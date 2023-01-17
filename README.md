@@ -3,7 +3,7 @@
 
 # 🏗 Conse PaaS
 
-Conse is an AI based Crypto Game Event Manager Platform on top of coiniXerr blockchain. 
+Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) blockchain. 
 
 > To update a user access level to dev first signup the user using `/auth/signup` API inside the `PaaS` then run the binary like so: `./app wildonion 0`
 
@@ -17,7 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of coiniXerr bloc
 
 * all TODOs inside the app
 
-* communication between Conse and the coiniXerr must be done through the TCP stream since coiniXerr supports TCP stream.
+* communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 
 * an AI model which suggests player the tips and tricks for a new game based on behavioural graph of the player collected by the history of each event's `phases` field
 
