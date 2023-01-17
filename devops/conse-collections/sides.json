@@ -1,0 +1,8 @@
+{"_id":{"$oid":"630a35978c198e0d655c8adf"},"name":"شهروند","is_disabled":false,"created_at":{"$numberLong":"1661613463"},"updated_at":{"$numberLong":"1661613463"}}
+{"_id":{"$oid":"630a359e8c198e0d655c8ae0"},"name":"مافیا","is_disabled":false,"created_at":{"$numberLong":"1661613470"},"updated_at":{"$numberLong":"1661613470"}}
+{"_id":{"$oid":"630a35a38c198e0d655c8ae1"},"name":"مستقل","is_disabled":false,"created_at":{"$numberLong":"1661613475"},"updated_at":{"$numberLong":"1661613475"}}
+{"_id":{"$oid":"630a3773696bb14037bdec19"},"name":"لشگر سیاه","is_disabled":false,"created_at":{"$numberLong":"1661613939"},"updated_at":{"$numberLong":"1661613939"}}
+{"_id":{"$oid":"630a383d696bb14037bdec1a"},"name":"کرونا","is_disabled":false,"created_at":{"$numberLong":"1661614141"},"updated_at":{"$numberLong":"1661614141"}}
+{"_id":{"$oid":"630a389a696bb14037bdec1b"},"name":"مجهول","is_disabled":false,"created_at":{"$numberLong":"1661614234"},"updated_at":{"$numberLong":"1661614234"}}
+{"_id":{"$oid":"630a38c1696bb14037bdec1c"},"name":"مجهول خاص","is_disabled":false,"created_at":{"$numberLong":"1661614273"},"updated_at":{"$numberLong":"1661614273"}}
+{"_id":{"$oid":"630a3926696bb14037bdec1d"},"name":"همزاد","is_disabled":false,"created_at":{"$numberLong":"1661614374"},"updated_at":{"$numberLong":"1661614374"}}

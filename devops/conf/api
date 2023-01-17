@@ -1,0 +1,29 @@
+
+
+
+
+
+server {
+
+	listen 7439 ssl default_server;
+	server_name api.ayoub.com;
+    client_max_body_size 1G;
+
+
+	location / {
+		proxy_pass http://localhost:7438;
+	}
+
+
+    location /assets {
+        autoindex off;
+        alias /home/ayoub/ayoub/assets/;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/api.ayoub.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/api.ayoub.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}

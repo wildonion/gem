@@ -1,0 +1,1 @@
+pg_dump -U ayoub -W -F t ayoub > /home/ayoub/_backups/ayoub.sql
