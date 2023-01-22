@@ -6,19 +6,19 @@
 ### step 0
 
 ```console
-$ sudo chown -R root:root /home/ayoub/_backups && sudo chmod -R 777 /home/ayoub/_backups
+$ sudo chown -R root:root /home/conse/_backups && sudo chmod -R 777 /home/conse/_backups
 ```
 
 ### Step 1
 
 ```console
-$ suso cp .pgpass /home/ayoub/
+$ suso cp .pgpass /home/conse/
 ```
 
 ### Step 2
 
 ```console
-$ sudo chown -R root:root /home/ayoub/.pgpass
+$ sudo chown -R root:root /home/conse/.pgpass
 ```
 
 ### Step 3
