@@ -17,7 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ### 🚧 WIP
 
-* adding Graphql using [juniper](https://graphql-rust.github.io/juniper/master/index.html)
+* adding Graphql for realtime streaming using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html)
 
 * updating [hyper](https://hyper.rs/) to latest version
 
