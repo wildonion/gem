@@ -5,7 +5,7 @@
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) blockchain. 
 
-> To update a user access level to dev first signup the user using `/auth/signup` API inside the `PaaS` then run the binary like so: `./app wildonion 0`
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
 
 ## 🧪 Test Conse Server
 
@@ -16,6 +16,10 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 ```sudo chmod +x app.sh && ./app.sh```
 
 ### 🚧 WIP
+
+* adding Graphql using [juniper](https://graphql-rust.github.io/juniper/master/index.html)
+
+* updating hyper to latest version
 
 * HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `app.sh`
 
