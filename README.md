@@ -21,7 +21,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * updating [hyper](https://hyper.rs/) to latest version
 
-* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `app.sh`
+* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `app.sh` on [xaas](https://xaas.ir/)
 
 * all TODOs inside the app
 
