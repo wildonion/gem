@@ -95,7 +95,7 @@ pub async fn add(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
                                             }, Some(update_option)).await.unwrap().unwrap();
                                             let response_body = ctx::app::Response::<schemas::game::DeckInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is DeckInfo struct
                                                 data: Some(updated_deck_doc), //// data is an empty &[u8] array
-                                                message: FOUND_DOCUMENT_UPDATE, //// collection found in ayoub database
+                                                message: FOUND_DOCUMENT_UPDATE, //// collection found in conse database
                                                 status: 302,
                                             };
                                             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
@@ -600,7 +600,7 @@ pub async fn disable(req: Request<Body>) -> GenericResult<hyper::Response<Body>,
                                         Some(deck_doc) => { //// deserializing BSON into the DeckInfo struct
                                             let response_body = ctx::app::Response::<schemas::game::DeckInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is DeckInfo struct
                                                 data: Some(deck_doc),
-                                                message: UPDATED, //// collection found in ayoub database
+                                                message: UPDATED, //// collection found in conse database
                                                 status: 200,
                                             };
                                             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

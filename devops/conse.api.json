@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "ccde3d43-f2cb-4a4c-b136-cde8c6f45b10",
-		"name": "Ayoub",
-		"description": "# AYOUB CONSE PITCH DECK\n\n[Technical Pitch Deck](https://miro.com/app/board/uXjVOb2Cb9k=/?moveToWidget=3458764531220249895&cot=14)\n\n# ***AYOUB CONSE GAME FLOW***\n\n*   Every God must create a group first then define an event related to that group so the players can purchase the event to participate in.\n*   Every God must define the a deck roles from all none disabled roles (which are created by the Dev) first to create an event for players.\n*   Every Dev must define roles before creating a deck\n*   A deck contains all defined roles by the God.\n*   Every God can update the role, side, status, player ability and phases for a specific event.\n*   Every God can chain two players together.\n*   Every God can see a player info during the game.\n*   Every Player can participate in an event defined by a God\n*   Every Player must reserve his/her role by purchasing and event.\n*   Every Dev must define sides for the game.\n*   Behalf of the user the server will assign the `role_id` and `side_id` for the user.\n*   To get all active users of a current event we must iterate through the `phases` field fetched from calling the `Get Single Event` API.\n*   Every God must send the updated player info by calling the `Update Event Phase` API after updating the `side_id`, `role_id`, `status`, `player_role_ability` and `player_chain_to` of the user during the game phases.\n    \n\n# ***NOTES***\n\n*   All passed in times are in form of UNIX timestamp.\n*   All access level must be constant values as defined.\n*   All player status must be constant values as defined.\n    \n\n# *CONSTANTS*\n\n### **ACCESS LEVELS**\n\n*   Admin Access is 1\n*   Dev Access is 0\n*   Default User Access is 2\n    \n\n### **PLAYER STATUS**\n\n*   Default Status is 0\n*   Kick Status is 1\n*   Dead Status is 2\n*   Three Phases Disability Status is 3\n*   Full Disability Status is 4\n*   Two Phases Later Silent Status is 5\n*   Six Phases Later Silent Status is 6\n*   Chained Status is 7\n*   Changed Role Status is 8\n*   Changed Side Status is 9\n*   Exit Status is 10\n*   Devote Status is 11\n*   Nine Phases Later Pro Killer Status is 12",
+		"name": "Conse",
+		"description": "# CONSE PITCH DECK\n\n[Technical Pitch Deck](https://miro.com/app/board/uXjVOb2Cb9k=/?moveToWidget=3458764531220249895&cot=14)\n\n# ***CONSE GAME FLOW***\n\n*   Every God must create a group first then define an event related to that group so the players can purchase the event to participate in.\n*   Every God must define the a deck roles from all none disabled roles (which are created by the Dev) first to create an event for players.\n*   Every Dev must define roles before creating a deck\n*   A deck contains all defined roles by the God.\n*   Every God can update the role, side, status, player ability and phases for a specific event.\n*   Every God can chain two players together.\n*   Every God can see a player info during the game.\n*   Every Player can participate in an event defined by a God\n*   Every Player must reserve his/her role by purchasing and event.\n*   Every Dev must define sides for the game.\n*   Behalf of the user the server will assign the `role_id` and `side_id` for the user.\n*   To get all active users of a current event we must iterate through the `phases` field fetched from calling the `Get Single Event` API.\n*   Every God must send the updated player info by calling the `Update Event Phase` API after updating the `side_id`, `role_id`, `status`, `player_role_ability` and `player_chain_to` of the user during the game phases.\n    \n\n# ***NOTES***\n\n*   All passed in times are in form of UNIX timestamp.\n*   All access level must be constant values as defined.\n*   All player status must be constant values as defined.\n    \n\n# *CONSTANTS*\n\n### **ACCESS LEVELS**\n\n*   Admin Access is 1\n*   Dev Access is 0\n*   Default User Access is 2\n    \n\n### **PLAYER STATUS**\n\n*   Default Status is 0\n*   Kick Status is 1\n*   Dead Status is 2\n*   Three Phases Disability Status is 3\n*   Full Disability Status is 4\n*   Two Phases Later Silent Status is 5\n*   Six Phases Later Silent Status is 6\n*   Chained Status is 7\n*   Changed Role Status is 8\n*   Changed Side Status is 9\n*   Exit Status is 10\n*   Devote Status is 11\n*   Nine Phases Later Pro Killer Status is 12",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035"
 	},
@@ -2038,17 +2038,17 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://api.ayoub.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://api.ayoub.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://api.ayoub.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{

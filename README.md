@@ -15,7 +15,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```sudo chmod +x app.sh && ./app.sh```
 
-### 🚧 WIP
+## 🚧 WIP
+
+* complete conse solana programs inside the `conse` folder using [anchor](https://www.anchor-lang.com/) 
 
 * adding Graphql for realtime streaming using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html)
 

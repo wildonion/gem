@@ -69,7 +69,7 @@ pub async fn main(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hy
                                         Some(event_doc) => { //// deserializing BSON into the EventInfo struct
                                             let response_body = ctx::app::Response::<schemas::event::EventInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is EventInfo struct
                                                 data: Some(event_doc),
-                                                message: UPDATED, //// collection found in ayoub database
+                                                message: UPDATED, //// collection found in conse database
                                                 status: 200,
                                             };
                                             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

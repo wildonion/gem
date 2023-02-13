@@ -412,7 +412,7 @@ pub async fn disable(req: Request<Body>) -> GenericResult<hyper::Response<Body>,
                                         Some(role_doc) => { //// deserializing BSON into the RoleInfo struct
                                             let response_body = ctx::app::Response::<schemas::game::RoleInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is RoleInfo struct
                                                 data: Some(role_doc),
-                                                message: UPDATED, //// collection found in ayoub database
+                                                message: UPDATED, //// collection found in conse database
                                                 status: 200,
                                             };
                                             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

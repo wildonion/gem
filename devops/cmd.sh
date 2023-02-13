@@ -1,1 +1,1 @@
-pg_dump -U ayoub -W -F t ayoub > /home/ayoub/_backups/ayoub.sql
+pg_dump -U conse -W -F t conse > /home/conse/_backups/conse.sql

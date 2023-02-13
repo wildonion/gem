@@ -77,7 +77,7 @@ pub async fn edit_profile(req: Request<Body>) -> GenericResult<hyper::Response<B
                                         Some(user_doc) => { //// deserializing BSON into the UserInfo struct
                                             let response_body = ctx::app::Response::<schemas::auth::UserInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is UserInfo struct
                                                 data: Some(user_doc),
-                                                message: UPDATED, //// collection found in ayoub database
+                                                message: UPDATED, //// collection found in conse database
                                                 status: 200,
                                             };
                                             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

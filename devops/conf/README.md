@@ -1,7 +1,7 @@
 
 
 
-## Setup Ayoub APIs Reverse Proxy
+## Setup Conse APIs Reverse Proxy
 
 ### Install Nginx
 
@@ -29,6 +29,6 @@ sudo systemctl restart nginx && sudo certbot --nginx
 
 ## NOTE
 
-> Remember to enable `ufw` and allow all in/out going requests through the ayoub port using `sudo ufw allow 7439`, `sudo ufw allow 80` and `sudo ufw 443` commands.
+> Remember to enable `ufw` and allow all in/out going requests through the conse port using `sudo ufw allow 7439`, `sudo ufw allow 80` and `sudo ufw 443` commands.
 
 > Don't use *.conf to configure the nginx for the backend code since in backend the we've used `middlewares::cors::allow` method to handle the CORS issue.  

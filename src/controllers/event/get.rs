@@ -299,7 +299,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> GenericResult<hyper:
                     ////////////////////////////////// DB Ops
                     
                     let filter = doc! { "is_expired": false, "players._id": _id.unwrap() }; //// filtering all expired events
-                    let events = db.database("ayoub").collection::<schemas::event::EventInfo>("events"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the ExploreEventInfo struct
+                    let events = db.database("conse").collection::<schemas::event::EventInfo>("events"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the ExploreEventInfo struct
                     let mut all_none_expired_events = schemas::event::AvailableEvents{
                         events: vec![],
                     };

@@ -43,7 +43,7 @@ pub async fn main(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hy
 
             ////////////////////////////////// DB Ops
                     
-            let users = db.database("ayoub").collection::<schemas::auth::UserInfo>("users"); //// selecting users collection to fetch all user infos into the UserInfo struct
+            let users = db.database("conse").collection::<schemas::auth::UserInfo>("users"); //// selecting users collection to fetch all user infos into the UserInfo struct
             match users.find_one(doc!{"username": username.clone(), "_id": _id.unwrap()}, None).await.unwrap(){ //// finding user based on username
                 Some(user_doc) => { //// deserializing BSON into the UserInfo struct
                     let user_response = schemas::auth::CheckTokenResponse{
