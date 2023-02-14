@@ -8,7 +8,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod conse_gem_transaction {
 
-
+    
     //// https://docs.solana.com/developing/programming-model/calling-between-programs#program-derived-addresses
     //// https://docs.rs/anchor-lang/latest/anchor_lang/index.html
     //// https://solana.stackexchange.com/a/1480
@@ -142,7 +142,7 @@ pub struct StartGame<'info> {
     #[account(
         init,
         payer= user,
-        space= 300, 
+        space= 300, // https://www.anchor-lang.com/docs/space
         //// following will create the pda using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
