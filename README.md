@@ -15,7 +15,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```sudo chmod +x app.sh && ./app.sh```
 
-## 💳 Wallet Info
+## 💳 Solana Wallet Info
 
 ```
 ===============================================================================
