@@ -8,6 +8,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod conse_gem_transaction {
 
+
+    //// https://docs.solana.com/developing/programming-model/calling-between-programs#program-derived-addresses
     //// https://docs.rs/anchor-lang/latest/anchor_lang/index.html
     //// https://solana.stackexchange.com/a/1480
     //// singer is the one who sign the transaction with his or her private key, 
@@ -18,7 +20,12 @@ pub mod conse_gem_transaction {
     //// call to that address to mutate the state of the account; the PDA can be generated 
     //// from a seed which can be a unique indentifer like public key plus a bump 
     //// which is a one byte number.
-    
+    //
+    //// pda can be used to generate signature to be used for calling between programs
+    //// since they have no private keys thus no third party can sign the transaction
+    //// only the pda owner can do this (without private key) which can be used for 
+    //// signing a transaction method call of another contract and also used for 
+    //// depositing lamports as a escrow contract.
     
     
     use super::*;
@@ -33,18 +40,16 @@ pub mod conse_gem_transaction {
         game_state.server = *ctx.accounts.user.key;
         game_state.player_one = *ctx.accounts.player_one.key;
         game_state.amount = amount;
-        // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling
-        
-
-
-        //-------------- Added by @wildonion
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
-        //--------------
-        
-
-
+        // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
+    
         
         Ok(())
+    }
+
+
+    pub fn reserve_ticket(ctx: Context<ReserveTicket>, amount: u64) -> Result<()>{
+
     }
 
     pub fn second_player(ctx: Context<SecondPlayer>, amount: u64) -> Result<()> {
@@ -122,6 +127,14 @@ pub struct GameState {
     bump: u8, //// this must be filled from the frontend
 }
 
+#[account]
+pub struct TicketStats{
+    pub id: String, //// the mongodb objectid
+    pub server: Pubkey, //// this is the server solana public key
+    pub bump: u8, 
+
+}
+
 #[derive(Accounts)]
 pub struct StartGame<'info> {
     #[account(mut)]
@@ -130,14 +143,12 @@ pub struct StartGame<'info> {
         init,
         payer= user,
         space= 300, 
-        // ---------- Added by @wildonion
         //// following will create the pda using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
         //// passed in bump to start_game() function.
         //// NOTE that the generated pda in here 
         //// must be equals to the one in frontend
-        // ----------
         seeds = [user.key().as_ref(), player_one.key().as_ref()], 
         bump
     )]
@@ -154,14 +165,12 @@ pub struct SecondPlayer<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        // ---------- Added by @wildonion
         //// following will create the pda using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 
         //// start_game() function.
         //// NOTE that the generated pda in here 
         //// must be equals to the one in frontend
-        // ----------
         seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
         bump = game_state.bump
     )]
@@ -181,14 +190,12 @@ pub struct GameResult<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        // ---------- Added by @wildonion
         //// following will create the pda using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 
         //// start_game() function.
         //// NOTE that the generated pda in here 
         //// must be equals to the one in frontend
-        // ----------
         seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
         bump = game_state.bump
     )]
@@ -205,10 +212,35 @@ pub struct GameResult<'info> {
     pub system_program: Program<'info, System>,
 }
 
+
+#[derive(Accounts)]
+pub struct ReserveTicket{
+    //// signer is the one who must pay 
+    //// for the ticket and signed this 
+    //// transaction method call also since we 
+    //// want to take money from him/her
+    //// the account must be mutable
+    #[account(mut)]
+    pub user: Signer<'info>,
+    //// following will create the pda using
+    //// server and the signer of this transaction
+    //// call public key as the seed and the passed 
+    //// in bump to start_game() function.
+    //// NOTE that the generated pda in here 
+    //// must be equals to the one in frontend
+    #[account(
+        mut,
+        seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
+        bump = ticket_stats.bump
+    )]
+    pub ticket_stats: Account<'info, GameState>, //// ticket_stats account is the PDA
+    pub system_program: Program<'info, System>
+}
+
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Error InsufficientFund!")]
+    #[msg("Error InsufficientFund")]
     InsufficientFund,
-    #[msg("Restriction error!")]
+    #[msg("Restriction error")]
     RestrictionError,
 }

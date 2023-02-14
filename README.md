@@ -15,6 +15,17 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```sudo chmod +x app.sh && ./app.sh```
 
+## 💳 Wallet Info
+
+```
+===============================================================================
+pubkey: wgnkeFs6nJVvQBzpMwwvyMmwfvVy3E7fCuZdEfx7uBF
+===============================================================================
+Save this seed phrase and your BIP39 passphrase to recover your new keypair:
+mango invite holiday candy gold force core accident fiscal repeat mind squirrel
+===============================================================================
+```
+
 ## 🚧 WIP
 
 * complete conse solana programs inside the `conse` folder using [anchor](https://www.anchor-lang.com/) 
