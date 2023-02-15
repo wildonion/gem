@@ -60,6 +60,9 @@ describe("conse-gem-reservation", () => {
     console.log("player 1 balance: ", balance_user_one);
     console.log("pda account balance: ", balance_pda_account);
     console.log("---------------------------------------------");
+    
+    // TODO - Error: failed to send transaction: Transaction simulation failed: This program may not be used for executing instructions
+    
     // Start game function - init pda program
     await program.methods.startGame(new anchor.BN(5_000_000_000), bump).accounts({user: provider.wallet.publicKey, gameState: gameStatePDA, playerOne: user_one.publicKey}).rpc();
     let currentAccountAmount = await program.account.gameState.fetch(gameStatePDA);
