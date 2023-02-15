@@ -5,8 +5,6 @@
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain. 
 
-> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
-
 ## 🧪 Test Conse Hyper Server
 
 ```cargo test --bin conse```
@@ -32,11 +30,13 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 🛠️ Production Setup
 
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
+
 > Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` API inside the `Anchor.toml`
 
 > Also make sure that your account has enough balance for deploying the program.
 
-```sudo chmod +x deploy.sh && ./deploy.sh```
+> Finally Run ```sudo chmod +x deploy.sh && ./deploy.sh```
 
 ## 🚀 Deploy Contract on Localnet 
 
