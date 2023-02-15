@@ -19,12 +19,13 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```
 Wrote new keypair to /home/wildonion/.config/solana/id.json
-===============================================================================
-pubkey: wgnkeFs6nJVvQBzpMwwvyMmwfvVy3E7fCuZdEfx7uBF
-===============================================================================
+================================================================================
+pubkey: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+================================================================================
 Save this seed phrase and your BIP39 passphrase to recover your new keypair:
-mango invite holiday candy gold force core accident fiscal repeat mind squirrel
-===============================================================================
+skill divorce afraid nice surface poverty host bright narrow media disorder tuna
+================================================================================
+
 ```
 
 ## 🚧 WIP
