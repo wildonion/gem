@@ -11,19 +11,11 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo test --bin conse```
 
-## 🛠️ Setup
+## 💳 Setup Solana Wallet 
 
-> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` API inside the `Anchor.toml`
+* Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! 
 
-> Also make sure that your account has enough balance for deploying the program.
-
-```sudo chmod +x deploy.sh && ./deploy.sh```
-
-## 💳 Solana Wallet Info
-
-> Solana program will be deployed to the generated address inside the wallet path in `Anchor.toml`.
-
-```
+```console
 Wrote new keypair to /home/wildonion/.config/solana/id.json
 ================================================================================
 pubkey: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
@@ -33,6 +25,32 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 ================================================================================
 
 ```
+
+* You can extract the public key using `solana address -k /home/$USER/.config/solana/id.json` command.
+
+* Change the `provider` field inside the `Anchor.toml` file with the proper path of the generated wallet address JSON.
+
+## 🛠️ Production Setup
+
+> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` API inside the `Anchor.toml`
+
+> Also make sure that your account has enough balance for deploying the program.
+
+```sudo chmod +x deploy.sh && ./deploy.sh```
+
+## 🚀 Deploy Contract on Localnet 
+
+* Fire up a terminal and run a local ledger using ```solana-test-validator``` command.
+
+* In the second terminal:
+    * config the solana on the localnet using ```solana config set --url localhost``` command.
+    * charge your generated wallet using ```solana airdrop 10``` command.
+    * build the contract with ```anchor build``` command.
+    * deploy the contract on the localnet with ```anchor deploy```
+    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract which is the output of the ```anchor deploy``` command.
+    * also you can check the deployed contract address with ```solana address -k target/deploy/conse-keypair.json``` command.
+
+* Stop the first terminal and in the second one run ```anchor test``` command, since this command will run a local ledger for the test proces.
 
 ## 🚧 WIP
 
