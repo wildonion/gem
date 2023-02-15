@@ -9,8 +9,25 @@ https://docs.rs/anchor-lang/latest/anchor_lang/index.html
 https://solana.stackexchange.com/a/1480
 
 
-////////////// NULL POINTER OPTIMISATION NOTE
-/////////////////////////////////////////////
+======================================
+============= ABOUT SOLANA WALLET INFO 
+======================================
+
+`solana-keygen new` will generate a new wallet info which contains 
+public and private keys produced from the elliptic curve algorithm
+based on Ed25519 which is a public key digital signature which means
+that a message came from the holder of a certain private key and that 
+the information has not been tampered with in flight; the hash of the 
+pulic key will be used as the wallet address or it can be used as it is
+in its raw format and the private key to sign transaction method calls 
+to make sure that the public key of the transaction call or the signer 
+info is the one who signed the call with his or her private key, also 
+the private key is a pen that can be used to sign 
+every program transaction call.  
+
+=============================================
+============= ABOUT NULL POINTER OPTIMISATION
+=============================================
 
 borsh uses a null-pointer optimization in serializing Option means it takes 
 extra 1 byte instead of allocating extra 8 bytes tag which is used to 
@@ -25,8 +42,9 @@ tag which can points to the current variant of the enum we can use the size of T
 with 1 extra byte to represent the tag to make sure that there is 
 no invalid pointer or reference.
 
-////////////// SOLANA RUNTIME
-/////////////////////////////
+=========================================
+=============  SOLANA RUNTIME EXPLANATION
+=========================================
 
 solana runtime has its own bpf loader which supports no std libs
 since contracts can't interact with the ouside world thus there 
@@ -40,8 +58,9 @@ which has bee deployed and contains the BPF bytecode in it to call
 the method name inside the incoming RPC request 
 to change the state of the blockchain.
 
-////////////// SOLANA ACCOUNTS EXPLANATION
-//////////////////////////////////////////
+=========================================
+============= SOLANA ACCOUNTS EXPLANATION
+=========================================
 
 singer is the one who sign the transaction with his or her private key, 
 owner is the contract owner which the program is must be equals to the 
@@ -260,8 +279,9 @@ pub struct GameResult<'info> {
 pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 
     //// for the ticket and signed this 
-    //// transaction method call also since we 
-    //// want to take money from him/her
+    //// transaction method call with his
+    //// or her private key also since we 
+    //// want to take money from him or her
     //// the account must be mutable
     #[account(mut)]
     pub user: Signer<'info>,

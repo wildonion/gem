@@ -8,9 +8,9 @@ describe("conse-gem-reservation", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
   
-  const user_one = anchor.web3.Keypair.generate();
-  const user_two = anchor.web3.Keypair.generate();
-  const tax_account = anchor.web3.Keypair.generate();
+  const user_one = anchor.web3.Keypair.generate(); // TODO - need wallet handler
+  const user_two = anchor.web3.Keypair.generate(); // TODO - it can be the server public key
+  const tax_account = anchor.web3.Keypair.generate(); // TODO - staking pool account
   
   const lamport_amount = 10_000_000_000;
   const lamport_to_send = 5_000_000_000;
@@ -26,6 +26,7 @@ describe("conse-gem-reservation", () => {
     [provider.wallet.publicKey.toBuffer(), user_one.publicKey.toBuffer()],
     program.programId
     )
+    
     // user one balance account
     const latestBlockHashforUserOne = await provider.connection.getLatestBlockhash();
     await provider.connection.confirmTransaction ({
@@ -42,6 +43,8 @@ describe("conse-gem-reservation", () => {
       signature: await provider.connection.requestAirdrop(user_two.publicKey, lamport_amount),
     });
     console.log("player 2 balance: ", await provider.connection.getBalance(user_two.publicKey));
+    
+    
     // user 1 send solana to pda 
     let tx_data = new anchor.web3.Transaction().add(anchor.web3.SystemProgram.transfer({
       fromPubkey: user_one.publicKey,

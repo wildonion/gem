@@ -13,9 +13,15 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🛠️ Setup
 
+> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` API inside the `Anchor.toml`
+
+> Also make sure that your account has enough balance for deploying the program.
+
 ```sudo chmod +x deploy.sh && ./deploy.sh```
 
 ## 💳 Solana Wallet Info
+
+> Solana program will be deployed to the generated address inside the wallet path in `Anchor.toml`.
 
 ```
 Wrote new keypair to /home/wildonion/.config/solana/id.json
