@@ -18,6 +18,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 ## 💳 Solana Wallet Info
 
 ```
+Wrote new keypair to /home/wildonion/.config/solana/id.json
 ===============================================================================
 pubkey: wgnkeFs6nJVvQBzpMwwvyMmwfvVy3E7fCuZdEfx7uBF
 ===============================================================================
