@@ -50,7 +50,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract which is the output of the ```anchor deploy``` command.
     * also you can check the deployed contract address with ```solana address -k target/deploy/conse-keypair.json``` command.
 
-* Stop the first terminal and in the second one run ```anchor test``` command, since this command will run a local ledger for the test proces.
+* Stop the first terminal and in the second one run ```anchor test``` command, since this command will run a local ledger for the test proces on its own.
 
 ## 🚧 WIP
 
