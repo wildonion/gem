@@ -1,10 +1,10 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { PublicKey } from '@solana/web3.js';
-import { ConseGemTransaction } from "../target/types/ConseGemTransaction";
+import { ConseGemReservation } from "../target/types/conse_gem_reservation";
 import { assert, expect } from "chai";
 
-describe("nds-transaction", () => {
+describe("conse-gem-reservation", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.AnchorProvider.env());
   
@@ -16,7 +16,7 @@ describe("nds-transaction", () => {
   const lamport_to_send = 5_000_000_000;
   const lamport_to_send_second = 2_000_000_000;
   
-  const program = anchor.workspace.ConseGemTransaction as Program<ConseGemTransaction>;
+  const program = anchor.workspace.ConseGemReservation as Program<ConseGemReservation>;
   const provider = anchor.AnchorProvider.env();
   
   it("Pda created!", async () => {

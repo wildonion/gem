@@ -1,32 +1,71 @@
 
 
 
+/*
+
+
+https://docs.solana.com/developing/programming-model/calling-between-programs#program-derived-addresses
+https://docs.rs/anchor-lang/latest/anchor_lang/index.html
+https://solana.stackexchange.com/a/1480
+
+
+////////////// NULL POINTER OPTIMISATION NOTE
+/////////////////////////////////////////////
+
+borsh uses a null-pointer optimization in serializing Option means it takes 
+extra 1 byte instead of allocating extra 8 bytes tag which is used to 
+point to the current variant; by this it serializes an Option as 1 byte for the 
+variant identifier and then additional x bytes for the content if it's Some
+otherwise there will be just 1 byte to avoid null pointer or zero bytes,
+a null-pointer optimization means a reference can never be null since 
+Option<&T> is the exact size of the T because in enum the size of the 
+whole enum is equals to the size of the biggest variant, in Option enum 
+and all enums with two variants instead of requiring an extra word or 8 bytes 
+tag which can points to the current variant of the enum we can use the size of T
+with 1 extra byte to represent the tag to make sure that there is 
+no invalid pointer or reference.
+
+////////////// SOLANA RUNTIME
+/////////////////////////////
+
+solana runtime has its own bpf loader which supports no std libs
+since contracts can't interact with the ouside world thus there 
+is no socket to do this due to the securtiy reasons although
+the reason that solana contract gets compiled to .so is because 
+they can be loaded from the linux kernel which is blazingly 
+fast also from the browsers, a json RPC call must be invoked 
+with a contract method name and id (wallet address or public key) 
+to the RPC server on the solana runtime node to load the .so contract 
+which has bee deployed and contains the BPF bytecode in it to call 
+the method name inside the incoming RPC request 
+to change the state of the blockchain.
+
+////////////// SOLANA ACCOUNTS EXPLANATION
+//////////////////////////////////////////
+
+singer is the one who sign the transaction with his or her private key, 
+owner is the contract owner which the program is must be equals to the 
+owner public key or address, PDA is an off curve address with no private key 
+that can be used as a staking pool account for transferring and withdrawing 
+lamports since it has no private key thus no one can sign a transaction 
+call to that address to mutate the state of the account; the PDA can be generated 
+from a seed which can be a unique indentifer like public key plus a bump 
+which is a one byte number.
+
+pda can be used to generate signature to be used for calling between programs
+since they have no private keys thus no third party can sign the transaction
+only the pda owner can do this (without private key) which can be used for 
+signing a transaction method call of another contract and also used for 
+depositing lamports as a escrow contract.
+
+*/
+
 use anchor_lang::prelude::*;
 use percentage::Percentage;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod conse_gem_transaction {
-
-    
-    //// https://docs.solana.com/developing/programming-model/calling-between-programs#program-derived-addresses
-    //// https://docs.rs/anchor-lang/latest/anchor_lang/index.html
-    //// https://solana.stackexchange.com/a/1480
-    //// singer is the one who sign the transaction with his or her private key, 
-    //// owner is the contract owner which the program is must be equals to the 
-    //// owner public key or address, PDA is an off curve address with no private key 
-    //// that can be used as a staking pool account for transferring and withdrawing 
-    //// lamports since it has no private key thus no one can sign a transaction 
-    //// call to that address to mutate the state of the account; the PDA can be generated 
-    //// from a seed which can be a unique indentifer like public key plus a bump 
-    //// which is a one byte number.
-    //
-    //// pda can be used to generate signature to be used for calling between programs
-    //// since they have no private keys thus no third party can sign the transaction
-    //// only the pda owner can do this (without private key) which can be used for 
-    //// signing a transaction method call of another contract and also used for 
-    //// depositing lamports as a escrow contract.
-    
+pub mod conse_gem_reservation {
     
     use super::*;
 
@@ -50,6 +89,7 @@ pub mod conse_gem_transaction {
 
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, amount: u64) -> Result<()>{
 
+        Ok(())
     }
 
     pub fn second_player(ctx: Context<SecondPlayer>, amount: u64) -> Result<()> {
@@ -127,6 +167,9 @@ pub struct GameState {
     bump: u8, //// this must be filled from the frontend
 }
 
+//// `#[account]` proc macro attribute sets 
+//// the owner of that data to the 
+//// `declare_id` of the crate
 #[account]
 pub struct TicketStats{
     pub id: String, //// the mongodb objectid
@@ -214,7 +257,7 @@ pub struct GameResult<'info> {
 
 
 #[derive(Accounts)]
-pub struct ReserveTicket{
+pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 
     //// for the ticket and signed this 
     //// transaction method call also since we 
@@ -222,18 +265,51 @@ pub struct ReserveTicket{
     //// the account must be mutable
     #[account(mut)]
     pub user: Signer<'info>,
-    //// following will create the pda using
-    //// server and the signer of this transaction
-    //// call public key as the seed and the passed 
-    //// in bump to start_game() function.
-    //// NOTE that the generated pda in here 
-    //// must be equals to the one in frontend
+    /*
+
+        following will create the pda from the 
+        ticket_stats using
+        server and the signer of this transaction
+        call public key as the seed and the passed 
+        in bump to start_game() function.
+        NOTE that the generated pda in here 
+        must be equals to the one in frontend
+    
+        the `Account` type is used when an instruction
+        is interested in the deserialized data of the
+        account means if we have a data coming from the 
+        transaction call we can store it inside the 
+        `Account` type with the `'info` lifetime
+        since `Account` type is generic over `T` which `T`
+        is the struct that contains the instruction data
+        that can be deserialized using borsh which will be 
+        bounded to the `T` once we added the `#[account]`
+        proc macro attribute on top of it.
+    
+        the `Account` type will verify that the owner of 
+        generic `T` or the `TicketStats` struct equals the
+        address we declared with `declare_id`.
+
+    */
     #[account(
         mut,
         seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
         bump = ticket_stats.bump
     )]
-    pub ticket_stats: Account<'info, GameState>, //// ticket_stats account is the PDA
+    pub ticket_stats: Account<'info, TicketStats>,
+    //// `AccountInfo` type don't implement any checks 
+    //// on the account being passed and we can fix the
+    //// compile time error by writing a CHECK doc.
+    /// CHECK: This is not dangerous because we don't read and write from this account and we'll transfer lamports of the bought ticket to this account 
+    #[account(mut)]
+    //// this is the staking pool account that will be used 
+    //// to transfer the paid amount to this one also the type
+    //// `AccountInfo` will be used to only indicate that the 
+    //// following is just an account without any instruction 
+    //// data and if we want to deserialize a data we must 
+    //// use `Account` type which is a wrapper around the 
+    //// `AccountInfo` type.
+    pub satking_pool: AccountInfo<'info>, 
     pub system_program: Program<'info, System>
 }
 
