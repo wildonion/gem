@@ -1,7 +1,7 @@
 
 
 
-# 🏗 Conse PaaS
+## 🏗 Conse PaaS
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain. 
 
