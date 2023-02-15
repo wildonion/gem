@@ -13,7 +13,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🛠️ Setup
 
-```sudo chmod +x app.sh && ./app.sh```
+```sudo chmod +x deploy.sh && ./deploy.sh```
 
 ## 💳 Solana Wallet Info
 
@@ -34,7 +34,7 @@ mango invite holiday candy gold force core accident fiscal repeat mind squirrel
 
 * updating [hyper](https://hyper.rs/) to latest version
 
-* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `app.sh` on [xaas](https://xaas.ir/)
+* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh` on [xaas](https://xaas.ir/)
 
 * all TODOs inside the app
 
