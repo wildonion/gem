@@ -46,9 +46,9 @@ is no socket to do this due to the securtiy reasons although
 the reason that solana contract gets compiled to .so is because 
 they can be loaded from the linux kernel which is blazingly 
 fast also from the browsers, a json RPC call must be invoked 
-with a contract method name and id (wallet address or public key) 
-to the RPC server on the solana runtime node to load the .so contract 
-which has bee deployed and contains the BPF bytecode in it to call 
+with a contract method name and id (public key) to the RPC server 
+on the solana runtime node to load the .so contract which has bee 
+deployed and contains the BPF bytecode in it to call 
 the method name inside the incoming RPC request 
 to change the state of the blockchain.
 
@@ -57,11 +57,10 @@ to change the state of the blockchain.
 =========================================
 
 singer is the one who sign the transaction with his or her private key, 
-owner is the contract owner which the program is must be equals to the 
-owner public key or address, PDA is an off curve address with no private key 
-that can be used as a staking pool account for transferring and withdrawing 
-lamports since it has no private key thus no one can sign a transaction 
-call to that address to mutate the state of the account; the PDA can be generated 
+PDA is an off curve address with no private key that can be used as a 
+staking pool account for transferring and withdrawing lamports since 
+it has no private key thus no one can sign a transaction call to that 
+address to mutate the state of the account; the PDA can be generated 
 from a seed which can be a unique indentifer like public key plus a bump 
 which is a one byte number.
 
