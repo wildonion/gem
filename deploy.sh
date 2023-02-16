@@ -6,8 +6,8 @@ sh -c "$(curl -sSfL https://release.solana.com/v1.15.1/install)"
 cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
 export PATH="/home/$USER/.local/share/solana/install/active_release/bin:$PATH"
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev
-avm install 0.24.2
-avm use 0.24.2
+avm install latest
+avm use latest
 npm install --force
 anchor build
 anchor deploy

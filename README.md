@@ -57,6 +57,17 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
         Deploy success
         ```
+    * show the deployed program: ```solana program show 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z``` and the output sample would be like:
+        ```console
+            Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
+            Owner: BPFLoaderUpgradeab1e11111111111111111111111
+            ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
+            Authority: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+            Last Deployed In Slot: 477
+            Data Length: 671648 (0xa3fa0) bytes
+            Balance: 4.67587416 SOL
+        ```
+        in which the owner is the BPF loader and the upgrade authority which is the public key of the generated wallet info and the one who has deployed this contract.
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
 

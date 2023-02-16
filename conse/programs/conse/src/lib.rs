@@ -54,27 +54,54 @@ to change the state of the blockchain.
 
 =========================================
 ============= SOLANA ACCOUNTS EXPLANATION
-=========================================
+========================================= 
 
-singer is the one who sign the transaction with his or her private key, 
-PDA is an off curve address with no private key that can be used as a 
-staking pool account for transferring and withdrawing lamports since 
-it has no private key thus no one can sign a transaction call to that 
-address to mutate the state of the account; the PDA can be generated 
-from a seed which can be a unique indentifer like public key plus a bump 
-which is a one byte number.
+on first deployment of the contract the owner of the program is the BPF loader
+itself also a new key pair will be generated and used to deploy the contract 
+on it which is the address that the BPF bytecode is located, in order to 
+amend any instruction data on the contract the account that wants to amend 
+must be the owner of the program id or the public key of the program account 
+means account.owner == program_id which this will be checked by Account type 
+in anchor that will check the owner of instruction data or the serialized 
+data passed in to the function equals to the program id public key 
+to modify the data on chain. 
 
-pda can be used to generate signature to be used for calling between programs
+accounts on solana can be used to store data inside of them in which the data 
+inside a specific account can only be modified by the account owner means the 
+owner must be the program id and the runtime grants the program write access 
+to the account if its id matches the owner.
+
+authority is the program's upgrade authority, the one who can sign transactions 
+on behalf of the account and who has deployed the program and has access to change 
+the program content thus is the owner of the program.
+
+singer is the private key holder and the one who can signs the transaction 
+with his or her private key, PDA is an off curve address with no private 
+key that can be used as a staking pool account for transferring and 
+withdrawing lamports since it has no private key thus no one can sign 
+a transaction call to that address to mutate the state of the account; 
+the PDA can be generated from a seed which can be a unique indentifer 
+like public key plus a bump which is a one byte number.
+
+PDA can be used to generate signature to be used for calling between programs
 since they have no private keys thus no third party can sign the transaction
-only the pda owner can do this (without private key) which can be used for 
+only the PDA owner can do this (without private key) which can be used for 
 signing a transaction method call of another contract and also used for 
 depositing lamports as a escrow contract.
+
+
+program id: is the public key of the deployed program
+authority : is the upgrade authority or the owner of the deployed contract
+owner     : is the one who can mutate instruction data on the chain; owner == program_id 
+signer    : is the private key holder and can sign tx call
+PDA       : is an off curve public key that can be used as the escrow account 
+
 
 */
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-declare_id!("2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z");
+declare_id!("2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
 
 #[program]
 pub mod conse_gem_reservation {
@@ -198,11 +225,11 @@ pub struct StartGame<'info> {
         init,
         payer= user,
         space= 300, // https://www.anchor-lang.com/docs/space
-        //// following will create the pda using
+        //// following will create the PDA using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
         //// passed in bump to start_game() function.
-        //// NOTE that the generated pda in here 
+        //// NOTE that the generated PDA in here 
         //// must be equals to the one in frontend
         seeds = [user.key().as_ref(), player_one.key().as_ref()], 
         bump
@@ -220,11 +247,11 @@ pub struct SecondPlayer<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        //// following will create the pda using
+        //// following will create the PDA using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 
         //// start_game() function.
-        //// NOTE that the generated pda in here 
+        //// NOTE that the generated PDA in here 
         //// must be equals to the one in frontend
         seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
         bump = game_state.bump
@@ -245,11 +272,11 @@ pub struct GameResult<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        //// following will create the pda using
+        //// following will create the PDA using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 
         //// start_game() function.
-        //// NOTE that the generated pda in here 
+        //// NOTE that the generated PDA in here 
         //// must be equals to the one in frontend
         seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
         bump = game_state.bump
@@ -280,12 +307,12 @@ pub struct ReserveTicket<'info>{
     pub user: Signer<'info>,
     /*
 
-        following will create the pda from the 
+        following will create the PDA from the 
         ticket_stats using
         server and the signer of this transaction
         call public key as the seed and the passed 
         in bump to start_game() function.
-        NOTE that the generated pda in here 
+        NOTE that the generated PDA in here 
         must be equals to the one in frontend
     
         the `Account` type is used when an instruction
