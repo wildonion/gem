@@ -24,7 +24,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ```
 
-* You can extract the public key using `solana address -k /home/$USER/.config/solana/id.json` command.
+* You can extract the public key using ```solana address -k /home/$USER/.config/solana/id.json``` command.
 
 * Change the `provider` field inside the `Anchor.toml` file with the proper path of the generated wallet address JSON.
 
@@ -47,10 +47,20 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * charge your generated wallet using ```solana airdrop 10``` command.
     * build the contract with ```anchor build``` command.
     * deploy the contract on the localnet with ```anchor deploy```
-    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract which is the output of the ```anchor deploy``` command.
-    * also you can check the deployed contract address with ```solana address -k target/deploy/conse-keypair.json``` command.
+    * the output of the deploy command is something like:
+        ```console
+        Deploying workspace: http://localhost:8899
+        Upgrade authority: /home/wildonion/.config/solana/id.json
+        Deploying program "conse"...
+        Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
+        Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
-* Stop the first terminal and in the second one run ```anchor test``` command, since this command will run a local ledger for the test proces on its own.
+        Deploy success
+        ```
+    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
+    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
+
+* Stop the first terminal and in the second one run ```anchor test``` command, since anchor will run a local ledger for the test process on its own.
 
 ## 🚧 WIP
 

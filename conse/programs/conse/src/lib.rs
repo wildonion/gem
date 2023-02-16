@@ -3,12 +3,6 @@
 
 /*
 
-
-https://docs.solana.com/developing/programming-model/calling-between-programs#program-derived-addresses
-https://docs.rs/anchor-lang/latest/anchor_lang/index.html
-https://solana.stackexchange.com/a/1480
-
-
 ======================================
 ============= ABOUT SOLANA WALLET INFO 
 ======================================
@@ -81,7 +75,7 @@ depositing lamports as a escrow contract.
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z");
 
 #[program]
 pub mod conse_gem_reservation {
@@ -311,6 +305,8 @@ pub struct ReserveTicket<'info>{
         address we declared with `declare_id`.
 
     */
+    // https://solana.stackexchange.com/questions/26/what-is-a-program-derived-address-pda-exactly/1480#1480
+    // https://solana.stackexchange.com/a/1480
     #[account(
         mut,
         seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
