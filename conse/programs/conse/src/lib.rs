@@ -52,6 +52,12 @@ deployed and contains the BPF bytecode in it to call
 the method name inside the incoming RPC request 
 to change the state of the blockchain.
 
+the reason that solana RPC data serialization is based on JSON
+is because dApps are browser based applications which don't 
+support raw TCP or UDP protocols and other serialization format 
+like capnp thus it's easier to use JSON and RPC or websocket on 
+top of http which is a layer of top of TCP protocol.
+
 =========================================
 ============= SOLANA ACCOUNTS EXPLANATION
 ========================================= 
@@ -93,6 +99,7 @@ depositing lamports as a escrow contract.
 program id: is the public key of the deployed program
 authority : is the upgrade authority or the owner of the deployed contract
 owner     : is the one who can mutate instruction data on the chain; owner == program_id 
+holder    : is the one who has the generated private key from the Ed25519 elliptic curve 
 signer    : is the private key holder and can sign tx call
 PDA       : is an off curve public key that can be used as the escrow account 
 

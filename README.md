@@ -67,7 +67,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
             Data Length: 671648 (0xa3fa0) bytes
             Balance: 4.67587416 SOL
         ```
-        in which the owner is the BPF loader and the upgrade authority which is the public key of the generated wallet info and the one who has deployed this contract.
+        in which the owner is the BPF loader and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
 
