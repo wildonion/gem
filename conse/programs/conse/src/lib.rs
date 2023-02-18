@@ -40,7 +40,7 @@ no invalid pointer or reference.
 =============  SOLANA RUNTIME EXPLANATION
 =========================================
 
-solana runtime has its own bpf loader which supports no std libs
+solana runtime has its own BPF loader which supports no std libs
 since contracts can't interact with the ouside world thus there 
 is no socket to do this due to the securtiy reasons although
 the reason that solana contract gets compiled to .so is because 
@@ -206,11 +206,11 @@ pub mod conse_gem_reservation {
 
 #[account]
 pub struct GameState {
-    server: Pubkey,
-    player_one: Pubkey,
-    player_two: Pubkey,
-    amount: u64,
-    bump: u8, //// this must be filled from the frontend
+    server: Pubkey, // 32 bytes
+    player_one: Pubkey, // 32 bytes
+    player_two: Pubkey, // 32 bytes
+    amount: u64, // 8 bytes
+    bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
 //// `#[account]` proc macro attribute sets 
@@ -230,8 +230,16 @@ pub struct StartGame<'info> {
     pub user: Signer<'info>,
     #[account(
         init,
-        payer= user,
-        space= 300, // https://www.anchor-lang.com/docs/space
+        payer = user, //// payer of this transaction call is the signer which is the user field
+        // https://www.anchor-lang.com/docs/space
+        //// the space that is required to store
+        //// GameState data which in total is:
+        //// 8 + (32 * 3) + 8 + 1 in which any 
+        //// public key or amount higher thatn 32
+        //// or 8 bytes will throw an error
+        //// also the first 8 bytes will be used
+        //// as discriminator by the anchor.
+        space = 300, 
         //// following will create the PDA using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
@@ -275,7 +283,7 @@ pub struct GameResult<'info> {
     //// mark their account as mutable also if the singer constraint is available 
     //// means that the account field must be the signer of this transaction or 
     //// this deposit method
-    #[account(mut)]
+    #[account(mut)] //// make the signer account mutable or writable 
     pub user: Signer<'info>,
     #[account(
         mut,
@@ -302,7 +310,7 @@ pub struct GameResult<'info> {
 }
 
 
-#[derive(Accounts)]
+#[derive(Accounts)] // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
 pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 
     //// for the ticket and signed this 
@@ -345,7 +353,11 @@ pub struct ReserveTicket<'info>{
         seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
         bump = ticket_stats.bump
     )]
-    pub ticket_stats: Account<'info, TicketStats>,
+    //// declaration of account owned by the 
+    //// program for storing data on chain means
+    //// that the owner can of the program owner
+    //// can store and mutate data on chain. 
+    pub ticket_stats: Account<'info, TicketStats>, 
     //// `AccountInfo` type don't implement any checks 
     //// on the account being passed and we can fix the
     //// compile time error by writing a CHECK doc.

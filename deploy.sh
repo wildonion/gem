@@ -2,7 +2,7 @@
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/yarn.gpg
 echo "deb [signed-by=/etc/apt/trusted.gpg.d/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update && sudo apt install yarn
-sh -c "$(curl -sSfL https://release.solana.com/v1.15.1/install)"
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
 cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
 export PATH="/home/$USER/.local/share/solana/install/active_release/bin:$PATH"
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev
