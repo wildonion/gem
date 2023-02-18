@@ -32,7 +32,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 > To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
 
-> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` API inside the `Anchor.toml`
+> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` inside the `Anchor.toml`
 
 > Also make sure that your account has enough balance for deploying the program.
 

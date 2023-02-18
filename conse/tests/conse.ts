@@ -16,6 +16,20 @@ describe("conse-gem-reservation", () => {
   const lamport_to_send = 5_000_000_000;
   const lamport_to_send_second = 2_000_000_000;
   
+  // https://docs.solana.com/developing/programming-model/accounts#ownership-and-assignment-to-programs
+  //// the owner of the program account must 
+  //// matches the program id that has been
+  //// deployed since the security model enforces 
+  //// that an account's data can only be modified 
+  //// by the account's owner program and no other 
+  //// accounts can call the contract method on their 
+  //// own to amend and mutate the instruction data
+  //// passed in to that account on the chain because 
+  //// because a malicious user could create accounts 
+  //// with arbitrary data and then pass these accounts 
+  //// to the program in place of valid accounts then 
+  //// the arbitrary data could be crafted in a way that 
+  //// leads to unexpected or harmful program behavior.
   const program = anchor.workspace.ConseGemReservation as Program<ConseGemReservation>;
   const provider = anchor.AnchorProvider.env();
   
