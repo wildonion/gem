@@ -152,6 +152,8 @@ pub mod conse_gem_reservation {
 
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, amount: u64) -> Result<()>{
 
+        emit!(ReserveTicketEvent{});
+
         Ok(())
     }
 
