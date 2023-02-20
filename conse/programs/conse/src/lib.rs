@@ -149,14 +149,6 @@ pub mod conse_gem_reservation {
     
     }
 
-
-    pub fn reserve_ticket(ctx: Context<ReserveTicket>, amount: u64) -> Result<()>{
-
-        emit!(ReserveTicketEvent{});
-
-        Ok(())
-    }
-
     pub fn second_player(ctx: Context<SecondPlayer>, amount: u64) -> Result<()> {
         
         let game_state = &mut ctx.accounts.game_state;
@@ -195,27 +187,23 @@ pub mod conse_gem_reservation {
         let tax = ctx.accounts.tax_account.to_account_info();
 
         let amount_receive = if instruct == 0 {
-            get_amount(amount, 98)
+            receive_amount(amount, 98)
         } else if instruct == 1 {
-            get_amount(amount, 88)
+            receive_amount(amount, 88)
         } else if instruct == 2 {
-            get_amount(amount, 48)
+            receive_amount(amount, 48)
         } else if instruct == 3 {
-            get_amount(amount, 38)
+            receive_amount(amount, 38)
         } else if instruct == 4 {
-            get_amount(amount, 0)
+            receive_amount(amount, 0)
         } else {
             panic!("err!")
         };
 
         let tax_amount = amount - amount_receive;
 
-        fn get_amount(amount: u64, perc: u8) -> u64{
-            let percent = Percentage::from(perc);
-            let amount_receive = percent.apply_to(amount);
-            amount_receive
-        }
-
+        //// withdraw fom PDA to fill the 
+        //// player and the staking pool account 
         // amount sent to winner
         **pda.try_borrow_mut_lamports()? -= amount_receive;
         **to.try_borrow_mut_lamports()? += amount_receive;
@@ -233,7 +221,52 @@ pub mod conse_gem_reservation {
     
     }
 
+    pub fn reserve_ticket(ctx: Context<ReserveTicket>, deposit: u64, user_id: String, bump: u8) -> Result<()>{
+
+        let ticket_stats = &mut ctx.accounts.ticket_stats;
+        let pda_lamports = ticket_stats.to_account_info().lamports();
+        let pda_account = ticket_stats.to_account_info(); //// ticket_stats is the PDA account itself
+        let staking_pool_account = ctx.accounts.satking_pool.to_account_info(); //// this is only an account info which has no instruction data to mutate on the chain 
+
+        //// the lamports inside the PDA account 
+        //// must equals to the deposited amount
+        //// also we've created a PDA account to 
+        //// deposit all the tickets in there. 
+        if pda_lamports != deposit{ 
+            return err!(ErrorCode::InsufficientFund);
+        }
+
+        ticket_stats.amount = deposit;
+        ticket_stats.bump = bump;
+        ticket_stats.id = user_id.clone();
+
+        //// since try_borrow_mut_lamports returns 
+        //// Result<RefMut<&'a mut u64>> which is a
+        //// RefMut type behind a mutable pointer
+        //// we must dereference it in order to 
+        //// mutate its value
+        //
+        //// *pda_account.try_borrow_mut_lamports()?
+        //// returns &mut u64 which requires another
+        //// dereference to mutate its value
+        **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
+        **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
+
+        emit!(ReserveTicketEvent{
+            deposit,
+            user_id
+        });
+
+        Ok(())
+    }
+
 }   
+
+fn receive_amount(amount: u64, perc: u8) -> u64{
+    let percent = Percentage::from(perc);
+    let amount_receive = percent.apply_to(amount);
+    amount_receive
+}
 
 #[account]
 pub struct GameState {
@@ -249,9 +282,10 @@ pub struct GameState {
 //// `declare_id` of the crate
 #[account]
 pub struct TicketStats{
-    pub id: String, //// the mongodb objectid
-    pub server: Pubkey, //// this is the server solana public key
-    pub bump: u8, 
+    id: String, //// the mongodb objectid
+    server: Pubkey, //// this is the server solana public key
+    amount: u64,
+    bump: u8, 
 
 }
 
@@ -441,4 +475,7 @@ pub struct GameResultEvent{
 }
 
 #[event]
-pub struct ReserveTicketEvent{}
+pub struct ReserveTicketEvent{
+    pub deposit: u64,
+    pub user_id: String,
+}
