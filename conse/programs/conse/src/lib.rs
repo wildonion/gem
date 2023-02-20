@@ -96,7 +96,7 @@
     depositing lamports as a escrow contract.
 
 
-    program id: is the public key of the deployed program
+    program id: is the public key of the deployed program which is inside the target/deploy
     authority : is the upgrade authority or the owner of the deployed contract
     owner     : is the one who can mutate instruction data on the chain; owner == program_id means only the program account can mutate data on the chain 
     holder    : is the one who has the generated private key from the Ed25519 elliptic curve 

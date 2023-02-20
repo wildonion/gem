@@ -8,7 +8,7 @@ conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/wildonion/.config/solana/id.json"
 
 [scripts]

@@ -32,7 +32,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 > To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
 
-> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` inside the `Anchor.toml`
+> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` address of your node like Alchemy node, inside the `Anchor.toml`
 
 > Also make sure that your account has enough balance for deploying the program.
 
@@ -44,18 +44,18 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * In the second terminal:
     * config the solana on the localnet using ```solana config set --url localhost``` command.
-    * charge your generated wallet using ```solana airdrop 10``` command.
+    * charge your generated wallet using ```solana airdrop 10``` command or the [faucet](https://solfaucet.com/) site for testnet or devnet.
     * build the contract with ```anchor build``` command.
     * deploy the contract on the localnet with ```anchor deploy```
     * the output of the deploy command is something like:
         ```console
-        Deploying workspace: http://localhost:8899
-        Upgrade authority: /home/wildonion/.config/solana/id.json
-        Deploying program "conse"...
-        Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
-        Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
+            Deploying workspace: http://localhost:8899
+            Upgrade authority: /home/wildonion/.config/solana/id.json
+            Deploying program "conse"...
+            Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
+            Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
-        Deploy success
+            Deploy success
         ```
     * show the deployed program: ```solana program show 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z``` and the output sample would be like:
         ```console
@@ -73,6 +73,39 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
 
 * Stop the first terminal and in the second one run ```anchor test``` command, since anchor will run a local ledger for the test process on its own.
+
+## 🚀 Deploy Contract on Devnet
+
+* ```solana config set --url devnet```
+
+* charge your generated wallet using ```solana airdrop 10``` command or the [faucet](https://solfaucet.com/) site for testnet or devnet.
+
+* build the contract with ```anchor build``` command.
+* deploy the contract on the localnet with ```anchor deploy```
+* the output of the deploy command is something like:
+    ```console
+        Deploying workspace: https://api.devnet.solana.com
+        Upgrade authority: /home/wildonion/.config/solana/id.json
+        Deploying program "conse"...
+        Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
+        Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
+
+        Deploy success
+    ```
+* show the deployed program: ```solana program show 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z``` and the output sample would be like:
+    ```console
+        Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
+        Owner: BPFLoaderUpgradeab1e11111111111111111111111
+        ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
+        Authority: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+        Last Deployed In Slot: 477
+        Data Length: 671648 (0xa3fa0) bytes
+        Balance: 4.67587416 SOL
+    ```
+    in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
+* show the account info: ```solana account 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z```
+* remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
+    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
 
 ## 🚧 WIP
 
