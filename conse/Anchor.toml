@@ -4,6 +4,12 @@ skip-lint = false
 [programs.localnet]
 conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
 
+[programs.devnet]
+conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
+
+[programs.mainnet]
+conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
+
 [registry]
 url = "https://api.apr.dev"
 

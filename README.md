@@ -32,7 +32,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 > To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
 
-> Before running the deploy script make sure that you've installed the nodejs and also set the cluster to the `mainnet` address of your node like Alchemy node, inside the `Anchor.toml`
+> Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` address of your node like Alchemy node, inside the `Anchor.toml`
 
 > Also make sure that your account has enough balance for deploying the program.
 
@@ -69,7 +69,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
         ```
         in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
     * show the account info: ```solana account 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z```
-    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
+    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all three sections must have same public address of the deployed contract which is the `*-keypair.json` inside the `target/deploy` folder. 
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
 
 * Stop the first terminal and in the second one run ```anchor test``` command, since anchor will run a local ledger for the test process on its own.
