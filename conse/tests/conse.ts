@@ -10,7 +10,7 @@ describe("conse-gem-reservation", () => {
   
   const user_one = anchor.web3.Keypair.generate(); // TODO - need wallet handler
   const user_two = anchor.web3.Keypair.generate(); // TODO - it can be the server public key
-  const tax_account = anchor.web3.Keypair.generate(); // TODO - staking pool account
+  const revenue_share_wallet = anchor.web3.Keypair.generate(); // TODO - staking pool account
   
   const lamport_amount = 10_000_000_000;
   const lamport_to_send = 5_000_000_000;
@@ -119,8 +119,9 @@ describe("conse-gem-reservation", () => {
     await program.methods.secondPlayer(new anchor.BN(2_000_000_000)).accounts({user: provider.wallet.publicKey, gameState: gameStatePDA, playerTwo: user_two.publicKey}).rpc();
     let secondAccountAmount = await program.account.gameState.fetch(gameStatePDA);
     assert.equal(7_000_000_000, secondAccountAmount.amount.toNumber());
-    // send solana from pda to account
-    await program.methods.gameResult(1, 1).accounts({user: provider.wallet.publicKey, gameState: gameStatePDA, playerOne: user_one.publicKey, playerTwo: user_two.publicKey, taxAccount: tax_account.publicKey}).rpc();
+    // if the first param is 1 means player two 
+    // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
+    await program.methods.gameResult(1, 3).accounts({user: provider.wallet.publicKey, gameState: gameStatePDA, playerOne: user_one.publicKey, playerTwo: user_two.publicKey, revenueShareWallet: revenue_share_wallet.publicKey}).rpc();
     // -------------------------------------------------
 
 
@@ -130,12 +131,12 @@ describe("conse-gem-reservation", () => {
     let balance_user_two = await provider.connection.getBalance(user_two.publicKey);
     let balance_pda_account_after = await provider.connection.getBalance(gameStatePDA);
     let balance_user_one_after = await provider.connection.getBalance(user_one.publicKey);
-    let balance_tax_account = await provider.connection.getBalance(tax_account.publicKey);
+    let balance_revenue_share_wallet = await provider.connection.getBalance(revenue_share_wallet.publicKey);
     console.log("after game results transfer... ")
     console.log("user1 balance after game: ", balance_user_one_after);
     console.log("user2 balance after game: ", balance_user_two);
     console.log("pda account balance after game: ", balance_pda_account_after);
-    console.log("tax account balance: ", balance_tax_account);
+    console.log("revenue share account balance after result: ", balance_revenue_share_wallet);
     console.log("---------------------------------------------");
   });
 });

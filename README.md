@@ -11,7 +11,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 💳 Setup Solana Wallet 
 
-* Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! 
+* Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! We'll use this public key as the program authority to deploy the program with it. 
 
 ```console
 Wrote new keypair to /home/wildonion/.config/solana/id.json
@@ -32,7 +32,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 > To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
 
-> Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` address of your node like Alchemy node, inside the `Anchor.toml`
+> Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml`
 
 > Also make sure that your account has enough balance for deploying the program.
 
@@ -76,6 +76,8 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 🚀 Deploy Contract on Devnet
 
+* change the `cluster` field under the `[provider]` section inside the `Anchor.toml` either to `devnet.`
+
 * ```solana config set --url devnet```
 
 * charge your generated wallet using ```solana airdrop 10``` command or the [faucet](https://solfaucet.com/) site for testnet or devnet.
@@ -106,6 +108,17 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 * show the account info: ```solana account 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z```
 * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command.
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
+
+## 📇 Notes
+
+* frontend must call the `gameResult()` of the contract and pass the `winner` and `instruct` values, the contract will do the rest of the things.
+
+* the third instruction has an special tax amount which is %25 of the deposited amount.
+
+* currently the program will be deployed on devnet, if you want to deploy on another network just change the `cluster` field under the `[provider]` section inside the `Anchor.toml` either to `mainnet`, `testnet` or your node address.
+
+* after running `anchor build` for the first time a new `keypair.json` will be generated which contains the wallet info the public and private key of the deployed contract in which 
+we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 

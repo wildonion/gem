@@ -69,8 +69,9 @@
     must be the owner of the program id or the public key of the program account 
     means account.owner == program_id which this will be checked by Account type 
     in anchor that will check the owner of instruction data or the serialized 
-    data passed in to the function equals to the program id public key 
-    to modify the data on chain. 
+    data passed in to the function equals to the program id public key to modify 
+    the data on chain in other words the mutation method must be called only by 
+    contract method itself not a third party account.
 
     accounts on solana can be used to store data inside of them in which the data 
     inside a specific account can only be modified by the account owner means the 
@@ -93,7 +94,7 @@
     since they have no private keys thus no third party can sign the transaction
     only the PDA owner can do this (without private key) which can be used for 
     signing a transaction method call of another contract and also used for 
-    depositing lamports as a escrow contract.
+    depositing/withdrawing lamports as a escrow contract.
 
 
     program id: is the public key of the deployed program which is inside the target/deploy
@@ -102,6 +103,7 @@
     holder    : is the one who has the generated private key from the Ed25519 elliptic curve 
     signer    : is the private key holder and can sign tx call
     PDA       : is an off curve public key that can be used as the escrow account 
+
 
     in our case the game_state field is an account over generic GameState
     in which its owner must equals to the id inside the declare_id which is 
@@ -177,44 +179,56 @@ pub mod conse_gem_reservation {
 
         let amount = game_state.amount;
         let pda = game_state.to_account_info();
-        let to = if winner == 0 {
+        let to_winner = if winner == 0{
             ctx.accounts.player_one.to_account_info()
-        } else if winner == 1 {
+        } else if winner == 1{
             ctx.accounts.player_two.to_account_info()
-        } else {
-            panic!("err!")
+        } else{
+            return err!(ErrorCode::InvalidWinnerIndex);
         };
-        let tax = ctx.accounts.tax_account.to_account_info();
 
+        let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
+        
+        //// calculating the amount that must be sent
+        //// the winner from the PDA account based on
+        //// instruction percentages.
+        //
+        //// we've assumed that the third instruction 
+        //// is the event with 25 percent special tax.
         let amount_receive = if instruct == 0 {
-            receive_amount(amount, 98)
+            receive_amount(amount, 95)
         } else if instruct == 1 {
-            receive_amount(amount, 88)
+            receive_amount(amount, 70)
         } else if instruct == 2 {
-            receive_amount(amount, 48)
+            receive_amount(amount, 35)
         } else if instruct == 3 {
-            receive_amount(amount, 38)
+            receive_amount(amount, 25)
         } else if instruct == 4 {
             receive_amount(amount, 0)
         } else {
-            panic!("err!")
+            return err!(ErrorCode::InvalidInstruction);
         };
 
-        let tax_amount = amount - amount_receive;
+        let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
+        let total_tax = amount - (amount_receive + general_tax_amount);
 
-        //// withdraw fom PDA to fill the 
-        //// player and the staking pool account 
-        // amount sent to winner
+        //--------------------------------------------
+        // we must withdraw all required lamports 
+        // from the PDA since the PDA 
+        // has all of it :)
+        //--------------------------------------------
+
+        //// withdraw fom PDA to fill the winner 
         **pda.try_borrow_mut_lamports()? -= amount_receive;
-        **to.try_borrow_mut_lamports()? += amount_receive;
-        // tax amount
-        **pda.try_borrow_mut_lamports()? -= tax_amount;
-        **tax.try_borrow_mut_lamports()? += tax_amount;
+        **to_winner.try_borrow_mut_lamports()? += amount_receive;
+        //// withdraw fom PDA to fill the revenue share account 
+        **pda.try_borrow_mut_lamports()? -= total_tax;
+        **revenue_share_wallet.try_borrow_mut_lamports()? += total_tax;
 
 
         emit!(GameResultEvent{
             amount_receive,
-            tax_amount,
+            total_tax
         });
 
         Ok(())
@@ -268,7 +282,7 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
     amount_receive
 }
 
-#[account]
+#[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
 pub struct GameState {
     server: Pubkey, // 32 bytes
     player_one: Pubkey, // 32 bytes
@@ -280,7 +294,7 @@ pub struct GameState {
 //// `#[account]` proc macro attribute sets 
 //// the owner of that data to the 
 //// `declare_id` of the crate
-#[account]
+#[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, TicketStats>.owner == program_id
 pub struct TicketStats{
     id: String, //// the mongodb objectid
     server: Pubkey, //// this is the server solana public key
@@ -289,7 +303,7 @@ pub struct TicketStats{
 
 }
 
-#[derive(Accounts)]
+#[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type 
 pub struct StartGame<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -311,7 +325,9 @@ pub struct StartGame<'info> {
         //// public key or amount higher thatn 32
         //// or 8 bytes will throw an error
         //// also the first 8 bytes will be used
-        //// as discriminator by the anchor.
+        //// as discriminator by the anchor to 
+        //// point to a type like the one in 
+        //// enum tag to point. 
         space = 300, 
         //// following will create the PDA using
         //// user which is the signer and player 
@@ -329,7 +345,7 @@ pub struct StartGame<'info> {
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
+#[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct SecondPlayer<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -350,7 +366,7 @@ pub struct SecondPlayer<'info> {
     pub player_two: AccountInfo<'info>,
 }
 
-#[derive(Accounts)]
+#[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct GameResult<'info> {
     //// if we want to take money from someone, we should make them sign 
     //// to call pay transaction method call as well as mark their account 
@@ -362,6 +378,11 @@ pub struct GameResult<'info> {
         //// which enable us to make changes to this account
         mut
     )] 
+    //// since we have one signer account which must be mutable
+    //// we have to put a CHECK for other accounts that are also 
+    //// mutable or writable that allow us to make changes to those
+    //// accounts like transferring lamports from another account
+    //// which makes some write to the account. 
     pub user: Signer<'info>,
     #[account(
         mut,
@@ -381,14 +402,14 @@ pub struct GameResult<'info> {
     /// CHECK: This is not dangerous because we just pay to this account
     #[account(mut)]
     pub player_two: AccountInfo<'info>,
-    /// CHECK: This is not dangerous because we just pay to this account
+    /// CHECK: This is not dangerous because we just pay to this account (general tax account)
     #[account(mut)]
-    pub tax_account: AccountInfo<'info>,
+    pub revenue_share_wallet: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
-
-#[derive(Accounts)] // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+// https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+#[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 
     //// for the ticket and signed this 
@@ -458,6 +479,10 @@ pub enum ErrorCode {
     InsufficientFund,
     #[msg("Restriction error")]
     RestrictionError,
+    #[msg("Invalid Winner Index")]
+    InvalidWinnerIndex,
+    #[msg("Invalid Instruction")]
+    InvalidInstruction
 }
 
 
@@ -471,7 +496,7 @@ pub struct StartGameEvent{
 #[event]
 pub struct GameResultEvent{
     pub amount_receive: u64,
-    pub tax_amount: u64,
+    pub total_tax: u64,
 }
 
 #[event]
