@@ -34,6 +34,10 @@
     with 1 extra byte to represent the tag to make sure that there is 
     no invalid pointer or reference.
 
+    to avoid zero bytes borsh will add 1 extra byte 
+    to Option that wheneve the None part was selected 
+    that extra 1 byte represent the size of the Option.
+
     =========================================
     =============  SOLANA RUNTIME EXPLANATION
     =========================================
@@ -59,7 +63,11 @@
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
-
+    data in solana will be stored in accounts not the contract thus discriminator 
+    will be used like the storage key and will be added to the first byte of the 
+    instruction data or the account to understand which instruction is being executed 
+    or to differentiate between different types of accounts within program.
+    
     on first deployment of the contract the owner of the program is the BPF loader
     itself also a new key pair will be generated and used to deploy the contract 
     on it which is the address that the BPF bytecode is located, in order to 
@@ -87,6 +95,13 @@
     a transaction call to that address to mutate the state of the account; 
     the PDA can be generated from a seed which can be a unique indentifer 
     like public key plus a bump which is a one byte number.
+
+    PDA will never conflict with cryptographically generated public keys All 
+    cryptographic public keys like public key digital signature which is based 
+    on Ed25519 are part of what we call an elliptic curve, if, when generating 
+    a PDA, the algorithm generated a key that falls on that curve, a bump which 
+    is 1 byte is added to the address and is incremented by one until the generated 
+    address no longer falls on the curve.
 
     PDA can be used to generate signature to be used for calling between programs
     since they have no private keys thus no third party can sign the transaction
