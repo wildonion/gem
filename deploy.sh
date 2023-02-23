@@ -41,10 +41,18 @@ avm use latest
 echo "[?] Deploy What? (programs || gem)"
 read BUILDFOR
 if [[ $BUILDFOR == "programs" ]]; then
+    solana-keygen new
     cd conse && npm install --force
-    anchor build
-    anchor deploy
-elif [[ $App == "gem" ]]; then
+    echo "[?] Build What? (conse || whitelist)"
+    read PROGRAM
+    if [[ $PROGRAM == "conse" ]]; then
+        anchor build --program-name conse
+        anchor deploy --program-name conse
+    elif [[ $BUILDFOR == "whitelist" ]]; then
+        anchor build --program-name whitelist
+        anchor deploy --program-name whitelist
+    if
+elif [[ $BUILDFOR == "gem" ]]; then
     echo "[+] Building Conse PaaS"
     cargo build --bin conse --release
     sudo rm conse
