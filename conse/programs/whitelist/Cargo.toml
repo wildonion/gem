@@ -1,12 +1,12 @@
 [package]
-name = "conse"
+name = "whitelist"
 version = "0.1.0"
-description = "Conse Ticket Reservation"
+description = "Conse Burn To Whitelist"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "conse"
+name = "whitelist"
 
 [features]
 no-entrypoint = []
@@ -15,9 +15,5 @@ no-log-ix-name = []
 cpi = ["no-entrypoint"]
 default = []
 
-[profile.release]
-overflow-checks = true
-
 [dependencies]
 anchor-lang = "0.26.0"
-percentage = "0.1.0"

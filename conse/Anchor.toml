@@ -3,18 +3,21 @@ seeds = false
 skip-lint = false
 [programs.localnet]
 conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
+whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
 
 [programs.devnet]
 conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
+whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
 
 [programs.mainnet]
 conse = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
+whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/home/wildonion/.config/solana/id.json"
 
 [scripts]
