@@ -60,6 +60,27 @@
     like capnp thus it's easier to use JSON and RPC or websocket on 
     top of http which is a layer of top of TCP protocol.
 
+    we can run tx in parallel means that only a single thread 
+    can mutate it like an account that want to mutate a instruction data 
+    on the chain which must be the owner of the program or decreasing
+    lamports from it but multiple thread can read that.
+
+    since everything will be built and stored in runtime there might be happend 
+    a data collision issue in which two different data types share the same underlying 
+    memeory allocation to avoid this we can use discriminator in such a way that NEAR 
+    uses a shared enum in a way that it serializes each varinat using borsh to add extra 
+    bytes by prefixing every type in runtime with the serialized variant related to each 
+    type but anchor uses 8 bytes discriminator to avoid data collision by adding extra 
+    unique bytes which will be calculated by hashing every account name to the first byets 
+    of the account in order to specify which account is being executed in runtime right now.
+
+    in rust the vairant with the largest size is the whole size of the enum also 
+    there will be usize bytes tag which will be pointed to the current vairant in 
+    borsh, enum serialization uses extra 1 bytes instead of 8 bytes tag to avoid 
+    zero bytes and null pointer optimisation conditions for example in Option enum 
+    the size will be 1 byte + T bytes if there was T otherwise 1 byte which is a 
+    pointer that shows the Option has no available data right now. 
+
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
@@ -110,12 +131,13 @@
     depositing/withdrawing lamports as a escrow contract.
 
 
-    program id: is the public key of the deployed program which is inside the target/deploy
-    authority : is the upgrade authority or the owner of the deployed contract
-    owner     : is the one who can mutate instruction data on the chain; owner == program_id means only the program account can mutate data on the chain 
-    holder    : is the one who has the generated private key from the Ed25519 elliptic curve 
-    signer    : is the private key holder and can sign tx call
-    PDA       : is an off curve public key that can be used as the escrow account 
+    program id    : is the public key of the deployed program which is inside the target/deploy
+    authority     : is the upgrade authority or the owner of the deployed contract
+    owner         : is the one who can mutate instruction data on the chain; owner == program_id means only the program account can mutate data on the chain 
+    holder        : is the one who has the generated private key from the Ed25519 elliptic curve 
+    signer        : is the private key holder and can sign tx calls
+    signer mutable: is the private key holder which can sign tx calls and must be writable or mutable to make changes on it like transferring lamports from it
+    PDA           : is an off curve public key that can be used as the escrow account 
 
 
     in our case the game_state field is an account over generic GameState

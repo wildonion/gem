@@ -104,7 +104,7 @@ pub struct UserUpdateResponse{
   pub updated_at: Option<i64>,
   pub last_login_time: Option<i64>,
   pub wallet_address: Option<String>,
-  pub balance: Option<u128>,
+  pub balance: Option<u64>,
 }
 
 
@@ -190,7 +190,7 @@ pub struct RegisterRequest{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
     pub last_login_time: Option<i64>, //// we set this field to Option cause we don't want to pass the last login time inside the request body thus it should be None initially, we'll fill it inside the server
     pub wallet_address: Option<String>,
-    pub balance: Option<u128>
+    pub balance: Option<u64>
 }
 
 
@@ -229,7 +229,7 @@ pub struct LoginResponse{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,
     pub wallet_address: Option<String>,
-    pub balance: Option<u128>,
+    pub balance: Option<u64>,
 }
 
 
@@ -253,7 +253,7 @@ pub struct RegisterResponse{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,
     pub wallet_address: Option<String>,
-    pub balance: Option<u128>,
+    pub balance: Option<u64>,
 }
 
 
@@ -376,7 +376,7 @@ pub struct UserInfo{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,
     pub wallet_address: Option<String>,
-    pub balance: Option<u128>,
+    pub balance: Option<u64>,
 }
 
 
@@ -439,7 +439,7 @@ pub struct CheckTokenResponse{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,
     pub wallet_address: Option<String>,
-    pub balance: Option<u128>
+    pub balance: Option<u64>
 }
 
 impl RegisterRequest{

@@ -1,0 +1,16 @@
+
+
+
+
+server {
+
+
+    listen 80 default_server;
+    server_name conse.app;
+
+    location / {
+        proxy_pass http://localhost:8000;
+    }
+
+
+}

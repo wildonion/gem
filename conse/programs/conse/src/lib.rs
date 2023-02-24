@@ -201,15 +201,15 @@ pub struct StartGame<'info> {
         //// the signer which is the user field
         payer = user, 
         // https://www.anchor-lang.com/docs/space
+        // https://docs.metaplex.com/programs/understanding-programs#discriminators
         //// the space that is required to store
         //// GameState data which in total is:
         //// 8 + (32 * 3) + 8 + 1 in which any 
-        //// public key or amount higher thatn 32
-        //// or 8 bytes will throw an error
-        //// also the first 8 bytes will be used
-        //// as discriminator by the anchor to 
-        //// point to a type like the one in 
-        //// enum tag to point. 
+        //// public key or amount higher than 32
+        //// will throw an error also the first 
+        //// 8 bytes will be used as discriminator 
+        //// by the anchor to point to a type like 
+        //// the one in enum tag to point to a variant.
         space = 300, 
         //// following will create the PDA using
         //// user which is the signer and player 
@@ -258,13 +258,27 @@ pub struct GameResult<'info> {
     #[account(
         //// make the signer account mutable or writable 
         //// which enable us to make changes to this account
+        //// like deposit/withdraw lamports into/from their accounts,
+        //// means signer and writable at the same time, this 
+        //// combination is pretty common since programs will 
+        //// usually require the owner of an account to prove 
+        //// who they are with their private key before mutating 
+        //// that account otherwise, anyone could mutate any 
+        //// account they don't own without needing the private
+        //// key of that account.
         mut
     )] 
     //// since we have one signer account which must be mutable
-    //// we have to put a CHECK for other accounts that are also 
-    //// mutable or writable that allow us to make changes to those
-    //// accounts like transferring lamports from another account
-    //// which makes some write to the account. 
+    //// we have to put a CHECK doc for other accounts that are of 
+    //// type Account which are also mutable or writable since they 
+    //// are safe and allow us to make changes to those accounts like 
+    //// transferring lamports from another account which 
+    //// makes some write to the account. 
+    //
+    //// a writable account will be mutated by the instruction 
+    //// this information is important for the blockchain to 
+    //// know which transactions can be run in parallel 
+    //// and which ones can't.
     pub user: Signer<'info>,
     #[account(
         mut,
@@ -291,6 +305,7 @@ pub struct GameResult<'info> {
 }
 
 // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+// https://docs.metaplex.com/programs/understanding-programs#signer-andor-writable-accounts
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 

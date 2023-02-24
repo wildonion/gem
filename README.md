@@ -14,7 +14,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 * Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! We'll use this public key as the program authority to deploy the program with it. 
 
 ```console
-Wrote new keypair to /home/wildonion/.config/solana/id.json
+Wrote new keypair to /home/$USER/.config/solana/id.json
 ================================================================================
 pubkey: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
 ================================================================================
@@ -50,9 +50,9 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * the output of the deploy command is something like:
         ```console
             Deploying workspace: http://localhost:8899
-            Upgrade authority: /home/wildonion/.config/solana/id.json
+            Upgrade authority: /home/$USER/.config/solana/id.json
             Deploying program "conse"...
-            Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
+            Program path: /home/$USER/Documents/gem/conse/target/deploy/conse.so...
             Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
             Deploy success
@@ -87,9 +87,9 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 * the output of the deploy command is something like:
     ```console
         Deploying workspace: https://api.devnet.solana.com
-        Upgrade authority: /home/wildonion/.config/solana/id.json
+        Upgrade authority: /home/$USER/.config/solana/id.json
         Deploying program "conse"...
-        Program path: /home/wildonion/Documents/gem/conse/target/deploy/conse.so...
+        Program path: /home/$USER/Documents/gem/conse/target/deploy/conse.so...
         Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
         Deploy success
@@ -123,6 +123,8 @@ we the program id is the public key address of the deployed contract.
 * use ```anchor init NEW_ANCHOR_PROJECT``` to build a new anchor workspace, ```anchor build --program-name PROGRAM_NAME``` and ```anchor deploy --program-name PROGRAM_NAME``` to build and deploy the specified program.
 
 * the steps to build and deploy the whitelist contract is the same as the conse ones. 
+
+* ```solana balance``` shows the balance of the address inside the `/home/$USER/.config/solana/id.json` on the selected network which is one of the `devnet`, `testnet` or `localhost`.
 
 ## 🚧 WIP
 

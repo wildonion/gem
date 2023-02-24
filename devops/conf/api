@@ -5,7 +5,7 @@
 
 server {
 
-	listen 7439 ssl default_server;
+	listen 7439 default_server;
 	server_name api.conse.app;
     client_max_body_size 1G;
 
@@ -16,14 +16,8 @@ server {
 
 
     location /assets {
-        autoindex off;
+        autoindex on;
         alias /home/conse/gem/assets/;
     }
-
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/api.conse.app/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/api.conse.app/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
 }

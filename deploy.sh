@@ -23,12 +23,16 @@ if [[ $SSLAnswer == "yes" ]]; then
 else
     echo "continue without applying SSL"
 fi
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
 sudo apt-get install gnupg
 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 sudo apt-get update -y && sudo apt-get install -y mongodb-org
 sudo mkdir -p /data/db && sudo chown -R $USER /data/db && sudo systemctl restart nginx
+mongoimport --db conse --collection roles devops/conse-collections/roles.json
+mongoimport --db conse --collection sides devops/conse-collections/sides.json
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/yarn.gpg
 echo "deb [signed-by=/etc/apt/trusted.gpg.d/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update -y && sudo apt install yarn
