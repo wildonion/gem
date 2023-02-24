@@ -59,7 +59,7 @@ if [[ $BUILDFOR == "programs" ]]; then
 elif [[ $BUILDFOR == "gem" ]]; then
     echo "[+] Building Conse PaaS"
     cargo build --bin conse --release
-    sudo rm conse
+    sudo rm /home/$USER/conse
     sudo cp target/release/conse /home/$USER/conse && sudo chmod +x /home/$USER/conse 
     sudo cp .env /home/$USER/.env 
     sudo pm2 delete conse
