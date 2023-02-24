@@ -6,14 +6,14 @@ use mpl_token_metadata::instruction::burn_nft;
 declare_id!("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
 
 #[program]
-pub mod whitelist {
+pub mod conse_gem_whitelist {
 
 
     use super::*;
 
     pub fn burn_request(ctx: Context<BurnRequest>) -> Result<()>{
         
-        let nft_stat = &mut ctx.accounts.nft_stat;
+        let nft_stat = &mut ctx.accounts.nft_stat; //// nft_stat field is a mutabe field thus we have to get it mutably
         let signer_account = ctx.accounts.user.key();
         let nft_owner = nft_stat.owner; 
 
@@ -30,6 +30,9 @@ pub mod whitelist {
             // https://solana.stackexchange.com/questions/3746/how-can-i-create-hash-table-using-pdas
             // TODO - then call self.add_to_whitelist()
             // TODO - PDA hashmap for whitelist
+            // there must be a mutable account that can mutate 
+            // the whitelist on chain and its owner id must 
+            // equals to the program id and must be the PDA account
             // ...    
 
             emit!(NftBurnEvent{

@@ -38,21 +38,21 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 > Finally Run ```sudo chmod +x deploy.sh && ./deploy.sh```
 
-## 🚀 Deploy Conse Contract on Localnet 
+## 🚀 Deploy Ticket Contract on Localnet 
 
 * Fire up a terminal and run a local ledger using ```solana-test-validator``` command.
 
 * In the second terminal:
     * config the solana on the localnet using ```solana config set --url localhost``` command.
     * charge your generated wallet using ```solana airdrop 10``` command or the [faucet](https://solfaucet.com/) site for testnet or devnet.
-    * build the contract with ```anchor build --program-name conse``` command.
-    * deploy the contract on the localnet with ```anchor deploy --program-name conse```
+    * build the contract with ```anchor build --program-name ticket``` command.
+    * deploy the contract on the localnet with ```anchor deploy --program-name ticket```
     * the output of the deploy command is something like:
         ```console
             Deploying workspace: http://localhost:8899
             Upgrade authority: /home/$USER/.config/solana/id.json
-            Deploying program "conse"...
-            Program path: /home/$USER/Documents/gem/conse/target/deploy/conse.so...
+            Deploying program "ticket"...
+            Program path: /home/$USER/Documents/gem/conse/target/deploy/ticket.so...
             Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
             Deploy success
@@ -69,12 +69,12 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
         ```
         in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
     * show the account info: ```solana account 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z```
-    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
-    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
+    * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
+    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
 * Stop the first terminal and in the second one run ```anchor test``` command, since anchor will run a local ledger for the test process on its own.
 
-## 🚀 Deploy Conse Contract on Devnet
+## 🚀 Deploy Ticket Contract on Devnet
 
 * change the `cluster` field under the `[provider]` section inside the `Anchor.toml` either to `devnet.`
 
@@ -82,14 +82,14 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * charge your generated wallet using ```solana airdrop 10``` command or the [faucet](https://solfaucet.com/) site for testnet or devnet.
 
-* build the contract with ```anchor build --program-name conse``` command.
-* deploy the contract on the localnet with ```anchor deploy --program-name conse```
+* build the contract with ```anchor build --program-name ticket``` command.
+* deploy the contract on the localnet with ```anchor deploy --program-name ticket```
 * the output of the deploy command is something like:
     ```console
         Deploying workspace: https://api.devnet.solana.com
         Upgrade authority: /home/$USER/.config/solana/id.json
-        Deploying program "conse"...
-        Program path: /home/$USER/Documents/gem/conse/target/deploy/conse.so...
+        Deploying program "ticket"...
+        Program path: /home/$USER/Documents/gem/conse/target/deploy/ticket.so...
         Program Id: 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z
 
         Deploy success
@@ -106,8 +106,8 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     ```
     in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
 * show the account info: ```solana account 2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z```
-* remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `conse` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
-    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/conse-keypair.json``` command.
+* remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
+    * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
 ## 📇 Notes
 
@@ -122,13 +122,13 @@ we the program id is the public key address of the deployed contract.
 
 * use ```anchor init NEW_ANCHOR_PROJECT``` to build a new anchor workspace, ```anchor build --program-name PROGRAM_NAME``` and ```anchor deploy --program-name PROGRAM_NAME``` to build and deploy the specified program.
 
-* the steps to build and deploy the whitelist contract is the same as the conse ones. 
+* the steps to build and deploy the whitelist contract is the same as the ticket contract. 
 
 * ```solana balance``` shows the balance of the address inside the `/home/$USER/.config/solana/id.json` on the selected network which is one of the `devnet`, `testnet` or `localhost`.
 
 ## 🚧 WIP
 
-* complete conse solana programs inside the `conse` folder using [anchor](https://www.anchor-lang.com/) 
+* complete solana programs inside the `conse` folder using [anchor](https://www.anchor-lang.com/) 
 
 * adding Graphql for realtime streaming using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html)
 

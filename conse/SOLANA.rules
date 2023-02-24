@@ -84,6 +84,11 @@
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
+    
+    we must use &[u8] since it's cheaper than Vec which is on the heap, 
+    but it's not sized at compile time thus it must be behind a pointer 
+    and pointers needs valid lifetimes.
+    
     data in solana will be stored in accounts not the contract thus discriminator 
     will be used like the storage key and will be added to the first byte of the 
     instruction data or the account to understand which instruction is being executed 

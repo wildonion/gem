@@ -232,7 +232,14 @@ pub struct SecondPlayer<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
-        mut,
+        //// since we want to mutate instruction data 
+        //// or the generic GameState on chain thus the 
+        //// PDA account must be defined as mutable
+        //// and also the owner of the program or 
+        //// its owner must equals to the program id
+        //// because only the program owner can mutate 
+        //// data on the chain. 
+        mut, 
         //// following will create the PDA using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 
@@ -345,6 +352,13 @@ pub struct ReserveTicket<'info>{
 
     */
     #[account(
+        //// since we want to mutate instruction data 
+        //// or the generic TicketStats on chain thus the 
+        //// PDA account must be defined as mutable
+        //// and also the owner of the program or 
+        //// its owner must equals to the program id
+        //// because only the program owner can mutate 
+        //// data on the chain. 
         mut,
         seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
         bump = ticket_stats.bump
