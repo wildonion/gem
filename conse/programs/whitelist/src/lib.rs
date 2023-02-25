@@ -29,11 +29,28 @@ pub mod conse_gem_whitelist {
 
             // https://solana.stackexchange.com/questions/3746/how-can-i-create-hash-table-using-pdas
             // TODO - then call self.add_to_whitelist()
-            // TODO - PDA hashmap for whitelist
+            // TODO - PDA hashmap for whitelist a map between nft owner and nft brun tx hash
+            
+            //// the maximum size of any account is 10 megabytes
+            //// we can store an array of nft owners inside a whitelist 
+            //// variable so if 5000 owners burnt their nfts our contract 
+            //// size on chain will be about 0.16 MB 
+            
             // there must be a mutable account that can mutate 
             // the whitelist on chain and its owner id must 
             // equals to the program id and must be the PDA account
             // ...    
+
+
+            // if we want to change the account we must set it to writable 
+            // also writing to an account that is not owned by the program
+            // will cause the tx failed
+
+
+            // pda 
+            // signer 
+            // mutable 
+
 
             emit!(NftBurnEvent{
                 owner: nft_owner,
@@ -84,6 +101,11 @@ impl Nft{
             self.spl_token, 
             self.collection_metadata
         ); 
+
+        //// an instruction has program_id, data and accounts
+        let accounts = transaction.accounts;
+        let data = transaction.data;
+        
         //// if the instruction is executed by
         //// the current program thus we can 
         //// return true since everything went well. 
@@ -97,7 +119,7 @@ impl Nft{
 }
 
 
-#[derive(Accounts)]
+#[derive(Accounts)] //// Accounts trait bounding will add the AnchorSerialize and AnchorDeserialize traits to the generic or the BurnRequest struct
 pub struct BurnRequest<'info> { //// 'info lifetime in function signature is required to store utf8 bytes or &[u8] instruction data in the accounts
     #[account(mut)]
     pub user: Signer<'info>, //// a mutable and a signer account which means this transaction call will be signed by a specific holder or NFT owner and is writable to make changes on it
@@ -109,7 +131,7 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     pub system_program: Program<'info, System>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+#[derive(Accounts)]
 pub struct Whitelist{}
 
 

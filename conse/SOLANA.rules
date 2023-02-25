@@ -4,7 +4,17 @@
     ======================================
     ============= ABOUT SOLANA WALLET INFO 
     ======================================
-
+    
+    solana uses ed25519 digital signature public key encryption 
+    for generating wallet info the public and the private key 
+    since we can sign a tx call using private key to generate
+    the tx signature thus the account that wants to call the 
+    tx must be the private key holder to do this and public key  
+    will be used for transferring lamprorts and ownership checking
+    because of these the public key of the program id must equals 
+    to the account that wants to verify the tx call and mutate 
+    the instruction data inside the tx on chain.
+    
     `solana-keygen new` will generate a new wallet info which contains 
     public and private keys produced from the elliptic curve algorithm
     based on Ed25519 which is a public key digital signature which means
