@@ -173,6 +173,14 @@ pub struct GameState {
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
+//// the `#[account]` proc macro on top 
+//// of the generic `T` or TicketStats 
+//// in here will set the owner of the 
+//// `Account` type that contains the 
+//// generic `T` to the program id since 
+//// the account must be the owner of the 
+//// program in order to mutate data on the chain
+//
 //// `#[account]` proc macro attribute sets 
 //// the owner of that data to the 
 //// `declare_id` of the crate
