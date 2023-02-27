@@ -121,6 +121,7 @@ describe("conse-gem-reservation", () => {
     assert.equal(7_000_000_000, secondAccountAmount.amount.toNumber());
     // if the first param is 1 means player two 
     // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
+    // NOTE - gameResult method must be called from the server side since the signer must be the server account
     await program.methods.gameResult(1, 3).accounts({user: provider.wallet.publicKey, gameState: gameStatePDA, playerOne: user_one.publicKey, playerTwo: user_two.publicKey, revenueShareWallet: revenue_share_wallet.publicKey}).rpc();
     // -------------------------------------------------
 

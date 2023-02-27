@@ -6,12 +6,20 @@ use mpl_token_metadata::instruction::burn_nft;
 
 declare_id!("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
 
-#[program]
+
+
+#[program] //// the program entrypoint which must be defined only once
 pub mod conse_gem_whitelist {
 
-
+    //// `AccountLoader` type and zero_copy attribute
+    //// will be used to deserialize the zero copy types
+    //// or the borrowed form of dynamic types.
+    
     //// every function in here 
     //// is a separate instruction
+    //// and every instruction
+    //// requires separate structure
+    //// to handle data on chain.
 
     use super::*;
 
@@ -50,41 +58,164 @@ pub mod conse_gem_whitelist {
         
     }
 
-    pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>) -> Result<()>{
 
-        let signer = ctx.accounts.user.key();
-        let nft_owner = ctx.accounts.nft_owner.key();
-        let server = ctx.accounts.nft_stats.server;
-
-        //// the signer of this transaction or instruction call
-        //// must be the server account means that a regular 
-        //// user can't call this transaction.
-        if signer != server{ 
-            return err!(ErrorCode::AddToWhitelistRequestRestriction);
-        }
-
-        //// nft owner account field inside the `AddToWhitelistRequest` struct
-        //// related to the `add_to_whitelist` instruction must be equals 
-        //// with the owner field inside the generic `Nft` which can be 
-        //// accessible by calling it on the PDA account or the `nft_stats`
-        //// account which is the owner of the generic `Nft` that can mutate 
-        //// the instruction data of type `Nft` on the chain since it's owner id
-        //// is equals to the program id.
-        if nft_owner != ctx.accounts.nft_stats.owner{
-            return err!(ErrorCode::NftOwnerDifferentWithPDANftOwner);
-        } 
-
-        //// this is the `nft_stats` field which is the PDA
-        //// account that can mutate instruction data on the chain
-        let pda_account = *ctx.accounts.nft_stats.to_account_info().key;
-        let whitelist = &mut ctx.accounts.whitelist.list;
-        whitelist.push(pda_account);
+    //// this instruction handler MUST be signed by a third party, secure 
+    //// and a none NFT owner account like a server public key so we can use
+    //// it as the whitelist state authority who can add PDAs to the list on 
+    //// the chain, we'll check the signer of the `add_to_whitelist` instruction
+    //// handler against the authority of the whitelist state.
+    //
+    //// also an initialization method is required to allocate whitelist structures
+    //// on the whitelist account on the chain thus every init method needs 
+    //// an account to store data on it.
+    //
+    //// since every data will be stored on an account thus every instruction 
+    //// data must be deserialize on a sepcific account hence every method needs 
+    //// a separate generic or data structure on the chain to be 
+    //// loaded inside the account.
+    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>) -> Result<()>{
+        
+        let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and ca be used as the whitelist state authority 
+        let whitelist_state = &mut ctx.accounts.whitelist_state;
+        let whitelist_data = ctx.accounts.whitelist_data.load_init().unwrap();
+        let mut wl_data = whitelist_data.to_owned();
+        wl_data.list = [Pubkey::default(); WhitelistData::MAX_SIZE]; 
+        whitelist_state.authority = signer; //// the signer must be the whitelist_state authority
+        whitelist_state.counter = 0;
 
         Ok(())
 
     }
 
+    //// this instruction handler must be called from the server or 
+    //// where the whitelist state authority wallet info exists.
+    pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>) -> Result<()>{
+
+        let signer = ctx.accounts.authority.key();
+        let whitelsit_state = &mut ctx.accounts.whitelist_state;
+        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut().unwrap().to_owned();
+        let mut counter = whitelsit_state.counter as usize;
+        let who_initialized_whitelist = whitelsit_state.authority.key();
+
+        //// the signer of this tx call must be the one
+        //// who initialized the whitelist instruction handler
+        if signer != who_initialized_whitelist{
+            return err!(ErrorCode::AddToWhitelistSignerIsNotTheInitializedAuthority);
+        }
+
+        //// this is the `nft_stats` field which is the PDA
+        //// account that can mutate instruction data on the chain
+        let pda_account = *ctx.accounts.nft_stats.to_account_info().key;
+
+
+        if counter > WhitelistData::MAX_SIZE{ //// make sure that we have enough space
+            return err!(ErrorCode::NotEnoughSpace);
+        }
+
+        msg!("current counter: {}", counter);
+        let mut current_data = Vec::<Pubkey>::new();
+        current_data.extend_from_slice(&whitelist_data.list[0..counter]); //// counter has the current size of the total PDAs, so we're filling the vector with the old PDAs on chain
+        current_data.push(pda_account); //// at this stage the size of the vector might not be the MAX_SIZE since the `list` field of the `whitelist_data` might not be reached that size yet means that we have still enough storage to store PDAs  
+        counter += 1; //// a new PDA added
+
+        //// vector types are dynamic sized means
+        //// their size is not known at compile time
+        //// since our PDAs is of type array thus we 
+        //// need to know the exact size of the elements
+        //// inside of it and also we need to convert the
+        //// vector into the array or the slice form after 
+        //// adding a new PDA inside of it hence after 
+        //// adding one PDA into the vector we must fill
+        //// the rest of the vector with a default keys.
+        for _ in counter..WhitelistData::MAX_SIZE{ //// if the counter is full then the starting point will be the MAX_SIZE itself thus the loop won't be run
+            current_data.push(Pubkey::default()); //// filling the rest of the vector with default public key
+        }
+        msg!("vector length on chain {:?}", current_data.len());
+
+        //// converting the vector into the slice with the size of MAX_SIZE
+        //// try_into() will convert the vector into a slice with a fixed size
+        let updated_data_on_chain: [Pubkey; WhitelistData::MAX_SIZE] = match current_data.try_into(){
+            Ok(data) => data,
+            Err(e) => {
+                msg!("error in filling whitelist data on the chain {:?}", e);
+                return err!(ErrorCode::FillingDataOnChainError);
+            }
+        };
+
+        whitelist_data.list = updated_data_on_chain;
+        whitelsit_state.counter = counter as u64;
+        msg!("current counter after adding one PDA: {}", counter);
+
+        Ok(())
+
+    }
+    
+    pub fn remove_from_whitelist(ctx: Context<RemoveFromWhitelistRequest>) -> Result<()>{
+
+        let signer = ctx.accounts.authority.key();
+        let whitelsit_state = &mut ctx.accounts.whitelist_state;
+        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut().unwrap().to_owned();
+        let mut counter = whitelsit_state.counter as usize;
+        let who_initialized_whitelist = whitelsit_state.authority.key();
+
+        //// the signer of this tx call must be the one
+        //// who initialized the whitelist instruction handler
+        if signer != who_initialized_whitelist{
+            return err!(ErrorCode::AddToWhitelistSignerIsNotTheInitializedAuthority);
+        }
+
+        //// this is the `nft_stats` field which is the PDA
+        //// account that can mutate instruction data of type `Nft`
+        //// on the chain and with this we can make sure that 
+        //// mutating on chain data with the correct input.
+        let pda_account = *ctx.accounts.nft_stats.to_account_info().key;
+
+        msg!("current counter: {}", counter);
+        let mut current_data = Vec::<Pubkey>::new();
+        let Some(pda_to_remove_index) = 
+            current_data
+                .iter()
+                .position(|p| *p == pda_account) else{
+            return err!(ErrorCode::PdaNotFoundToRemove);
+        };
+        current_data.remove(pda_to_remove_index);
+        counter -= 1; //// a PDA is removed
+
+        //// vector types are dynamic sized means
+        //// their size is not known at compile time
+        //// since our PDAs is of type array thus we 
+        //// need to know the exact size of the elements
+        //// inside of it and also we need to convert the
+        //// vector into the array or the slice form after 
+        //// adding a new PDA inside of it hence after 
+        //// adding one PDA into the vector we must fill
+        //// the rest of the vector with a default keys.
+        for _ in counter..WhitelistData::MAX_SIZE{ //// if the counter is full then the starting point will be the MAX_SIZE itself thus the loop won't be run
+            current_data.push(Pubkey::default()); //// filling the rest of the vector with default public key
+        }
+        msg!("vector length on chain {:?}", current_data.len());
+
+        //// converting the vector into the slice with the size of MAX_SIZE
+        //// try_into() will convert the vector into a slice with a fixed size
+        let updated_data_on_chain: [Pubkey; WhitelistData::MAX_SIZE] = match current_data.try_into(){
+            Ok(data) => data,
+            Err(e) => {
+                msg!("error in filling whitelist data on the chain {:?}", e);
+                return err!(ErrorCode::FillingDataOnChainError);
+            }
+        };
+
+        whitelist_data.list = updated_data_on_chain;
+        whitelsit_state.counter = counter as u64;
+        msg!("current counter after removing PDA: {}", counter);
+        
+
+        Ok(())
+        
+    }
+
 }
+
 
 
 
@@ -100,7 +231,6 @@ pub struct Nft{
     pub spl_token: Pubkey,
     pub collection_metadata: Option<Pubkey>,
     pub bump: u8,
-    pub server: Pubkey, //// this is required for calling the `add_to_whitelist` instruction by the server
 }
 
 
@@ -141,25 +271,6 @@ impl Nft{
 }
 
 
-#[account]
-#[derive(Default)]
-pub struct Whitelist{
-    // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
-    //// heap data size like string and vector are always 24 bytes
-    //// which will be stored on the stack: 8 bytes for capaciy, 8 bytes for length
-    //// and the last one is the size of their pointer which points to a heap-allocated buffer
-    //// but borsh actually serializing a slice of the vector thus the size of the following 
-    //// list will be 4 + (32 * N) which N referes to the number of elements and 32 is the
-    //// size of public key and 4 is the size of one public key since the public key is of
-    //// type u32 which 4 bytes long.
-    //
-    //// the maximum size of any account is 10 megabytes
-    //// we can store an array of nft owners inside a whitelist 
-    //// variable so if 5000 owners burnt their nfts our contract 
-    //// size on chain will be about ~0.160004 MB which has calculated
-    //// by 4 + (32 * 5000).
-    pub list: Vec<Pubkey>, //// list of all PDAs that shows an owner has burnt his/her NFT
-}
 
 
 #[derive(Accounts)] //// Accounts trait bounding will add the AnchorSerialize and AnchorDeserialize traits to the generic or the BurnRequest struct
@@ -171,26 +282,30 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// this means that it can only be called once (because the 2nd time it's called 
     //// the PDA will already be initialized). 
     #[account( // https://www.anchor-lang.com/docs/pdas
-              //// `init` immediately shouts at us and tells 
-              //// us to add a payer because init creates 
-              //// rent-exempt accounts and someone has 
-              //// to pay for that.
-              //
-              //// `init` wants the system program to be inside 
-              //// the struct because init creates the `nft_stats` 
-              //// account by making a call to that program.
-              //
-              //// in initial call or creating the PDA account, 
-              //// `nft_stats` can't be mutable but we're telling 
-              //// anchor that this account is the owner of the 
-              //// program which can mutate instruction 
-              //// data on the chain.   
-              init, //// --- init also requires space and payer constraints --- 
-              space = 8 + Nft::MAX_SIZE, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct
-              payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
-              seeds = [user.key().as_ref(), nft_mint.key().as_ref()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft mint address to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
-              bump //// we're adding an empty bump constraint to signal to anchor that it should find the canonical bump itself, then in the `burn_request` handler, we call ctx.bumps.get("nft_statss") to get the bump anchor found and save it to the nft stats account as an extra property
-            )]
+        //// `init` immediately shouts at us and tells 
+        //// us to add a payer because init creates 
+        //// rent-exempt accounts and someone has 
+        //// to pay for that.
+        //
+        //// `init` wants the system program to be inside 
+        //// the struct because init creates the `nft_stats` 
+        //// account by making a call to that program.
+        //
+        //// in initial call or creating the PDA account, 
+        //// `nft_stats` can't be mutable but we're telling 
+        //// anchor that this account is the owner of the 
+        //// program which can mutate instruction 
+        //// data on the chain.   
+        //
+        //// we can't use `nft_stats.mint.key().as_ref()` since
+        //// in here we're initializing the `nft_stats` in the
+        //// first step and we don't have access to that field. 
+        init, //// --- init also requires space and payer constraints --- 
+        space = 8 + Nft::MAX_SIZE, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct
+        payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
+        seeds = [user.key().as_ref(), nft_mint.key().as_ref()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft mint address to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
+        bump //// we're adding an empty bump constraint to signal to anchor that it should find the canonical bump itself, then in the `burn_request` handler, we call ctx.bumps.get("nft_statss") to get the bump anchor found and save it to the nft stats account as an extra property
+    )]
     //// this is the account that can mutate the generic Nft 
     //// on the contract and its owner is the program id, 
     //// in a sence the PDA account must only be owned by the 
@@ -224,13 +339,31 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     pub system_program: Program<'info, System>,
 }
 
+
+#[derive(Accounts)]
+pub struct IntializeWhitelist<'info>{
+    // anchor `#[account]` proc macro attribute constraint guide: https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+    #[account( //// can't use mut constraint since we're initializing this account
+        init, //// initializing the whitelist_state account 
+        payer = user, //// init requires payer which is the signer of this tx call
+        space = 8 + WhitelistState::MAX_SIZE //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct
+    )]
+    pub whitelist_state: Account<'info, WhitelistState>,
+    #[account(zero)] //// zero constraint is necessary for accounts that are larger than 10 Kibibyte because those accounts cannot be created via a CPI (which is what init would do)
+    pub whitelist_data: AccountLoader<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
+    #[account(mut)]
+    pub user: Signer<'info>, //// signer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account
+    pub system_program: AccountInfo<'info>, //// when we use `init` system program account info must be exists
+
+}
+
 #[derive(Accounts)]
 pub struct AddToWhitelistRequest<'info>{
     //// if we want to take money from someone, 
     //// we should make them sign as well as mark 
     //// their account as mutable.
     #[account(mut)]
-    pub user: Signer<'info>, //// the transaction signer account
+    pub authority: Signer<'info>, //// the transaction signer account which must be mutable
     //// if we then want to use the created PDA in 
     //// a different instruction like the `add_to_whitelist` 
     //// method, we can add a new validation struct which 
@@ -247,14 +380,20 @@ pub struct AddToWhitelistRequest<'info>{
         //// access to the account to mutate and deserialize 
         //// the passed in instruction data if its owner 
         //// was equals to program id.
+        //
+        //// instead of creating signature from wallet addresses 
+        //// or creating merkle root from them we can use PDA
+        //// to add or remove them into or from the list.
         mut, 
-        seeds = [nft_owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
+        seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
         bump = nft_stats.bump //// use the nft_stats bump itself which has been founded inside the frontend
     )]
     //// this is the account that can mutate the generic `Nft` 
     //// on the contract and its owner is the program id, 
     //// in a sence the PDA account must only be owned by the 
-    //// program or account.owner == program_id
+    //// program or account.owner == program_id, since this 
+    //// is not initialize account we don't need to add 
+    //// space and payer constraint.
     //
     //// the PDA account that will be used to create whitelist
     //// based on the nft owner and the nft mint address also 
@@ -266,16 +405,89 @@ pub struct AddToWhitelistRequest<'info>{
     #[account(
         //// we need to define this account mutable or 
         //// writable since we want to add PDAs to it in runtime
-        //
-        //// since this is not initialize account we don't 
-        //// need to add space and payer constraint.
         mut, 
     )]
-    pub whitelist: Account<'info, Whitelist>,
-    pub nft_owner: AccountInfo<'info>, //// the NFT owner account that will be used to create the PDA
+    pub whitelist_data: AccountLoader<'info, WhitelistData>, //// `AccountLoader` will be used to deserialize zero copy types 
+    #[account(
+        //// we need to define this account mutable or 
+        //// writable since we want to mutate the 
+        //// white list state at runtime
+        mut,
+        //// `has_one` constraint will check 
+        //// that whitelist_state.owner == authority.key()
+        has_one = authority
+    )]
+    pub whitelist_state: Account<'info, WhitelistState>,
+}
+
+//// zero copy technique: https://rkyv.org/zero-copy-deserialization.html#zero-copy-deserialization 
+//// since we're using array to store PDAs we must 
+//// use the zero copy technique which is directly
+//// referencing bytes of the serialized type instead of
+//// copying the serialized type into the buffer, for ex
+//// we can borrow the String of a JSON into &str instead of
+//// loading those chars into a String also the lifetime of 
+//// the &str depends on the String buffer itself and because
+//// there is no copying operation this is called zero copy 
+//// deserialization technique, also zero copy needs that 
+//// the Copy trait implemented for the type thus dynamic
+//// size types like Vec can't be bounded to zero copy.
+#[account(zero_copy)] 
+pub struct WhitelistData{
+    // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
+    //// heap data size like string and vector are always 24 bytes
+    //// which will be stored on the stack: 8 bytes for capaciy, 8 bytes for length
+    //// and the last one is the size of their pointer which points to a heap-allocated buffer
+    //// but borsh actually serializing a slice of the vector thus the size of the following 
+    //// list will be 4 + (32 * N) which N referes to the number of elements and 32 is the
+    //// size of public key and 4 is the size of one public key since the public key is of
+    //// type u32 which 4 bytes long.
+    //
+    //// the maximum size of any account is 10 megabytes
+    //// we can store an array of nft owners inside a whitelist 
+    //// variable so if 5000 owners burnt their nfts our contract 
+    //// size on chain will be about ~0.160004 MB which has calculated
+    //// by (32 * 5000).
+    //
+    //// note that we must initialize the list before calling `add_to_whitelist`
+    //// instruction handler since it's an array that must be filled with some 
+    //// default public key then in `add_to_whitelist` handler we can replace it 
+    //// with the passed PDAs.
+    pub list: [Pubkey; WhitelistData::MAX_SIZE], //// list of all PDAs that shows an owner has burnt his/her NFT
 }
 
 
+impl WhitelistData{
+    pub const MAX_SIZE: usize = 5000; // TODO
+}
+
+
+#[account]
+pub struct WhitelistState{
+    pub authority: Pubkey, //// the owner of the whitelist state
+    pub counter: u64, //// total number of PDAs inside the whitelist
+}
+
+impl WhitelistState{
+    pub const MAX_SIZE: usize = 32 + 8;
+}
+
+
+#[derive(Accounts)]
+pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `AddToWhitelistRequest` struct but will be used for removing a PDA 
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(mut)] //// this account must be mutable since it wants to mutate the instruction data of type `WhitelistData` on the chain by removing a PDA from the list
+    pub whitelist_data: AccountLoader<'info, WhitelistData>, //// `AccountLoader` will bound the `Account` into ZeroCopy trait and return a RefMut or the borrowed form of the deserialized instruction data  
+    #[account(mut, has_one = authority)]
+    pub whitelist_state: Account<'info, WhitelistState>,
+    #[account( 
+        mut, 
+        seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
+        bump = nft_stats.bump //// use the nft_stats bump itself which has been founded inside the frontend
+    )]
+    pub nft_stats: Account<'info, Nft>, 
+}
 
 #[error_code]
 pub enum ErrorCode {
@@ -283,10 +495,15 @@ pub enum ErrorCode {
     RestrictionError,
     #[msg("Invalid Nft Burn Instruction In Metaplex Candy Machine")]
     InvalidBurnInstruction,
-    #[msg("Signer Is Not The Server")]
-    AddToWhitelistRequestRestriction,
-    #[msg("Nft Owner Is Different With The PDA Nft Owner")]
-    NftOwnerDifferentWithPDANftOwner
+    #[msg("Signer Is Not The Whitelist Authority")]
+    AddToWhitelistSignerIsNotTheInitializedAuthority,
+    #[msg("Not Enough Space")]
+    NotEnoughSpace,
+    #[msg("Fillin Data On Chain Error")]
+    FillingDataOnChainError,
+    #[msg("PDA Not Found To Remove")]
+    PdaNotFoundToRemove
+
 }
 
 

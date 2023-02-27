@@ -91,6 +91,21 @@
     the size will be 1 byte + T bytes if there was T otherwise 1 byte which is a 
     pointer that shows the Option has no available data right now. 
 
+    in runtime we can avoid data collision using borsh encoded enum offset variant 
+    to build a unique storgage key like by adding a unique 8 bytes discriminator built
+    from the account name to the prefix of every account to have a unique account
+    on chain on runtime to avoid deadlock, race conditions and data collision, also 
+    we can use the unique storage key in hashmap like structure in which we can make sure 
+    that the key inside the map is unique in memroy in entire runtime the example of this 
+    strategey is creating the PDAs from a seed and a bump.
+    
+    since data in solana will be stored in accounts hence we can decode the data using 
+    borsh to mutate them on chain but there is no hashmap like structure thus we can 
+    make a new one using PDA since PDA is only public key without a private key in which 
+    it can be built from a seed and a bump also we have to consider the total space that 
+    must be used by every account to allocate storage on chain using space 
+    constraint on the PDA account.
+
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
