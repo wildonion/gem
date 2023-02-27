@@ -30,7 +30,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 🛠️ Production Setup
 
-> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary like so: `./app wildonion 0`
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0`
 
 > Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml`
 

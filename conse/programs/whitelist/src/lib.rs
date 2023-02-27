@@ -300,6 +300,10 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         //// we can't use `nft_stats.mint.key().as_ref()` since
         //// in here we're initializing the `nft_stats` in the
         //// first step and we don't have access to that field. 
+        //
+        //// the PDA can be built from the NFT owner and the NFT
+        //// mint address since an owner might have burned multiple NFTs
+        //// thus the tracking must be unique to add them to whitelist.
         init, //// --- init also requires space and payer constraints --- 
         space = 8 + Nft::MAX_SIZE, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct
         payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
