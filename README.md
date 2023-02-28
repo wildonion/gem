@@ -9,6 +9,16 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo test --bin conse```
 
+## 🛠️ Production Setup
+
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0`
+
+> Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml`
+
+> Also make sure that your account has enough balance for deploying the program.
+
+> Finally Run ```sudo chmod +x deploy.sh && ./deploy.sh```
+
 ## 💳 Setup Solana Wallet 
 
 * Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! We'll use this public key as the program authority to deploy the program with it. 
@@ -27,16 +37,6 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 * You can extract the public key using ```solana address -k /home/$USER/.config/solana/id.json``` command.
 
 * Change the `provider` field inside the `Anchor.toml` file with the proper path of the generated wallet address JSON.
-
-## 🛠️ Production Setup
-
-> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0`
-
-> Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml`
-
-> Also make sure that your account has enough balance for deploying the program.
-
-> Finally Run ```sudo chmod +x deploy.sh && ./deploy.sh```
 
 ## 🚀 Deploy Ticket Contract on Localnet 
 
@@ -111,7 +111,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 📇 Notes
 
-* frontend must call the `gameResult()` of the contract and pass the `winner` and `instruct` values, the contract will do the rest of the things.
+* frontend must call the `gameResult()` of the contract and pass the `winner` either 0 or 1 and `instruct` values between 0 up to 4, the contract will do the rest of the things.
 
 * the third instruction has an special tax amount which is %25 of the deposited amount.
 
@@ -120,15 +120,15 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 * after running `anchor build` for the first time a new `keypair.json` will be generated which contains the wallet info the public and private key of the deployed contract in which 
 we the program id is the public key address of the deployed contract.
 
-* use ```anchor init NEW_ANCHOR_PROJECT``` to build a new anchor workspace, ```anchor build --program-name PROGRAM_NAME``` and ```anchor deploy --program-name PROGRAM_NAME``` to build and deploy the specified program.
+* use ```anchor init NEW_ANCHOR_PROJECT``` to build a new anchor workspace, ```anchor new PROGRAM_NAME``` to create a new program in the workspace, ```anchor build --program-name PROGRAM_NAME``` and ```anchor deploy --program-name PROGRAM_NAME``` to build and deploy the specified program.
 
-* the steps to build and deploy the whitelist contract is the same as the ticket contract. 
+* the steps to build and deploy the whitelist contract is the same as the ticket contract, simply run ```anchor build --program-name whitelist``` and then ```anchor build --program-name whitelist```. 
 
 * ```solana balance``` shows the balance of the address inside the `/home/$USER/.config/solana/id.json` on the selected network which is one of the `devnet`, `testnet` or `localhost`.
 
 ## 🚧 WIP
 
-* complete solana programs inside the `conse` folder using [anchor](https://www.anchor-lang.com/) 
+* complete solana programs inside the `conse` folder
 
 * adding Graphql for realtime streaming using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html)
 

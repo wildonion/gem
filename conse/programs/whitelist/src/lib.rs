@@ -8,8 +8,26 @@ declare_id!("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"); //// this is the pr
 
 
 
+pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
+    let program_id_bytes = program_id.as_bytes();
+    let program_id_bytes_vec = program_id_bytes.to_vec(); //// we must convert the bytes into vector to build the [u8; 32]
+    let program_id_bytes_fixed_size: [u8; 32] = match program_id_bytes_vec.try_into(){ //// converting the vector into the slice form or array with a fixed size of 32 bytes which is the size of each public key
+        Ok(data) => data,
+        Err(e) => [0u8; 32], //// returning an empty array of zero with a fixed size of 32 bytes 
+    };
+    if !program_id_bytes_fixed_size
+            .into_iter()
+            .all(|byte| byte == 0){
+                let program_public_key = Pubkey::from(program_id_bytes_fixed_size);
+                Some(program_public_key)
+            } else{
+                None //// returning None if the public key contains zero bytes means that we couldn't convert the vector into [u8; 32] correctly
+            }
+}
+
 #[program] //// the program entrypoint which must be defined only once
 pub mod conse_gem_whitelist {
+
 
     //// `AccountLoader` type and zero_copy attribute
     //// will be used to deserialize the zero copy types
@@ -25,34 +43,58 @@ pub mod conse_gem_whitelist {
 
     pub fn burn_request(ctx: Context<BurnRequest>, bump: u8) -> Result<()>{
         
+        let this_program_id_public_key = gen_program_pub_key("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9");
         let nft_stats = &mut ctx.accounts.nft_stats; //// nft_stats field is a mutabe field thus we have to get it mutably
         let signer_account = ctx.accounts.user.key();
-        let nft_owner = nft_stats.owner; 
 
         //// we could also use the found bump by the anchor 
         //// when initializing the nft_stats account over
         //// generic `Nft` struct inside the `BurnRequest` struct
-        // user_stats.bump = *ctx.bumps.get("user_stats").unwrap();
-        nft_stats.bump = bump; //// set the bump to the passed in bump from the frontend
+        // user_stats.bump = *ctx.bumps.get("user_stats")?;
+        nft_stats.bump = bump; //// setting the bump to the passed in bump from the frontend
+        nft_stats.program_id = *ctx.accounts.the_program_id.key;
+        nft_stats.metadata = *ctx.accounts.metadata.key;
+        nft_stats.token = *ctx.accounts.token.key;
+        nft_stats.mint = *ctx.accounts.nft_mint.key; 
+        nft_stats.edition = *ctx.accounts.edition.key;
+        nft_stats.spl_token = *ctx.accounts.spl_token.key;
+        nft_stats.collection_metadata = Some(*ctx.accounts.collection_metadata.key);
 
         //// checking that the transaction call signer
         //// which is the one who has called this method
         //// and sign it with his/her private key is the 
         //// NFT owner 
+        let nft_owner = nft_stats.owner; 
         if nft_owner != signer_account {
             return err!(ErrorCode::RestrictionError);
         }
 
-        if nft_stats.burn_that(){
+        nft_stats.owner = signer_account; //// if the signer of this instruiction call was the owner then we can set the owner field to this signer
 
-            emit!(NftBurnEvent{
+        //// checking the passed in program id from then frontend
+        //// into the accounts section of this instruiction handler 
+        //// against the current program id.
+        if let Some(pub_key) = this_program_id_public_key{
+            if nft_stats.program_id != pub_key{
+                return err!(ErrorCode::AccessDeniedDueToDifferentProgramId);
+            }
+        } else{
+            return err!(ErrorCode::RuntimeError);
+        }
+
+
+        // ------------------ Burning Process -----------------------
+
+        if nft_stats.burn_that(){
+            emit!(NftBurnEvent{ //// log the burn event 
                 owner: nft_owner,
                 mint_address: nft_stats.mint,
             });
-
         } else{
             return err!(ErrorCode::InvalidBurnInstruction);
         }
+
+        // ------------------------------------------------------------
             
         Ok(())
         
@@ -77,9 +119,9 @@ pub mod conse_gem_whitelist {
         
         let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and ca be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
-        let whitelist_data = ctx.accounts.whitelist_data.load_init().unwrap();
+        let whitelist_data = ctx.accounts.whitelist_data.load_init()?;
         let mut wl_data = whitelist_data.to_owned();
-        wl_data.list = [Pubkey::default(); WhitelistData::MAX_SIZE]; 
+        wl_data.list = [Pubkey::default(); 5000]; // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
         whitelist_state.authority = signer; //// the signer must be the whitelist_state authority
         whitelist_state.counter = 0;
 
@@ -93,7 +135,7 @@ pub mod conse_gem_whitelist {
 
         let signer = ctx.accounts.authority.key();
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
-        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut().unwrap().to_owned();
+        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut()?.to_owned();
         let mut counter = whitelsit_state.counter as usize;
         let who_initialized_whitelist = whitelsit_state.authority.key();
 
@@ -134,7 +176,7 @@ pub mod conse_gem_whitelist {
 
         //// converting the vector into the slice with the size of MAX_SIZE
         //// try_into() will convert the vector into a slice with a fixed size
-        let updated_data_on_chain: [Pubkey; WhitelistData::MAX_SIZE] = match current_data.try_into(){
+        let updated_data_on_chain: [Pubkey; 5000] = match current_data.try_into(){ // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
             Ok(data) => data,
             Err(e) => {
                 msg!("error in filling whitelist data on the chain {:?}", e);
@@ -154,7 +196,7 @@ pub mod conse_gem_whitelist {
 
         let signer = ctx.accounts.authority.key();
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
-        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut().unwrap().to_owned();
+        let mut whitelist_data = ctx.accounts.whitelist_data.load_mut()?.to_owned();
         let mut counter = whitelsit_state.counter as usize;
         let who_initialized_whitelist = whitelsit_state.authority.key();
 
@@ -172,12 +214,15 @@ pub mod conse_gem_whitelist {
 
         msg!("current counter: {}", counter);
         let mut current_data = Vec::<Pubkey>::new();
-        let Some(pda_to_remove_index) = 
-            current_data
-                .iter()
-                .position(|p| *p == pda_account) else{
+        let pda_to_remove_index = if let Some(index) 
+                                        = current_data
+                                            .iter()
+                                            .position(|p| *p == pda_account){
+                            index
+        } else{
             return err!(ErrorCode::PdaNotFoundToRemove);
         };
+
         current_data.remove(pda_to_remove_index);
         counter -= 1; //// a PDA is removed
 
@@ -197,7 +242,7 @@ pub mod conse_gem_whitelist {
 
         //// converting the vector into the slice with the size of MAX_SIZE
         //// try_into() will convert the vector into a slice with a fixed size
-        let updated_data_on_chain: [Pubkey; WhitelistData::MAX_SIZE] = match current_data.try_into(){
+        let updated_data_on_chain: [Pubkey; 5000] = match current_data.try_into(){ // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
             Ok(data) => data,
             Err(e) => {
                 msg!("error in filling whitelist data on the chain {:?}", e);
@@ -219,8 +264,14 @@ pub mod conse_gem_whitelist {
 
 
 
-#[account]
-#[derive(Default)]
+//// structs that are bounded to this proc macro attribute, are the instruction data
+//// which are the generic of the account that wants to mutate them on the chain and 
+//// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
+//// in frontend side which allows us to get current value of each field on chain,
+//// here the owner of this struct is the PDA account which its owner must be
+//// the program id so it can mutate the deserialized data on the chain. 
+#[account] 
+#[derive(Default, PartialEq)]
 pub struct Nft{
     pub program_id: Pubkey,
     pub metadata: Pubkey,
@@ -339,7 +390,20 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// which must be mutable or use it to create the PDA like 
     //// the following account that will be used to create the 
     //// whitelist PDA.
-    pub nft_mint: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to create the PDA and check against the passed in NFT mint address from the frontend
+    pub nft_mint: AccountInfo<'info>, //// this needs to be checked since it's unsafe because we're initializing the PDA account and any other account will be unsafe thus we have to check them as safe 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub metadata: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub token: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub edition: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub spl_token: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub collection_metadata: AccountInfo<'info>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    pub the_program_id: AccountInfo<'info>, 
     pub system_program: Program<'info, System>,
 }
 
@@ -357,7 +421,7 @@ pub struct IntializeWhitelist<'info>{
     pub whitelist_data: AccountLoader<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
     #[account(mut)]
     pub user: Signer<'info>, //// signer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account
-    pub system_program: AccountInfo<'info>, //// when we use `init` system program account info must be exists
+    pub system_program: Program<'info, System>, //// when we use `init` system program account info must be exists
 
 }
 
@@ -424,6 +488,13 @@ pub struct AddToWhitelistRequest<'info>{
     pub whitelist_state: Account<'info, WhitelistState>,
 }
 
+//// structs that are bounded to this proc macro attribute, are the instruction data
+//// which are the generic of the account that wants to mutate them on the chain and 
+//// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
+//// in frontend side which allows us to get current value of each field on chain,
+//// here the owner of this struct is the `whitelist_data` account field which its 
+//// owner must be the program id so it can mutate the deserialized data on the chain. 
+//
 //// zero copy technique: https://rkyv.org/zero-copy-deserialization.html#zero-copy-deserialization 
 //// since we're using array to store PDAs we must 
 //// use the zero copy technique which is directly
@@ -457,15 +528,25 @@ pub struct WhitelistData{
     //// instruction handler since it's an array that must be filled with some 
     //// default public key then in `add_to_whitelist` handler we can replace it 
     //// with the passed PDAs.
-    pub list: [Pubkey; WhitelistData::MAX_SIZE], //// list of all PDAs that shows an owner has burnt his/her NFT
+    pub list: [Pubkey; 5000], //// list of all PDAs that shows an owner has burnt his/her NFT; TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
 }
 
 
 impl WhitelistData{
-    pub const MAX_SIZE: usize = 5000; // TODO
+    // https://solana.stackexchange.com/questions/3816/thread-main-panicked-at-called-resultunwrap-on-an-err-value-parsein
+    //// note that we can't use MAX_SIZE variablt 
+    //// inside the array we must use a number means 
+    //// we can't have [Pubkey; MAX_SIZE] since it'll
+    //// face us an error like: thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }'
+    pub const MAX_SIZE: usize = 5000; // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
 }
 
-
+//// structs that are bounded to this proc macro attribute, are the instruction data
+//// which are the generic of the account that wants to mutate them on the chain and 
+//// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
+//// in frontend side which allows us to get current value of each field on chain,
+//// here the owner of this struct is the `whitelist_state` account field which its 
+//// owner must be the program id so it can mutate the deserialized data on the chain. 
 #[account]
 pub struct WhitelistState{
     pub authority: Pubkey, //// the owner of the whitelist state
@@ -506,8 +587,13 @@ pub enum ErrorCode {
     #[msg("Fillin Data On Chain Error")]
     FillingDataOnChainError,
     #[msg("PDA Not Found To Remove")]
-    PdaNotFoundToRemove
-
+    PdaNotFoundToRemove,
+    #[msg("Different Nft Mint Address")]
+    DifferentNftMintAddress,
+    #[msg("Access Denied, Passed In Program Id Is Wrong")]
+    AccessDeniedDueToDifferentProgramId,
+    #[msg("Runtime Error")]
+    RuntimeError,
 }
 
 
