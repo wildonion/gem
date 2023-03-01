@@ -533,6 +533,16 @@ pub struct WhitelistData{
     //// instruction handler since it's an array that must be filled with some 
     //// default public key then in `add_to_whitelist` handler we can replace it 
     //// with the passed PDAs.
+    //
+    //// dynamic size can be in their borrowed form like &str or &[u8],
+    //// since str and [u8] don't have fixed size at compile time 
+    //// we must use them behind a reference or the borrowed form of their dynamic size
+    //// about the &[u8] we can also use its fixed size like [0u8; 32] also
+    //// we have to pass types into other scopes and threads by reference or 
+    //// in their borrowed form and we have to fill the remaining bytes if 
+    //// we're using the array slices with a fixed size since their size must 
+    //// be specified at compile time also all the allocated size for 
+    //// them must be filled at runtime.
     pub list: [Pubkey; 5000], //// list of all PDAs that shows an owner has burnt his/her NFT; TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
 }
 

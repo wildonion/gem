@@ -45,7 +45,7 @@
     no invalid pointer or reference.
 
     to avoid zero bytes borsh will add 1 extra byte 
-    to Option that wheneve the None part was selected 
+    to Option that whenever the None part was selected 
     that extra 1 byte represent the size of the Option.
 
     =========================================
