@@ -76,7 +76,7 @@ pub mod conse_gem_whitelist {
         //// against the current program id.
         if let Some(pub_key) = this_program_id_public_key{
             if nft_stats.program_id != pub_key{
-                return err!(ErrorCode::AccessDeniedDueToDifferentProgramId);
+                return err!(ErrorCode::AccessDeniedDueToInvalidProgramId);
             }
         } else{
             return err!(ErrorCode::RuntimeError);
@@ -333,6 +333,11 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// this means that it can only be called once (because the 2nd time it's called 
     //// the PDA will already be initialized). 
     #[account( // https://www.anchor-lang.com/docs/pdas
+        //// `init` will initialize a call using a cpi to the solana 
+        //// to create the init account that its owner is the program
+        //// itself which allows us to mutate its instruction data on chain 
+        //// by deserializing it using borsh.
+        //
         //// `init` immediately shouts at us and tells 
         //// us to add a payer because init creates 
         //// rent-exempt accounts and someone has 
@@ -590,8 +595,8 @@ pub enum ErrorCode {
     PdaNotFoundToRemove,
     #[msg("Different Nft Mint Address")]
     DifferentNftMintAddress,
-    #[msg("Access Denied, Passed In Program Id Is Wrong")]
-    AccessDeniedDueToDifferentProgramId,
+    #[msg("Access Denied, Passed In Program Id Is Invalid")]
+    AccessDeniedDueToInvalidProgramId,
     #[msg("Runtime Error")]
     RuntimeError,
 }
