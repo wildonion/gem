@@ -39,6 +39,7 @@ pub mod conse_gem_whitelist {
     //// requires separate structure
     //// to handle data on chain.
 
+
     use super::*;
 
     pub fn burn_request(ctx: Context<BurnRequest>, bump: u8) -> Result<()>{
@@ -46,6 +47,23 @@ pub mod conse_gem_whitelist {
         let this_program_id_public_key = gen_program_pub_key("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9");
         let nft_stats = &mut ctx.accounts.nft_stats; //// nft_stats field is a mutabe field thus we have to get it mutably
         let signer_account = ctx.accounts.user.key();
+
+        //// `ctx.accounts.collection_metadata` can't be 
+        //// dereferenced because we can't move out of it 
+        //// since it's behind a mutable reference of type 
+        //// `AccountInfo` which doesn't implement Copy trait 
+        //// thus if it's inside an Option we can't move out 
+        //// of it too since methods of Option<T> is the same as 
+        //// `T` methods means that Copy is not implemented for 
+        //// `Option<AccountInfo>`, we can either move it between 
+        //// threads and scopes by borrowing it or cloning it.  
+        //
+        //// moving out of a referenced type requires one 
+        //// of the dereferencing methods methods which is 
+        //// either copying the type or cloning it, the Copy 
+        //// or Clone trait must be implemented for the type 
+        //// otherwise we can' move out of it.
+        let collection_metadata = ctx.accounts.collection_metadata.clone(); 
 
         //// we could also use the found bump by the anchor 
         //// when initializing the nft_stats account over
@@ -58,7 +76,11 @@ pub mod conse_gem_whitelist {
         nft_stats.mint = *ctx.accounts.nft_mint.key; 
         nft_stats.edition = *ctx.accounts.edition.key;
         nft_stats.spl_token = *ctx.accounts.spl_token.key;
-        nft_stats.collection_metadata = Some(*ctx.accounts.collection_metadata.key);
+        nft_stats.collection_metadata = if let Some(collection_metadata_account) = collection_metadata{
+            Some(collection_metadata_account.key())
+        } else{
+            None
+        };
 
         //// checking that the transaction call signer
         //// which is the one who has called this method
@@ -397,17 +419,17 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// whitelist PDA.
     /// CHECK: This is not dangerous because we're using this account to create the PDA and check against the passed in NFT mint address from the frontend
     pub nft_mint: AccountInfo<'info>, //// this needs to be checked since it's unsafe because we're initializing the PDA account and any other account will be unsafe thus we have to check them as safe 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
     pub metadata: AccountInfo<'info>, 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
     pub token: AccountInfo<'info>, 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
     pub edition: AccountInfo<'info>, 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
     pub spl_token: AccountInfo<'info>, 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
-    pub collection_metadata: AccountInfo<'info>, 
-    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
+    pub collection_metadata: Option<AccountInfo<'info>>, 
+    /// CHECK: This is not dangerous because we're using this account to set the `nft_stats` field inside the `burn_request` method
     pub the_program_id: AccountInfo<'info>, 
     pub system_program: Program<'info, System>,
 }
