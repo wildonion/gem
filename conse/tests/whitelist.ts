@@ -71,7 +71,7 @@ describe("whitelist", () => {
         // Burn Request
         // ------------
           await program.methods.burnRequest(bump).accounts({
-                user: provider.wallet.publicKey, 
+                user: nft_owner.publicKey, 
                 nftStats: NftStatsPDA, 
                 nftMint: nft_mint.publicKey,
                 metadata: metadata.publicKey,
@@ -79,6 +79,7 @@ describe("whitelist", () => {
                 edition: edition.publicKey,
                 splToken: spl_token.publicKey,
                 theProgramId: program.programId,
+                collectionMetadata: collection_metadata.publicKey
             }).rpc();
 
           // deserializing the PDA account

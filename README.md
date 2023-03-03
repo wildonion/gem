@@ -111,6 +111,8 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 📇 Notes
 
+* currently the program id of the whitelist contract is `6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9`.
+
 * frontend must call the `gameResult()` of the contract and pass the `winner` either 0 or 1 and `instruct` values between 0 up to 4, the contract will do the rest of the things.
 
 * the third instruction has an special tax amount which is %25 of the deposited amount.

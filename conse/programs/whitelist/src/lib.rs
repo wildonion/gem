@@ -74,6 +74,7 @@ pub mod conse_gem_whitelist {
         nft_stats.metadata = *ctx.accounts.metadata.key;
         nft_stats.token = *ctx.accounts.token.key;
         nft_stats.mint = *ctx.accounts.nft_mint.key; 
+        nft_stats.owner = signer_account; //// set the owner field of the `nft_stats` account to the signer of this instruction handler since only the NFT owner can call this method
         nft_stats.edition = *ctx.accounts.edition.key;
         nft_stats.spl_token = *ctx.accounts.spl_token.key;
         nft_stats.collection_metadata = if let Some(collection_metadata_account) = collection_metadata{
@@ -81,17 +82,6 @@ pub mod conse_gem_whitelist {
         } else{
             None
         };
-
-        //// checking that the transaction call signer
-        //// which is the one who has called this method
-        //// and sign it with his/her private key is the 
-        //// NFT owner 
-        let nft_owner = nft_stats.owner; 
-        if nft_owner != signer_account {
-            return err!(ErrorCode::RestrictionError);
-        }
-
-        nft_stats.owner = signer_account; //// if the signer of this instruiction call was the owner then we can set the owner field to this signer
 
         //// checking the passed in program id from then frontend
         //// into the accounts section of this instruiction handler 
@@ -109,7 +99,7 @@ pub mod conse_gem_whitelist {
 
         if nft_stats.burn_that(){
             emit!(NftBurnEvent{ //// log the burn event 
-                owner: nft_owner,
+                owner: signer_account,
                 mint_address: nft_stats.mint,
             });
         } else{
@@ -159,7 +149,7 @@ pub mod conse_gem_whitelist {
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
         let mut whitelist_data = ctx.accounts.whitelist_data.load_mut()?.to_owned();
         let mut counter = whitelsit_state.counter as usize;
-        let who_initialized_whitelist = whitelsit_state.authority.key();
+        let who_initialized_whitelist = whitelsit_state.authority.key(); //// the whitelist owner 
 
         //// the signer of this tx call must be the one
         //// who initialized the whitelist instruction handler
@@ -176,7 +166,7 @@ pub mod conse_gem_whitelist {
             return err!(ErrorCode::NotEnoughSpace);
         }
 
-        msg!("current counter: {}", counter);
+        msg!("[+] current counter: {}", counter);
         let mut current_data = Vec::<Pubkey>::new();
         current_data.extend_from_slice(&whitelist_data.list[0..counter]); //// counter has the current size of the total PDAs, so we're filling the vector with the old PDAs on chain
         current_data.push(pda_account); //// at this stage the size of the vector might not be the MAX_SIZE since the `list` field of the `whitelist_data` might not be reached that size yet means that we have still enough storage to store PDAs  
@@ -194,21 +184,21 @@ pub mod conse_gem_whitelist {
         for _ in counter..WhitelistData::MAX_SIZE{ //// if the counter is full then the starting point will be the MAX_SIZE itself thus the loop won't be run
             current_data.push(Pubkey::default()); //// filling the rest of the vector with default public key
         }
-        msg!("vector length on chain {:?}", current_data.len());
+        msg!("[+] vector length on chain {:?}", current_data.len());
 
         //// converting the vector into the slice with the size of MAX_SIZE
         //// try_into() will convert the vector into a slice with a fixed size
         let updated_data_on_chain: [Pubkey; 5000] = match current_data.try_into(){ // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
             Ok(data) => data,
             Err(e) => {
-                msg!("error in filling whitelist data on the chain {:?}", e);
+                msg!("[+] error in filling whitelist data on the chain {:?}", e);
                 return err!(ErrorCode::FillingDataOnChainError);
             }
         };
 
         whitelist_data.list = updated_data_on_chain;
         whitelsit_state.counter = counter as u64;
-        msg!("current counter after adding one PDA: {}", counter);
+        msg!("[+] current counter after adding one PDA: {}", counter);
 
         Ok(())
 
@@ -234,7 +224,7 @@ pub mod conse_gem_whitelist {
         //// mutating on chain data with the correct input.
         let pda_account = *ctx.accounts.nft_stats.to_account_info().key;
 
-        msg!("current counter: {}", counter);
+        msg!("[+] current counter: {}", counter);
         let mut current_data = Vec::<Pubkey>::new();
         let pda_to_remove_index = if let Some(index) 
                                         = current_data
@@ -260,21 +250,21 @@ pub mod conse_gem_whitelist {
         for _ in counter..WhitelistData::MAX_SIZE{ //// if the counter is full then the starting point will be the MAX_SIZE itself thus the loop won't be run
             current_data.push(Pubkey::default()); //// filling the rest of the vector with default public key
         }
-        msg!("vector length on chain {:?}", current_data.len());
+        msg!("[+] vector length on chain {:?}", current_data.len());
 
         //// converting the vector into the slice with the size of MAX_SIZE
         //// try_into() will convert the vector into a slice with a fixed size
         let updated_data_on_chain: [Pubkey; 5000] = match current_data.try_into(){ // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
             Ok(data) => data,
             Err(e) => {
-                msg!("error in filling whitelist data on the chain {:?}", e);
+                msg!("[+] error in filling whitelist data on the chain {:?}", e);
                 return err!(ErrorCode::FillingDataOnChainError);
             }
         };
 
         whitelist_data.list = updated_data_on_chain;
         whitelsit_state.counter = counter as u64;
-        msg!("current counter after removing PDA: {}", counter);
+        msg!("[+] current counter after removing PDA: {}", counter);
         
 
         Ok(())
@@ -282,7 +272,6 @@ pub mod conse_gem_whitelist {
     }
 
 }
-
 
 
 

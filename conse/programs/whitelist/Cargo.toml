@@ -15,6 +15,9 @@ no-log-ix-name = []
 cpi = ["no-entrypoint"]
 default = []
 
+[profile.release]
+overflow-checks = true
+
 [dependencies]
 anchor-lang = "0.26.0"
 # use features = ["no-entrypoint"] to avoid the `#[global_allocator]` error: https://github.com/metaplex-foundation/metaplex/issues/722
