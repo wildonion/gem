@@ -17,7 +17,7 @@ whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/wildonion/.config/solana/id.json"
 
 [scripts]
