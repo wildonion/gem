@@ -111,9 +111,9 @@
 							}
 						},
 						"url": {
-							"raw": "{{local_auth}}/auth/login",
+							"raw": "{{auth}}/auth/login",
 							"host": [
-								"{{local_auth}}"
+								"{{auth}}"
 							],
 							"path": [
 								"auth",
@@ -1337,7 +1337,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzMTVmOTlhODk3OGQ3NjFlOTdhOWIzYSJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjk0NjAzNjY5LCJpYXQiOjE2NjMwNjc2Njl9.aERXnt5SMr_4r2R4zQCj7RQ3iaVXXEOpLRUEnnyUIP8WGTifAMVzHPABG-Ypmonf96TsydR9c4Y4BzyYsJZ-zw",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzZmJiMWEzNzAzMGI5M2EyNmNhMDk2OSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5MzA4MDA2LCJpYXQiOjE2Nzc3NzIwMDZ9.vhjvqDTIarqeEXwzxbmjiGeLBHXfQAKalsRmVzpopcckoAI_lMFaWMV1YGi7JwKE3K0igkRivjXli6yFNUMNvg",
 									"type": "string"
 								}
 							]
@@ -2007,6 +2007,66 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Whitelist",
+			"item": [
+				{
+					"name": "Add PDAs To Whitelist",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"\",\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{whitelist}}/whitelist/add/pdas",
+							"host": [
+								"{{whitelist}}"
+							],
+							"path": [
+								"whitelist",
+								"add",
+								"pdas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Whitelist By Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{whitelist}}/whitelist/get/free-mint",
+							"host": [
+								"{{whitelist}}"
+							],
+							"path": [
+								"whitelist",
+								"get",
+								"free-mint"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Whitelists",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -2042,6 +2102,11 @@
 		},
 		{
 			"key": "game",
+			"value": "https://conse.app:7439",
+			"type": "string"
+		},
+		{
+			"key": "whitelist",
 			"value": "https://conse.app:7439",
 			"type": "string"
 		}
