@@ -48,13 +48,13 @@ pub async fn all_whitelists(req: Request<Body>) -> GenericResult<hyper::Response
 
     ////////////////////////////////// DB Ops
 
-    let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the WhitelistInfo struct
+    let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
     let mut available_whitelist = Vec::<schemas::whitelist::WhitelistInfo>::new();
 
     match whitelist.find(None, None).await{
         Ok(mut cursor) => {
             while let Some(wl) = cursor.try_next().await.unwrap(){ //// calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
-            available_whitelist.push(wl);
+                available_whitelist.push(wl);
             }
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
             let response_body = ctx::app::Response::<Vec<schemas::whitelist::WhitelistInfo>>{
@@ -121,7 +121,7 @@ pub async fn whitelist(req: Request<Body>) -> GenericResult<hyper::Response<Body
     ////////////////////////////////// DB Ops
     
     let filter = doc! {"name": name};
-    let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the WhitelistInfo struct
+    let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
     let mut available_whitelist = Vec::<schemas::whitelist::WhitelistInfo>::new();
 
     match whitelist.find(filter, None).await{

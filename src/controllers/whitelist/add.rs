@@ -62,7 +62,7 @@ pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
 
 
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
-                                    let pda = wl_info.pda.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft mint address and the nft owner after burning
+                                    let pdas = wl_info.pdas.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
                                     let name = wl_info.owner.clone(); //// cloning to prevent ownership moving
 
                                     ////////////////////////////////// DB Ops
@@ -75,7 +75,7 @@ pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
                                             let owner_index = is_owner_exists.unwrap(); //// we're sure that we have an owner definitely since the find_one() query has executed correctly if we're here :)
                                             //// we found the passed in owner inside the whitelist
                                             //// then we have to update the list with the passed in pda
-                                            if let Some(pdas) = wl_doc.add_pda(pda.clone(), owner_index).await{
+                                            if let Some(pdas) = wl_doc.add_pdas(pdas.clone(), owner_index).await{
                                                 //// means we have an updated pda 
                                                 //// then we need to update the collection
                                                 wl_doc.owners[owner_index].pdas = pdas;
@@ -112,12 +112,10 @@ pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
                                                         )
                                                     },
                                                 } 
-                                                
-                                                
                                             } else{
                                                 let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is WhitelistInfo struct
                                                     data: Some(wl_doc),
-                                                    message: FOUND_DOCUMENT,
+                                                    message: FOUND_DOCUMENT, //// already pda inside the pdas 
                                                     status: 302,
                                                 };
                                                 let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
