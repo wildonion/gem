@@ -132,7 +132,7 @@ we the program id is the public key address of the deployed contract.
 
 * complete solana programs inside the `conse` folder
 
-* adding Graphql for realtime streaming using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html)
+* adding Graphql for realtime streaming and push notification using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html) and routerify websocket.
 
 * updating [hyper](https://hyper.rs/) to latest version
 

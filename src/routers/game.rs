@@ -16,9 +16,6 @@
    | a new one inside the body of each router since rust doesn't support garbage
    | collection rule and each response object will be dropped once each router 
    | router body scope gets ended.
-   |
-   | instead of initializing the app_storage inside each router api we've 
-   | initialized it only once per router service to move it between each router api.
    | 
 
 */

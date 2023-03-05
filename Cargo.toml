@@ -27,9 +27,12 @@ rust-argon2 = "1"
 lazy_static = "1"
 serde = {version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
+juniper = "0.10"
+juniper_hyper = "0.1.0"
 routerify-cors = "3"
 routerify = "3"
 routerify-multipart = "3"
+routerify-websocket = "3.0.0"
 sanitize-filename = "0.4.0"
 async-trait = "0.1.64"
 

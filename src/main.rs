@@ -224,7 +224,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- building the conse server from the router
     //
     //      we're sharing the db_instance state between routers' threads to get the data inside each api
-    // TODO - add websocket for realtime pushing and pulling: http://zderadicka.eu/hyper-websocket/
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
@@ -233,14 +232,17 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .scope("/auth", routers::auth::register().await)
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
+        .scope("/whitelist", routers::whitelist::register().await)
+        // .scope("/ws") // TODO - 
+        // .scope("/gql") // TODO - 
         .build()
         .unwrap();
-    info!("running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
+    info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = utils::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver));
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to receive the shutdown signal
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
-        error!("conse server error {} - {}", e, chrono::Local::now().naive_local());
+        error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
 
 
