@@ -62,7 +62,7 @@ elif [[ $BUILDFOR == "gem" ]]; then
     sudo rm /home/$USER/conse
     sudo cp target/release/conse /home/$USER/conse && sudo chmod +x /home/$USER/conse 
     sudo cp .env /home/$USER/.env 
-    sudo pm2 delete conse
+    sudo pm2 delete conse && cd /home/$USER
     sudo pm2 start conse --name conse
     sudo pm2 status
 fi
