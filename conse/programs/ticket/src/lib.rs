@@ -5,7 +5,7 @@ use percentage::Percentage;
 declare_id!("2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
 
 #[program]
-pub mod conse_gem_reservation {
+pub mod ticket {
     
     use super::*;
 
@@ -18,32 +18,16 @@ pub mod conse_gem_reservation {
         }
 
         game_state.server = *ctx.accounts.user.key;
-        game_state.player_one = *ctx.accounts.player_one.key;
+        game_state.player = *ctx.accounts.player.key;
         game_state.amount = amount;
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
         
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
-            player_one: ctx.accounts.player_one.key(), 
+            player: ctx.accounts.player.key(), 
             amount,
         });
-        
-        Ok(())
-    
-    }
-
-    pub fn second_player(ctx: Context<SecondPlayer>, amount: u64) -> Result<()> {
-        
-        let game_state = &mut ctx.accounts.game_state;
-        let lamports_before_second_player = game_state.amount;
-        let pda_lamports = game_state.to_account_info().lamports();
-        if (pda_lamports - lamports_before_second_player) != amount {
-            return err!(ErrorCode::InsufficientFund);
-        }
-        
-        game_state.player_two = *ctx.accounts.player_two.key;
-        game_state.amount += amount;
         
         Ok(())
     
@@ -62,9 +46,9 @@ pub mod conse_gem_reservation {
         let amount = game_state.amount;
         let pda = game_state.to_account_info();
         let to_winner = if winner == 0{
-            ctx.accounts.player_one.to_account_info()
+            ctx.accounts.player.to_account_info()
         } else if winner == 1{
-            ctx.accounts.player_two.to_account_info()
+            ctx.accounts.server.to_account_info()
         } else{
             return err!(ErrorCode::InvalidWinnerIndex);
         };
@@ -167,8 +151,7 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 #[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
 pub struct GameState {
     server: Pubkey, // 32 bytes
-    player_one: Pubkey, // 32 bytes
-    player_two: Pubkey, // 32 bytes
+    player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
@@ -225,43 +208,16 @@ pub struct StartGame<'info> {
         //// passed in bump to start_game() function.
         //// NOTE that the generated PDA in here 
         //// must be equals to the one in frontend
-        seeds = [user.key().as_ref(), player_one.key().as_ref()], 
+        seeds = [user.key().as_ref(), player.key().as_ref()], 
         bump
     )]
     pub game_state: Account<'info, GameState>,
     /// CHECK: This is not dangerous because we just pay to this account
     #[account(mut)]
-    pub player_one: AccountInfo<'info>,
+    pub player: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
-pub struct SecondPlayer<'info> {
-    #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(
-        //// since we want to mutate instruction data 
-        //// or the generic GameState on chain thus the 
-        //// PDA account must be defined as mutable
-        //// and also the owner of the program or 
-        //// its owner must equals to the program id
-        //// because only the program owner can mutate 
-        //// data on the chain. 
-        mut, 
-        //// following will create the PDA using
-        //// server and player one public keys as 
-        //// the seed and the passed in bump to 
-        //// start_game() function.
-        //// NOTE that the generated PDA in here 
-        //// must be equals to the one in frontend
-        seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
-        bump = game_state.bump
-    )]
-    pub game_state: Account<'info, GameState>,
-    /// CHECK: This is not dangerous because we just pay to this account
-    #[account(mut)]
-    pub player_two: AccountInfo<'info>,
-}
 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct GameResult<'info> {
@@ -303,16 +259,16 @@ pub struct GameResult<'info> {
         //// start_game() function.
         //// NOTE that the generated PDA in here 
         //// must be equals to the one in frontend
-        seeds = [game_state.server.key().as_ref(), game_state.player_one.key().as_ref()], 
+        seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], 
         bump = game_state.bump
     )]
     pub game_state: Account<'info, GameState>,
     /// CHECK: This is not dangerous because we just pay to this account
     #[account(mut)]
-    pub player_one: AccountInfo<'info>,
+    pub server: AccountInfo<'info>,
     /// CHECK: This is not dangerous because we just pay to this account
     #[account(mut)]
-    pub player_two: AccountInfo<'info>,
+    pub player: AccountInfo<'info>,
     /// CHECK: This is not dangerous because we just pay to this account (general tax account)
     #[account(mut)]
     pub revenue_share_wallet: AccountInfo<'info>,
@@ -330,7 +286,7 @@ pub struct ReserveTicket<'info>{
     //// want to take money from him or her
     //// the account must be mutable
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub user: Signer<'info>, //// the signer who must sign the call and pay for the transaction fees
     /*
         // https://solana.stackexchange.com/questions/26/what-is-a-program-derived-address-pda-exactly/1480#1480
         // https://solana.stackexchange.com/a/1480
@@ -408,7 +364,7 @@ pub enum ErrorCode {
 #[event]
 pub struct StartGameEvent{
     pub server: Pubkey,
-    pub player_one: Pubkey,
+    pub player: Pubkey,
     pub amount: u64,
 }
 

@@ -26,7 +26,7 @@ pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
 }
 
 #[program] //// the program entrypoint which must be defined only once
-pub mod conse_gem_whitelist {
+pub mod whitelist {
 
 
     //// `AccountLoader` type and zero_copy attribute
@@ -74,7 +74,7 @@ pub mod conse_gem_whitelist {
         nft_stats.metadata = *ctx.accounts.metadata.key;
         nft_stats.token = *ctx.accounts.token.key;
         nft_stats.mint = *ctx.accounts.nft_mint.key; 
-        nft_stats.owner = signer_account; //// set the owner field of the `nft_stats` account to the signer of this instruction handler since only the NFT owner can call this method
+        nft_stats.owner = signer_account; //// set the owner field of the `nft_stats` account to the signer of this instruction handler since only the NFT owner can call this method and pay for the transaction fees
         nft_stats.edition = *ctx.accounts.edition.key;
         nft_stats.spl_token = *ctx.accounts.spl_token.key;
         nft_stats.collection_metadata = if let Some(collection_metadata_account) = collection_metadata{
@@ -129,7 +129,7 @@ pub mod conse_gem_whitelist {
     //// loaded inside the account.
     pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>) -> Result<()>{
         
-        let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and ca be used as the whitelist state authority 
+        let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and can be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
         let whitelist_data = ctx.accounts.whitelist_data.load_init()?; //// a mutable reference to the whitelist data account loader
         let mut wl_data = whitelist_data.to_owned(); //// to_owned() will convert the borrowed data into the owned data

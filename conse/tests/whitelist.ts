@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { ConseGemWhitelist } from "../target/types/conse_gem_whitelist";
+import { Whitelist } from "../target/types/whitelist";
 import { PublicKey } from '@solana/web3.js';
 
 describe("whitelist", () => {
@@ -19,10 +19,17 @@ describe("whitelist", () => {
     const collection_metadata = anchor.web3.Keypair.generate(); // TODO 
 
     // only the program itself can mutate passed in instruction data to a instruction handler on chain
-    const program = anchor.workspace.ConseGemWhitelist as Program<ConseGemWhitelist>;
+    const program = anchor.workspace.Whitelist as Program<Whitelist>;
+    // https://solana.stackexchange.com/questions/2057/what-is-the-relation-between-signers-wallets-in-testing?rq=1
     //// server.publicKey is the one who
     //// has deployed the program thus is the authority 
     //// of the program.
+    //
+    //// `provider.wallet.publickey` is signer by default 
+    //// since we're using it to pay for transaction fees
+    //// signer must pay for the transaction fees 
+    //// and we can make an account as the signer by putting 
+    //// it inside the signers([]) array
     const provider = anchor.AnchorProvider.env(); //// the authority who has deployed this program is: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
 
     
@@ -59,7 +66,7 @@ describe("whitelist", () => {
             user: server.publicKey, 
             whitelistState: server.publicKey, 
             whitelistData: server.publicKey,
-        }).rpc();
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
 
         // deserializing the `whitelist_state` account
@@ -84,7 +91,7 @@ describe("whitelist", () => {
                 splToken: spl_token.publicKey,
                 theProgramId: program.programId,
                 collectionMetadata: collection_metadata.publicKey
-            }).rpc();
+            }).signers([nft_owner]).rpc(); //// signer of this call who must pay for the transaction fee is the NFT owner
 
           // deserializing the PDA account
           // since the `Nft` struct inside the contract
@@ -108,7 +115,7 @@ describe("whitelist", () => {
             nftStats: NftStatsPDA, // this will be added to the whitelist by the server authority
             whitelistState: server.publicKey, 
             whitelistData: server.publicKey,
-        }).rpc(); 
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
         let deserialized_whitelist_data_account_after_adding = await program.account.whitelistData.fetch(server.publicKey);
         console.log("deserialized_whitelist_data_account: >>>>>> ", deserialized_whitelist_data_account_after_adding);
@@ -125,7 +132,7 @@ describe("whitelist", () => {
             nftStats: NftStatsPDA, // this will be removed from the whitelist by the server authority
             whitelistState: server.publicKey, 
             whitelistData: server.publicKey,
-        }).rpc(); 
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
         let deserialized_whitelist_data_account_after_removing = await program.account.whitelistData.fetch(server.publicKey);
         console.log("deserialized_whitelist_data_account_after_removing: >>>>>> ", deserialized_whitelist_data_account_after_removing);
