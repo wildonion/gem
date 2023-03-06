@@ -19,8 +19,11 @@ describe("whitelist", () => {
     const collection_metadata = anchor.web3.Keypair.generate(); // TODO 
 
     // only the program itself can mutate passed in instruction data to a instruction handler on chain
-    const program = anchor.workspace.ConseGemReservation as Program<ConseGemWhitelist>;
-    const provider = anchor.AnchorProvider.env();
+    const program = anchor.workspace.ConseGemWhitelist as Program<ConseGemWhitelist>;
+    //// server.publicKey is the one who
+    //// has deployed the program thus is the authority 
+    //// of the program.
+    const provider = anchor.AnchorProvider.env(); //// the authority who has deployed this program is: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
 
     
 
@@ -60,7 +63,8 @@ describe("whitelist", () => {
 
 
         // deserializing the `whitelist_state` account
-        // which is owned by the server.
+        // which contains the instruction data on chain 
+        // and is owned by the server.
         let deserialized_whitelist_state_account = await program.account.whitelistState.fetch(server.publicKey);
         console.log("deserialized_whitelist_state_account: >>>>>> ", deserialized_whitelist_state_account);
 

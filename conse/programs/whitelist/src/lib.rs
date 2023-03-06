@@ -131,8 +131,8 @@ pub mod conse_gem_whitelist {
         
         let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and ca be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
-        let whitelist_data = ctx.accounts.whitelist_data.load_init()?;
-        let mut wl_data = whitelist_data.to_owned();
+        let whitelist_data = ctx.accounts.whitelist_data.load_init()?; //// a mutable reference to the whitelist data account loader
+        let mut wl_data = whitelist_data.to_owned(); //// to_owned() will convert the borrowed data into the owned data
         wl_data.list = [Pubkey::default(); 5000]; // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
         whitelist_state.authority = signer; //// the signer must be the whitelist_state authority
         whitelist_state.counter = 0;
@@ -143,6 +143,8 @@ pub mod conse_gem_whitelist {
 
     //// this instruction handler must be called from the server or 
     //// where the whitelist state authority wallet info exists.
+    //// in centralized servers the security check of the caller 
+    //// can be done using a JWT or a dev token.
     pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
@@ -276,11 +278,18 @@ pub mod conse_gem_whitelist {
 
 
 //// structs that are bounded to this proc macro attribute, are the instruction data
-//// which are the generic of the account that wants to mutate them on the chain and 
+//// which are the generic of the account (`Account` type) that wants to mutate them on the chain and 
 //// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
 //// in frontend side which allows us to get current value of each field on chain,
 //// here the owner of this struct is the PDA account which its owner must be
-//// the program id so it can mutate the deserialized data on the chain. 
+//// the program id so it can mutate the deserialized data on the chain although
+//// the `#[account]` proc macro on top of the generic `T` or Nft in here will set 
+//// the owner of the `Account` type that contains the generic `T` to the program id since 
+//// the account must be the owner of the program in order to mutate data on the chain
+//
+//// `#[account]` proc macro attribute sets 
+//// the owner of that data to the 
+//// `declare_id` of the crate 
 #[account] 
 #[derive(Default, PartialEq)]
 pub struct Nft{
@@ -334,7 +343,15 @@ impl Nft{
 
 
 
-
+//// since everything on solana will be stored 
+//// inside accounts thus the following structure 
+//// contains all the required accounts to use them
+//// inside the contract, they can be of type either
+//// `AccountInfo` which can contains the serialized 
+//// instruction data to be mutated on the chain by 
+//// its owner or `Account` which is just an account 
+//// info contains public key without the 
+//// serialized instruction data.
 #[derive(Accounts)] //// Accounts trait bounding will add the AnchorSerialize and AnchorDeserialize traits to the generic or the BurnRequest struct
 pub struct BurnRequest<'info> { //// 'info lifetime in function signature is required to store utf8 bytes or &[u8] instruction data in the accounts
     #[account(mut)]
@@ -397,7 +414,7 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// that verifies program ownership and deserializes 
     //// underlying data into a Rust type.
     pub nft_stats: Account<'info, Nft>,
-    //// more than one mutable account of type `AccountInfo` 
+    //// more than one account of type `AccountInfo` 
     //// needs to be checked also with `AccountInfo` type we 
     //// can mutate nothing on chain since it has no passed 
     //// in generic instruction data and only it can be used 
@@ -429,14 +446,14 @@ pub struct IntializeWhitelist<'info>{
     // anchor `#[account]` proc macro attribute constraint guide: https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
     #[account( //// can't use mut constraint since we're initializing this account
         init, //// initializing the whitelist_state account 
-        payer = user, //// init requires payer which is the signer of this tx call
+        payer = user, //// init requires payer (the signer of this tx call) and space constraint
         space = 8 + WhitelistState::MAX_SIZE //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct
     )]
     pub whitelist_state: Account<'info, WhitelistState>,
     #[account(zero)] //// zero constraint is necessary for accounts that are larger than 10 Kibibyte because those accounts cannot be created via a CPI (which is what init would do)
     pub whitelist_data: AccountLoader<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
     #[account(mut)]
-    pub user: Signer<'info>, //// signer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account
+    pub user: Signer<'info>, //// signer or payer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account that must pay for the call which leads to decreasing lamports from his/her account
     pub system_program: Program<'info, System>, //// when we use `init` system program account info must be exists
 
 }
@@ -505,11 +522,18 @@ pub struct AddToWhitelistRequest<'info>{
 }
 
 //// structs that are bounded to this proc macro attribute, are the instruction data
-//// which are the generic of the account that wants to mutate them on the chain and 
+//// which are the generic of the account (`Account` type) that wants to mutate them on the chain and 
 //// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
 //// in frontend side which allows us to get current value of each field on chain,
 //// here the owner of this struct is the `whitelist_data` account field which its 
-//// owner must be the program id so it can mutate the deserialized data on the chain. 
+//// owner must be the program id so it can mutate the deserialized data on the chain although
+//// the `#[account]` proc macro on top of the generic `T` or Nft in here will set 
+//// the owner of the `Account` type that contains the generic `T` to the program id since 
+//// the account must be the owner of the program in order to mutate data on the chain
+//
+//// `#[account]` proc macro attribute sets 
+//// the owner of that data to the 
+//// `declare_id` of the crate
 //
 //// zero copy technique: https://rkyv.org/zero-copy-deserialization.html#zero-copy-deserialization 
 //// since we're using array to store PDAs we must 
@@ -568,11 +592,18 @@ impl WhitelistData{
 }
 
 //// structs that are bounded to this proc macro attribute, are the instruction data
-//// which are the generic of the account that wants to mutate them on the chain and 
+//// which are the generic of the account (`Account` type) that wants to mutate them on the chain and 
 //// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
 //// in frontend side which allows us to get current value of each field on chain,
 //// here the owner of this struct is the `whitelist_state` account field which its 
-//// owner must be the program id so it can mutate the deserialized data on the chain. 
+//// owner must be the program id so it can mutate the deserialized data on the chain although
+//// the `#[account]` proc macro on top of the generic `T` or Nft in here will set 
+//// the owner of the `Account` type that contains the generic `T` to the program id since 
+//// the account must be the owner of the program in order to mutate data on the chain
+//
+//// `#[account]` proc macro attribute sets 
+//// the owner of that data to the 
+//// `declare_id` of the crate
 #[account]
 pub struct WhitelistState{
     pub authority: Pubkey, //// the owner of the whitelist state

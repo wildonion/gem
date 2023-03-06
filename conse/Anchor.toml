@@ -17,8 +17,9 @@ whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/home/wildonion/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test-ticket = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/ticket.ts"
+test-whitelist = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/whitelist.ts"

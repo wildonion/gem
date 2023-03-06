@@ -6,7 +6,7 @@ sudo chown -R www-data:www-data . && sudo chmod -R 777 .
 sudo chmod +x /root && sudo chown -R root:root /root && sudo chmod -R 777 /root
 sudo chmod +x /root && sudo chown -R www-data:www-data /root && sudo chmod -R 777 /root
 sudo apt update && sudo apt upgrade -y
-curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm
 npm install pm2@latest -g
 sudo apt install -y nginx
