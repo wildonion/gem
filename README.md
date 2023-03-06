@@ -72,7 +72,26 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
-* Stop the first terminal and in the second one run ```anchor run test-ticket``` command, since anchor will run a local ledger for the test process on its own if the `cluster` field under the `[provider]` section is set to `localnet`.
+* Stop the first terminal and in the second one run ```anchor run test-ticket``` command, since anchor will run a local ledger for the test process on its own if the `cluster` field under the `[provider]` section is set to `localnet`, the output will be:
+    ```
+    conse-whitelist
+    player 1 balance:  10000000000
+    sending sol from player to PDA
+    >>>> player balance:  4999995000
+    >>>> PDA account balance:  5000000000
+    ---------------------------------------------
+    after game results transfer... 
+    player balance after game:  4999995000
+    PDA account balance after game:  250000000
+    revenue share wallet account balance:  3500000000
+    ---------------------------------------------
+        ✔ Pda created! (1372ms)
+
+
+    1 passing (1s)
+
+    Done in 3.27s.
+    ```
 
 ## 🚀 Deploy Ticket Contract on Devnet
 

@@ -4,7 +4,7 @@ import { PublicKey } from '@solana/web3.js';
 import { Ticket } from "../target/types/ticket";
 import { assert, expect } from "chai";
 
-describe("nds-transaction", () => {
+describe("conse ticket", () => {
 
   // TODO - use a real provider or connection like testnet or devnet
   // Configure the client to use the local cluster.

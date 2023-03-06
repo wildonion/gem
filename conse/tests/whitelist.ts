@@ -3,7 +3,7 @@ import { Program } from "@project-serum/anchor";
 import { Whitelist } from "../target/types/whitelist";
 import { PublicKey } from '@solana/web3.js';
 
-describe("whitelist", () => {
+describe("conse whitelist", () => {
   
 
     // Configure the client to use the local cluster.
