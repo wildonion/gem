@@ -58,11 +58,12 @@ pub mod whitelist {
         //// `Option<AccountInfo>`, we can either move it between 
         //// threads and scopes by borrowing it or cloning it.  
         //
-        //// moving out of a referenced type requires one 
-        //// of the dereferencing methods methods which is 
-        //// either copying the type or cloning it, the Copy 
-        //// or Clone trait must be implemented for the type 
-        //// otherwise we can' move out of it.
+        //// a shared reference can be in use by other scopes and threads
+        //// thus moving out of a shared referenced type requires one 
+        //// of the dereferencing methods which is either copying
+        //// (the Copy trait must be implemented), borrowing it using & 
+        //// or cloning (Clone trait must be implemented) it or dereference
+        //// it by using `*` otherwise we can' move out of it.
         let collection_metadata = ctx.accounts.collection_metadata.clone(); 
 
         //// we could also use the found bump by the anchor 
@@ -401,7 +402,8 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //
     //// the PDA account that will be used to create whitelist
     //// based on the nft owner and the nft mint address and 
-    //// only the program will have control over it.
+    //// only the program will have control over it also PDA 
+    //// doesn't need to be a signer since it has no private key.
     //
     //// an account that stores an instruction data on the 
     //// chain must be of type `Account` which owns the generic 

@@ -180,3 +180,18 @@
     field is also a PDA accounts since a transaction method call on the owner account 
     the game_state account might be came from a server (not the frontend itself 
     where we have access the program account) which wants to amend data on the chain.
+
+    instructions are data: Rc<RefCell<&'d mut [u8]>> (Rc makes strong counter 
+    of the type in which we can count its reference when we pass it to other 
+    scopes or borrow it and if it reaches zero the type can be dropped 
+    otherwise can't move or dropped when other types are using it.) on chain 
+    which must be mutated by the program owner in which the program will create an 
+    init account by cpi to the solana on first init call to make the account 
+    owner of the instruction data to be able to mutate its instruction data on chain. 
+
+    by putting instruction data in each account solana can know how to run transaction
+    in a better parallel manner by knowing which accounts and data is required before runtime.
+    means that each tx can be run in a separate thread and must be 
+    Arc<Mutex<Transaction>> + Send + Sync + 'static to avoid deadlock when want to share 
+    it between tokio spawn threads using tokio channels but solana fix this by knowing 
+    which account holds what instruction data at runtime. 
