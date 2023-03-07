@@ -43,7 +43,7 @@ use std::time::UNIX_EPOCH;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn upload_img(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn upload_img(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -238,7 +238,7 @@ pub async fn upload_img(req: Request<Body>) -> GenericResult<hyper::Response<Bod
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn create(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn create(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -486,7 +486,7 @@ pub async fn create(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
 // -------------------------------- get all groups controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -559,7 +559,7 @@ pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
 // -------------------------------- get all god groups controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn god_all_groups(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn god_all_groups(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
     
      
 

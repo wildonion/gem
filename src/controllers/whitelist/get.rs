@@ -37,7 +37,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn all_whitelists(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
+pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
 
 
     use routerify::prelude::*;
@@ -50,7 +50,6 @@ pub async fn all_whitelists(req: Request<Body>) -> GenericResult<hyper::Response
 
     let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
     let mut available_whitelist = Vec::<schemas::whitelist::WhitelistInfo>::new();
-
     match whitelist.find(None, None).await{
         Ok(mut cursor) => {
             while let Some(wl) = cursor.try_next().await.unwrap(){ //// calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
@@ -107,7 +106,7 @@ pub async fn all_whitelists(req: Request<Body>) -> GenericResult<hyper::Response
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn whitelist(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
+pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
 
 
     use routerify::prelude::*;
@@ -122,17 +121,12 @@ pub async fn whitelist(req: Request<Body>) -> GenericResult<hyper::Response<Body
     
     let filter = doc! {"name": name};
     let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
-    let mut available_whitelist = Vec::<schemas::whitelist::WhitelistInfo>::new();
-
-    match whitelist.find(filter, None).await{
-        Ok(mut cursor) => {
-            while let Some(wl) = cursor.try_next().await.unwrap(){ //// calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
-            available_whitelist.push(wl);
-            }
+    match whitelist.find_one(filter, None).await.unwrap(){
+        Some(whitelist_doc) => {
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-            let response_body = ctx::app::Response::<Vec<schemas::whitelist::WhitelistInfo>>{
+            let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{
                 message: FETCHED,
-                data: Some(available_whitelist),
+                data: Some(whitelist_doc),
                 status: 200,
             };
             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
@@ -144,16 +138,16 @@ pub async fn whitelist(req: Request<Body>) -> GenericResult<hyper::Response<Body
                     .unwrap()
             )
         },
-        Err(e) => {
+       None => {
             let response_body = ctx::app::Response::<ctx::app::Nill>{
                 data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                status: 500,
+                message: NOT_FOUND_DOCUMENT,
+                status: 404,
             };
             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
             Ok(
                 res
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .status(StatusCode::NOT_FOUND)
                     .header(header::CONTENT_TYPE, "application/json")
                     .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                     .unwrap() 

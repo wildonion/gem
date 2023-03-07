@@ -28,7 +28,7 @@ use std::env;
 // -------------------------------- expire event controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn main(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 

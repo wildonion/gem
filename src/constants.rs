@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 pub type MainResult<T, E> = std::result::Result<T, E>;
 pub type GenericError = Box<dyn std::error::Error + Send + Sync>;
-pub type GenericResult<T, E> = std::result::Result<T, E>;
+pub type ConseResult<T, E> = std::result::Result<T, E>;
 pub static mut DB: Option<Arc<ctx::app::Storage>> = None; // NOTE - use of mutable static is unsafe and requires unsafe function or block since mutable statics can be mutated by multiple threads: aliasing violations or data races will cause undefined behavior
 pub static INTERNAL_SERVER_ERROR: &str = "Interal Server Error";
 pub static WRONG_CREDENTIALS: &str = "Wrong Credentials";

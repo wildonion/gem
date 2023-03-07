@@ -38,7 +38,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn add(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
  
     
     use routerify::prelude::*;
@@ -242,7 +242,7 @@ pub async fn add(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
 // -------------------------------- get all last moves controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -373,7 +373,7 @@ pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
 // -------------------------------- disable last move controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn disable(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn disable(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 

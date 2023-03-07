@@ -56,6 +56,7 @@ pub async fn register() -> Router<Body, hyper::Error>{
     /////////////////////////////////////////////////////////////////////////////////////
 
     ////////
+    // NOTE - all the passed in handlers in every method of the Router::builder() is of type fn() or function pointer which must have a request object as their first param
     // NOTE - above operation is so expensive due to this fact : https://mongodb.github.io/mongo-rust-driver/manual/performance.html#lifetime
     // NOTE - only the request object must be passed through each handler
     // NOTE - shared state which will be available to every route handlers is the app_storage which must be Send + Syn + 'static to share between threads

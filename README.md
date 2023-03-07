@@ -9,9 +9,13 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo test --bin conse```
 
+## 🧪 Run Conse Hyper Server
+
+```cargo run --bin conse```
+
 ## 🛠️ Production Setup
 
-> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0`
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0`.
 
 > Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml`
 

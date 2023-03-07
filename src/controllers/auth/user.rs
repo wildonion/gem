@@ -37,7 +37,7 @@ use chrono::Utc;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn edit_profile(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
 
 
@@ -209,7 +209,7 @@ pub async fn edit_profile(req: Request<Body>) -> GenericResult<hyper::Response<B
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn get_all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 

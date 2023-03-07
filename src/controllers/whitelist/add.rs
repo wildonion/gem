@@ -31,7 +31,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // ----------------------------------------------------------------------------------
 
-pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
     use routerify::prelude::*; //// to build the response object
     let res = Response::builder();
@@ -63,7 +63,7 @@ pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
 
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
                                     let pdas = wl_info.pdas.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
-                                    let name = wl_info.owner.clone(); //// cloning to prevent ownership moving
+                                    let name = wl_info.name.clone(); //// cloning to prevent ownership moving
 
                                     ////////////////////////////////// DB Ops
 
@@ -133,7 +133,11 @@ pub async fn upsert(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
                                             let whitelist = db.clone().database(&db_name).collection::<schemas::whitelist::AddWhitelistInfo>("whitelist"); //// using AddWhitelistInfo struct to insert a whitelist info into whitelist collection 
                                             let whitelist_doc = schemas::whitelist::AddWhitelistInfo{
                                                 name,
-                                                owners: vec![],
+                                                owners: vec![schemas::whitelist::OwnerData{
+                                                    pdas, //// vector of the passed in pdas from the client
+                                                    owner, //// owner of the burned nft
+                                                    requested_at: Some(now)
+                                                }],
                                                 created_at: Some(now),
                                                 updated_at: Some(now),
                                             };

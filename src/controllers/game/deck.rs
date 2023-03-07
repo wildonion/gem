@@ -32,7 +32,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn add(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -261,7 +261,7 @@ pub async fn add(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
 // -------------------------------- get all decks controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -393,7 +393,7 @@ pub async fn all(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyp
 // -------------------------------- get a single deck controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn single(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -560,7 +560,7 @@ pub async fn single(req: Request<Body>) -> GenericResult<hyper::Response<Body>, 
 // -------------------------------- disable deck controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn disable(req: Request<Body>) -> GenericResult<hyper::Response<Body>, hyper::Error>{
+pub async fn disable(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
      
 
