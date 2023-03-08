@@ -91,7 +91,7 @@ pub mod auth{
         let mut user_data_inside_token: Option<TokenData<jwt::Claims>> = None;
         let mut jwt_error: Option<jsonwebtoken::errors::Error> = None;
         if Method::OPTIONS == *req.method() {
-            authenticate_pass = true;
+            authenticate_pass = true; //// since OPTIONS route don't need to be checked since it might be fucking CORS preflight request :)
         } else{
             for ignore_route in IGNORE_ROUTES.iter(){
                 if req.uri().path().starts_with(ignore_route){

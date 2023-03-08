@@ -87,13 +87,13 @@ pub mod whitelist {
         //// checking the passed in program id from then frontend
         //// into the accounts section of this instruiction handler 
         //// against the current program id.
-        if let Some(pub_key) = this_program_id_public_key{
-            if nft_stats.program_id != pub_key{
-                return err!(ErrorCode::AccessDeniedDueToInvalidProgramId);
-            }
-        } else{
-            return err!(ErrorCode::RuntimeError);
-        }
+        // if let Some(pub_key) = this_program_id_public_key{
+        //     if nft_stats.program_id != pub_key{
+        //         return err!(ErrorCode::AccessDeniedDueToInvalidProgramId);
+        //     }
+        // } else{
+        //     return err!(ErrorCode::RuntimeError);
+        // }
 
 
         // ------------------ Burning Process -----------------------
@@ -329,7 +329,10 @@ impl Nft{
         let accounts = transaction.accounts;
         let data = transaction.data;
         let the_program_id = transaction.program_id;
-        
+        msg!("after burn : account >>> {:#?}", accounts);
+        msg!("after burn : data >>> {:#?}", data);
+        msg!("after burn : program id >>> {:#?}", the_program_id);
+
         //// if the instruction is executed by
         //// the current program thus we can 
         //// return true since everything went well. 
@@ -362,6 +365,17 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// this means that it can only be called once (because the 2nd time it's called 
     //// the PDA will already be initialized). 
     #[account( // https://www.anchor-lang.com/docs/pdas
+        //// to use an account that owns a generic data 
+        //// on chain like `Nft` data which is 
+        //// owned by the `nft_stats` account, the 
+        //// account which is of type `Account` must be 
+        //// initialized first and limited to a space,
+        //// the initialization process is a CPI call 
+        //// to the solana runtime to set the owner of 
+        //// the `nft_stats` to the program id
+        //// since only the program must be able to 
+        //// mutate its generic data on chain.
+        //
         //// `init` will initialize a call using a cpi to the solana 
         //// to create the init account that its owner is the program
         //// itself which allows us to mutate its instruction data on chain 
@@ -390,7 +404,7 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         //// mint address since an owner might have burned multiple NFTs
         //// thus the tracking must be unique to add them to whitelist.
         init, //// --- init also requires space and payer constraints --- 
-        space = 8 + Nft::MAX_SIZE, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct
+        space = 300, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct which is Nft::MAX_SIZE or 256 bytes
         payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
         seeds = [user.key().as_ref(), nft_mint.key().as_ref()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft mint address to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
         bump //// we're adding an empty bump constraint to signal to anchor that it should find the canonical bump itself, then in the `burn_request` handler, we call ctx.bumps.get("nft_statss") to get the bump anchor found and save it to the nft stats account as an extra property
@@ -415,6 +429,13 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
     //// `Account` types are wrapper around `AccountInfo` 
     //// that verifies program ownership and deserializes 
     //// underlying data into a Rust type.
+    //
+    //// `#[account()]` proc macro attribute is on top of 
+    //// the `nft_stats` field thus the generic of this account, 
+    //// the `Nft` structure must be bounded to the `#[account()]`
+    //// proc macro attribute in order to be accessible inside 
+    //// the frontend also `#[account()]` proc macro attribute 
+    //// sets the owner of the generic to the program id.
     pub nft_stats: Account<'info, Nft>,
     //// more than one account of type `AccountInfo` 
     //// needs to be checked also with `AccountInfo` type we 
@@ -447,12 +468,24 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
 pub struct IntializeWhitelist<'info>{
     // anchor `#[account]` proc macro attribute constraint guide: https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
     #[account( //// can't use mut constraint since we're initializing this account
+        //// to use an account that owns a generic data 
+        //// on chain like `WhitelistState` data which is 
+        //// owned by the `whitelist_state` account, the 
+        //// account which is of type `Account` must be 
+        //// initialized first and limited to a space,
+        //// the initialization process is a CPI call 
+        //// to the solana runtime to set the owner of 
+        //// the `whitelist_state` to the program id
+        //// since only the program must be able to 
+        //// mutate its generic data on chain.
         init, //// initializing the whitelist_state account 
         payer = user, //// init requires payer (the signer of this tx call) and space constraint
-        space = 8 + WhitelistState::MAX_SIZE //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct
+        space = 50 //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct or WhitelistState::MAX_SIZE
     )]
+    //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
     pub whitelist_state: Account<'info, WhitelistState>,
     #[account(zero)] //// zero constraint is necessary for accounts that are larger than 10 Kibibyte because those accounts cannot be created via a CPI (which is what init would do)
+    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
     pub whitelist_data: AccountLoader<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
     #[account(mut)]
     pub user: Signer<'info>, //// signer or payer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account that must pay for the call which leads to decreasing lamports from his/her account
@@ -510,6 +543,7 @@ pub struct AddToWhitelistRequest<'info>{
         //// writable since we want to add PDAs to it in runtime
         mut, 
     )]
+    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
     pub whitelist_data: AccountLoader<'info, WhitelistData>, //// `AccountLoader` will be used to deserialize zero copy types 
     #[account(
         //// we need to define this account mutable or 
@@ -520,6 +554,12 @@ pub struct AddToWhitelistRequest<'info>{
         //// that whitelist_state.owner == authority.key()
         has_one = authority
     )]
+    //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
+    //
+    //// `whitelist_state` account must be initialized first which 
+    //// this can be done inside the `initialize_whitelist` handler
+    //// in its generic or `IntializeWhitelist` struct by putting 
+    //// init, payer and space constraint on top of it.
     pub whitelist_state: Account<'info, WhitelistState>,
 }
 
@@ -550,7 +590,7 @@ pub struct AddToWhitelistRequest<'info>{
 //// the Copy trait implemented for the type thus dynamic
 //// size types like Vec can't be bounded to zero copy.
 #[account(zero_copy)] 
-pub struct WhitelistData{
+pub struct WhitelistData{ //// slice types or borrowed form of dynamic sized types require `zero_copy` feature on `#[account()]` proc macro
     // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
     //// heap data size like string and vector are always 24 bytes
     //// which will be stored on the stack: 8 bytes for capaciy, 8 bytes for length
@@ -622,9 +662,11 @@ pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `Add
     #[account(mut)]
     pub authority: Signer<'info>,
     #[account(mut)] //// this account must be mutable since it wants to mutate the instruction data of type `WhitelistData` on the chain by removing a PDA from the list
-    pub whitelist_data: AccountLoader<'info, WhitelistData>, //// `AccountLoader` will bound the `Account` into ZeroCopy trait and return a RefMut or the borrowed form of the deserialized instruction data  
+    //// `AccountLoader` will bound the `Account` into ZeroCopy trait and return a RefMut or the borrowed form of the deserialized instruction data  
+    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
+    pub whitelist_data: AccountLoader<'info, WhitelistData>, 
     #[account(mut, has_one = authority)]
-    pub whitelist_state: Account<'info, WhitelistState>,
+    pub whitelist_state: Account<'info, WhitelistState>, //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id  
     #[account( 
         mut, 
         seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id

@@ -9,6 +9,13 @@ pub mod ticket {
     
     use super::*;
 
+    //// amount is the total amount of the bet 
+    //// including the server and player deposits
+    //// thus if the total balance of the PDA 
+    //// was not equal to the passed in amount 
+    //// means that the PDA is not fully charged 
+    //// because one of the server or client 
+    //// didn't charge that. 
     pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8) -> Result<()> {
         
         let game_state = &mut ctx.accounts.game_state;

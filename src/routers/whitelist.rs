@@ -78,7 +78,7 @@ pub async fn register() -> Router<Body, hyper::Error>{
     })
     .post("/add/pdas", upsert_whitelist)
     .get("/get/:name", get_whitelist)
-    .get("/get/all", get_all_whitelists)
+    .get("/all/", get_all_whitelists)
     .any(not_found) //// handling 404 request
     .build()
     .unwrap()

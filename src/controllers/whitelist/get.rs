@@ -37,7 +37,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
+pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get all whitelist infos
 
 
     use routerify::prelude::*;
@@ -106,7 +106,7 @@ pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<B
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get all user infos
+pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get a whitelist infos
 
 
     use routerify::prelude::*;

@@ -106,6 +106,10 @@
     must be used by every account to allocate storage on chain using space 
     constraint on the PDA account.
 
+    idl means that with we can use the json of the compiled program metadata 
+    and its methods to create rpc calls to the runtime that contains the deployed 
+    program instead of loading the compiled program inside the client.
+
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 

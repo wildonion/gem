@@ -37,7 +37,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"hasan\",\r\n    \"phone\": \"00000000000\",\r\n    \"pwd\": \"hasan@1234\",\r\n    \"status\": 0\r\n}",
+							"raw": "{\r\n    \"username\": \"dev\",\r\n    \"phone\": \"00000000000\",\r\n    \"pwd\": \"dev@1234\",\r\n    \"status\": 0\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -103,7 +103,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"wildonion\",\r\n    \"pwd\": \"wildonion@1234\"\r\n}\r\n",
+							"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2012,13 +2012,23 @@
 			"name": "Whitelist",
 			"item": [
 				{
-					"name": "Add PDAs To Whitelist",
+					"name": "Upsert PDAs To Whitelist",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MDcyZjEyMjhmNWFmMDE5NTI0OWU5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5NzI4NzI4LCJpYXQiOjE2NzgxOTI3Mjh9.FMxy65Ed28vaNCGZzmCpZiNV157HzF7I8SeWbR4siVKX-uh021kRmFFzLOMuC-vzvFNgnV_PQj57QQrmjjqlIQ",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"\",\n}",
+							"raw": "{\n    \"pdas\": [\"pda3\"],\n    \"owner\": \"wildonion\",\n    \"name\": \"another-free-mint\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2045,14 +2055,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{whitelist}}/whitelist/get/free-mint",
+							"raw": "{{whitelist}}/whitelist/get/another-free-mint",
 							"host": [
 								"{{whitelist}}"
 							],
 							"path": [
 								"whitelist",
 								"get",
-								"free-mint"
+								"another-free-mint"
 							]
 						}
 					},
@@ -2062,7 +2072,20 @@
 					"name": "Get All Whitelists",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "{{whitelist}}/whitelist/get/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7438",
+							"path": [
+								"whitelist",
+								"get",
+								"all"
+							]
+						}
 					},
 					"response": []
 				}

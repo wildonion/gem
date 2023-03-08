@@ -134,9 +134,11 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 📇 Notes
 
+* use ```anchor keys list``` to list all the program ids of each contract.
+
 * if you get error `"*/tsconfig.json" needs an import assertion of type json` just inside the `conse` folder type ```yarn add ts-mocha```.
 
-* to test the whitelist contract run ```anchor run test-whitelist```.
+* to test the whitelist contract run ```anchor run test-whitelist```, just to make sure you have a test validator up and running on your localnet in another terminal.
 
 * currently the program id of the whitelist contract is `6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9`.
 

@@ -247,7 +247,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
         Err(e) => {
             let response_body = ctx::app::Response::<ctx::app::Nill>{
                 data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
