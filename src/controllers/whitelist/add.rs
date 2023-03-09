@@ -37,7 +37,70 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    
+    //// ============ NOTE ============
+    //// frontend must have the following
+    //// hash in a config file since this
+    //// hash will be decoded that must be
+    //// the one inside the .env file.
+    let api_key_hardcoded = "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$xyuPmb2pZQ4P2atgLPwc3ocE5VrEamWBkOxE9SBrdrE";
+    
+    
+    let Ok(api_key) = req.headers().get("API_KEY").unwrap().to_str() else{ //// hased api key from the client
+        let response_body = ctx::app::Response::<ctx::app::Nill>{
+            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            message: NO_API_KEY,
+            status: 403,
+        };
+        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+        return Ok(
+            res
+                .status(StatusCode::BAD_REQUEST)
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                .unwrap() 
+        );
+    }; 
 
+
+    let whitelist_secret_key = env::var("WHITELIST_SECRET_KEY").expect("⚠️ no whitelist secret key variable set");
+    let whitelist_secret_key_bytes = whitelist_secret_key.as_bytes();
+    let dev = match argon2::verify_encoded(api_key, whitelist_secret_key_bytes){
+        Ok(is_dev) => {
+            is_dev
+        }, 
+        Err(e) => {
+            let response_body = ctx::app::Response::<ctx::app::Nill>{
+                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                message: &e.to_string(), //// passing a reference to the underlying string of the Error type 
+                status: 500,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+            return Ok(
+                res
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .unwrap() 
+            );
+        }
+    };
+
+    if !dev{
+        let response_body = ctx::app::Response::<ctx::app::Nill>{
+            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            message: ACCESS_DENIED,
+            status: 403,
+        };
+        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+        return Ok(
+            res
+                .status(StatusCode::BAD_REQUEST)
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                .unwrap() 
+        );
+    }
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have borrow the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -59,7 +122,6 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                             let json = serde_json::to_string(&data).unwrap(); //// converting data into a json string
                             match serde_json::from_str::<schemas::whitelist::InsertWhitelistRequest>(&json){ //// the generic type of from_str() method is InsertWhitelistRequest struct - mapping (deserializing) the json string into the InsertWhitelistRequest struct
                                 Ok(wl_info) => {
-
 
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
                                     let pdas = wl_info.pdas.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning

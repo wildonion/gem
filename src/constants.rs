@@ -22,6 +22,7 @@ pub static BAD_REQUEST: &str = "Bad Request";
 pub static UNAUTHORISED: &str = "Unauthorised";
 pub static METHOD_NOT_ALLOWED: &str = "Method Not Allowed";
 pub static ACCESS_GRANTED: &str = "Access Granted";
+pub static NO_API_KEY: &str = "No Api Key";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static REGISTERED: &str = "Registered Successfully";
 pub static DO_LOGIN: &str = "Please Login";
