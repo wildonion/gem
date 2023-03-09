@@ -39,7 +39,7 @@ pub struct AddWhitelistInfo{
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 pub struct InsertWhitelistRequest{
     pub owner: String, //// nft owner
-    pub pdas: Vec<String>, //// pda address (nft burn tx hash + nft owner)
+    pub tx_hashes: Vec<String>, //// pda address (nft burn tx hash + nft owner)
     pub name: String,
 }
 
@@ -61,7 +61,7 @@ pub struct InsertWhitelistResponse{
 
 #[derive(Debug, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Default)]
 pub struct OwnerData{
-    pub pdas: Vec<String>, //// number of unique burned nfts for this owner (nft owner + nft burn tx hash)
+    pub tx_hashes: Vec<String>, //// number of unique burned nfts for this owner (nft owner + nft burn tx hash)
     pub owner: String, //// nft owner
     pub requested_at: Option<i64>,
 }
@@ -84,15 +84,15 @@ pub struct WhitelistInfo{
 
 impl WhitelistInfo{
 
-    pub async fn add_pdas(&self, pdas: Vec<String>, owner_index: usize) -> Option<Vec<String>>{
+    pub async fn add_tx_hashes(&self, tx_hashes: Vec<String>, owner_index: usize) -> Option<Vec<String>>{
         let mut owner = self.owners[owner_index].clone();
-        let already_pda = owner.pdas.iter().all(|pda| pdas.contains(pda));
+        let already_pda = owner.tx_hashes.iter().all(|pda| tx_hashes.contains(pda));
         if already_pda{
-            None //// we've found a pda inside the owner.pdas vector thus we must notify the user that please pass a unique vector
+            None //// we've found a pda inside the owner.tx_hashes vector thus we must notify the user that please pass a unique vector
         } else{
-            let pdas_slice = pdas.as_slice(); //// converting the passed in pdas into the slice
-            owner.pdas.extend_from_slice(&pdas_slice); //// extending the owner.pdas vector from the passed in pdas 
-            Some(owner.pdas)
+            let tx_hashes_slice = tx_hashes.as_slice(); //// converting the passed in tx_hashes into the slice
+            owner.tx_hashes.extend_from_slice(&tx_hashes_slice); //// extending the owner.tx_hashes vector from the passed in tx_hashes 
+            Some(owner.tx_hashes)
         }
     }
 }

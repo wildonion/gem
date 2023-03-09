@@ -112,9 +112,7 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
     use routerify::prelude::*;
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let db = &req.data::<Client>().unwrap().to_owned();
-
-                    
+    let db = &req.data::<Client>().unwrap().to_owned();                    
     let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
     
     ////////////////////////////////// DB Ops

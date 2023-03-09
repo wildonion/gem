@@ -161,9 +161,9 @@ we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 
-* complete solana programs inside the `conse` folder
+* complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
 
-* adding Graphql for realtime streaming and push notification using hyper with [juniper](https://graphql-rust.github.io/juniper/master/index.html) and routerify websocket.
+* push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` pubsub topic on redis server.
 
 * updating [hyper](https://hyper.rs/) to latest version
 

@@ -55,7 +55,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
         return Ok(
             res
-                .status(StatusCode::BAD_REQUEST)
+                .status(StatusCode::FORBIDDEN)
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                 .unwrap() 
@@ -95,7 +95,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
         return Ok(
             res
-                .status(StatusCode::BAD_REQUEST)
+                .status(StatusCode::FORBIDDEN)
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                 .unwrap() 
@@ -123,9 +123,11 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                             match serde_json::from_str::<schemas::whitelist::InsertWhitelistRequest>(&json){ //// the generic type of from_str() method is InsertWhitelistRequest struct - mapping (deserializing) the json string into the InsertWhitelistRequest struct
                                 Ok(wl_info) => {
 
+
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
-                                    let pdas = wl_info.pdas.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
+                                    let tx_hashes = wl_info.tx_hashes.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
                                     let name = wl_info.name.clone(); //// cloning to prevent ownership moving
+
 
                                     ////////////////////////////////// DB Ops
 
@@ -137,10 +139,10 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                             let owner_index = is_owner_exists.unwrap(); //// we're sure that we have an owner definitely since the find_one() query has executed correctly if we're here :)
                                             //// we found the passed in owner inside the whitelist
                                             //// then we have to update the list with the passed in pda
-                                            if let Some(pdas) = wl_doc.add_pdas(pdas.clone(), owner_index).await{
+                                            if let Some(tx_hashes) = wl_doc.add_tx_hashes(tx_hashes.clone(), owner_index).await{
                                                 //// means we have an updated pda 
                                                 //// then we need to update the collection
-                                                wl_doc.owners[owner_index].pdas = pdas;
+                                                wl_doc.owners[owner_index].tx_hashes = tx_hashes;
                                                 let serialized_owners = bson::to_bson(&wl_doc.owners).unwrap(); //// we have to serialize the owners to BSON Document object in order to update the owners field inside the collection
                                                 match whitelist.find_one_and_update(doc!{"name": name}, doc!{"$set": {"owners": serialized_owners, "updated_at": Some(Utc::now().timestamp())}}, Some(update_option)).await.unwrap(){
                                                     Some(wl_info) => { //// deserializing BSON into the EventInfo struct
@@ -177,7 +179,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                             } else{
                                                 let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is WhitelistInfo struct
                                                     data: Some(wl_doc),
-                                                    message: FOUND_DOCUMENT, //// already pda inside the pdas 
+                                                    message: FOUND_DOCUMENT, //// already pda inside the tx_hashes 
                                                     status: 302,
                                                 };
                                                 let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
@@ -196,7 +198,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                             let whitelist_doc = schemas::whitelist::AddWhitelistInfo{
                                                 name,
                                                 owners: vec![schemas::whitelist::OwnerData{
-                                                    pdas, //// vector of the passed in pdas from the client
+                                                    tx_hashes, //// vector of the passed in tx_hashes from the client
                                                     owner, //// owner of the burned nft
                                                     requested_at: Some(now)
                                                 }],
@@ -284,7 +286,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 

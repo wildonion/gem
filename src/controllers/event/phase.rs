@@ -156,7 +156,7 @@ pub async fn insert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -205,7 +205,7 @@ pub async fn insert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 

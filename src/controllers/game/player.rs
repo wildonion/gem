@@ -152,7 +152,7 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -202,7 +202,7 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -353,7 +353,7 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -404,7 +404,7 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -554,7 +554,7 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -605,7 +605,7 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -746,7 +746,7 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -796,7 +796,7 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -994,7 +994,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                 let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                                 Ok(
                                                     res
-                                                        .status(StatusCode::BAD_REQUEST)
+                                                        .status(StatusCode::FORBIDDEN)
                                                         .header(header::CONTENT_TYPE, "application/json")
                                                         .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                         .unwrap() 
@@ -1064,7 +1064,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -1212,7 +1212,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         Ok(
                                             res
-                                                .status(StatusCode::BAD_REQUEST)
+                                                .status(StatusCode::FORBIDDEN)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -1263,7 +1263,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -1396,7 +1396,7 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                                         Ok(
                                                             res
-                                                                .status(StatusCode::BAD_REQUEST)
+                                                                .status(StatusCode::FORBIDDEN)
                                                                 .header(header::CONTENT_TYPE, "application/json")
                                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                                 .unwrap() 
@@ -1482,7 +1482,7 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -1652,7 +1652,7 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -1834,7 +1834,7 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -2005,7 +2005,7 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
@@ -2179,7 +2179,7 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
-                            .status(StatusCode::BAD_REQUEST)
+                            .status(StatusCode::FORBIDDEN)
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 

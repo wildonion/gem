@@ -233,6 +233,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
         .scope("/whitelist", routers::whitelist::register().await)
+        // .scope("/redis") // TODO -
         // .scope("/ws") // TODO - 
         // .scope("/gql") // TODO - 
         .build()

@@ -483,7 +483,7 @@ pub struct IntializeWhitelist<'info>{
         space = 50 //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct or WhitelistState::MAX_SIZE
     )]
     //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    pub whitelist_state: Account<'info, WhitelistState>,
+    pub whitelist_state: Account<'info, WhitelistState>, //// this account is also the singer of the transaction call that means it must pay for the gas fee
     #[account(zero)] //// zero constraint is necessary for accounts that are larger than 10 Kibibyte because those accounts cannot be created via a CPI (which is what init would do)
     //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
     pub whitelist_data: AccountLoader<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
