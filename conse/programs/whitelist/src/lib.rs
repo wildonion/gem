@@ -48,11 +48,18 @@ pub mod whitelist {
     //// and every instruction
     //// requires separate structure
     //// to handle data on chain.
+    
+    //// we will need to pass the accounts through 
+    //// the context in order to be able to access 
+    //// its data, this design allows Solana to parallelize 
+    //// transactions better by knowing which accounts 
+    //// and data is required before runtime.
+    
 
 
     use super::*;
 
-    pub fn burn_request(ctx: Context<BurnRequest>, bump: u8) -> Result<()>{
+    pub fn burn_request(ctx: Context<BurnRequest>, bump: u8, burn_tx_hash: String) -> Result<()>{
         
         let this_program_id_public_key = gen_program_pub_key("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9");
         let nft_stats = &mut ctx.accounts.nft_stats; //// nft_stats field is a mutabe field thus we have to get it mutably
@@ -95,7 +102,7 @@ pub mod whitelist {
         };
 
         //// checking the passed in program id from then frontend
-        //// into the accounts section of this instruiction handler 
+        //// into the accounts section of this instruction handler 
         //// against the current program id.
         // if let Some(pub_key) = this_program_id_public_key{
         //     if nft_stats.program_id != pub_key{
@@ -138,7 +145,7 @@ pub mod whitelist {
     //// data must be deserialize on a sepcific account hence every method needs 
     //// a separate generic or data structure on the chain to be 
     //// loaded inside the account.
-    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>, authority: Pubkey) -> Result<()>{
+    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>, burn_tx_hash: String, authority: Pubkey) -> Result<()>{
         
         let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and can be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
@@ -223,7 +230,7 @@ pub mod whitelist {
 
     }
     
-    pub fn remove_from_whitelist(ctx: Context<RemoveFromWhitelistRequest>) -> Result<()>{
+    pub fn remove_from_whitelist(ctx: Context<RemoveFromWhitelistRequest>, burn_tx_hash: String) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
@@ -373,6 +380,7 @@ impl Nft{
 //// info contains public key without the 
 //// serialized instruction data.
 #[derive(Accounts)] //// Accounts trait bounding will add the AnchorSerialize and AnchorDeserialize traits to the generic or the BurnRequest struct
+#[instruction(burn_tx_hash: String)] //// we can access the instruction’s arguments passed inside the `burn_request` instruction handler with the #[instruction(..)] attribute
 pub struct BurnRequest<'info> { //// 'info lifetime in function signature is required to store utf8 bytes or &[u8] instruction data in the accounts
     #[account(mut)]
     pub user: Signer<'info>, //// a mutable and a signer account which means this transaction call will be signed by a specific holder or NFT owner and is writable to make changes on it
@@ -422,7 +430,7 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         init, //// --- init also requires space and payer constraints --- 
         space = 300, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct which is Nft::MAX_SIZE or 256 bytes
         payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
-        seeds = [user.key().as_ref(), nft_mint.key().as_ref()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft mint address to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
+        seeds = [user.key().as_ref(), burn_tx_hash.as_bytes()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft mint address to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
         bump //// we're adding an empty bump constraint to signal to anchor that it should find the canonical bump itself, then in the `burn_request` handler, we call ctx.bumps.get("nft_statss") to get the bump anchor found and save it to the nft stats account as an extra property
     )]
     //// this is the account that can mutate the generic Nft 
@@ -510,6 +518,7 @@ pub struct IntializeWhitelist<'info>{
 }
 
 #[derive(Accounts)]
+#[instruction(burn_tx_hash: String)] //// we can access the instruction’s arguments passed inside the `add_to_whitelist` instruction handler with the #[instruction(..)] attribute
 pub struct AddToWhitelistRequest<'info>{
     //// if we want to take money from someone, 
     //// we should make them sign as well as mark 
@@ -537,7 +546,7 @@ pub struct AddToWhitelistRequest<'info>{
         //// or creating merkle root from them we can use PDA
         //// to add or remove them into or from the list.
         mut, 
-        seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
+        seeds = [nft_stats.owner.key().as_ref(), burn_tx_hash.as_bytes()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
         bump = nft_stats.bump //// use the nft_stats bump itself which has been founded inside the frontend
     )]
     //// this is the account that can mutate the generic `Nft` 
@@ -674,6 +683,7 @@ impl WhitelistState{
 
 
 #[derive(Accounts)]
+#[instruction(burn_tx_hash: String)] //// we can access the instruction’s arguments passed inside the `remove_from_whitelist` instruction handler with the #[instruction(..)] attribute
 pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `AddToWhitelistRequest` struct but will be used for removing a PDA 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -685,7 +695,7 @@ pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `Add
     pub whitelist_state: Account<'info, WhitelistState>, //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id  
     #[account( 
         mut, 
-        seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
+        seeds = [nft_stats.owner.key().as_ref(), burn_tx_hash.as_bytes()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id
         bump = nft_stats.bump //// use the nft_stats bump itself which has been founded inside the frontend
     )]
     pub nft_stats: Account<'info, Nft>, 
