@@ -19,6 +19,14 @@ use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson str
 use hyper::http::Uri;
 use mongodb::options::FindOptions;
 use std::env;
+use solana_transaction_status::UiTransactionEncoding;
+use solana_client_helpers::RpcClient;
+use solana_sdk::{
+    system_transaction,
+    signature::Keypair,
+    commitment_config::CommitmentConfig,
+    signature::Signature,
+};
 
 
 
@@ -114,7 +122,25 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();                    
     let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
+    let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String 
     
+
+    let payer = Keypair::new();
+    let sender = Keypair::new();
+    let recipient = Keypair::new();
+    let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
+
+    let tx = system_transaction::transfer(&sender, &recipient.pubkey(), 10_000_000_000, latest_blockhash);
+    let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
+    let transaction = rpc_client.get_transaction(
+        &signature,
+        UiTransactionEncoding::Json,
+    ).unwrap();
+    
+    info!("[[[[smapel transaction details]]]] {:#?}", transaction);
+
+
+
     ////////////////////////////////// DB Ops
     
     let filter = doc! {"name": name};

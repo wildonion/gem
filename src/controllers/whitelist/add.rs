@@ -18,6 +18,13 @@ use log::info;
 use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
 use std::env;
+use solana_transaction_status::UiTransactionEncoding;
+use solana_client_helpers::RpcClient;
+use solana_sdk::{
+    commitment_config::CommitmentConfig,
+    signature::Signature,
+};
+
 
 
 
@@ -36,7 +43,9 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     use routerify::prelude::*; //// to build the response object
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net vairiable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String 
     
     //// ============ NOTE ============
     //// frontend must have the following
