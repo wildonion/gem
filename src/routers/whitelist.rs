@@ -30,7 +30,8 @@ use crate::contexts as ctx;
 use hyper::{header, Body, Response, StatusCode};
 use crate::controllers::whitelist::{
                                     add::upsert as upsert_whitelist,
-                                    get::{whitelist as get_whitelist, all_whitelists as get_all_whitelists},
+                                    get::{whitelist as get_whitelist, all_whitelists as get_all_whitelists, 
+                                          whitelist_owner_score as get_whitelist_score_of_owner},
                                     _404::main as not_found,
                                 };
 
@@ -76,8 +77,9 @@ pub async fn register() -> Router<Body, hyper::Error>{
                 .unwrap()
         )
     })
-    .post("/add/pdas", upsert_whitelist)
+    .post("/add/tx-hashes", upsert_whitelist)
     .get("/get/:name", get_whitelist)
+    .get("/:name/get/score/of/:owner", get_whitelist_score_of_owner)
     .get("/all/", get_all_whitelists)
     .any(not_found) //// handling 404 request
     .build()

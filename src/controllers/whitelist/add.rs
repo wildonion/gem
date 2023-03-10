@@ -22,9 +22,11 @@ use solana_transaction_status::UiTransactionEncoding;
 use solana_client_helpers::RpcClient;
 use solana_sdk::{
     commitment_config::CommitmentConfig,
+    system_transaction,
+    signature::Keypair,
+    signer::Signer,
     signature::Signature,
 };
-
 
 
 
@@ -46,7 +48,29 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net vairiable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String 
+
     
+    // let payer = Keypair::new();
+    // let sender = Keypair::new();
+    // let recipient = Keypair::new();
+    // let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
+
+    // let tx = system_transaction::transfer(&sender, &recipient.pubkey(), 10_000_000_000, latest_blockhash);
+    // let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
+    // let transaction = rpc_client.get_transaction(
+    //     &signature,
+    //     UiTransactionEncoding::Json,
+    // ).unwrap();
+    
+    // info!("[[[[smapel transaction details]]]] {:#?}", transaction);
+
+
+
+    //// TODO - this must be loaded from the snapshot json
+    // ...
+    let owners = vec!["".to_string(), "".to_string()]; 
+
+
     //// ============ NOTE ============
     //// frontend must have the following
     //// hash in a config file since this
@@ -136,6 +160,25 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
                                     let tx_hashes = wl_info.tx_hashes.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
                                     let name = wl_info.name.clone(); //// cloning to prevent ownership moving
+
+
+                                    //// the caller of this method must be inside 
+                                    //// the NFT owners list or the collection snapshot
+                                    if !owners.contains(&owner){
+                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
+                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            message: NOT_OWNER,
+                                            status: 403,
+                                        };
+                                        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                                        return Ok(
+                                            res
+                                                .status(StatusCode::FORBIDDEN)
+                                                .header(header::CONTENT_TYPE, "application/json")
+                                                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                                .unwrap() 
+                                        );   
+                                    }
 
 
                                     ////////////////////////////////// DB Ops

@@ -9,8 +9,18 @@ declare_id!("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"); //// this is the pr
 
 
 pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
+
     let program_id_bytes = program_id.as_bytes();
-    let program_id_bytes_vec = program_id_bytes.to_vec(); //// we must convert the bytes into vector to build the [u8; 32]
+    let program_id_bytes_vec = program_id_bytes.to_vec(); //// we must convert the bytes into vector to build the [u8; 44]
+    
+    //////////////////////
+    /////// first approach
+    let mut pubkey: [u8; 32] = Default::default();
+    pubkey[..program_id_bytes.len()].clone_from_slice(program_id_bytes);
+
+    ///////////////////////
+    /////// second approach
+    ///////////////////////
     let program_id_bytes_fixed_size: [u8; 32] = match program_id_bytes_vec.try_into(){ //// converting the vector into the slice form or array with a fixed size of 32 bytes which is the size of each public key
         Ok(data) => data,
         Err(e) => [0u8; 32], //// returning an empty array of zero with a fixed size of 32 bytes 
@@ -21,7 +31,7 @@ pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
                 let program_public_key = Pubkey::from(program_id_bytes_fixed_size);
                 Some(program_public_key)
             } else{
-                None //// returning None if the public key contains zero bytes means that we couldn't convert the vector into [u8; 32] correctly
+                None //// returning None if the public key contains zero bytes means that we couldn't convert the vector into [u8; 44] correctly
             }
 }
 
@@ -128,14 +138,14 @@ pub mod whitelist {
     //// data must be deserialize on a sepcific account hence every method needs 
     //// a separate generic or data structure on the chain to be 
     //// loaded inside the account.
-    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>) -> Result<()>{
+    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>, authority: Pubkey) -> Result<()>{
         
         let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and can be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
         let whitelist_data = ctx.accounts.whitelist_data.load_init()?; //// a mutable reference to the whitelist data account loader
         let mut wl_data = whitelist_data.to_owned(); //// to_owned() will convert the borrowed data into the owned data
         wl_data.list = [Pubkey::default(); 5000]; // TODO - need to change the 5000 since it's the total number of PDAs that must be inside the list
-        whitelist_state.authority = signer; //// the signer must be the whitelist_state authority
+        whitelist_state.authority = authority; //// the signer must be the whitelist_state authority
         whitelist_state.counter = 0;
 
         Ok(())
@@ -150,15 +160,18 @@ pub mod whitelist {
 
         let signer = ctx.accounts.authority.key();
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
+        let who_initialized_whitelist = whitelsit_state.authority.key(); //// the whitelist owner 
         let mut whitelist_data = ctx.accounts.whitelist_data.load_mut()?.to_owned();
         let mut counter = whitelsit_state.counter as usize;
-        let who_initialized_whitelist = whitelsit_state.authority.key(); //// the whitelist owner 
 
         //// the signer of this tx call must be the one
         //// who initialized the whitelist instruction handler
-        if signer != who_initialized_whitelist{
-            return err!(ErrorCode::AddToWhitelistSignerIsNotTheInitializedAuthority);
-        }
+        //// or the server account must pay for gas fee
+        //// because the burner shouldn't pay for the whitelist
+        //// gas fee.
+        // if signer != who_initialized_whitelist{
+        //     return err!(ErrorCode::AddToWhitelistSignerIsNotTheInitializedAuthority);
+        // }
 
         //// this is the `nft_stats` field which is the PDA
         //// account that can mutate instruction data on the chain
@@ -172,6 +185,9 @@ pub mod whitelist {
         msg!("[+] current counter: {}", counter);
         let mut current_data = Vec::<Pubkey>::new();
         current_data.extend_from_slice(&whitelist_data.list[0..counter]); //// counter has the current size of the total PDAs, so we're filling the vector with the old PDAs on chain
+        if current_data.contains(&pda_account){
+            return err!(ErrorCode::PdaIsAlreadyAdded);
+        }
         current_data.push(pda_account); //// at this stage the size of the vector might not be the MAX_SIZE since the `list` field of the `whitelist_data` might not be reached that size yet means that we have still enough storage to store PDAs  
         counter += 1; //// a new PDA added
 
@@ -695,6 +711,8 @@ pub enum ErrorCode {
     AccessDeniedDueToInvalidProgramId,
     #[msg("Runtime Error")]
     RuntimeError,
+    #[msg("PDA Is Already Added")]
+    PdaIsAlreadyAdded
 }
 
 

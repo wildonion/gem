@@ -2009,7 +2009,7 @@
 			]
 		},
 		{
-			"name": "Whitelist",
+			"name": "Whitelist Service",
 			"item": [
 				{
 					"name": "Upsert PDAs To Whitelist",
@@ -2025,10 +2025,16 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "API_KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pdas\": [\"pda3\"],\n    \"owner\": \"wildonion\",\n    \"name\": \"another-free-mint\"\n}",
+							"raw": "{\n    \"tx_hashes\": [\"tx3\"],\n    \"owner\": \"wildonion\",\n    \"name\": \"another-free-mint\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2036,14 +2042,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{whitelist}}/whitelist/add/pdas",
+							"raw": "{{whitelist}}/whitelist/add/tx-hashes",
 							"host": [
 								"{{whitelist}}"
 							],
 							"path": [
 								"whitelist",
 								"add",
-								"pdas"
+								"tx-hashes"
 							]
 						}
 					},
@@ -2075,15 +2081,35 @@
 						"header": [],
 						"url": {
 							"raw": "{{whitelist}}/whitelist/get/all",
-							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{whitelist}}"
 							],
-							"port": "7438",
 							"path": [
 								"whitelist",
 								"get",
 								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Owner Whitelist Score",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{whitelist}}/whitelist/another-free-mint/get/score/of/mY82DecoKnDMj1YqNxpikSKutiErhacy566KdP3Rfkh",
+							"host": [
+								"{{whitelist}}"
+							],
+							"path": [
+								"whitelist",
+								"another-free-mint",
+								"get",
+								"score",
+								"of",
+								"mY82DecoKnDMj1YqNxpikSKutiErhacy566KdP3Rfkh"
 							]
 						}
 					},
@@ -2131,6 +2157,11 @@
 		{
 			"key": "whitelist",
 			"value": "https://conse.app:7439",
+			"type": "string"
+		},
+		{
+			"key": "API_KEY",
+			"value": "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$xyuPmb2pZQ4P2atgLPwc3ocE5VrEamWBkOxE9SBrdrE",
 			"type": "string"
 		}
 	]

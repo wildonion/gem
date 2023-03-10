@@ -24,6 +24,7 @@ pub static METHOD_NOT_ALLOWED: &str = "Method Not Allowed";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static NO_API_KEY: &str = "No Api Key";
 pub static ACCESS_DENIED: &str = "Access Denied";
+pub static NOT_OWNER: &str = "Not An Nft Owner";
 pub static REGISTERED: &str = "Registered Successfully";
 pub static DO_LOGIN: &str = "Please Login";
 pub static DO_SIGNUP: &str = "Please Signup";

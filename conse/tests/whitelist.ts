@@ -34,7 +34,6 @@ describe("conse whitelist", () => {
 
     
 
-
     
     
     it("Pda created!", async () => {
@@ -67,14 +66,15 @@ describe("conse whitelist", () => {
         // build PDA from NFT owner and the NFT mint address
         // since it might be multiple burn for a user thus
         // these params will be unique inside the whitelist. 
+        //
+        //// contract doesn't return NFT burn tx hash
+        //// thus we have to create the PDA based on the 
+        //// NFT owner and NFT mint address
         const [NftStatsPDA, bump] = PublicKey
         .findProgramAddressSync(
             [nft_owner.publicKey.toBuffer(), nft_mint.publicKey.toBuffer()],
             program.programId
           )
-
-        
-
 
 
         // --------------
@@ -85,7 +85,7 @@ describe("conse whitelist", () => {
         // and also the one who init the server is the authority of 
         // the the whitelist state and data and only she/he can add 
         // PDA to whitelist or call that method
-        await program.methods.initializeWhitelist().accounts({ //// initializing the whitelist state and whitelist data accounts    
+        await program.methods.initializeWhitelist(server.publicKey).accounts({ //// initializing the whitelist state and whitelist data accounts    
             user: server.publicKey, 
             whitelistState: server.publicKey, 
             whitelistData: server.publicKey,
@@ -130,36 +130,36 @@ describe("conse whitelist", () => {
 
 
 
-        // // ----------------
-        // // Add to Whitelist
-        // // ----------------
-        // // call this after successful burn request
-        // await program.methods.addToWhitelist().accounts({
-        //     authority: server.publicKey, // the signer must the one who initialized the whitelist to add a PDA into the chain
-        //     nftStats: NftStatsPDA, // this will be added to the whitelist by the server authority
-        //     whitelistState: server.publicKey, 
-        //     whitelistData: server.publicKey,
-        // }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+        // ----------------
+        // Add to Whitelist
+        // ----------------
+        // call this after successful burn request
+        await program.methods.addToWhitelist().accounts({
+            authority: server.publicKey, // the signer must the one who initialized the whitelist to add a PDA into the chain
+            nftStats: NftStatsPDA, // this will be added to the whitelist by the server authority
+            whitelistState: server.publicKey, 
+            whitelistData: server.publicKey,
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
-        // let deserialized_whitelist_data_account_after_adding = await program.account.whitelistData.fetch(server.publicKey);
-        // console.log("deserialized_whitelist_data_account: >>>>>> ", deserialized_whitelist_data_account_after_adding);
-
-
+        let deserialized_whitelist_data_account_after_adding = await program.account.whitelistData.fetch(server.publicKey);
+        console.log("deserialized_whitelist_data_account: >>>>>> ", deserialized_whitelist_data_account_after_adding);
 
 
 
-        // // ----------------
-        // // Remove Whitelist
-        // // ---------------- 
-        // await program.methods.removeFromWhitelist().accounts({
-        //     authority: server.publicKey,  // the signer must the one who initialized the whitelist to remove a PDA from the chain
-        //     nftStats: NftStatsPDA, // this will be removed from the whitelist by the server authority
-        //     whitelistState: server.publicKey, 
-        //     whitelistData: server.publicKey,
-        // }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
-        // let deserialized_whitelist_data_account_after_removing = await program.account.whitelistData.fetch(server.publicKey);
-        // console.log("deserialized_whitelist_data_account_after_removing: >>>>>> ", deserialized_whitelist_data_account_after_removing);
+
+        // ----------------
+        // Remove Whitelist
+        // ---------------- 
+        await program.methods.removeFromWhitelist().accounts({
+            authority: server.publicKey,  // the signer must the one who initialized the whitelist to remove a PDA from the chain
+            nftStats: NftStatsPDA, // this will be removed from the whitelist by the server authority
+            whitelistState: server.publicKey, 
+            whitelistData: server.publicKey,
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+
+        let deserialized_whitelist_data_account_after_removing = await program.account.whitelistData.fetch(server.publicKey);
+        console.log("deserialized_whitelist_data_account_after_removing: >>>>>> ", deserialized_whitelist_data_account_after_removing);
 
 
     

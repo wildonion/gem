@@ -19,14 +19,6 @@ use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson str
 use hyper::http::Uri;
 use mongodb::options::FindOptions;
 use std::env;
-use solana_transaction_status::UiTransactionEncoding;
-use solana_client_helpers::RpcClient;
-use solana_sdk::{
-    system_transaction,
-    signature::Keypair,
-    commitment_config::CommitmentConfig,
-    signature::Signature,
-};
 
 
 
@@ -120,30 +112,86 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
     use routerify::prelude::*;
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net variable set");
     let db = &req.data::<Client>().unwrap().to_owned();                    
     let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
-    let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String 
     
-
-    let payer = Keypair::new();
-    let sender = Keypair::new();
-    let recipient = Keypair::new();
-    let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
-
-    let tx = system_transaction::transfer(&sender, &recipient.pubkey(), 10_000_000_000, latest_blockhash);
-    let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
-    let transaction = rpc_client.get_transaction(
-        &signature,
-        UiTransactionEncoding::Json,
-    ).unwrap();
-    
-    info!("[[[[smapel transaction details]]]] {:#?}", transaction);
-
 
 
     ////////////////////////////////// DB Ops
     
     let filter = doc! {"name": name};
+    let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
+    match whitelist.find_one(filter, None).await.unwrap(){
+        Some(whitelist_doc) => {
+            let res = Response::builder(); //// creating a new response cause we didn't find any available route
+            let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{
+                message: FETCHED,
+                data: Some(whitelist_doc),
+                status: 200,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+            Ok(
+                res
+                    .status(StatusCode::OK) //// not found route or method not allowed
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket
+                    .unwrap()
+            )
+        },
+       None => {
+            let response_body = ctx::app::Response::<ctx::app::Nill>{
+                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                message: NOT_FOUND_DOCUMENT,
+                status: 404,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+            Ok(
+                res
+                    .status(StatusCode::NOT_FOUND)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .unwrap() 
+            )
+        },
+    }
+    
+    //////////////////////////////////
+                
+
+                
+
+}
+
+
+
+
+
+
+
+
+
+
+// -------------------------------- get whitelist owner score controller
+// ➝ Return : Hyper Response Body or Hyper Error
+// --------------------------------------------------------------------------------------
+
+pub async fn whitelist_owner_score(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get a whitelist infos
+
+
+    use routerify::prelude::*;
+    let res = Response::builder();
+    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net variable set");
+    let db = &req.data::<Client>().unwrap().to_owned();                    
+    let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
+    let owner = format!("{}", req.param("owner").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
+
+
+
+    ////////////////////////////////// DB Ops
+    
+    let filter = doc! {"name": name, "owners.owner": owner};
     let whitelist = db.database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist"); //// selecting whitelist collection to fetch and deserialize all whitelist infos or documents from BSON into the WhitelistInfo struct
     match whitelist.find_one(filter, None).await.unwrap(){
         Some(whitelist_doc) => {
