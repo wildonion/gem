@@ -1,30 +1,15 @@
-version: '3'
+version: "3.8"
+
 
 services:
   mongodb:
-    build:
-      context: '.'
-      dockerfile: './devops/docker/mongodb/Dockerfile'
-    networks:
-      - 'conse'
-    ports:
-      - '27017-27017'
+    image : mongo
+    container_name: mongodb
+    environment:
+      - PUID=1000
+      - PGID=1000
     volumes:
-      - './data:/data/db'
-  rust:
-    build:
-      context: '.'
-      dockerfile: './devops/docker/rust/Dockerfile'
+      - /home/root/mongodb/database:/data/db
     ports:
-      - '4379:4378'
-    volumes:
-      - './:/usr/gem'
-    depends_on:
-      - 'mongodb'
-    links:
-      - mongodb 
-    networks:
-      - 'conse'
-
-networks:
-  conse:
+      - 27017:27017
+    restart: unless-stopped

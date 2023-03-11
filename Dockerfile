@@ -1,19 +1,17 @@
 # Rust as the base image
 FROM rust:1.68 as build
 
-WORKDIR /usr/gem
 RUN USER=root mkdir gem
-COPY . gem
 
-WORKDIR /usr/gem/
+WORKDIR /gem
+COPY . .
 
 RUN cargo install --path .
 RUN cargo build --bin conse --release
 
 FROM debian:buster-slim
-COPY --from=build /usr/gem/target/release/conse .
-COPY .env .
+COPY ./target/release/conse .
 
-EXPOSE 4378
+EXPOSE 7438
 
 CMD ["./conse"]
