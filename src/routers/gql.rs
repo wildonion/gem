@@ -2,7 +2,7 @@
 
 
 
-// push notif handler and other realtime streaming
+// push notif handler and other realtime streaming like chatapp
 // https://graphql-rust.github.io/juniper/master/advanced/subscriptions.html
 
 // step 1) gql subscription routes over hyper 

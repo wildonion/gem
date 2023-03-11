@@ -10,8 +10,13 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 
 
-
-
+///// the following will be used to load all the 
+//// nft mint addresses inside the nfts.json into
+//// this struct. 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+pub struct Nft{
+    pub mint_addrs: Vec<String>,
+}
 
 
 /*
@@ -39,7 +44,7 @@ pub struct AddWhitelistInfo{
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 pub struct InsertWhitelistRequest{
     pub owner: String, //// nft owner
-    pub tx_hashes: Vec<String>, //// pda address (nft burn tx hash + nft owner)
+    pub mint_addrs: Vec<String>, //// nft mint addresses that this owner owns
     pub name: String,
 }
 
@@ -61,7 +66,7 @@ pub struct InsertWhitelistResponse{
 
 #[derive(Debug, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Default)]
 pub struct OwnerData{
-    pub tx_hashes: Vec<String>, //// number of unique burned nfts for this owner (nft owner + nft burn tx hash)
+    pub mint_addrs: Vec<String>, //// number of unique burned nfts for this owner (nft owner + nft burn tx hash)
     pub owner: String, //// nft owner
     pub requested_at: Option<i64>,
 }
@@ -84,15 +89,15 @@ pub struct WhitelistInfo{
 
 impl WhitelistInfo{
 
-    pub async fn add_tx_hashes(&self, tx_hashes: Vec<String>, owner_index: usize) -> Option<Vec<String>>{
+    pub async fn add_mint_addrs(&self, mint_addrs: Vec<String>, owner_index: usize) -> Option<Vec<String>>{
         let mut owner = self.owners[owner_index].clone();
-        let already_pda = owner.tx_hashes.iter().all(|pda| tx_hashes.contains(pda));
-        if already_pda{
-            None //// we've found a pda inside the owner.tx_hashes vector thus we must notify the user that please pass a unique vector
+        let already_burned = owner.mint_addrs.iter().any(|mint_addr| mint_addrs.contains(mint_addr));
+        if already_burned{
+            None //// we've found a mint_addr inside the owner.mint_addrs vector thus we must notify the user that please pass a unique vector since one of the nft address is already bunred
         } else{
-            let tx_hashes_slice = tx_hashes.as_slice(); //// converting the passed in tx_hashes into the slice
-            owner.tx_hashes.extend_from_slice(&tx_hashes_slice); //// extending the owner.tx_hashes vector from the passed in tx_hashes 
-            Some(owner.tx_hashes)
+            let mint_addrs_slice = mint_addrs.as_slice(); //// converting the passed in mint_addrs into the a string slice
+            owner.mint_addrs.extend_from_slice(&mint_addrs_slice); //// extending the owner.mint_addrs vector from the passed in mint_addrs 
+            Some(owner.mint_addrs)
         }
     }
 }

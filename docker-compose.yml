@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  mongodb:
+    build:
+      context: '.'
+      dockerfile: './devops/docker/mongodb/Dockerfile'
+    networks:
+      - 'conse'
+    ports:
+      - '27017-27017'
+    volumes:
+      - './data:/data/db'
+  rust:
+    build:
+      context: '.'
+      dockerfile: './devops/docker/rust/Dockerfile'
+    ports:
+      - '4379:4378'
+    volumes:
+      - './:/usr/gem'
+    depends_on:
+      - 'mongodb'
+    links:
+      - mongodb 
+    networks:
+      - 'conse'
+
+networks:
+  conse:

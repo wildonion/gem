@@ -33,6 +33,53 @@ use std::env;
 
 
 
+
+// -------------------------------- get NFT mint addrs controller
+// ➝ Return : Hyper Response Body or Hyper Error
+// --------------------------------------------------------------------------------------
+
+pub async fn mint_addrs(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// get a whitelist infos
+
+
+    ///// ==============================================================================
+    ////                              LOAD NFT MINT ADDRESSES
+    ///// ==============================================================================
+    let file = std::fs::File::open("nfts.json").expect("file should open read only"); //// the file must be inside where we run the `cargo run` command or the root dir
+    let nfts_value: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+    let nfts_json_string = serde_json::to_string(&nfts_value).unwrap();
+    let nft = serde_json::from_str::<schemas::whitelist::Nft>(&nfts_json_string).unwrap();
+    let snapshot_nfts = nft.mint_addrs;
+    
+    let res = Response::builder();
+    let response_body = ctx::app::Response::<Vec<String>>{
+        data: Some(snapshot_nfts), //// data is an empty &[u8] array
+        message: FOUND_DOCUMENT,
+        status: 200,
+    };
+    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+    Ok(
+        res
+            .status(StatusCode::FOUND)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+            .unwrap() 
+    )
+
+                                
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // -------------------------------- get all whitelists controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
@@ -112,7 +159,6 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
     use routerify::prelude::*;
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net variable set");
     let db = &req.data::<Client>().unwrap().to_owned();                    
     let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
     
@@ -182,7 +228,6 @@ pub async fn whitelist_owner_score(req: Request<Body>) -> ConseResult<hyper::Res
     use routerify::prelude::*;
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net variable set");
     let db = &req.data::<Client>().unwrap().to_owned();                    
     let name = format!("{}", req.param("name").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
     let owner = format!("{}", req.param("owner").unwrap()); //// we must create the name param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 

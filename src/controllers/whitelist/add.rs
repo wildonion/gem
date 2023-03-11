@@ -40,7 +40,11 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net vairiable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     
+
     
+    ///// ==============================================================================
+    ////                                SOLANA RPC REQUESTS
+    ///// ==============================================================================
     // use solana_transaction_status::UiTransactionEncoding;
     // use solana_client_helpers::RpcClient;
     // use solana_sdk::{
@@ -66,10 +70,14 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     // info!("[[[[smapel transaction details]]]] {:#?}", transaction);
 
 
-
-    //// TODO - this must be loaded from the snapshot_owners json
-    // ...
-    let snapshot_owners = vec!["".to_string(), "".to_string()]; 
+    ///// ==============================================================================
+    ////                              LOAD NFT MINT ADDRESSES
+    ///// ==============================================================================
+    let file = std::fs::File::open("nfts.json").expect("file should open read only"); //// the file must be inside where we run the `cargo run` command or the root dir
+    let nfts_value: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+    let nfts_json_string = serde_json::to_string(&nfts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
+    let nft = serde_json::from_str::<schemas::whitelist::Nft>(&nfts_json_string).unwrap(); 
+    let snapshot_nfts = nft.mint_addrs;
 
 
 
@@ -79,10 +87,28 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     //// hash in a config file since this
     //// hash will be decoded that must be
     //// the one inside the .env file.
-    let api_key_hardcoded = "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$xyuPmb2pZQ4P2atgLPwc3ocE5VrEamWBkOxE9SBrdrE";
+    // let api_key_hardcoded = "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$xyuPmb2pZQ4P2atgLPwc3ocE5VrEamWBkOxE9SBrdrE";
     
-    
-    let Ok(api_key) = req.headers().get("API_KEY").unwrap().to_str() else{ //// hased api key from the client
+    ///// ==============================================================================
+    ////                                API KEY VALIDATION
+    ///// ==============================================================================
+    let Some(header_value_api_key) = req.headers().get("API_KEY") else{
+        let response_body = ctx::app::Response::<ctx::app::Nill>{
+            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            message: HTTP_HEADER_ERR,
+            status: 500,
+        };
+        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+        return Ok(
+            res
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                .unwrap() 
+        );
+    };
+
+    let Ok(api_key) = header_value_api_key.to_str() else{ //// hased api key from the client
         let response_body = ctx::app::Response::<ctx::app::Nill>{
             data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
             message: NO_API_KEY,
@@ -137,6 +163,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                 .unwrap() 
         );
     }
+    ///// ==============================================================================
+
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have borrow the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -161,22 +189,24 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
 
 
                                     let owner = wl_info.owner.clone(); //// cloning to prevent ownership moving
-                                    let tx_hashes = wl_info.tx_hashes.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
+                                    let mint_addrs = wl_info.mint_addrs.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
                                     let name = wl_info.name.clone(); //// cloning to prevent ownership moving
 
 
-                                    //// the caller of this method must be inside 
-                                    //// the NFT owners list or the collection snapshot_owners
-                                    if !snapshot_owners.contains(&owner){
+                                    //// one of the NFT mint addr must be inside the snapshot
+                                    //// otherwise the NFT is not verified and is not owned
+                                    //// by the owner
+                                    let vefified_nft_mint_addresses = snapshot_nfts.iter().any(|mint_addr| mint_addrs.contains(mint_addr));
+                                    if !vefified_nft_mint_addresses{
                                         let response_body = ctx::app::Response::<ctx::app::Nill>{
                                             data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                                            message: NOT_OWNER,
-                                            status: 403,
+                                            message: NOT_VERIFIED_NFT, //// one of the NFT is not verified since it's not inside the snapshot
+                                            status: 406,
                                         };
                                         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
                                         return Ok(
                                             res
-                                                .status(StatusCode::FORBIDDEN)
+                                                .status(StatusCode::NOT_ACCEPTABLE)
                                                 .header(header::CONTENT_TYPE, "application/json")
                                                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                                 .unwrap() 
@@ -188,16 +218,38 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
 
                                     let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                     let whitelist = db.clone().database(&db_name).collection::<schemas::whitelist::WhitelistInfo>("whitelist");
+                                    ///// ==============================================================================
+                                    ////                         UNIQUE OWNER MINT ADDRESS VALIDATION
+                                    ///// ==============================================================================
+                                    match whitelist.find_one(doc!{"owners.mint_addrs": mint_addrs.clone()}, None).await.unwrap(){
+                                        Some(wl_doc) => {
+                                            let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is WhitelistInfo struct
+                                                data: Some(wl_doc),
+                                                message: ALREADY_BURNED, //// already burned nft since the passed in mint addresses are belong to an owner that has already burned them 
+                                                status: 302,
+                                            };
+                                            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                                            return Ok(
+                                                res
+                                                    .status(StatusCode::FOUND)
+                                                    .header(header::CONTENT_TYPE, "application/json")
+                                                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                                    .unwrap() 
+                                            );
+                                        }
+                                        None => {}
+                                    }
+                                    ///// ==============================================================================
                                     match whitelist.find_one(doc!{"name": name.clone(), "owners.owner": owner.clone()}, None).await.unwrap(){
                                         Some(mut wl_doc) => { //// we must declare the wl_doc as mutable since we want to mutate it later
                                             let is_owner_exists = wl_doc.owners.clone().into_iter().position(|od| od.owner == owner.clone());
                                             let owner_index = is_owner_exists.unwrap(); //// we're sure that we have an owner definitely since the find_one() query has executed correctly if we're here :)
                                             //// we found the passed in owner inside the whitelist
                                             //// then we have to update the list with the passed in pda
-                                            if let Some(tx_hashes) = wl_doc.add_tx_hashes(tx_hashes.clone(), owner_index).await{
+                                            if let Some(mint_addrs) = wl_doc.add_mint_addrs(mint_addrs.clone(), owner_index).await{
                                                 //// means we have an updated pda 
                                                 //// then we need to update the collection
-                                                wl_doc.owners[owner_index].tx_hashes = tx_hashes;
+                                                wl_doc.owners[owner_index].mint_addrs = mint_addrs;
                                                 let serialized_owners = bson::to_bson(&wl_doc.owners).unwrap(); //// we have to serialize the owners to BSON Document object in order to update the owners field inside the collection
                                                 match whitelist.find_one_and_update(doc!{"name": name}, doc!{"$set": {"owners": serialized_owners, "updated_at": Some(Utc::now().timestamp())}}, Some(update_option)).await.unwrap(){
                                                     Some(wl_info) => { //// deserializing BSON into the EventInfo struct
@@ -234,7 +286,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                             } else{
                                                 let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is WhitelistInfo struct
                                                     data: Some(wl_doc),
-                                                    message: FOUND_DOCUMENT, //// already pda inside the tx_hashes 
+                                                    message: ALREADY_BURNED, //// already burned nft since one of the addresses inside the mint_addrs is already burned by this owner 
                                                     status: 302,
                                                 };
                                                 let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
@@ -253,7 +305,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                             let whitelist_doc = schemas::whitelist::AddWhitelistInfo{
                                                 name,
                                                 owners: vec![schemas::whitelist::OwnerData{
-                                                    tx_hashes, //// vector of the passed in tx_hashes from the client
+                                                    mint_addrs, //// vector of the passed in mint_addrs from the client
                                                     owner, //// owner of the burned nft
                                                     requested_at: Some(now)
                                                 }],

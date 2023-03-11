@@ -163,11 +163,11 @@ we the program id is the public key address of the deployed contract.
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
 
-* push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` pubsub topic on redis server.
+* push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` register pubsub topic on redis server.
 
 * updating [hyper](https://hyper.rs/) to latest version
 
-* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh` on [xaas](https://xaas.ir/)
+* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh`, also update the image version inside each `Dockerfile`. 
 
 * all TODOs inside the app
 

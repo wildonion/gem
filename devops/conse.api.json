@@ -2012,7 +2012,7 @@
 			"name": "Whitelist Service",
 			"item": [
 				{
-					"name": "Upsert PDAs To Whitelist",
+					"name": "Upsert Whitelist",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -2034,7 +2034,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"tx_hashes\": [\"tx3\"],\n    \"owner\": \"wildonion\",\n    \"name\": \"another-free-mint\"\n}",
+							"raw": "{\n    \"mint_addrs\": [\"4goQEoJ3jNbVFGmuHAqMrYpuyNx1s2woEPrjHfEeUixw\"],\n    \"owner\": \"dev\",\n    \"name\": \"another-free-mint\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2042,14 +2042,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{whitelist}}/whitelist/add/tx-hashes",
+							"raw": "{{whitelist}}/whitelist/add/mint-addrs",
 							"host": [
 								"{{whitelist}}"
 							],
 							"path": [
 								"whitelist",
 								"add",
-								"tx-hashes"
+								"mint-addrs"
 							]
 						}
 					},
@@ -2075,18 +2075,37 @@
 					"response": []
 				},
 				{
-					"name": "Get All Whitelists",
+					"name": "Load NFT Mint Addresses",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{whitelist}}/whitelist/get/all",
+							"raw": "{{whitelist}}/whitelist/load/nft/mint-addrs",
 							"host": [
 								"{{whitelist}}"
 							],
 							"path": [
 								"whitelist",
-								"get",
+								"load",
+								"nft",
+								"mint-addrs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Whitelists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{whitelist}}/whitelist/all",
+							"host": [
+								"{{whitelist}}"
+							],
+							"path": [
+								"whitelist",
 								"all"
 							]
 						}

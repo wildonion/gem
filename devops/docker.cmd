@@ -33,7 +33,7 @@ sudo docker exec <CONTAINER/IMAGE_NAME/ID>_A ping <CONTAINER/IMAGE_NAME/ID>_B -c
 sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(sudo docker ps --format '{{.Names}}')
 sudo docker inspect -f '{{index .Options "com.docker.network.bridge.enable_icc"}}' <NETWORK_NAME>
 sudo docker build -t avl .
-sudo docker run -it avl /bin/bash
+sudo docker run -it <IMAGE_NAME> /bin/bash
 sudo docker run -d -it -p 8586:8586 avl --network=<NETWORK_NAME>
 sudo docker images
 sudo docker volume ls

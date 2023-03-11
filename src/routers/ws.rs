@@ -3,4 +3,4 @@
 
 // https://crates.io/crates/routerify-websocket
 
-// realtiming chat app and push notification
+// realtiming chatapp and push notification

@@ -31,7 +31,9 @@ use hyper::{header, Body, Response, StatusCode};
 use crate::controllers::whitelist::{
                                     add::upsert as upsert_whitelist,
                                     get::{whitelist as get_whitelist, all_whitelists as get_all_whitelists, 
-                                          whitelist_owner_score as get_whitelist_score_of_owner},
+                                          whitelist_owner_score as get_whitelist_score_of_owner,
+                                          mint_addrs as load_nft_mint_addresses
+                                        },
                                     _404::main as not_found,
                                 };
 
@@ -77,7 +79,8 @@ pub async fn register() -> Router<Body, hyper::Error>{
                 .unwrap()
         )
     })
-    .post("/add/tx-hashes", upsert_whitelist)
+    .post("/add/mint-addrs", upsert_whitelist)
+    .get("/load/nft/mint-addrs", load_nft_mint_addresses)
     .get("/get/:name", get_whitelist)
     .get("/:name/get/score/of/:owner", get_whitelist_score_of_owner)
     .get("/all/", get_all_whitelists)
