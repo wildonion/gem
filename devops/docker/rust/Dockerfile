@@ -2,14 +2,18 @@
 FROM rust:1.68 as build
 
 WORKDIR /usr/gem
-COPY . .
+RUN USER=root mkdir gem
+COPY . gem
+
+WORKDIR /usr/gem/
 
 RUN cargo install --path .
 RUN cargo build --bin conse --release
 
 FROM debian:buster-slim
-COPY --from=build /conse/target/release/conse /usr/gem/conse
+COPY --from=build /usr/gem/target/release/conse .
+COPY .env .
 
 EXPOSE 4378
 
-CMD ["/usr/gem/conse"]
+CMD ["./conse"]
