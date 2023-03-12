@@ -65,7 +65,6 @@ pub async fn register() -> Router<Body, hyper::Error>{
 
     Router::builder()
         // .data(app_storage) //// sharing the initialized app_storage between routers' threads
-        .middleware(Middleware::post(middlewares::cors::allow)) //// allow all CORS setup - the post Middlewares will be executed after all the route handlers process the request and generates a response and it will access that response object and the request info(optional) and it can also do some changes to the response if required
         .middleware(Middleware::pre(middlewares::logging::logger)) //// enable logging middleware on the incoming request then pass it to the next middleware - pre Middlewares will be executed before any route handlers and it will access the req object and it can also do some changes to the request object if required
         .get("/page", |req| async move{
             let res = Response::builder(); //// creating a new response cause we didn't find any available route

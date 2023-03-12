@@ -236,6 +236,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // .scope("/redis") // TODO -
         // .scope("/ws") // TODO - 
         // .scope("/gql") // TODO - 
+        .options("*", middlewares::cors::allow)
         .build()
         .unwrap();
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());

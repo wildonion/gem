@@ -83,7 +83,7 @@ pub mod ticket {
         };
 
         let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
-        let total_tax = amount - (amount_receive + general_tax_amount);
+        let total_tax = amount - (amount_receive + general_tax_amount); //// 1 SOL - 0.7 = 0.3 is the total tax 
 
         //--------------------------------------------
         // we must withdraw all required lamports 

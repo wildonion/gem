@@ -169,7 +169,7 @@ we the program id is the public key address of the deployed contract.
 
 * updating [hyper](https://hyper.rs/) to latest version
 
-* HAProxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh`, also update the image version inside each `Dockerfile`. 
+* HAproxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh`, also update the image version inside each `Dockerfile`. 
 
 * all TODOs inside the app
 
