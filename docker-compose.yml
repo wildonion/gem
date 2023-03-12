@@ -5,6 +5,8 @@ services:
   mongodb:
     image : mongo
     container_name: mongodb
+    networks:
+      - 'gem' 
     environment:
       - PUID=1000
       - PGID=1000
@@ -13,3 +15,38 @@ services:
     ports:
       - 27017:27017
     restart: unless-stopped
+  conse:
+    build:
+      dockerfile: './Dockerfile'
+    container_name: conse
+    ports:
+      - '7439:7438'
+    volumes:
+      - './assets:/gem/assets'
+    depends_on:
+      - 'mongodb'
+    links:
+      - mongodb 
+    networks:
+      - 'gem'
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "7440:7440"
+    volumes:
+      - ./devops/conf/api.conf:/etc/nginx/conf.d/api.conf
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/logs/:/var/log/nginx/
+      - ./nginx/sites/:/etc/nginx/sites-available/
+    networks:
+      - gem
+    depends_on:
+      - 'conse'
+    links:
+      - conse 
+networks:
+  gem:

@@ -30,6 +30,7 @@ sudo docker save $(sudo docker images -q) -o docker-utils/avl.tar
 sudo docker load -i -o docker-utils/avl.tar
 sudo docker ps
 sudo docker exec <CONTAINER/IMAGE_NAME/ID>_A ping <CONTAINER/IMAGE_NAME/ID>_B -c2
+sudo docker exec -it <CONTAINER/IMAGE_NAME/ID> bash
 sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(sudo docker ps --format '{{.Names}}')
 sudo docker inspect -f '{{index .Options "com.docker.network.bridge.enable_icc"}}' <NETWORK_NAME>
 sudo docker build -t avl .

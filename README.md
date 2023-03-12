@@ -159,6 +159,8 @@ we the program id is the public key address of the deployed contract.
 
 * ```solana balance``` shows the balance of the address inside the `/home/$USER/.config/solana/id.json` on the selected network which is one of the `devnet`, `testnet` or `localhost`.
 
+* in order to use docker containers inside another one by its name all of them must be inside the same network.
+
 ## 🚧 WIP
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
