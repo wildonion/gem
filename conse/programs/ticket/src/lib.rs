@@ -83,25 +83,28 @@ pub mod ticket {
         };
 
         let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
-        let total_tax = amount - (amount_receive + general_tax_amount); //// 1 SOL - 0.7 = 0.3 is the total tax 
+        let event_tax = amount - amount_receive;
 
         //--------------------------------------------
         // we must withdraw all required lamports 
         // from the PDA since the PDA 
         // has all of it :)
         //--------------------------------------------
-
-        //// withdraw fom PDA to fill the winner 
+        
+        //// withdraw %5 fom PDA to fill the revenue share account 
+        **pda.try_borrow_mut_lamports()? -= general_tax_amount;
+        **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
+        //// withdraw amount receive fom PDA to fill the winner 
         **pda.try_borrow_mut_lamports()? -= amount_receive;
         **to_winner.try_borrow_mut_lamports()? += amount_receive;
-        //// withdraw fom PDA to fill the revenue share account 
-        **pda.try_borrow_mut_lamports()? -= total_tax;
-        **revenue_share_wallet.try_borrow_mut_lamports()? += total_tax;
+        //// withdraw event tax fom PDA to fill the revenue share account 
+        **pda.try_borrow_mut_lamports()? -= event_tax;
+        **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax;
 
 
         emit!(GameResultEvent{
             amount_receive,
-            total_tax
+            event_tax
         });
 
         Ok(())
@@ -378,7 +381,7 @@ pub struct StartGameEvent{
 #[event]
 pub struct GameResultEvent{
     pub amount_receive: u64,
-    pub total_tax: u64,
+    pub event_tax: u64,
 }
 
 #[event]

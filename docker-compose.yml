@@ -29,37 +29,7 @@ services:
       - mongodb 
     networks:
       - 'gem'
-  # nginx:
-  #   image: nginx:latest
-  #   container_name: nginx
-  #   restart: unless-stopped
-  #   tty: true
-  #   ports:
-  #     - "7440:7440"
-  #   volumes:
-  #     - ./devops/conf/api.conf:/etc/nginx/conf.d/api.conf
-  #     - ./:/var/www
-  #     - ./nginx/conf.d/:/etc/nginx/conf.d/
-  #     - ./nginx/logs/:/var/log/nginx/
-  #     - ./nginx/sites/:/etc/nginx/sites-available/
-  #   networks:
-  #     - gem
-  #   depends_on:
-  #     - 'conse'
-  #   links:
-  #     - conse
-  haproxy:
-    image: haproxy:2.3
-    container_name: haproxy
-    ports:
-      - '7440:7440'
-    volumes:
-      - './devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg'
-    depends_on:
-      - 'conse'
-    links:
-      - conse
-    networks:
-      - 'gem' 
 networks:
   gem:
+    driver: bridge
+  

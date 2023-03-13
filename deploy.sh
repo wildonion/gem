@@ -4,6 +4,8 @@ read ANSDOCKER
 if [[ $ANSDOCKER == "yes"]]
     sudo docker compose -f  docker-compose.yml build --no-cache
     sudo docker compose up -d --force-recreate
+    sudo docker network create --driver=bridge gem
+    sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.conf:/usr/local/etc/haproxy:ro -p 8404:8404 -p 7440:7440 -e DNS_TCP_ADDR=$DNS_IP -e DNS_TCP_PORT=7439 -c haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg haproxy:2.3 
 else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     source "$HOME/.cargo/env"
