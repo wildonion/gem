@@ -70,7 +70,12 @@ pub mod routers;
 
 
 
-
+//// the return type of the error part in Result 
+//// is a trait which is behind a pointer or Box 
+//// since they have no size at compile time and their
+//// implementor will be known at runtime thus they must 
+//// be behind a pointer like &dyn or inside a Box
+//// if we want to return them as a type.
 #[tokio::main(flavor="multi_thread", worker_threads=10)] //// use the tokio multi threaded runtime by spawning 10 threads
 async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ //// generic types can also be bounded to lifetimes ('static in this case) and traits inside the Box<dyn ... > - since the error that may be thrown has a dynamic size at runtime we've put all these traits inside the Box (a heap allocation pointer) and bound the error to Sync, Send and the static lifetime to be valid across the main function and sendable and implementable between threads
     
@@ -167,15 +172,15 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     if username_cli != &"".to_string() && access_level_cli != &"".to_string(){
         match utils::set_user_access(username_cli.to_owned(), access_level_cli.parse::<i64>().unwrap(), app_storage.clone()).await{
             Ok(user_info) => {
-                info!("access level for user {} has been updated successfully", username_cli);
-                info!("updated user {:?}", user_info);
+                info!("🔓 access level for user {} has been updated successfully", username_cli);
+                info!("🧑🏻 updated user {:?}", user_info);
             },
             Err(empty_doc) => {
-                info!("no user found for updating access level");
+                info!("🤔 no user found for updating access level");
             },
         }
     } else{
-        info!("no username has passed in to the cli; pass updating access level process");
+        info!("🫠 no username has passed in to the cli; pass updating access level process");
     }
 
 
@@ -240,7 +245,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // .scope("/redis") // TODO -
         // .scope("/ws") // TODO - 
         // .scope("/gql") // TODO - 
-        .options("*", middlewares::cors::allow)
         .middleware(routerify_cors::enable_cors_all())
         .build()
         .unwrap();

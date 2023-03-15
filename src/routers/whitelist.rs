@@ -84,6 +84,7 @@ pub async fn register() -> Router<Body, hyper::Error>{
     .get("/:name/get/score/of/:owner", get_whitelist_score_of_owner)
     .get("/all/", get_all_whitelists)
     .any(not_found) //// handling 404 request
+    .options("/", middlewares::cors::allow)
     .build()
     .unwrap()
 }
