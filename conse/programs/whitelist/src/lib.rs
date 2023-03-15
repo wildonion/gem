@@ -426,7 +426,10 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         //
         //// the PDA can be built from the NFT owner and the NFT
         //// mint address since an owner might have burned multiple NFTs
-        //// thus the tracking must be unique to add them to whitelist.
+        //// thus the tracking must be unique to add them to whitelist
+        //// also since PDA is a public key only wallet address, we can 
+        //// send to and withdraw from it and sign cpi with it inside the 
+        //// contract since it has no private key and is off curve.
         init, //// --- init also requires space and payer constraints --- 
         space = 300, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct which is Nft::MAX_SIZE or 256 bytes
         payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method

@@ -60,8 +60,17 @@ pub mod ticket {
             return err!(ErrorCode::InvalidWinnerIndex);
         };
 
+
         let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
         
+        //// calculating the general tax amount
+        //// and transferring from PDA to revenue share wallet 
+        let total_amount_after_general_tax = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
+        let general_tax_amount = amount - total_amount_after_general_tax;
+        //// withdraw %5 fom PDA to fill the revenue share account 
+        **pda.try_borrow_mut_lamports()? -= general_tax_amount;
+        **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
+
         //// calculating the amount that must be sent
         //// the winner from the PDA account based on
         //// instruction percentages.
@@ -69,42 +78,39 @@ pub mod ticket {
         //// we've assumed that the third instruction 
         //// is the event with 25 percent special tax.
         let amount_receive = if instruct == 0 {
-            receive_amount(amount, 95)
+            receive_amount(total_amount_after_general_tax, 95)
         } else if instruct == 1 {
-            receive_amount(amount, 70)
+            receive_amount(total_amount_after_general_tax, 70)
         } else if instruct == 2 {
-            receive_amount(amount, 35)
+            receive_amount(total_amount_after_general_tax, 35)
         } else if instruct == 3 {
-            receive_amount(amount, 25)
+            receive_amount(total_amount_after_general_tax, 25)
         } else if instruct == 4 {
-            receive_amount(amount, 0)
+            receive_amount(total_amount_after_general_tax, 0)
         } else {
             return err!(ErrorCode::InvalidInstruction);
         };
 
-        let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
-        let event_tax = amount - amount_receive;
-
+        
         //--------------------------------------------
         // we must withdraw all required lamports 
         // from the PDA since the PDA 
         // has all of it :)
         //--------------------------------------------
-        
-        //// withdraw %5 fom PDA to fill the revenue share account 
-        **pda.try_borrow_mut_lamports()? -= general_tax_amount;
-        **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
+        // bet amount      : 1    SOL - %5  = 0.95 -> 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
+        // amount after tax: 0.95 SOL - %25 = 0.24 -> 0.95 - 0.24 = 0.71 must withdraw for %25 tax to revenue share wallet 
+        let event_tax_amount = total_amount_after_general_tax - amount_receive;
+        //// withdraw event tax fom PDA to fill the revenue share account 
+        **pda.try_borrow_mut_lamports()? -= event_tax_amount;
+        **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
         //// withdraw amount receive fom PDA to fill the winner 
         **pda.try_borrow_mut_lamports()? -= amount_receive;
         **to_winner.try_borrow_mut_lamports()? += amount_receive;
-        //// withdraw event tax fom PDA to fill the revenue share account 
-        **pda.try_borrow_mut_lamports()? -= event_tax;
-        **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax;
 
 
         emit!(GameResultEvent{
             amount_receive,
-            event_tax
+            event_tax_amount
         });
 
         Ok(())
@@ -381,7 +387,7 @@ pub struct StartGameEvent{
 #[event]
 pub struct GameResultEvent{
     pub amount_receive: u64,
-    pub event_tax: u64,
+    pub event_tax_amount: u64,
 }
 
 #[event]

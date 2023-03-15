@@ -134,6 +134,8 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 📇 Notes
 
+* once the authority gets changed the program id will be changed too, currently these programs are authorized with `F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ` 
+
 * use ```anchor keys list``` to list all the program ids of each contract.
 
 * if you get error `"*/tsconfig.json" needs an import assertion of type json` just inside the `conse` folder type ```yarn add ts-mocha```.

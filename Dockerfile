@@ -1,4 +1,4 @@
-FROM rust:1.68 as builder
+FROM rust:latest as builder
 
 RUN USER=root cargo new --bin gem
 WORKDIR ./gem

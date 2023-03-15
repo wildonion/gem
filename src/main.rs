@@ -197,6 +197,10 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // ---------------------------------------------------------------------------------------
     let mut otp_auth = utils::otp::Auth::new(sms_api_token, sms_template); //// the return type is impl Otp trait which we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
     let otp_info = ctx::app::OtpInfo{
+        //// since otp_auth is of type trait, in order 
+        //// to have a trait in struct field or function
+        //// param we have to use it behind a pointer 
+        //// by putting it inside the Box<dyn Trait> or use &dyn Trait  
         otp_auth: Box::new(otp_auth), 
     };
     let arced_mutexd_otp_info = Arc::new( //// in order the OtpInput to be shareable between routers' threads it must be sendable or cloneable and since the Clone trait is not implemented for the OtpInput we're putting it inside the Arc
