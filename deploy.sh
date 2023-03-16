@@ -10,7 +10,7 @@ sudo docker compose -f  docker-compose.yml build --no-cache
 sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 sudo docker exec -it mongodb mongod --bind_ip 64.226.71.201 ########## allow only the server ip access the db which we have to find from the above command
-sudo docker run -d --name haproxy --net gem -v $(pwd):/usr/local/etc/haproxy -p 8404:8404 -p 7439:7439 haproxytech/haproxy-alpine:2.4 
+sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7439:7439 haproxytech/haproxy-alpine:2.4 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 sudo chown -R root:root . && sudo chmod -R 777 .
@@ -21,20 +21,8 @@ sudo apt update && sudo apt upgrade -y
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm
 npm install pm2@latest -g
-sudo apt install -y nginx
 sudo apt install -y snapd
 sudo snap install core; sudo snap refresh core
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-sudo cp devops/conf/api /etc/nginx/sites-available/
-sudo ln -s /etc/nginx/sites-available/api /etc/nginx/sites-enabled/
-echo "[?] SSL APIs? (you must have a registered domain)"
-read SSLAnswer
-if [[ $SSLAnswer == "yes" ]]; then
-    sudo certbot --nginx
-else
-    echo "continue without applying SSL"
-fi
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
