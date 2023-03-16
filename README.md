@@ -163,6 +163,8 @@ we the program id is the public key address of the deployed contract.
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge.
 
+* clean all the docker cache using ```sudo docker buildx prune --all``` command.
+
 ## 🚧 WIP
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 

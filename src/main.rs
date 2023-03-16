@@ -45,6 +45,7 @@ use log::{info, error};
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
+use routerify::Middleware;
 use self::contexts as ctx; // use crate::contexts as ctx;
 
 
@@ -233,11 +234,15 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- building the conse server from the router
     //
     //      we're sharing the db_instance state between routers' threads to get the data inside each api
+    //      and for this the db data must be shareable and safe to send between threads which must be bounded
+    //      to Send + Sync traits 
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
     let api = Router::builder()
         .data(db_instance.unwrap().clone()) //// shared state which will be available to every route handlers is the db_instance which must be Send + Syn + 'static to share between threads
+        .middleware(Middleware::pre(middlewares::logging::logger)) //// enable logging middleware on the incoming request then pass it to the next middleware - pre Middlewares will be executed before any route handlers and it will access the req object and it can also do some changes to the request object if required
+        .middleware(Middleware::post(middlewares::cors::allow)) //// the path that will be fallen into this middleware is "/*" thus it has the OPTIONS route in it also post middleware accepts a response object as its param since it only can mutate the response of all the requests before sending them back to the client
         .scope("/auth", routers::auth::register().await)
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
@@ -245,7 +250,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // .scope("/redis") // TODO -
         // .scope("/ws") // TODO - 
         // .scope("/gql") // TODO - 
-        .middleware(routerify_cors::enable_cors_all())
         .build()
         .unwrap();
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());

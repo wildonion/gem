@@ -196,7 +196,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                     //// one of the NFT mint addr must be inside the snapshot
                                     //// otherwise the NFT is not verified and is not owned
                                     //// by the owner
-                                    let vefified_nft_mint_addresses = snapshot_nfts.iter().any(|mint_addr| mint_addrs.contains(mint_addr));
+                                    let vefified_nft_mint_addresses = mint_addrs.iter().all(|mint_addr| snapshot_nfts.contains(mint_addr));
                                     if !vefified_nft_mint_addresses{
                                         let response_body = ctx::app::Response::<ctx::app::Nill>{
                                             data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array

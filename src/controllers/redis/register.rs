@@ -10,8 +10,6 @@ use hyper::{header, StatusCode, Body, Response};
 
 
 
-// TODO - fetch redis from the server 
-// ...
 
 
 
@@ -20,6 +18,13 @@ use hyper::{header, StatusCode, Body, Response};
 // -------------------------------------------------------------------------
 
 pub async fn register_notif(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// the return type is hyper response
+
+
+    // TODO - fetch redis from the server 
+    // ...
+
+    let redis_client = None;
+
 
     let res = Response::builder(); //// creating a new response cause we didn't find any available route
     let response_body = ctx::app::Response::<ctx::app::Nill>{

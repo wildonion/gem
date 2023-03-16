@@ -15,20 +15,20 @@ services:
     ports:
       - 27017:27017
     restart: unless-stopped
-  conse:
-    build:
-      dockerfile: './Dockerfile'
-    container_name: conse
-    ports:
-      - '7439:7438'
-    volumes:
-      - './assets:/gem/assets'
-    depends_on:
-      - 'mongodb'
-    links:
-      - mongodb 
-    networks:
-      - 'gem'
+  # conse:
+  #   build:
+  #     dockerfile: './Dockerfile'
+  #   container_name: conse
+  #   ports:
+  #     - '7439:7438'
+  #   volumes:
+  #     - './assets:/gem/assets'
+  #   depends_on:
+  #     - 'mongodb'
+  #   links:
+  #     - mongodb 
+  #   networks:
+  #     - 'gem'
 networks:
   gem:
     driver: bridge

@@ -14,24 +14,24 @@ pub mod cors{
 
 
     use crate::constants::*;
-    use hyper::{header, Body, Response, Request, StatusCode, http::HeaderValue};
-
-
-
+    use hyper::{header, Body, Response, StatusCode, http::HeaderValue};
     
-    ///// CORS middleware allow method - by adding this api to the router config we're allowing the client to access all resources of that router 
+    //// CORS middleware allow method,
+    //// by adding this api to the router 
+    //// config we're allowing the client 
+    //// to access all resources of that router 
 
-    pub async fn allow(_: Request<Body>) -> ConseResult<Response<Body>, hyper::Error> { //// res must be mutable to borrow its headers mutably
-        let mut res = Response::default(); //// we've defined the default response as mutable since we want to get its header mutably
+    pub async fn allow(mut res: Response<Body>) -> ConseResult<Response<Body>, hyper::Error> { //// res must be mutable to borrow its headers mutably
         let headers = res.headers_mut();
         headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
         headers.insert(header::ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("*"));
+        headers.insert(header::ACCESS_CONTROL_ALLOW_CREDENTIALS, HeaderValue::from_static("true"));
+        headers.insert(header::ACCESS_CONTROL_MAX_AGE , HeaderValue::from_static("3600"));
         headers.insert(header::ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("*"));
         headers.insert(header::ACCESS_CONTROL_EXPOSE_HEADERS, HeaderValue::from_static("*"));
         *res.status_mut() = StatusCode::OK; // NOTE - this is so important since the browsers will check for the 200 status inside the response 
         Ok(res)
     }
-
 
 
 
