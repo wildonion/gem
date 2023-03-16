@@ -9,7 +9,7 @@ sudo systemctl status docker
 sudo docker compose -f  docker-compose.yml build --no-cache
 sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
-sudo docker exec -it mongodb mongod --bind_ip 172.19.0.3 ########## allow only the conse container access the db which we have to find from the above command
+sudo docker exec -it mongodb mongod --bind_ip 64.226.71.201 ########## allow only the server ip access the db which we have to find from the above command
 sudo docker run -d --name haproxy --net gem -v $(pwd):/usr/local/etc/haproxy -p 8404:8404 -p 7439:7439 haproxytech/haproxy-alpine:2.4 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
