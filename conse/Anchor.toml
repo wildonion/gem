@@ -1,17 +1,18 @@
 [features]
 seeds = false
 skip-lint = false
+
 [programs.localnet]
-ticket = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
-whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
+ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
+whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
 
 [programs.devnet]
-ticket = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
-whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
+ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
+whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
 
 [programs.mainnet]
-ticket = "2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"
-whitelist = "6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"
+ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
+whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
 
 [registry]
 url = "https://api.apr.dev"

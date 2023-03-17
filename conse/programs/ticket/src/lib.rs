@@ -2,7 +2,7 @@
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-declare_id!("2dxHAp1hE9R4zieNEAVct4H5gC9xbYzdJ3DJnJ7EU62Z"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
+declare_id!("DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
 
 #[program]
 pub mod ticket {
@@ -46,7 +46,7 @@ pub mod ticket {
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
 
-        if server != signer_account {
+        if server != signer_account { //// the signer of the tx call or the one who paid the gas fee is the server account itself
             return err!(ErrorCode::RestrictionError);
         }
 
@@ -56,6 +56,12 @@ pub mod ticket {
             ctx.accounts.player.to_account_info()
         } else if winner == 1{
             ctx.accounts.server.to_account_info()
+        } else if winner == 3{
+
+            // equal conditions
+            // ...
+            todo!()
+
         } else{
             return err!(ErrorCode::InvalidWinnerIndex);
         };

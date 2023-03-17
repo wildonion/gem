@@ -4,19 +4,20 @@
 use anchor_lang::prelude::*;
 use mpl_token_metadata::instruction::burn_nft;
 
-declare_id!("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
+declare_id!("4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
 
 
 
 pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
 
-    let program_id_bytes = program_id.as_bytes();
+    let program_id_bytes = program_id.as_bytes(); //// convert the &str into slice of utf8 bytes
     let program_id_bytes_vec = program_id_bytes.to_vec(); //// we must convert the bytes into vector to build the [u8; 44]
     
     //////////////////////
     /////// first approach
+    //////////////////////
     let mut pubkey: [u8; 32] = Default::default();
-    pubkey[..program_id_bytes.len()].clone_from_slice(program_id_bytes);
+    pubkey[..program_id_bytes.len()].clone_from_slice(program_id_bytes); //// clone_from_slice will clone a new one from the passed in utf8 slice 
 
     ///////////////////////
     /////// second approach
@@ -59,9 +60,8 @@ pub mod whitelist {
 
     use super::*;
 
-    pub fn burn_request(ctx: Context<BurnRequest>, bump: u8, burn_tx_hash: String) -> Result<()>{
+    pub fn burn_request(ctx: Context<BurnRequest>, bump: u8) -> Result<()>{
         
-        let this_program_id_public_key = gen_program_pub_key("6oRp5W29ohs29iGqyn5EmYw2PQ8fcYZnCPr5HCdKwkp9");
         let nft_stats = &mut ctx.accounts.nft_stats; //// nft_stats field is a mutabe field thus we have to get it mutably
         let signer_account = ctx.accounts.user.key();
 
@@ -101,9 +101,12 @@ pub mod whitelist {
             None
         };
 
+        // TODO - this will broke the program at runtime
+        // with error: Error processing Instruction 0: Program failed to complete
         //// checking the passed in program id from then frontend
         //// into the accounts section of this instruction handler 
         //// against the current program id.
+        // let this_program_id_public_key = gen_program_pub_key("4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2");
         // if let Some(pub_key) = this_program_id_public_key{
         //     if nft_stats.program_id != pub_key{
         //         return err!(ErrorCode::AccessDeniedDueToInvalidProgramId);
@@ -145,7 +148,7 @@ pub mod whitelist {
     //// data must be deserialize on a sepcific account hence every method needs 
     //// a separate generic or data structure on the chain to be 
     //// loaded inside the account.
-    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>, burn_tx_hash: String, authority: Pubkey) -> Result<()>{
+    pub fn initialize_whitelist(ctx: Context<IntializeWhitelist>, authority: Pubkey) -> Result<()>{
         
         let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and can be used as the whitelist state authority 
         let whitelist_state = &mut ctx.accounts.whitelist_state;
@@ -230,7 +233,7 @@ pub mod whitelist {
 
     }
     
-    pub fn remove_from_whitelist(ctx: Context<RemoveFromWhitelistRequest>, burn_tx_hash: String) -> Result<()>{
+    pub fn remove_from_whitelist(ctx: Context<RemoveFromWhitelistRequest>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
         let whitelsit_state = &mut ctx.accounts.whitelist_state;
@@ -380,7 +383,7 @@ impl Nft{
 //// info contains public key without the 
 //// serialized instruction data.
 #[derive(Accounts)] //// Accounts trait bounding will add the AnchorSerialize and AnchorDeserialize traits to the generic or the BurnRequest struct
-#[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `burn_request` instruction handler with the #[instruction(..)] attribute
+// #[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `burn_request` instruction handler with the #[instruction(..)] attribute
 pub struct BurnRequest<'info> { //// 'info lifetime in function signature is required to store utf8 bytes or &[u8] instruction data in the accounts
     #[account(mut)]
     pub user: Signer<'info>, //// a mutable and a signer account which means this transaction call will be signed by a specific holder or NFT owner and is writable to make changes on it
@@ -522,7 +525,7 @@ pub struct IntializeWhitelist<'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `add_to_whitelist` instruction handler with the #[instruction(..)] attribute
+// #[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `add_to_whitelist` instruction handler with the #[instruction(..)] attribute
 pub struct AddToWhitelistRequest<'info>{
     //// if we want to take money from someone, 
     //// we should make them sign as well as mark 
@@ -688,7 +691,7 @@ impl WhitelistState{
 
 
 #[derive(Accounts)]
-#[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `remove_from_whitelist` instruction handler with the #[instruction(..)] attribute
+// #[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `remove_from_whitelist` instruction handler with the #[instruction(..)] attribute
 pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `AddToWhitelistRequest` struct but will be used for removing a PDA 
     #[account(mut)]
     pub authority: Signer<'info>,

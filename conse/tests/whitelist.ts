@@ -73,7 +73,8 @@ describe("conse whitelist", () => {
         let burn_tx_hash = "0000000000" ///////////////// TODO - this is the NFT burn tx hash
         const [NftStatsPDA, bump] = PublicKey
         .findProgramAddressSync(
-            [nft_owner.publicKey.toBuffer(), Buffer.from(burn_tx_hash, "utf-8")],
+            // [nft_owner.publicKey.toBuffer(), Buffer.from(burn_tx_hash, "utf-8")],
+            [nft_owner.publicKey.toBuffer(), nft_mint.publicKey.toBuffer()],
             program.programId
           )
 
@@ -87,26 +88,26 @@ describe("conse whitelist", () => {
         // and also the one who init the server is the authority of 
         // the the whitelist state and data and only she/he can add 
         // PDA to whitelist or call that method
-        // await program.methods.initializeWhitelist(server.publicKey).accounts({ //// initializing the whitelist state and whitelist data accounts    
-        //     user: server.publicKey, 
-        //     whitelistState: server.publicKey, 
-        //     whitelistData: server.publicKey,
-        // }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+        await program.methods.initializeWhitelist(server.publicKey).accounts({ //// initializing the whitelist state and whitelist data accounts    
+            user: server.publicKey, 
+            whitelistState: server.publicKey, 
+            whitelistData: server.publicKey,
+        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
 
-        // // deserializing the `whitelist_state` account
-        // // which contains the instruction data on chain 
-        // // and is owned by the server which are accessible
-        // // in here by using `.` notation on `deserialized_whitelist_state_account`
-        // let deserialized_whitelist_state_account = await program.account.whitelistState.fetch(server.publicKey);
-        // console.log("deserialized_whitelist_state_account: >>>>>> ", deserialized_whitelist_state_account);
+        // deserializing the `whitelist_state` account
+        // which contains the instruction data on chain 
+        // and is owned by the server which are accessible
+        // in here by using `.` notation on `deserialized_whitelist_state_account`
+        let deserialized_whitelist_state_account = await program.account.whitelistState.fetch(server.publicKey);
+        console.log("deserialized_whitelist_state_account: >>>>>> ", deserialized_whitelist_state_account);
 
 
 
         // ------------
         // Burn Request
         // ------------
-          await program.methods.burnRequest(bump, burn_tx_hash).accounts({
+          await program.methods.burnRequest(bump).accounts({
                 user: nft_owner.publicKey, 
                 nftStats: NftStatsPDA, 
                 nftMint: nft_mint.publicKey,

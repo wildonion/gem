@@ -147,7 +147,8 @@
 
     authority is the program's upgrade authority, the one who can sign transactions 
     on behalf of the account and who has deployed the program and has access to change 
-    the program content thus is the owner of the program.
+    the program content thus is the owner of the program and with new authority account
+    the program id will be changed with new deployment. 
 
     singer is the private key holder and the one who can signs the transaction 
     with his or her private key, PDA is an off curve address with no private 
@@ -205,3 +206,8 @@
     Arc<Mutex<Transaction>> + Send + Sync + 'static to avoid deadlock when want to share 
     it between tokio spawn threads using tokio channels but solana fix this by knowing 
     which account holds what instruction data at runtime. 
+
+    `#[derive(Accounts)]` must be on top of the structure that contains accounts, 
+    `#[account()]` must be on top of the account fields that own a generic on chain 
+    and `#[account]` must be on top of the generic structure that is owned by an account 
+    which contains its utf8 bytes data of the serialized generic structure.
