@@ -165,15 +165,21 @@ we the program id is the public key address of the deployed contract.
 
 * clean all the docker cache using ```sudo docker buildx prune --all``` command.
 
+* register push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` register pubsub topic on redis server.
+
+* subscribing to push notification strategy: client `<--gql subscription-->` redis published topics inside the server.
+
+* subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis. 
+
 ## 🚧 WIP
+
+* bakend design pattern sketch in wiki.
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
 
-* push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` register pubsub topic on redis server.
-
 * updating [hyper](https://hyper.rs/) to latest version
 
-* HAproxy, k8s-ing docker containers in `docker-compose.yml` and CI/CD in `deploy.sh`, also update the image version inside each `Dockerfile`. 
+* CI/CD in `deploy.sh` based on the latest commits. 
 
 * all TODOs inside the app
 
