@@ -202,10 +202,10 @@
 
     by putting instruction data in each account solana can know how to run transaction
     in a better parallel manner by knowing which accounts and data is required before runtime.
-    means that each tx can be run in a separate thread and must be 
-    Arc<Mutex<Transaction>> + Send + Sync + 'static to avoid deadlock when want to share 
-    it between tokio spawn threads using tokio channels but solana fix this by knowing 
-    which account holds what instruction data at runtime. 
+    means that each tx can be run in a separate thread and must be Arc<Mutex<Transaction>> + Send + Sync + 'static 
+    to avoid deadlocks, race conditions and TOD attacks when want to share it between tokio spawn 
+    threads using tokio channels but solana fix this by knowing which 
+    account holds what instruction data at runtime. 
 
     `#[derive(Accounts)]` must be on top of the structure that contains accounts, 
     `#[account()]` must be on top of the account fields that own a generic on chain 
