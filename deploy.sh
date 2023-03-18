@@ -1,4 +1,5 @@
 #!/bin/bash
+SERVER_IP=hostname -I | awk '{print $1}'
 sudo apt update
 sudo apt install apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -9,8 +10,8 @@ sudo systemctl status docker
 sudo docker compose -f  docker-compose.yml build --no-cache
 sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
-sudo docker exec -it mongodb mongod --bind_ip 64.226.71.201 ########## allow only the server ip access the db which we have to find from the above command
-sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7439:7439 haproxytech/haproxy-alpine:2.4 
+sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db
+sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7439:7439 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
 sudo docker ps -a && sudo docker compose ps -a
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"

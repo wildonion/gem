@@ -22,6 +22,8 @@ pub fn gen_program_pub_key(program_id: &str) -> Option<Pubkey>{
     ///////////////////////
     /////// second approach
     ///////////////////////
+    //// in converting the vector into an array
+    //// we must know the exact size of the array
     let program_id_bytes_fixed_size: [u8; 32] = match program_id_bytes_vec.try_into(){ //// converting the vector into the slice form or array with a fixed size of 32 bytes which is the size of each public key
         Ok(data) => data,
         Err(e) => [0u8; 32], //// returning an empty array of zero with a fixed size of 32 bytes 
@@ -495,7 +497,7 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
 }
 
 
-impl<'info> for BurnRequest<'info>{}
+impl<'info> BurnRequest<'info>{}
 
 #[derive(Accounts)]
 pub struct IntializeWhitelist<'info>{

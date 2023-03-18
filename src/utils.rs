@@ -459,7 +459,7 @@ macro_rules! db {
                 )
             );
             let app_storage = if $engine.as_str() == "mongodb"{
-                info!("➔ 🛢️ switching to mongodb on host {}", $host);
+                info!("➔ 🛢️ switching to mongodb on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
                 let db_addr = if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)
@@ -495,6 +495,7 @@ macro_rules! db {
                     }
                 }
             } else if $engine.as_str() == "postgres"{
+                info!("➔ 🛢️ switching to postgres on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");                
                 if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)
