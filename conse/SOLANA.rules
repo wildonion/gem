@@ -24,8 +24,11 @@
     in its raw format and the private key to sign transaction method calls 
     to make sure that the public key of the transaction call or the signer 
     info is the one who signed the call with his or her private key, also 
-    the private key is a pen that can be used to sign 
-    every program transaction call.  
+    the private key is a pen that can be used to sign every program transaction 
+    call which the generated signature from signing the transaction is a 64 bytes 
+    utf8 bytes which means that the tx has signed by the caller 
+    using his/her private key.
+  
 
     =============================================
     ============= ABOUT NULL POINTER OPTIMISATION
@@ -119,6 +122,7 @@
     =========================================
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
+    https://docs.solana.com/developing/programming-model/accounts#ownership-and-assignment-to-programs
     
     we must use &[u8] since it's cheaper than Vec which is on the heap, 
     but it's not sized at compile time thus it must be behind a pointer 
@@ -144,11 +148,23 @@
     inside a specific account can only be modified by the account owner means the 
     owner must be the program id and the runtime grants the program write access 
     to the account if its id matches the owner.
+    
+    since instruction data are on solana accounts thus every account must be 
+    initialized inside the program to be owned by the program id first at runtime 
+    using the CPI calls by the help of the init constraint then it can mutate 
+    the state of the contract on chain using the serialized data inside of it 
+    (since data will be stored inside accounts) which also must be the owner of the 
+    serialized generic data, the init constraint by default sets the owner field 
+    of the created account to the currently executing program means that it sets
+    the account.owner to the program id so it can mutate the instruction data on chain, 
+    aslo we can add the owner constraint to specify a different program owner.
 
     authority is the program's upgrade authority, the one who can sign transactions 
     on behalf of the account and who has deployed the program and has access to change 
     the program content thus is the owner of the program and with new authority account
-    the program id will be changed with new deployment. 
+    the program id will be changed with new deployment also SBF loader will use the 
+    program's account's owner to load the program which is the authority 
+    who deployed the program.
 
     singer is the private key holder and the one who can signs the transaction 
     with his or her private key, PDA is an off curve address with no private 
@@ -172,16 +188,16 @@
     depositing/withdrawing lamports as a escrow contract.
 
 
-    program id    : is the public key of the deployed program which is inside the target/deploy
+    program id    : is the public key of the deployed program which the keypair is inside the target/deploy
     authority     : is the upgrade authority or the owner of the deployed contract
     owner         : is the one who can mutate instruction data on the chain; owner == program_id means only the program account can mutate data on the chain 
     holder        : is the one who has the generated private key from the Ed25519 elliptic curve 
     signer        : is the private key holder and can sign tx calls
     signer mutable: is the private key holder which can sign tx calls and must be writable or mutable to make changes on it like transferring lamports from it
-    PDA           : is an off curve public key that can be used as the escrow account 
+    PDA           : is an off curve public key that can be used as the escrow account and sign CPI calls
 
 
-    in our case the game_state field is an account over generic GameState
+    in ticket program the game_state field is an account over generic GameState
     in which its owner must equals to the id inside the declare_id which is 
     the id of the program also the #[accounts] proc macro attribute sets the 
     owner of the GameState data to the declare_id in order to be able to mutate
@@ -201,11 +217,11 @@
     owner of the instruction data to be able to mutate its instruction data on chain. 
 
     by putting instruction data in each account solana can know how to run transaction
-    in a better parallel manner by knowing which accounts and data is required before runtime.
+    in a better parallel manner by knowing which accounts and data is required before runtime,
     means that each tx can be run in a separate thread and must be Arc<Mutex<Transaction>> + Send + Sync + 'static 
     to avoid deadlocks, race conditions and TOD attacks when want to share it between tokio spawn 
-    threads using tokio channels but solana fix this by knowing which 
-    account holds what instruction data at runtime. 
+    threads using tokio channels but solana fix this by knowing which account holds what instruction 
+    data at runtime to allow the tx be executed in parallel. 
 
     `#[derive(Accounts)]` must be on top of the structure that contains accounts, 
     `#[account()]` must be on top of the account fields that own a generic on chain 
