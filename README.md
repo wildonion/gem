@@ -173,11 +173,11 @@ we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 
-* bakend design pattern sketch in wiki.
+* bakend design pattern sketch using freeform inside wiki.
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
 
-* updating [hyper](https://hyper.rs/) to latest version
+* handle different versions of [hyper](https://hyper.rs/) in `main.rs`.
 
 * CI/CD in `deploy.sh` based on the latest commits. 
 
