@@ -495,6 +495,8 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
 }
 
 
+impl<'info> for BurnRequest<'info>{}
+
 #[derive(Accounts)]
 pub struct IntializeWhitelist<'info>{
     // anchor `#[account]` proc macro attribute constraint guide: https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
