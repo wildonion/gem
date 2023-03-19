@@ -130,21 +130,21 @@ pub mod ticket {
         
 
         emit!(GameResultEvent{
-            amount_receive: {
+            amount_receive: { ////--- we can also omit this
                 if is_equal_condition{
                     0 as u64
                 } else{
                     amount_receive
                 }
-            },
-            event_tax_amount: {
+            }, ////--- we can also omit this
+            event_tax_amount: { ////--- we can also omit this
                 if is_equal_condition{
                     0 as u64
                 } else{
                     event_tax_amount
                 }
-            },
-            winner: {
+            }, ////--- we can also omit this
+            winner: { ////--- we can also omit this
                 if winner == 0{
                     Some(ctx.accounts.player.key())
                 } else if winner == 1{
@@ -152,7 +152,7 @@ pub mod ticket {
                 } else{
                     None
                 }
-            },
+            }, ////--- we can also omit this
             is_equal: is_equal_condition,
         });
 
