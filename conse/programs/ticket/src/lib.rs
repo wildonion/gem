@@ -62,71 +62,98 @@ pub mod ticket {
         **pda.try_borrow_mut_lamports()? -= general_tax_amount;
         **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
 
-
-        let to_winner = if winner == 0{
-            ctx.accounts.player.to_account_info()
-        } else if winner == 1{
-            ctx.accounts.server.to_account_info()
-        } else if winner == 3{
-
-            // equal condition
     
-            let pda_amount = **pda.try_borrow_mut_lamports()?;
-            let half_pda_amount = (pda_amount/2) as u64;
-            let server_account = ctx.accounts.server.to_account_info();
-            let player_account = ctx.accounts.player.to_account_info();
-            **server_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-            **player_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+        let mut to_winner = match winner{
+            0 => Some(ctx.accounts.player.to_account_info()),
+            1 => Some(ctx.accounts.server.to_account_info()),
+            3 => {
+                
+                // equal condition
 
-            return Ok(()) //// return ok from contract since no more instruction is needed
+                let pda_amount = **pda.try_borrow_mut_lamports()?;
+                let half_pda_amount = (pda_amount/2) as u64;
+                let server_account = ctx.accounts.server.to_account_info();
+                let player_account = ctx.accounts.player.to_account_info();
+                **server_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+                **player_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
 
-        } else{
-            return err!(ErrorCode::InvalidWinnerIndex);
+                is_equal_condition = true;
+                None
+                
+            },
+            _ => return err!(ErrorCode::InvalidWinnerIndex),
         };
+        
+  
+   
+        //// we're sure that we have a winner
+        if !is_equal_condition && to_winner.is_some(){
+            to_winner = to_winner.unwrap();
+            //// calculating the amount that must be sent
+            //// the winner from the PDA account based on
+            //// instruction percentages.
+            //
+            //// we've assumed that the third instruction 
+            //// is the event with 25 percent special tax.
+            let amount_receive = if instruct == 0 {
+                receive_amount(total_amount_after_general_tax, 95)
+            } else if instruct == 1 {
+                receive_amount(total_amount_after_general_tax, 70)
+            } else if instruct == 2 {
+                receive_amount(total_amount_after_general_tax, 35)
+            } else if instruct == 3 {
+                receive_amount(total_amount_after_general_tax, 25)
+            } else if instruct == 4 {
+                receive_amount(total_amount_after_general_tax, 0)
+            } else {
+                return err!(ErrorCode::InvalidInstruction);
+            };
 
-
-        //// calculating the amount that must be sent
-        //// the winner from the PDA account based on
-        //// instruction percentages.
-        //
-        //// we've assumed that the third instruction 
-        //// is the event with 25 percent special tax.
-        let amount_receive = if instruct == 0 {
-            receive_amount(total_amount_after_general_tax, 95)
-        } else if instruct == 1 {
-            receive_amount(total_amount_after_general_tax, 70)
-        } else if instruct == 2 {
-            receive_amount(total_amount_after_general_tax, 35)
-        } else if instruct == 3 {
-            receive_amount(total_amount_after_general_tax, 25)
-        } else if instruct == 4 {
-            receive_amount(total_amount_after_general_tax, 0)
-        } else {
-            return err!(ErrorCode::InvalidInstruction);
-        };
-
-        ///////////////////////////////////////////////////
-        ////////// CALCULATING TAX BASED ON THE INSTRUCTION
-        ///////////////////////////////////////////////////
-        //--------------------------------------------
-        // we must withdraw all required lamports 
-        // from the PDA since the PDA 
-        // has all of it :)
-        //--------------------------------------------
-        // bet amount      : 1    SOL - %5  = 0.95 -> 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
-        // amount after tax: 0.95 SOL - %25 = 0.24 -> 0.95 - 0.24 = 0.71 must withdraw for %25 tax to revenue share wallet 
-        let event_tax_amount = total_amount_after_general_tax - amount_receive;
-        //// withdraw event tax fom PDA to fill the revenue share account 
-        **pda.try_borrow_mut_lamports()? -= event_tax_amount;
-        **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
-        //// withdraw amount receive fom PDA to fill the winner 
-        **pda.try_borrow_mut_lamports()? -= amount_receive;
-        **to_winner.try_borrow_mut_lamports()? += amount_receive;
-
+            ///////////////////////////////////////////////////
+            ////////// CALCULATING TAX BASED ON THE INSTRUCTION
+            ///////////////////////////////////////////////////
+            //--------------------------------------------
+            // we must withdraw all required lamports 
+            // from the PDA since the PDA 
+            // has all of it :)
+            //--------------------------------------------
+            // bet amount      : 1    SOL - %5  = 0.95 -> 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
+            // amount after tax: 0.95 SOL - %25 = 0.24 -> 0.95 - 0.24 = 0.71 must withdraw for %25 tax to revenue share wallet 
+            let event_tax_amount = total_amount_after_general_tax - amount_receive;
+            //// withdraw event tax fom PDA to fill the revenue share account 
+            **pda.try_borrow_mut_lamports()? -= event_tax_amount;
+            **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
+            //// withdraw amount receive fom PDA to fill the winner 
+            **pda.try_borrow_mut_lamports()? -= amount_receive;
+            **to_winner.try_borrow_mut_lamports()? += amount_receive;
+        }
+        
 
         emit!(GameResultEvent{
-            amount_receive,
-            event_tax_amount
+            amount_receive: {
+                if is_equal_condition{
+                    0 as u64
+                } else{
+                    amount_receive
+                }
+            },
+            event_tax_amount: {
+                if is_equal_condition{
+                    0 as u64
+                } else{
+                    event_tax_amount
+                }
+            },
+            winner: {
+                if winner == 0{
+                    Some(ctx.accounts.player.key())
+                } else if winner == 1{
+                    Some(ctx.accounts.server.key())
+                } else{
+                    None
+                }
+            },
+            is_equal: is_equal_condition,
         });
 
         Ok(())
@@ -404,6 +431,8 @@ pub struct StartGameEvent{
 pub struct GameResultEvent{
     pub amount_receive: u64,
     pub event_tax_amount: u64,
+    pub winner: Option<Pubkey>, //// since it might be happened the equal condition which there is no winner  
+    pub is_equal: bool,
 }
 
 #[event]
