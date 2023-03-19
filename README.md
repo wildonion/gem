@@ -181,9 +181,7 @@ we the program id is the public key address of the deployed contract.
 
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification, also add redis docker image inside the `docker-compose.yml`.
 
-* balance the loads between docker services and images using `k8s` on `AWS` cloud.
-
-* CI/CD configuration files based on the latest commits. 
+* balance the loads between docker services and images using `k8s` on `AWS` cloud also CI/CD configuration files based on the latest commits. 
 
 * all TODOs inside the app
 
