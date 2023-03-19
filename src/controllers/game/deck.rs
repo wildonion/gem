@@ -51,7 +51,6 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
             let access_level = token_data.claims.access_level;
     
             
-            
             let db_to_pass = db.clone();
             if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ //// finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
@@ -64,7 +63,7 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
                                 Ok(deck_info) => {
 
                                     let mut god_has_a_group = false; //// if we initialize it here then we have to define it as mutable since we want to change its content later otherwise for first initialization inside other scopes there is no need to define it as mutable here 
-                                    let group_filter = doc!{"god_id": _id};
+                                    let group_filter = doc!{"god_id": _id.unwrap().to_string()};
                                     let groups = db.clone().database(&db_name).collection::<schemas::game::GroupInfo>("groups");
                                     match groups.find_one(group_filter, None).await.unwrap(){ //// first we have to check that the caller owns a group
                                         Some(group_doc) => god_has_a_group = true, //// if we're here means the caller of this api has a already and owned group

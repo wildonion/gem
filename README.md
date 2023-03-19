@@ -173,17 +173,21 @@ we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 
-* backend design pattern sketch using freeform.
+* reserve ticket contract tests and update to the latest `Anchor` version also fix the whitelist contract issue in `initializeWhitelist` method.
 
-* `ed25519` keypair for server verification, updating app and time hash based locking api. 
-
-* complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
+* `ed25519` keypair for server verification, updating app and time hash based locking api, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 
-* CI/CD configuration files in `deploy.sh` based on the latest commits. 
+* complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification, also add redis docker image inside the `docker-compose.yml`.
+
+* balance the loads between docker services and images using `k8s` on `AWS` cloud.
+
+* CI/CD configuration files based on the latest commits. 
 
 * all TODOs inside the app
+
+* backend design pattern sketch using freeform.
 
 * communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 

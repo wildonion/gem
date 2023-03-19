@@ -45,6 +45,10 @@ pub mod ticket {
         let game_state = &mut ctx.accounts.game_state;
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
+        let mut is_equal_condition = false;
+        let mut amount_receive: u64 = 0;
+        let mut event_tax_amount: u64 = 0;
+
 
         if server != signer_account { //// the signer of the tx call or the one who paid the gas fee is the server account itself
             return err!(ErrorCode::RestrictionError);
@@ -88,6 +92,12 @@ pub mod ticket {
    
         //// we're sure that we have a winner
         if !is_equal_condition && to_winner.is_some(){
+            //// every types and variable that 
+            //// are defined here are only accessible
+            //// to this scope since their lifetimes 
+            //// out of this if block will be dropped,
+            //// thanks to the rust :) which doesn't 
+            //// collect garbages.
             to_winner = to_winner.unwrap();
             //// calculating the amount that must be sent
             //// the winner from the PDA account based on
@@ -95,7 +105,7 @@ pub mod ticket {
             //
             //// we've assumed that the third instruction 
             //// is the event with 25 percent special tax.
-            let amount_receive = if instruct == 0 {
+            amount_receive = if instruct == 0 { //// we've defined the amount_receive earlier up
                 receive_amount(total_amount_after_general_tax, 95)
             } else if instruct == 1 {
                 receive_amount(total_amount_after_general_tax, 70)
@@ -119,7 +129,7 @@ pub mod ticket {
             //--------------------------------------------
             // bet amount      : 1    SOL - %5  = 0.95 -> 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
             // amount after tax: 0.95 SOL - %25 = 0.24 -> 0.95 - 0.24 = 0.71 must withdraw for %25 tax to revenue share wallet 
-            let event_tax_amount = total_amount_after_general_tax - amount_receive;
+            event_tax_amount = total_amount_after_general_tax - amount_receive; //// we've defined the event_tax_amount earlier up
             //// withdraw event tax fom PDA to fill the revenue share account 
             **pda.try_borrow_mut_lamports()? -= event_tax_amount;
             **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
@@ -375,21 +385,22 @@ pub struct ReserveTicket<'info>{
 
     */
     #[account(
-        //// since we want to mutate instruction data 
-        //// or the generic TicketStats on chain thus the 
-        //// PDA account must be defined as mutable
-        //// and also the owner of the program or 
-        //// its owner must equals to the program id
-        //// because only the program owner can mutate 
-        //// data on the chain. 
-        mut,
+        init,
+        space = 300,
+        payer = user,
         seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
         bump = ticket_stats.bump
     )]
     //// declaration of account owned by the 
     //// program for storing data on chain means
-    //// that the owner can of the program owner
-    //// can store and mutate data on chain. 
+    //// that the owner is the program owner
+    //// and can store and mutate data on chain.
+    //// since init constraint will initialize 
+    //// this account on solana runtime via a CPI call
+    //// in which its owner by default is the program id
+    //// also since this is a PDA account it must be initialized
+    //// in order to use it later inside another 
+    //// instruction handler method. 
     pub ticket_stats: Account<'info, TicketStats>, 
     //// `AccountInfo` type don't implement any checks 
     //// on the account being passed and we can fix the
@@ -403,8 +414,12 @@ pub struct ReserveTicket<'info>{
     //// data and if we want to deserialize a data we must 
     //// use `Account` type which is a wrapper around the 
     //// `AccountInfo` type.
+    //
+    //// more than one `AccountInfo` inside the struct
+    //// needs to be checked and tell solana that 
+    //// these are safe. 
     pub satking_pool: AccountInfo<'info>, 
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System> //// this can also be another program instead of System
 }
 
 #[error_code]

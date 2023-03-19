@@ -403,7 +403,9 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         //// to the solana runtime to set the owner of 
         //// the `nft_stats` to the program id
         //// since only the program must be able to 
-        //// mutate its generic data on chain.
+        //// mutate its generic data on chain, for the 
+        //// PDA it must also be initialized to use it 
+        //// later inside another instruction handler method.
         //
         //// `init` will initialize a call using a cpi to the solana 
         //// to create the init account that its owner is the program
@@ -435,7 +437,10 @@ pub struct BurnRequest<'info> { //// 'info lifetime in function signature is req
         //// also since PDA is a public key only wallet address, we can 
         //// send to and withdraw from it and sign cpi with it inside the 
         //// contract since it has no private key and is off curve.
-        init, //// --- init also requires space and payer constraints --- 
+        //// ------------------------------------------------------
+        //// --- init also requires space and payer constraints ---
+        //// ------------------------------------------------------
+        init, 
         space = 300, //// first 8 byte is the anchor discriminator and the rest is the size of the Nft struct which is Nft::MAX_SIZE or 256 bytes
         payer = user, //// the payer is the signer which must be the NFT owner, this constraint will be checked inside the `burn_request` method
         // seeds = [user.key().as_ref(), burn_tx_hash.as_bytes()], //// the following is the PDA account that can be created using the signer public key which is the nft owner and the nft burn tx hash to create the whitelist id; as_ref() converts the public key of each account into utf8 bytes  
@@ -556,6 +561,15 @@ pub struct AddToWhitelistRequest<'info>{
         //// instead of creating signature from wallet addresses 
         //// or creating merkle root from them we can use PDA
         //// to add or remove them into or from the list.
+        //
+        //// when we want to use the PDA account it must be
+        //// mutable since we want to mutate instruction data 
+        //// or the generic Nft on chain thus the 
+        //// PDA account must be defined as mutable
+        //// and also the owner of the program or 
+        //// its owner must equals to the program id
+        //// because only the program owner can mutate 
+        //// data on the chain. 
         mut, 
         // seeds = [nft_stats.owner.key().as_ref(), burn_tx_hash.as_bytes()], //// the following is the PDA account that can be created using the nft owner and the nft burn tx hash to create the whitelist id
         seeds = [nft_stats.owner.key().as_ref(), nft_stats.mint.key().as_ref()], //// the following is the PDA account that can be created using the nft owner and the nft mint address to create the whitelist id

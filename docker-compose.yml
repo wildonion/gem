@@ -16,7 +16,7 @@ services:
       - 27017:27017
     restart: unless-stopped
   #---------------------------------------
-  #     Rust Docker Configuration
+  #     Conse Rust Docker Configuration
   #---------------------------------------
   # NOTE - due to the HAproxy DNS resolving 
   #        bug we've commented the following
@@ -26,20 +26,26 @@ services:
   #        rust server packets from the VPS ip
   #        to the specified and opened port 
   #        using HAproxy docker.
-  # conse:
-  #   build:
-  #     dockerfile: './Dockerfile'
-  #   container_name: conse
-  #   ports:
-  #     - '7439:7438'
-  #   volumes:
-  #     - './assets:/gem/assets'
-  #   depends_on:
-  #     - 'mongodb'
-  #   links:
-  #     - mongodb 
-  #   networks:
-  #     - 'gem'
+  # NOTE - rust dockerfile is useful when 
+  #        we want to balance between the loads
+  #        of all services using k8s or HAproxy
+  #        inside the cloud thus the conse server 
+  #        must be dockerized to be balanced 
+  #        with high loads using k8s.  
+  conse:
+    build:
+      dockerfile: './Dockerfile'
+    container_name: conse
+    ports:
+      - '7439:7438'
+    volumes:
+      - './assets:/gem/assets'
+    depends_on:
+      - 'mongodb'
+    links:
+      - mongodb 
+    networks:
+      - 'gem'
 networks:
   gem:
     driver: bridge
