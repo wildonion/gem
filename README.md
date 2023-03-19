@@ -175,6 +175,8 @@ we the program id is the public key address of the deployed contract.
 
 * backend design pattern sketch using freeform.
 
+* `ed25519` keypair for server verification, updating app and time hash based locking api. 
+
 * complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification. 
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.

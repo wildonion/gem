@@ -50,25 +50,10 @@ pub mod ticket {
             return err!(ErrorCode::RestrictionError);
         }
 
-        let amount = game_state.amount;
+
         let pda = game_state.to_account_info();
-        let to_winner = if winner == 0{
-            ctx.accounts.player.to_account_info()
-        } else if winner == 1{
-            ctx.accounts.server.to_account_info()
-        } else if winner == 3{
-
-            // equal conditions
-            // ...
-            todo!()
-
-        } else{
-            return err!(ErrorCode::InvalidWinnerIndex);
-        };
-
-
+        let amount = game_state.amount;
         let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
-        
         //// calculating the general tax amount
         //// and transferring from PDA to revenue share wallet 
         let total_amount_after_general_tax = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
@@ -76,6 +61,29 @@ pub mod ticket {
         //// withdraw %5 fom PDA to fill the revenue share account 
         **pda.try_borrow_mut_lamports()? -= general_tax_amount;
         **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
+
+
+        let to_winner = if winner == 0{
+            ctx.accounts.player.to_account_info()
+        } else if winner == 1{
+            ctx.accounts.server.to_account_info()
+        } else if winner == 3{
+
+            // equal condition
+    
+            let pda_amount = **pda.try_borrow_mut_lamports()?;
+            let half_pda_amount = (pda_amount/2) as u64;
+            let server_account = ctx.accounts.server.to_account_info();
+            let player_account = ctx.accounts.player.to_account_info();
+            **server_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+            **player_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
+            return Ok(()) //// return ok from contract since no more instruction is needed
+
+        } else{
+            return err!(ErrorCode::InvalidWinnerIndex);
+        };
+
 
         //// calculating the amount that must be sent
         //// the winner from the PDA account based on
@@ -97,7 +105,9 @@ pub mod ticket {
             return err!(ErrorCode::InvalidInstruction);
         };
 
-        
+        ///////////////////////////////////////////////////
+        ////////// CALCULATING TAX BASED ON THE INSTRUCTION
+        ///////////////////////////////////////////////////
         //--------------------------------------------
         // we must withdraw all required lamports 
         // from the PDA since the PDA 

@@ -24,6 +24,27 @@ Coded by
 
 
 
+=======================
+COMMUNICATION PROTOCOLS
+=======================
+
+gql ws client 
+    |
+    |
+    ------riker and tokio server (select!{}, spawn(), job q channels) -------
+                                                                            |
+                                                                           tlps
+                                                                            |
+                                                                            -----
+                                                                                quic and udp
+                                                                                tcp 
+                                                                                rpc capnp 
+                                                                                zmq 
+                                                                                gql
+                                                                                ws
+                                                                                redis client
+
+
 
 */
 
