@@ -17,6 +17,8 @@ describe("conse whitelist", () => {
     const edition = anchor.web3.Keypair.generate(); // TODO 
     const spl_token = anchor.web3.Keypair.generate(); // TODO 
     const collection_metadata = anchor.web3.Keypair.generate(); // TODO 
+    
+    
     // only the program itself can mutate passed in 
     // instruction data to a instruction handler on chain
     const program = anchor.workspace.Whitelist as Program<Whitelist>;
@@ -30,6 +32,9 @@ describe("conse whitelist", () => {
     //// signer must pay for the transaction fees 
     //// and we can make an account as the signer by putting 
     //// it inside the signers([]) array
+    //
+    //// use a real provider or connection like testnet or devnet
+    //// Configure the client to use the local cluster. 
     const provider = anchor.AnchorProvider.env(); //// the authority who has deployed this program is: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
 
     

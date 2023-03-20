@@ -20,7 +20,7 @@ pub mod ticket {
         
         let game_state = &mut ctx.accounts.game_state;
         let pda_lamports = game_state.to_account_info().lamports();
-        if pda_lamports != amount {
+        if pda_lamports != amount { //// amount is the total amounts of PDA (server bet + player bet)
             return err!(ErrorCode::InsufficientFund);
         }
 
@@ -75,13 +75,19 @@ pub mod ticket {
                 // equal condition
 
                 let pda_amount = **pda.try_borrow_mut_lamports()?;
-                let half_pda_amount = (pda_amount/2) as u64;
                 let server_account = ctx.accounts.server.to_account_info();
                 let player_account = ctx.accounts.player.to_account_info();
-                **server_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-                **player_account.try_borrow_mut_lamports()? += half_pda_amount; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-
-                is_equal_condition = true;
+                if pda_amount == amount{
+                    let half = (pda_amount / 2) as u64;
+                    **server_account.try_borrow_mut_lamports()? += half; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+                    **player_account.try_borrow_mut_lamports()? += half; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+    
+                    is_equal_condition = true;
+                    
+                } else{
+                    return err!(ErrorCode::InsufficientFundEqualCondition);
+                }
+                
                 None
                 
             },
@@ -98,7 +104,7 @@ pub mod ticket {
             //// out of this if block will be dropped,
             //// thanks to the rust :) which doesn't 
             //// collect garbages.
-            to_winner = to_winner.unwrap();
+            let to_winner = to_winner.unwrap();
             //// calculating the amount that must be sent
             //// the winner from the PDA account based on
             //// instruction percentages.
@@ -424,9 +430,11 @@ pub struct ReserveTicket<'info>{
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Error InsufficientFund")]
+    #[msg("Error InsufficientFund!")]
     InsufficientFund,
-    #[msg("Restriction error")]
+    #[msg("Error InsufficientFund In Equal Condition!")]
+    InsufficientFundEqualCondition,
+    #[msg("Restriction error!")]
     RestrictionError,
     #[msg("Invalid Winner Index")]
     InvalidWinnerIndex,

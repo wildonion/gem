@@ -2,11 +2,11 @@
 
 
 
-
+use solana_sdk::{pubkey::Pubkey, program_pack::Pack};
+use solana_client::{rpc_request, rpc_response, rpc_client::{self, RpcClient}}; //// self refers to the structure or module (rpc_client in our case) itself
 use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use borsh::{BorshDeserialize, BorshSerialize};
-
 
 
 
@@ -100,4 +100,50 @@ impl WhitelistInfo{
             Some(owner.mint_addrs)
         }
     }
+}
+
+
+#[derive(Deserialize)]
+pub struct RpcTokenAccount{
+    pub address: String,
+}
+
+pub async fn verify_owner(owner: String, mint_addrs: &[String], rpc_client: &RpcClient) -> bool{
+    
+    //// in rpc we can call the method name of 
+    //// the actor object directly with a passed 
+    //// in prams using rpc_request from another device 
+    //// to get the utf8 response and map it 
+    //// into another structure also in json rpc we 
+    //// have to use the json codec and in rpc capnp 
+    //// we have to use capnp codec
+    let method_name = "getTokenLargestAccounts";
+    let request = rpc_request::RpcRequest::Custom { method: method_name };
+    let params = serde_json::json!(mint_addrs); //// since the solana rpc protocol is a json based rpc thus we have to pass the encoded data as a json 
+
+    //// sending the rpc request to the solana rpc endpoint which is 
+    //// inside the rpc_client, also we're deserializing the response
+    //// came back from the json rpc server into a vector of RpcTokenAccount.  
+    let res: Result<rpc_response::Response<Vec<RpcTokenAccount>>, Box<dyn std::error::Error>> = 
+            rpc_client.send(request, params).map_err(|e| e.into()); //// map the error if there was any 
+    let addr = res
+            .unwrap()
+            .value
+            .first()
+            .take() //// take() takes the some part and leaves a None if there is no some
+            .unwrap()
+            .address
+            .parse()
+            .unwrap();
+
+    let mut account = rpc_client.get_account(&addr).unwrap();
+    let token = spl_token::state::Account::unpack(&mut account.data).unwrap(); //// to borrow the data of the account mutably we must define the account as mutable
+    let fetched_owner = token.owner;
+
+    if owner == fetched_owner.to_string(){
+        true 
+    } else{
+        false
+    }
+    
 }

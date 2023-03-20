@@ -26,6 +26,7 @@ pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static NO_API_KEY: &str = "No Api Key";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static NOT_VERIFIED_NFT: &str = "Nft Mint Address Is Not Verified";
+pub static NOT_VERIFIED_OWNER: &str = "Nft Min Addresses Deson't Belong To The Owner";
 pub static ALREADY_BURNED: &str = "Nft Mint Address Is Already Burned";
 pub static REGISTERED: &str = "Registered Successfully";
 pub static DO_LOGIN: &str = "Please Login";

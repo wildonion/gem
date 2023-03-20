@@ -62,6 +62,11 @@ pub mod whitelist {
 
     use super::*;
 
+    pub fn burn_requests(ctx: Context<BurnRequest>, bump: u8, nfts: Vec<> ) -> Result<()>{
+
+        
+    }
+
     pub fn burn_request(ctx: Context<BurnRequest>, bump: u8) -> Result<()>{
         
         let nft_stats = &mut ctx.accounts.nft_stats; //// nft_stats field is a mutabe field thus we have to get it mutably

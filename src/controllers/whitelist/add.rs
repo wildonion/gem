@@ -2,8 +2,7 @@
 
 
 
-use crate::controllers::whitelist;
-use crate::utils;
+
 use crate::middlewares;
 use crate::contexts as ctx;
 use crate::schemas;
@@ -18,7 +17,16 @@ use log::info;
 use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
 use std::env;
-
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::{
+    account::ReadableAccount, program_pack::Pack,
+    pubkey::Pubkey,
+    commitment_config::CommitmentConfig,
+    system_transaction,
+    signature::Keypair,
+    signer::Signer,
+    signature::Signature,
+};
 
 
 
@@ -37,42 +45,19 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     use routerify::prelude::*; //// to build the response object
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let sol_net = env::var("SOLANA_NET").expect("⚠️ no solana net vairiable set");
+    // let sol_net = env::var("SOLANA_DEVNET").expect("⚠️ no solana net vairiable set");
+    let sol_net = env::var("SOLANA_MAINNET").expect("⚠️ no solana net vairiable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    
+    let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String since the address is of type String 
 
-    
-    ///// ==============================================================================
-    ////                                SOLANA RPC REQUESTS
-    ///// ==============================================================================
-    // use solana_transaction_status::UiTransactionEncoding;
-    // use solana_client_helpers::RpcClient;
-    // use solana_sdk::{
-    //     commitment_config::CommitmentConfig,
-    //     system_transaction,
-    //     signature::Keypair,
-    //     signer::Signer,
-    //     signature::Signature,
-    // };
-    // let rpc_client = RpcClient::new_with_commitment::<String>(sol_net.into(), CommitmentConfig::confirmed()); //// the generic that must be passed to the new_with_commitment method must be String 
-    // let payer = Keypair::new();
-    // let sender = Keypair::new();
-    // let recipient = Keypair::new();
-    // let latest_blockhash = rpc_client.get_latest_blockhash().unwrap();
-
-    // let tx = system_transaction::transfer(&sender, &recipient.pubkey(), 10_000_000_000, latest_blockhash);
-    // let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
-    // let transaction = rpc_client.get_transaction(
-    //     &signature,
-    //     UiTransactionEncoding::Json,
-    // ).unwrap();
-    
-    // info!("[[[[smapel transaction details]]]] {:#?}", transaction);
 
 
     ///// ==============================================================================
     ////                              LOAD NFT MINT ADDRESSES
     ///// ==============================================================================
+    //// from_reader() accepts a buffer path or tcp stream
+    //// then it returns a serde Value which can be converted
+    //// into the json string that can be mapped into a structure.
     let file = std::fs::File::open("nfts.json").unwrap(); //// the file must be inside where we run the `cargo run` command or the root dir
     let nfts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
     let nfts_json_string = serde_json::to_string(&nfts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
@@ -192,10 +177,11 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                     let mint_addrs = wl_info.mint_addrs.clone(); //// cloning to prevent ownership moving - the pda calculated from the nft burn tx hash address and the nft owner after burning
                                     let name = wl_info.name.clone(); //// cloning to prevent ownership moving
 
-
+                                    // ================= NFT VERIFICATION ===================
                                     //// one of the NFT mint addr must be inside the snapshot
                                     //// otherwise the NFT is not verified and is not owned
                                     //// by the owner
+                                    // ======================================================
                                     let vefified_nft_mint_addresses = mint_addrs.iter().all(|mint_addr| snapshot_nfts.contains(mint_addr));
                                     if !vefified_nft_mint_addresses{
                                         let response_body = ctx::app::Response::<ctx::app::Nill>{
@@ -212,6 +198,28 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                                 .unwrap() 
                                         );   
                                     }
+
+                                    // ================ OWNER VERIFICATION ================
+                                    //// verify that the passed in mint addresses
+                                    //// belongs to the passed in owner by sending the 
+                                    //// request to the solana json rpc endpoint
+                                    // ====================================================
+                                    if !schemas::whitelist::verify_owner(owner.clone(), &mint_addrs, &rpc_client).await{
+                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
+                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            message: NOT_VERIFIED_OWNER, //// mint addresses doesn't belong to the owner
+                                            status: 406,
+                                        };
+                                        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                                        return Ok(
+                                            res
+                                                .status(StatusCode::NOT_ACCEPTABLE)
+                                                .header(header::CONTENT_TYPE, "application/json")
+                                                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                                .unwrap() 
+                                        );   
+                                    }
+
 
 
                                     ////////////////////////////////// DB Ops
