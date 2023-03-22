@@ -18,14 +18,6 @@ services:
   #---------------------------------------
   #     Conse Rust Docker Configuration
   #---------------------------------------
-  # NOTE - due to the HAproxy DNS resolving 
-  #        bug we've commented the following
-  #        image since we'll run the rust server
-  #        inside the VPS itself and run the HAproxy
-  #        inside the docker so we can forward 
-  #        rust server packets from the VPS ip
-  #        to the specified and opened port 
-  #        using HAproxy docker.
   # NOTE - rust dockerfile is useful when 
   #        we want to balance between the loads
   #        of all services using k8s or HAproxy

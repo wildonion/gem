@@ -51,15 +51,15 @@ if [[ $BUILDFOR == "programs" ]]; then
     cd conse && npm install --force
     echo "[?] Build What? (conse || whitelist)"
     read PROGRAM
-    if [[ $PROGRAM == "conse" ]]; then
-        anchor build --program-name conse
-        anchor deploy --program-name conse
+    if [[ $PROGRAM == "ticket" ]]; then
+        anchor build --program-name ticket
+        anchor deploy --program-name ticket
     elif [[ $BUILDFOR == "whitelist" ]]; then
         anchor build --program-name whitelist
         anchor deploy --program-name whitelist
     if
 elif [[ $BUILDFOR == "gem" ]]; then
-    echo "[+] Building Conse PaaS"
+    echo "[+] Building Conse PaaS using Pm2"
     cargo build --bin conse --release
     sudo rm /usr/bin/conse
     sudo cp target/release/conse /usr/bin/conse && sudo chmod +x /usr/bin/conse 

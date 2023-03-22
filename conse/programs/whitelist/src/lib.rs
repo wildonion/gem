@@ -324,7 +324,9 @@ pub struct AddToWhitelistRequest<'info>{
 //
 //// `#[account]` proc macro attribute sets 
 //// the owner of that data to the 
-//// `declare_id` of the crate
+//// `declare_id` of the crate also 
+//// we can deserialize this account
+//// on frontend to get the list field
 #[account]
 pub struct WhitelistData{ // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
     // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors

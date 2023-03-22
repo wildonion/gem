@@ -218,6 +218,15 @@ pub async fn into_box_slice(u8_vector: &Vec<u8>) -> Result<Box<[u8; 4]>, String>
 // https://rust-lang.github.io/async-book/07_workarounds/04_recursion.html
 // NOTE - Future trait is an object safe trait thus we have to Box it with dyn keyword to have kinda a pointer to the heap where the object is allocated in runtime
 // NOTE - a recursive `async fn` will always return a Future object which must be rewritten to return a boxed `dyn Future` to prevent infinite size allocation in runtime from heppaneing some kinda maximum recursion depth exceeded prevention process
+//// the return type can also be ... -> impl std::future::Future<Output=usize>
+//// which implements the future trait for the usize output also BoxFuture<'static, usize>
+//// is a pinned Box under the hood because in order to return a future as a type
+//// we have to return its pinned pointer since future objects are traits and 
+//// traits are not sized at compile time thus we have to put them inside the 
+//// Box or use &dyn to return them as a type and for the future traits we have
+//// to pin them into the ram in order to be able to solve them later so we must 
+//// return the pinned Box (Box in here is a smart pointer points to the future)
+//// or use impl Trait in function return signature. 
 pub fn async_gen_random_idx(idx: usize) -> BoxFuture<'static, usize>{ // NOTE - pub type BoxFuture<'a, T> = Pin<alloc::boxed::Box<dyn Future<Output = T> + Send + 'a>>
     async move{
         if idx <= CHARSET.len(){

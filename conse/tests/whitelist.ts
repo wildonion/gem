@@ -68,19 +68,19 @@ describe("conse whitelist", () => {
         // and also the one who init the server is the authority of 
         // the the whitelist state and data and only she/he can add 
         // PDA to whitelist or call that method
-        await program.methods.initializeWhitelist(server.publicKey).accounts({ //// initializing the whitelist state and whitelist data accounts    
-            user: server.publicKey, 
-            whitelistState: server.publicKey, 
-            whitelistData: server.publicKey,
-        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+        // await program.methods.initializeWhitelist(server.publicKey).accounts({ //// initializing the whitelist state and whitelist data accounts    
+        //     user: server.publicKey, 
+        //     whitelistState: server.publicKey, 
+        //     whitelistData: server.publicKey,
+        // }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
 
 
-        // deserializing the `whitelist_state` account
-        // which contains the instruction data on chain 
-        // and is owned by the server which are accessible
-        // in here by using `.` notation on `deserialized_whitelist_state_account`
-        let deserialized_whitelist_state_account = await program.account.whitelistState.fetch(server.publicKey);
-        console.log("deserialized_whitelist_state_account: >>>>>> ", deserialized_whitelist_state_account);
+        // // deserializing the `whitelist_state` account
+        // // which contains the instruction data on chain 
+        // // and is owned by the server which are accessible
+        // // in here by using `.` notation on `deserialized_whitelist_state_account`
+        // let deserialized_whitelist_state_account = await program.account.whitelistState.fetch(server.publicKey);
+        // console.log("deserialized_whitelist_state_account: >>>>>> ", deserialized_whitelist_state_account);
 
 
 
@@ -88,24 +88,24 @@ describe("conse whitelist", () => {
         // Burn Request
         // ------------
         let nft1 = {
-          owner: nft_mint.publicKey,
+          owner: nft_owner.publicKey,
           mint: nft_mint.publicKey,
           metadata: metadata.publicKey,
           token: token.publicKey,
           edition: edition.publicKey,
-          spl_token: spl_token.publicKey,
-          program_id: program.programId,
-          collection_metadata: collection_metadata.publicKey
+          splToken: spl_token.publicKey,
+          programId: program.programId,
+          collectionMetadata: collection_metadata.publicKey
         }
         let nft2 = {
-          owner: nft_mint.publicKey,
+          owner: nft_owner.publicKey,
           mint: nft_mint.publicKey,
           metadata: metadata.publicKey,
           token: token.publicKey,
           edition: edition.publicKey,
-          spl_token: spl_token.publicKey,
-          program_id: program.programId,
-          collection_metadata: collection_metadata.publicKey
+          splToken: spl_token.publicKey,
+          programId: program.programId,
+          collectionMetadata: collection_metadata.publicKey
         }
           await program.methods.burnRequest([nft1, nft2]).accounts({
                 user: nft_owner.publicKey, 
