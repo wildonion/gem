@@ -203,9 +203,16 @@ pub mod ticket {
         //
         //// *pda_account.try_borrow_mut_lamports()?
         //// returns &mut u64 which requires another
-        //// dereference to mutate its value
+        //// dereference to mutate its value, after 
+        //// tranferring the balance of the PDA
+        //// must be zero
         **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
         **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
+
+        if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
+            return err!(ErrorCode::UnsuccessfulReservation);
+        }
+
 
         emit!(ReserveTicketEvent{
             deposit,
@@ -359,7 +366,8 @@ pub struct ReserveTicket<'info>{
     //// transaction method call with his
     //// or her private key also since we 
     //// want to take money from him or her
-    //// the account must be mutable
+    //// the account must be mutable since 
+    //// he or she must pay for the gas fee also.
     #[account(mut)]
     pub user: Signer<'info>, //// the signer who must sign the call and pay for the transaction fees
     /*
@@ -391,11 +399,18 @@ pub struct ReserveTicket<'info>{
 
     */
     #[account(
-        init,
+        //// since this is a new PDA account we must initialize it 
+        //// using init contraint which do a CPI call to the runtime 
+        //// to set its owner to the program id in order to be able 
+        //// to mutate the `TicketStats` instruction generic data 
+        init, 
         space = 300,
         payer = user,
-        seeds = [ticket_stats.server.key().as_ref(), user.key().as_ref()],
-        bump = ticket_stats.bump
+        //// we can't use ticket_stats.server.key().as_ref() 
+        //// since the ticket_stats is not initialized yet thus 
+        //// we can't use its fields.
+        seeds = [server.key().as_ref(), user.key().as_ref()],
+        bump,
     )]
     //// declaration of account owned by the 
     //// program for storing data on chain means
@@ -408,6 +423,9 @@ pub struct ReserveTicket<'info>{
     //// in order to use it later inside another 
     //// instruction handler method. 
     pub ticket_stats: Account<'info, TicketStats>, 
+    /// CHECK: this is safe since it's a server account and we want to use it to build the PDA
+    #[account(mut)]
+    pub server: AccountInfo<'info>,
     //// `AccountInfo` type don't implement any checks 
     //// on the account being passed and we can fix the
     //// compile time error by writing a CHECK doc.
@@ -439,7 +457,9 @@ pub enum ErrorCode {
     #[msg("Invalid Winner Index")]
     InvalidWinnerIndex,
     #[msg("Invalid Instruction")]
-    InvalidInstruction
+    InvalidInstruction,
+    #[msg("Unsuccessful Reservation")]
+    UnsuccessfulReservation
 }
 
 

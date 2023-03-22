@@ -4,15 +4,15 @@ skip-lint = false
 
 [programs.localnet]
 ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
+whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
 
 [programs.devnet]
 ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
+whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
 
 [programs.mainnet]
 ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "4ZdXCpgo5wZTVbh1QV2yjcsiX1jCSzsqkfWeYwXwcAU2"
+whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
 
 [registry]
 url = "https://api.apr.dev"

@@ -38,8 +38,8 @@ gql ws client
                                                                             -----
                                                                                 quic and udp
                                                                                 tcp 
-                                                                                rpc capnp 
-                                                                                zmq 
+                                                                                rpc capnp pubsub 
+                                                                                zmq pubsub
                                                                                 gql
                                                                                 ws
                                                                                 redis client

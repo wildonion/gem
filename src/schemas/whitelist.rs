@@ -123,7 +123,13 @@ pub async fn verify_owner(owner: String, mint_addrs: &[String], rpc_client: &Rpc
 
     //// sending the rpc request to the solana rpc endpoint which is 
     //// inside the rpc_client, also we're deserializing the response
-    //// came back from the json rpc server into a vector of RpcTokenAccount.  
+    //// came back from the json rpc server into a vector of RpcTokenAccount.
+    //
+    //// there are some predefined methdods for every 
+    //// rpc actor object in which we can call them
+    //// directly from other device through an rpc
+    //// request and if the method has params we have 
+    //// to pass the encoded param as either json or capnp.
     let res: Result<rpc_response::Response<Vec<RpcTokenAccount>>, Box<dyn std::error::Error>> = 
             rpc_client.send(request, params).map_err(|e| e.into()); //// map the error if there was any 
     let addr = res

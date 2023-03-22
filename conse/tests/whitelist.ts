@@ -8,7 +8,17 @@ describe("conse whitelist", () => {
 
     // Configure the client to use the local cluster.
     anchor.setProvider(anchor.AnchorProvider.env());
-  
+    //// `provider.wallet.publickey` is signer by default 
+    //// since we're using it to pay for transaction fees
+    //// signer must pay for the transaction fees 
+    //// and we can make an account as the signer by putting 
+    //// it inside the signers([]) array
+    //
+    //// use a real provider or connection like testnet or devnet
+    //// Configure the client to use the local cluster. 
+    const provider = anchor.AnchorProvider.env(); //// the authority who has deployed this program is: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
+
+    
     const server = anchor.web3.Keypair.generate(); // TODO - a secure account, preferred to be a none NFT owner
     const nft_owner = anchor.web3.Keypair.generate(); // TODO 
     const nft_mint = anchor.web3.Keypair.generate(); // TODO 
@@ -19,36 +29,18 @@ describe("conse whitelist", () => {
     const collection_metadata = anchor.web3.Keypair.generate(); // TODO 
     
     
+    // https://solana.stackexchange.com/questions/2057/what-is-the-relation-between-signers-wallets-in-testing?rq=1
     // only the program itself can mutate passed in 
     // instruction data to a instruction handler on chain
     const program = anchor.workspace.Whitelist as Program<Whitelist>;
-    // https://solana.stackexchange.com/questions/2057/what-is-the-relation-between-signers-wallets-in-testing?rq=1
-    //// server.publicKey is the one who
-    //// has deployed the program thus is the authority 
-    //// of the program.
-    //
-    //// `provider.wallet.publickey` is signer by default 
-    //// since we're using it to pay for transaction fees
-    //// signer must pay for the transaction fees 
-    //// and we can make an account as the signer by putting 
-    //// it inside the signers([]) array
-    //
-    //// use a real provider or connection like testnet or devnet
-    //// Configure the client to use the local cluster. 
-    const provider = anchor.AnchorProvider.env(); //// the authority who has deployed this program is: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
-
-    
-
     
     
-    it("Pda created!", async () => {
+    
+    it("Tested!", async () => {
         
         const latestBlockHashforUserOne = await provider.connection.getLatestBlockhash();
         const lamport_amount = 10_000_000_000;
     
-
-
-
         //---------------------------
         // charging NFT owner account
         //---------------------------
@@ -64,24 +56,7 @@ describe("conse whitelist", () => {
 
 
 
-        // -------------
-        // Creating PDA
-        // -------------
-
-        // build PDA from NFT owner and the NFT mint address
-        // since it might be multiple burn for a user thus
-        // these params will be unique inside the whitelist. 
-        //
-        //// contract doesn't return NFT burn tx hash
-        //// thus we have to create the PDA based on the 
-        //// NFT owner and NFT mint address
-        let burn_tx_hash = "0000000000" ///////////////// TODO - this is the NFT burn tx hash
-        const [NftStatsPDA, bump] = PublicKey
-        .findProgramAddressSync(
-            // [nft_owner.publicKey.toBuffer(), Buffer.from(burn_tx_hash, "utf-8")],
-            [nft_owner.publicKey.toBuffer(), nft_mint.publicKey.toBuffer()],
-            program.programId
-          )
+      
 
 
 
@@ -112,26 +87,29 @@ describe("conse whitelist", () => {
         // ------------
         // Burn Request
         // ------------
-          await program.methods.burnRequest(bump).accounts({
+        let nft1 = {
+          owner: nft_mint.publicKey,
+          mint: nft_mint.publicKey,
+          metadata: metadata.publicKey,
+          token: token.publicKey,
+          edition: edition.publicKey,
+          spl_token: spl_token.publicKey,
+          program_id: program.programId,
+          collection_metadata: collection_metadata.publicKey
+        }
+        let nft2 = {
+          owner: nft_mint.publicKey,
+          mint: nft_mint.publicKey,
+          metadata: metadata.publicKey,
+          token: token.publicKey,
+          edition: edition.publicKey,
+          spl_token: spl_token.publicKey,
+          program_id: program.programId,
+          collection_metadata: collection_metadata.publicKey
+        }
+          await program.methods.burnRequest([nft1, nft2]).accounts({
                 user: nft_owner.publicKey, 
-                nftStats: NftStatsPDA, 
-                nftMint: nft_mint.publicKey,
-                metadata: metadata.publicKey,
-                token: token.publicKey,
-                edition: edition.publicKey,
-                splToken: spl_token.publicKey,
-                theProgramId: program.programId,
-                collectionMetadata: collection_metadata.publicKey
             }).signers([nft_owner]).rpc(); //// signer of this call who must pay for the transaction fee is the NFT owner
-
-          // deserializing the PDA account
-          // since the `Nft` struct inside the contract
-          // is bounded to `#[account]` proc macro attribute
-          // which is owned by the PDA and only the PDA can mutate
-          // its data on the chain which are accessible
-            // in here by using `.` notation on `deserialized_nft_stats_account`
-          let deserialized_nft_stats_account = await program.account.nft.fetch(NftStatsPDA);
-            console.log("deserialized_nft_stats_account: >>>>>> ", deserialized_nft_stats_account);
           
 
 
@@ -153,21 +131,6 @@ describe("conse whitelist", () => {
         // console.log("deserialized_whitelist_data_account: >>>>>> ", deserialized_whitelist_data_account_after_adding);
 
 
-
-
-
-        // // ----------------
-        // // Remove Whitelist
-        // // ---------------- 
-        // await program.methods.removeFromWhitelist().accounts({
-        //     authority: server.publicKey,  // the signer must the one who initialized the whitelist to remove a PDA from the chain
-        //     nftStats: NftStatsPDA, // this will be removed from the whitelist by the server authority
-        //     whitelistState: server.publicKey, 
-        //     whitelistData: server.publicKey,
-        // }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
-
-        // let deserialized_whitelist_data_account_after_removing = await program.account.whitelistData.fetch(server.publicKey);
-        // console.log("deserialized_whitelist_data_account_after_removing: >>>>>> ", deserialized_whitelist_data_account_after_removing);
 
 
     

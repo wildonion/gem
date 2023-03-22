@@ -21,6 +21,7 @@ describe("conse ticket", () => {
 
   const lamport_amount = 10_000_000_000;
   const bet_amount = 5_000_000_000;
+  const reserve_amount = 5_000_000_000; //// the amount of ticket
 
 
 
@@ -31,10 +32,20 @@ describe("conse ticket", () => {
 
   
   
-  it("Pda created!", async () => {
-  // find pda account
-  const [gameStatePDA, bump] = await PublicKey
-  .findProgramAddress(
+  it("PDAs created!", async () => {
+
+
+  // find pda account for game account
+  const [gameStatePDA, bump] = PublicKey
+  .findProgramAddressSync(
+      [server.publicKey.toBuffer(), player.publicKey.toBuffer()],
+      program.programId
+    )
+
+
+    // find pda for the ticket reservation account
+  const [ticketStatsPDA, _bump] = PublicKey
+  .findProgramAddressSync(
       [server.publicKey.toBuffer(), player.publicKey.toBuffer()],
       program.programId
     )
@@ -125,10 +136,32 @@ describe("conse ticket", () => {
     // Start game function - init pda program
     await program.methods.startGame(new anchor.BN(10_000_000_000), bump) //// 10_000_000_000 must be the total deposited amount (server + player) 
       .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey
-      }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+      }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
     let currentAccountAmount = await program.account.gameState.fetch(gameStatePDA);
-    //// PDA account balance must be 5 since player has sent 5 to it
+    //// PDA account balance must be 10 since player and server each one sent 5 to it
     assert.equal(10_000_000_000, currentAccountAmount.amount.toNumber());
+
+
+
+
+
+
+    //------------------------------------------------------
+    // meanwhilte, reserving ticket using the built in PDA 
+    //------------------------------------------------------
+    let _tx_ticket_data = new anchor.web3.Transaction().add(anchor.web3.SystemProgram.transfer({
+      fromPubkey: player.publicKey,
+      toPubkey: ticketStatsPDA,
+      lamports: reserve_amount,    
+    }));
+    await anchor.web3.sendAndConfirmTransaction(provider.connection, _tx_ticket_data, [player]);
+    await program.methods.reserveTicket(new anchor.BN(5_000_000_000), "<some_user_id_from_db>", _bump) //// 5_000_000_000 must be the total deposited amount inside the ticketStatsPDA 
+      .accounts({user: player.publicKey, ticketStats: ticketStatsPDA, satkingPool: revenue_share_wallet.publicKey
+      }).signers([player]).rpc(); //// signer of this call who must pay for the transaction fee which is the player or user
+    let _currentAccountAmount = await program.account.gameState.fetch(ticketStatsPDA);
+    assert.equal(0, currentAccountAmount.amount.toNumber()); //// it must 0 in PDA since we withdraw all the deposited amounts from PDA and send them to the revenue share wallet after reservation
+
+
 
 
 
@@ -143,7 +176,7 @@ describe("conse ticket", () => {
     // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
     await program.methods.gameResult(3, 3)
       .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey, server: server.publicKey, revenueShareWallet: revenue_share_wallet.publicKey
-    }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee is the server
+    }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
   
     let balance_pda_account_after = await provider.connection.getBalance(gameStatePDA);
     let balance_server_account_after = await provider.connection.getBalance(server.publicKey);

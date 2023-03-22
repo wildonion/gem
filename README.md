@@ -30,7 +30,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 ```console
 Wrote new keypair to /home/$USER/.config/solana/id.json
 ================================================================================
-pubkey: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+pubkey: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
 ================================================================================
 Save this seed phrase and your BIP39 passphrase to recover your new keypair:
 skill divorce afraid nice surface poverty host bright narrow media disorder tuna
@@ -66,7 +66,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
             Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
             Owner: BPFLoaderUpgradeab1e11111111111111111111111
             ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
-            Authority: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+            Authority: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
             Last Deployed In Slot: 477
             Data Length: 671648 (0xa3fa0) bytes
             Balance: 4.67587416 SOL
@@ -76,7 +76,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
-* Stop the first terminal and in the second one run ```anchor run test-ticket``` command, since anchor will run a local ledger for the test process on its own if the `cluster` field under the `[provider]` section is set to `localnet`, the output will be:
+* In the second one run ```anchor run test-ticket``` command, the output will be:
     ```
     conse-whitelist
     player 1 balance:  10000000000
@@ -122,7 +122,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
         Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
         Owner: BPFLoaderUpgradeab1e11111111111111111111111
         ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
-        Authority: F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ
+        Authority: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
         Last Deployed In Slot: 477
         Data Length: 671648 (0xa3fa0) bytes
         Balance: 4.67587416 SOL
@@ -134,7 +134,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 📇 Notes
 
-* once the authority gets changed the program id will be changed too, currently these programs are authorized with `F3Ngjacvfd37nitEDZMuSV9Ckv5MHBdaB3iMhPiUaztQ` 
+* once the authority gets changed the program id will be changed too, currently these programs are authorized with `8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF` 
 
 * use ```anchor keys list``` to list all the program ids of each contract.
 
@@ -173,9 +173,7 @@ we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 
-* reserve ticket contract tests and update to the latest `Anchor` version also fix the whitelist contract issue in `initializeWhitelist` method.
-
-* `ed25519` keypair for server verification, updating app and time hash based locking api, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server verification like ssh, updating app and time hash based locking api, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 
