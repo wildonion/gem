@@ -3,23 +3,23 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
+ticket = "bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"
+whitelist = "2YQmwuktcWmmhXXAzjizxzie3QWEkZC8HQ4ZnRtrKF7p"
 
 [programs.devnet]
-ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
+ticket = "bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"
+whitelist = "2YQmwuktcWmmhXXAzjizxzie3QWEkZC8HQ4ZnRtrKF7p"
 
 [programs.mainnet]
-ticket = "DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"
-whitelist = "HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"
+ticket = "bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"
+whitelist = "2YQmwuktcWmmhXXAzjizxzie3QWEkZC8HQ4ZnRtrKF7p"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-# cluster = "localnet"
-cluster = "devnet"
+cluster = "localnet"
+# cluster = "devnet"
 # cluster = "mainnet"
 wallet = "/home/wildonion/.config/solana/id.json"
 

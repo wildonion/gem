@@ -42,7 +42,7 @@ gql ws client
                                                                                 zmq pubsub
                                                                                 gql
                                                                                 ws
-                                                                                redis client
+                                                                                redis client + mongodb
 
 
 

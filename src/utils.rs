@@ -227,6 +227,19 @@ pub async fn into_box_slice(u8_vector: &Vec<u8>) -> Result<Box<[u8; 4]>, String>
 //// to pin them into the ram in order to be able to solve them later so we must 
 //// return the pinned Box (Box in here is a smart pointer points to the future)
 //// or use impl Trait in function return signature. 
+//
+//// async block needs to be pinned into the ram and since they are traits of 
+//// the Future their pointer will be either Box<dyn Trait> or &dyn Trait, 
+//// to pin them into the ram to solve them later.
+//
+//// since async blocks are of type Future trait in roder to return them
+//// as a type their pointer either Box<dyn Trait> or &dyn Trait must be
+//// pinned into the ram to let us solve them later because rust doesn't 
+//// have gc and it'll drop the type after it moved into the new scope or
+//// another type thus for the future objects we must pin them to ram and 
+//// tell rust hey we're moving this in other scopes but don't drop it because
+//// we pinned it to the ram to solve it in other scopes, also it must have
+//// valid lifetime during the the entire lifetime of the app.
 pub fn async_gen_random_idx(idx: usize) -> BoxFuture<'static, usize>{ // NOTE - pub type BoxFuture<'a, T> = Pin<alloc::boxed::Box<dyn Future<Output = T> + Send + 'a>>
     async move{
         if idx <= CHARSET.len(){
@@ -240,7 +253,7 @@ pub fn async_gen_random_idx(idx: usize) -> BoxFuture<'static, usize>{ // NOTE - 
 
 
 
-
+//// recursive random index generator
 pub fn gen_random_idx(idx: usize) -> usize{
     if idx < CHARSET.len(){
         idx

@@ -57,13 +57,13 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
             Upgrade authority: /home/$USER/.config/solana/id.json
             Deploying program "ticket"...
             Program path: /home/$USER/Documents/gem/conse/target/deploy/ticket.so...
-            Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
+            Program Id: bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk
 
             Deploy success
         ```
-    * show the deployed program: ```solana program show DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD``` and the output sample would be like:
+    * show the deployed program: ```solana program show bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk``` and the output sample would be like:
         ```console
-            Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
+            Program Id: bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk
             Owner: BPFLoaderUpgradeab1e11111111111111111111111
             ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
             Authority: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
@@ -72,7 +72,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
             Balance: 4.67587416 SOL
         ```
         in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
-    * show the account info: ```solana account DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD```
+    * show the account info: ```solana account bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk```
     * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
@@ -113,13 +113,13 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
         Upgrade authority: /home/$USER/.config/solana/id.json
         Deploying program "ticket"...
         Program path: /home/$USER/Documents/gem/conse/target/deploy/ticket.so...
-        Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
+        Program Id: bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk
 
         Deploy success
     ```
-* show the deployed program: ```solana program show DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD``` and the output sample would be like:
+* show the deployed program: ```solana program show bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk``` and the output sample would be like:
     ```console
-        Program Id: DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD
+        Program Id: bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk
         Owner: BPFLoaderUpgradeab1e11111111111111111111111
         ProgramData Address: Bq447TCGGXipjaVrQb72TVLrgzVVqD85FYcGDMZeGMgk
         Authority: 8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF
@@ -128,7 +128,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
         Balance: 4.67587416 SOL
     ```
     in which the owner is the BPF loader which is the owner of every upgradable Solana program account, and the upgrade authority is the public key of the generated wallet info whom has deployed this contract.
-* show the account info: ```solana account DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD```
+* show the account info: ```solana account bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk```
 * remember to change the program id in `declare_id` in `lib.rs` and `[programs.localnet]` `[programs.mainnet]`, `[programs.devnet]` section, the `ticket` field inside the `Anchor.toml` with the deployed address of the contract or the **Program Id** which is the output of the ```anchor deploy``` command; all mentioned three sections must have same public address of the deployed contract which is the wallet info inside the `*-keypair.json` in the `target/deploy` directory. 
     * also you can check the deployed contract address or the **Program Id** with ```solana address -k target/deploy/ticket-keypair.json``` command.
 
@@ -177,9 +177,9 @@ we the program id is the public key address of the deployed contract.
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 
-* complete graphql, redis and websocket routes setup for realtime streaming like chatapp and push notification, also add redis docker image inside the `docker-compose.yml`.
+* complete graphql, redis and websocket routes and controllers setup for realtime game monitoring, chatapp and push notification also add redis docker image inside the `docker-compose.yml`.
 
-* balance the loads between docker services and images using `k8s` on `AWS` cloud also CI/CD configuration files based on the latest commits. 
+* balance the loads between docker services and images using `k8s` on `DigitalOcean` cloud also CI/CD configuration files based on the latest commits. 
 
 * all TODOs inside the app
 

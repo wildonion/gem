@@ -1,15 +1,19 @@
 
 
 
+
 use anchor_lang::prelude::*;
 use mpl_token_metadata::instruction::burn_nft;
 
-declare_id!("HTx9H8pfWeCGXfe7Hfap6LkVXgQNLNh5CnCSNRscFyCk"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
+declare_id!("2YQmwuktcWmmhXXAzjizxzie3QWEkZC8HQ4ZnRtrKF7p"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
 
 
 
 #[program] //// the program entrypoint which must be defined only once
 pub mod whitelist {
+
+    
+    // https://github.com/samuelvanderwaal/solana-whitelist/tree/main/programs/whitelist
 
 
     use super::*;
@@ -44,6 +48,7 @@ pub mod whitelist {
         } else{
             return err!(ErrorCode::RestrictionError);
         }
+
         
     }
 
@@ -79,13 +84,29 @@ pub mod whitelist {
         //// (Clone trait must be implemented) it or dereference it by using `*` otherwise 
         //// we can' move out of it in our case `whitelist_state` which is of type Account, can't be moved 
         //// since `Account` type doesn't implement Copy trait we have to either borrow it or clone it. 
+        //
+        //// based on above notes we should borrow the ctx.accounts mutably if the type was either Account,
+        //// or AccountInfo since we might want to mutate its fields later and these accounts don't implement
+        //// the Copy trait thus we can't dereference them by * cause they might be being in used by other scopes 
+        //// and threads (they are shared references) we have to borrow them or clone them.
+        //
+        //// we can't move the type between scopes and threads if there is a pointer or shared reference of 
+        //// that type exists which is being in used by other scopes and threads and due to the fact that 
+        //// rust doesn't support gc thus by moving it its lifetime will be dropped hence its pointer will 
+        //// be point to no where or a location inside the stack or heap that doesn't exist!
 
-        let signer = ctx.accounts.user.key(); //// this can be a server or a none NFT owner which has signed this instruction handler and can be used as the whitelist state authority 
-        let whitelist_state = &mut ctx.accounts.whitelist_state;
         let whitelist_data = &mut ctx.accounts.whitelist_data; //// a mutable reference to the whitelist data account, since Account is a mutable shared reference which doesn't implement Copy trait we can't move out of it thus we have to either clone it or borrow it 
         whitelist_data.list = vec![]; //// creating empty vector on chain
-        whitelist_state.authority = authority; //// the signer must be the whitelist_state authority
-        whitelist_state.counter = 0;
+        //// the authority is the server account which must 
+        //// be passed from the frontend call, also this account
+        //// has signed its own creation thus we can use it 
+        //// to sign the add to whitelist tx call later
+        //// since we're setting the authority of the whitelist_data 
+        //// on chain to the passed in authority which is the
+        //// server which is the owner of the whitelist_data 
+        whitelist_data.authority = authority; 
+        whitelist_data.counter = 0;
+
 
         Ok(())
 
@@ -98,58 +119,67 @@ pub mod whitelist {
     pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>, addresses: Vec<Pda>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
-        let whitelsit_state = &mut ctx.accounts.whitelist_state;
-        let who_initialized_whitelist = whitelsit_state.authority.key(); //// the whitelist owner 
-        let whitelist_data = &mut ctx.accounts.whitelist_data.list; //// a mutable reference to the whitelist data account, since Account is a mutable shared reference which doesn't implement Copy trait we can't move out of it thus we have to either clone it or borrow it 
-        let mut counter = whitelsit_state.counter as usize;
+        //// a mutable reference to the whitelist data account, we can't move the whitelist_data while we have 
+        //// pointer of that since by moving it all of its pointer might be converted into a dangling ones which rust
+        //// doesn't allow this from the first, since Account is a mutable shared reference which doesn't implement 
+        //// Copy trait we can't move out of it thus we have to either clone it or borrow it, this is for dynamic 
+        //// data sized like vector and string in which we can't move them without cloning them or borrowing, for 
+        //// stack data types like u8 we can have a pointer of them and simply move them between threads
+        //// and scopes without losing their ownerships. 
+        //
+        //// whitelist_data is of type vector which doesn't implement Copy trait (since heap data sized are can't 
+        //// be simply copied and in order to have them in later scopes we have to either clone them which is expensive 
+        //// or borrow them) means that by moving it into new scopes we'll lose it's ownership and will be dropped 
+        //// (rust doesn't have gc) thus if a shared pointer of that exists we can't move it since by moving it its 
+        //// lifetime will be dropped and the pointer will point to no where which remains a dangling pointer which 
+        //// rust doesn't allow use to do this from the first step, the solution to this, for dynamic data sized like 
+        //// vector is by either passing the already pointer or cloned version of the vector into the new scopes, but 
+        //// for stack data sized we can have them behind a pointer and moving them between scopes and threads because 
+        //// by moving them rust will actually copying their bits into a new type inside the new scope.
+        let whitelist_data = &mut ctx.accounts.whitelist_data; //// since Copy is not implement for Account type we've borrowed the whitelist_data mutably
+        let who_initialized_whitelist = whitelist_data.authority.key(); //// the whitelist owner 
+        let mut counter = whitelist_data.counter as usize;
+        //// we can't move heap data size into new scopes when there 
+        //// is a shared reference or pointer of them is exists (we've
+        //// borrowed it mutably earlier) but it's ok for the stack 
+        //// data types, the solution is either clone it or borrowing it.  
+        let mut whitelist_data_list = whitelist_data.list.clone(); 
+        let length = addresses.len();
 
         //// the signer of this tx call must be the one
         //// who initialized the whitelist instruction handler
-        //// or the server account must pay for gas fee
-        //// because the burner shouldn't pay for the whitelist
-        //// gas fee.
+        //// which must pay for gas fee because the NFT burner 
+        //// shouldn't pay for the whitelist gas fee.
         if signer != who_initialized_whitelist{
             return err!(ErrorCode::WhitelistOwnerRestriction);
         }
 
-        let length = addresses.len();
         if counter > WhitelistData::MAX_SIZE{ //// make sure that we have enough space
             return err!(ErrorCode::NotEnoughSpace);
         }
-
-        msg!("[+] current counter: {}", counter);
-        let mut current_data = Vec::<Pda>::new();
-        current_data.extend_from_slice(&whitelist_data[0..counter]); //// counter has the current size of the total PDAs, so we're filling the vector with the old PDAs on chain
+        
+        whitelist_data_list.extend_from_slice(&addresses[0..length]); //// extending the on chain data with the passed in ones
         counter += length;
 
-
-        //// vector types are dynamic sized means
-        //// their size is not known at compile time
-        //// since our PDAs is of type array thus we 
-        //// need to know the exact size of the elements
-        //// inside of it and also we need to convert the
-        //// vector into the array or the slice form after 
-        //// adding a new PDA inside of it hence after 
-        //// adding one PDA into the vector we must fill
-        //// the rest of the vector with a default keys.
-        for _ in counter..WhitelistData::MAX_SIZE{ //// if the counter is full then the starting point will be the MAX_SIZE itself thus the loop won't be run
-            current_data.push(Pda::default()); //// filling the rest of the vector with default public key
-        }
-        msg!("[+] vector length on chain {:?}", current_data.len());
-
-        *whitelist_data = current_data; //// since whitelist_data is behind a reference we have to dereference it
-        whitelsit_state.counter = counter as u64;
-        msg!("[+] current counter after adding one PDA: {}", counter);
-
-        Ok(())
-
+        whitelist_data.list = whitelist_data_list; //// since whitelist_data is behind a reference we have to dereference it
+        whitelist_data.counter = counter as u64;
+        msg!("----------- ----------- ----------- ");
+        msg!("[+] whitelist data on chain {:?}", whitelist_data.list);
+        msg!("----------- ----------- ----------- ");
+        
+        Ok(()) 
+        
     }
 
 
 }
 
 
-
+//// `#[account]` proc macro attribute will implement the
+//// AccountSerialize and AccountDeserialize traits for the generic
+//// thus the implementations of AccountSerialize and AccountDeserialize 
+//// do the discriminator check on the first 8 bytes of the account name 
+//// and Borsh ser/deser of the rest of the account data.
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
 pub struct Pda{
     pub owner: Pubkey,
@@ -192,9 +222,6 @@ impl Nft{
         let accounts = transaction.accounts;
         let data = transaction.data;
         let the_program_id = transaction.program_id;
-        msg!("after burn : account >>> {:#?}", accounts);
-        msg!("after burn : data >>> {:#?}", data);
-        msg!("after burn : program id >>> {:#?}", the_program_id);
 
         //// if the instruction is executed by
         //// the current program thus we can 
@@ -228,7 +255,7 @@ impl Nft{
 pub struct BurnRequest<'info> { //// 'info lifetime in function signature is required to store utf8 bytes or &[u8] instruction data in the accounts
     #[account(mut)]
     pub user: Signer<'info>, //// this is the NFT owner which must pay for the gas fee
-    pub system_program: Program<'info, System>, //// this refers to this program itself and it can be another program
+    pub system_program: Program<'info, System>, //// this refers to this program itself and it can be another program also it's carrying 0-bytes of account data and can be used for CPI calls (simply put the contract name instead of System)
 }
 
 
@@ -236,14 +263,14 @@ impl<'info> BurnRequest<'info>{}
 
 #[derive(Accounts)]
 pub struct IntializeWhitelist<'info>{
-    // anchor `#[account]` proc macro attribute constraint guide: https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+    // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
     #[account( //// can't use mut constraint here since we're initializing this account
         //// data store on solana accounts and if it's not exists on the 
         //// runtime `init` will initialize the account via CPI call to the 
         //// runtime and sets its owner to the program id by default since
         //// only the program must be able to mutate its generic instruction data 
         //// on chain by deserializing it using borsh hence to use an account 
-        //// that owns a generic data on chain like `WhitelistState` data which 
+        //// that owns a generic data on chain like `WhitelistData` data which 
         //// is owned by the `whitelist_state` account, the account which is of 
         //// type `Account` must be initialized first and limited to a space.
         //
@@ -261,21 +288,55 @@ pub struct IntializeWhitelist<'info>{
         //// some allocated space on chain since solana stores 
         //// everything inside accounts and thus they must be 
         //// sized and limited to space allocation on chain.
-        //// ------------------------------------------------------
-        //// --- init also requires space and payer constraints ---
-        //// ------------------------------------------------------
-        init, //// initializing the whitelist_state account 
+        //
+        //// since init constraint needs a payer who must pay
+        //// for the account creation by signing the tx thus 
+        //// the payer is the signer of this call and must be 
+        //// the one who pays for the whitelist server account
+        //// creation also in frontend we have to pass the payer
+        //// account along with the server account itself inside 
+        //// the signers[] array if we don't want to use the 
+        //// provider.wallet.publickey which signs every tx call 
+        //// by default, although the reason that we must pass 
+        //// the server as the signer too is because every account 
+        //// needs to sign its own creation.
+        //
+        //// to init an account other than PDAs (cause PDAs has no
+        //// private key thus they can't sign), there must be two 
+        //// signers the first is the one who must pay for the account 
+        //// creation and the second is the account itself that we're 
+        //// creating it which must sign with its private key for its 
+        //// own creation. 
+        //
+        //// zero constraint or `#[account(zero)]` is necessary for 
+        //// accounts that are larger than 10 Kibibyte also will deserialize 
+        //// their data using a zero copy technique because those accounts 
+        //// cannot be created via a CPI (which is what init would do).
+        //
+        //// we can use #[account(mut)] only if the account has already 
+        //// been initialized otherwise we should first init it then 
+        //// try to mutate it. 
+        //
+        //// the `WhitelistData` structure must be bounded to the `#[account]` 
+        //// proc macro attribute in order to be accessible inside the frontend 
+        //// also the `#[account()]` proc macro attribute sets the owner 
+        //// of the generic to the program id.
+        //
+        //// account must starts with certain 8 bytes tag or 
+        //// (hash of the account name) also we must include 
+        //// this extra space inside the space constraint 
+        //// to calculate the total space required for the account.
+        // ------------------------------------------------------
+        // --- init also requires space and payer constraints ---
+        // ------------------------------------------------------
+        init, //// initializing the whitelist_state account via CPI call to the solana runtime to grant the access of instruction data on chain for later mutation, init by default sets the owner of this account to the program id so the program can mutate data on chain later
         payer = user, //// init requires payer (the signer of this tx call) who must pay for the gas fee and account creation
-        space = 50 //// total space required for this account on chain which is the size of its generic or `WhitelistState` struct or WhitelistState::MAX_SIZE
+        space = 300 //// total space required for this account on chain with extra 8 bytes discriminator tag, 300 bytes is good for all data i think :/
     )]
-    //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    pub whitelist_state: Account<'info, WhitelistState>, //// this account is also the singer of the transaction call that means it must pay for the gas fee
-    #[account(zero)] //// zero constraint is necessary for accounts that are larger than 10 Kibibyte also will deserialize using a zero copy technique because those accounts cannot be created via a CPI (which is what init would do)
-    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    pub whitelist_data: Account<'info, WhitelistData>, //// since `WhitelistData` is a zero copy data structure we must use `AccountLoader` for deserializing it
+    pub whitelist_data: Account<'info, WhitelistData>, //// this account is also the singer of the transaction call that means it must pay for the gas fee
     #[account(mut)]
     pub user: Signer<'info>, //// signer or payer of this tx call which must be mutable since it's the payer for initializing the `whitelist_state` account that must pay for the call which leads to decreasing lamports from his/her account
-    pub system_program: Program<'info, System>, //// when we use `init` system program account info must be exists
+    pub system_program: Program<'info, System>, //// when we use `init` system program account info must be exists also system program is carrying 0-bytes of account data and can be used for CPI calls (simply put the contract name instead of System)
 
 }
 
@@ -286,30 +347,22 @@ pub struct AddToWhitelistRequest<'info>{
     //// we should make them sign as well as mark 
     //// their account as mutable.
     #[account(mut)]
-    pub authority: Signer<'info>, //// the transaction signer account which must be mutable
+    pub authority: Signer<'info>, //// the transaction signer account which must be mutable and is the one who pays for the gas fee and sing this call
     #[account(
         //// we need to define this account mutable or 
         //// writable since we want to add PDAs to it in runtime
+        //
+        //// to mutate the `whitelist_data` account must be initialized first which 
+        //// this can be done inside the `initialize_whitelist` handler
+        //// in its generic or `IntializeWhitelist` struct by putting 
+        //// init, payer and space constraint on top of it.
         mut, 
-    )]
-    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    pub whitelist_data: Account<'info, WhitelistData>, //// `AccountLoader` will be used to deserialize zero copy types 
-    #[account(
-        //// we need to define this account mutable or 
-        //// writable since we want to mutate the 
-        //// white list state at runtime
-        mut,
         //// `has_one` constraint will check 
-        //// that whitelist_state.owner == authority.key()
+        //// that whitelist_data.owner == authority.key()
+        //// so the whitelist_data must be initialized first
         has_one = authority
     )]
-    //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    //
-    //// `whitelist_state` account must be initialized first which 
-    //// this can be done inside the `initialize_whitelist` handler
-    //// in its generic or `IntializeWhitelist` struct by putting 
-    //// init, payer and space constraint on top of it.
-    pub whitelist_state: Account<'info, WhitelistState>,
+    pub whitelist_data: Account<'info, WhitelistData>, //// `AccountLoader` will be used to deserialize zero copy types 
 }
 
 //// structs that are bounded to this proc macro attribute, are the instruction data
@@ -328,7 +381,7 @@ pub struct AddToWhitelistRequest<'info>{
 //// we can deserialize this account
 //// on frontend to get the list field
 #[account]
-pub struct WhitelistData{ // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
+pub struct WhitelistData{
     // https://solana.stackexchange.com/questions/2339/account-size-calculation-when-using-vectors
     //// heap data size like string and vector are always 24 bytes
     //// which will be stored on the stack: 8 bytes for capaciy, 8 bytes for length
@@ -337,6 +390,14 @@ pub struct WhitelistData{ // https://solana.stackexchange.com/questions/2339/acc
     //// list will be 4 + (32 * N) which N referes to the number of elements and 32 is the
     //// size of public key and 4 is the size of one public key since the public key is of
     //// type u32 which 4 bytes long.
+    //
+    //// slice form of dynamic sized types like strings, traits and vectors 
+    //// must be behind a pointer since their size are not know at compile 
+    //// time and will be specified at runtime either they are in binary, 
+    //// stack or heap itself thus we have to take a pointer to them to store 
+    //// the pointer in the stack to access their heap location using that 
+    //// pointer to reach the data itself because pointers store the address
+    //// of the data either in heap or stack. 
     //
     //// dynamic size can be in their borrowed form like &str or &[u8],
     //// since str and [u8] don't have fixed size at compile time 
@@ -349,49 +410,14 @@ pub struct WhitelistData{ // https://solana.stackexchange.com/questions/2339/acc
     //// is a shared pointer that is being in used by other scopes and we must either
     //// borrow the type or clone it to move it into ther scopes.
     pub list: Vec<Pda>, //// list of all PDAs that shows an owner has burnt his/her NFT
-}
-
-impl WhitelistData{
-    pub const MAX_SIZE: usize = 2000;
-}
-
-//// structs that are bounded to this proc macro attribute, are the instruction data
-//// which are the generic of the account (`Account` type) that wants to mutate them on the chain and 
-//// their fields can be accessible by calling the `program.account.<STRUCT_NAME>`
-//// in frontend side which allows us to get current value of each field on chain,
-//// here the owner of this struct is the `whitelist_state` account field which its 
-//// owner must be the program id so it can mutate the deserialized data on the chain although
-//// the `#[account]` proc macro on top of the generic `T` or Nft in here will set 
-//// the owner of the `Account` type that contains the generic `T` to the program id since 
-//// the account must be the owner of the program in order to mutate data on the chain
-//
-//// `#[account]` proc macro attribute sets 
-//// the owner of that data to the 
-//// `declare_id` of the crate
-#[account]
-pub struct WhitelistState{
     pub authority: Pubkey, //// the owner of the whitelist state
     pub counter: u64, //// total number of PDAs inside the whitelist
 }
 
-impl WhitelistState{
-    pub const MAX_SIZE: usize = 32 + 8;
+
+impl WhitelistData{
+    pub const MAX_SIZE: usize = 2000;
 }
-
-
-#[derive(Accounts)]
-// #[instruction(burn_tx_hash: String)] //// we can access the instruction's arguments here which are passed inside the `remove_from_whitelist` instruction handler with the #[instruction(..)] attribute
-pub struct RemoveFromWhitelistRequest<'info>{ //// this is exactly like the `AddToWhitelistRequest` struct but will be used for removing a PDA 
-    #[account(mut)]
-    pub authority: Signer<'info>,
-    #[account(mut)] //// this account must be mutable since it wants to mutate the instruction data of type `WhitelistData` on the chain by removing a PDA from the list
-    //// `#[account()]` proc macro attribute is on top of the `whitelist_data` field thus the generic of this account, the `WhitelistData` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id
-    pub whitelist_data: Account<'info, WhitelistData>, 
-    #[account(mut, has_one = authority)]
-    pub whitelist_state: Account<'info, WhitelistState>, //// `#[account()]` proc macro attribute is on top of the `whitelist_state` field thus the generic of this account, the `WhitelistState` structure must be bounded to the `#[account()]` proc macro attribute in order to be accessible inside the frontend also the `#[account()]` proc macro attribute sets the owner of the generic to the program id  
-}
-
-
 
 #[error_code]
 pub enum ErrorCode {

@@ -2,11 +2,16 @@
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-declare_id!("DseCcTkkVGWnHnt6s8uMdcb5EDaduxaKxVfEu6aVkfLD"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
+declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
 
 #[program]
 pub mod ticket {
-    
+
+
+    // https://github.com/coral-xyz/anchor/tree/master/tests/cpi-returns
+    // https://github.com/switchboard-xyz/vrf-demo-walkthrough
+
+
     use super::*;
 
     //// amount is the total amount of the bet 
@@ -16,7 +21,7 @@ pub mod ticket {
     //// means that the PDA is not fully charged 
     //// because one of the server or client 
     //// didn't charge that. 
-    pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8) -> Result<()> {
+    pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8, match_id: u8) -> Result<()> {
         
         let game_state = &mut ctx.accounts.game_state;
         let pda_lamports = game_state.to_account_info().lamports();
@@ -26,10 +31,18 @@ pub mod ticket {
 
         game_state.server = *ctx.accounts.user.key;
         game_state.player = *ctx.accounts.player.key;
+        game_state.match_id = match_id;
         game_state.amount = amount;
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
         
+
+        // TODO
+        // generate deck in here 
+        // ...
+        game_state.deck = vec![0, 1, 43, 56, 34];
+
+
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
             player: ctx.accounts.player.key(), 
@@ -77,19 +90,18 @@ pub mod ticket {
                 let pda_amount = **pda.try_borrow_mut_lamports()?;
                 let server_account = ctx.accounts.server.to_account_info();
                 let player_account = ctx.accounts.player.to_account_info();
-                if pda_amount == amount{
+                
                     let half = (pda_amount / 2) as u64;
+                    **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
                     **server_account.try_borrow_mut_lamports()? += half; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
                     **player_account.try_borrow_mut_lamports()? += half; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-    
+                    **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
                     is_equal_condition = true;
                     
-                } else{
-                    return err!(ErrorCode::InsufficientFundEqualCondition);
-                }
-                
-                None
-                
+                    None
+            
             },
             _ => return err!(ErrorCode::InvalidWinnerIndex),
         };
@@ -176,6 +188,16 @@ pub mod ticket {
     
     }
 
+    pub fn return_deck_info(ctx: Context<DeckInfo>) -> Result<Vec<u8>>{
+
+        //// we can't move game_state which is of type Account
+        //// since Vec<u8> doesn't implement Copy thus we have
+        //// to either borrow it or clone it.
+        let deck = ctx.accounts.game_state.deck.clone(); 
+        Ok(deck)
+
+    }
+
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, deposit: u64, user_id: String, bump: u8) -> Result<()>{
 
         let ticket_stats = &mut ctx.accounts.ticket_stats;
@@ -231,10 +253,12 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 }
 
 #[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
-pub struct GameState {
+pub struct GameState { //// this struct will be stored inside the PDA
     server: Pubkey, // 32 bytes
     player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
+    match_id: u8,
+    deck: Vec<u8>, // the deck of this player for the passed in match id
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
@@ -257,6 +281,7 @@ pub struct TicketStats{
     bump: u8, 
 
 }
+
 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type 
 pub struct StartGame<'info> {
@@ -357,6 +382,13 @@ pub struct GameResult<'info> {
     pub system_program: Program<'info, System>,
 }
 
+
+#[derive(Accounts)]
+pub struct DeckInfo<'info>{
+    #[account(mut, seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], bump = game_state.bump)]
+    pub game_state: Account<'info, GameState>,
+}
+
 // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
 // https://docs.metaplex.com/programs/understanding-programs#signer-andor-writable-accounts
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
@@ -439,7 +471,7 @@ pub struct ReserveTicket<'info>{
     //// use `Account` type which is a wrapper around the 
     //// `AccountInfo` type.
     //
-    //// more than one `AccountInfo` inside the struct
+    //// more than one `AccountInfo` fields inside the struct
     //// needs to be checked and tell solana that 
     //// these are safe. 
     pub satking_pool: AccountInfo<'info>, 

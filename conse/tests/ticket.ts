@@ -27,7 +27,7 @@ describe("conse ticket", () => {
 
 
   // https://solana.stackexchange.com/questions/2057/what-is-the-relation-between-signers-wallets-in-testing?rq=1
-  const program = anchor.workspace.NdsTransaction as Program<Ticket>;
+  const program = anchor.workspace.Ticket as Program<Ticket>;
   const provider = anchor.AnchorProvider.env(); 
 
   
@@ -134,16 +134,19 @@ describe("conse ticket", () => {
     // starting the game by the server as the signer
     //-----------------------------------------------
     // Start game function - init pda program
-    await program.methods.startGame(new anchor.BN(10_000_000_000), bump) //// 10_000_000_000 must be the total deposited amount (server + player) 
+    let match_id = 23;
+    await program.methods.startGame(new anchor.BN(10_000_000_000), bump, match_id) //// 10_000_000_000 must be the total deposited amount (server + player) 
       .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey
       }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
     let currentAccountAmount = await program.account.gameState.fetch(gameStatePDA);
     //// PDA account balance must be 10 since player and server each one sent 5 to it
     assert.equal(10_000_000_000, currentAccountAmount.amount.toNumber());
 
-
-
-
+    //--------------------------------------------------
+    // getting the generated deck info for this player 
+    //--------------------------------------------------
+    let deck_of_this_pda = program.account.gameState.fetch(gameStatePDA);
+    console.log("deck info ", (await deck_of_this_pda).deck);
 
 
     //------------------------------------------------------

@@ -11,19 +11,13 @@ services:
       - PUID=1000
       - PGID=1000
     volumes:
-      - /home/root/mongodb/database:/data/db
+      - /home/root/gem/devops/database/mongodb:/data/db
     ports:
       - 27017:27017
     restart: unless-stopped
   #---------------------------------------
   #     Conse Rust Docker Configuration
   #---------------------------------------
-  # NOTE - rust dockerfile is useful when 
-  #        we want to balance between the loads
-  #        of all services using k8s or HAproxy
-  #        inside the cloud thus the conse server 
-  #        must be dockerized to be balanced 
-  #        with high loads using k8s.  
   conse:
     build:
       dockerfile: './Dockerfile'

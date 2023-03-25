@@ -110,6 +110,8 @@ pub struct RpcTokenAccount{
 
 pub async fn verify_owner(owner: String, mint_addrs: &[String], rpc_client: &RpcClient) -> bool{
     
+    // https://github.com/ronanyeah/solana-rust-examples
+    
     //// in rpc we can call the method name of 
     //// the actor object directly with a passed 
     //// in prams using rpc_request from another device 
