@@ -4,11 +4,7 @@
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-use orao_solana_vrf::program::OraoVrf;
-use orao_solana_vrf::state::NetworkState;
-use orao_solana_vrf::CONFIG_ACCOUNT_SEED;
-use orao_solana_vrf::RANDOMNESS_ACCOUNT_SEED;
-use orao_solana_vrf::cpi::accounts::Request;
+use sha3::{Sha3_512, Digest};
 
 
 declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
@@ -27,7 +23,7 @@ pub mod ticket {
 
     use super::*;
 
-    pub fn start_game(ctx: Context<StartGame>, seed: [u8; 32], amount: u64, bump: u8, match_id: u8) -> Result<()> {
+    pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8, match_id: u8) -> Result<()> {
         
         let game_state = &mut ctx.accounts.game_state;
         let pda_lamports = game_state.to_account_info().lamports();
@@ -43,46 +39,22 @@ pub mod ticket {
             return err!(ErrorCode::InsufficientFund);
         }
 
-        if seed == [0_u8; 32] {
-            return err!(ErrorCode::ZeroSeed);
-        }
-
         game_state.server = *ctx.accounts.user.key;
         game_state.player = *ctx.accounts.player.key;
         game_state.amount = amount;
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
+
         
-        //// ----------------------------
-        //// ------------------- VRF CPI
-        //// cpis is based on rpc call which can directly 
-        //// call an rpc method of the other program actor
-        //
-        //// this is the loaded VRF program account from 
-        //// the Cargo.toml using path, we'll use this to 
-        //// create a new CpiContext for CPI calls, this
-        //// must be loaded into this program using `use`
-        //// statement which can be loaded into the `StartGame`
-        //// struct in `vrf` field.
-        let cpi_program = ctx.accounts.vrf.to_account_info(); 
-        let cpi_accounts = Request{
-            payer: ctx.accounts.player.to_account_info(),
-            network_state: ctx.accounts.config.to_account_info(),
-            treasury: ctx.accounts.treasury.to_account_info(),
-            request: ctx.accounts.random.to_account_info(),
-            system_program: ctx.accounts.system_program.to_account_info(),
-        };
-        //// CpiContext takes two params the one is the solana 
-        //// program that we want to make a call and the other 
-        //// is the accounts that must be passed to the call
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts); 
-        orao_solana_vrf::cpi::request(cpi_ctx, seed)?;
-        //// ------------------- 
-        //// ----------------------------
+
+        let mut hasher = Sha3_512::new();
+        hasher.update(bump.to_be_bytes()); //// hash the passed in bump to generate a 64 (512 bits) bytes hash data
+        let deck = &hasher.finalize()[0..52];
+
 
         let match_info = MatchInfo{
-            deck: vec![], //// we'll fill this on call game_result instruction
-            match_id
+            deck: vec![],
+            match_id,
         };
         game_state.match_infos.push(match_info.clone()); 
 
@@ -201,9 +173,12 @@ pub mod ticket {
         }
 
 
-        game_state.match_infos.clone().into_iter().map(|mut m| if m.match_id == match_id{
-            m.deck = deck.clone();
-        });
+        let mut iter = game_state.match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
+        while let Some(mut match_info) = iter.next(){
+            if match_info.match_id == match_id{
+                match_info.deck = deck.clone();
+            } 
+        }
         
 
         emit!(GameResultEvent{
@@ -294,7 +269,7 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
 pub struct MatchInfo{
     pub deck: Vec<u16>,
-    pub match_id: u8
+    pub match_id: u8,
 }
 
 #[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
@@ -336,6 +311,11 @@ pub struct TicketStats{
 pub struct StartGame<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+    //// more than multiple AccountInfo 
+    //// inside needs to be checked
+    /// CHECK: This is not dangerous because we just pay to this account
+    #[account(mut)]
+    pub player: AccountInfo<'info>,
     #[account(
         //// by using init we're telling anchor 
         //// that we want to initialize an account
@@ -371,34 +351,6 @@ pub struct StartGame<'info> {
         bump
     )]
     pub game_state: Account<'info, GameState>,
-    //// -----------------------------------------
-    //// ---------------------------- VRF ACCOUNTS
-    //// more than multiple AccountInfo 
-    //// inside needs to be checked
-    /// CHECK: This is not dangerous because we just pay to this account
-    #[account(mut)]
-    pub player: AccountInfo<'info>,
-    /// CHECK:
-    #[account(
-        mut,
-        seeds = [RANDOMNESS_ACCOUNT_SEED.as_ref(), &seed], //// seed has passed to the instruction call
-        bump,
-        seeds::program = orao_solana_vrf::ID
-    )]
-    random: AccountInfo<'info>,
-    /// CHECK:
-    #[account(mut)]
-    treasury: AccountInfo<'info>,
-    #[account(
-        mut,
-        seeds = [CONFIG_ACCOUNT_SEED.as_ref()],
-        bump,
-        seeds::program = orao_solana_vrf::ID
-    )]
-    config: Account<'info, NetworkState>, //// the anchor version must be 0.26 since orao-vrf is using this version otherwise we'll face the serialization problem of the `NetworkState` generic
-    vrf: Program<'info, OraoVrf>,
-    //// -----------------------------------------
-    //// -----------------------------------------
     pub system_program: Program<'info, System>,
 }
 
