@@ -8,7 +8,7 @@ use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
 use routerify::prelude::*;
 use crate::middlewares;
-use crate::utils;
+use crate::misc;
 use crate::schemas;
 use crate::contexts as ctx;
 use crate::constants::*;
@@ -72,7 +72,7 @@ pub async fn role(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                 Ok(event_info) => {
 
                                     let event_id = ObjectId::parse_str(event_info._id.as_str()).unwrap(); //// generating mongodb object id from the id string
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{ //// checking that the passed in event id is belongs to the passed in god id or not 
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{ //// checking that the passed in event id is belongs to the passed in god id or not 
 
                                         ////////////////////////////////// DB Ops
                                     

@@ -11,7 +11,7 @@ use std::thread;
 use crate::contexts as ctx;
 use crate::schemas;
 use crate::constants::*;
-use crate::utils;
+use crate::misc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next IO stream of future chunk and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
@@ -130,9 +130,9 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //         })
     //         .collect::<Vec<u8>>()
     // });
-    // let bytes_slice = utils::into_box_slice(&buffer).await.unwrap(); //// converting io_chunk_stream into a Box of 4 u8 slice
+    // let bytes_slice = misc::into_box_slice(&buffer).await.unwrap(); //// converting io_chunk_stream into a Box of 4 u8 slice
     // let start = Instant::now();
-    // match utils::simd(u32::from_be_bytes(*bytes_slice), heavy_func).await{ //// passing a u32 bits integer by dereferencing the Box which has the bytes_slice value itself
+    // match misc::simd(u32::from_be_bytes(*bytes_slice), heavy_func).await{ //// passing a u32 bits integer by dereferencing the Box which has the bytes_slice value itself
     //     Ok(result) => {
     //         let end = Instant::now();
     //         let delta = end.duration_since(start);
@@ -186,7 +186,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                     ////////////////////////////////// SIMD OPS
                     
                     let start = Instant::now();
-                    match utils::simd(simd.input, heavy_func).await{
+                    match misc::simd(simd.input, heavy_func).await{
                         Ok(result) => {
                             let end = Instant::now();
                             let delta = end.duration_since(start);

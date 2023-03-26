@@ -119,6 +119,12 @@ pub mod whitelist {
     pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>, addresses: Vec<Pda>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
+        //// every type will be moved by default in rust if it doesn't implement Copy trait since it has no gc thus 
+        //// thus if a value can't be moved is because
+        ////       - it doesn't implemente Copy trait
+        ////       - it's behind a shared reference (rust doesn't move that since the reference might be a dangling pointer later)
+        //// we can sovle this either by cloning or borrowing it.
+        //
         //// a mutable reference to the whitelist data account, we can't move the whitelist_data while we have 
         //// pointer of that since by moving it all of its pointer might be converted into a dangling ones which rust
         //// doesn't allow this from the first, since Account is a mutable shared reference which doesn't implement 
@@ -207,7 +213,13 @@ impl Nft{
         //// its owner must be the signer 
         //// of the transaction call or 
         //// the `burn_request` method.
-        let transaction = burn_nft(
+        //
+        //// every instruction on solana is 
+        //// a transaction which contains
+        //// serialized data, accounts and 
+        //// the program id that executed
+        //// this instruction.
+        let transaction = burn_nft( 
             self.program_id, 
             self.metadata, 
             self.owner, 
@@ -272,7 +284,8 @@ pub struct IntializeWhitelist<'info>{
         //// on chain by deserializing it using borsh hence to use an account 
         //// that owns a generic data on chain like `WhitelistData` data which 
         //// is owned by the `whitelist_state` account, the account which is of 
-        //// type `Account` must be initialized first and limited to a space.
+        //// type `Account` must be initialized first by a payer and limited to 
+        //// a space then we can use it in the next instruction handler.
         //
         //// in initial call or creating the whitelist_state, 
         //// account can't be mutable but we're telling 

@@ -8,7 +8,7 @@ use crate::middlewares;
 use crate::contexts as ctx;
 use crate::schemas;
 use crate::constants::*;
-use crate::utils;
+use crate::misc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
@@ -771,7 +771,7 @@ pub async fn god_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 
                     let event_id = ObjectId::parse_str(event_id.as_str()).unwrap(); //// generating mongodb object id from the id string
                     let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
-                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{ //// checking that the passed in event id is belongs to the passed in god id or not 
+                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{ //// checking that the passed in event id is belongs to the passed in god id or not 
 
                         ////////////////////////////////// DB Ops
                         

@@ -56,7 +56,8 @@
     =========================================
 
     solana runtime has its own BPF loader which supports no std libs
-    since contracts can't interact with the ouside world thus there 
+    since contracts can't interact with the ouside world due to the fact
+    that they are on VM not a real hardware to compile std libs thus there 
     is no socket to do this due to the securtiy reasons although
     the reason that solana contract gets compiled to .so is because 
     they can be loaded from the linux kernel which is blazingly 

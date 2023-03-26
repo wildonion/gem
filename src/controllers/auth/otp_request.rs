@@ -7,7 +7,7 @@
 use crate::contexts as ctx;
 use crate::schemas;
 use crate::constants::*;
-use crate::utils::otp::{Otp, Auth, OtpInput}; //// based on orphan rule Otp trait must be imported here to use its methods on an instance of OTPAuth which returns impl Otp
+use crate::misc::otp::{Otp, Auth, OtpInput}; //// based on orphan rule Otp trait must be imported here to use its methods on an instance of OTPAuth which returns impl Otp
 use std::{mem, slice, env, io::{BufWriter, Write}};
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;

@@ -1,51 +1,95 @@
 
 
+
+
 use anchor_lang::prelude::*;
 use percentage::Percentage;
+use orao_solana_vrf::program::OraoVrf;
+use orao_solana_vrf::state::NetworkState;
+use orao_solana_vrf::CONFIG_ACCOUNT_SEED;
+use orao_solana_vrf::RANDOMNESS_ACCOUNT_SEED;
+use orao_solana_vrf::cpi::accounts::Request;
+
+
 declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
+
 
 #[program]
 pub mod ticket {
 
 
+    
+    // https://github.com/orao-network/solana-vrf/
+    // https://www.anchor-lang.com/docs/cross-program-invocations
     // https://github.com/coral-xyz/anchor/tree/master/tests/cpi-returns
     // https://github.com/switchboard-xyz/vrf-demo-walkthrough
 
 
     use super::*;
 
-    //// amount is the total amount of the bet 
-    //// including the server and player deposits
-    //// thus if the total balance of the PDA 
-    //// was not equal to the passed in amount 
-    //// means that the PDA is not fully charged 
-    //// because one of the server or client 
-    //// didn't charge that. 
-    pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8, match_id: u8) -> Result<()> {
+    pub fn start_game(ctx: Context<StartGame>, seed: [u8; 32], amount: u64, bump: u8, match_id: u8) -> Result<()> {
         
         let game_state = &mut ctx.accounts.game_state;
         let pda_lamports = game_state.to_account_info().lamports();
+        
+        //// amount is the total amount of the bet 
+        //// including the server and player deposits
+        //// thus if the total balance of the PDA 
+        //// was not equal to the passed in amount 
+        //// means that the PDA is not fully charged 
+        //// because one of the server or client 
+        //// didn't charge that. 
         if pda_lamports != amount { //// amount is the total amounts of PDA (server bet + player bet)
             return err!(ErrorCode::InsufficientFund);
         }
 
+        if seed == [0_u8; 32] {
+            return err!(ErrorCode::ZeroSeed);
+        }
+
         game_state.server = *ctx.accounts.user.key;
         game_state.player = *ctx.accounts.player.key;
-        game_state.match_id = match_id;
         game_state.amount = amount;
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
         
+        //// ----------------------------
+        //// ------------------- VRF CPI
+        //// cpis is based on rpc call which can directly 
+        //// call an rpc method of the other program actor
+        //
+        //// this is the loaded VRF program account from 
+        //// the Cargo.toml using path, we'll use this to 
+        //// create a new CpiContext for CPI calls, this
+        //// must be loaded into this program using `use`
+        //// statement which can be loaded into the `StartGame`
+        //// struct in `vrf` field.
+        let cpi_program = ctx.accounts.vrf.to_account_info(); 
+        let cpi_accounts = Request{
+            payer: ctx.accounts.player.to_account_info(),
+            network_state: ctx.accounts.config.to_account_info(),
+            treasury: ctx.accounts.treasury.to_account_info(),
+            request: ctx.accounts.random.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+        };
+        //// CpiContext takes two params the one is the solana 
+        //// program that we want to make a call and the other 
+        //// is the accounts that must be passed to the call
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts); 
+        orao_solana_vrf::cpi::request(cpi_ctx, seed)?;
+        //// ------------------- 
+        //// ----------------------------
 
-        // TODO
-        // generate deck in here 
-        // ...
-        game_state.deck = vec![0, 1, 43, 56, 34];
-
+        let match_info = MatchInfo{
+            deck: vec![], //// we'll fill this on call game_result instruction
+            match_id
+        };
+        game_state.match_infos.push(match_info.clone()); 
 
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
-            player: ctx.accounts.player.key(), 
+            player: ctx.accounts.player.key(),
+            match_info, 
             amount,
         });
         
@@ -53,7 +97,7 @@ pub mod ticket {
     
     }
 
-    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8) -> Result<()> {
+    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (u8 bytes with 52 elements)
         
         let game_state = &mut ctx.accounts.game_state;
         let signer_account = ctx.accounts.user.key();
@@ -155,6 +199,11 @@ pub mod ticket {
             **pda.try_borrow_mut_lamports()? -= amount_receive;
             **to_winner.try_borrow_mut_lamports()? += amount_receive;
         }
+
+
+        game_state.match_infos.clone().into_iter().map(|mut m| if m.match_id == match_id{
+            m.deck = deck.clone();
+        });
         
 
         emit!(GameResultEvent{
@@ -186,16 +235,6 @@ pub mod ticket {
 
         Ok(())
     
-    }
-
-    pub fn return_deck_info(ctx: Context<DeckInfo>) -> Result<Vec<u8>>{
-
-        //// we can't move game_state which is of type Account
-        //// since Vec<u8> doesn't implement Copy thus we have
-        //// to either borrow it or clone it.
-        let deck = ctx.accounts.game_state.deck.clone(); 
-        Ok(deck)
-
     }
 
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, deposit: u64, user_id: String, bump: u8) -> Result<()>{
@@ -252,13 +291,19 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
     amount_receive
 }
 
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
+pub struct MatchInfo{
+    pub deck: Vec<u16>,
+    pub match_id: u8
+}
+
 #[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
 pub struct GameState { //// this struct will be stored inside the PDA
     server: Pubkey, // 32 bytes
     player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
     match_id: u8,
-    deck: Vec<u8>, // the deck of this player for the passed in match id
+    match_infos: Vec<MatchInfo>, // all player matches and decks
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
@@ -284,6 +329,10 @@ pub struct TicketStats{
 
 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type 
+//// with the #[instruction(..)] attribute we can access the instruction’s arguments 
+//// we have to list them in the same order as in the instruction but 
+//// we can omit all arguments after the last one you need.
+#[instruction(seed: [u8; 32])] 
 pub struct StartGame<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -294,6 +343,9 @@ pub struct StartGame<'info> {
         //// in which the payer of this account is the signer
         //// also the game_state is the owner that can 
         //// amend data on the the chain.
+        //
+        //// each field of type Account must be initialized first
+        //// the it can be mutated in the next instruction call 
         init,
         //// payer of this transaction call is 
         //// the signer which is the user field
@@ -319,9 +371,34 @@ pub struct StartGame<'info> {
         bump
     )]
     pub game_state: Account<'info, GameState>,
+    //// -----------------------------------------
+    //// ---------------------------- VRF ACCOUNTS
+    //// more than multiple AccountInfo 
+    //// inside needs to be checked
     /// CHECK: This is not dangerous because we just pay to this account
     #[account(mut)]
     pub player: AccountInfo<'info>,
+    /// CHECK:
+    #[account(
+        mut,
+        seeds = [RANDOMNESS_ACCOUNT_SEED.as_ref(), &seed], //// seed has passed to the instruction call
+        bump,
+        seeds::program = orao_solana_vrf::ID
+    )]
+    random: AccountInfo<'info>,
+    /// CHECK:
+    #[account(mut)]
+    treasury: AccountInfo<'info>,
+    #[account(
+        mut,
+        seeds = [CONFIG_ACCOUNT_SEED.as_ref()],
+        bump,
+        seeds::program = orao_solana_vrf::ID
+    )]
+    config: Account<'info, NetworkState>, //// the anchor version must be 0.26 since orao-vrf is using this version otherwise we'll face the serialization problem of the `NetworkState` generic
+    vrf: Program<'info, OraoVrf>,
+    //// -----------------------------------------
+    //// -----------------------------------------
     pub system_program: Program<'info, System>,
 }
 
@@ -473,7 +550,7 @@ pub struct ReserveTicket<'info>{
     //
     //// more than one `AccountInfo` fields inside the struct
     //// needs to be checked and tell solana that 
-    //// these are safe. 
+    //// these are safe or not safe. 
     pub satking_pool: AccountInfo<'info>, 
     pub system_program: Program<'info, System> //// this can also be another program instead of System
 }
@@ -491,7 +568,9 @@ pub enum ErrorCode {
     #[msg("Invalid Instruction")]
     InvalidInstruction,
     #[msg("Unsuccessful Reservation")]
-    UnsuccessfulReservation
+    UnsuccessfulReservation,
+    #[msg("Seed Can't Be Zero Bytes")]
+    ZeroSeed
 }
 
 
@@ -499,6 +578,7 @@ pub enum ErrorCode {
 pub struct StartGameEvent{
     pub server: Pubkey,
     pub player: Pubkey,
+    pub match_info: MatchInfo,
     pub amount: u64,
 }
 

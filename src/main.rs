@@ -72,7 +72,7 @@ use self::contexts as ctx; // use crate::contexts as ctx;
 
 
 pub mod middlewares;
-pub mod utils; //// we're importing the utils.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
+pub mod misc; //// we're importing the utils.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
 pub mod constants;
 pub mod contexts;
 pub mod schemas;
@@ -191,7 +191,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         access_level_cli = &args[2];
     }
     if username_cli != &"".to_string() && access_level_cli != &"".to_string(){
-        match utils::set_user_access(username_cli.to_owned(), access_level_cli.parse::<i64>().unwrap(), app_storage.clone()).await{
+        match misc::set_user_access(username_cli.to_owned(), access_level_cli.parse::<i64>().unwrap(), app_storage.clone()).await{
             Ok(user_info) => {
                 info!("🔓 access level for user {} has been updated successfully", username_cli);
                 info!("🧑🏻 updated user {:?}", user_info);
@@ -221,7 +221,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- initializing the otp info instance
     //
     // ---------------------------------------------------------------------------------------
-    let mut otp_auth = utils::otp::Auth::new(sms_api_token, sms_template); //// the return type is impl Otp trait which we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
+    let mut otp_auth = misc::otp::Auth::new(sms_api_token, sms_template); //// the return type is impl Otp trait which we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
     let otp_info = ctx::app::OtpInfo{
         //// since otp_auth is of type trait, in order 
         //// to have a trait in struct field or function
@@ -273,7 +273,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .build()
         .unwrap();
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
-    let conse_server = utils::build_server(api).await; //// build the server from the series of api routers
+    let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver));
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to receive the shutdown signal
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
@@ -336,7 +336,7 @@ mod tests{
                 .scope("/auth", routers::auth::register().await)
                 .build()
                 .unwrap();
-        let conse_server = utils::build_server(api).await;
+        let conse_server = misc::build_server(api).await;
         if let Err(e) = conse_server.await{ //// we should await on the server to run for testing
             eprintln!("conse server error in testing: {}", e);
         }

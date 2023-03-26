@@ -5,7 +5,7 @@
 
 use crate::contexts as ctx;
 use crate::schemas;
-use crate::utils;
+use crate::misc;
 use crate::constants::*;
 use chrono::Utc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
@@ -54,9 +54,9 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             match schemas::auth::LoginRequest::verify_pwd(user_doc.clone().pwd, user_info.clone().pwd).await{
                                 Ok(is_correct) => {
                                     if is_correct{
-                                        let (now, exp) = utils::jwt::gen_times().await;
-                                        let jwt_payload = utils::jwt::Claims{_id: user_doc.clone()._id, username: user_doc.clone().username, access_level: user_doc.access_level, iat: now, exp}; //// building jwt if passwords are matched
-                                        match utils::jwt::construct(jwt_payload).await{
+                                        let (now, exp) = misc::jwt::gen_times().await;
+                                        let jwt_payload = misc::jwt::Claims{_id: user_doc.clone()._id, username: user_doc.clone().username, access_level: user_doc.access_level, iat: now, exp}; //// building jwt if passwords are matched
+                                        match misc::jwt::construct(jwt_payload).await{
                                             Ok(token) => {
                                                 users.update_one(doc!{"username": user_doc.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();
                                                 let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec

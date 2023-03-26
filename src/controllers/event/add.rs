@@ -5,7 +5,7 @@
 
 
 use crate::middlewares;
-use crate::utils;
+use crate::misc;
 use crate::schemas;
 use crate::contexts as ctx;
 use crate::constants::*;
@@ -82,8 +82,8 @@ pub async fn upload_img(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                             match events.find_one(doc!{"_id": event_object_id}, None).await.unwrap(){
                                 Some(event_doc) => {
                                     if event_doc.clone().group_info.unwrap().god_id.unwrap() == _id.unwrap().to_string() || access_level == DEV_ACCESS{
-                                        let filepath = utils::upload_asset(EVENT_UPLOAD_PATH, payload, &event_id).await; //// passing the incoming multipart payload to build the image from its IO stream utf8 bytes future object 
-                                        let upload_instance = utils::UploadFile{
+                                        let filepath = misc::upload_asset(EVENT_UPLOAD_PATH, payload, &event_id).await; //// passing the incoming multipart payload to build the image from its IO stream utf8 bytes future object 
+                                        let upload_instance = misc::UploadFile{
                                             name: filepath.clone(),
                                             time: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
                                         };

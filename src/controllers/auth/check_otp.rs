@@ -10,7 +10,7 @@ use routerify::prelude::*;
 use crate::contexts as ctx;
 use crate::schemas;
 use crate::constants::*;
-use crate::utils::otp::{Otp, OtpInput}; //// based on orphan rule Otp trait must be imported here to use its methods on an instance of OTPAuth which returns impl Otp
+use crate::misc::otp::{Otp, OtpInput}; //// based on orphan rule Otp trait must be imported here to use its methods on an instance of OTPAuth which returns impl Otp
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};

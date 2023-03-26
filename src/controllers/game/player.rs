@@ -6,7 +6,7 @@
 
 
 use crate::middlewares;
-use crate::utils;
+use crate::misc;
 use crate::schemas;
 use crate::contexts as ctx;
 use crate::constants::*;
@@ -86,7 +86,7 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                 Ok(update_info) => { //// we got the username and password inside the login route
                                     
                                     let event_id = ObjectId::from_str(&update_info.event_id).unwrap();
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
                                     
                                         ////////////////////////////////// DB Ops
 
@@ -287,7 +287,7 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                 Ok(update_info) => { //// we got the username and password inside the login route
 
                                     let event_id = ObjectId::from_str(&update_info.event_id).unwrap();
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
 
                                         ////////////////////////////////// DB Ops
 
@@ -488,7 +488,7 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
 
 
                                     let event_id = ObjectId::from_str(&update_info.event_id).unwrap();
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
 
                                         ////////////////////////////////// DB Ops
 
@@ -691,7 +691,7 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
 
 
                                     let event_id = ObjectId::from_str(&update_info.event_id).unwrap();
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
 
                                         ////////////////////////////////// DB Ops
                                         
@@ -1156,7 +1156,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                     
 
                                     let event_id = ObjectId::from_str(&update_info.event_id).unwrap();
-                                    if utils::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
+                                    if misc::event_belongs_to_god(_id.unwrap(), event_id, db_to_pass.clone()).await || access_level == DEV_ACCESS{
 
                                         ////////////////////////////////// DB Ops
 
@@ -1356,7 +1356,7 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                         Some(user_doc) => {
                                             match events.find_one(doc!{"_id": event_id}, None).await.unwrap(){
                                                 Some(event_doc) => {
-                                                    if utils::event_belongs_to_god(_id.unwrap(), event_doc._id.unwrap(), db_to_pass.clone()).await || user_doc._id.unwrap() == _id.unwrap() || access_level == DEV_ACCESS{
+                                                    if misc::event_belongs_to_god(_id.unwrap(), event_doc._id.unwrap(), db_to_pass.clone()).await || user_doc._id.unwrap() == _id.unwrap() || access_level == DEV_ACCESS{
                                                         let mut player_role_name: Option<String> = None;
                                                         let event_players = event_doc.players.unwrap();
                                                         for p in event_players{ //// finding the role_name of the passed in player, we must make sure that the client has called upsert event after every role, side and status update to update the players vector inside the event
