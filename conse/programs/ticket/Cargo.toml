@@ -21,4 +21,3 @@ overflow-checks = true
 [dependencies]
 anchor-lang = "0.27.0"
 percentage = "0.1.0"
-sha2 = "0.10.6"

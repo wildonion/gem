@@ -3,8 +3,8 @@
 
 
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::hash;
 use percentage::Percentage;
-use sha2::{Digest, Sha512};
 
 
 
@@ -18,13 +18,18 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
     let mut decks: Vec<Deck> = Vec::new();
     for deck in 0..iteration{ 
 
-        let mut new_deck = Vec::<u8>::new();
-        let mut hasher = Sha512::new();
         let input = format!("{}${}${}", player, bump, deck);
-        hasher.update(input.as_bytes());
-        let digest: &[u8] = &hasher.finalize()[..64];
-        
-        new_deck.extend_from_slice(digest); 
+        let hash = hash::hash(input.as_bytes());
+        //// -------------- HASH NOTE --------------
+        //// ---------------------------------------  
+        //// we've used the built in hash methods of 
+        //// the solana program since extern crate 
+        //// returns a reference to a utf8 slice 
+        //// which solana needs a fixed size 
+        //// pointer to the slice.
+        //// ---------------------------------------
+        //// ---------------------------------------
+        let mut new_deck = hash.try_to_vec().unwrap(); 
         new_deck = new_deck.into_iter().map(|byte|{
             if byte % 52 == 0{
                 1
@@ -48,24 +53,31 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
                     new_deck[card_index] = new_card;
                     card_index+=1;
                 } 
-                //// we have to borrow the new_deck since 
-                //// it has no fixed size also it must be 
-                //// mutable because we want to fill it 
-                //// with the first 12 bytes of the first
-                //// deck data cards.
-                //
-                //// final_deck must be a mutable slice since 
-                //// clone_from_slice() method will borrow 
-                //// the self as mutable otherwise it'll say:  
-                ////    cannot borrow `*last_deck_data` as mutable, 
-                ////    as it is behind a `&` reference, `last_deck_data` 
-                ////    is a `&` reference, so the data it refers to 
-                ////    cannot be borrowed as mutable
-                let final_deck = &mut new_deck[0..52]; 
-                let first_deck: Deck = decks[0].clone();
-                let first_deck_data = first_deck.data.as_slice(); 
-                final_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
-                final_deck.to_vec()
+                
+                //// we have to borrow the new_deck since it has no fixed size also it must be 
+                //// mutable because we want to fill it with the first 12 bytes of the first
+                //// deck data cards also final_deck must be a mutable slice since clone_from_slice() 
+                //// method will borrow the self as mutable otherwise we'll get a compiler ERROR:  
+                ////    cannot borrow `*last_deck_data` as 
+                ////    mutable, as it is behind a `&` 
+                ////    reference, `last_deck_data` is a 
+                ////    `&` reference, so the data it refers 
+                ////    to cannot be borrowed as mutable
+                // let final_deck = final; 
+                // let first_deck: Deck = decks[0].clone();
+                // let first_deck_data = first_deck.data.as_slice(); 
+                // final_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
+                // final_deck.to_vec()
+
+                //// we can't use slice with no fixed size on solana 
+                //// thus we have to use the shuffled new_deck vector to take 
+                //// its 52 cards and push into a new final deck.
+                let mut final_deck = vec![];
+                let mut new_deck_iter = new_deck.into_iter().take(52); 
+                while let Some(card) = new_deck_iter.next(){
+                    final_deck.push(card);
+                } 
+                final_deck
                 ///// -------------------------------------
                 ///// -------------------------------------
             }
@@ -73,10 +85,10 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
 
 
         decks.push(generated_deck);
+        // decks.push(Deck { data: vec![0, 1] });
 
     }
     
-    // decks.push(Deck { data: vec![0, 1] });
 
     Some(decks)
 
@@ -420,7 +432,7 @@ pub struct StartGame<'info> {
         //// 8 bytes will be used as discriminator 
         //// by the anchor to point to a type like 
         //// the one in enum tag to point to a variant.
-        space = 300, 
+        space = 1024, 
         //// following will create the PDA using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
