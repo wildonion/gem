@@ -111,7 +111,8 @@ pub struct RpcTokenAccount{
 pub async fn verify_owner(owner: String, mint_addrs: &[String], rpc_client: &RpcClient) -> bool{
     
     // https://github.com/ronanyeah/solana-rust-examples
-    
+    // https://github.com/orao-network/solana-vrf/blob/master/rust/examples/cpi/programs/russian-roulette/src/lib.rs ------>  example of anchor-client usage and finding PDA
+
     //// in rpc we can call the method name of 
     //// the actor object directly with a passed 
     //// in prams using rpc_request from another device 

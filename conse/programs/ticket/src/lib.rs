@@ -4,7 +4,8 @@
 
 use anchor_lang::prelude::*;
 use percentage::Percentage;
-use sha3::{Sha3_512, Digest};
+use sha2::{Digest, Sha512};
+
 
 
 declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
@@ -12,21 +13,18 @@ declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the pro
 
 
 
-
 pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Deck>>{
     
-    let mut decks = Vec::new();
-    decks.push(Deck { data: vec![0, 1] });
-    for deck in 0..iteration{
-        
-        let mut new_deck = Vec::<u8>::new();
-        let mut hasher = Sha3_512::new();
+    let mut decks: Vec<Deck> = Vec::new();
+    for deck in 0..iteration{ 
 
+        let mut new_deck = Vec::<u8>::new();
+        let mut hasher = Sha512::new();
         let input = format!("{}${}${}", player, bump, deck);
         hasher.update(input.as_bytes());
-        let finalized_hash_digest: &[u8] = &hasher.finalize()[..];
+        let digest: &[u8] = &hasher.finalize()[..64];
         
-        new_deck.extend_from_slice(finalized_hash_digest); 
+        new_deck.extend_from_slice(digest); 
         new_deck = new_deck.into_iter().map(|byte|{
             if byte % 52 == 0{
                 1
@@ -49,17 +47,36 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
                     new_deck[position] = prev_card;
                     new_deck[card_index] = new_card;
                     card_index+=1;
-                }
-                let final_deck = new_deck[0..52].to_vec();
-                final_deck
+                } 
+                //// we have to borrow the new_deck since 
+                //// it has no fixed size also it must be 
+                //// mutable because we want to fill it 
+                //// with the first 12 bytes of the first
+                //// deck data cards.
+                //
+                //// final_deck must be a mutable slice since 
+                //// clone_from_slice() method will borrow 
+                //// the self as mutable otherwise it'll say:  
+                ////    cannot borrow `*last_deck_data` as mutable, 
+                ////    as it is behind a `&` reference, `last_deck_data` 
+                ////    is a `&` reference, so the data it refers to 
+                ////    cannot be borrowed as mutable
+                let final_deck = &mut new_deck[0..52]; 
+                let first_deck: Deck = decks[0].clone();
+                let first_deck_data = first_deck.data.as_slice(); 
+                final_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
+                final_deck.to_vec()
                 ///// -------------------------------------
                 ///// -------------------------------------
             }
         };
-        
+
+
         decks.push(generated_deck);
 
     }
+    
+    // decks.push(Deck { data: vec![0, 1] });
 
     Some(decks)
 
@@ -69,14 +86,6 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
 
 #[program]
 pub mod ticket {
-
-
-    
-    // https://github.com/orao-network/solana-vrf/
-    // https://www.anchor-lang.com/docs/cross-program-invocations
-    // https://github.com/coral-xyz/anchor/tree/master/tests/cpi-returns
-    // https://github.com/switchboard-xyz/vrf-demo-walkthrough
-
 
     use super::*;
 
@@ -103,7 +112,9 @@ pub mod ticket {
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
 
         
-
+        //// generating 10 random decks based
+        //// on the player public key, bump and
+        //// index iteration. 
         let decks = generate_decks(game_state.player, bump, 10);
 
 
@@ -135,8 +146,8 @@ pub mod ticket {
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
         let mut is_equal_condition = false;
-        let mut amount_receive: u64 = 0;
         let mut event_tax_amount: u64 = 0;
+        let mut winner_reward: u64 = 0;
 
 
         if server != signer_account { //// the signer of the tx call or the one who paid the gas fee is the server account itself
@@ -145,15 +156,15 @@ pub mod ticket {
 
 
         let pda = game_state.to_account_info();
-        let amount = game_state.amount;
+        let amount = game_state.amount; //// amount is the total number of player and server deposit
         let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
         //// calculating the general tax amount
         //// and transferring from PDA to revenue share wallet 
-        let total_amount_after_general_tax = receive_amount(amount, 5); // general tax must be calculated from the deposited amount since it's a general tax
-        let general_tax_amount = amount - total_amount_after_general_tax;
+        let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the total deposited amount since it's a general tax
         //// withdraw %5 fom PDA to fill the revenue share account 
         **pda.try_borrow_mut_lamports()? -= general_tax_amount;
         **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
+        let total_amount_after_general_tax = amount - general_tax_amount;
 
     
         let mut to_winner = match winner{
@@ -199,7 +210,7 @@ pub mod ticket {
             //
             //// we've assumed that the third instruction 
             //// is the event with 25 percent special tax.
-            amount_receive = if instruct == 0 { //// we've defined the amount_receive earlier up
+            event_tax_amount = if instruct == 0 { //// we've defined the event_tax_amount earlier up
                 receive_amount(total_amount_after_general_tax, 95)
             } else if instruct == 1 {
                 receive_amount(total_amount_after_general_tax, 70)
@@ -221,15 +232,18 @@ pub mod ticket {
             // from the PDA since the PDA 
             // has all of it :)
             //--------------------------------------------
-            // bet amount      : 1    SOL - %5 of 1 SOL     = 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
-            // amount after tax: 0.95 SOL - %25 of 0.95 SOL = 0.95 - 0.2375 = 0.7125 must withdraw for %25 tax to revenue share wallet 
-            event_tax_amount = total_amount_after_general_tax - amount_receive; //// we've defined the event_tax_amount earlier up
+            // bet amount is: 2 (1 for server and 1 for player)
+            // %5 of 2 SOL is 0.1 ---> 0.1 must go to revenue
+            // 2 - 0.1 = 1.9 is the amounts inside the PDA
+            // %25 of 1.9 SOL is 0.475 ---> 0.475 must to go revenue
+            // 1.9 - 0.475 = 1.425 ---> must go to the winner
+            winner_reward = total_amount_after_general_tax - event_tax_amount; //// we've defined the event_tax_amount earlier up
             //// withdraw event tax fom PDA to fill the revenue share account 
             **pda.try_borrow_mut_lamports()? -= event_tax_amount;
             **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
             //// withdraw amount receive fom PDA to fill the winner 
-            **pda.try_borrow_mut_lamports()? -= amount_receive;
-            **to_winner.try_borrow_mut_lamports()? += amount_receive;
+            **pda.try_borrow_mut_lamports()? -= winner_reward;
+            **to_winner.try_borrow_mut_lamports()? += winner_reward;
         }
 
 
@@ -246,7 +260,7 @@ pub mod ticket {
                 if is_equal_condition{
                     0 as u64
                 } else{
-                    amount_receive
+                    winner_reward
                 }
             }, ////--- we can also omit this
             event_tax_amount: { ////--- we can also omit this
@@ -274,46 +288,46 @@ pub mod ticket {
 
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, deposit: u64, user_id: String, bump: u8) -> Result<()>{
 
-        // let ticket_stats = &mut ctx.accounts.ticket_stats;
-        // let pda_lamports = ticket_stats.to_account_info().lamports();
-        // let pda_account = ticket_stats.to_account_info(); //// ticket_stats is the PDA account itself
-        // let staking_pool_account = ctx.accounts.satking_pool.to_account_info(); //// this is only an account info which has no instruction data to mutate on the chain 
+        let ticket_stats = &mut ctx.accounts.ticket_stats;
+        let pda_lamports = ticket_stats.to_account_info().lamports();
+        let pda_account = ticket_stats.to_account_info(); //// ticket_stats is the PDA account itself
+        let staking_pool_account = ctx.accounts.satking_pool.to_account_info(); //// this is only an account info which has no instruction data to mutate on the chain 
 
-        // //// the lamports inside the PDA account 
-        // //// must equals to the deposited amount
-        // //// also we've created a PDA account to 
-        // //// deposit all the tickets in there. 
-        // if pda_lamports != deposit{ 
-        //     return err!(ErrorCode::InsufficientFund);
-        // }
+        //// the lamports inside the PDA account 
+        //// must equals to the deposited amount
+        //// also we've created a PDA account to 
+        //// deposit all the tickets in there. 
+        if pda_lamports != deposit{ 
+            return err!(ErrorCode::InsufficientFund);
+        }
 
-        // ticket_stats.amount = deposit;
-        // ticket_stats.bump = bump;
-        // ticket_stats.id = user_id.clone();
+        ticket_stats.amount = deposit;
+        ticket_stats.bump = bump;
+        ticket_stats.id = user_id.clone();
 
-        // //// since try_borrow_mut_lamports returns 
-        // //// Result<RefMut<&'a mut u64>> which is a
-        // //// RefMut type behind a mutable pointer
-        // //// we must dereference it in order to 
-        // //// mutate its value
-        // //
-        // //// *pda_account.try_borrow_mut_lamports()?
-        // //// returns &mut u64 which requires another
-        // //// dereference to mutate its value, after 
-        // //// tranferring the balance of the PDA
-        // //// must be zero
-        // **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
-        // **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
+        //// since try_borrow_mut_lamports returns 
+        //// Result<RefMut<&'a mut u64>> which is a
+        //// RefMut type behind a mutable pointer
+        //// we must dereference it in order to 
+        //// mutate its value
+        //
+        //// *pda_account.try_borrow_mut_lamports()?
+        //// returns &mut u64 which requires another
+        //// dereference to mutate its value, after 
+        //// tranferring the balance of the PDA
+        //// must be zero
+        **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
+        **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
 
-        // if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
-        //     return err!(ErrorCode::UnsuccessfulReservation);
-        // }
+        if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
+            return err!(ErrorCode::UnsuccessfulReservation);
+        }
 
 
-        // emit!(ReserveTicketEvent{
-        //     deposit,
-        //     user_id
-        // });
+        emit!(ReserveTicketEvent{
+            deposit,
+            user_id
+        });
 
         Ok(())
     }

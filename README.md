@@ -173,7 +173,7 @@ we the program id is the public key address of the deployed contract.
 
 ## 🚧 WIP
 
-* `ed25519` keypair for server verification like ssh, updating app and time hash based locking api, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server verification like ssh, updating app and time hash based locking api using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 

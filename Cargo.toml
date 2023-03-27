@@ -24,6 +24,9 @@ dotenv = "0.15"
 log = "0.4"
 jsonwebtoken = "8"
 rust-argon2 = "1"
+rust-crypto = "0.2.36"
+ring = "0.16.20"
+ed25519-dalek = "1.0.1"
 lazy_static = "1"
 serde = {version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
@@ -39,10 +42,11 @@ async-trait = "0.1.64"
 mpl-token-metadata = "1.8.5"
 mpl-candy-machine = "4.6.0"
 solana-client-helpers = "1.1.0"
-solana-client = "1.15.2"
+solana-client = "1.15.2" # this can be used to send rpc request to the solana blockchain
 solana-sdk = "1.15.2"
 spl-token = "3.5.0"
 solana-transaction-status = "1.15.2"
+anchor-client = "0.27.0" # this can be used to call deployed program methods using anchor through rpc 
 
 
 [[bin]]

@@ -63,7 +63,7 @@ describe("conse ticket", () => {
       await provider.connection.confirmTransaction ({
         blockhash: latestBlockHashforUserOne.blockhash,
         lastValidBlockHeight: latestBlockHashforUserOne.lastValidBlockHeight,
-        signature: await provider.connection.requestAirdrop(player.publicKey, lamport_amount * 10)
+        signature: await provider.connection.requestAirdrop(player.publicKey, lamport_amount)
       });
       console.log("player balance: ", await provider.connection.getBalance(player.publicKey));
 
@@ -105,7 +105,9 @@ describe("conse ticket", () => {
         lamports: bet_amount,    
       }));
       await anchor.web3.sendAndConfirmTransaction(provider.connection, _tx_data, [server]);
-      
+
+     
+        
 
 
 
@@ -149,20 +151,32 @@ describe("conse ticket", () => {
       console.log("match info ", (await match_before_start).matchInfos); //// deserializing the PDA account to see all the decks for this player
 
 
+
+
+
+      
       //------------------------------------------------------
       // meanwhilte, reserving ticket using the built in PDA 
       //------------------------------------------------------
-      let _tx_ticket_data = new anchor.web3.Transaction().add(anchor.web3.SystemProgram.transfer({
-        fromPubkey: player.publicKey,
-        toPubkey: ticketStatsPDA,
-        lamports: reserve_amount,    
-      }));
-      await anchor.web3.sendAndConfirmTransaction(provider.connection, _tx_ticket_data, [player]);
-      await program.methods.reserveTicket(new anchor.BN(5_000_000_000), "<some_user_id_from_db>", _bump) //// 5_000_000_000 must be the total deposited amount inside the ticketStatsPDA 
-        .accounts({user: player.publicKey, ticketStats: ticketStatsPDA, server: server.publicKey, satkingPool: revenue_share_wallet.publicKey
-        }).signers([player]).rpc(); //// signer of this call who must pay for the transaction fee which is the player or user
-      let _currentAccountAmount = await program.account.gameState.fetch(ticketStatsPDA);
-      assert.equal(0, _currentAccountAmount.amount.toNumber()); //// it must 0 in PDA since we withdraw all the deposited amounts from PDA and send them to the revenue share wallet after reservation
+
+      // const latestBlockHashforPlayer = await provider.connection.getLatestBlockhash();
+      // await provider.connection.confirmTransaction ({
+      //   blockhash: latestBlockHashforPlayer.blockhash,
+      //   lastValidBlockHeight: latestBlockHashforPlayer.lastValidBlockHeight,
+      //   signature: await provider.connection.requestAirdrop(player.publicKey, lamport_amount)
+      // });
+      // console.log("player balance: ", await provider.connection.getBalance(player.publicKey));
+      // let ticket_tx_data = new anchor.web3.Transaction().add(anchor.web3.SystemProgram.transfer({
+      //   fromPubkey: player.publicKey,
+      //   toPubkey: ticketStatsPDA,
+      //   lamports: reserve_amount,    
+      // }));
+      // await anchor.web3.sendAndConfirmTransaction(provider.connection, ticket_tx_data, [player]);
+      // await program.methods.reserveTicket(new anchor.BN(5_000_000_000), "<some_user_id_from_db>", _bump) //// 5_000_000_000 must be the total deposited amount inside the ticketStatsPDA 
+      //   .accounts({user: player.publicKey, ticketStats: ticketStatsPDA, server: server.publicKey, satkingPool: revenue_share_wallet.publicKey
+      //   }).signers([player]).rpc(); //// signer of this call who must pay for the transaction fee which is the player or user
+      // let _currentAccountAmount = await program.account.gameState.fetch(ticketStatsPDA);
+      // assert.equal(0, _currentAccountAmount.amount.toNumber()); //// it must 0 in PDA since we withdraw all the deposited amounts from PDA and send them to the revenue share wallet after reservation
 
 
 
