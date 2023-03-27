@@ -432,7 +432,7 @@ pub struct StartGame<'info> {
         //// 8 bytes will be used as discriminator 
         //// by the anchor to point to a type like 
         //// the one in enum tag to point to a variant.
-        space = 1024, 
+        space = 1024, //// since we're storing decks on chain :) 
         //// following will create the PDA using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
