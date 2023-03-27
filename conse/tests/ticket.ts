@@ -63,7 +63,7 @@ describe("conse ticket", () => {
       await provider.connection.confirmTransaction ({
         blockhash: latestBlockHashforUserOne.blockhash,
         lastValidBlockHeight: latestBlockHashforUserOne.lastValidBlockHeight,
-        signature: await provider.connection.requestAirdrop(player.publicKey, lamport_amount)
+        signature: await provider.connection.requestAirdrop(player.publicKey, lamport_amount * 10)
       });
       console.log("player balance: ", await provider.connection.getBalance(player.publicKey));
 
@@ -159,10 +159,10 @@ describe("conse ticket", () => {
       }));
       await anchor.web3.sendAndConfirmTransaction(provider.connection, _tx_ticket_data, [player]);
       await program.methods.reserveTicket(new anchor.BN(5_000_000_000), "<some_user_id_from_db>", _bump) //// 5_000_000_000 must be the total deposited amount inside the ticketStatsPDA 
-        .accounts({user: player.publicKey, ticketStats: ticketStatsPDA, satkingPool: revenue_share_wallet.publicKey
+        .accounts({user: player.publicKey, ticketStats: ticketStatsPDA, server: server.publicKey, satkingPool: revenue_share_wallet.publicKey
         }).signers([player]).rpc(); //// signer of this call who must pay for the transaction fee which is the player or user
       let _currentAccountAmount = await program.account.gameState.fetch(ticketStatsPDA);
-      assert.equal(0, currentAccountAmount.amount.toNumber()); //// it must 0 in PDA since we withdraw all the deposited amounts from PDA and send them to the revenue share wallet after reservation
+      assert.equal(0, _currentAccountAmount.amount.toNumber()); //// it must 0 in PDA since we withdraw all the deposited amounts from PDA and send them to the revenue share wallet after reservation
 
 
 
@@ -173,10 +173,10 @@ describe("conse ticket", () => {
       /////// STEP 4
       ///////////////////////////////
 
-      //-----------------------------------returnDe-----------------
+      //----------------------------------------------------
       // calling the game result by the server as the signer
       //----------------------------------------------------
-      let deck = [1, 12, 44] // TODO - this must be filled 
+      let deck = [1, 12, 44] // TODO - this must be choosed from one of the available decks
       // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
       await program.methods.gameResult(3, 3, match_id, deck)
         .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey, server: server.publicKey, revenueShareWallet: revenue_share_wallet.publicKey

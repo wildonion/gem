@@ -141,7 +141,9 @@ describe("conse whitelist", () => {
 
 
 
-
+        //// NOTE - invalid account discriminator means 
+        ////        that the account we're trying to deserialize it
+        ////        might not be existed thus we have to initialize it first
         // ----------------
         // Add to Whitelist
         // ----------------

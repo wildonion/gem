@@ -10,6 +10,63 @@ use sha3::{Sha3_512, Digest};
 declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
 
 
+
+
+
+pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Deck>>{
+    
+    let mut decks = Vec::new();
+    decks.push(Deck { data: vec![0, 1] });
+    for deck in 0..iteration{
+        
+        let mut new_deck = Vec::<u8>::new();
+        let mut hasher = Sha3_512::new();
+
+        let input = format!("{}${}${}", player, bump, deck);
+        hasher.update(input.as_bytes());
+        let finalized_hash_digest: &[u8] = &hasher.finalize()[..];
+        
+        new_deck.extend_from_slice(finalized_hash_digest); 
+        new_deck = new_deck.into_iter().map(|byte|{
+            if byte % 52 == 0{
+                1
+            } else{
+                byte % 52
+            }
+        }).collect::<Vec<u8>>();   
+
+        let generated_deck = Deck{
+            data: {
+                ///// ------------------- SHUFFLING PORCESS
+                ///// -------------------------------------
+                new_deck.reverse();
+                let new_deck_len = new_deck.len();
+                let mut card_index = 0;
+                while card_index < new_deck_len{
+                    let position = (card_index * 100) % new_deck_len; //// kinda random position, but we're happy :)
+                    let prev_card = new_deck[card_index];
+                    let new_card = new_deck[position];
+                    new_deck[position] = prev_card;
+                    new_deck[card_index] = new_card;
+                    card_index+=1;
+                }
+                let final_deck = new_deck[0..52].to_vec();
+                final_deck
+                ///// -------------------------------------
+                ///// -------------------------------------
+            }
+        };
+        
+        decks.push(generated_deck);
+
+    }
+
+    Some(decks)
+
+}
+
+
+
 #[program]
 pub mod ticket {
 
@@ -47,14 +104,17 @@ pub mod ticket {
 
         
 
-        let mut hasher = Sha3_512::new();
-        hasher.update(bump.to_be_bytes()); //// hash the passed in bump to generate a 64 (512 bits) bytes hash data
-        let deck = &hasher.finalize()[0..52];
+        let decks = generate_decks(game_state.player, bump, 10);
 
 
         let match_info = MatchInfo{
-            deck: vec![],
+            decks: if decks.is_some(){
+                decks.unwrap()
+            } else{
+                vec![]
+            },
             match_id,
+            final_deck: vec![]
         };
         game_state.match_infos.push(match_info.clone()); 
 
@@ -161,8 +221,8 @@ pub mod ticket {
             // from the PDA since the PDA 
             // has all of it :)
             //--------------------------------------------
-            // bet amount      : 1    SOL - %5  = 0.95 -> 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
-            // amount after tax: 0.95 SOL - %25 = 0.24 -> 0.95 - 0.24 = 0.71 must withdraw for %25 tax to revenue share wallet 
+            // bet amount      : 1    SOL - %5 of 1 SOL     = 1    - 0.95 = 0.05 must withdraw for general tax to revenue share wallet 
+            // amount after tax: 0.95 SOL - %25 of 0.95 SOL = 0.95 - 0.2375 = 0.7125 must withdraw for %25 tax to revenue share wallet 
             event_tax_amount = total_amount_after_general_tax - amount_receive; //// we've defined the event_tax_amount earlier up
             //// withdraw event tax fom PDA to fill the revenue share account 
             **pda.try_borrow_mut_lamports()? -= event_tax_amount;
@@ -176,7 +236,7 @@ pub mod ticket {
         let mut iter = game_state.match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         while let Some(mut match_info) = iter.next(){
             if match_info.match_id == match_id{
-                match_info.deck = deck.clone();
+                match_info.final_deck = deck.clone();
             } 
         }
         
@@ -214,46 +274,46 @@ pub mod ticket {
 
     pub fn reserve_ticket(ctx: Context<ReserveTicket>, deposit: u64, user_id: String, bump: u8) -> Result<()>{
 
-        let ticket_stats = &mut ctx.accounts.ticket_stats;
-        let pda_lamports = ticket_stats.to_account_info().lamports();
-        let pda_account = ticket_stats.to_account_info(); //// ticket_stats is the PDA account itself
-        let staking_pool_account = ctx.accounts.satking_pool.to_account_info(); //// this is only an account info which has no instruction data to mutate on the chain 
+        // let ticket_stats = &mut ctx.accounts.ticket_stats;
+        // let pda_lamports = ticket_stats.to_account_info().lamports();
+        // let pda_account = ticket_stats.to_account_info(); //// ticket_stats is the PDA account itself
+        // let staking_pool_account = ctx.accounts.satking_pool.to_account_info(); //// this is only an account info which has no instruction data to mutate on the chain 
 
-        //// the lamports inside the PDA account 
-        //// must equals to the deposited amount
-        //// also we've created a PDA account to 
-        //// deposit all the tickets in there. 
-        if pda_lamports != deposit{ 
-            return err!(ErrorCode::InsufficientFund);
-        }
+        // //// the lamports inside the PDA account 
+        // //// must equals to the deposited amount
+        // //// also we've created a PDA account to 
+        // //// deposit all the tickets in there. 
+        // if pda_lamports != deposit{ 
+        //     return err!(ErrorCode::InsufficientFund);
+        // }
 
-        ticket_stats.amount = deposit;
-        ticket_stats.bump = bump;
-        ticket_stats.id = user_id.clone();
+        // ticket_stats.amount = deposit;
+        // ticket_stats.bump = bump;
+        // ticket_stats.id = user_id.clone();
 
-        //// since try_borrow_mut_lamports returns 
-        //// Result<RefMut<&'a mut u64>> which is a
-        //// RefMut type behind a mutable pointer
-        //// we must dereference it in order to 
-        //// mutate its value
-        //
-        //// *pda_account.try_borrow_mut_lamports()?
-        //// returns &mut u64 which requires another
-        //// dereference to mutate its value, after 
-        //// tranferring the balance of the PDA
-        //// must be zero
-        **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
-        **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
+        // //// since try_borrow_mut_lamports returns 
+        // //// Result<RefMut<&'a mut u64>> which is a
+        // //// RefMut type behind a mutable pointer
+        // //// we must dereference it in order to 
+        // //// mutate its value
+        // //
+        // //// *pda_account.try_borrow_mut_lamports()?
+        // //// returns &mut u64 which requires another
+        // //// dereference to mutate its value, after 
+        // //// tranferring the balance of the PDA
+        // //// must be zero
+        // **pda_account.try_borrow_mut_lamports()? -= deposit; //// withdraw from PDA account that has been charged inside the frontend
+        // **staking_pool_account.try_borrow_mut_lamports()? += deposit; //// deposit inside the conse staking pool account
 
-        if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
-            return err!(ErrorCode::UnsuccessfulReservation);
-        }
+        // if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
+        //     return err!(ErrorCode::UnsuccessfulReservation);
+        // }
 
 
-        emit!(ReserveTicketEvent{
-            deposit,
-            user_id
-        });
+        // emit!(ReserveTicketEvent{
+        //     deposit,
+        //     user_id
+        // });
 
         Ok(())
     }
@@ -268,8 +328,14 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
 pub struct MatchInfo{
-    pub deck: Vec<u16>,
+    pub decks: Vec<Deck>,
     pub match_id: u8,
+    pub final_deck: Vec<u16>,
+}
+
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
+pub struct Deck{
+    pub data: Vec<u8>
 }
 
 #[account] //// means the following structure will be used to mutate data on the chain which this generic must be owned by the program or Account<'info, GameState>.owner == program_id
@@ -307,7 +373,7 @@ pub struct TicketStats{
 //// with the #[instruction(..)] attribute we can access the instruction’s arguments 
 //// we have to list them in the same order as in the instruction but 
 //// we can omit all arguments after the last one you need.
-#[instruction(seed: [u8; 32])] 
+// #[instruction(seed: [u8; 32])] 
 pub struct StartGame<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -412,12 +478,6 @@ pub struct GameResult<'info> {
 }
 
 
-#[derive(Accounts)]
-pub struct DeckInfo<'info>{
-    #[account(mut, seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], bump = game_state.bump)]
-    pub game_state: Account<'info, GameState>,
-}
-
 // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
 // https://docs.metaplex.com/programs/understanding-programs#signer-andor-writable-accounts
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
@@ -521,8 +581,6 @@ pub enum ErrorCode {
     InvalidInstruction,
     #[msg("Unsuccessful Reservation")]
     UnsuccessfulReservation,
-    #[msg("Seed Can't Be Zero Bytes")]
-    ZeroSeed
 }
 
 
