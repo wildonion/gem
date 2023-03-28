@@ -125,6 +125,17 @@ pub mod whitelist {
         ////       - it's behind a shared reference (rust doesn't move that since the reference might be a dangling pointer later)
         //// we can sovle this either by cloning or borrowing it.
         //
+        //// since rust doesn't have gc thus using value in other scopes in rust has two ways:
+        ////     - value moved by default if it's a heap data and their previous lifetime will be dropped
+        ////     - value copied by default if it's a stack data and we have them in other scopes
+        ////     - note that we can't borrow the value after it has moved
+        ////     - note that we can't move the value if it's behind a pointer or borrowed since the pointer of that might convert into a dangling pointer
+        //// which in order to not to lose the ownership of heap data we can either pass their 
+        //// clone or their borrowed form or a pointer of them, note that if we clone them the main 
+        //// value won't be updated since clone will create a new data inside the heap also heap 
+        //// data sized can be in their borrowed for or behind a pointer like &str for String and 
+        //// &[u8] or &[0u8; SIZE] for Vec if we care about the cost of the app.  
+        //
         //// a mutable reference to the whitelist data account, we can't move the whitelist_data while we have 
         //// pointer of that since by moving it all of its pointer might be converted into a dangling ones which rust
         //// doesn't allow this from the first, since Account is a mutable shared reference which doesn't implement 
@@ -185,7 +196,11 @@ pub mod whitelist {
 //// AccountSerialize and AccountDeserialize traits for the generic
 //// thus the implementations of AccountSerialize and AccountDeserialize 
 //// do the discriminator check on the first 8 bytes of the account name 
-//// and Borsh ser/deser of the rest of the account data.
+//// and Borsh ser/deser of the rest of the account data means
+//// that the account serialization is: 
+//// (sha256(account_name).get_first_byte() + account data).serialize()
+//// account name is a unique identifier that can be used to detect 
+//// which account is being executed on runtime in parallel.
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
 pub struct Pda{
     pub owner: Pubkey,

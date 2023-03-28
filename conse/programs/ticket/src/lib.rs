@@ -8,7 +8,7 @@ use percentage::Percentage;
 
 
 
-declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public key which can be found in `target/deploy/conse-keypair.json`
+declare_id!("bArDn16ERF32oHbL3Qvbsfz55xkj1CdbPV8VYXJtCtk"); //// this is the program public (a 32 bytes slice array or [u8; 32] in Base-58 or Uint8 format) key which can be found in `target/deploy/conse-keypair.json`
 
 
 
@@ -17,19 +17,29 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
     
     let mut decks: Vec<Deck> = Vec::new();
     for deck in 0..iteration{ 
-
-        let input = format!("{}${}${}", player, bump, deck);
-        let hash = hash::hash(input.as_bytes());
-        //// -------------- HASH NOTE --------------
-        //// ---------------------------------------  
-        //// we've used the built in hash methods of 
-        //// the solana program since extern crate 
-        //// returns a reference to a utf8 slice 
-        //// which solana needs a fixed size 
-        //// pointer to the slice.
-        //// ---------------------------------------
-        //// ---------------------------------------
-        let mut new_deck = hash.try_to_vec().unwrap(); 
+        
+        //// ---------------- HASH NOTES 
+        //// ----------------------------
+        //// sha512 bits hash contains a slice of 64 bytes (each byte is a utf8 element) which can be shown in hex as of 128 chars or 64 packs of 2 chars in hex
+        //// sha256 bits hash contains a slice of 32 bytes (each byte is a utf8 element) which can be shown in hex as of 64 chars or 32 packs of 2 chars in hex
+        //// ----------------------------
+        /// 
+        //// since built in solana hash function
+        //// doesn't support sha512 thus we must 
+        //// generate two 32 bytes hash then
+        //// concatenate them.
+        let mut nonce = deck+1;
+        let player_key_string = player.to_string(); //// we've convrted the public key into string since the type Pubkey will be moved in first input
+        let first_32bytes_input = format!("{}${}${}${}", player_key_string, bump, deck, nonce);
+        let first_hash = hash::hash(first_32bytes_input.as_bytes());
+        let first_part_deck = first_hash.try_to_vec().unwrap();  
+        nonce+=1;
+        let second_32bytes_input = format!("{}${}${}${}", player_key_string, bump, deck, nonce);
+        let second_hash = hash::hash(second_32bytes_input.as_bytes());
+        let second_part_deck = &mut second_hash.try_to_vec().unwrap();  
+        let mut new_deck = first_part_deck;
+        
+        new_deck.append(second_part_deck);
         new_deck = new_deck.into_iter().map(|byte|{
             if byte % 52 == 0{
                 1
@@ -53,7 +63,7 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
                     new_deck[card_index] = new_card;
                     card_index+=1;
                 } 
-                
+
                 //// we have to borrow the new_deck since it has no fixed size also it must be 
                 //// mutable because we want to fill it with the first 12 bytes of the first
                 //// deck data cards also final_deck must be a mutable slice since clone_from_slice() 
@@ -63,21 +73,22 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
                 ////    reference, `last_deck_data` is a 
                 ////    `&` reference, so the data it refers 
                 ////    to cannot be borrowed as mutable
-                // let final_deck = final; 
-                // let first_deck: Deck = decks[0].clone();
-                // let first_deck_data = first_deck.data.as_slice(); 
-                // final_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
-                // final_deck.to_vec()
 
-                //// we can't use slice with no fixed size on solana 
-                //// thus we have to use the shuffled new_deck vector to take 
-                //// its 52 cards and push into a new final deck.
-                let mut final_deck = vec![];
-                let mut new_deck_iter = new_deck.into_iter().take(52); 
+                let first_deck = &decks.get(0); //// since indexing in rust returns a slice of the vector thus we have to put it behind a pointer
+                let final_deck = if first_deck.is_some(){
+                    let first_deck_data = first_deck.unwrap().data.as_slice(); 
+                    new_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
+                    new_deck.to_vec()
+                } else{
+                    new_deck
+                };
+
+                let mut new_deck_iter = final_deck.into_iter().take(52); 
+                let mut sliced_deck = vec![];
                 while let Some(card) = new_deck_iter.next(){
-                    final_deck.push(card);
+                    sliced_deck.push(card);
                 } 
-                final_deck
+                sliced_deck
                 ///// -------------------------------------
                 ///// -------------------------------------
             }
@@ -85,7 +96,6 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
 
 
         decks.push(generated_deck);
-        // decks.push(Deck { data: vec![0, 1] });
 
     }
     
@@ -155,6 +165,7 @@ pub mod ticket {
     pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (u8 bytes with 52 elements)
         
         let game_state = &mut ctx.accounts.game_state;
+        let match_infos = &game_state.match_infos;
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
         let mut is_equal_condition = false;
@@ -258,14 +269,29 @@ pub mod ticket {
             **to_winner.try_borrow_mut_lamports()? += winner_reward;
         }
 
-
-        let mut iter = game_state.match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
+        //// -------------------- UPDATING FINAL DECK --------------------
+        //// ------------------------------------------------------------- 
+        let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
+        let mut iter = match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         while let Some(mut match_info) = iter.next(){
-            if match_info.match_id == match_id{
-                match_info.final_deck = deck.clone();
+            if match_info.match_id == match_id {
+                let mut decks_iter = match_info.decks.iter();
+                while let Some(deck) = decks_iter.next(){
+                    if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
+                        match_info.final_deck = reveal_deck.clone();
+                    }
+                }
+                if match_info.final_deck.is_empty(){
+                    return err!(ErrorCode::InvalidDeck);
+                }
             } 
         }
-        
+        //// since we did a clone of match_infos to update the final_deck 
+        //// thus the one inside the game_state won't be updated
+        //// hence we have to update the game_state.match_infos by 
+        //// setting it to a new one which is the updated match_infos.
+        game_state.match_infos = match_infos.to_vec();
+        //// -------------------------------------------------------------
 
         emit!(GameResultEvent{
             amount_receive: { ////--- we can also omit this
@@ -356,7 +382,7 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 pub struct MatchInfo{
     pub decks: Vec<Deck>,
     pub match_id: u8,
-    pub final_deck: Vec<u16>,
+    pub final_deck: Vec<u8>,
 }
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
@@ -424,15 +450,7 @@ pub struct StartGame<'info> {
         payer = user, 
         // https://www.anchor-lang.com/docs/space
         // https://docs.metaplex.com/programs/understanding-programs#discriminators
-        //// the space that is required to store
-        //// GameState data which in total is:
-        //// 8 + (32 * 3) + 8 + 1 in which any 
-        //// public key or amount higher than 32
-        //// will throw an error also the first 
-        //// 8 bytes will be used as discriminator 
-        //// by the anchor to point to a type like 
-        //// the one in enum tag to point to a variant.
-        space = 1024, //// since we're storing decks on chain :) 
+        space = 4096, //// since we're storing decks on chain :) 
         //// following will create the PDA using
         //// user which is the signer and player 
         //// one public keys as the seed and the 
@@ -605,6 +623,8 @@ pub enum ErrorCode {
     InvalidWinnerIndex,
     #[msg("Invalid Instruction")]
     InvalidInstruction,
+    #[msg("Invalid Deck")]
+    InvalidDeck,
     #[msg("Unsuccessful Reservation")]
     UnsuccessfulReservation,
 }

@@ -90,7 +90,7 @@
     type but anchor uses 8 bytes discriminator to avoid data collision by adding extra 
     unique bytes which will be calculated by hashing (SHA256) every account name to the first byets 
     of the serialized account type in order to specify which account is being executed 
-    in runtime right now or which one is being deserialized inside the fontend. 
+    on runtime in parallel right now or which one is being deserialized inside the fontend. 
 
     in rust the vairant with the largest size is the whole size of the enum also 
     there will be usize bytes tag which will be pointed to the current vairant in 

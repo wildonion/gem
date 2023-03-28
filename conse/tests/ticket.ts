@@ -135,7 +135,7 @@ describe("conse ticket", () => {
       //-----------------------------------------------
       // starting the game by the server as the signer
       //-----------------------------------------------
-      // Start game function - init pda program
+      // Start game function - init pda account to mutate it later
       let match_id = 23;
       await program.methods.startGame(new anchor.BN(10_000_000_000), bump, match_id) //// 10_000_000_000 must be the total deposited amount (server + player) 
         .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey
@@ -148,11 +148,11 @@ describe("conse ticket", () => {
       // getting the match info of the PDA 
       //--------------------------------------------------
       let match_before_start = program.account.gameState.fetch(gameStatePDA);
-      console.log("match info ", (await match_before_start).matchInfos); //// deserializing the PDA account to see all the decks for this player
-
-
-
-
+      (await match_before_start).matchInfos.forEach(function (match_info){
+        console.log("all decks >>>>>>>>>>", match_info.decks); // TODO - deck data are hex must be converted to utf16
+        console.log("final deck >>>>>>>>>>", match_info.finalDeck);
+        console.log("match id >>>>>>>>>>", match_info.matchId);
+      });
 
       
       //------------------------------------------------------
@@ -201,8 +201,10 @@ describe("conse ticket", () => {
       let balance_user_one_after = await provider.connection.getBalance(player.publicKey);
       let balance_revenue_share_wallet = await provider.connection.getBalance(revenue_share_wallet.publicKey);
       let match_after_finish = program.account.gameState.fetch(gameStatePDA);
+      const PDAInfo = await program.provider.connection.getAccountInfo(gameStatePDA);
       
       console.log("after game results transfer... ")
+      console.log("PDA account INFO", PDAInfo);
       console.log("match info after finish ", (await match_after_finish).matchInfos); //// deserializing the PDA account to see all the decks for this player
       console.log("player balance after game: ", balance_user_one_after);
       console.log("PDA account balance after game: ", balance_pda_account_after);
