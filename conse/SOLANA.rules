@@ -1,7 +1,14 @@
 
-           https://docs.metaplex.com/programs/understanding-programs
-           https://www.anchor-lang.com/docs/cross-program-invocations
-           https://github.com/coral-xyz/anchor/tree/master/tests/cpi-returns
+       https://docs.metaplex.com/programs/understanding-programs
+       https://www.anchor-lang.com/docs/cross-program-invocations
+       https://github.com/coral-xyz/anchor/tree/master/tests/cpi-returns
+       https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+       https://www.anchor-lang.com/docs/space
+       https://docs.metaplex.com/programs/understanding-programs#discriminators
+       https://solana.stackexchange.com/questions/26/what-is-a-program-derived-address-pda-exactly/1480#1480
+       https://solana.stackexchange.com/a/1480
+       https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
+       https://docs.metaplex.com/programs/understanding-programs#signer-andor-writable-accounts
 
     ======================================
     ============= ABOUT SOLANA WALLET INFO 

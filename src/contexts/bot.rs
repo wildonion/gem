@@ -3,19 +3,34 @@
 
 
 
-
+// TODO - discrod channel summerization using chatGPT
 // TODO - discord bot for conse conse PaaS like checking services status by typing commands on the discord
 // ...
 // https://developers.facebook.com/blog/post/2020/09/30/build-discord-bot-with-rust-and-serenity/
 // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64
 
 
+/*
+
+    BOT:
+      -> get messages of a channel using discord api OR get messages of a user inside a channel 
+      ->  for every fetched message feed that to the ChatGPT api to get some bullet list based summerization 
+      -> store the summerizations inside the mongodb alongside with their dates
+      -> write /summerize discord command inside the bot to fetch the summerization based on a specific date or for today
+
+*/
  
 
-
-
-
 pub mod bot{
+
+
+    pub async fn get_channel_messages(){
+
+    }
+
+    pub async fn summerize_channel_messages(){
+
+    }
 
 
 }

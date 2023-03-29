@@ -119,17 +119,16 @@ pub mod whitelist {
     pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>, addresses: Vec<Pda>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
-        //// every type will be moved by default in rust if it doesn't implement Copy trait since it has no gc thus 
-        //// thus if a value can't be moved is because
-        ////       - it doesn't implemente Copy trait
-        ////       - it's behind a shared reference (rust doesn't move that since the reference might be a dangling pointer later)
-        //// we can sovle this either by cloning or borrowing it.
-        //
-        //// since rust doesn't have gc thus using value in other scopes in rust has two ways:
-        ////     - value moved by default if it's a heap data and their previous lifetime will be dropped
-        ////     - value copied by default if it's a stack data and we have them in other scopes
+        //// since rust doesn't have gc thus using value in other scopes we must notice that:
+        ////     - value will be moved by default if it's a heap data and their previous lifetime will be dropped
+        ////     - value will be copied by default if it's a stack data and we have them in other scopes
         ////     - note that we can't borrow the value after it has moved
-        ////     - note that we can't move the value if it's behind a pointer or borrowed since the pointer of that might convert into a dangling pointer
+        ////     - note that we can't move the value if it 
+        ////            - is behind a shared pointer or borrowed since the pointer of that might convert into a dangling pointer once the value gets dropped
+        ////            - doesn't implement the Copy trait
+        ////     - note that we borrow the value because 
+        ////            - its size can't be known at compile time
+        ////            - don't want to lose its ownership later
         //// which in order to not to lose the ownership of heap data we can either pass their 
         //// clone or their borrowed form or a pointer of them, note that if we clone them the main 
         //// value won't be updated since clone will create a new data inside the heap also heap 
@@ -290,7 +289,6 @@ impl<'info> BurnRequest<'info>{}
 
 #[derive(Accounts)]
 pub struct IntializeWhitelist<'info>{
-    // https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
     #[account( //// can't use mut constraint here since we're initializing this account
         //// data store on solana accounts and if it's not exists on the 
         //// runtime `init` will initialize the account via CPI call to the 

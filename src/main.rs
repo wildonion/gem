@@ -36,12 +36,16 @@ gql ws client
                                                                            tlps
                                                                             |
                                                                             -----
+                                                                                p2p stacks
+                                                                                    - kademlia
+                                                                                    - gossipsub over tcp and quic
+                                                                                    - noise protocol
                                                                                 quic and udp
                                                                                 tcp 
                                                                                 rpc capnp pubsub 
                                                                                 zmq pubsub
-                                                                                gql
-                                                                                ws
+                                                                                gql subs
+                                                                                ws (push notif, chatapp, realtime monit)
                                                                                 redis client + mongodb
 
 

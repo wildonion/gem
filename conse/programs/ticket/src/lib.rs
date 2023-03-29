@@ -23,7 +23,6 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
         //// sha512 bits hash contains a slice of 64 bytes (each byte is a utf8 element) which can be shown in hex as of 128 chars or 64 packs of 2 chars in hex
         //// sha256 bits hash contains a slice of 32 bytes (each byte is a utf8 element) which can be shown in hex as of 64 chars or 32 packs of 2 chars in hex
         //// ----------------------------
-        /// 
         //// since built in solana hash function
         //// doesn't support sha512 thus we must 
         //// generate two 32 bytes hash then
@@ -109,6 +108,7 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
 #[program]
 pub mod ticket {
 
+
     use super::*;
 
     pub fn start_game(ctx: Context<StartGame>, amount: u64, bump: u8, match_id: u8) -> Result<()> {
@@ -161,114 +161,109 @@ pub mod ticket {
         Ok(())
     
     }
-
-    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (u8 bytes with 52 elements)
+    
+    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
         
         let game_state = &mut ctx.accounts.game_state;
         let match_infos = &game_state.match_infos;
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
         let mut is_equal_condition = false;
-        let mut event_tax_amount: u64 = 0;
-        let mut winner_reward: u64 = 0;
-
+        let mut reward = 0 as u64;
+        let mut event_tax_amount = 0 as u64;
+        let pda = game_state.to_account_info();
+        let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
+        let player = ctx.accounts.player.to_account_info();
+        let server_account = ctx.accounts.server.to_account_info();
+        let pda_amount = **pda.try_borrow_mut_lamports()?;
+        let half = (pda_amount / 2) as u64;
 
         if server != signer_account { //// the signer of the tx call or the one who paid the gas fee is the server account itself
             return err!(ErrorCode::RestrictionError);
         }
 
+        //// ------------------------- WINNER REWARD -------------------------
+        //// -----------------------------------------------------------------
+        let winner_account = match winner{
+            //// every types and variable that are defined here are only accessible
+            //// to this scope since their lifetimes out of if blocks will be dropped,
+            //// because they've been moved into this match arm scope, thanks to the rust :) 
+            //// which doesn't collect garbages! for example we don't have player and 
+            //// server_account outside of this match arm scope any more.
+            0 => {
+                
+                // player wins which must pay
+                // for the %5 + event taxes
 
-        let pda = game_state.to_account_info();
-        let amount = game_state.amount; //// amount is the total number of player and server deposit
-        let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
-        //// calculating the general tax amount
-        //// and transferring from PDA to revenue share wallet 
-        let general_tax_amount = receive_amount(amount, 5); // general tax must be calculated from the total deposited amount since it's a general tax
-        //// withdraw %5 fom PDA to fill the revenue share account 
-        **pda.try_borrow_mut_lamports()? -= general_tax_amount;
-        **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount;
-        let total_amount_after_general_tax = amount - general_tax_amount;
+                let player_deposited_amount = half; //// half of the PDA belongs to player, for 2 SOL this would be 1 SOL
+                let general_tax_amount = receive_amount(player_deposited_amount, 5); //// %5 of 1 SOL is 0.05
+                let remaining_amount_after_general_tax = player_deposited_amount - general_tax_amount; //// 1 - 0.05 = 0.95
+                **pda.try_borrow_mut_lamports()? -= general_tax_amount; //// 2 - 0.05 = 1.95 will be inside the PDA
+                **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount; //// send 0.05 to revenue 
 
-    
-        let mut to_winner = match winner{
-            0 => Some(ctx.accounts.player.to_account_info()),
-            1 => Some(ctx.accounts.server.to_account_info()),
+                event_tax_amount = if instruct == 0 {
+                    receive_amount(player_deposited_amount, 98)
+                } else if instruct == 1 {
+                    receive_amount(player_deposited_amount, 88)
+                } else if instruct == 2 {
+                    receive_amount(player_deposited_amount, 48)
+                } else if instruct == 3 {
+                    receive_amount(player_deposited_amount, 25) //// %25 tax ---> %25 of 1 = 0.25
+                } else if instruct == 4 {
+                    receive_amount(player_deposited_amount, 0)
+                } else{
+                    return err!(ErrorCode::InvalidInstruction);
+                };
+                
+                let current_pda_amount = pda.lamports();
+                reward = current_pda_amount - event_tax_amount; //// 1.95 - 0.25 = 1.7
+                **pda.try_borrow_mut_lamports()? -= event_tax_amount; //// 1.95 - 0.25 = 1.7 will be inside the PDA
+                **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount; //// send 0.25 to revenue 
+                
+                **pda.try_borrow_mut_lamports()? -= reward; //// 1.7 - 1.7 = 0 ---> sending all the amounts to the revenue  
+                **player.try_borrow_mut_lamports()? += reward; //// send 1.7 to player as the reward 
+
+                Some(player)
+            
+            },
+            1 => { 
+
+                // server wins with no tax
+                
+                **pda.try_borrow_mut_lamports()? -= pda_amount;
+                **server_account.try_borrow_mut_lamports()? += pda_amount;
+
+                Some(server_account)
+            },
             3 => {
                 
                 // equal condition
 
-                let pda_amount = **pda.try_borrow_mut_lamports()?;
-                let server_account = ctx.accounts.server.to_account_info();
-                let player_account = ctx.accounts.player.to_account_info();
+                **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+                **server_account.try_borrow_mut_lamports()? += half; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
+                **player.try_borrow_mut_lamports()? += half; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+                **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
+                is_equal_condition = true;
                 
-                    let half = (pda_amount / 2) as u64;
-                    **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-                    **server_account.try_borrow_mut_lamports()? += half; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-
-                    **player_account.try_borrow_mut_lamports()? += half; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-                    **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-
-                    is_equal_condition = true;
-                    
-                    None
+                None
             
             },
             _ => return err!(ErrorCode::InvalidWinnerIndex),
         };
+        //// ------------------------------------------------------------------
         
+        //// NOTE that we don't have player and server_account 
+        //// in here any more since they've been moved 
+        //// into the match arm because they are heap data types
+        //// that doesn't implement the Copy trait and if 
+        //// we want to have them in here we should use their 
+        //// clone inside the match arm 
+        // let see_if_we_have_player = player;
+        // let see_if_we_have_server = server_account;
+
   
-   
-        //// we're sure that we have a winner
-        if !is_equal_condition && to_winner.is_some(){
-            //// every types and variable that 
-            //// are defined here are only accessible
-            //// to this scope since their lifetimes 
-            //// out of this if block will be dropped,
-            //// thanks to the rust :) which doesn't 
-            //// collect garbages.
-            let to_winner = to_winner.unwrap();
-            //// calculating the amount that must be sent
-            //// the winner from the PDA account based on
-            //// instruction percentages.
-            //
-            //// we've assumed that the third instruction 
-            //// is the event with 25 percent special tax.
-            event_tax_amount = if instruct == 0 { //// we've defined the event_tax_amount earlier up
-                receive_amount(total_amount_after_general_tax, 95)
-            } else if instruct == 1 {
-                receive_amount(total_amount_after_general_tax, 70)
-            } else if instruct == 2 {
-                receive_amount(total_amount_after_general_tax, 35)
-            } else if instruct == 3 {
-                receive_amount(total_amount_after_general_tax, 25)
-            } else if instruct == 4 {
-                receive_amount(total_amount_after_general_tax, 0)
-            } else {
-                return err!(ErrorCode::InvalidInstruction);
-            };
-
-            ///////////////////////////////////////////////////
-            ////////// CALCULATING TAX BASED ON THE INSTRUCTION
-            ///////////////////////////////////////////////////
-            //--------------------------------------------
-            // we must withdraw all required lamports 
-            // from the PDA since the PDA 
-            // has all of it :)
-            //--------------------------------------------
-            // bet amount is: 2 (1 for server and 1 for player)
-            // %5 of 2 SOL is 0.1 ---> 0.1 must go to revenue
-            // 2 - 0.1 = 1.9 is the amounts inside the PDA
-            // %25 of 1.9 SOL is 0.475 ---> 0.475 must to go revenue
-            // 1.9 - 0.475 = 1.425 ---> must go to the winner
-            winner_reward = total_amount_after_general_tax - event_tax_amount; //// we've defined the event_tax_amount earlier up
-            //// withdraw event tax fom PDA to fill the revenue share account 
-            **pda.try_borrow_mut_lamports()? -= event_tax_amount;
-            **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount;
-            //// withdraw amount receive fom PDA to fill the winner 
-            **pda.try_borrow_mut_lamports()? -= winner_reward;
-            **to_winner.try_borrow_mut_lamports()? += winner_reward;
-        }
-
         //// -------------------- UPDATING FINAL DECK --------------------
         //// ------------------------------------------------------------- 
         let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
@@ -289,7 +284,7 @@ pub mod ticket {
         //// since we did a clone of match_infos to update the final_deck 
         //// thus the one inside the game_state won't be updated
         //// hence we have to update the game_state.match_infos by 
-        //// setting it to a new one which is the updated match_infos.
+        //// setting it to a new one which is the updated match_infos
         game_state.match_infos = match_infos.to_vec();
         //// -------------------------------------------------------------
 
@@ -298,25 +293,15 @@ pub mod ticket {
                 if is_equal_condition{
                     0 as u64
                 } else{
-                    winner_reward
+                    reward
                 }
             }, ////--- we can also omit this
-            event_tax_amount: { ////--- we can also omit this
-                if is_equal_condition{
-                    0 as u64
-                } else{
-                    event_tax_amount
-                }
-            }, ////--- we can also omit this
-            winner: { ////--- we can also omit this
-                if winner == 0{
-                    Some(ctx.accounts.player.key())
-                } else if winner == 1{
-                    Some(ctx.accounts.server.key())
-                } else{
-                    None
-                }
-            }, ////--- we can also omit this
+            event_tax_amount,
+            winner: if winner_account.is_some(){
+                Some(winner_account.unwrap().key())
+            } else{
+                None
+            },
             is_equal: is_equal_condition,
         });
 
@@ -360,6 +345,10 @@ pub mod ticket {
         if **pda_account.try_borrow_mut_lamports()? != 0 as u64{
             return err!(ErrorCode::UnsuccessfulReservation);
         }
+
+
+        // TODO - CPI calls to the whitelist contract
+        // ...
 
 
         emit!(ReserveTicketEvent{
@@ -448,8 +437,6 @@ pub struct StartGame<'info> {
         //// payer of this transaction call is 
         //// the signer which is the user field
         payer = user, 
-        // https://www.anchor-lang.com/docs/space
-        // https://docs.metaplex.com/programs/understanding-programs#discriminators
         space = 4096, //// since we're storing decks on chain :) 
         //// following will create the PDA using
         //// user which is the signer and player 
@@ -521,9 +508,6 @@ pub struct GameResult<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
-// https://docs.rs/anchor-lang/latest/anchor_lang/derive.Accounts.html
-// https://docs.metaplex.com/programs/understanding-programs#signer-andor-writable-accounts
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
 pub struct ReserveTicket<'info>{
     //// signer is the one who must pay 
@@ -536,8 +520,6 @@ pub struct ReserveTicket<'info>{
     #[account(mut)]
     pub user: Signer<'info>, //// the signer who must sign the call and pay for the transaction fees
     /*
-        // https://solana.stackexchange.com/questions/26/what-is-a-program-derived-address-pda-exactly/1480#1480
-        // https://solana.stackexchange.com/a/1480
 
         following will create the PDA from the 
         ticket_stats using server and the signer 
@@ -621,10 +603,10 @@ pub enum ErrorCode {
     RestrictionError,
     #[msg("Invalid Winner Index")]
     InvalidWinnerIndex,
-    #[msg("Invalid Instruction")]
-    InvalidInstruction,
     #[msg("Invalid Deck")]
     InvalidDeck,
+    #[msg("Invalid Instruction")]
+    InvalidInstruction,
     #[msg("Unsuccessful Reservation")]
     UnsuccessfulReservation,
 }
