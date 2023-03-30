@@ -154,6 +154,9 @@ describe("conse ticket", () => {
         console.log("match id >>>>>>>>>>", match_info.matchId);
       });
 
+
+
+
       
       //------------------------------------------------------
       // meanwhilte, reserving ticket using the built in PDA 
@@ -200,17 +203,13 @@ describe("conse ticket", () => {
       let balance_server_account_after = await provider.connection.getBalance(server.publicKey);
       let balance_user_one_after = await provider.connection.getBalance(player.publicKey);
       let balance_revenue_share_wallet = await provider.connection.getBalance(revenue_share_wallet.publicKey);
-      let match_after_finish = program.account.gameState.fetch(gameStatePDA);
-      const PDAInfo = await program.provider.connection.getAccountInfo(gameStatePDA);
       
       // NOTE - just make sure that the PDA has enough lamports to check its state for deserialization
       console.log("after game results transfer... ")
-      console.log("PDA account INFO", PDAInfo);
       console.log("player balance after game: ", balance_user_one_after);
       console.log("PDA account balance after game: ", balance_pda_account_after);
       console.log("server account balance after game: ", balance_server_account_after);
       console.log("revenue share wallet account balance: ", balance_revenue_share_wallet);
-      console.log("match info after finish ", (await match_after_finish).matchInfos); //// deserializing the PDA account to see all the decks for this player
       console.log("---------------------------------------------");
     
 

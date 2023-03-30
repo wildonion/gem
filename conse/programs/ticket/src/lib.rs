@@ -198,19 +198,18 @@ pub mod ticket {
         } else{
             return err!(ErrorCode::InvalidInstruction);
         };
-        
-        // TODO - this makes PDA zero thus can't serialize its data
-        // **pda.try_borrow_mut_lamports()? -= general_tax_amount; //// 2 - 0.05 = 1.95 will be inside the PDA
-        // **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount; //// send 0.02 to revenue
+
+        **pda.try_borrow_mut_lamports()? -= general_tax_amount; //// 2 - 0.05 = 1.95 will be inside the PDA
+        **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount; //// send 0.02 to revenue
         
         **pda.try_borrow_mut_lamports()? -= event_tax_amount; //// 1.95 - 0.25 (event tax) = 1.7 will be inside the PDA
         **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount; //// send 0.3 to revenue
         
-        
         let taxes = general_tax_amount + event_tax_amount; //// 0.25 + 0.05
         let pda_amount_after_taxes = amount - taxes; //// 2 - 0.3 = 1.7
-        reward = pda_amount_after_taxes - 0.1 as u64;
-        
+        let current_pda_amount = pda.lamports(); //// by now PDA has 1.7 since revenue has : 0.05 + 0.25 = 0.3
+        reward = current_pda_amount;
+
         //// ------------------------- WINNER REWARD -------------------------
         //// -----------------------------------------------------------------
         let winner_account = match winner{
@@ -297,12 +296,12 @@ pub mod ticket {
         let mut iter = match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         while let Some(mut match_info) = iter.next(){
             if match_info.match_id == match_id {
-                // let mut decks_iter = match_info.decks.iter();
-                // while let Some(deck) = decks_iter.next(){
-                    // if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
+                let mut decks_iter = match_info.decks.iter();
+                while let Some(deck) = decks_iter.next(){
+                    if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
                         match_info.final_deck = reveal_deck.clone();
-                    // }
-                // }
+                    }
+                }
                 if match_info.final_deck.is_empty(){
                     return err!(ErrorCode::InvalidDeck);
                 }
@@ -324,12 +323,14 @@ pub mod ticket {
                     reward
                 }
             }, ////--- we can also omit this
-            event_tax_amount,
             winner: if winner_account.is_some(){
                 Some(winner_account.unwrap().key())
             } else{
                 None
             },
+            event_tax_amount,
+            final_deck: reveal_deck,
+            match_infos: game_state.match_infos.clone(),
             is_equal: is_equal_condition,
         });
 
@@ -651,6 +652,8 @@ pub struct StartGameEvent{
 pub struct GameResultEvent{
     pub amount_receive: u64,
     pub event_tax_amount: u64,
+    pub final_deck: Vec<u8>,
+    pub match_infos: Vec<MatchInfo>,
     pub winner: Option<Pubkey>, //// since it might be happened the equal condition which there is no winner  
     pub is_equal: bool,
 }
