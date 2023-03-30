@@ -172,6 +172,7 @@ pub mod ticket {
         let mut reward = 0 as u64;
         let mut event_tax_amount = 0 as u64;
         let pda = game_state.to_account_info();
+        let amount = game_state.amount;
         let revenue_share_wallet = ctx.accounts.revenue_share_wallet.to_account_info();
         let player = ctx.accounts.player.to_account_info();
         let server_account = ctx.accounts.server.to_account_info();
@@ -181,7 +182,35 @@ pub mod ticket {
         if server != signer_account { //// the signer of the tx call or the one who paid the gas fee is the server account itself
             return err!(ErrorCode::RestrictionError);
         }
-
+        
+        let general_tax_amount = receive_amount(half, 5); //// %5 of 1 SOL is 0.05
+        //// event tax amount must be calculated from the half
+        event_tax_amount = if instruct == 0 {
+            receive_amount(half, 98)
+        } else if instruct == 1 {
+            receive_amount(half, 88)
+        } else if instruct == 2 {
+            receive_amount(half, 48)
+        } else if instruct == 3 {
+            receive_amount(half, 25) //// %25 tax ---> %25 of 1 = 0.25
+        } else if instruct == 4 {
+            receive_amount(half, 0)
+        } else{
+            return err!(ErrorCode::InvalidInstruction);
+        };
+        
+        // TODO - this makes PDA zero thus can't serialize its data
+        // **pda.try_borrow_mut_lamports()? -= general_tax_amount; //// 2 - 0.05 = 1.95 will be inside the PDA
+        // **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount; //// send 0.02 to revenue
+        
+        **pda.try_borrow_mut_lamports()? -= event_tax_amount; //// 1.95 - 0.25 (event tax) = 1.7 will be inside the PDA
+        **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount; //// send 0.3 to revenue
+        
+        
+        let taxes = general_tax_amount + event_tax_amount; //// 0.25 + 0.05
+        let pda_amount_after_taxes = amount - taxes; //// 2 - 0.3 = 1.7
+        reward = pda_amount_after_taxes - 0.1 as u64;
+        
         //// ------------------------- WINNER REWARD -------------------------
         //// -----------------------------------------------------------------
         let winner_account = match winner{
@@ -192,58 +221,52 @@ pub mod ticket {
             //// server_account outside of this match arm scope any more.
             0 => {
                 
-                // player wins which must pay
-                // for the %5 + event taxes
+                // player wins with 1.7 SOL
+                // since player paied for the 
+                // %5 and event taxes and because
+                // server is the looser, 1 SOL from 
+                // the server must be gotten to 
+                // send it to the player.
 
-                let player_deposited_amount = half; //// half of the PDA belongs to player, for 2 SOL this would be 1 SOL
-                let general_tax_amount = receive_amount(player_deposited_amount, 5); //// %5 of 1 SOL is 0.05
-                let remaining_amount_after_general_tax = player_deposited_amount - general_tax_amount; //// 1 - 0.05 = 0.95
-                **pda.try_borrow_mut_lamports()? -= general_tax_amount; //// 2 - 0.05 = 1.95 will be inside the PDA
-                **revenue_share_wallet.try_borrow_mut_lamports()? += general_tax_amount; //// send 0.05 to revenue 
-
-                event_tax_amount = if instruct == 0 {
-                    receive_amount(player_deposited_amount, 98)
-                } else if instruct == 1 {
-                    receive_amount(player_deposited_amount, 88)
-                } else if instruct == 2 {
-                    receive_amount(player_deposited_amount, 48)
-                } else if instruct == 3 {
-                    receive_amount(player_deposited_amount, 25) //// %25 tax ---> %25 of 1 = 0.25
-                } else if instruct == 4 {
-                    receive_amount(player_deposited_amount, 0)
-                } else{
-                    return err!(ErrorCode::InvalidInstruction);
-                };
+                **pda.try_borrow_mut_lamports()? -= reward;
+                **player.try_borrow_mut_lamports()? += reward; 
                 
-                let current_pda_amount = pda.lamports();
-                reward = current_pda_amount - event_tax_amount; //// 1.95 - 0.25 = 1.7
-                **pda.try_borrow_mut_lamports()? -= event_tax_amount; //// 1.95 - 0.25 = 1.7 will be inside the PDA
-                **revenue_share_wallet.try_borrow_mut_lamports()? += event_tax_amount; //// send 0.25 to revenue 
-                
-                **pda.try_borrow_mut_lamports()? -= reward; //// 1.7 - 1.7 = 0 ---> sending all the amounts to the revenue  
-                **player.try_borrow_mut_lamports()? += reward; //// send 1.7 to player as the reward 
-
                 Some(player)
             
             },
             1 => { 
 
-                // server wins with no tax
+                // server wins with 1.7 SOL
+                // since player paied for the 
+                // %5 and event taxes and because
+                // player is the looser, 0.7 SOL 
+                // from the player (1 - %5 + event tax)
+                // must be gotten to send it to
+                // the server.
                 
-                **pda.try_borrow_mut_lamports()? -= pda_amount;
-                **server_account.try_borrow_mut_lamports()? += pda_amount;
+                **pda.try_borrow_mut_lamports()? -= reward;
+                **server_account.try_borrow_mut_lamports()? += reward;
 
                 Some(server_account)
             },
             3 => {
                 
-                // equal condition
+                // equal condition with 1 SOL 
+                // for server and 0.7 for player
+                // since player paied for the 
+                // %5 and event taxes and because 
+                // we server won't pay for the taxes
+                // thus its deposited amount which is 
+                // 1 SOL will be transffered from 
+                // the PDA to it and the rest of the 
+                // PDA which is 0.7 will go to player. 
 
-                **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
                 **server_account.try_borrow_mut_lamports()? += half; //// double dereferencing server account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
-
-                **player.try_borrow_mut_lamports()? += half; //// double dereferencing player account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
                 **pda.try_borrow_mut_lamports()? -= half; //// double dereferencing pda account since try_borrow_mut_lamports() returns RefMut<&'a mut u64>
+
+                let money_back_to_player = reward - half; //// 1.7 - 1 = 0.7 will be inside the PDA
+                **pda.try_borrow_mut_lamports()? -= money_back_to_player;
+                **player.try_borrow_mut_lamports()? += money_back_to_player;
 
                 is_equal_condition = true;
                 
@@ -252,6 +275,7 @@ pub mod ticket {
             },
             _ => return err!(ErrorCode::InvalidWinnerIndex),
         };
+        //// ------------------------------------------------------------------
         //// ------------------------------------------------------------------
         
         //// NOTE that we don't have player and server_account 
@@ -266,16 +290,19 @@ pub mod ticket {
   
         //// -------------------- UPDATING FINAL DECK --------------------
         //// ------------------------------------------------------------- 
+        //// in order to fetch the state of the PDA account
+        //// for deserialization we have to make sure that
+        //// the PDA has enough lamports inside of it.
         let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
         let mut iter = match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         while let Some(mut match_info) = iter.next(){
             if match_info.match_id == match_id {
-                let mut decks_iter = match_info.decks.iter();
-                while let Some(deck) = decks_iter.next(){
-                    if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
+                // let mut decks_iter = match_info.decks.iter();
+                // while let Some(deck) = decks_iter.next(){
+                    // if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
                         match_info.final_deck = reveal_deck.clone();
-                    }
-                }
+                    // }
+                // }
                 if match_info.final_deck.is_empty(){
                     return err!(ErrorCode::InvalidDeck);
                 }
@@ -287,6 +314,7 @@ pub mod ticket {
         //// setting it to a new one which is the updated match_infos
         game_state.match_infos = match_infos.to_vec();
         //// -------------------------------------------------------------
+        //// ------------------------------------------------------------------
 
         emit!(GameResultEvent{
             amount_receive: { ////--- we can also omit this
@@ -334,7 +362,7 @@ pub mod ticket {
         //// we must dereference it in order to 
         //// mutate its value
         //
-        //// *pda_account.try_borrow_mut_lamports()?
+        //// **pda_account.try_borrow_mut_lamports()?
         //// returns &mut u64 which requires another
         //// dereference to mutate its value, after 
         //// tranferring the balance of the PDA
@@ -384,7 +412,6 @@ pub struct GameState { //// this struct will be stored inside the PDA
     server: Pubkey, // 32 bytes
     player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
-    match_id: u8,
     match_infos: Vec<MatchInfo>, // all player matches and decks
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
@@ -485,7 +512,7 @@ pub struct GameResult<'info> {
     //// and which ones can't.
     pub user: Signer<'info>,
     #[account(
-        mut,
+        mut, //// the PDA has been initialized once inside the start_game() method thus we can use it in here
         //// following will create the PDA using
         //// server and player one public keys as 
         //// the seed and the passed in bump to 

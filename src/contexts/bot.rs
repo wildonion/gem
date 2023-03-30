@@ -14,14 +14,14 @@
 
     BOT:
       -> get messages of a channel using discord api OR get messages of a user inside a channel 
-      ->  for every fetched message feed that to the ChatGPT api to get some bullet list based summerization 
+      -> for every fetched message feed that to the ChatGPT api to get some bullet list based summerization 
       -> store the summerizations inside the mongodb alongside with their dates
       -> write /summerize discord command inside the bot to fetch the summerization based on a specific date or for today
 
 */
  
 
-pub mod bot{
+pub mod wwu_bot{
 
 
     pub async fn get_channel_messages(){
@@ -29,6 +29,9 @@ pub mod bot{
     }
 
     pub async fn summerize_channel_messages(){
+
+        // send fetched messages to chatgpt api
+        // ...
 
     }
 

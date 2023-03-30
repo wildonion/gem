@@ -5,6 +5,10 @@
 use anchor_lang::prelude::*;
 use mpl_token_metadata::instruction::burn_nft;
 
+
+//// wallet address in solana are based on 
+//// base58 encoding thus we can't simply 
+//// build the public key from them 
 declare_id!("2YQmwuktcWmmhXXAzjizxzie3QWEkZC8HQ4ZnRtrKF7p"); //// this is the program public key of the the program wallet info which can be found in `target/deploy/whitelist-keypair.json` 
 
 
