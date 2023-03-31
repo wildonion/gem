@@ -394,6 +394,7 @@ pub async fn build_server(router: Router<Body, hyper::Error>) -> Server<AddrInco
 // ------------------------------ simd using mpsc channel + tokio + native thread
 // -----------------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------------
+// NOET - if we have a buffer we can convert it into chunks of bytes using simd algos 
 // -----------------------------------------------------------------------------------------
 
 pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8) -> u8 + std::marker::Send + 'static + Clone{ //// in order to move the F between threads it must be bounded to Send trait

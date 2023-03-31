@@ -18,6 +18,7 @@
       -> store the summerizations inside the mongodb alongside with their dates
       -> write /summerize discord command inside the bot to fetch the summerization based on a specific date or for today
 
+
 */
  
 

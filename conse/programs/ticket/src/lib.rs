@@ -184,9 +184,10 @@ pub mod ticket {
         }
         
         let general_tax_amount = receive_amount(half, 5); //// %5 of 1 SOL is 0.05
-        //// event tax amount must be calculated from the half
+        //// event tax amount must be calculated from 
+        //// the half since player must pay for them  
         event_tax_amount = if instruct == 0 {
-            receive_amount(half, 98)
+            receive_amount(half, 90)
         } else if instruct == 1 {
             receive_amount(half, 88)
         } else if instruct == 2 {
@@ -208,7 +209,12 @@ pub mod ticket {
         let taxes = general_tax_amount + event_tax_amount; //// 0.25 + 0.05
         let pda_amount_after_taxes = amount - taxes; //// 2 - 0.3 = 1.7
         let current_pda_amount = pda.lamports(); //// by now PDA has 1.7 since revenue has : 0.05 + 0.25 = 0.3
-        reward = current_pda_amount;
+
+        if current_pda_amount == pda_amount_after_taxes{
+            reward = current_pda_amount;
+        } else{
+            return err!(ErrorCode::PdaIsFullWithTaxes);
+        }
 
         //// ------------------------- WINNER REWARD -------------------------
         //// -----------------------------------------------------------------
@@ -635,6 +641,8 @@ pub enum ErrorCode {
     InvalidDeck,
     #[msg("Invalid Instruction")]
     InvalidInstruction,
+    #[msg("PDA Is Full With Taxes")]
+    PdaIsFullWithTaxes,
     #[msg("Unsuccessful Reservation")]
     UnsuccessfulReservation,
 }

@@ -195,7 +195,7 @@ describe("conse ticket", () => {
       //----------------------------------------------------
       let deck = [1, 12, 44] // TODO - this must be choosed from one of the available decks
       // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
-      await program.methods.gameResult(3, 3, match_id, deck)
+      await program.methods.gameResult(3, 0, match_id, deck)
         .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey, server: server.publicKey, revenueShareWallet: revenue_share_wallet.publicKey
       }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
     

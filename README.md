@@ -169,7 +169,7 @@ we the program id is the public key address of the deployed contract.
 
 * subscribing to push notification strategy: client `<--gql subscription-->` redis published topics inside the server.
 
-* subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis. 
+* subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis for caching and persistence in mongodb . 
 
 ## 🚧 WIP
 
