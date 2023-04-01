@@ -36,6 +36,7 @@ gql ws client
                                                                            tlps
                                                                             |
                                                                             -----
+                                                                                hyper
                                                                                 p2p stacks
                                                                                     - kademlia
                                                                                     - gossipsub over tcp and quic
@@ -46,6 +47,7 @@ gql ws client
                                                                                 zmq pubsub
                                                                                 gql subs
                                                                                 ws (push notif, chatapp, realtime monit)
+                                                                                connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
                                                                                 redis client + mongodb
 
 
@@ -57,11 +59,13 @@ gql ws client
 
 
 // #![allow(unused)] //// will let the unused vars be there - we have to put this on top of everything to affect the whole crate
-#![macro_use] //// apply the macro_use attribute to the root cause it's an inner attribute and will be effect on all things inside this crate 
+#![macro_use] //// apply the macro_use attribute to the root cause it's an inner attribute (the `!` mark) and will be effect on all things inside this crate 
 
 
 
 use constants::MainResult;
+use openai::chat::ChatCompletionMessage;
+use openai::chat::ChatCompletionMessageRole;
 use routerify::Router;
 use std::{net::SocketAddr, sync::Arc, env};
 use dotenv::dotenv;
@@ -71,6 +75,7 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
 use routerify::Middleware;
+use openai::set_key;
 use self::contexts as ctx; // use crate::contexts as ctx;
 
 
@@ -82,7 +87,6 @@ pub mod contexts;
 pub mod schemas;
 pub mod controllers;
 pub mod routers;
-
 
 
 
@@ -112,7 +116,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
 
-
     
 
 
@@ -131,13 +134,14 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
+    let openai_key = env::var("OPENAI_KEY").expect("⚠️ no openai key variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
-    
+    set_key(openai_key);
     
 
 
@@ -250,7 +254,33 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
+
+
+
+
+    // -------------------------------- discord bot commands
+    //
+    // ---------------------------------------------------------------------------------------
+    let mut gpt_request_command = "";
+    gpt_request_command = "can you summerize the content inside the bracket like news title as a numbered bullet? [This is a chat log from a group discussion on a messaging platform. The conversation is somewhat disjointed, and it is unclear what the main topic of conversation is. However, members of the group discussed a range of issues related to NFTs and cryptocurrency. LC makes several comments about the modus operandi of ruggers and incentives to buy and raid floors. SolCultures shares a tweet that highlights the sale of YugiSauce #217 on Magic Eden. Several members discuss the risks and losses associated with NFTs. Oxygencube expresses disappointment about their NFT losses and suggests leaving NFTs, while GoatZilla suggests they might have infinite bags that they haven't realized yet. Dead King Dylan advises sticking with two or three projects, while sm0lfish mentions a King who does the same. LC shares an image that generates some laughter, and other members share emoji reactions. Theude mentions a good call he had earlier, and Dead King Dylan observes that he buys every rev share project. Sm0lfish shares a tweet that suggests there might be another big airdrop in Sol.]";
+    let messages = vec![ //// messages must be a vector to feed them into the ChatGPT to predict the next tokens based on previous ones
+        ChatCompletionMessage{ 
+            role: ChatCompletionMessageRole::User,
+            content: gpt_request_command.to_string(),
+            name: None,
+        }
+    ];
+    let gpt_response = ctx::bot::wwu_bot::feed_gpt(gpt_request_command.to_string(), messages.clone()).await;
+    info!("ChatGPT Response: {:?}", gpt_response.0);
+    gpt_request_command = "can you expand the second bulletlist?"; 
+    let gpt_response = ctx::bot::wwu_bot::feed_gpt(gpt_request_command.to_string(), messages.clone()).await;
+    info!("ChatGPT Response: {:?}", gpt_response.0);
+
                                                     
+
+
+
+
 
 
 

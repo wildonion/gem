@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { Program, BorshCoder, EventParser } from "@project-serum/anchor";
 import { PublicKey } from '@solana/web3.js';
 import { Ticket } from "../target/types/ticket";
 import { assert, expect } from "chai";
@@ -132,6 +132,7 @@ describe("conse ticket", () => {
       /////// STEP 3
       ///////////////////////////////
 
+      
       //-----------------------------------------------
       // starting the game by the server as the signer
       //-----------------------------------------------
@@ -139,25 +140,22 @@ describe("conse ticket", () => {
       let match_id = 23;
       await program.methods.startGame(new anchor.BN(2_000_000_000), bump, match_id) //// 10_000_000_000 must be the total deposited amount (server + player) 
         .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey
-        }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
-      let currentAccountAmount = await program.account.gameState.fetch(gameStatePDA);
-      //// PDA account balance must be 10 since player and server each one sent 5 to it
-      assert.equal(2_000_000_000, currentAccountAmount.amount.toNumber());
-
+          }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
+      
+      
       //--------------------------------------------------
       // getting the match info of the PDA 
       //--------------------------------------------------
-      let match_before_start = program.account.gameState.fetch(gameStatePDA);
-      (await match_before_start).matchInfos.forEach(function (match_info){
-        console.log("all decks >>>>>>>>>>", match_info.decks); // TODO - deck data are hex must be converted to utf16
-        console.log("final deck >>>>>>>>>>", match_info.finalDeck);
-        console.log("match id >>>>>>>>>>", match_info.matchId);
-      });
-
-
-
-
+      let match_before_start = await program.account.gameState.fetch(gameStatePDA);
+      //// PDA account balance must be 10 since player and server each one sent 5 to it
+      assert.equal(2_000_000_000, match_before_start.amount.toNumber());
+      // (await match_before_start).matchInfos.forEach(function (match_info){
+        //   console.log("all decks >>>>>>>>>>", match_info.decks); // TODO - deck data are hex must be converted to utf16
+        //   console.log("final deck >>>>>>>>>>", match_info.finalDeck);
+        //   console.log("match id >>>>>>>>>>", match_info.matchId);
+        // });
       
+
       //------------------------------------------------------
       // meanwhilte, reserving ticket using the built in PDA 
       //------------------------------------------------------

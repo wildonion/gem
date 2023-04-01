@@ -148,7 +148,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * server must call and sign the `gameResult()` of the contract and pass the `winner` either 0 or 1 and `instruct` values between 0 up to 4, the contract will do the rest of the things.
 
-* the third instruction has an special tax amount which is %25 of the deposited amount.
+* every time we start a the local node using `solana-test-validator` it search for the existing `test-ledger` folder and if it's not there it'll create a new one, note that in this stage we must deploy the program again to be known by the newly runtime of the local node.  
 
 * currently the program will be deployed on devnet, if you want to deploy on another network just change the `cluster` field under the `[provider]` section inside the `Anchor.toml` either to `mainnet`, `testnet` or your node address.
 

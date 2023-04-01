@@ -4,11 +4,11 @@
 
 
 // TODO - discrod channel summerization using chatGPT
-// TODO - discord bot for conse conse PaaS like checking services status by typing commands on the discord
+// TODO - discord bot for conse PaaS like checking services status by typing commands on the discord
 // ...
 // https://developers.facebook.com/blog/post/2020/09/30/build-discord-bot-with-rust-and-serenity/
 // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64
-
+// https://github.com/valentinegb/openai/blob/main/examples/chat_cli/src/main.rs
 
 /*
 
@@ -24,18 +24,34 @@
 
 pub mod wwu_bot{
 
+    use openai::{ //// openai crate is using the reqwest lib under the hood
+        chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
+    }; 
 
-    pub async fn get_channel_messages(){
-
-    }
-
-    pub async fn summerize_channel_messages(){
-
-        // send fetched messages to chatgpt api
-        // ...
+    pub async fn get_message_of(){
 
     }
 
+    pub async fn feed_gpt(content: String, mut messages: Vec<ChatCompletionMessage>) -> (Option<String>, Vec<ChatCompletionMessage>){
+
+        messages.push(ChatCompletionMessage{
+            role: ChatCompletionMessageRole::User,
+            content,
+            name: None,
+        });
+        let chat_completion = ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
+                                                                    .create()
+                                                                    .await
+                                                                    .unwrap()
+                                                                    .unwrap();
+        let returned_message = chat_completion.choices.first().unwrap().message.clone();
+        (
+            Some(returned_message.content.to_string()),
+            messages.clone()
+        )
+
+    }
+    
 
 }
 
