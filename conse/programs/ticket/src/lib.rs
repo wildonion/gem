@@ -467,7 +467,7 @@ pub struct StartGame<'info> {
         //
         //// each field of type Account must be initialized first
         //// the it can be mutated in the next instruction call 
-        init,
+        init_if_needed, //-> it'll initialize the PDA if it's not already
         //// payer of this transaction call is 
         //// the signer which is the user field
         payer = user, 

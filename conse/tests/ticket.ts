@@ -149,11 +149,11 @@ describe("conse ticket", () => {
       let match_before_start = await program.account.gameState.fetch(gameStatePDA);
       //// PDA account balance must be 10 since player and server each one sent 5 to it
       assert.equal(2_000_000_000, match_before_start.amount.toNumber());
-      // (await match_before_start).matchInfos.forEach(function (match_info){
-        //   console.log("all decks >>>>>>>>>>", match_info.decks); // TODO - deck data are hex must be converted to utf16
-        //   console.log("final deck >>>>>>>>>>", match_info.finalDeck);
-        //   console.log("match id >>>>>>>>>>", match_info.matchId);
-        // });
+      (await match_before_start).matchInfos.forEach(function (match_info){
+          console.log("all decks >>>>>>>>>>", match_info.decks); // TODO - deck data are hex must be converted to utf16
+          console.log("final deck >>>>>>>>>>", match_info.finalDeck);
+          console.log("match id >>>>>>>>>>", match_info.matchId);
+        });
       
 
       //------------------------------------------------------

@@ -135,6 +135,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let openai_key = env::var("OPENAI_KEY").expect("⚠️ no openai key variable set");
+    let discord_token = env::var("DISCORD_TOKEN").expect("⚠️ no discord token variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
@@ -261,20 +262,18 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- discord bot commands
     //
     // ---------------------------------------------------------------------------------------
+    let mut gpt = ctx::bot::wwu_bot::Gpt::new().await;
+    let mut response = "".to_string();
     let mut gpt_request_command = "";
+    
     gpt_request_command = "can you summerize the content inside the bracket like news title as a numbered bullet? [This is a chat log from a group discussion on a messaging platform. The conversation is somewhat disjointed, and it is unclear what the main topic of conversation is. However, members of the group discussed a range of issues related to NFTs and cryptocurrency. LC makes several comments about the modus operandi of ruggers and incentives to buy and raid floors. SolCultures shares a tweet that highlights the sale of YugiSauce #217 on Magic Eden. Several members discuss the risks and losses associated with NFTs. Oxygencube expresses disappointment about their NFT losses and suggests leaving NFTs, while GoatZilla suggests they might have infinite bags that they haven't realized yet. Dead King Dylan advises sticking with two or three projects, while sm0lfish mentions a King who does the same. LC shares an image that generates some laughter, and other members share emoji reactions. Theude mentions a good call he had earlier, and Dead King Dylan observes that he buys every rev share project. Sm0lfish shares a tweet that suggests there might be another big airdrop in Sol.]";
-    let messages = vec![ //// messages must be a vector to feed them into the ChatGPT to predict the next tokens based on previous ones
-        ChatCompletionMessage{ 
-            role: ChatCompletionMessageRole::User,
-            content: gpt_request_command.to_string(),
-            name: None,
-        }
-    ];
-    let gpt_response = ctx::bot::wwu_bot::feed_gpt(gpt_request_command.to_string(), messages.clone()).await;
-    info!("ChatGPT Response: {:?}", gpt_response.0);
-    gpt_request_command = "can you expand the second bulletlist?"; 
-    let gpt_response = ctx::bot::wwu_bot::feed_gpt(gpt_request_command.to_string(), messages.clone()).await;
-    info!("ChatGPT Response: {:?}", gpt_response.0);
+    response = gpt.feed(gpt_request_command).await.current_response;
+    info!("ChatGPT Response: {:?}", response);
+    
+    gpt_request_command = "can you expand the second bulletlist?";
+    response = gpt.feed(gpt_request_command).await.current_response;
+    info!("ChatGPT Response: {:?}", response);
+    
 
                                                     
 
