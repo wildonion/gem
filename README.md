@@ -1,7 +1,7 @@
 
 
 <p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
+    <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
 </p>
 
 ## 🖥 Conse PaaS
