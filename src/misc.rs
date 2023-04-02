@@ -31,7 +31,6 @@ use routerify::{RouterService, Router};
 
 
 
-
 pub mod jwt{
 
     use std::env;
@@ -148,7 +147,7 @@ pub mod otp{
             let recipient = self.otp_input.phone.clone().unwrap();
             let uri = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", self.token, recipient, code, self.template).as_str().parse::<Uri>().unwrap(); //// parsing it to hyper based uri
             let client = HyperClient::new();
-            let sms_response_stream = block_on(client.get(uri)).unwrap(); //// since we can't use .await inside trait methods thus we have to solve the future using block_on() function
+            let sms_response_stream = client.get(uri).await.unwrap(); //// since we can't use .await inside trait methods thus we have to solve the future using block_on() function
             
             Ok(
                 OtpSuccess(sms_response_stream, self.otp_input.clone()) //// we have to clone the self.otp_input to prevent its ownership moving since by moving it into the field of a structure it'll lose its ownership 
@@ -268,15 +267,15 @@ pub fn gen_random_idx(idx: usize) -> usize{
 
 pub async fn upload_asset(path: &str, mut payload: Multipart<'_>, doc_id: &String) -> Option<String>{ //// parsing the incoming file stream into MultipartItem instances - Multipart struct takes a lifetime and we've passed an unnamed lifetime to that
     
+    // https://github.com/hyperium/hyper/blob/master/examples/send_file.rs
+
     fs::create_dir_all(path).unwrap(); //// creating the directory which must be contains the file
     let mut filename = "".to_string();
     let mut filepath = "".to_string();
     while let Some(mut field) = payload.next_field().await.map_err(|err| Error::wrap(err)).unwrap(){ //// reading the next field which contains IO stream future object of utf8 bytes of the payload is a mutable process and due to this fact we've defined the payload as a mutable type; we've mapped each incoming utf8 bytes future into an error if there was any error on reading them 
-        
         let field_name = field.name(); //// getting the field's name if provided in "Content-Disposition" header from the client
         let field_file_name = field.file_name(); //// getting the field's filename if provided in "Content-Disposition" header from the client
         filename = format!("{} - {}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), field_file_name.unwrap()); //// creating the new filename with the server time
-        
         filepath = format!("{}/{}/{}", path, doc_id, sanitize_filename::sanitize(&filename)); //// creating the new file path with the sanitized filename and the passed in document id
         let mut buffer_file = fs::File::create(filepath.clone()).unwrap();
         while let Some(chunk) = field.chunk().await.map_err(|err| Error::wrap(err)).unwrap(){ //// mapping the incoming IO stream of futre object which contains utf8 bytes into a file

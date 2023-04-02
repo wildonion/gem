@@ -60,6 +60,11 @@ if [[ $BUILDFOR == "programs" ]]; then
     if
 elif [[ $BUILDFOR == "gem" ]]; then
     echo "[+] Building Conse PaaS using Pm2"
+    if [[ ! -f "devops/openssl/conse_cert.pem" ]] && [[ ! -f "devops/openssl/conse_key.pem" ]]
+    then
+        echo "openssl files doesn't exist creating new TLS certificate and key files for conse"
+        openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
+    fi
     cargo build --bin conse --release
     sudo rm /usr/bin/conse
     sudo cp target/release/conse /usr/bin/conse && sudo chmod +x /usr/bin/conse 

@@ -74,7 +74,7 @@ pub fn generate_decks(player: Pubkey, bump: u8, iteration: u8) -> Option<Vec<Dec
                 ////    to cannot be borrowed as mutable
 
                 let first_deck = &decks.get(0); //// since indexing in rust returns a slice of the vector thus we have to put it behind a pointer
-                let final_deck = if first_deck.is_some(){
+                let final_deck = if first_deck.is_some(){ //// if it's a first iteration there might be no deck inside the vector
                     let first_deck_data = first_deck.unwrap().data.as_slice(); 
                     new_deck[0..13].clone_from_slice(&first_deck_data[0..13]);
                     new_deck.to_vec()
@@ -147,6 +147,7 @@ pub mod ticket {
                 vec![]
             },
             match_id,
+            winner: None,
             final_deck: vec![]
         };
         game_state.match_infos.push(match_info.clone()); 
@@ -406,6 +407,7 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 pub struct MatchInfo{
     pub decks: Vec<Deck>,
     pub match_id: u8,
+    pub winner: Option<Pubkey>,
     pub final_deck: Vec<u8>,
 }
 
@@ -467,7 +469,7 @@ pub struct StartGame<'info> {
         //
         //// each field of type Account must be initialized first
         //// the it can be mutated in the next instruction call 
-        init_if_needed, //-> it'll initialize the PDA if it's not already
+        init, //-> it'll initialize the PDA if it's not already
         //// payer of this transaction call is 
         //// the signer which is the user field
         payer = user, 

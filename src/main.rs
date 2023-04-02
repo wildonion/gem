@@ -33,7 +33,7 @@ gql ws client
     |
     ------riker and tokio server (select!{}, spawn(), job q channels) -------
                                                                             |
-                                                                           tlps
+                                                      tlps over noise-protocol and tokio-rustls
                                                                             |
                                                                             -----
                                                                                 hyper
@@ -41,6 +41,8 @@ gql ws client
                                                                                     - kademlia
                                                                                     - gossipsub over tcp and quic
                                                                                     - noise protocol
+                                                                                    - ws and webrtc
+                                                                                    - muxer
                                                                                 quic and udp
                                                                                 tcp 
                                                                                 rpc capnp pubsub 
@@ -276,6 +278,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
                                                     
+
+
 
 
 
