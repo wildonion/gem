@@ -3,6 +3,7 @@
 
 
 
+// gql subs is a listener for subscribing to emitted events and published topics using redis, zmq publisher socket or ws server setup in routers/ws.rs 
 // push notif handler other realtime streaming like realtime game monitoring and chatapp using gql subscriptions also see README.md strategies
 // https://graphql-rust.github.io/juniper/master/advanced/subscriptions.html
 

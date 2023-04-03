@@ -20,7 +20,7 @@ use hyper::{header, StatusCode, Body, Response};
 pub async fn register_notif(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ //// the return type is hyper response
 
 
-    // TODO - fetch redis data from the server 
+    // TODO - fetch redis data from its server 
     // ...
 
 

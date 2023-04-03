@@ -20,14 +20,17 @@ pub mod wwu_bot{
     // https://developers.facebook.com/blog/post/2020/09/30/build-discord-bot-with-rust-and-serenity/
     // https://github.com/serenity-rs/serenity/blob/current/examples/e14_slash_commands/src/main.rs
 
-    pub struct DiscordBot{
-        
+    pub struct DiscordBot<'t>{
+        pub token: &'t [u8],
     }
 
+    impl<'t> DiscordBot<'t>{
+
+    }
 
     pub struct Gpt<'c>{
         pub messages: Vec<ChatCompletionMessage>,
-        pub last_content: &'c [u8], //// utf8 bytes is easier to handle tokenizations
+        pub last_content: &'c [u8], //// utf8 bytes is easier to handle tokenization process later
         pub current_response: String,
     }
 
@@ -58,7 +61,9 @@ pub mod wwu_bot{
         //   because its pointer might be a dangling one in the caller space since 
         //   we don't have that String anymore inside the function! this is different
         //   about the &str in the first place cause we're cool with returning them
-        //   since they are behind a pointer and kinda stack data types.
+        //   since they are behind a pointer and kinda stack data types which by
+        //   passing them to other scopes their lifetime won't be dropped since they
+        //   will be copied bit by bit instead moving the entire underlying data.
         //→ also if the self wasn't behind a reference by calling the first method on 
         //  the Gpt instance the instance will be moved and we can't call other methods.
         pub async fn feed(&mut self, content: &'c str) -> Gpt<'c>{

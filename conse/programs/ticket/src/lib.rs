@@ -147,10 +147,8 @@ pub mod ticket {
                 vec![]
             },
             match_id,
-            winner: None,
-            final_deck: vec![]
         };
-        game_state.match_infos.push(match_info.clone()); 
+        game_state.match_info = Some(match_info); 
 
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
@@ -163,10 +161,10 @@ pub mod ticket {
     
     }
     
-    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
+    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck_index: u8) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
         
         let game_state = &mut ctx.accounts.game_state;
-        let match_infos = &game_state.match_infos;
+        let match_info = &game_state.match_info;
         let signer_account = ctx.accounts.user.key();
         let server = game_state.server.key();
         let mut is_equal_condition = false;
@@ -299,29 +297,38 @@ pub mod ticket {
         //// in order to fetch the state of the PDA account
         //// for deserialization we have to make sure that
         //// the PDA has enough lamports inside of it.
-        let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
-        let mut iter = match_infos.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
-        while let Some(mut match_info) = iter.next(){
-            if match_info.match_id == match_id {
-                let mut decks_iter = match_info.decks.iter();
-                while let Some(deck) = decks_iter.next(){
-                    if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
-                        match_info.final_deck = reveal_deck.clone();
-                    }
-                }
-                if match_info.final_deck.is_empty(){
-                    return err!(ErrorCode::InvalidDeck);
-                }
-            } 
-        }
-        //// since we did a clone of match_infos to update the final_deck 
-        //// thus the one inside the game_state won't be updated
-        //// hence we have to update the game_state.match_infos by 
-        //// setting it to a new one which is the updated match_infos
-        game_state.match_infos = match_infos.to_vec();
-        //// -------------------------------------------------------------
+        // let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
+        // let mut iter = match_info.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
+        // while let Some(mut match_info) = iter.next(){
+        //     if match_info.match_id == match_id {
+        //         let mut decks_iter = match_info.decks.iter();
+        //         while let Some(deck) = decks_iter.next(){
+        //             if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
+        //                 match_info.final_deck = reveal_deck.clone();
+        //             }
+        //         }
+        //         if match_info.final_deck.is_empty(){
+        //             return err!(ErrorCode::InvalidDeck);
+        //         }
+        //     } 
+        // }
+        // //// since we did a clone of match_info to update the final_deck 
+        // //// thus the one inside the game_state won't be updated
+        // //// hence we have to update the game_state.match_info by 
+        // //// setting it to a new one which is the updated match_info
+        // game_state.match_info = match_info.to_vec();
         //// ------------------------------------------------------------------
+        //// ------------------------------------------------------------------
+        
 
+        //// deck validation
+        let decks = match_info.decks;
+        let deck = decks.get(deck_index);
+        if let None = deck{
+            return err!(ErrorCode::InvalidDeckIndex);
+        }
+        
+        game_state.match_info = None; //// cleaning the PDA
         emit!(GameResultEvent{
             amount_receive: { ////--- we can also omit this
                 if is_equal_condition{
@@ -336,8 +343,7 @@ pub mod ticket {
                 None
             },
             event_tax_amount,
-            final_deck: reveal_deck,
-            match_infos: game_state.match_infos.clone(),
+            deck_index,
             is_equal: is_equal_condition,
         });
 
@@ -407,8 +413,6 @@ fn receive_amount(amount: u64, perc: u8) -> u64{
 pub struct MatchInfo{
     pub decks: Vec<Deck>,
     pub match_id: u8,
-    pub winner: Option<Pubkey>,
-    pub final_deck: Vec<u8>,
 }
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)] //// no need to bound the Pda struct to `#[account]` proc macro attribute since this is not a generic instruction data
@@ -421,7 +425,7 @@ pub struct GameState { //// this struct will be stored inside the PDA
     server: Pubkey, // 32 bytes
     player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
-    match_infos: Vec<MatchInfo>, // all player matches and decks
+    match_info: Option<MatchInfo>,
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
@@ -643,6 +647,8 @@ pub enum ErrorCode {
     InvalidDeck,
     #[msg("Invalid Instruction")]
     InvalidInstruction,
+    #[msg("Invalid Deck Index")]
+    InvalidDeckIndex,
     #[msg("PDA Is Full With Taxes")]
     PdaIsFullWithTaxes,
     #[msg("Unsuccessful Reservation")]
@@ -662,8 +668,7 @@ pub struct StartGameEvent{
 pub struct GameResultEvent{
     pub amount_receive: u64,
     pub event_tax_amount: u64,
-    pub final_deck: Vec<u8>,
-    pub match_infos: Vec<MatchInfo>,
+    pub deck_index: u8,
     pub winner: Option<Pubkey>, //// since it might be happened the equal condition which there is no winner  
     pub is_equal: bool,
 }

@@ -71,5 +71,6 @@ elif [[ $BUILDFOR == "gem" ]]; then
     sudo cp .env /usr/bin/ && sudo cp nfts.json /usr/bin/ 
     sudo pm2 delete conse && cd /usr/bin/
     sudo pm2 start conse --name conse
+    sudo pm2 startup && sudo pm2 save
     sudo pm2 status
 fi
