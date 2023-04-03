@@ -2,10 +2,11 @@
 
 
 
-
+// --- bot link --- 
 // https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
-// TODO - discord bot for conse PaaS like checking services status by typing commands on the discord
- 
+
+
+
 
 pub mod wwu_bot{
 
@@ -13,18 +14,47 @@ pub mod wwu_bot{
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     }; 
+    use serenity::prelude::*;
+    use serenity::async_trait;
+    use serenity::model::application::command::Command;
+    use serenity::model::application::interaction::{Interaction, InteractionResponseType};
+    use serenity::model::gateway::Ready;
+    use serenity::model::id::GuildId;
 
+    
 
-
+    
+    // TODO - add conse server status commands
     // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64 
     // https://developers.facebook.com/blog/post/2020/09/30/build-discord-bot-with-rust-and-serenity/
-    // https://github.com/serenity-rs/serenity/blob/current/examples/e14_slash_commands/src/main.rs
+    // https://github.com/serenity-rs/serenity/tree/current/examples/e14_slash_commands/src
+
+    pub struct Handler; //// the discord bot commands handler 
+    
 
     pub struct DiscordBot<'t>{
         pub token: &'t [u8],
     }
 
     impl<'t> DiscordBot<'t>{
+        
+        //// since token is of type &str and not owned by the current function, 
+        //// we are ok to return its &[u8] bytes pointer with the valid 't lifetime
+        //// note that we can't return a pointer to a type that owned by the function
+        //// since once the function gets executed the type will be dropped and 
+        //// will no longer be exists thus its pointer will be a dangline pointer.
+
+        pub async fn start(token: &'t str) -> DiscordBot<'t>{ 
+            Self{
+                token: token.as_bytes(),
+            }
+        }
+
+        pub async fn get_user_messages(&self, id: &str) -> DiscordBot<'t>{
+            Self{
+                token: self.token,
+            }
+        }
 
     }
 

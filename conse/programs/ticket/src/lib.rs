@@ -148,7 +148,7 @@ pub mod ticket {
             },
             match_id,
         };
-        game_state.match_info = Some(match_info); 
+        game_state.match_info = Some(match_info.clone()); 
 
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
@@ -320,12 +320,14 @@ pub mod ticket {
         //// ------------------------------------------------------------------
         //// ------------------------------------------------------------------
         
-
         //// deck validation
-        let decks = match_info.decks;
-        let deck = decks.get(deck_index);
-        if let None = deck{
-            return err!(ErrorCode::InvalidDeckIndex);
+        match match_info{
+            Some(data) => {
+                if deck_index as usize > data.decks.len(){
+                    return err!(ErrorCode::InvalidDeckIndex);
+                }
+            },
+            None => return err!(ErrorCode::PdaAlreadyCleaned),
         }
         
         game_state.match_info = None; //// cleaning the PDA
@@ -651,6 +653,8 @@ pub enum ErrorCode {
     InvalidDeckIndex,
     #[msg("PDA Is Full With Taxes")]
     PdaIsFullWithTaxes,
+    #[msg("PDA Has Alread Cleaned")]
+    PdaAlreadyCleaned,
     #[msg("Unsuccessful Reservation")]
     UnsuccessfulReservation,
 }
