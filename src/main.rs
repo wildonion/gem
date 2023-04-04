@@ -31,27 +31,30 @@ COMMUNICATION PROTOCOLS
 gql ws client 
     |
     |
-    ------riker and tokio server (select!{}, spawn(), job q channels) -------
+    ------riker and tokio server (select!{}, spawn(), jobq channels) -------
                                                                             |
-                                                      tlps over noise-protocol and tokio-rustls
+                                                    tlp shards over noise-protocol and tokio-rustls
                                                                             |
-                                                                            -----
-                                                                                hyper
-                                                                                p2p stacks
-                                                                                    - kademlia
-                                                                                    - gossipsub over tcp and quic
-                                                                                    - noise protocol
-                                                                                    - ws and webrtc
-                                                                                    - muxer
-                                                                                quic and udp
-                                                                                tcp 
-                                                                                rpc capnp pubsub 
-                                                                                zmq pubsub
-                                                                                gql subs
-                                                                                ws (push notif, chatapp, realtime monit)
-                                                                                connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
-                                                                                redis client + mongodb
+                                                                            ----- sharded instances -----
+                                                                                        hyper
+                                                                                        p2p stacks
+                                                                                            - kademlia
+                                                                                            - gossipsub over tcp and quic
+                                                                                            - noise protocol
+                                                                                            - ws and webrtc
+                                                                                            - muxer
+                                                                                        quic and udp
+                                                                                        tcp 
+                                                                                        rpc capnp pubsub 
+                                                                                        zmq pubsub
+                                                                                        gql subs
+                                                                                        ws (push notif on data changes, chatapp, realtime monit and webhook setups)
+                                                                                        connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
+                                                                                        redis client + mongodb
 
+→ an eventloop server can be one of the above sharded tlps which contains an event handler trait 
+ (like riker and senerity EventHanlder traits, tokio::select!{} or ws, zmq and rpc pubsub server) 
+ to handle the incoming published topics, emitted events or webhooks 
 
 
 */
@@ -65,21 +68,24 @@ gql ws client
 
 
 
+use std::time::Duration;
 use constants::MainResult;
-use openai::chat::ChatCompletionMessage;
-use openai::chat::ChatCompletionMessageRole;
-use routerify::Router;
+use std::collections::HashSet;
 use std::{net::SocketAddr, sync::Arc, env};
 use dotenv::dotenv;
+use routerify::Router;
+use routerify::Middleware;
 use uuid::Uuid;
 use log::{info, error};
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
-use routerify::Middleware;
 use openai::set_key;
-use self::contexts as ctx; // use crate::contexts as ctx;
-
+use crate::ctx::bot::wwu_bot::GENERAL_GROUP;
+use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
+use serenity::{prelude::*, framework::{standard::macros::group, StandardFramework}, 
+                http, model::prelude::*, Client as BotClient,
+                client::bridge::gateway::ShardManager};
 
 
 pub mod middlewares;
@@ -261,7 +267,88 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-    // -------------------------------- discord bot commands
+
+    // -------------------------------- discord bot setups
+    //
+    // ---------------------------------------------------------------------------------------
+    //// each shard is a ws client to the discrod ws server also discord 
+    //// requires that there be at least one shard for every 2500 guilds 
+    //// (discrod servers) that a bot is on.
+    //
+    //// data of each bot client must be safe to send between other shards' 
+    //// threads means they must be Arc<Mutex<Data>> + Send + Sync + 'static
+    //// or an RwLock type also each shard must be Arced and Mutexed to 
+    //// be shareable between threads.
+    let http = http::Http::new(&discord_token);
+    let (owners, _bot_id) = match http.get_current_application_info().await{
+        Ok(info) => {
+            let mut owners = HashSet::new();
+            owners.insert(info.owner.id);
+            (owners, info.id)
+        },
+        Err(why) => panic!("😖 could not access discord bot application info: {:?}", why),
+    };
+    let framework = StandardFramework::new().configure(|c| c.owners(owners).prefix("~")).group(&GENERAL_GROUP);
+    let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    let mut bot_client = BotClient::builder(discord_token, intents)
+                                                    .framework(framework)
+                                                    .event_handler(ctx::bot::wwu_bot::Handler)
+                                                    .await
+                                                    .expect("creating discord bot client error");
+    { 
+        //// since we want to borrow the bot_client as immutable we must define 
+        //// a new scope to do this because if a mutable pointer exists 
+        //// an immutable one can't be there otherwise we get this Error:
+        //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
+        let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
+        data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a shard manager inside the bot client data
+    }
+    //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
+    //// into tokio green threadpools
+    let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
+    tokio::spawn(async move{
+        tokio::signal::ctrl_c().await.expect("😖 couldn't register ctrl+c handler");
+        shard_manager.lock().await.shutdown_all().await;
+        //// we'll print the current statuses of the two shards to the 
+        //// terminal every 30 seconds. This includes the ID of the shard, 
+        //// the current connection stage, (e.g. "Connecting" or "Connected"), 
+        //// and the approximate WebSocket latency (time between when a heartbeat 
+        //// is sent to discord and when a heartbeat acknowledgement is received),
+        //// note that it may take a minute or more for a latency to be recorded or to
+        //// update, depending on how often Discord tells the client to send a heartbeat.
+        loop{ //// here we're logging the shard status every 30 seconds
+            tokio::time::sleep(Duration::from_secs(30)).await; //// wait for 30 seconds hearbeat
+            let lock = shard_manager.lock().await;
+            let shard_runners = lock.runners.lock().await;
+            for (id, runner) in shard_runners.iter(){
+                info!(
+                    "🧩 shard ID {} is {} with a latency of {:?}",
+                    id, runner.stage, runner.latency,
+                );
+            }
+        }
+    });
+    //// start the bot client with 2 shards or ws clients for listening
+    //// for events, there is an ~5 second ratelimit period
+    //// between when one shard can start after another.
+    if let Err(why) = bot_client.start_shards(2).await{
+        error!("😖 discord bot client error: {:?}", why);
+    }
+
+
+    
+
+
+
+
+
+
+
+
+
+                                                    
+
+    // -------------------------------- GPT requests
     //
     // ---------------------------------------------------------------------------------------
     let mut gpt = ctx::bot::wwu_bot::Gpt::new().await;
@@ -275,11 +362,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     gpt_request_command = "can you expand the second bulletlist?";
     response = gpt.feed(gpt_request_command).await.current_response;
     info!("ChatGPT Response: {:?}", response);
-    
-
-                                                    
-
-
 
 
 

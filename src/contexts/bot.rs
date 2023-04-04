@@ -10,53 +10,73 @@
 
 pub mod wwu_bot{
 
-
+    use log::{info, error};
+    use std::sync::Arc;
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     }; 
-    use serenity::prelude::*;
     use serenity::async_trait;
+    use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
+    use serenity::model::channel::Message;
     use serenity::model::application::interaction::{Interaction, InteractionResponseType};
     use serenity::model::gateway::Ready;
     use serenity::model::id::GuildId;
-
+    use serenity::{prelude::*, 
+                    model::prelude::ResumedEvent, 
+                    framework::standard::{
+                        Args,
+                        CommandResult, macros::{command, group}
+                    }
+                };
     
-
     
-    // TODO - add conse server status commands
-    // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64 
-    // https://developers.facebook.com/blog/post/2020/09/30/build-discord-bot-with-rust-and-serenity/
-    // https://github.com/serenity-rs/serenity/tree/current/examples/e14_slash_commands/src
+    // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64
+    // https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
 
-    pub struct Handler; //// the discord bot commands handler 
+
+    #[group]
+    #[commands(news, status)]
+    struct General; //// this can be accessible by GENERAL_GROUP
     
-
-    pub struct DiscordBot<'t>{
-        pub token: &'t [u8],
+    pub struct ShardManagerContainer;
+    impl TypeMapKey for ShardManagerContainer {
+        type Value = Arc<Mutex<ShardManager>>;
     }
 
-    impl<'t> DiscordBot<'t>{
-        
-        //// since token is of type &str and not owned by the current function, 
-        //// we are ok to return its &[u8] bytes pointer with the valid 't lifetime
-        //// note that we can't return a pointer to a type that owned by the function
-        //// since once the function gets executed the type will be dropped and 
-        //// will no longer be exists thus its pointer will be a dangline pointer.
 
-        pub async fn start(token: &'t str) -> DiscordBot<'t>{ 
-            Self{
-                token: token.as_bytes(),
+    pub struct Handler; //// the discord bot commands, events and webhook handler 
+    
+    //// following we're implementing the EventHandler trait
+    //// for the Handler struct to handle all the bot events
+    #[async_trait]
+    impl EventHandler for Handler{
+        async fn ready(&self, _: Context, ready: Ready){
+            if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes size each 
+                info!("🔗 {} is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
             }
         }
 
-        pub async fn get_user_messages(&self, id: &str) -> DiscordBot<'t>{
-            Self{
-                token: self.token,
-            }
+        async fn message(&self, ctx: Context, msg: Message){
+            
         }
 
+        async fn resume(&self, _: Context, _: ResumedEvent){
+            info!("▶ Resumed");
+        }
     }
+
+    #[command] //// news command
+    async fn news(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+        todo!()
+    }
+
+    #[command] //// conse server status command
+    async fn status(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+        todo!()
+    }
+
+
 
     pub struct Gpt<'c>{
         pub messages: Vec<ChatCompletionMessage>,

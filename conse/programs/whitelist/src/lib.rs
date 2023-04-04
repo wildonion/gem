@@ -82,7 +82,7 @@ pub mod whitelist {
         //// is the same as `T` methods means that Copy is not implemented for `Option<Account>` 
         //// we can either move it between threads and scopes by borrowing it or cloning it.
         //
-        //// a shared reference can be in use by other scopes and threads thus moving out of 
+        //// a shared reference can be in used by other scopes and threads thus moving out of 
         //// a shared referenced type requires one of the dereferencing methods which is either 
         //// copying (the Copy trait must be implemented), borrowing it using & or cloning 
         //// (Clone trait must be implemented) it or dereference it by using `*` otherwise 
@@ -123,22 +123,6 @@ pub mod whitelist {
     pub fn add_to_whitelist(ctx: Context<AddToWhitelistRequest>, addresses: Vec<Pda>) -> Result<()>{
 
         let signer = ctx.accounts.authority.key();
-        //// since rust doesn't have gc thus using value in other scopes we must notice that:
-        ////     - value will be moved by default if it's a heap data and their previous lifetime will be dropped
-        ////     - value will be copied by default if it's a stack data and we have them in other scopes
-        ////     - note that we can't borrow the value after it has moved
-        ////     - note that we can't move the value if it 
-        ////            - is behind a shared pointer or borrowed since the pointer of that might convert into a dangling pointer once the value gets dropped
-        ////            - doesn't implement the Copy trait
-        ////     - note that we borrow the value because 
-        ////            - its size can't be known at compile time
-        ////            - don't want to lose its ownership later
-        //// which in order to not to lose the ownership of heap data we can either pass their 
-        //// clone or their borrowed form or a pointer of them, note that if we clone them the main 
-        //// value won't be updated since clone will create a new data inside the heap also heap 
-        //// data sized can be in their borrowed for or behind a pointer like &str for String and 
-        //// &[u8] or &[0u8; SIZE] for Vec if we care about the cost of the app.  
-        //
         //// a mutable reference to the whitelist data account, we can't move the whitelist_data while we have 
         //// pointer of that since by moving it all of its pointer might be converted into a dangling ones which rust
         //// doesn't allow this from the first, since Account is a mutable shared reference which doesn't implement 
