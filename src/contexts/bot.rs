@@ -71,7 +71,26 @@ pub mod wwu_bot{
 
     #[command] //// news command
     async fn news(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+        
+        //// ---------------- GPT Request ---------------- 
+        let mut gpt = Gpt::new().await;
+        let mut response = "".to_string();
+        let mut gpt_request_command = "".to_string();
+        let mut channel_messages = "This is a chat log from a group discussion on a messaging platform. The conversation is somewhat disjointed, and it is unclear what the main topic of conversation is. However, members of the group discussed a range of issues related to NFTs and cryptocurrency. LC makes several comments about the modus operandi of ruggers and incentives to buy and raid floors. SolCultures shares a tweet that highlights the sale of YugiSauce #217 on Magic Eden. Several members discuss the risks and losses associated with NFTs. Oxygencube expresses disappointment about their NFT losses and suggests leaving NFTs, while GoatZilla suggests they might have infinite bags that they haven't realized yet. Dead King Dylan advises sticking with two or three projects, while sm0lfish mentions a King who does the same. LC shares an image that generates some laughter, and other members share emoji reactions. Theude mentions a good call he had earlier, and Dead King Dylan observes that he buys every rev share project. Sm0lfish shares a tweet that suggests there might be another big airdrop in Sol.";
+        
+        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet? [{}]", channel_messages);
+        let req_cmd = gpt_request_command.clone();
+        response = gpt.feed(req_cmd.as_str()).await.current_response;
+        info!("ChatGPT Response: {:?}", response);
+        
+        gpt_request_command = format!("can you expand the second bulletlist?");
+        let req_cmd = gpt_request_command.clone();
+        response = gpt.feed(req_cmd.as_str()).await.current_response;
+        info!("ChatGPT Response: {:?}", response);
+        //// ---------------------------------------------
+
         todo!()
+
     }
 
     #[command] //// conse server status command

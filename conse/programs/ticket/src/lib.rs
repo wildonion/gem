@@ -150,6 +150,16 @@ pub mod ticket {
         };
         game_state.match_info = Some(match_info.clone()); 
 
+        msg!(
+            "{:#?}",
+            StartGameEvent{ 
+                server: ctx.accounts.user.key(), 
+                player: ctx.accounts.player.key(),
+                match_info: match_info.clone(), 
+                amount,
+            }
+        );
+
         emit!(StartGameEvent{ 
             server: ctx.accounts.user.key(), 
             player: ctx.accounts.player.key(),
@@ -161,7 +171,7 @@ pub mod ticket {
     
     }
     
-    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck_index: u8) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
+    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck_index: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
         
         let game_state = &mut ctx.accounts.game_state;
         let match_info = &game_state.match_info;
@@ -297,7 +307,7 @@ pub mod ticket {
         //// in order to fetch the state of the PDA account
         //// for deserialization we have to make sure that
         //// the PDA has enough lamports inside of it.
-        // let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
+        let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
         // let mut iter = match_info.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         // while let Some(mut match_info) = iter.next(){
         //     if match_info.match_id == match_id {
@@ -331,6 +341,29 @@ pub mod ticket {
         }
         
         game_state.match_info = None; //// cleaning the PDA
+        
+        msg!(
+            "{:#?}",
+            GameResultEvent{
+                amount_receive: { ////--- we can also omit this
+                    if is_equal_condition{
+                        0 as u64
+                    } else{
+                        reward
+                    }
+                }, ////--- we can also omit this
+                winner: if winner_account.is_some(){
+                    Some(winner_account.clone().unwrap().key())
+                } else{
+                    None
+                },
+                event_tax_amount,
+                deck_index,
+                reveal_deck: reveal_deck.clone(),
+                is_equal: is_equal_condition,
+            }
+        );
+        
         emit!(GameResultEvent{
             amount_receive: { ////--- we can also omit this
                 if is_equal_condition{
@@ -346,6 +379,7 @@ pub mod ticket {
             },
             event_tax_amount,
             deck_index,
+            reveal_deck,
             is_equal: is_equal_condition,
         });
 
@@ -661,6 +695,7 @@ pub enum ErrorCode {
 
 
 #[event]
+#[derive(Debug)]
 pub struct StartGameEvent{
     pub server: Pubkey,
     pub player: Pubkey,
@@ -669,10 +704,12 @@ pub struct StartGameEvent{
 }
 
 #[event]
+#[derive(Debug)]
 pub struct GameResultEvent{
     pub amount_receive: u64,
     pub event_tax_amount: u64,
     pub deck_index: u8,
+    pub reveal_deck: Vec<u8>,
     pub winner: Option<Pubkey>, //// since it might be happened the equal condition which there is no winner  
     pub is_equal: bool,
 }
