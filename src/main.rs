@@ -50,7 +50,7 @@ gql ws client
                                                                                         gql subs
                                                                                         ws (push notif on data changes, chatapp, realtime monit and webhook setups)
                                                                                         connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
-                                                                                        redis client + mongodb
+                                                                                        redis client pubsub + mongodb
 
 → an eventloop server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio::select!{} or ws, zmq and rpc pubsub server) 
