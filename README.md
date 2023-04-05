@@ -171,7 +171,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 🚧 WIP
 
-* setup TLS or noise protocol for `hyper` and `ws` server in code also setup it up inside the HAproxy configuration file.
+* setup TLS or noise protocol for `hyper` and `ws` server in code also setup it up inside the `HAproxy` configuration file.
 
 * sharding and scaling mechanism for `ws` server.
 

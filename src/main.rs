@@ -33,7 +33,7 @@ gql ws client
     |
     ------riker and tokio server (select!{}, spawn(), jobq channels) -------
                                                                             |
-                                                    tlp shards over noise-protocol and tokio-rustls
+                                                    sharded tlps over noise-protocol and tokio-rustls
                                                                             |
                                                                             ----- sharded instances -----
                                                                                         hyper
@@ -48,13 +48,21 @@ gql ws client
                                                                                         rpc capnp pubsub 
                                                                                         zmq pubsub
                                                                                         gql subs
-                                                                                        ws (push notif on data changes, chatapp, realtime monit and webhook setups)
+                                                                                        ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
                                                                                         connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
                                                                                         redis client pubsub + mongodb
 
 → an eventloop server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio::select!{} or ws, zmq and rpc pubsub server) 
  to handle the incoming published topics, emitted events or webhooks 
+
+
+gql subs + ws + redis client <------> ws server + redis server
+http request to set push notif <------> http hyper server to publish topic in redis server
+json/capnp rpc client <------> json/capnp rpc server
+zmq subs <------> zmq pub server
+tcp, quic client <------> tcp, quic streaming future io objects server
+
 
 
 */
@@ -284,55 +292,60 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         Ok(info) => {
             let mut owners = HashSet::new();
             owners.insert(info.owner.id);
-            (owners, info.id)
+            (Some(owners), Some(info.id))
         },
-        Err(why) => panic!("😖 could not access discord bot application info: {:?}", why),
+        Err(why) => {
+            error!("😖 could not access discord bot application info: {:?}", why);
+            (None, None)
+        },
     };
-    let framework = StandardFramework::new().configure(|c| c.owners(owners).prefix("~")).group(&GENERAL_GROUP);
-    let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
-    let mut bot_client = BotClient::builder(discord_token, intents)
-                                                    .framework(framework)
-                                                    .event_handler(ctx::bot::wwu_bot::Handler)
-                                                    .await
-                                                    .expect("creating discord bot client error");
-    { 
-        //// since we want to borrow the bot_client as immutable we must define 
-        //// a new scope to do this because if a mutable pointer exists 
-        //// an immutable one can't be there otherwise we get this Error:
-        //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
-        let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
-        data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a shard manager inside the bot client data
-    }
-    //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
-    //// into tokio green threadpools
-    let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
-    tokio::spawn(async move{
-        tokio::signal::ctrl_c().await.expect("😖 couldn't register ctrl+c handler");
-        shard_manager.lock().await.shutdown_all().await;
-        //// we'll print the current statuses of the two shards to the 
-        //// terminal every 30 seconds. This includes the ID of the shard, 
-        //// the current connection stage, (e.g. "Connecting" or "Connected"), 
-        //// and the approximate WebSocket latency (time between when a heartbeat 
-        //// is sent to discord and when a heartbeat acknowledgement is received),
-        //// note that it may take a minute or more for a latency to be recorded or to
-        //// update, depending on how often Discord tells the client to send a heartbeat.
-        loop{ //// here we're logging the shard status every 30 seconds
-            tokio::time::sleep(Duration::from_secs(30)).await; //// wait for 30 seconds hearbeat
-            let lock = shard_manager.lock().await;
-            let shard_runners = lock.runners.lock().await;
-            for (id, runner) in shard_runners.iter(){
-                info!(
-                    "🧩 shard ID {} is {} with a latency of {:?}",
-                    id, runner.stage, runner.latency,
-                );
-            }
+    if owners.is_some(){
+        let framework = StandardFramework::new().configure(|c| c.owners(owners.unwrap()).prefix("~")).group(&GENERAL_GROUP);
+        let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+        let mut bot_client = BotClient::builder(discord_token, intents)
+                                                        .framework(framework)
+                                                        .event_handler(ctx::bot::wwu_bot::Handler)
+                                                        .await
+                                                        .expect("creating discord bot client error");
+        { 
+            //// since we want to borrow the bot_client as immutable we must define 
+            //// a new scope to do this because if a mutable pointer exists 
+            //// an immutable one can't be there otherwise we get this Error:
+            //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
+            let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
+            data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a shard manager inside the bot client data
         }
-    });
-    //// start the bot client with 2 shards or ws clients for listening
-    //// for events, there is an ~5 second ratelimit period
-    //// between when one shard can start after another.
-    if let Err(why) = bot_client.start_shards(2).await{
-        error!("😖 discord bot client error: {:?}", why);
+        //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
+        //// into tokio green threadpools
+        let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
+        tokio::spawn(async move{
+            tokio::signal::ctrl_c().await.expect("😖 failed to plugin CTRL+C signal to the server");
+            shard_manager.lock().await.shutdown_all().await; //// once we received the ctrl + c we'll shutdown all shards or ws clients 
+            //// we'll print the current statuses of the two shards to the 
+            //// terminal every 30 seconds. This includes the ID of the shard, 
+            //// the current connection stage, (e.g. "Connecting" or "Connected"), 
+            //// and the approximate WebSocket latency (time between when a heartbeat 
+            //// is sent to discord and when a heartbeat acknowledgement is received),
+            //// note that it may take a minute or more for a latency to be recorded or to
+            //// update, depending on how often Discord tells the client to send a heartbeat.
+            loop{ //// here we're logging the shard status every 30 seconds
+                tokio::time::sleep(Duration::from_secs(30)).await; //// wait for 30 seconds hearbeat
+                let lock = shard_manager.lock().await;
+                let shard_runners = lock.runners.lock().await;
+                for (id, runner) in shard_runners.iter(){
+                    info!(
+                        "🧩 shard ID {} is {} with a latency of {:?}",
+                        id, runner.stage, runner.latency,
+                    );
+                }
+            }
+        });
+        //// start the bot client with 2 shards or ws clients for listening
+        //// for events, there is an ~5 second ratelimit period
+        //// between when one shard can start after another.
+        if let Err(why) = bot_client.start_shards(2).await{
+            error!("😖 discord bot client error: {:?}", why);
+        }
     }
 
 

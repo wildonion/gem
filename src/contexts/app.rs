@@ -228,7 +228,7 @@ pub struct OtpInfo{
 
 
 #[derive(Serialize, Deserialize)]
-pub struct Nill<'n>(pub &'n [u8]); //// this will be used for empty data inside the data field of the Response struct - 'n is the lifetime of the &[u8] type cause every pointer needs a lifetime in order not to point to an empty location inside the memory
+pub struct Nill<'n>(pub &'n [u8]); //// this will be used for empty data inside the data field of the Response struct - 'n is the lifetime of the &[u8] type cause every pointer needs a lifetime in order not to point to an empty location inside the memory (dangling pointer)
 
 
 pub async fn shutdown_signal(signal: Receiver<u8>){
@@ -236,7 +236,7 @@ pub async fn shutdown_signal(signal: Receiver<u8>){
         Ok(s) => {
             if s == 0{
                 info!("shutting down the server - {}", chrono::Local::now().naive_local());
-                tokio::signal::ctrl_c().await.expect("failed to plugin CTRL+C signal to the server");
+                tokio::signal::ctrl_c().await.expect("😖 failed to plugin CTRL+C signal to the server");
             } else if s == 1 { // TODO - freez the server
                 // ...
             }
