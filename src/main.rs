@@ -57,6 +57,13 @@ gql ws client
  to handle the incoming published topics, emitted events or webhooks 
 
 
+→ ws, gql, rpc and zmq pubs to fired or emitted events <--
+                                                         |
+                                                         like notifs or streaming of future io objects
+                                                         |
+                                                         ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
+
+
 gql subs + ws + redis client <------> ws server + redis server
 http request to set push notif <------> http hyper server to publish topic in redis server
 json/capnp rpc client <------> json/capnp rpc server
@@ -89,7 +96,7 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
 use openai::set_key;
-use crate::ctx::bot::wwu_bot::GENERAL_GROUP;
+use crate::ctx::bot::wwu_bot::ASKGPT_GROUP;
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
 use serenity::{prelude::*, framework::{standard::macros::group, StandardFramework}, 
                 http, model::prelude::*, Client as BotClient,
@@ -97,7 +104,7 @@ use serenity::{prelude::*, framework::{standard::macros::group, StandardFramewor
 
 
 pub mod middlewares;
-pub mod misc; //// we're importing the utils.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
+pub mod misc; //// we're importing the misc.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
 pub mod constants;
 pub mod contexts;
 pub mod schemas;
@@ -126,11 +133,6 @@ pub mod routers;
 async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ //// generic types can also be bounded to lifetimes ('static in this case) and traits inside the Box<dyn ... > - since the error that may be thrown has a dynamic size at runtime we've put all these traits inside the Box (a heap allocation pointer) and bound the error to Sync, Send and the static lifetime to be valid across the main function and sendable and implementable between threads
     
     
-
-
-
-    
-
 
     
 
@@ -162,19 +164,10 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
 
-
-
-
-
-
-    
-
     
     
 
     
-
-
 
 
     // -------------------------------- app storage setup
@@ -189,15 +182,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         db_password
     };
     
-
-
-
-
-
-
-
-
-
 
 
 
@@ -232,14 +216,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-
-
-
-
-
-
-
-
     
 
 
@@ -265,18 +241,9 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
+    // /* =========================================================================
 
-
-
-
-
-
-
-
-
-
-
-    // -------------------------------- discord bot setups
+    // -------------------------------- setting up discord bot
     //
     // ---------------------------------------------------------------------------------------
     //// each shard is a ws client to the discrod ws server also discord 
@@ -287,8 +254,9 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //// threads means they must be Arc<Mutex<Data>> + Send + Sync + 'static
     //// or an RwLock type also each shard must be Arced and Mutexed to 
     //// be shareable between threads.
+    
     let http = http::Http::new(&discord_token);
-    let (owners, _bot_id) = match http.get_current_application_info().await{
+    let (owners, _bot_id) = match http.get_current_application_info().await{ //// fetching bot owner and id
         Ok(info) => {
             let mut owners = HashSet::new();
             owners.insert(info.owner.id);
@@ -300,13 +268,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         },
     };
     if owners.is_some(){
-        let framework = StandardFramework::new().configure(|c| c.owners(owners.unwrap()).prefix("~")).group(&GENERAL_GROUP);
-        let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+        let framework = StandardFramework::new()
+                                                        .configure(|c| c.owners(owners.unwrap())
+                                                        .prefix("/"))
+                                                        .group(&ASKGPT_GROUP);
+        let intents = GatewayIntents::default();
         let mut bot_client = BotClient::builder(discord_token, intents)
                                                         .framework(framework)
                                                         .event_handler(ctx::bot::wwu_bot::Handler)
                                                         .await
-                                                        .expect("creating discord bot client error");
+                                                        .expect("😖 creating discord bot client error");
         { 
             //// since we want to borrow the bot_client as immutable we must define 
             //// a new scope to do this because if a mutable pointer exists 
@@ -316,10 +287,9 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
             data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a shard manager inside the bot client data
         }
         //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
-        //// into tokio green threadpools
+        //// into tokio green threadpool to check all the shards status
         let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
         tokio::spawn(async move{
-            tokio::signal::ctrl_c().await.expect("😖 failed to plugin CTRL+C signal to the server");
             shard_manager.lock().await.shutdown_all().await; //// once we received the ctrl + c we'll shutdown all shards or ws clients 
             //// we'll print the current statuses of the two shards to the 
             //// terminal every 30 seconds. This includes the ID of the shard, 
@@ -348,16 +318,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         }
     }
 
-
+    // =========================================================================*/
     
-
-
-
-
-
-
-
-
 
 
 
@@ -390,8 +352,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
-
-
 
 
 

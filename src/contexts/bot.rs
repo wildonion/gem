@@ -10,12 +10,15 @@
 
 pub mod wwu_bot{
 
+    use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
     use log::{info, error};
-    use std::sync::Arc;
+    use std::{sync::Arc, collections::HashSet};
+    use once_cell::sync::Lazy;
+    use futures::executor::block_on;
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     }; 
-    use serenity::{async_trait, model::prelude::MessageId};
+    use serenity::{async_trait, model::prelude::{MessageId, UserId}, framework::standard::{macros::help, HelpOptions, help_commands, CommandGroup}};
     use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
     use serenity::model::channel::Message;
@@ -31,23 +34,28 @@ pub mod wwu_bot{
                 };
     
     
+    pub static GPT: Lazy<Gpt> = Lazy::new(|| {
+        block_on(Gpt::new())
+    });
 
 
 
     //// ---------------------------------------------
     //// ----------- DISCORD BOT STRUCTURE -----------
     //// ---------------------------------------------
+    // https://github.com/serenity-rs/serenity/blob/current/examples/
 
-    #[group] //// grouping the following commands into the General group
-    #[commands(news, status)]
-    struct General; //// this can be accessible by GENERAL_GROUP inside the main.rs
+    #[group] //// grouping the following commands into the AskGPT group
+    #[prefix = "gpt"]
+    #[commands(news, expand, stats)]
+    struct AskGPT; //// this can be accessible by GENERAL_GROUP inside the main.rs
     
     pub struct ShardManagerContainer;
     impl TypeMapKey for ShardManagerContainer {
         type Value = Arc<Mutex<ShardManager>>;
     }
 
-    pub struct Handler; //// the discord bot commands, events and webhook handler 
+    pub struct Handler; //// the discord bot commands and events over ws and webhook over http handler 
 
     //// following we're implementing the EventHandler trait
     //// for the Handler struct to handle all the bot events
@@ -55,6 +63,7 @@ pub mod wwu_bot{
     //// server thus in here we're subscribing to those events. 
     #[async_trait]
     impl EventHandler for Handler{
+
         async fn ready(&self, _: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
             if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
                 info!("🔗 {} is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
@@ -68,11 +77,9 @@ pub mod wwu_bot{
         async fn resume(&self, _: Context, _: ResumedEvent){
             info!("▶ Resumed");
         }
+    
     }
 
-    //// ----------------------------------------------
-    //// ----------------------------------------------
-    //// ----------------------------------------------
 
     //// ----------------------------------------------
     //// ---------------- BOT COMMANDS ----------------
@@ -81,20 +88,32 @@ pub mod wwu_bot{
     #[command] //// news command
     async fn news(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
         
-        let mut gpt = Gpt::new().await;
+
+        //// ---------------------------
+        //// setting up the GPT instance
+        //// --------------------------- 
+        let mut gpt = GPT.clone(); //// we're cloning static GPT instance to get the Gpt instance out of the Lazy structure 
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
 
+        //// ---------------------------------
+        //// parsing the bot command arguments 
+        //// ---------------------------------
         let message_limit = _args.current().unwrap().parse::<u64>().unwrap_or(50); // → number of messages inside the channel for summerization
         let around_message_id = _args.current().unwrap().parse::<u64>().unwrap_or(0); // → the message id that we want to use it to do a summerization around of it (messages before and after that)
-
+        
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
         let messages = msg.channel_id.messages(&ctx.http, |gm|{
-            gm
-                .around(around_message_id)
-                .limit(message_limit)
+            if around_message_id != 0{ //// fetching all the messages around the passed in message id (before and after that)
+                gm
+                    .around(around_message_id)
+                    .limit(message_limit)
+            } else{ //// fetching all the messages
+                gm
+                    .limit(message_limit)
+            }
         }).await;
 
         //// -----------------------------------------------------------
@@ -116,7 +135,7 @@ pub mod wwu_bot{
         //// ---------------------------------------------------------------
         //// feed the messages to the chat GPT to do a summerization process
         //// ---------------------------------------------------------------
-        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet? [{}]", messages);
+        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet list? [{}]", messages);
         let req_cmd = gpt_request_command.clone();
         response = gpt.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
@@ -142,32 +161,93 @@ pub mod wwu_bot{
     #[command] //// expand the summerization
     async fn expand(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
         
-        // let mut gpt = Gpt::new().await;
-        // let mut response = "".to_string();
-        // let mut gpt_request_command = "".to_string();        
-        // gpt_request_command = format!("can you expand the second bulletlist?");
-        // let req_cmd = gpt_request_command.clone();
-        // response = gpt.feed(req_cmd.as_str()).await.current_response;
-        // info!("ChatGPT Response: {:?}", response);
-
-        Ok(())
-    }
-
-    #[command] //// conse server status command
-    async fn status(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+        //// ---------------------------
+        //// setting up the GPT instance
+        //// --------------------------- 
+        let mut gpt = GPT.clone(); //// we're cloning static GPT instance to get the Gpt instance out of the Lazy structure 
+        let mut response = "".to_string();
+        let mut gpt_request_command = "".to_string();
         
+        //// ---------------------------------
+        //// parsing the bot command arguments 
+        //// ---------------------------------
+        let expand_which = _args.current().unwrap().parse::<u16>().unwrap_or(0); // → number of messages inside the channel for summerization
+        
+        //// ------------------------------------------------------------
+        //// feed the messages to the chat GPT to do an expanding process
+        //// ------------------------------------------------------------
+        let ordinal = if expand_which == 1{
+            "1st".to_string()
+        } else if expand_which == 2{
+            "2nd".to_string()
+        } else if expand_which == 3{
+            "3nd".to_string()
+        } else{
+            format!("{}th", expand_which)
+        };
+        gpt_request_command = format!("can you expand and explain more about the {} bullet list", ordinal);
+        let req_cmd = gpt_request_command.clone();
+        response = gpt.feed(req_cmd.as_str()).await.current_response;
+        info!("ChatGPT Response: {:?}", response);
+
+        //// ----------------------------------------------
+        //// sending the GPT response to the channel itself 
+        //// ----------------------------------------------
+        let title = format!("Here is the expanded version of the {} bullet list", ordinal);
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
+            m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                e.title(title.as_str());
+                e.description(response);
+                return e;
+            });
+            m
+        }).await{
+            error!("can't send message embedding because {:#?}", why);
+        }
+
         Ok(())
+        
     }
 
-    //// ----------------------------------------------
-    //// ----------------------------------------------
-    //// ----------------------------------------------
+    #[command] //// conse server stats command
+    async fn stats(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+        
+        // TODO - https://crates.io/crates/sysinfo
+
+        let mut sys = System::new_all();
+        sys.refresh_all();
+        let mut cpus = vec![];
+        sys.refresh_cpu();
+        for cpu in sys.cpus() {
+            cpus.push(cpu.cpu_usage());
+        }
+
+        let cpu_info_json = serde_json::to_string_pretty(&cpus).unwrap();
+
+        //// ------------------------------
+        //// sending sysinfo to the channel
+        //// ------------------------------
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
+            m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                e.title("server sysinfo stats");
+                e.description(cpu_info_json.as_str());
+                return e;
+            });
+            m
+        }).await{
+            error!("can't send message embedding because {:#?}", why);
+        }
+
+        Ok(())
+
+    }
 
 
     //// ----------------------------------------------
     //// -------------- GPT STRUCTURE -----------------
     //// ----------------------------------------------
 
+    #[derive(Clone, Debug)]
     pub struct Gpt<'c>{
         pub messages: Vec<ChatCompletionMessage>,
         pub last_content: &'c [u8], //// utf8 bytes is easier to handle tokenization process later
@@ -239,11 +319,6 @@ pub mod wwu_bot{
             }
         }
 
-    }
-
-    //// ----------------------------------------------
-    //// ----------------------------------------------
-    //// ----------------------------------------------
-    
+    }    
     
 }

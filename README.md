@@ -167,7 +167,9 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * subscribing to push notification strategy: client `<--gql subscription-->` redis published topics (emitted events) inside the server.
 
-* subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis for caching and persistence in mongodb . 
+* subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis for caching and persistence in mongodb.
+
+* remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
 
 ## 🚧 WIP
 
