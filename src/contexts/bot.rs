@@ -15,7 +15,7 @@ pub mod wwu_bot{
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     }; 
-    use serenity::async_trait;
+    use serenity::{async_trait, model::prelude::MessageId};
     use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
     use serenity::model::channel::Message;
@@ -34,14 +34,13 @@ pub mod wwu_bot{
 
 
 
+    //// ---------------------------------------------
+    //// ----------- DISCORD BOT STRUCTURE -----------
+    //// ---------------------------------------------
 
-    // https://betterprogramming.pub/writing-a-discord-bot-in-rust-2d0e50869f64
-    // https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
-
-
-    #[group]
+    #[group] //// grouping the following commands into the General group
     #[commands(news, status)]
-    struct General; //// this can be accessible by GENERAL_GROUP
+    struct General; //// this can be accessible by GENERAL_GROUP inside the main.rs
     
     pub struct ShardManagerContainer;
     impl TypeMapKey for ShardManagerContainer {
@@ -52,15 +51,17 @@ pub mod wwu_bot{
 
     //// following we're implementing the EventHandler trait
     //// for the Handler struct to handle all the bot events
+    //// which will be fired or emitted through the discrod ws
+    //// server thus in here we're subscribing to those events. 
     #[async_trait]
     impl EventHandler for Handler{
-        async fn ready(&self, _: Context, ready: Ready){
-            if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each 
+        async fn ready(&self, _: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
+            if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
                 info!("🔗 {} is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
             }
         }
 
-        async fn message(&self, ctx: Context, msg: Message){
+        async fn message(&self, ctx: Context, msg: Message){ //// handling the message event
             
         }
 
@@ -69,35 +70,103 @@ pub mod wwu_bot{
         }
     }
 
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+
+    //// ----------------------------------------------
+    //// ---------------- BOT COMMANDS ----------------
+    //// ----------------------------------------------
+
     #[command] //// news command
     async fn news(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
         
-        //// ---------------- GPT Request ---------------- 
         let mut gpt = Gpt::new().await;
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
-        let mut channel_messages = "This is a chat log from a group discussion on a messaging platform. The conversation is somewhat disjointed, and it is unclear what the main topic of conversation is. However, members of the group discussed a range of issues related to NFTs and cryptocurrency. LC makes several comments about the modus operandi of ruggers and incentives to buy and raid floors. SolCultures shares a tweet that highlights the sale of YugiSauce #217 on Magic Eden. Several members discuss the risks and losses associated with NFTs. Oxygencube expresses disappointment about their NFT losses and suggests leaving NFTs, while GoatZilla suggests they might have infinite bags that they haven't realized yet. Dead King Dylan advises sticking with two or three projects, while sm0lfish mentions a King who does the same. LC shares an image that generates some laughter, and other members share emoji reactions. Theude mentions a good call he had earlier, and Dead King Dylan observes that he buys every rev share project. Sm0lfish shares a tweet that suggests there might be another big airdrop in Sol.";
-        
-        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet? [{}]", channel_messages);
+
+        let message_limit = _args.current().unwrap().parse::<u64>().unwrap_or(50); // → number of messages inside the channel for summerization
+        let around_message_id = _args.current().unwrap().parse::<u64>().unwrap_or(0); // → the message id that we want to use it to do a summerization around of it (messages before and after that)
+
+        //// ------------------------------------------------------
+        //// fetching all channel messages based on above criterias
+        //// ------------------------------------------------------ 
+        let messages = msg.channel_id.messages(&ctx.http, |gm|{
+            gm
+                .around(around_message_id)
+                .limit(message_limit)
+        }).await;
+
+        //// -----------------------------------------------------------
+        //// concatenating all the channel messages into a single string
+        //// -----------------------------------------------------------
+        let channel_messages = messages.unwrap_or_else(|_| vec![]);
+        let messages = if channel_messages.len() > 1{
+            channel_messages
+                .into_iter()
+                .map(|m|{
+                    m.content
+                })
+                .collect::<Vec<String>>()
+                .concat()
+        } else{
+            "".to_string()
+        };
+
+        //// ---------------------------------------------------------------
+        //// feed the messages to the chat GPT to do a summerization process
+        //// ---------------------------------------------------------------
+        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet? [{}]", messages);
         let req_cmd = gpt_request_command.clone();
         response = gpt.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
+
+        //// ----------------------------------------------
+        //// sending the GPT response to the channel itself 
+        //// ----------------------------------------------
+        if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
+            m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                e.title("Here is the latest NEWS");
+                e.description(response);
+                return e;
+            });
+            m
+        }).await{
+            error!("can't send message embedding because {:#?}", why);
+        }
+
+        Ok(())
+
+    }
+
+    #[command] //// expand the summerization
+    async fn expand(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
         
-        gpt_request_command = format!("can you expand the second bulletlist?");
-        let req_cmd = gpt_request_command.clone();
-        response = gpt.feed(req_cmd.as_str()).await.current_response;
-        info!("ChatGPT Response: {:?}", response);
-        //// ---------------------------------------------
+        // let mut gpt = Gpt::new().await;
+        // let mut response = "".to_string();
+        // let mut gpt_request_command = "".to_string();        
+        // gpt_request_command = format!("can you expand the second bulletlist?");
+        // let req_cmd = gpt_request_command.clone();
+        // response = gpt.feed(req_cmd.as_str()).await.current_response;
+        // info!("ChatGPT Response: {:?}", response);
 
-        todo!()
-
+        Ok(())
     }
 
     #[command] //// conse server status command
     async fn status(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
-        todo!()
+        
+        Ok(())
     }
 
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+
+
+    //// ----------------------------------------------
+    //// -------------- GPT STRUCTURE -----------------
+    //// ----------------------------------------------
 
     pub struct Gpt<'c>{
         pub messages: Vec<ChatCompletionMessage>,
@@ -172,4 +241,9 @@ pub mod wwu_bot{
 
     }
 
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+    //// ----------------------------------------------
+    
+    
 }
