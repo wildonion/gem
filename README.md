@@ -171,9 +171,11 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
 
+* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot) we can add the conse bot to discord servers.  
+
 ## 🚧 WIP
 
-* setup TLS or noise protocol for `hyper` and `ws` server in code also setup it up inside the `HAproxy` configuration file.
+* setup TLS using `tokio-rustls` or noise protocol for `hyper` and `ws` server in code also setup it up inside the `HAproxy` configuration file using the `conse_cert.pem` and `conse_key.pem` inside the `devops/openssl/` folder.
 
 * sharding and scaling mechanism for `ws` server.
 

@@ -52,14 +52,14 @@ gql ws client
                                                                                         connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
                                                                                         redis client pubsub + mongodb
 
-→ an eventloop server can be one of the above sharded tlps which contains an event handler trait 
- (like riker and senerity EventHanlder traits, tokio::select!{} or ws, zmq and rpc pubsub server) 
- to handle the incoming published topics, emitted events or webhooks 
+→ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
+ (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
+ to handle the incoming published topics over zmq and rpc server, emitted events over ws server or webhooks over http
 
 
 → ws, gql, rpc and zmq pubs to fired or emitted events <--
                                                          |
-                                                         like notifs or streaming of future io objects
+                                    like notifs or streaming of future io objects
                                                          |
                                                          ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
 
@@ -85,6 +85,7 @@ tcp, quic client <------> tcp, quic streaming future io objects server
 
 use std::time::Duration;
 use constants::MainResult;
+use serenity::framework::standard::buckets::LimitedFor;
 use std::collections::HashSet;
 use std::{net::SocketAddr, sync::Arc, env};
 use dotenv::dotenv;
@@ -92,11 +93,13 @@ use routerify::Router;
 use routerify::Middleware;
 use uuid::Uuid;
 use log::{info, error};
+use once_cell::sync::Lazy;
+use futures::executor::block_on;
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
 use openai::set_key;
-use crate::ctx::bot::wwu_bot::ASKGPT_GROUP;
+use crate::ctx::bot::wwu_bot::{ASKGPT_GROUP, BOT_HELP};
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
 use serenity::{prelude::*, framework::{standard::macros::group, StandardFramework}, 
                 http, model::prelude::*, Client as BotClient,
@@ -115,7 +118,9 @@ pub mod routers;
 
 
 
-
+pub static GPT: Lazy<ctx::bot::wwu_bot::Gpt> = Lazy::new(|| {
+    block_on(ctx::bot::wwu_bot::Gpt::new())
+});
 
 
 
@@ -239,8 +244,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-
-
     // /* =========================================================================
 
     // -------------------------------- setting up discord bot
@@ -259,8 +262,18 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let (owners, _bot_id) = match http.get_current_application_info().await{ //// fetching bot owner and id
         Ok(info) => {
             let mut owners = HashSet::new();
-            owners.insert(info.owner.id);
-            (Some(owners), Some(info.id))
+            if let Some(team) = info.team {
+                owners.insert(team.owner_user_id);
+            } else {
+                owners.insert(info.owner.id);
+            }
+            match http.get_current_user().await {
+                Ok(bot_id) => (Some(owners), Some(bot_id.id)),
+                Err(why) => {
+                    error!("😖 Could not access the bot id: {:?}", why);
+                    (None, None)
+                },
+            }
         },
         Err(why) => {
             error!("😖 could not access discord bot application info: {:?}", why);
@@ -269,27 +282,51 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     };
     if owners.is_some(){
         let framework = StandardFramework::new()
-                                                        .configure(|c| c.owners(owners.unwrap())
-                                                        .prefix("/"))
+                                                        .configure(|c| 
+                                                            c
+                                                                .on_mention(_bot_id)
+                                                                .owners(owners.unwrap())
+                                                                .prefixes(vec!["!", "~"])
+                                                                .delimiters(vec![" ", ", "])
+                                                        )
+                                                        .help(&BOT_HELP)
+                                                        //// following buckets can't be used more than 2 times per 30 seconds, 
+                                                        //// with a 5 second delay applying per channel.
+                                                        //// `await_ratelimits` will delay until the command can be executed 
+                                                        //// instead of cancelling the command invocation.
+                                                        .bucket("summerize", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
+                                                                .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
+                                                                .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
+                                                                .delay_action(ctx::bot::wwu_bot::delay_action)) //// a function to call when a rate limit leads to a delay
+                                                                .await //// run the news command which is labeled with summerize bucket to be run every 20 seconds
+                                                        .bucket("bullet", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
+                                                                .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
+                                                                .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
+                                                                .delay_action(ctx::bot::wwu_bot::delay_action)) //// a function to call when a rate limit leads to a delay
+                                                                .await
                                                         .group(&ASKGPT_GROUP);
-        let intents = GatewayIntents::default();
+        ///// gateway intents are predefined ws events 
+        let intents = GatewayIntents::all(); //// all the gateway intents must be on inside the https://discord.com/developers/applications/1092048595605270589/bot the privileged gateway intents section
         let mut bot_client = BotClient::builder(discord_token, intents)
                                                         .framework(framework)
                                                         .event_handler(ctx::bot::wwu_bot::Handler)
                                                         .await
-                                                        .expect("😖 creating discord bot client error");
-        { 
+                                                        .expect("😖 in creating discord bot client");
+        {   
+            let gpt_instance_cloned_mutexed = Arc::new(RwLock::new(GPT.clone())); //// building a new chat GPT instance for our summerization process
             //// since we want to borrow the bot_client as immutable we must define 
             //// a new scope to do this because if a mutable pointer exists 
             //// an immutable one can't be there otherwise we get this Error:
             //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
             let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
-            data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a shard manager inside the bot client data
+            data.insert::<ctx::bot::wwu_bot::GptBot>(gpt_instance_cloned_mutexed.clone()); //// writing the GPT bot instance into the data variable of the bot client to pass it between shards' threads 
+            data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a cloned shard manager inside the bot client data
         }
         //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
         //// into tokio green threadpool to check all the shards status
         let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
         tokio::spawn(async move{
+            tokio::signal::ctrl_c().await.expect("😖 install the plugin CTRL+C signal to the server");
             shard_manager.lock().await.shutdown_all().await; //// once we received the ctrl + c we'll shutdown all shards or ws clients 
             //// we'll print the current statuses of the two shards to the 
             //// terminal every 30 seconds. This includes the ID of the shard, 
@@ -299,12 +336,12 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
             //// note that it may take a minute or more for a latency to be recorded or to
             //// update, depending on how often Discord tells the client to send a heartbeat.
             loop{ //// here we're logging the shard status every 30 seconds
-                tokio::time::sleep(Duration::from_secs(30)).await; //// wait for 30 seconds hearbeat
+                tokio::time::sleep(Duration::from_secs(30)).await; //// wait for 30 seconds heartbeat of course it depends on the discord ws server of the heartbeat response
                 let lock = shard_manager.lock().await;
                 let shard_runners = lock.runners.lock().await;
                 for (id, runner) in shard_runners.iter(){
                     info!(
-                        "🧩 shard ID {} is {} with a latency of {:?}",
+                        "🧩 shard with ID {} is {} with a latency of {:?}",
                         id, runner.stage, runner.latency,
                     );
                 }
@@ -320,8 +357,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
     // =========================================================================*/
     
-
-
+    
+    
 
     
     // -------------------------------- building the conse server from the router
@@ -347,25 +384,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .unwrap();
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
-    let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver));
-    if let Err(e) = conse_graceful.await{ //// awaiting on the server to receive the shutdown signal
+    let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
+    sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
+    if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
 
+    
 
-
-
-
-        
-        
-    tokio::signal::ctrl_c().await?;
-    println!("conse server stopped due to receiving [ctrl-c]");
-        
-        
-        
-        
-        
+    
         
     Ok(())
     
@@ -413,7 +441,7 @@ mod tests{
         }
 
         //// sending the started conse server a get request to auth home 
-        let uri = format!("http://{}:{}/auth/home", host, port).as_str().parse::<Uri>().unwrap(); //// parsing it to hyper based uri
+        let uri = format!("http://{}:{}/auth/home", host, port).as_str().parse::<Uri>().unwrap(); //// parsing it to a hyper based uri
         let client = Client::new();
         let Ok(res) = client.get(uri).await else{
             panic!("conse test failed");

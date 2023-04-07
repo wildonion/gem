@@ -12,6 +12,8 @@ sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db
 sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7440:7440 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
+sudo docker exec mongodb mongoimport --db conse --collection roles devops/conse-collections/roles.json
+sudo docker exec mongodb mongoimport --db conse --collection sides devops/conse-collections/sides.json
 sudo docker ps -a && sudo docker compose ps -a
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
@@ -27,21 +29,13 @@ sudo apt install -y snapd
 sudo snap install core; sudo snap refresh core
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
-wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-sudo apt-get install gnupg
-wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-sudo apt-get update -y && sudo apt-get install -y mongodb-org
-sudo mkdir -p /data/db && sudo chown -R $USER /data/db && sudo systemctl restart nginx
-mongoimport --db conse --collection roles devops/conse-collections/roles.json
-mongoimport --db conse --collection sides devops/conse-collections/sides.json
+sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev librust-openssl-dev
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/yarn.gpg
 echo "deb [signed-by=/etc/apt/trusted.gpg.d/yarn.gpg] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update -y && sudo apt install yarn
 sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
 cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
 export PATH="/home/$USER/.local/share/solana/install/active_release/bin:$PATH"
-sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev
 avm install latest
 avm use latest
 echo "[?] Deploy What? (programs || gem)"

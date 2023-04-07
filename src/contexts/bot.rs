@@ -2,8 +2,33 @@
 
 
 
-// --- bot link --- 
-// https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
+
+/*
+
+
+--- sources ---
+https://blog.logrocket.com/building-rust-discord-bot-shuttle-serenity/
+https://github.com/serenity-rs/serenity/tree/current/examples/
+https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
+
+--- bot link --- 
+https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
+
+
+command examples:
+
+    → show the help message
+        !help gpt
+
+    → feed the chat GPT 2 messages after the passed in message id for summerization
+        !gpt news 2 1093605502979682384
+    
+    → feed the chat GPT selected bullet list to exapnd it
+        !gpt expand 2  
+
+
+*/
+
 
 
 
@@ -13,12 +38,10 @@ pub mod wwu_bot{
     use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
     use log::{info, error};
     use std::{sync::Arc, collections::HashSet};
-    use once_cell::sync::Lazy;
-    use futures::executor::block_on;
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     }; 
-    use serenity::{async_trait, model::prelude::{MessageId, UserId}, framework::standard::{macros::help, HelpOptions, help_commands, CommandGroup}};
+    use serenity::{async_trait, model::prelude::{MessageId, UserId}, framework::standard::{macros::{help, hook}, HelpOptions, help_commands, CommandGroup}};
     use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
     use serenity::model::channel::Message;
@@ -34,9 +57,9 @@ pub mod wwu_bot{
                 };
     
     
-    pub static GPT: Lazy<Gpt> = Lazy::new(|| {
-        block_on(Gpt::new())
-    });
+
+
+
 
 
 
@@ -50,9 +73,18 @@ pub mod wwu_bot{
     #[commands(news, expand, stats)]
     struct AskGPT; //// this can be accessible by GENERAL_GROUP inside the main.rs
     
+
+    //// --------------------------------------------------------------------------------------
+    //// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
+    //// --------------------------------------------------------------------------------------
     pub struct ShardManagerContainer;
     impl TypeMapKey for ShardManagerContainer {
         type Value = Arc<Mutex<ShardManager>>;
+    }
+
+    pub struct GptBot;
+    impl TypeMapKey for GptBot{
+        type Value = Arc<RwLock<Gpt>>;
     }
 
     pub struct Handler; //// the discord bot commands and events over ws and webhook over http handler 
@@ -71,7 +103,9 @@ pub mod wwu_bot{
         }
 
         async fn message(&self, ctx: Context, msg: Message){ //// handling the message event
-            
+            //// ctx is the instance that contains 
+            //// the methods and types of the whole
+            //// setup bot. 
         }
 
         async fn resume(&self, _: Context, _: ResumedEvent){
@@ -81,34 +115,65 @@ pub mod wwu_bot{
     }
 
 
+    //// -----------------------------------------------------
+    //// ---------------- BOT HOOKS AND HELPS ----------------
+    //// -----------------------------------------------------
+    #[help]
+    async fn bot_help(
+        context: &Context,
+        msg: &Message,
+        args: Args,
+        help_options: &'static HelpOptions,
+        groups: &[&'static CommandGroup],
+        owners: HashSet<UserId>,
+    ) -> CommandResult {
+        let _ = help_commands::with_embeds(context, msg, args, help_options, groups, owners).await;
+        Ok(())
+    }
+
+    #[hook]
+    pub async fn delay_action(ctx: &Context, msg: &Message) {
+        let _ = msg.react(ctx, '⏱').await;
+    }
+
+
     //// ----------------------------------------------
     //// ---------------- BOT COMMANDS ----------------
     //// ----------------------------------------------
 
     #[command] //// news command
-    async fn news(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
-        
+    #[bucket="summerize"] //// required to define the bucket limitations on the news command event handler
+    async fn news(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult{
 
         //// ---------------------------
         //// setting up the GPT instance
         //// --------------------------- 
-        let mut gpt = GPT.clone(); //// we're cloning static GPT instance to get the Gpt instance out of the Lazy structure 
+        let data = ctx.data.read().await;
+        let gpt = match data.get::<GptBot>(){
+            Some(mut gpt) => gpt,
+            None => {
+                msg.reply(ctx, "ChatGPT is not online :(").await?;
+                return Ok(());
+            },
+        };
+        let mut gpt_bot = gpt.read().await; 
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
 
         //// ---------------------------------
         //// parsing the bot command arguments 
         //// ---------------------------------
-        let message_limit = _args.current().unwrap().parse::<u64>().unwrap_or(50); // → number of messages inside the channel for summerization
-        let around_message_id = _args.current().unwrap().parse::<u64>().unwrap_or(0); // → the message id that we want to use it to do a summerization around of it (messages before and after that)
+        let mut args = _args.iter::<u64>();
+        let message_limit = args.next().unwrap().unwrap_or(10); // → number of messages inside the channel for summerization
+        let after_message_id = args.next().unwrap().unwrap_or(0); // → the message id that we want to use it to do a summerization after it (messages after that)
         
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
         let messages = msg.channel_id.messages(&ctx.http, |gm|{
-            if around_message_id != 0{ //// fetching all the messages around the passed in message id (before and after that)
+            if after_message_id != 0{ //// fetching all the messages around the passed in message id (before and after that)
                 gm
-                    .around(around_message_id)
+                    .after(after_message_id)
                     .limit(message_limit)
             } else{ //// fetching all the messages
                 gm
@@ -132,20 +197,23 @@ pub mod wwu_bot{
             "".to_string()
         };
 
+        let _ = msg.react(ctx, '🤔').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
+
         //// ---------------------------------------------------------------
         //// feed the messages to the chat GPT to do a summerization process
         //// ---------------------------------------------------------------
         gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet list? [{}]", messages);
         let req_cmd = gpt_request_command.clone();
-        response = gpt.feed(req_cmd.as_str()).await.current_response;
+        response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
 
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
+        let title = format!("Here is the latest NEWS summerized based on {} messages after the message with ID {}", message_limit, after_message_id);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-                e.title("Here is the latest NEWS");
+                e.title(title.as_str());
                 e.description(response);
                 return e;
             });
@@ -154,24 +222,42 @@ pub mod wwu_bot{
             error!("can't send message embedding because {:#?}", why);
         }
 
+        //// writing the update gpt_bot instance with the latest NEWS 
+        //// to the data field inside the ctx (bot client) in order to
+        //// all previous messages and data of the gpt_bot can be accessible 
+        //// in other shards' threads and command handlers
+        let mut updated_data = ctx.data.write().await;
+        updated_data.insert::<GptBot>(Arc::new(RwLock::new(gpt_bot.clone()))); //// by mutating the updated_data the ctx.data will be updated 
+
         Ok(())
 
     }
 
     #[command] //// expand the summerization
-    async fn expand(ctx: &Context, msg: &Message, _args: Args) -> CommandResult{
+    #[bucket="bullet"] //// required to define the bucket limitations on the expand command event handler
+    async fn expand(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult{
         
         //// ---------------------------
         //// setting up the GPT instance
         //// --------------------------- 
-        let mut gpt = GPT.clone(); //// we're cloning static GPT instance to get the Gpt instance out of the Lazy structure 
+        let data = ctx.data.read().await;
+        let gpt = match data.get::<GptBot>(){
+            Some(mut gpt) => gpt,
+            None => {
+                msg.reply(ctx, "ChatGPT is not online :(").await?;
+                return Ok(());
+            },
+        };
+
+        let mut gpt_bot = gpt.read().await; 
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
-        
+
         //// ---------------------------------
         //// parsing the bot command arguments 
         //// ---------------------------------
-        let expand_which = _args.current().unwrap().parse::<u16>().unwrap_or(0); // → number of messages inside the channel for summerization
+        let mut args = _args.iter::<u8>();
+        let expand_which = args.next().unwrap().unwrap_or(1); 
         
         //// ------------------------------------------------------------
         //// feed the messages to the chat GPT to do an expanding process
@@ -185,15 +271,18 @@ pub mod wwu_bot{
         } else{
             format!("{}th", expand_which)
         };
-        gpt_request_command = format!("can you expand and explain more about the {} bullet list", ordinal);
+
+        let _ = msg.react(ctx, '🔎').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
+
+        gpt_request_command = format!("can you expand and explain more about the {} bullet list in the last summerization", ordinal);
         let req_cmd = gpt_request_command.clone();
-        response = gpt.feed(req_cmd.as_str()).await.current_response;
+        response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
 
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
-        let title = format!("Here is the expanded version of the {} bullet list", ordinal);
+        let title = format!("Here is the expanded version of the {} bullet list of the latest NEWS", ordinal);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());
@@ -204,6 +293,13 @@ pub mod wwu_bot{
         }).await{
             error!("can't send message embedding because {:#?}", why);
         }
+
+        //// writing the update gpt_bot instance with the expanded bullet list 
+        //// to the data field inside the ctx (bot client) in order to
+        //// all previous messages and data of the gpt_bot can be accessible 
+        //// in other shards' threads and command handlers
+        // let mut updated_data = ctx.data.write().await;
+        // updated_data.insert::<GptBot>(Arc::new(Mutex::new(gpt_bot.clone()))); //// by mutating the updated_data the ctx.data will be updated
 
         Ok(())
         
@@ -222,7 +318,10 @@ pub mod wwu_bot{
             cpus.push(cpu.cpu_usage());
         }
 
-        let cpu_info_json = serde_json::to_string_pretty(&cpus).unwrap();
+        let json = serde_json::json!({
+            "cpu_core_usage": cpus,
+        });
+        let cpu_info_json = serde_json::to_string_pretty(&json).unwrap();
 
         //// ------------------------------
         //// sending sysinfo to the channel
@@ -248,20 +347,16 @@ pub mod wwu_bot{
     //// ----------------------------------------------
 
     #[derive(Clone, Debug)]
-    pub struct Gpt<'c>{
+    pub struct Gpt{
         pub messages: Vec<ChatCompletionMessage>,
-        pub last_content: &'c [u8], //// utf8 bytes is easier to handle tokenization process later
+        pub last_content: String, //// utf8 bytes is easier to handle tokenization process later
         pub current_response: String,
     }
 
-    impl<'c> Gpt<'c>{
+    impl Gpt{
         
-        pub async fn new() -> Gpt<'c>{
-            //// this is not owned by the current function 
-            //// so we can return it since:
-            ////    - it's behind a pointer with a valid lifetime ('c)
-            ////    - it's str and is inside either the stack or binary   
-            let content = "Hello You're Amazing"; //// starting conversation to feed later tokens to the GPT model for prediction
+        pub async fn new() -> Gpt{
+            let content = "Hello,"; //// starting conversation to feed later tokens to the GPT model for prediction
             Self{
                 messages: vec![
                     ChatCompletionMessage{
@@ -270,7 +365,7 @@ pub mod wwu_bot{
                         name: None,
                     }
                 ],
-                last_content: content.as_bytes(), //// since content is a string slice which is behind a pointer there is no need to clone it
+                last_content: content.to_string(),
                 current_response: "".to_string()
             }
         }
@@ -286,7 +381,7 @@ pub mod wwu_bot{
         //  will be copied bit by bit instead moving the entire underlying data.
         //→ also if the self wasn't behind a reference by calling the first method on 
         //  the Gpt instance the instance will be moved and we can't call other methods.
-        pub async fn feed(&mut self, content: &'c str) -> Gpt<'c>{
+        pub async fn feed(&mut self, content: &str) -> Gpt{
             
             //→ based on borrowing and ownership rules in rust we can't move a type into new scope when there
             //  is a borrow or a pointer of that type exists, rust moves heap data types by default since it 
@@ -300,7 +395,7 @@ pub mod wwu_bot{
             //  forces us to pass either its borrow or clone to other scopes.   
             
             let mut messages = self.messages.clone(); //// clone messages vector since we can't move a type if it's behind a pointer 
-            messages.push(ChatCompletionMessage{
+            messages.push(ChatCompletionMessage{ //// pushing the current token to the vector so the GPT can be able to predict the next tokens based on the previous ones 
                 role: ChatCompletionMessageRole::User,
                 content: content.to_string(),
                 name: None,
@@ -314,7 +409,7 @@ pub mod wwu_bot{
             self.current_response = returned_message.content.to_string();
             Self{
                 messages: self.messages.clone(),
-                last_content: content.as_bytes(),
+                last_content: content.to_string(),
                 current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
             }
         }

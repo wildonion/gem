@@ -235,8 +235,8 @@ pub async fn shutdown_signal(signal: Receiver<u8>){
     match signal.await{ //// await on signal to get the message in down side of the channel
         Ok(s) => {
             if s == 0{
-                info!("shutting down the server - {}", chrono::Local::now().naive_local());
-                tokio::signal::ctrl_c().await.expect("😖 failed to plugin CTRL+C signal to the server");
+                info!("🔌 shutting down the server - {}", chrono::Local::now().naive_local());
+                tokio::signal::ctrl_c().await.expect("😖 install the plugin CTRL+C signal to the server");
             } else if s == 1 { // TODO - freez the server
                 // ...
             }
