@@ -100,7 +100,7 @@ pub mod wwu_bot{
 
         async fn ready(&self, _: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
             if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
-                info!("🔗 {} is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
+                info!("🔗 {} bot is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
             }
         }
 
