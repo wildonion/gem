@@ -77,6 +77,8 @@ pub mod wwu_bot{
     //// --------------------------------------------------------------------------------------
     //// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
     //// --------------------------------------------------------------------------------------
+    //// inside the Value type we'll use a Mutex to mutate 
+    //// the underlying data inside the Arc<RwLock<TypeKeyMap>> 
     pub struct ShardManagerContainer;
     impl TypeMapKey for ShardManagerContainer {
         type Value = Arc<Mutex<ShardManager>>;
@@ -84,7 +86,7 @@ pub mod wwu_bot{
 
     pub struct GptBot;
     impl TypeMapKey for GptBot{
-        type Value = Arc<RwLock<Gpt>>;
+        type Value = Arc<Mutex<Gpt>>;
     }
 
     pub struct Handler; //// the discord bot commands and events over ws and webhook over http handler 
@@ -147,16 +149,25 @@ pub mod wwu_bot{
 
         //// ---------------------------
         //// setting up the GPT instance
-        //// --------------------------- 
-        let data = ctx.data.read().await;
-        let gpt = match data.get::<GptBot>(){
-            Some(mut gpt) => gpt,
+        //// ---------------------------
+        //// data inside the bot client must be safe to 
+        //// be shared between event and command handlers'
+        //// threads thus they must be of type Arc<RwLock<TypeMapKey>>
+        //// in which TypeMapKey is a trait that has implemented for 
+        //// the underlying data which is of type Arc<Mutex<Data>>
+        //// acquiring a write lock will block other event and 
+        //// command handlers which don't allow them to use 
+        //// the data until the lock is released.
+        let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+        let gpt_data = match data.get_mut::<GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+            Some(gpt) => gpt,
             None => {
                 msg.reply(ctx, "ChatGPT is not online :(").await?;
                 return Ok(());
             },
         };
-        let mut gpt_bot = gpt.read().await; 
+        
+        let mut gpt_bot = gpt_data.lock().await;
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
 
@@ -197,7 +208,7 @@ pub mod wwu_bot{
             "".to_string()
         };
 
-        let _ = msg.react(ctx, '🤔').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
+        let _ = msg.react(ctx, '📰').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
 
         //// ---------------------------------------------------------------
         //// feed the messages to the chat GPT to do a summerization process
@@ -221,13 +232,11 @@ pub mod wwu_bot{
         }).await{
             error!("can't send message embedding because {:#?}", why);
         }
+        
 
-        //// writing the update gpt_bot instance with the latest NEWS 
-        //// to the data field inside the ctx (bot client) in order to
-        //// all previous messages and data of the gpt_bot can be accessible 
-        //// in other shards' threads and command handlers
-        let mut updated_data = ctx.data.write().await;
-        updated_data.insert::<GptBot>(Arc::new(RwLock::new(gpt_bot.clone()))); //// by mutating the updated_data the ctx.data will be updated 
+        //// no need to update the ctx.data since we're already modifying it directly
+        //// through the write lock on the RwLock
+        //// ...
 
         Ok(())
 
@@ -239,17 +248,25 @@ pub mod wwu_bot{
         
         //// ---------------------------
         //// setting up the GPT instance
-        //// --------------------------- 
-        let data = ctx.data.read().await;
-        let gpt = match data.get::<GptBot>(){
-            Some(mut gpt) => gpt,
+        //// ---------------------------
+        //// data inside the bot client must be safe to 
+        //// be shared between event and command handlers'
+        //// threads thus they must be of type Arc<RwLock<TypeMapKey>>
+        //// in which TypeMapKey is a trait that has implemented for 
+        //// the underlying data which is of type Arc<Mutex<Data>>
+        //// acquiring a write lock will block other event and 
+        //// command handlers which don't allow them to use 
+        //// the data until the lock is released.
+        let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+        let gpt_data = match data.get_mut::<GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+            Some(gpt) => gpt,
             None => {
                 msg.reply(ctx, "ChatGPT is not online :(").await?;
                 return Ok(());
             },
         };
 
-        let mut gpt_bot = gpt.read().await; 
+        let mut gpt_bot = gpt_data.lock().await;
         let mut response = "".to_string();
         let mut gpt_request_command = "".to_string();
 
@@ -274,7 +291,7 @@ pub mod wwu_bot{
 
         let _ = msg.react(ctx, '🔎').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
 
-        gpt_request_command = format!("can you expand and explain more about the {} bullet list in the last summerization", ordinal);
+        gpt_request_command = format!("can you expand and explain more about the {} bullet list in the summerization discussion", ordinal);
         let req_cmd = gpt_request_command.clone();
         response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
@@ -294,13 +311,10 @@ pub mod wwu_bot{
             error!("can't send message embedding because {:#?}", why);
         }
 
-        //// writing the update gpt_bot instance with the expanded bullet list 
-        //// to the data field inside the ctx (bot client) in order to
-        //// all previous messages and data of the gpt_bot can be accessible 
-        //// in other shards' threads and command handlers
-        // let mut updated_data = ctx.data.write().await;
-        // updated_data.insert::<GptBot>(Arc::new(Mutex::new(gpt_bot.clone()))); //// by mutating the updated_data the ctx.data will be updated
-
+        //// no need to update the ctx.data since we're already modifying it directly
+        //// through the write lock on the RwLock
+        //// ...
+        
         Ok(())
         
     }
@@ -407,8 +421,9 @@ pub mod wwu_bot{
                                                                         .unwrap();
             let returned_message = chat_completion.choices.first().unwrap().message.clone();
             self.current_response = returned_message.content.to_string();
+            self.messages = messages.clone(); //// updating the messages field
             Self{
-                messages: self.messages.clone(),
+                messages,
                 last_content: content.to_string(),
                 current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
             }

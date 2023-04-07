@@ -313,7 +313,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
                                                         .await
                                                         .expect("😖 in creating discord bot client");
         {   
-            let gpt_instance_cloned_mutexed = Arc::new(RwLock::new(GPT.clone())); //// building a new chat GPT instance for our summerization process
+            let gpt_instance_cloned_mutexed = Arc::new(Mutex::new(GPT.clone())); //// building a new chat GPT instance for our summerization process
             //// since we want to borrow the bot_client as immutable we must define 
             //// a new scope to do this because if a mutable pointer exists 
             //// an immutable one can't be there otherwise we get this Error:
