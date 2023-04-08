@@ -234,8 +234,9 @@ pub mod wwu_bot{
         }
         
 
-        //// no need to update the ctx.data since we're already modifying it directly
-        //// through the write lock on the RwLock
+        //// no need to update the ctx.data with the updated gpt_bot field 
+        //// since we're already modifying it directly through the 
+        //// write lock on the RwLock
         //// ...
 
         Ok(())
@@ -299,6 +300,8 @@ pub mod wwu_bot{
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
+        let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
+        let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap();
         let title = format!("Here is the expanded version of the {} bullet list of the latest NEWS", ordinal);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
@@ -311,8 +314,9 @@ pub mod wwu_bot{
             error!("can't send message embedding because {:#?}", why);
         }
 
-        //// no need to update the ctx.data since we're already modifying it directly
-        //// through the write lock on the RwLock
+        //// no need to update the ctx.data with the updated gpt_bot field 
+        //// since we're already modifying it directly through the 
+        //// write lock on the RwLock
         //// ...
         
         Ok(())
@@ -421,7 +425,12 @@ pub mod wwu_bot{
                                                                         .unwrap();
             let returned_message = chat_completion.choices.first().unwrap().message.clone();
             self.current_response = returned_message.content.to_string();
-            self.messages = messages.clone(); //// updating the messages field
+            messages.push(ChatCompletionMessage{ //// we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
+                role: ChatCompletionMessageRole::Assistant,
+                content: self.current_response.clone(),
+                name: None
+            });
+            self.messages = messages.clone(); //// finally update the message field inside the Gpt instance 
             Self{
                 messages,
                 last_content: content.to_string(),
