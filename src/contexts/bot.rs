@@ -23,7 +23,7 @@ command examples:
     → feed the chat GPT 2 messages after the passed in message id for summerization
         !gpt news 2 1093605502979682384
     
-    → feed the chat GPT selected bullet list to exapnd it
+    → feed the chat GPT the selected bullet list to exapnd it
         !gpt expand 2  
 
 
@@ -55,11 +55,21 @@ pub mod wwu_bot{
                         CommandResult, macros::{command, group}
                     }
                 };
+
+
+    /*
+                            --------------------
+                            ABOUT ctx.data FIELD
+                            -------------------- 
+        data field in hyper and serenity are atomic types that can be 
+        shread between shards' and other threads safely is of type 
+        Arc<RwLock<TypeMapKey>> in which TypeMapKey::Value can 
+        be of type Arc<Mutex<Data>> and if we want to update the
+        type inside the data field we call write() method on the data
+        to acquire the lock on the type which during the lock acquisition
+        other event handlers remain block until the lock gets released
     
-    
-
-
-
+    */
 
 
 
@@ -100,7 +110,7 @@ pub mod wwu_bot{
 
         async fn ready(&self, _: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
             if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
-                info!("🔗 {} bot is connected on shard {}/{}", ready.user.name, shard[0], shard[1]);
+                info!("🔗 {} bot is connected on shard id {}/{}", ready.user.name, shard[0], shard[1]);
             }
         }
 

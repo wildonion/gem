@@ -52,23 +52,26 @@ gql subs ws client
                                                                                         connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
                                                                                         redis client pubsub + mongodb
 
-→ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
+➙ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
  to handle the incoming published topics over zmq and rpc server, emitted events over ws server or webhooks over http
 
 
-→ ws, gql, rpc and zmq pubs to fired or emitted events <--
-                                                         |
-                                    like notifs or streaming of future io objects
-                                                         |
-                                                         ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
+➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
+ server side, these handlers can be predefined traits or an event loop like tokio::select!{} which listen to the events 
+ coming from the server over ws, zmq or rpc here is the flow of realtiming:
+                    ws, gql, rpc and zmq pubs to fired or emitted events <--
+                                                                            |
+                                                        notifs or streaming of future io objects
+                                                                            |
+                                                                            ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
 
+                    gql subs + ws + redis client <------> ws server + redis server
+                    http request to set push notif <------> http hyper server to publish topic in redis server
+                    json/capnp rpc client <------> json/capnp rpc server
+                    zmq subs <------> zmq pub server
+                    tcp, quic client <------> tcp, quic streaming future io objects server
 
-gql subs + ws + redis client <------> ws server + redis server
-http request to set push notif <------> http hyper server to publish topic in redis server
-json/capnp rpc client <------> json/capnp rpc server
-zmq subs <------> zmq pub server
-tcp, quic client <------> tcp, quic streaming future io objects server
 
 
 

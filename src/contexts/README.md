@@ -15,6 +15,8 @@ sudo apt install libssl-dev libudev-dev pkg-config
 
 * show the sysinfo status of the conse server
 
+* channel messages summerization using chat GPT
+
 ## Commands
 
 ```
@@ -24,6 +26,6 @@ sudo apt install libssl-dev libudev-dev pkg-config
 → feed the chat GPT 2 messages after the passed in message id for summerization
     !gpt news 2 1093605502979682384
 
-→ feed the chat GPT selected bullet list to exapnd it
+→ feed the chat GPT the selected bullet list to exapnd it
     !gpt expand 2 
 ```

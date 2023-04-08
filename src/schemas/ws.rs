@@ -28,7 +28,8 @@ pub struct Notif{
     pub seen: bool,
     pub data_id: String,
     pub data_owner: String,
-    pub fired_at: Option<i64>
+    pub fired_at: Option<i64>,
+    pub topic: String, //// event name or the topic that the subscribers must subs to
 }
 
 #[derive(Serialize, Deserialize, Clone)]
