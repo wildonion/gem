@@ -18,13 +18,20 @@ https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissio
 command examples:
 
     → show the help message
-        !help gpt
+        !help wagies
 
-    → feed the chat GPT 2 messages after the passed in message id for summerization
-        !gpt news 2 1093605502979682384
+    → feed the chat GPT all the messages of 2 hours ago for summarization
+        !wagies wrapup 2
     
     → feed the chat GPT the selected bullet list to exapnd it
-        !gpt expand 2  
+        !wagies expand 2  
+
+
+WIP
+    - typing
+    - username said
+    - fetch messages of n hours ago
+
 
 
 */
@@ -79,8 +86,8 @@ pub mod wwu_bot{
     // https://github.com/serenity-rs/serenity/blob/current/examples/
 
     #[group] //// grouping the following commands into the AskGPT group
-    #[prefix = "gpt"]
-    #[commands(news, expand, stats)]
+    #[prefix = "wagies"]
+    #[commands(wrapup, expand, stats)]
     struct AskGPT; //// this can be accessible by GENERAL_GROUP inside the main.rs
     
 
@@ -155,7 +162,7 @@ pub mod wwu_bot{
 
     #[command] //// news command
     #[bucket="summerize"] //// required to define the bucket limitations on the news command event handler
-    async fn news(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult{
+    async fn wrapup(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult{
 
         //// ---------------------------
         //// setting up the GPT instance
@@ -185,22 +192,12 @@ pub mod wwu_bot{
         //// parsing the bot command arguments 
         //// ---------------------------------
         let mut args = _args.iter::<u64>();
-        let message_limit = args.next().unwrap().unwrap_or(10); // → number of messages inside the channel for summerization
-        let after_message_id = args.next().unwrap().unwrap_or(0); // → the message id that we want to use it to do a summerization after it (messages after that)
+        let hours_ago = args.next().unwrap().unwrap_or(1); // → the message id that we want to use it to do a summarization after it (messages after that)
         
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
-        let messages = msg.channel_id.messages(&ctx.http, |gm|{
-            if after_message_id != 0{ //// fetching all the messages around the passed in message id (before and after that)
-                gm
-                    .after(after_message_id)
-                    .limit(message_limit)
-            } else{ //// fetching all the messages
-                gm
-                    .limit(message_limit)
-            }
-        }).await;
+        let messages = msg.channel_id.messages(&ctx.http, |gm| gm).await;
 
         //// -----------------------------------------------------------
         //// concatenating all the channel messages into a single string
@@ -217,21 +214,25 @@ pub mod wwu_bot{
         } else{
             "".to_string()
         };
-
+        
         let _ = msg.react(ctx, '📰').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
-
+        
+        let typing = msg.channel_id.start_typing(&ctx.http)?;
+        
         //// ---------------------------------------------------------------
-        //// feed the messages to the chat GPT to do a summerization process
+        //// feed the messages to the chat GPT to do a summarization process
         //// ---------------------------------------------------------------
         gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet list? [{}]", messages);
         let req_cmd = gpt_request_command.clone();
         response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
 
+        typing.stop().unwrap(); //// stop typing after getting messages
+
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
-        let title = format!("Here is the latest NEWS summerized based on {} messages after the message with ID {}", message_limit, after_message_id);
+        let title = format!("Here is the latest wagies wrap up {} hour(s) ago", hours_ago);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());
@@ -253,7 +254,7 @@ pub mod wwu_bot{
 
     }
 
-    #[command] //// expand the summerization
+    #[command] //// expand the summarization
     #[bucket="bullet"] //// required to define the bucket limitations on the expand command event handler
     async fn expand(ctx: &Context, msg: &Message, mut _args: Args) -> CommandResult{
         
@@ -302,10 +303,14 @@ pub mod wwu_bot{
 
         let _ = msg.react(ctx, '🔎').await; //// send the reaction through the created ws shards won't be disconnected from the shard since it's a realtime communication
 
-        gpt_request_command = format!("can you expand and explain more about the {} bullet list in the summerization discussion", ordinal);
+        let typing = msg.channel_id.start_typing(&ctx.http)?;
+
+        gpt_request_command = format!("can you expand and explain more about the {} bullet list in the summarization discussion", ordinal);
         let req_cmd = gpt_request_command.clone();
         response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
+
+        typing.stop().unwrap();
 
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
