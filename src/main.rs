@@ -28,7 +28,7 @@ Coded by
 COMMUNICATION PROTOCOLS
 =======================
 
-gql ws client 
+gql subs ws client 
     |
     |
     ------riker and tokio server (select!{}, spawn(), jobq channels) -------
