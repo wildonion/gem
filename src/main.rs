@@ -35,7 +35,7 @@ gql subs ws client
                                                                             |
                                                     sharded tlps over noise-protocol and tokio-rustls
                                                                             |
-                                                                            ----- sharded instances and servers -----
+                                                                            ----- sharded instances, nodes and servers -----
                                                                                             hyper
                                                                                             p2p stacks
                                                                                                 - kademlia

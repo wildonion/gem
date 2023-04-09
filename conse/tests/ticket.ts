@@ -146,10 +146,21 @@ describe("conse ticket", () => {
       //--------------------------------------------------
       // getting the match info of the PDA 
       //--------------------------------------------------
+      //--------------------------------------------------
+      // getting the match info of the PDA 
+      //--------------------------------------------------
       let match_before_start = await program.account.gameState.fetch(gameStatePDA);
       //// PDA account balance must be 10 since player and server each one sent 5 to it
       assert.equal(2_000_000_000, match_before_start.amount.toNumber());
-      match_before_start.matchInfo;
+      match_before_start.deck;
+
+
+
+
+      let server_commit = "seed";
+      await program.methods.generateCard(server_commit)
+        .accounts({user: server.publicKey, gameState: gameStatePDA, server: server.publicKey
+      }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
       
 
       //------------------------------------------------------
@@ -187,10 +198,9 @@ describe("conse ticket", () => {
       //----------------------------------------------------
       // calling the game result by the server as the signer
       //----------------------------------------------------
-      let deck_index = 3 // TODO - this must be choosed from one of the available decks
-      let reveal_deck = [24, 24]
+      let deck = [24, 24]
       // the second param in gameResult() method is the event with special tax which is 25 percent of the deposited amount 
-      await program.methods.gameResult(3, 0, match_id, deck_index, reveal_deck)
+      await program.methods.gameResult(3, 0, deck)
         .accounts({user: server.publicKey, gameState: gameStatePDA, player: player.publicKey, server: server.publicKey, revenueShareWallet: revenue_share_wallet.publicKey
       }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
     

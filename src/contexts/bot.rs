@@ -20,18 +20,11 @@ command examples:
     → show the help message
         !help wagies
 
-    → feed the chat GPT all the messages of 2 hours ago for summarization
-        !wagies wrapup 2
+    → feed the chat GPT all the messages before the passed in message id for summarization
+        !wagies wrapup 1093823771514777631
     
     → feed the chat GPT the selected bullet list to exapnd it
         !wagies expand 2  
-
-
-WIP
-    - typing
-    - username said
-    - fetch messages of n hours ago
-
 
 
 */
@@ -199,19 +192,20 @@ pub mod wwu_bot{
         //// parsing the bot command arguments 
         //// ---------------------------------
         let mut args = _args.iter::<u64>();
-        let hours_ago = args.next().unwrap().unwrap_or(1); // → the time that we want to fetch messages before that
-        let after_message_id = args.next().unwrap().unwrap_or(0); // → the message id that we want to use it to do a summarization after it (messages after that)
-        
+        let before = args.next().unwrap().unwrap_or(1); // → the time or message id that we want to fetch messages before that (snowflake type)
+
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
         
-        // TODO - get channel history to get messages before a date
+        // TODO - get the username of each message
         // ...
+
         
-        let messages = msg.channel_id.messages(&ctx.http, |gm| {
-            gm
-                .after(after_message_id)
+        let messages = msg.channel_id    
+            .messages(&ctx.http, |gm| {
+                gm
+                    .before(before) //// fetch messages before this snowflake
         }).await;
 
         //// -----------------------------------------------------------
@@ -242,12 +236,12 @@ pub mod wwu_bot{
         response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
 
-        typing.stop().unwrap(); //// stop typing after getting messages
+        typing.stop().unwrap(); //// stop typing after feeding GPT
 
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
-        let title = format!("Here is the latest wagies wrap up {} hour(s) ago", hours_ago);
+        let title = format!("Here is the latest wagies wrap up {} hour(s) ago", before);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());

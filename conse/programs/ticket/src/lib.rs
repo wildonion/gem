@@ -170,8 +170,49 @@ pub mod ticket {
         Ok(())
     
     }
+
+    pub fn generate_card(ctx: Context<GenerateCard>, server_commit: String) -> Result<()>{ //// can't use the &[u8] for the server_commit since in that case the function needs a lifetime in its signature 
+
+        let game_state = &mut ctx.accounts.game_state;
+        let signer = &ctx.accounts.user; //// we should borrow or clone the ctx since its underlying data or the Account type doesn't implement Copy trait 
+        let server = &ctx.accounts.server;
+
+        if signer.key != server.key{
+            return err!(ErrorCode::RestrictionError);
+        }
+
+        let current_deck = &mut game_state.current_deck; //// borrow the deck of the game state mutably since we want to add card into it later
+ 
+        let first_32bytes_input = format!("{}${}", server_commit, 1);
+        let first_commit_hash = hash::hash(first_32bytes_input.as_bytes());
+        let first_part_deck = first_commit_hash.try_to_vec().unwrap();  
+
+        let second_32bytes_input = format!("{}${}", server_commit, 2);
+        let second_commit_hash = hash::hash(second_32bytes_input.as_bytes());
+        let second_part_deck = &mut second_commit_hash.try_to_vec().unwrap();  
+        let mut new_deck = first_part_deck;
+        
+        new_deck.append(second_part_deck);
+        for byte in new_deck{
+            let card = if byte % 52 == 0{
+                1
+            } else{
+                byte % 52 
+            };
+            if current_deck.contains(&card){
+               continue; 
+            } else{
+                current_deck.push(card)
+            }
+        }
+
+        game_state.current_deck = current_deck.clone(); //// updating the card field inside the game_state PDA, clone() method returns the type itself 
+
+        Ok(())
     
-    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, match_id: u8, deck_index: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
+    }
+    
+    pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
         
         let game_state = &mut ctx.accounts.game_state;
         let match_info = &game_state.match_info;
@@ -307,14 +348,14 @@ pub mod ticket {
         //// in order to fetch the state of the PDA account
         //// for deserialization we have to make sure that
         //// the PDA has enough lamports inside of it.
-        let reveal_deck = deck.clone().into_iter().map(|card| card as u8).collect::<Vec<u8>>();
+        let deck = deck.into_iter().map(|card| card as u8).collect::<Vec<u8>>();
         // let mut iter = match_info.clone().into_iter(); //// since iterating through the iterator is a mutable process thus we have to define mutable
         // while let Some(mut match_info) = iter.next(){
         //     if match_info.match_id == match_id {
         //         let mut decks_iter = match_info.decks.iter();
         //         while let Some(deck) = decks_iter.next(){
-        //             if reveal_deck.len() == 52 && reveal_deck.clone().into_iter().all(|card| deck.data.contains(&card)){
-        //                 match_info.final_deck = reveal_deck.clone();
+        //             if deck.len() == 52 && deck.clone().into_iter().all(|card| deck.data.contains(&card)){
+        //                 match_info.final_deck = deck.clone();
         //             }
         //         }
         //         if match_info.final_deck.is_empty(){
@@ -330,14 +371,9 @@ pub mod ticket {
         //// ------------------------------------------------------------------
         //// ------------------------------------------------------------------
         
-        //// deck validation
-        match match_info{
-            Some(data) => {
-                if deck_index as usize > data.decks.len(){
-                    return err!(ErrorCode::InvalidDeckIndex);
-                }
-            },
-            None => return err!(ErrorCode::PdaAlreadyCleaned),
+        let verified_deck = game_state.current_deck.iter().all(|card| deck.contains(&card));
+        if !verified_deck{
+            return err!(ErrorCode::InvalidDeck);
         }
         
         game_state.match_info = None; //// cleaning the PDA
@@ -358,8 +394,7 @@ pub mod ticket {
                     None
                 },
                 event_tax_amount,
-                deck_index,
-                reveal_deck: reveal_deck.clone(),
+                deck: deck.clone(),
                 is_equal: is_equal_condition,
             }
         );
@@ -378,8 +413,7 @@ pub mod ticket {
                 None
             },
             event_tax_amount,
-            deck_index,
-            reveal_deck,
+            deck,
             is_equal: is_equal_condition,
         });
 
@@ -462,6 +496,7 @@ pub struct GameState { //// this struct will be stored inside the PDA
     player: Pubkey, // 32 bytes
     amount: u64, // 8 bytes
     match_info: Option<MatchInfo>,
+    current_deck: Vec<u8>,
     bump: u8, //// this must be filled from the frontend; 1 byte
 }
 
@@ -582,6 +617,21 @@ pub struct GameResult<'info> {
     #[account(mut)]
     pub revenue_share_wallet: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
+}
+
+
+#[derive(Accounts)]
+pub struct GenerateCard<'info>{
+    #[account(mut)] //// signer must be mutable in order to be able to pay for the gass fee 
+    pub user: Signer<'info>, //// this must be the server account since only the server can generate card with its commit (seed)
+    #[account(mut, //// must be mutable since we want to mutate this account on chain
+        seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], 
+        bump = game_state.bump)]
+    pub game_state: Account<'info, GameState>,
+    #[account(mut)]
+    pub server: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+
 }
 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type
@@ -708,8 +758,7 @@ pub struct StartGameEvent{
 pub struct GameResultEvent{
     pub amount_receive: u64,
     pub event_tax_amount: u64,
-    pub deck_index: u8,
-    pub reveal_deck: Vec<u8>,
+    pub deck: Vec<u8>,
     pub winner: Option<Pubkey>, //// since it might be happened the equal condition which there is no winner  
     pub is_equal: bool,
 }
