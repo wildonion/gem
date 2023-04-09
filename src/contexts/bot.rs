@@ -47,8 +47,11 @@ pub mod wwu_bot{
     use std::{sync::Arc, collections::HashSet};
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
-    }; 
-    use serenity::{async_trait, model::prelude::{MessageId, UserId}, framework::standard::{macros::{help, hook}, HelpOptions, help_commands, CommandGroup}};
+    };
+    use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId}, 
+                    framework::standard::{macros::{help, hook}, 
+                    HelpOptions, help_commands, CommandGroup}
+                };
     use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
     use serenity::model::channel::Message;
@@ -159,6 +162,10 @@ pub mod wwu_bot{
     //// ----------------------------------------------
     //// ---------------- BOT COMMANDS ----------------
     //// ----------------------------------------------
+    //// in bot design there must be a ctx type that 
+    //// can be passed to other handlers and used to 
+    //// access whole methods and bot setup functions 
+    //// like each ws shard inside each event handler 
 
     #[command] //// news command
     #[bucket="summerize"] //// required to define the bucket limitations on the news command event handler
@@ -192,12 +199,20 @@ pub mod wwu_bot{
         //// parsing the bot command arguments 
         //// ---------------------------------
         let mut args = _args.iter::<u64>();
-        let hours_ago = args.next().unwrap().unwrap_or(1); // → the message id that we want to use it to do a summarization after it (messages after that)
+        let hours_ago = args.next().unwrap().unwrap_or(1); // → the time that we want to fetch messages before that
+        let after_message_id = args.next().unwrap().unwrap_or(0); // → the message id that we want to use it to do a summarization after it (messages after that)
         
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
-        let messages = msg.channel_id.messages(&ctx.http, |gm| gm).await;
+        
+        // TODO - get channel history to get messages before a date
+        // ...
+        
+        let messages = msg.channel_id.messages(&ctx.http, |gm| {
+            gm
+                .after(after_message_id)
+        }).await;
 
         //// -----------------------------------------------------------
         //// concatenating all the channel messages into a single string
