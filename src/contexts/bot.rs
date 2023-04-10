@@ -198,10 +198,6 @@ pub mod wwu_bot{
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
         
-        // TODO - get the username of each message
-        // ...
-
-        
         let messages = msg.channel_id    
             .messages(&ctx.http, |gm| {
                 gm
@@ -216,7 +212,8 @@ pub mod wwu_bot{
             channel_messages
                 .into_iter()
                 .map(|m|{
-                    m.content
+                    let user_message = format!("{} at time {} said: {}", m.author.name, m.timestamp, m.content);
+                    user_message
                 })
                 .collect::<Vec<String>>()
                 .concat()
