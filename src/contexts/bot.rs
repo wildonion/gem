@@ -15,16 +15,13 @@ https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framew
 https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
 
 
---- discord token ---
-MTA5MjA0ODU5NTYwNTI3MDU4OQ.GLnFja.b3NEV2_ApH5c9eH-4q7xMVZaj4FkRUYYrMGdlw
-
 command examples:
 
     → show the help message
         !help conse
 
-    → feed the chat GPT all the messages before the passed in message id for summarization
-        !conse wrapup 1093823771514777631
+    → feed the chat GPT all the messages before the passed in hours ago for summarization
+        !conse wrapup 4
     
     → feed the chat GPT the selected bullet list to exapnd it
         !conse expand 2  
