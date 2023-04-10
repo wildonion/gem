@@ -239,6 +239,8 @@ pub async fn into_box_slice(u8_vector: &Vec<u8>) -> Result<Box<[u8; 4]>, String>
 //// tell rust hey we're moving this in other scopes but don't drop it because
 //// we pinned it to the ram to solve it in other scopes, also it must have
 //// valid lifetime during the the entire lifetime of the app.
+//
+//// BoxFuture<'fut, ()> is Pin<alloc::boxed::Box<dyn Future<Output=()> + Send + Sync + 'fut>>
 pub fn async_gen_random_idx(idx: usize) -> BoxFuture<'static, usize>{ // NOTE - pub type BoxFuture<'a, T> = Pin<alloc::boxed::Box<dyn Future<Output = T> + Send + 'a>>
     async move{
         if idx <= CHARSET.len(){
@@ -247,6 +249,11 @@ pub fn async_gen_random_idx(idx: usize) -> BoxFuture<'static, usize>{ // NOTE - 
             gen_random_idx(random::<u8>() as usize)
         }
     }.boxed() //// wrap the future in a Box, pinning it
+}
+pub fn ret_boxed_future() -> std::pin::Pin<Box<dyn futures::future::Future<Output=()>>>{ //// Pin takes a pointer to the type and since traits are dynamic types thir pointer can be either &dyn ... or Box<dyn...>
+    Box::pin(async move{ //// pinning the async block into the ram to solve it later 
+        ()
+    })
 }
 
 

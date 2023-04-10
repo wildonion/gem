@@ -181,7 +181,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * complete the **CPI** call from ticket program to whitelist after successful reservation. 
 
-* `ed25519` keypair for server verification (like ssh), updating app and time hash based locking api using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum and verification using its commit (like ssh), updating app and time hash based locking api using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 

@@ -11,20 +11,23 @@ https://blog.logrocket.com/building-rust-discord-bot-shuttle-serenity/
 https://github.com/serenity-rs/serenity/tree/current/examples/
 https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
 
---- bot link --- 
+--- bot link example --- 
 https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
 
+
+--- discord token ---
+MTA5MjA0ODU5NTYwNTI3MDU4OQ.GLnFja.b3NEV2_ApH5c9eH-4q7xMVZaj4FkRUYYrMGdlw
 
 command examples:
 
     → show the help message
-        !help wagies
+        !help conse
 
     → feed the chat GPT all the messages before the passed in message id for summarization
-        !wagies wrapup 1093823771514777631
+        !conse wrapup 1093823771514777631
     
     → feed the chat GPT the selected bullet list to exapnd it
-        !wagies expand 2  
+        !conse expand 2  
 
 
 */
@@ -35,6 +38,7 @@ command examples:
 
 pub mod wwu_bot{
 
+    use chrono::{TimeZone, Timelike, Datelike}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
     use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
     use log::{info, error};
     use std::{sync::Arc, collections::HashSet};
@@ -82,7 +86,7 @@ pub mod wwu_bot{
     // https://github.com/serenity-rs/serenity/blob/current/examples/
 
     #[group] //// grouping the following commands into the AskGPT group
-    #[prefix = "wagies"]
+    #[prefix = "conse"]
     #[commands(wrapup, expand, stats)]
     struct AskGPT; //// this can be accessible by GENERAL_GROUP inside the main.rs
     
@@ -191,17 +195,42 @@ pub mod wwu_bot{
         //// ---------------------------------
         //// parsing the bot command arguments 
         //// ---------------------------------
-        let mut args = _args.iter::<u64>();
-        let before = args.next().unwrap().unwrap_or(1); // → the time or message id that we want to fetch messages before that (snowflake type)
-
+        let mut args = _args.iter::<u32>();
+        let hours_ago = args.next().unwrap().unwrap_or(0);
+        
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
+        //// MessageId is of type snowflake thus if we want to
+        //// fetch messages before a specific time we have 
+        //// to convert the time into snowflake or MessageId. 
+        // example:
+        // get 10 hours ago messages from the inital command
+        // inital command is     : 2023-10-4 16:24:00
+        // until 10 hours ago is : 2023-10-4 06:24:00
+        // start fetching from   : 2023-10-4 06:24:00
         
+        let command_time = msg.timestamp.naive_local(); //// initial command message datetime
+        let date = command_time.date();
+        let time = command_time.time();
+
+        let start_fetching_year = date.year();
+        let start_fetching_month = date.month();
+        let start_fetching_day = date.day();
+
+        let start_fetching_hours = time.hour() - hours_ago;
+        let start_fetching_mins = time.minute();
+        let start_fetching_secs = time.second();
+
+        let d = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
+        let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
+        let start_fetching_from_timestamp = chrono::NaiveDateTime::new(d, t).timestamp() as u64;
+        let after_message_id = MessageId(start_fetching_from_timestamp << 22);
+
         let messages = msg.channel_id    
             .messages(&ctx.http, |gm| {
                 gm
-                    .before(before) //// fetch messages before this snowflake
+                    .after(after_message_id) //// fetch messages after the passed snowflake id
         }).await;
 
         //// -----------------------------------------------------------
@@ -212,7 +241,7 @@ pub mod wwu_bot{
             channel_messages
                 .into_iter()
                 .map(|m|{
-                    let user_message = format!("{} at time {} said: {}", m.author.name, m.timestamp, m.content);
+                    let user_message = format!("{}: {}", m.author.name, m.content);
                     user_message
                 })
                 .collect::<Vec<String>>()
@@ -228,7 +257,7 @@ pub mod wwu_bot{
         //// ---------------------------------------------------------------
         //// feed the messages to the chat GPT to do a summarization process
         //// ---------------------------------------------------------------
-        gpt_request_command = format!("can you summerize the content inside the bracket like news title as a numbered bullet list? [{}]", messages);
+        gpt_request_command = format!("can you summerize what users said inside the bracket as a numbered bullet list along with their username? [{}]", messages);
         let req_cmd = gpt_request_command.clone();
         response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
         info!("ChatGPT Response: {:?}", response);
@@ -238,7 +267,7 @@ pub mod wwu_bot{
         //// ----------------------------------------------
         //// sending the GPT response to the channel itself 
         //// ----------------------------------------------
-        let title = format!("Here is the latest wagies wrap up {} hour(s) ago", before);
+        let title = format!("Here is all conse wrap ups for {} hour(s) ago", hours_ago);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());
@@ -323,7 +352,7 @@ pub mod wwu_bot{
         //// ----------------------------------------------
         let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
         let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap();
-        let title = format!("Here is the expanded version of the {} bullet list of the latest NEWS", ordinal);
+        let title = format!("Here is the expanded version of the {} bullet list of the last warp up", ordinal);
         if let Err(why) = msg.channel_id.send_message(&ctx.http, |m|{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());

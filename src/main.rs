@@ -42,7 +42,7 @@ gql subs ws client
                                                                                                 - gossipsub over tcp and quic
                                                                                                 - noise protocol
                                                                                                 - ws and webrtc
-                                                                                                - muxer
+                                                                                                - muxer and yamux
                                                                                             quic and udp
                                                                                             tcp 
                                                                                             rpc capnp/json pubsub 
@@ -72,6 +72,13 @@ gql subs ws client
                     json/capnp rpc client <------> json/capnp rpc server
                     zmq subs <------> zmq pub server
                     tcp, quic client <------> tcp, quic streaming future io objects server
+
+                    discord client
+                            subs to emitted event/webhooks inside each shard <----------------- ws/http -----------------> discord ws and http shards and nodes 
+                    discord shards and nodes  
+                            shard 1 <---------- full duplex streaming and multiplexing over tokio tcp and quic, zmq/ json and capnp rpc pubsub ----------> shard 2  
+                                |                                                                                                                              |
+                                --------------------------------------- cassandra and mongodb -----------------------------------------------------------------
 
 
 
@@ -105,9 +112,7 @@ use hyper::{Client, Uri};
 use openai::set_key;
 use crate::ctx::bot::wwu_bot::{ASKGPT_GROUP, BOT_HELP};
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
-use serenity::{prelude::*, framework::{standard::macros::group, StandardFramework}, 
-                http, model::prelude::*, Client as BotClient,
-                client::bridge::gateway::ShardManager};
+use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
 
 
 pub mod middlewares;
@@ -268,7 +273,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //// be shareable between threads.
     
     let http = http::Http::new(&discord_token);
-    let (owners, _bot_id) = match http.get_current_application_info().await{ //// fetching bot owner and id
+    let (owners, _bot_id) = match http.get_current_application_info().await{ //// fetching bot owner and id, application id is the id of the created http channel
         Ok(info) => {
             let mut owners = HashSet::new();
             if let Some(team) = info.team {
