@@ -219,15 +219,15 @@ pub mod wwu_bot{
         let start_fetching_mins = time.minute();
         let start_fetching_secs = time.second();
 
-        let d = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
-        let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
-        let start_fetching_from_timestamp = chrono::NaiveDateTime::new(d, t).timestamp() as u64;
-        let after_message_id = MessageId(start_fetching_from_timestamp << 22);
+        let new_date = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
+        let new_time = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
+        let start_fetching_from_timestamp = chrono::NaiveDateTime::new(new_date, new_time).timestamp() as u64;
+        let after_message_id = MessageId(start_fetching_from_timestamp << 22); //// creating the snowflake id from the passed in hours ago
 
         let messages = msg.channel_id    
             .messages(&ctx.http, |gm| {
                 gm
-                    .after(after_message_id) //// fetch messages after the passed snowflake id
+                    .after(after_message_id) //// fetch messages after the passed in snowflake id
         }).await;
 
         //// -----------------------------------------------------------
