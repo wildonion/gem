@@ -31,6 +31,7 @@ lazy_static = "1"
 serde = {version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 serenity = "0.11"
+poise = "0.5.2"
 juniper = "0.15.11"
 juniper_hyper = "0.8.0"
 juniper_subscriptions = "0.16.0"

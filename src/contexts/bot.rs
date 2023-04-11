@@ -12,7 +12,10 @@ https://github.com/serenity-rs/serenity/tree/current/examples/
 https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
 
 --- bot link example --- 
-https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025483776&scope=bot
+https://discord.com/oauth2/authorize?client_id=1092048595605270589&scope=applications.commands
+
+get token from : https://discord.com/developers/applications/1092048595605270589/bot
 
 
 command examples:
@@ -32,7 +35,6 @@ command examples:
 
 
 
-
 pub mod wwu_bot{
 
     use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
@@ -42,10 +44,13 @@ pub mod wwu_bot{
     use openai::{ //// openai crate is using the reqwest lib under the hood
         chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
     };
-    use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId}, 
+    use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
+                    interaction::application_command::{CommandDataOption, CommandDataOptionValue}}, 
                     framework::standard::{macros::{help, hook}, 
                     HelpOptions, help_commands, CommandGroup}
                 };
+    use serenity::builder;
+    use serenity::model::prelude::command::CommandOptionType;
     use serenity::client::bridge::gateway::ShardManager;
     use serenity::model::application::command::Command;
     use serenity::model::channel::Message;
@@ -103,7 +108,7 @@ pub mod wwu_bot{
         type Value = Arc<Mutex<Gpt>>;
     }
 
-    pub struct Handler; //// the discord bot commands and events over ws and webhook over http handler 
+    pub struct Handler; //// the discord bot commands and events listener over ws and webhook over http 
 
     //// following we're implementing the EventHandler trait
     //// for the Handler struct to handle all the bot events
@@ -112,7 +117,7 @@ pub mod wwu_bot{
     #[async_trait]
     impl EventHandler for Handler{
 
-        async fn ready(&self, _: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
+        async fn ready(&self, ctx: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
             if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
                 info!("🔗 {} bot is connected on shard id {}/{}", ready.user.name, shard[0], shard[1]);
             }
@@ -271,7 +276,7 @@ pub mod wwu_bot{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());
                 e.description(response);
-                e.footer(|f|{
+                e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                     let content = format!("📨 wrap up requested at: {} \n 🧩 wrapped up from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
                     f
                         .text(content.as_str())
