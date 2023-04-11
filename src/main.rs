@@ -143,6 +143,10 @@ pub static GPT: Lazy<ctx::bot::wwu_bot::Gpt> = Lazy::new(|| {
 //// implementor will be known at runtime thus they must 
 //// be behind a pointer like &dyn or inside a Box
 //// if we want to return them as a type.
+//
+//// in Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> 
+//// we can return the structure that implements the Error trait for the error part
+//// which can be a custom error struct.
 #[tokio::main(flavor="multi_thread", worker_threads=10)] //// use the tokio multi threaded runtime by spawning 10 green threads
 async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ //// generic types can also be bounded to lifetimes ('static in this case) and traits inside the Box<dyn ... > - since the error that may be thrown has a dynamic size at runtime we've put all these traits inside the Box (a heap allocation pointer) and bound the error to Sync, Send and the static lifetime to be valid across the main function and sendable and implementable between threads
     

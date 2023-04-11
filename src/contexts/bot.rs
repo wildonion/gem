@@ -20,7 +20,7 @@ command examples:
     → show the help message
         !help conse
 
-    → feed the chat GPT all the messages before the passed in hours ago for summarization
+    → feed the chat GPT all the messages before the passed in hours ago (4 hours ago in this case) for summarization
         !conse wrapup 4
     
     → feed the chat GPT the selected bullet list to exapnd it
@@ -35,7 +35,7 @@ command examples:
 
 pub mod wwu_bot{
 
-    use chrono::{TimeZone, Timelike, Datelike}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
+    use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
     use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
     use log::{info, error};
     use std::{sync::Arc, collections::HashSet};
@@ -193,23 +193,24 @@ pub mod wwu_bot{
         //// parsing the bot command arguments 
         //// ---------------------------------
         let mut args = _args.iter::<u32>();
-        let hours_ago = args.next().unwrap().unwrap_or(0);
+        let hours_ago = args.next().unwrap_or(Ok(1)).unwrap(); //// default value will be set to 1 hour ago
+        if hours_ago > 24{
+            msg.reply(&ctx.http, "👎 Enter correct hour!").await.unwrap();
+        }
         
         //// ------------------------------------------------------
         //// fetching all channel messages based on above criterias
         //// ------------------------------------------------------ 
-        //// MessageId is of type snowflake thus if we want to
-        //// fetch messages before a specific time we have 
-        //// to convert the time into snowflake or MessageId. 
         // example:
         // get 10 hours ago messages from the inital command
         // inital command is     : 2023-10-4 16:24:00
         // until 10 hours ago is : 2023-10-4 06:24:00
         // start fetching from   : 2023-10-4 06:24:00
         
-        let command_time = msg.timestamp.naive_local(); //// initial command message datetime
-        let date = command_time.date();
-        let time = command_time.time();
+        let command_time_offset = msg.timestamp.offset();
+        let command_time_naive_local = msg.timestamp.naive_local(); //// initial command message datetime
+        let date = command_time_naive_local.date();
+        let time = command_time_naive_local.time();
 
         let start_fetching_year = date.year();
         let start_fetching_month = date.month();
@@ -219,15 +220,16 @@ pub mod wwu_bot{
         let start_fetching_mins = time.minute();
         let start_fetching_secs = time.second();
 
-        let new_date = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
-        let new_time = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
-        let start_fetching_from_timestamp = chrono::NaiveDateTime::new(new_date, new_time).timestamp() as u64;
-        let after_message_id = MessageId(start_fetching_from_timestamp << 22); //// creating the snowflake id from the passed in hours ago
+        let d = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
+        let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
+        let start_fetching_from_timestamp = chrono::NaiveDateTime::new(d, t).timestamp() as u64;
+        let start_fetching_from_string = chrono::NaiveDateTime::new(d, t).to_string();
+        let after_message_id = MessageId(start_fetching_from_timestamp); //// creating the snowflake id from the timestamp (serde will do this)
 
         let messages = msg.channel_id    
             .messages(&ctx.http, |gm| {
                 gm
-                    .after(after_message_id) //// fetch messages after the passed in snowflake id
+                    .after(after_message_id) //// fetch messages after the passed snowflake id
         }).await;
 
         //// -----------------------------------------------------------
@@ -238,7 +240,7 @@ pub mod wwu_bot{
             channel_messages
                 .into_iter()
                 .map(|m|{
-                    let user_message = format!("{}: {}", m.author.name, m.content);
+                    let user_message = format!("@{}: {}", m.author.name, m.content);
                     user_message
                 })
                 .collect::<Vec<String>>()
@@ -269,6 +271,11 @@ pub mod wwu_bot{
             m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                 e.title(title.as_str());
                 e.description(response);
+                e.footer(|f|{
+                    let content = format!("📨 wrap up requested at: {} \n 🧩 wrapped up from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+                    f
+                        .text(content.as_str())
+                });
                 return e;
             });
             m
@@ -446,6 +453,10 @@ pub mod wwu_bot{
         //  will be copied bit by bit instead moving the entire underlying data.
         //→ also if the self wasn't behind a reference by calling the first method on 
         //  the Gpt instance the instance will be moved and we can't call other methods.
+        //
+        //// if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable 
+        //// we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
+        //// dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait 
         pub async fn feed(&mut self, content: &str) -> Gpt{
             
             //→ based on borrowing and ownership rules in rust we can't move a type into new scope when there
