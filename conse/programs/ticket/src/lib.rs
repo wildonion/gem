@@ -628,6 +628,7 @@ pub struct GenerateCard<'info>{
         seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], 
         bump = game_state.bump)]
     pub game_state: Account<'info, GameState>,
+    /// CHECK:
     #[account(mut)]
     pub server: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
