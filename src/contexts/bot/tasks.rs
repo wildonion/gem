@@ -109,6 +109,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let title = format!("Here is all conse wrap ups for {} hour(s) ago", hours_ago);
     if let Err(why) = channel_id.send_message(&ctx.http, |m|{
         m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+            e.color(Colour::from_rgb(235, 204, 120));
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
@@ -192,6 +193,7 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     let title = format!("Here is the expanded version of the {} bullet list of the last warp up", ordinal);
     if let Err(why) = channel_id.send_message(&ctx.http, |m|{
         m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+            e.color(Colour::from_rgb(235, 204, 120));
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
