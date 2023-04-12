@@ -20,12 +20,26 @@ sudo apt install libssl-dev libudev-dev pkg-config
 ## Commands
 
 ```
-→ show the help message
-    !help gpt
+--- sources ---
+https://blog.logrocket.com/building-rust-discord-bot-shuttle-serenity/
+https://github.com/serenity-rs/serenity/tree/current/examples/
+https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
 
-→ feed the chat GPT 2 messages after the passed in message id for summerization
-    !gpt news 2 1093605502979682384
+--- bot link example --- 
+https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025483776&scope=bot
+https://discord.com/oauth2/authorize?client_id=1092048595605270589&scope=applications.commands
 
-→ feed the chat GPT the selected bullet list to exapnd it
-    !gpt expand 2 
+get token from : https://discord.com/developers/applications/1092048595605270589/bot
+
+
+command examples:
+
+    → show the help message
+        !help conse
+
+    → feed the chat GPT all the messages before the passed in hours ago (4 hours ago in this case) for summarization
+        !conse wrapup 4
+    
+    → feed the chat GPT the selected bullet list to exapnd it
+        !conse expand 2  
 ```

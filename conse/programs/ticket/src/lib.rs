@@ -129,6 +129,7 @@ pub mod ticket {
 
         game_state.server = *ctx.accounts.user.key;
         game_state.player = *ctx.accounts.player.key;
+        game_state.current_deck = vec![];
         game_state.amount = amount;
         game_state.bump = bump; //// NOTE - we must set the game state bump to the passed in bump coming from the frontend
         // game_state.bump = *ctx.bumps.get("game_state").unwrap(); // proper err handling    
@@ -202,7 +203,8 @@ pub mod ticket {
             if current_deck.contains(&card){
                continue; 
             } else{
-                current_deck.push(card)
+                current_deck.push(card);
+                break;
             }
         }
 

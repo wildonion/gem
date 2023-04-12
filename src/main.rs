@@ -110,10 +110,36 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
 use openai::set_key;
-use crate::ctx::bot::wwu_bot::{ASKGPT_GROUP, BOT_HELP};
+use crate::ctx::bot::cmds::framework_command::{ASKGPT_GROUP, BOT_HELP};
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
 use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
-
+use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
+use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
+use openai::{ //// openai crate is using the reqwest lib under the hood
+    chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
+};
+use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
+                interaction::application_command::{CommandDataOption, CommandDataOptionValue}, command::CommandOption}, 
+                framework::standard::{macros::{help, hook}, 
+                HelpOptions, help_commands, CommandGroup}
+            };
+use serenity::model::Timestamp;
+use serenity::builder;
+use serenity::utils::Colour;
+use serenity::model::prelude::command::CommandOptionType;
+use serenity::client::bridge::gateway::ShardManager;
+use serenity::model::application::command::Command;
+use serenity::model::channel::Message;
+use serenity::model::application::interaction::{Interaction, InteractionResponseType};
+use serenity::model::gateway::Ready;
+use serenity::model::id::GuildId;
+use serenity::{prelude::*, 
+                model::prelude::ResumedEvent, 
+                framework::standard::{
+                    Args,
+                    CommandResult, macros::{command, group}
+                }
+            };
 
 pub mod middlewares;
 pub mod misc; //// we're importing the misc.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
@@ -127,8 +153,8 @@ pub mod routers;
 
 
 
-pub static GPT: Lazy<ctx::bot::wwu_bot::Gpt> = Lazy::new(|| {
-    block_on(ctx::bot::wwu_bot::Gpt::new())
+pub static GPT: Lazy<ctx::gpt::chat::Gpt> = Lazy::new(|| {
+    block_on(ctx::gpt::chat::Gpt::new())
 });
 
 
@@ -315,30 +341,33 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
                                                         .bucket("summerize", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
                                                                 .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
                                                                 .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
-                                                                .delay_action(ctx::bot::wwu_bot::delay_action)) //// a function to call when a rate limit leads to a delay
+                                                                .delay_action(ctx::bot::cmds::framework_command::delay_action)) //// a function to call when a rate limit leads to a delay
                                                                 .await //// run the news command which is labeled with summerize bucket to be run every 20 seconds
                                                         .bucket("bullet", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
                                                                 .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
                                                                 .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
-                                                                .delay_action(ctx::bot::wwu_bot::delay_action)) //// a function to call when a rate limit leads to a delay
+                                                                .delay_action(ctx::bot::cmds::framework_command::delay_action)) //// a function to call when a rate limit leads to a delay
                                                                 .await
                                                         .group(&ASKGPT_GROUP);
         ///// gateway intents are predefined ws events 
         let intents = GatewayIntents::all(); //// all the gateway intents must be on inside the https://discord.com/developers/applications/1092048595605270589/bot the privileged gateway intents section
         let mut bot_client = BotClient::builder(discord_token, intents)
                                                         .framework(framework)
-                                                        .event_handler(ctx::bot::wwu_bot::Handler)
+                                                        .event_handler(ctx::bot::handler::Handler)
                                                         .await
                                                         .expect("😖 in creating discord bot client");
         {   
-            let gpt_instance_cloned_mutexed = Arc::new(Mutex::new(GPT.clone())); //// building a new chat GPT instance for our summerization process
+            //// building a new chat GPT instance for our summerization process
+            //// it must be Send to be shared and Sync or safe to move it between 
+            //// shards' and command handlers' threads 
+            let gpt_instance_cloned_mutexed = Arc::new(Mutex::new(GPT.clone())); 
             //// since we want to borrow the bot_client as immutable we must define 
             //// a new scope to do this because if a mutable pointer exists 
             //// an immutable one can't be there otherwise we get this Error:
             //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
             let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
-            data.insert::<ctx::bot::wwu_bot::GptBot>(gpt_instance_cloned_mutexed.clone()); //// writing the GPT bot instance into the data variable of the bot client to pass it between shards' threads 
-            data.insert::<ctx::bot::wwu_bot::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a cloned shard manager inside the bot client data
+            data.insert::<ctx::bot::handler::GptBot>(gpt_instance_cloned_mutexed.clone()); //// writing the GPT bot instance into the data variable of the bot client to pass it between shards' threads 
+            data.insert::<ctx::bot::handler::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a cloned shard manager inside the bot client data
         }
         //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
         //// into tokio green threadpool to check all the shards status
