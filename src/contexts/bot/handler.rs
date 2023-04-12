@@ -132,35 +132,17 @@ impl EventHandler for Handler{
         //// -------------------------------------------------
         //// --------- REGISTERING GLOBAL COMMANDS -----------
         //// -------------------------------------------------
-
-        let mut commands = vec![];
-        //// first param is bounded to impl AsRef<Http> thus 
-        //// we can pass the borrowed form of the ctx.http
-        //// also every register returns &mut CreateApplicationCommand
-        //// instance which must be cloned to be used as CreateApplicationCommand
-        //// since set_global_application_commands takes a vector of CreateApplicationCommand
-        let guild_wrapup_command = Command::create_global_application_command(&ctx.http, |cmd| {
-            commands.clone().push(ctx::bot::cmds::slash::wrapup_register(cmd).clone());
-            ctx::bot::cmds::slash::wrapup_register(cmd)            
-        })
-        .await;
         
-        let guild_expand_command = Command::create_global_application_command(&ctx.http, |cmd| {
-            commands.clone().push(ctx::bot::cmds::slash::expand_register(cmd).clone());
-            ctx::bot::cmds::slash::expand_register(cmd)          
-        })
-        .await;
-
-        let guild_help_command = Command::create_global_application_command(&ctx.http, |cmd| {
-            commands.clone().push(ctx::bot::cmds::slash::help_register(cmd).clone());
-            ctx::bot::cmds::slash::help_register(cmd)            
-        })
-        .await;
-
-        let registered_commands = Command::set_global_application_commands(&ctx.http, |cmds|{
-            cmds.set_application_commands(commands)
-        })
-        .await;
+        let guilds = ready.guilds;
+        for guild in guilds{
+            let commands = GuildId::set_application_commands(&guild.id, &ctx.http, |commands| {
+                commands
+                    .create_application_command(|command| ctx::bot::cmds::slash::wrapup_register(command))
+                    .create_application_command(|command| ctx::bot::cmds::slash::expand_register(command))
+                    .create_application_command(|command| ctx::bot::cmds::slash::help_register(command))
+            })
+            .await;
+        }
 
     }
 

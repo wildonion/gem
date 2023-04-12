@@ -20,14 +20,9 @@ sudo apt install libssl-dev libudev-dev pkg-config
 ## Commands
 
 ```
---- sources ---
-https://blog.logrocket.com/building-rust-discord-bot-shuttle-serenity/
-https://github.com/serenity-rs/serenity/tree/current/examples/
-https://github.com/serenity-rs/serenity/blob/current/examples/e05_command_framework/src/main.rs
 
 --- bot link example --- 
-https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025483776&scope=bot
-https://discord.com/oauth2/authorize?client_id=1092048595605270589&scope=applications.commands
+https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025475584&scope=bot%20applications.commands
 
 get token from : https://discord.com/developers/applications/1092048595605270589/bot
 

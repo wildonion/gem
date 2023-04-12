@@ -397,7 +397,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         //// start the bot client with 2 shards or ws clients for listening
         //// for events, there is an ~5 second ratelimit period
         //// between when one shard can start after another.
-        if let Err(why) = bot_client.start_shards(2).await{
+        if let Err(why) = bot_client.start_shards(4).await{
             error!("😖 discord bot client error: {:?}", why);
         }
     }
