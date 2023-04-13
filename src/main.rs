@@ -203,6 +203,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let openai_key = env::var("OPENAI_KEY").expect("⚠️ no openai key variable set");
     let discord_token = env::var("DISCORD_TOKEN").expect("⚠️ no discord token variable set");
+    let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
@@ -212,7 +213,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     set_key(openai_key);
     
 
-
+    
     
     
 
@@ -397,7 +398,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         //// start the bot client with 2 shards or ws clients for listening
         //// for events, there is an ~5 second ratelimit period
         //// between when one shard can start after another.
-        if let Err(why) = bot_client.start_shards(4).await{
+        if let Err(why) = bot_client.start_shards(serenity_shards.parse::<u64>().unwrap()).await{
             error!("😖 discord bot client error: {:?}", why);
         }
     }

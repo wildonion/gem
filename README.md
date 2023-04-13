@@ -161,7 +161,9 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge.
 
-* clean all the docker cache using ```sudo docker buildx prune --all``` command.
+* build the docker image from the gem server only using ```sudo docker build -t gem . && sudo docker -d run gem```. 
+
+* clean docker cache using ```sudo docker buildx prune --all``` command.
 
 * register push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` register pubsub topic (emit events) on redis server.
 
@@ -171,7 +173,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
 
-* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=274877974528&scope=bot) we can add the conse bot to discord servers.  
+* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025475584&scope=bot%20applications.commands) we can add the conse bot to discord servers.  
 
 ## 🚧 WIP
 
@@ -185,7 +187,7 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
 
-* complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification also add redis docker image inside the `docker-compose.yml`.
+* complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification also add redis server docker image inside the `docker-compose.yml`.
 
 * balance the loads between docker services and images using `k8s` on `DigitalOcean` cloud also CI/CD configuration files based on the latest commits. 
 

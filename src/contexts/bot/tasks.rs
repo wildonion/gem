@@ -43,11 +43,6 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// ------------------------------------------------------
     //// fetching all channel messages based on above criterias
     //// ------------------------------------------------------ 
-    // example:
-    // get 10 hours ago messages from the inital command
-    // inital command is     : 2023-10-4 16:24:00
-    // until 10 hours ago is : 2023-10-4 06:24:00
-    // start fetching from   : 2023-10-4 06:24:00
     
     let command_time_offset = init_cmd.offset();
     let command_time_naive_local = init_cmd.naive_local(); //// initial command message datetime
@@ -55,12 +50,75 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let time = command_time_naive_local.time();
 
     let start_fetching_year = date.year();
+    let mut start_fetching_day = date.day();
     let start_fetching_month = date.month();
-    let start_fetching_day = date.day();
-
-    let start_fetching_hours = time.hour() - hours_ago;
     let start_fetching_mins = time.minute();
     let start_fetching_secs = time.second();
+    
+    //// if the requested time was smaller than the passed 
+    //// in hours ago means we must fetch all the 
+    //// messages from a day ago at the calculated 
+    //// correct time (see the time calculation logic).
+    let ago = time.hour() as i32 - hours_ago as i32; 
+    start_fetching_day = if ago < 0{ // a day ago 
+        start_fetching_day = date.day() - 1;
+        start_fetching_day as u32
+    } else{
+        start_fetching_day as u32 
+    };
+
+    //// ----------------------------------------------
+    //// ----------- TIME CALCULATION LOGIC -----------
+    //// ----------------------------------------------
+    /*  
+        Example
+
+        requested time hour : 10 in the morning
+        hours ago           : 17
+        10 < 17{
+            start from hour = 10 + 24 - 17 = 34 - 17 = 17 or 5 in the evening
+            start from day  = 10 - 17 = -7 
+            -7 means that we've fallen into a day ago and must 
+            fetch from a day ago started at 17 or 5 in the morning 
+        }
+        
+        requested time hour : 10 in the morning
+        hours ago           : 10
+        10 == 10{
+            start from = 10 - 10 = 00 or 12 late night
+        }
+
+        requested time hour : 10 in the morning
+        hours ago           : 6
+        10 == 10{
+            start from = 10 - 6 = 4 or 4 in the evening
+        }
+
+    */
+    //// if the requested time was greater than the 
+    //// passed in hours ago time simply the start time
+    //// will be the hours ago of the requested time.
+    let start_fetching_hours = if time.hour() > hours_ago{
+        time.hour() - hours_ago
+    } 
+    //// if the requested time was smaller than the 
+    //// passed in hours ago time simply the start time
+    //// will be the hours ago of the requested time + 24
+    //// since the hours ago is greater than the requested time
+    //// we have to add 24 hours to the requested time.
+    else if time.hour() < hours_ago{
+        (time.hour() + 24) - hours_ago
+    } 
+    //// if the requested time was equal to the 
+    //// passed in hours ago time simply the start time
+    //// will be the hours ago of the requested time 
+    //// which will be 00 time or 12 late night.
+    else{
+        //// this can be 00
+        time.hour() - hours_ago 
+    };
+    //// ----------------------------------------------
+    //// ----------------------------------------------
 
     let d = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
     let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
@@ -106,14 +164,14 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// ----------------------------------------------
     //// sending the GPT response to the channel itself 
     //// ----------------------------------------------
-    let title = format!("Here is all conse wrap ups for {} hour(s) ago", hours_ago);
+    let title = format!("Here is your WrapUp from {} hour(s) ago", hours_ago);
     if let Err(why) = channel_id.send_message(&ctx.http, |m|{
         m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
             e.color(Colour::from_rgb(235, 204, 120));
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 wrap up requested at: {} \n 🧩 wrapped up from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+                let content = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
                 f
                     .text(content.as_str())
             });
@@ -126,6 +184,11 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     } else{
         return format!(""); //// embedding has sent
     }
+
+    //// no need to update the ctx.data with the updated gpt_bot field 
+    //// since we're already modifying it directly through the 
+    //// write lock on the RwLock
+    //// ...
 
 }
 
@@ -189,8 +252,8 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     //// sending the GPT response to the channel itself 
     //// ----------------------------------------------
     let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
-    let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap();
-    let title = format!("Here is the expanded version of the {} bullet list of the last warp up", ordinal);
+    let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap(); //// all the chat GPT messages  
+    let title = format!("Here is the {} bullet list expanded from your WrapUp", ordinal);
     if let Err(why) = channel_id.send_message(&ctx.http, |m|{
         m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
             e.color(Colour::from_rgb(235, 204, 120));
@@ -210,4 +273,10 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     } else{
         return format!(""); //// embedding has sent
     }
+
+    //// no need to update the ctx.data with the updated gpt_bot field 
+    //// since we're already modifying it directly through the 
+    //// write lock on the RwLock
+    //// ...
+
 }

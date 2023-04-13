@@ -52,7 +52,7 @@ impl EventHandler for Handler{
                         .and_then(|val| val.as_i64())
                         .unwrap_or(1); //// default: fetch 1 hour ago
                     wrapup_sender.send(value).unwrap();
-                    format!("Okay, be patient please, until I wrap them all up.")
+                    format!("9-5s are hard. WrapUps are easy. I’m on it!")
                 },
                 "expand" => {
                     let value = command
@@ -63,11 +63,11 @@ impl EventHandler for Handler{
                         .and_then(|val| val.as_i64())
                         .unwrap_or(1); //// default: expand first bullet list
                     expand_sender.send(value).unwrap();
-                    format!("Okay, be patient please, until I write the bullet details.")
+                    format!("Okay, be patient please, until I write the bullet point details.")
                 
                 },
                 "help" => {
-                    format!("**Examples**:\nsummarize all 1 hour ago messages using `/wrapup 1`\nexpand the second bullet list in the summarization text using `/expand 2`")
+                    format!("**Examples**:\nGet a WrapUp for the past 2 hours : use `/wrapup 2`\nExpand on the 3rd bullet point from your WrapUp:  use `/expand 3`")
                 } 
                 _ => {
                     format!("Uknown command!")
@@ -86,7 +86,7 @@ impl EventHandler for Handler{
                         .interaction_response_data(|message| message.content(response_content)) //// the response to the intraction request for slash commands
                 })
                 .await{ //// expanding if let Err(why){...
-                    info!("can't responde to slash command {:?}", why);
+                    info!("can't respond to slash command {:?}", why);
             }
 
 
@@ -132,7 +132,8 @@ impl EventHandler for Handler{
         //// -------------------------------------------------
         //// --------- REGISTERING GLOBAL COMMANDS -----------
         //// -------------------------------------------------
-        
+        //// registering global commands for each 
+        //// guild that this bot is added to
         let guilds = ready.guilds;
         for guild in guilds{
             let commands = GuildId::set_application_commands(&guild.id, &ctx.http, |commands| {
