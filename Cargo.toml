@@ -51,6 +51,7 @@ solana-transaction-status = "1.15.2"
 anchor-client = "0.27.0" # this can be used to call deployed program methods using anchor through rpc 
 once_cell = "1.17.1"
 sysinfo = "0.28.4"
+tokio-cron-scheduler = "0.9.4"
 
 
 [[bin]]

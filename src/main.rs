@@ -93,7 +93,7 @@ gql subs ws client
 #![macro_use] //// apply the macro_use attribute to the root cause it's an inner attribute (the `!` mark) and will be effect on all things inside this crate 
 
 
-
+use tokio_cron_scheduler::{JobScheduler, JobToRun, Job};
 use std::time::Duration;
 use constants::MainResult;
 use serenity::framework::standard::buckets::LimitedFor;
@@ -222,6 +222,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
+    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
     set_key(openai_key);
     
 
@@ -272,7 +273,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
             },
         }
     } else{
-        info!("🫠 no username has passed in to the cli; passing updating access level process");
+        info!("🫠 no username has passed in to the cli; no updating process is required for access level");
     }
 
 
@@ -306,18 +307,28 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
+
     // -------------------------------- setting up discord bot
     //
     // ---------------------------------------------------------------------------------------
-    misc::activate_discord_bot(discord_token.as_str(), 
-                                serenity_shards.parse::<u64>().unwrap(), 
-                                GPT.clone()).await;
+    // sending the start bot flag to the downside of the channel
+    discord_bot_flag_sender.send(false).await.unwrap(); //// TODO - an event that set this to true is required 
+    //// waiting to receive the flag from the sender
+    //// to activate the bot if it was a true flag  
+    if let Some(flag) = discord_bot_flag_receiver.recv().await{
+        if flag{
+            misc::activate_discord_bot(discord_token.as_str(), 
+                                        serenity_shards.parse::<u64>().unwrap(), 
+                                        GPT.clone()).await;
+        }
+    }
+
+    
 
 
 
 
 
-   
 
 
 
@@ -346,13 +357,15 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
-    sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
-
     
+    
+    // TODO - send the 0 flag on any error
+    // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
+
 
     
         
