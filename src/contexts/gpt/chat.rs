@@ -46,9 +46,9 @@ impl Gpt{
     //→ also if the self wasn't behind a reference by calling the first method on 
     //  the Gpt instance the instance will be moved and we can't call other methods.
     //
-    //// if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable 
-    //// we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
-    //// dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait 
+    //// → if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable
+    //// → we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
+    //// → dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait 
     pub async fn feed(&mut self, content: &str) -> Gpt{
         
         //→ based on borrowing and ownership rules in rust we can't move a type into new scope when there
