@@ -8,7 +8,18 @@ use crate::*;
 
 
 
-pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp) -> String{
+/*  
+    ------------------------------------------------
+   |              SLASH COMMAND TASKS
+   |------------------------------------------------
+   | followings are related to slash commands' tasks
+   |
+
+*/
+
+
+
+pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64) -> String{
 
     //// ---------------------------
     //// setting up the GPT instance
@@ -71,7 +82,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// ----------- TIME CALCULATION LOGIC -----------
     //// ----------------------------------------------
     /*  
-        Example
+        -------------
+        Logic Example
+        -------------
 
         requested time hour : 10 in the morning
         hours ago           : 17
@@ -90,8 +103,8 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
 
         requested time hour : 10 in the morning
         hours ago           : 6
-        10 == 10{
-            start from = 10 - 6 = 4 or 4 in the evening
+        10 > 6{
+            start from = 10 - 6 = 4 in the morning
         }
 
     */
@@ -124,12 +137,39 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
     let start_fetching_from_timestamp = chrono::NaiveDateTime::new(d, t).timestamp() as u64;
     let start_fetching_from_string = chrono::NaiveDateTime::new(d, t).to_string();
-    let after_message_id = MessageId(start_fetching_from_timestamp); //// creating the snowflake id from the timestamp (serde will do this)
+
+    /*
+
+        the snowflake ID is generated based on the timestamp, but it also includes 
+        other information like worker ID, process ID, and an incrementing sequence number. 
+        So, it's not possible to convert a timestamp directly to a snowflake ID without 
+        knowing the other components. However, if you want to generate a Discord snowflake 
+        ID where the timestamp part of the ID corresponds to your given timestamp, 
+        you can follow the Discord snowflake format:
+
+            42 bits for the timestamp (in milliseconds) - Discord's epoch is 1420070400000 (2015-01-01T00:00:00.000Z)
+            5 bits for the worker ID
+            5 bits for the process ID
+            12 bits for the incrementing sequence number
+    
+        we can't create snowflake id directly from the message id since it depends 
+        on the worker or thread id and the process id inside the server and we don't 
+        know these to create the snowflake id thus the best way to fetch messages 
+        after the passed in hours ago is to fetch all the messages before the 
+        interaction response message timestamp and filter them to feed GPT those 
+        messages that their timestamp is greater than the start_fetching_from_timestamp 
+        
+        let after_message_id = MessageId(start_fetching_from_timestamp);
+    
+    */
 
     let messages = channel_id    
         .messages(&ctx.http, |gm| {
             gm
-                .after(after_message_id) //// fetch messages after the passed snowflake id
+                //// we can convert the message id of the interaction response message to timestamp 
+                //// using https://snowsta.mp/?l=en-us&z=g&f=axciv6sznf-9zc for example for 1096776315631312936 
+                //// its timestamp would be 1681562250 or 2023-04-15T12:37:30.765Z
+                .before(command_message_id) //// fetch all messages before the initialized command timestamp
     }).await;
 
     //// -----------------------------------------------------------
@@ -137,16 +177,25 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// -----------------------------------------------------------
     let channel_messages = messages.unwrap_or_else(|_| vec![]);
     let messages = if channel_messages.len() > 1{
-        channel_messages
-            .into_iter()
-            .map(|m|{
+        let mut hours_ago_messages = vec![]; 
+        let mut messages_iterator = channel_messages.into_iter();
+        while let Some(m) = messages_iterator.next(){
+            if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp
                 let user_message = format!("@{}: {}", m.author.name, m.content);
-                user_message
-            })
-            .collect::<Vec<String>>()
-            .concat()
+                hours_ago_messages.push(user_message);
+            } else{
+                break;
+            }
+        }
+        hours_ago_messages.concat()
     } else{
-        "".to_string()
+        if let Err(why) = channel_id.send_message(&ctx.http, |m|{
+            let response = format!("There are no messages in the past {} hours ago", hours_ago);
+            m.content(response.as_str())
+        }).await{
+            error!("can't send message {:#?}", why);
+        }
+        return "no messages in the past hours ago".to_string();
     };
     
     let typing = channel_id.start_typing(&ctx.http).unwrap();

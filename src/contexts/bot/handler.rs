@@ -51,7 +51,7 @@ impl EventHandler for Handler{
                         .and_then(|opt| opt.value.as_ref())
                         .and_then(|val| val.as_i64())
                         .unwrap_or(1); //// default: fetch 1 hour ago
-                    wrapup_sender.send(value).unwrap();
+                    wrapup_sender.send(value).unwrap(); //// once we received the argument we'll send the value of this command to the downside of the channel to do its related task 
                     format!("9-5s are hard. WrapUps are easy. I’m on it!")
                 },
                 "expand" => {
@@ -62,7 +62,7 @@ impl EventHandler for Handler{
                         .and_then(|opt| opt.value.as_ref())
                         .and_then(|val| val.as_i64())
                         .unwrap_or(1); //// default: expand first bullet list
-                    expand_sender.send(value).unwrap();
+                    expand_sender.send(value).unwrap(); //// once we received the argument we'll send the value of this command to the downside of the channel to do its related task 
                     format!("Okay, be patient please, until I write the bullet point details.")
                 
                 },
@@ -74,53 +74,68 @@ impl EventHandler for Handler{
                 }
             };
 
-            //// the calculations inside above commands
-            //// take longer than 3 seconds thus we can't 
-            //// send the content back to the user we have to 
-            //// wait until they get finished, since interaction_response_data
-            //// timeout is 3 seconds.
-            if let Err(why) = command
+            //// we first send the interaction response back to the slash command caller then 
+            //// after that we'll do our computation once we get the interaction response
+            //// message, the reason is the timeout of the interacton response is 3 seconds 
+            //// and any computation higher than 3 seconds will send the `The application did not respond`
+            //// error first then do the computations also we want to use the message id of the interaction
+            //// response later to fetch all the messages before that.
+            let interaction_response = command
                 .create_interaction_response(&ctx.http, |response| {
                     response
                         .kind(InteractionResponseType::ChannelMessageWithSource)
                         .interaction_response_data(|message| message.content(response_content)) //// the response to the intraction request for slash commands
                 })
-                .await{ //// expanding if let Err(why){...
+                .await;
+
+            match interaction_response{ //// matching on interaction response to do the computational tasks
+                Ok(_) => {
+                    //// sleep 1 seconds for the interaction response message to be created 
+                    //// so its ID gets created inside the discrod db
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    //// once we received data from the downside of each channel
+                    //// we'll do the heavy computational process
+                    if let Ok(wrapup_value) = wrapup_receiver.try_recv(){
+                        //// --------------------------------------------------------
+                        //// -------------------- WRAPUP TASK -----------------------
+                        //// -------------------------------------------------------- 
+                        //// the following timestamp is approximate and may not exactly 
+                        //// match the time when the command was executed.
+                        let channel_id = command.channel_id;
+                        let interaction_response_message = channel_id
+                                                                        .messages(&ctx.http, |retriever| retriever.limit(1))
+                                                                        .await
+                                                                        .unwrap()
+                                                                        .into_iter()
+                                                                        .next()
+                                                                        .unwrap();
+                        let interaction_response_message_id = interaction_response_message.id.0;
+                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                        /////// here response takes a long time to gets solved
+                        /////// and because of this halting issue the interaction 
+                        /////// response will say The application did not respond
+                        /////// since discrod timeout is 3 seconds to send the 
+                        /////// response back to the user.
+                        let response = ctx::bot::tasks::wrapup(&ctx, wrapup_value as u32, channel_id, init_cmd_time, interaction_response_message_id).await;
+                        info!("wrapup process response: {}", response);
+                    }
+                    
+                    if let Ok(exapnd_value) = expand_receiver.try_recv(){
+                        //// --------------------------------------------------------
+                        //// -------------------- EXAPND TASK -----------------------
+                        //// -------------------------------------------------------- 
+                        //// the following timestamp is approximate and may not exactly 
+                        //// match the time when the command was executed.
+                        let channel_id = command.channel_id;
+                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                        let response = ctx::bot::tasks::expand(&ctx, exapnd_value as u32, channel_id, init_cmd_time).await;
+                        info!("expand process response: {}", response);
+                    }
+                },
+                Err(why) => {
                     info!("can't respond to slash command {:?}", why);
+                }
             }
-
-
-            //// once we received data from the downside of each channel
-            //// we'll do the heavy computational process
-            if let Ok(wrapup_value) = wrapup_receiver.try_recv(){
-                //// --------------------------------------------------------
-                //// -------------------- WRAPUP TASK -----------------------
-                //// -------------------------------------------------------- 
-                //// the following timestamp is approximate and may not exactly 
-                //// match the time when the command was executed.
-                let channel_id = command.channel_id;
-                let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                /////// here response takes a long time to gets solved
-                /////// and because of this halting issue the interaction 
-                /////// response will say The application did not respond
-                /////// since discrod timeout is 3 seconds to send the 
-                /////// response back to the user.
-                let response = ctx::bot::tasks::wrapup(&ctx, wrapup_value as u32, channel_id, init_cmd_time).await;
-                info!("wrapup process response: {}", response);
-            }
-            
-            if let Ok(exapnd_value) = expand_receiver.try_recv(){
-                //// --------------------------------------------------------
-                //// -------------------- EXAPND TASK -----------------------
-                //// -------------------------------------------------------- 
-                //// the following timestamp is approximate and may not exactly 
-                //// match the time when the command was executed.
-                let channel_id = command.channel_id;
-                let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                let response = ctx::bot::tasks::expand(&ctx, exapnd_value as u32, channel_id, init_cmd_time).await;
-                info!("expand process response: {}", response);
-            }
-            
         }
     }
 
