@@ -63,7 +63,7 @@ impl EventHandler for Handler{
                         .and_then(|val| val.as_i64())
                         .unwrap_or(1); //// default: expand first bullet list
                     expand_sender.send(value).unwrap(); //// once we received the argument we'll send the value of this command to the downside of the channel to do its related task 
-                    format!("Okay, be patient please, until I write the bullet point details.")
+                    format!("Details make perfection, and perfection is not a detail")
                 
                 },
                 "help" => {

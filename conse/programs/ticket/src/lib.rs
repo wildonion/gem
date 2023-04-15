@@ -522,7 +522,10 @@ pub struct TicketStats{
 
 }
 
-
+//// #[derive(Accounts)] proc macro attribute means
+//// the following is a set of accounts that can be 
+//// used on chain for transferring lamports or 
+//// mutating their data 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type 
 //// with the #[instruction(..)] attribute we can access the instruction’s arguments 
 //// we have to list them in the same order as in the instruction but 

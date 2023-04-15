@@ -189,14 +189,28 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
         }
         hours_ago_messages.concat()
     } else{
+        "".to_string()
+    };
+
+    if messages.is_empty(){
         if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-            let response = format!("There are no messages in the past {} hours ago", hours_ago);
-            m.content(response.as_str())
+            let response = format!("**Nothing to WrapUp in the past {} hours ago**", hours_ago);
+            m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                e.color(Colour::from_rgb(235, 204, 120));
+                e.description(response);
+                e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                    let content = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+                    f
+                        .text(content.as_str())
+                });
+                return e;
+            });
+            m
         }).await{
             error!("can't send message {:#?}", why);
         }
         return "no messages in the past hours ago".to_string();
-    };
+    }
     
     let typing = channel_id.start_typing(&ctx.http).unwrap();
     
@@ -309,7 +323,7 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("🪶 requested at: {}", init_cmd.naive_local().to_string());
+                let content = format!("📨 expand requested at: {}", init_cmd.naive_local().to_string());
                 f
                     .text(content.as_str())
             });
