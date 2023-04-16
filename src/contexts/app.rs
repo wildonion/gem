@@ -213,7 +213,7 @@ pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) t
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{
     pub data: Option<T>,
-    pub message: &'m str,
+    pub message: &'m str, //// &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
     pub status: u16,
 }
 

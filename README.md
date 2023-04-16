@@ -203,4 +203,6 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 * use an AI model like [STEM](https://github.com/wildonion/stem) which suggests player the tips and tricks for a new game based on behavioural graph of the player collected by the history of each event's `phases` field
 
+* `MMQ` engine to suggests players events and other games based on their past experiences, scores (MMR) and earned tokesn.
+
 * use [uniXerr](https://github.com/wildonion/uniXerr) coin generation AI model which players get rewarded based on their scores and positions which are collected by each event manager inside the game, then update the balance field of the user based on that

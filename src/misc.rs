@@ -189,7 +189,8 @@ pub struct UploadFile{
 }
 
 
-
+pub struct Block;
+pub const SEEDS: &[[[Block; 2]; 2]] = &[[[Block, Block], [Block, Block]]];
 
 
 

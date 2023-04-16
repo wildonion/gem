@@ -46,7 +46,7 @@ gql subs ws client
                                                                                             quic and udp
                                                                                             tcp 
                                                                                             rpc capnp/json pubsub 
-                                                                                            zmq pubsub
+                                                                                            zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
                                                                                             gql subs
                                                                                             ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
                                                                                             connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
