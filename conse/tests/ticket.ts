@@ -157,10 +157,22 @@ describe("conse ticket", () => {
 
 
 
+      //--------------------------------------------------
+      // withdraw from the PDA 
+      //--------------------------------------------------
+      await program.methods.withdraw()
+        .accounts({signer: server.publicKey, gameState: gameStatePDA, server: server.publicKey
+      }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
+
+
+      //--------------------------------------------------
+      // generate card on chain 
+      //--------------------------------------------------
       let server_commit = "seed";
       await program.methods.generateCard(server_commit)
         .accounts({user: server.publicKey, gameState: gameStatePDA, server: server.publicKey
       }).signers([server]).rpc(); //// signer of this call who must pay for the transaction fee which is the server
+
       
 
       //------------------------------------------------------

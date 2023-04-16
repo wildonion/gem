@@ -135,6 +135,11 @@
     ============= SOLANA ACCOUNTS EXPLANATION
     ========================================= 
     https://docs.solana.com/developing/programming-model/accounts#ownership-and-assignment-to-programs
+
+    account must be initialized means program will do a cpi to the runtime to set 
+    the owner of the PDA to the program id to be able to mutate its data on chain 
+    then in second call we can mutate its data on chain since only the program can 
+    mutate data on chain and now the owner of the PDA is the program id.
     
     we must use &[u8] since it's cheaper than Vec which is on the heap, 
     but it's not sized at compile time thus it must be behind a pointer 

@@ -213,6 +213,25 @@ pub mod ticket {
         Ok(())
     
     }
+
+    pub fn withdraw(ctx: Context<WithdrawFromPda>) -> Result<()>{
+
+        let game_state = &mut ctx.accounts.game_state;
+        let signer = &ctx.accounts.user; //// we should borrow or clone the ctx since its underlying data or the Account type doesn't implement Copy trait 
+        let server = &ctx.accounts.server;
+        let pda = game_state.to_account_info();
+        let current_pda_amount = pda.lamports(); 
+
+        if signer.key != server.key{ //// the signer of this method must be the server means only server can withdraw the PDA lamports
+            return err!(ErrorCode::RestrictionError);
+        }
+
+        **pda.try_borrow_mut_lamports()? -= current_pda_amount;
+        **server.try_borrow_mut_lamports()? += current_pda_amount;
+
+
+        Ok(())
+    }
     
     pub fn game_result(ctx: Context<GameResult>, winner: u8, instruct: u8, deck: Vec<u16>) -> Result<()> { //// AnchorSerialize is not implement for [u8; 52] (52 elements of utf8 bytes)
         
@@ -638,6 +657,20 @@ pub struct GenerateCard<'info>{
     pub server: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 
+}
+
+#[derive(Accounts)]
+pub struct WithdrawFromPda<'info>{
+    #[account(mut)] //// signer must be mutable in order to be able to pay for the gass fee 
+    pub user: Signer<'info>, //// this must be the server account since only the server can generate card with its commit (seed)
+    #[account(mut, //// must be mutable since we want to mutate this account on chain
+        seeds = [game_state.server.key().as_ref(), game_state.player.key().as_ref()], 
+        bump = game_state.bump)]
+    pub game_state: Account<'info, GameState>,
+    /// CHECK:
+    #[account(mut)]
+    pub server: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)] //// means the following structure contains Account and AccountInfo fields which can be used for mutating data on the chain if it was Account type

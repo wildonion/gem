@@ -32,8 +32,8 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// acquiring a write lock will block other event and 
     //// command handlers which don't allow them to use 
     //// the data until the lock is released.
-    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying ctx::gpt::Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    let gpt_data = match data.get_mut::<ctx::bot::handler::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+    let mut data = ctx.data.write().await; //// writing safely to the GptBot instance also write lock returns a mutable reference to the underlying ctx::gpt::Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+    let gpt_data = match data.get_mut::<ctx::bot::handler::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> the GptBot structure
         Some(gpt) => gpt,
         None => {
             let resp = format!("ChatGPT is not online :(");
@@ -51,9 +51,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let mut gpt_request_command = "".to_string();
 
     
-    //// ------------------------------------------------------
-    //// fetching all channel messages based on above criterias
-    //// ------------------------------------------------------ 
+    //// ----------------------------------------------------------------------------
+    //// fetching all channel messages before the initialized /wrap command timestamp
+    //// ----------------------------------------------------------------------------
     
     let command_time_offset = init_cmd.offset();
     let command_time_naive_local = init_cmd.naive_local(); //// initial command message datetime
