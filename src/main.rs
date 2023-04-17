@@ -110,11 +110,10 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri};
 use openai::set_key;
-use crate::ctx::bot::cmds::framework_command::{ASKGPT_GROUP, BOT_HELP};
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
 use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
 use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
-use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt};
+use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; //// methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
 use openai::{ //// openai crate is using the reqwest lib under the hood
     chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
 };
@@ -319,7 +318,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         if flag{
             misc::activate_discord_bot(discord_token.as_str(), 
                                         serenity_shards.parse::<u64>().unwrap(), 
-                                        GPT.clone()).await;
+                                        GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
         }
     }
 

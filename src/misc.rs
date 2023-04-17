@@ -431,25 +431,7 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
                                                     c
                                                         .on_mention(_bot_id)
                                                         .owners(owners.unwrap())
-                                                        .prefixes(vec!["!", "~"])
-                                                        .delimiters(vec![" ", ", "])
-                                                )
-                                                .help(&BOT_HELP)
-                                                //// following buckets can't be used more than 2 times per 30 seconds, 
-                                                //// with a 5 second delay applying per channel.
-                                                //// `await_ratelimits` will delay until the command can be executed 
-                                                //// instead of cancelling the command invocation.
-                                                .bucket("summerize", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
-                                                        .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
-                                                        .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
-                                                        .delay_action(ctx::bot::cmds::framework_command::delay_action)) //// a function to call when a rate limit leads to a delay
-                                                        .await //// run the news command which is labeled with summerize bucket to be run every 20 seconds
-                                                .bucket("bullet", |b| b.limit(1).time_span(30).delay(5) //// run 1 time per 30 seconds with a 5 second delay in each channel
-                                                        .limit_for(LimitedFor::Channel) //// limit to be run every 5 seconds per channel
-                                                        .await_ratelimits(15) //// delay 15 seconds until the command can be executed instead of canceling the command invocation
-                                                        .delay_action(ctx::bot::cmds::framework_command::delay_action)) //// a function to call when a rate limit leads to a delay
-                                                        .await
-                                                .group(&ASKGPT_GROUP);
+                                                );
         ///// gateway intents are predefined ws events 
         let intents = GatewayIntents::all(); //// all the gateway intents must be on inside the https://discord.com/developers/applications/1092048595605270589/bot the privileged gateway intents section
         let mut bot_client = BotClient::builder(discord_token, intents)

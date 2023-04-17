@@ -180,7 +180,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
         let mut hours_ago_messages = vec![]; 
         let mut messages_iterator = channel_messages.into_iter();
         while let Some(m) = messages_iterator.next(){
-            if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp
+            if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp are the ones that are n hours ago
                 let user_message = format!("@{}: {}", m.author.name, m.content);
                 hours_ago_messages.push(user_message);
             } else{
@@ -214,9 +214,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     
     let typing = channel_id.start_typing(&ctx.http).unwrap();
     
-    //// ---------------------------------------------------------------
-    //// feed the messages to the chat GPT to do a summarization process
-    //// ---------------------------------------------------------------
+    //// --------------------------------------------------------------------
+    //// feed the messages to the chat GPT to do a long summarization process
+    //// --------------------------------------------------------------------
     gpt_request_command = format!("can you summerize what users said inside the bracket as a numbered bullet list along with their username? [{}]", messages);
     let req_cmd = gpt_request_command.clone();
     response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
@@ -234,7 +234,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+                let content = format!("📨 /wrapup requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
                 f
                     .text(content.as_str())
             });
@@ -323,7 +323,7 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
             e.title(title.as_str());
             e.description(response);
             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 expand requested at: {}", init_cmd.naive_local().to_string());
+                let content = format!("📨 /expand requested at: {}", init_cmd.naive_local().to_string());
                 f
                     .text(content.as_str())
             });
@@ -341,5 +341,56 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     //// since we're already modifying it directly through the 
     //// write lock on the RwLock
     //// ...
+
+}
+
+
+pub async fn stats(ctx: &Context, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64) -> String{
+
+
+    // TODO - https://crates.io/crates/sysinfo
+
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    
+    let memory = sys.available_memory();
+    let mut cpus = vec![];
+    let mut disks = vec![];
+    
+    for cpu in sys.cpus() {
+        cpus.push(cpu.cpu_usage());
+    }
+
+    for disk in sys.disks() {
+        disks.push(disk.total_space());
+    }
+
+    let json = serde_json::json!({
+        "cpu_core_usage": cpus,
+        "available_memory": memory,
+        "disks_total_space": disks
+    });
+    let cpu_info_json = serde_json::to_string_pretty(&json).unwrap();
+
+    let title = format!("Here is the resources info of the conse server");
+    if let Err(why) = channel_id.send_message(&ctx.http, |m|{
+        m.embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+            e.color(Colour::from_rgb(235, 204, 120));
+            e.title(title.as_str());
+            e.description(cpu_info_json);
+            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                let content = format!("📨 /stats requested at: {}", init_cmd.naive_local().to_string());
+                f
+                    .text(content.as_str())
+            });
+            return e;
+        });
+        m
+    }).await{
+        error!("can't send message embedding because {:#?}", why);
+        return format!("can't send message embedding because {:#?}", why);
+    } else{
+        return format!(""); //// embedding has sent
+    }
 
 }
