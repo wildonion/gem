@@ -39,19 +39,19 @@ impl UserNotif{
 
 pub trait NotifExt{
     type Data;
-    fn set_notif(&self, notif_data: NotifData) -> Self;
-    fn get_notif(&self) -> Vec<NotifData>;
+    fn set_user_notif(&mut self, notif_data: NotifData) -> Self;
+    fn get_user_notif(&self) -> Vec<NotifData>;
 }
 
 impl NotifExt for UserNotif{
     type Data = Self;
 
-    fn get_notif(&self) -> Vec<NotifData> {
+    fn get_user_notif(&self) -> Vec<NotifData> {
         self.notifs.clone()
     }
 
-    fn set_notif(&self, notif_data: NotifData) -> Self {
-        self.set_notif(notif_data)
+    fn set_user_notif(&mut self, new_notif: NotifData) -> Self { //// since the set() method of the UserNotif instance is mutable this method must be mutable too
+        self.set(new_notif)
     }
 
 }

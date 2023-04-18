@@ -56,4 +56,4 @@ tokio-cron-scheduler = "0.9.4"
 
 [[bin]]
 name = "conse"
-path = "src/main.rs"
+path = "src/app.rs"

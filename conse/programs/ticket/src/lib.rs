@@ -280,12 +280,22 @@ pub mod ticket {
         let taxes = general_tax_amount + event_tax_amount; //// 0.25 + 0.05
         let pda_amount_after_taxes = amount - taxes; //// 2 - 0.3 = 1.7
         let current_pda_amount = pda.lamports(); //// by now PDA has 1.7 since revenue has : 0.05 + 0.25 = 0.3
+        //// amount of PDA can be higher that the initialized one 
+        //// which can be caused by depositing more lamports during 
+        //// the game, in this case server must call the withdraw 
+        //// method to make the PDA empty  
+        reward = current_pda_amount; 
 
-        if current_pda_amount == pda_amount_after_taxes{
-            reward = current_pda_amount;
-        } else{
-            return err!(ErrorCode::PdaIsFullWithTaxes);
-        }
+        // if current_pda_amount == pda_amount_after_taxes{
+        //     reward = current_pda_amount;
+        // } else{
+        //     //// this error will triggered if a player tries to deposit 
+        //     //// lamports into the PDA during the game which the amount
+        //     //// inside the PDA will be higher than the initial one
+        //     //// thus there will be more money inside the PDA which
+        //     //// can be the taxes money.
+        //     return err!(ErrorCode::PdaIsFullWithTaxes);
+        // }
 
         //// ------------------------- WINNER REWARD -------------------------
         //// -----------------------------------------------------------------

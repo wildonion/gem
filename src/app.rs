@@ -1,16 +1,5 @@
-
-
-
-
-
 /*
-
-
-
 Coded by
-
-
-
  █     █░ ██▓ ██▓    ▓█████▄  ▒█████   ███▄    █  ██▓ ▒█████   ███▄    █ 
 ▓█░ █ ░█░▓██▒▓██▒    ▒██▀ ██▌▒██▒  ██▒ ██ ▀█   █ ▓██▒▒██▒  ██▒ ██ ▀█   █ 
 ▒█░ █ ░█ ▒██▒▒██░    ░██   █▌▒██░  ██▒▓██  ▀█ ██▒▒██▒▒██░  ██▒▓██  ▀█ ██▒
@@ -21,13 +10,9 @@ Coded by
   ░   ░   ▒ ░  ░ ░    ░ ░  ░ ░ ░ ░ ▒     ░   ░ ░  ▒ ░░ ░ ░ ▒     ░   ░ ░ 
     ░     ░      ░  ░   ░        ░ ░           ░  ░      ░ ░           ░ 
                       ░                                                  
-
-
-
 =======================
 COMMUNICATION PROTOCOLS
 =======================
-
 gql subs ws client 
     |
     |
@@ -51,13 +36,10 @@ gql subs ws client
                                                                                             ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
                                                                                             connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
                                                                                             redis client pubsub + mongodb
-
 ➙ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
  to handle the incoming published topics over zmq and rpc (json and capnp) server, 
   emitted events over ws server or webhooks over http
-
-
 ➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
  server side, these handlers can be predefined traits or an event loop like tokio::select!{} which listen to the events 
  coming from the server over ws, zmq or rpc here is the flow of realtiming:
@@ -66,23 +48,17 @@ gql subs ws client
                                                         notifs or streaming of future io objects
                                                                             |
                                                                             ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
-
                     gql subs + ws + redis client <------> ws server + redis server
                     http request to set push notif <------> http hyper server to publish topic in redis server
                     json/capnp rpc client <------> json/capnp rpc server
                     zmq subs <------> zmq pub server
                     tcp, quic client <------> tcp, quic streaming future io objects server
-
                     discord client
                             subs to emitted event/webhooks inside each shard <----------------- ws/http -----------------> discord ws and http shards and nodes 
                     discord shards and nodes  
                             shard 1 <---------- full duplex streaming and multiplexing over tokio tcp and quic, zmq/ json and capnp rpc pubsub ----------> shard 2  
                                 |                                                                                                                              |
                                 --------------------------------------- cassandra and mongodb -----------------------------------------------------------------
-
-
-
-
 */
 
 
@@ -189,7 +165,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
 
     });
-    while let Some(data) = receiver_flag.recv().await{
+    while let Some(data) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
         // do whatever with data 
         // ...
     }
