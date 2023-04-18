@@ -311,7 +311,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //
     // ---------------------------------------------------------------------------------------
     // sending the start bot flag to the downside of the channel
-    discord_bot_flag_sender.send(true).await.unwrap(); //// TODO - an event that set this to true is required 
+    discord_bot_flag_sender.send(true).await.unwrap(); //// TODO - an event that set this to true is required like an api call
     //// waiting to receive the flag from the sender
     //// to activate the bot if it was a true flag  
     if let Some(flag) = discord_bot_flag_receiver.recv().await{
@@ -323,7 +323,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     }
 
     
-
 
 
 

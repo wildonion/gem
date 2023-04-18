@@ -15,32 +15,43 @@ use uuid::Uuid;
 
 // update UserNotif on every data changes through its related api calls
 // then fire the updated data event through the ws server so the client
-// can subs to the fired event 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct NotifData{
-    pub is_active: bool,
-    pub notifs: Vec<Notif>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Notif{
-    pub id: Uuid, //// borsh is not implemented for Uuid
-    pub seen: bool,
-    pub data_id: String,
-    pub data_owner: String,
-    pub fired_at: Option<i64>,
-    pub topic: String, //// event name or the topic that the subscribers must subs to
-}
-
+// can subs using gql subs or ws to the fired event 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserNotif{
-    pub item_sold: NotifData,
-    pub bid_activity: NotifData, // When someone bids on one of your items
-    pub price_change: NotifData, // When an item you made an offer on changes in price
-    pub auction_expiration: NotifData, // When a timed auction you created ends
-    pub outbid: NotifData, // When an offer you placed is exceeded by another user
-    pub owned_item_updates: NotifData, // When a significant update occurs for one of the items you have purchased on dortzio
-    pub successfull_purchase: NotifData, // Occasional updates from the dortzio team
-    pub min_bid_tresh: NotifData, // Receive notifications only when you receive offers with a value greater than or equal to this amount of ETH.
-    pub updated_at: Option<i64>,
+    user_id: String,
+    notifs: Vec<NotifData>,
+    updated_at: Option<i64>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct NotifData{
+    fired_at: Option<i64>,
+    seen: bool,
+    topic: String, //// json string contains the actual data
+}
+
+impl UserNotif{
+    fn set(&mut self, notif_data: NotifData) -> Self{
+        self.notifs.push(notif_data);
+        UserNotif { user_id: self.user_id.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at }
+    }
+}
+
+pub trait NotifExt{
+    type Data;
+    fn set_notif(&self, notif_data: NotifData) -> Self;
+    fn get_notif(&self) -> Vec<NotifData>;
+}
+
+impl NotifExt for UserNotif{
+    type Data = Self;
+
+    fn get_notif(&self) -> Vec<NotifData> {
+        self.notifs.clone()
+    }
+
+    fn set_notif(&self, notif_data: NotifData) -> Self {
+        self.set_notif(notif_data)
+    }
+
 }
