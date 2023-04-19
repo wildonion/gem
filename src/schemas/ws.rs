@@ -55,3 +55,18 @@ impl NotifExt for UserNotif{
     }
 
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+
+pub struct Royalty{
+    pub wallet_address: String,
+    pub amount: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+
+pub struct Nft{
+    pub owner: String,
+    pub royalties: Vec<Royalty>, //// Royalty struct must be public if this field is public since we want to access this field later which contains the Royalty instances
+    pub events: Vec<UserNotif>
+}

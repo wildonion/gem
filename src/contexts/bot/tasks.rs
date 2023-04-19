@@ -284,7 +284,7 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
         },
     };
 
-    let mut gpt_bot = gpt_data.lock().await;
+    let mut gpt_bot = gpt_data.lock().await; //// acquiring the mutex by locking on the gpt_data task which blocks the current thread
     let mut response = "".to_string();
     let mut gpt_request_command = "".to_string();
 

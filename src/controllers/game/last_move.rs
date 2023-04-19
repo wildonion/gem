@@ -253,7 +253,7 @@ pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 
 
     match middlewares::auth::pass(req).await{
-        Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have borrow the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
+        Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             
     
@@ -383,7 +383,7 @@ pub async fn disable(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
     let db = &req.data::<Client>().unwrap().to_owned();
 
     match middlewares::auth::pass(req).await{
-        Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have borrow the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
+        Ok((token_data, req)) => { //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             
     

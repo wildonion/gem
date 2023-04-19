@@ -24,6 +24,7 @@ pub static UNAUTHORISED: &str = "Unauthorised";
 pub static METHOD_NOT_ALLOWED: &str = "Method Not Allowed";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static NO_API_KEY: &str = "No Api Key";
+pub static DISCORD_BOT_STARTED: &str = "Conse Discord Bot Started Successfully";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static NOT_VERIFIED_NFT: &str = "Nft Mint Address Is Not Verified";
 pub static NOT_VERIFIED_OWNER: &str = "Nft Min Addresses Deson't Belong To The Owner";

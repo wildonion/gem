@@ -47,7 +47,7 @@ gql subs ws client
                                                                             |
                                                         notifs or streaming of future io objects
                                                                             |
-                                                                            ---> ws, gql, rpc and zmq subs or event handler traits for firing or emit events
+                                                                            ---> ws, gql, rpc and zmq subs or event handler traits for subscribing to emitted events
                     gql subs + ws + redis client <------> ws server + redis server
                     http request to set push notif <------> http hyper server to publish topic in redis server
                     json/capnp rpc client <------> json/capnp rpc server
@@ -84,7 +84,7 @@ use once_cell::sync::Lazy;
 use futures::executor::block_on;
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
-use hyper::{Client, Uri};
+use hyper::{Client, Uri, Body};
 use openai::set_key;
 use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
 use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
@@ -286,15 +286,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- setting up discord bot
     //
     // ---------------------------------------------------------------------------------------
-    // sending the start bot flag to the downside of the channel
-    discord_bot_flag_sender.send(true).await.unwrap(); //// TODO - an event that set this to true is required like an api call
-    //// waiting to receive the flag from the sender
-    //// to activate the bot if it was a true flag  
-    if let Some(flag) = discord_bot_flag_receiver.recv().await{
-        if flag{
-            misc::activate_discord_bot(discord_token.as_str(), 
-                                        serenity_shards.parse::<u64>().unwrap(), 
-                                        GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+    //// we're using tokio event loop handler to activate the discord bot in such
+    //// a way that once we received the flag from the mpsc channel inside the event
+    //// loop, other branches will be canceled
+    tokio::select!{
+        flag = discord_bot_flag_receiver.recv() => {
+            if let Some(_) = flag{
+                misc::activate_discord_bot(discord_token.as_str(), 
+                                            serenity_shards.parse::<u64>().unwrap(), 
+                                            GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+            }    
         }
     }
 
@@ -317,11 +318,13 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
     let api = Router::builder()
         .data(db_instance.unwrap().clone()) //// shared state which will be available to every route handlers is the db_instance which must be Send + Syn + 'static to share between threads
+        .data(discord_bot_flag_sender.clone()) //// sharing the discord bot sender between routers' threads which must be Send + Syn + 'static or Arc<Mutex<Sender<bool>>> to share between threads
         .middleware(Middleware::pre(middlewares::logging::logger)) //// enable logging middleware on the incoming request then pass it to the next middleware - pre Middlewares will be executed before any route handlers and it will access the req object and it can also do some changes to the request object if required
         .middleware(Middleware::post(middlewares::cors::allow)) //// the path that will be fallen into this middleware is "/*" thus it has the OPTIONS route in it also post middleware accepts a response object as its param since it only can mutate the response of all the requests before sending them back to the client
         .scope("/auth", routers::auth::register().await)
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
+        .scope("/bot", routers::bot::register().await)
         .scope("/whitelist", routers::whitelist::register().await)
         .scope("/redis", routers::redis::register().await)
         // .scope("/ws") // TODO - used for chatapp routes
