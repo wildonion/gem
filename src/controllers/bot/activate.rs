@@ -46,10 +46,12 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
 
             let db_to_pass = db.clone();
             if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ //// finding the user with these info extracted from jwt
-                if access_level == DEV_ACCESS{
+                if access_level == DEV_ACCESS{ //// only dev can start the bot
                     //// sending the start bot flag to the downside of the channel
                     //// to start the discrod bot
+                    // ------------------------
                     discord_bot_flag_sender.send(true).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
+                    // ------------------------
                     let response_body = ctx::app::Response::<ctx::app::Nill>{
                         data: Some(ctx::app::Nill(&[])),
                         message: DISCORD_BOT_STARTED,

@@ -289,18 +289,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //// we're using tokio event loop handler to activate the discord bot in such
     //// a way that once we received the flag from the mpsc channel inside the event
     //// loop, other branches will be canceled
+    discord_bot_flag_sender.send(true).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
     tokio::select!{
-        flag = discord_bot_flag_receiver.recv() => {
-            if let Some(_) = flag{
+        bot_flag = discord_bot_flag_receiver.recv() => {
+            if let Some(_) = bot_flag{
                 misc::activate_discord_bot(discord_token.as_str(), 
                                             serenity_shards.parse::<u64>().unwrap(), 
                                             GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
             }    
         }
     }
-
-    
-
 
 
 

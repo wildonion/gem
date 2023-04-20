@@ -30,7 +30,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge.
 
-* build the docker image from the gem server only using ```sudo docker build -t gem . && sudo docker -d run gem```. 
+* build the docker image from the `gem` server only (without `docker-compose`), using ```sudo docker build -t gem . && sudo docker -d run gem```. 
 
 * clean docker cache using ```sudo docker buildx prune --all``` command.
 
