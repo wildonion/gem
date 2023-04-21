@@ -34,6 +34,7 @@ impl Gpt{
         }
     }
     
+    // refer to https://github.com/wildonion/uniXerr/blob/839c128aabf1c0dd85add0a177484f3ac1b4f255/infra/valhalla/coiniXerr/src/tests/main.rs#L5 for more rules
     //→ if the content was String we couldn't return its &str since this is 
     //  owned by the function and its lifetime will be dropped once the function 
     //  gets executed thus we can't return a &str or a pointer to its utf8 bytes 

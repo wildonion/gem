@@ -211,7 +211,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- app storage setup
     //
     // ------------------------------------------------------------------
-    let app_storage = db!{ //// this publicly has exported inside the utils so we can access it here 
+    let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
         db_name,
         db_engine,
         db_host,
@@ -293,6 +293,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     tokio::select!{
         bot_flag = discord_bot_flag_receiver.recv() => {
             if let Some(_) = bot_flag{
+                info!("🏳️ receiving discord bot true flag");
                 misc::activate_discord_bot(discord_token.as_str(), 
                                             serenity_shards.parse::<u64>().unwrap(), 
                                             GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
@@ -306,7 +307,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
     
-    // -------------------------------- building the conse server from the router
+    // -------------------------------- building the conse api server from the registered routers
     //
     //      we're sharing the db_instance state between routers' threads to get the data inside each api
     //      and for this the db data must be shareable and safe to send between threads which must be bounded
@@ -332,18 +333,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
+    sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
     
     
-    // TODO - send the 0 flag on any error
-    // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
-
-
     
-        
+    
+
     Ok(())
     
 

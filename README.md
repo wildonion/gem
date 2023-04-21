@@ -46,7 +46,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🚧 WIP
 
-* setup TLS using `tokio-rustls` or noise protocol for `hyper` and `ws` server in code also setup it up inside the `HAproxy` configuration file using the `conse_cert.pem` and `conse_key.pem` inside the `devops/openssl/` folder.
+* setup **TLS** using `tokio-rustls` or noise protocol for `hyper` and `ws` server in code also setup it up inside the `HAproxy` configuration file using the `conse_cert.pem` and `conse_key.pem` inside the `devops/openssl/` folder.
 
 * sharding and scaling mechanism for `ws` server.
 
@@ -54,11 +54,11 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * `ed25519` keypair for server checksum and verification using its commit (like ssh), updating app and time hash based locking api using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
-* handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var.
+* handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
 * complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification also add redis server docker image inside the `docker-compose.yml`.
 
-* balance the loads between docker services and images using `k8s` on `DigitalOcean` cloud also CI/CD configuration files based on the latest commits. 
+* balance the loads between docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` cloud also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
 
 * complete conse discrod monitoring bot, also run the bot loop `ws` shards based on a specific event inside the app. 
 

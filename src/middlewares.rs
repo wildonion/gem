@@ -3,12 +3,6 @@
 
 
 
-
-
-
-
-
-
 pub mod cors{
 
 
@@ -41,10 +35,6 @@ pub mod cors{
 
 
 
-
-
-
-
 pub mod logging{
 
     use crate::constants::*;
@@ -62,12 +52,6 @@ pub mod logging{
 
 
 
-
-
-
-
-
-
 pub mod auth{
     
     
@@ -76,14 +60,6 @@ pub mod auth{
     use hyper::{Method, Body};
     use crate::misc::jwt;
     use jsonwebtoken::TokenData;
-    
-
-
-
-
-
-
-
     
 
 
@@ -127,8 +103,6 @@ pub mod auth{
             Err(jwt_error.unwrap().to_string())
         }
     }
-
-
 
 
 

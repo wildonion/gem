@@ -343,7 +343,7 @@ pub mod ticket {
                 // %5 and event taxes and because 
                 // we server won't pay for the taxes
                 // thus its deposited amount which is 
-                // 1 SOL will be transffered from 
+                // 1 SOL will be transferred from 
                 // the PDA to it and the rest of the 
                 // PDA which is 0.7 will go to player. 
 

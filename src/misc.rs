@@ -641,3 +641,37 @@ macro_rules! db {
     };
 
 }
+
+#[macro_export]
+macro_rules! passport {
+    (
+      $req:expr,
+      $storage:expr
+    ) 
+    => {
+
+        { //// this is required if we want to import modules and use the let statements
+            use std::env;
+            use crate::middlewares;
+            
+            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+            let passport = middlewares::auth::pass($req).await;
+
+            if passport.is_ok(){
+                let (token_data, req) = passport.unwrap(); //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function
+                let _id = token_data.claims._id;
+                let username = token_data.claims.username;
+                let access_level = token_data.claims.access_level;
+                if middlewares::auth::user::exists(Some(&$storage), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
+                    Some((_id, username, access_level, req))
+                } else{
+                    None
+                }
+            } else{
+                None
+            }
+        }
+
+    };
+}
+
