@@ -12,6 +12,8 @@ sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db
 sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7440:7440 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
+sudo docker cp devops/conse-collections/roles.json 0a4d36cbfca6:/roles.json ########### TODO - use a correct container id 
+sudo docker cp devops/conse-collections/sides.json 0a4d36cbfca6:/sides.json ########### TODO - use a correct container id 
 sudo docker exec mongodb mongoimport --db conse --collection roles devops/conse-collections/roles.json
 sudo docker exec mongodb mongoimport --db conse --collection sides devops/conse-collections/sides.json
 sudo docker ps -a && sudo docker compose ps -a
