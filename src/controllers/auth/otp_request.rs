@@ -7,6 +7,7 @@
 use crate::contexts as ctx;
 use crate::schemas;
 use crate::constants::*;
+use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
 use crate::misc::otp::{Otp, Auth, OtpInput}; //// based on orphan rule Otp trait must be imported here to use its methods on an instance of OTPAuth which returns impl Otp
 use std::{mem, slice, env, io::{BufWriter, Write}};
 use borsh::BorshDeserialize;
@@ -185,21 +186,14 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                             // ---
                                             // ...
 
-                                            
+                                            resp!{
+                                                ctx::app::Nill, //// the data type
+                                                ctx::app::Nill(&[]), //// the data itself
+                                                OTP_CODE_HAS_BEEN_SENT, //// response message
+                                                StatusCode::OK, //// status code
+                                                "application/json" //// the content type 
+                                            }
 
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                message: OTP_CODE_HAS_BEEN_SENT,
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                                                status: 200,
-                                            };
-                                            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                                            Ok(
-                                                res
-                                                    .status(StatusCode::OK) //// not found route or method not allowed
-                                                    .header(header::CONTENT_TYPE, "application/json")
-                                                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket
-                                                    .unwrap()
-                                            )
                                         },
                                         None => { //// once we get here means that the user is trying to login for the first time in our app and we have to save a new otp info into our otp_info collection
                                             let otp_info = db.clone().database(&db_name).collection::<schemas::auth::SaveOTPInfo>("otp_info"); //// using SaveOTPInfo struct to insert new otp info into the otp_info collection
@@ -213,34 +207,25 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                             };
                                             match otp_info.insert_one(new_otp_info, None).await{
                                                 Ok(insert_result) => {
-                                                    let response_body = ctx::app::Response::<ObjectId>{ //// we have to specify a generic type for data field in Response struct which in our case is ObjectId struct
-                                                        data: Some(insert_result.inserted_id.as_object_id().unwrap()),
-                                                        message: INSERTED,
-                                                        status: 201,
-                                                    };
-                                                    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                                                    Ok(
-                                                        res
-                                                            .status(StatusCode::CREATED)
-                                                            .header(header::CONTENT_TYPE, "application/json")
-                                                            .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                                                            .unwrap() 
-                                                    )
+
+                                                    resp!{
+                                                        ObjectId, //// the data type
+                                                        insert_result.inserted_id.as_object_id().unwrap(), //// the data itself
+                                                        INSERTED, //// response message
+                                                        StatusCode::CREATED, //// status code
+                                                        "application/json" //// the content type 
+                                                    }
                                                 },
                                                 Err(e) => {
-                                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                                                        message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                                                        status: 406,
-                                                    };
-                                                    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                                                    Ok(
-                                                        res
-                                                            .status(StatusCode::NOT_ACCEPTABLE)
-                                                            .header(header::CONTENT_TYPE, "application/json")
-                                                            .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                                                            .unwrap() 
-                                                    )
+
+                                                    resp!{
+                                                        ctx::app::Nill, //// the data type
+                                                        ctx::app::Nill(&[]), //// the data itself
+                                                        &e.to_string(), //// response message
+                                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                                        "application/json" //// the content type 
+                                                    }
+
                                                 },
                                             }
                                         },
@@ -253,68 +238,48 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
 
                             },
                             Err(e) => {
-                                let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                                    message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                                    status: 406,
-                                };
-                                let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                                Ok(
-                                    res
-                                        .status(StatusCode::NOT_ACCEPTABLE)
-                                        .header(header::CONTENT_TYPE, "application/json")
-                                        .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                                        .unwrap() 
-                                )
+
+                                resp!{
+                                    ctx::app::Nill, //// the data type
+                                    ctx::app::Nill(&[]), //// the data itself
+                                    &e.to_string(), //// response message
+                                    StatusCode::NOT_ACCEPTABLE, //// status code
+                                    "application/json" //// the content type 
+                                }
                             },
                         }
                     } else{ /////// the status of the OTP career is not 200 means the code didn't send successfully to the receiver
-                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                            message: &"OTP didn't send from the career".to_string(), //// message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                            status: 503,
-                        };
-                        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                        Ok(
-                            res
-                                .status(StatusCode::SERVICE_UNAVAILABLE)
-                                .header(header::CONTENT_TYPE, "application/json")
-                                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                                .unwrap() 
-                        )   
+
+                        resp!{
+                            ctx::app::Nill, //// the data type
+                            ctx::app::Nill(&[]), //// the data itself
+                            &"OTP didn't send from the career".to_string(), //// response message
+                            StatusCode::SERVICE_UNAVAILABLE, //// status code
+                            "application/json" //// the content type 
+                        }
                     }
                 },
                 Err(e) => {
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                        message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                        status: 406,
-                    };
-                    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                    Ok(
-                        res
-                            .status(StatusCode::NOT_ACCEPTABLE)
-                            .header(header::CONTENT_TYPE, "application/json")
-                            .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                            .unwrap() 
-                    )
+
+                    resp!{
+                        ctx::app::Nill, //// the data type
+                        ctx::app::Nill(&[]), //// the data itself
+                        &e.to_string(), //// response message
+                        StatusCode::NOT_ACCEPTABLE, //// status code
+                        "application/json" //// the content type 
+                    }
                 },
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
-                status: 400,
-            };
-            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-            Ok(
-                res
-                    .status(StatusCode::BAD_REQUEST)
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                    .unwrap() 
-            )
+
+            resp!{
+                ctx::app::Nill, //// the data type
+                ctx::app::Nill(&[]), //// the data itself
+                &e.to_string(), //// response message
+                StatusCode::BAD_REQUEST, //// status code
+                "application/json" //// the content type 
+            }
         },
     } 
 }

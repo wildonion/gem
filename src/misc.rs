@@ -646,32 +646,146 @@ macro_rules! db {
 macro_rules! passport {
     (
       $req:expr,
-      $storage:expr
+      $access:expr
     ) 
     => {
 
         { //// this is required if we want to import modules and use the let statements
-            use std::env;
             use crate::middlewares;
+            use crate::contexts as ctx;
+            use hyper::{header, StatusCode, Body, Response};
             
-            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let passport = middlewares::auth::pass($req).await;
+            let res = Response::builder();
+            let db = &$req.data::<Client>().unwrap().to_owned();
+            let pass = middlewares::auth::pass($req).await;
 
-            if passport.is_ok(){
-                let (token_data, req) = passport.unwrap(); //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function
+            if pass.is_ok(){
+                
+                let (token_data, req) = pass.unwrap(); //// the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function
                 let _id = token_data.claims._id;
-                let username = token_data.claims.username;
+                let username = token_data.claims.username.clone();
                 let access_level = token_data.claims.access_level;
-                if middlewares::auth::user::exists(Some(&$storage), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
-                    Some((_id, username, access_level, req))
+                if middlewares::auth::user::exists(Some(&db.clone()), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
+                    if access_level == $access{ //// the passed in access_level must be equals with the one decoded one inside the JWT  
+                        Some(
+                                (
+                                    Some(token_data),
+                                    Some(req), //// we must send the req object to decode its body for further logics inside the related route
+                                    None //// there is no need to return a response object since it'll be fulfilled inside the related route
+                                )
+                            ) 
+                    } else{
+                        //////////////////////////////
+                        ////// ACCESS DENIED RESPONSE
+                        //////////////////////////////
+                        let response_body = ctx::app::Response::<ctx::app::Nill>{
+                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            message: ACCESS_DENIED,
+                            status: 403,
+                        };
+                        let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                        let response = Ok(
+                                    res
+                                        .status(StatusCode::FORBIDDEN)
+                                        .header(header::CONTENT_TYPE, "application/json")
+                                        .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                        .unwrap() 
+                                );
+                        Some(
+                                (
+                                    None, 
+                                    None,
+                                    Some(response)
+                                )
+                            )
+                    }
+                    
                 } else{
-                    None
+                    //////////////////////////////
+                    ////// NOT FOUND USER RESPONSE
+                    //////////////////////////////
+                    let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                        message: DO_SIGNUP, //// document not found in database and the user must do a signup
+                        status: 404,
+                    };
+                    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                    let response = Ok(
+                                    res
+                                        .status(StatusCode::NOT_FOUND)
+                                        .header(header::CONTENT_TYPE, "application/json")
+                                        .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                        .unwrap() 
+                                );
+                    Some(
+                            (
+                                None,
+                                None,
+                                Some(response)
+                            )
+                        )
                 }
             } else{
-                None
+                ///////////////////////////
+                ////// WRONG TOKEN RESPONSE
+                ///////////////////////////
+                let e = pass.err().unwrap();
+                let response_body = ctx::app::Response::<ctx::app::Nill>{
+                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                    status: 500,
+                };
+                let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                let response = Ok(
+                            res
+                                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                                .header(header::CONTENT_TYPE, "application/json")
+                                .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                .unwrap() 
+                        );
+                Some(
+                        (
+                            None,
+                            None, //// we can't have req in here since it has been moved into the pass() function and it implements neither Copy nor Clone trait 
+                            Some(response)
+                        )
+                    )
             }
-        }
-
-    };
+        };
+    }
 }
 
+#[macro_export]
+macro_rules! resp {
+    (
+        $data_type:ty, //// ty indicates the type of the data
+        $data:expr,
+        $msg:expr,
+        $code:expr,
+        $content_type:expr
+    ) => {
+
+        {
+            use hyper::{header, StatusCode, Body, Response};
+            use crate::contexts as ctx;
+
+            let code = $code.as_u16(); 
+            let res = Response::builder();
+            let response_body = ctx::app::Response::<$data_type>{
+                data: Some($data),
+                message: $msg,
+                status: code,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+            let response = Ok(
+                res
+                    .status($code)
+                    .header(header::CONTENT_TYPE, $content_type)
+                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .unwrap() 
+            );
+            return response;
+
+        }
+    }
+}

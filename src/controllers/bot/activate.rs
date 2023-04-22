@@ -6,7 +6,8 @@
 use crate::misc;
 use crate::middlewares;
 use crate::contexts as ctx;
-use crate::passport;
+use crate::passport; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::passport
+use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
 use crate::schemas;
 use crate::constants::*;
 use chrono::Utc;
@@ -28,82 +29,61 @@ use std::env;
 pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
 
     use routerify::prelude::*;
-    let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let discord_bot_flag_sender = &req.data::<tokio::sync::mpsc::Sender<bool>>().unwrap().to_owned();
-    let db_to_pass_to_macro = db.clone();
 
 
-    match passport!{ //// this is inside the misc
+    match passport!{
         req,
-        db_to_pass_to_macro
+        DEV_ACCESS //// this is the access level that is required for this route
     } {
-        Some(passport_data) => {   
-            let _id = passport_data.0;
-            let username = passport_data.1;
-            let access_level = passport_data.2;
-            let req = passport_data.3;
+        Some(passport_data) => {
+            
+            let token_data = passport_data.0;
+            let request = passport_data.1;
+            let response = passport_data.2;
 
-            //// -------------------------------------------------------------------------------------
-            //// ------------------------------- PASSPORT DATA REGION --------------------------------
-            //// -------------------------------------------------------------------------------------
-            if access_level == DEV_ACCESS{ //// only dev can start the bot
-                    
+            if token_data.is_some() && response.is_none() && request.is_some(){ //// if the response was empty means we have the passport data since the response must be fulfilled in this route
+                
+                //// -------------------------------------------------------------------------------------
+                //// ------------------------------- ACCESS GRANTED REGION -------------------------------
+                //// -------------------------------------------------------------------------------------
+                
+                let token_data = token_data.unwrap();
+                let _id = token_data.claims._id;
+                let username = token_data.claims.username;
+                let access_level = token_data.claims.access_level;
+                let req = request.unwrap();
+
                 //// sending the start bot flag to the downside of 
                 //// the channel to start the discrod bot
-                // ------------------------
                 discord_bot_flag_sender.send(true).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
-                // ------------------------
-                
-                let response_body = ctx::app::Response::<ctx::app::Nill>{
-                    data: Some(ctx::app::Nill(&[])),
-                    message: DISCORD_BOT_STARTED,
-                    status: 200,
-                };
-                let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                Ok(
-                    res
-                        .status(StatusCode::OK)
-                        .header(header::CONTENT_TYPE, "application/json")
-                        .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                        .unwrap() 
-                )
-            } else{ //// access denied for this user with none admin and dev access level
-                let response_body = ctx::app::Response::<ctx::app::Nill>{
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                    message: ACCESS_DENIED,
-                    status: 403,
-                };
-                let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-                Ok(
-                    res
-                        .status(StatusCode::FORBIDDEN)
-                        .header(header::CONTENT_TYPE, "application/json")
-                        .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                        .unwrap() 
-                )
+                            
+                resp!{
+                    ctx::app::Nill, //// the data type
+                    ctx::app::Nill(&[]), //// the data itself
+                    DISCORD_BOT_STARTED, //// response message
+                    StatusCode::OK, //// status code
+                    "application/json" //// the content type 
+                }
+
+                //// -------------------------------------------------------------------------------------
+                //// -------------------------------------------------------------------------------------
+                //// -------------------------------------------------------------------------------------
+            } else {
+                return response.unwrap(); //// response is full and it contains one of these errors: wrong token, not registered or not found user
             }
-            //// -------------------------------------------------------------------------------------
-            //// -------------------------------------------------------------------------------------
-            //// -------------------------------------------------------------------------------------
         },
-        None => { //// if we're here it might be because of the JWT parsing (wrong token) or not found user error 
-            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
-                message: DO_SIGNUP, //// document not found in database and the user must do a signup
-                status: 404,
-            };
-            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
-            Ok(
-                res
-                    .status(StatusCode::NOT_FOUND)
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
-                    .unwrap() 
-            )
-        }
+        None => { //// passport data not found response
 
+            resp!{
+                ctx::app::Nill, //// the data type
+                ctx::app::Nill(&[]), //// the data itself
+                PASSPORT_DATA_NOT_FOUND, //// response message
+                StatusCode::NOT_ACCEPTABLE, //// status code
+                "application/json" //// the content type
+            }
+        },
     }
-
 }
