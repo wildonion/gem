@@ -3,7 +3,8 @@
 		"_postman_id": "1c29aeb4-2345-463e-96d2-52b1c5fe2f93",
 		"name": "Conse",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "22927035"
+		"_exporter_id": "22927035",
+		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?action=share&creator=22927035&source=collection_link"
 	},
 	"item": [
 		{
@@ -65,7 +66,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzZmJiMWEzNzAzMGI5M2EyNmNhMDk2OSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5MDQ5MjAyLCJpYXQiOjE2Nzc1MTMyMDJ9.LBqN2AKcahn7R7xvq5qNIP_a4Bt7HG6y7TFE7G48NyGSXf9ZOghJRwHzug_vmy08KThTmBzrvIG7GfhNTDefYw",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
 									"type": "string"
 								}
 							]
@@ -74,7 +75,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"_id\": \"63fcab907030b93a26ca096c\"\r\n}",
+							"raw": "{\r\n    \"_id\": \"6416ea5dcd31576b6d77e898\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -103,7 +104,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234\"\r\n}\r\n",
+							"raw": "{\r\n    \"username\": \"wildonion\",\r\n    \"pwd\": \"20\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -213,7 +214,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzZmJiMWEzNzAzMGI5M2EyNmNhMDk2OSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5MDQ5MjAyLCJpYXQiOjE2Nzc1MTMyMDJ9.LBqN2AKcahn7R7xvq5qNIP_a4Bt7HG6y7TFE7G48NyGSXf9ZOghJRwHzug_vmy08KThTmBzrvIG7GfhNTDefYw",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
 									"type": "string"
 								}
 							]
@@ -1337,7 +1338,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzZmJiMWEzNzAzMGI5M2EyNmNhMDk2OSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5MzA4MDA2LCJpYXQiOjE2Nzc3NzIwMDZ9.vhjvqDTIarqeEXwzxbmjiGeLBHXfQAKalsRmVzpopcckoAI_lMFaWMV1YGi7JwKE3K0igkRivjXli6yFNUMNvg",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
 									"type": "string"
 								}
 							]
@@ -1346,7 +1347,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"gardan koloft\",\r\n    \"rate\": 1,\r\n    \"desc\": \"\"\r\n}",
+							"raw": "{\r\n    \"name\": \"پرده قرمز\",\r\n    \"rate\": 1,\r\n    \"desc\": \"همه مافیا ها بیرون\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2135,6 +2136,45 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Discord Bot",
+			"item": [
+				{
+					"name": "Start Bot",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MDcyZjEyMjhmNWFmMDE5NTI0OWU5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5NzI4NzI4LCJpYXQiOjE2NzgxOTI3Mjh9.FMxy65Ed28vaNCGZzmCpZiNV157HzF7I8SeWbR4siVKX-uh021kRmFFzLOMuC-vzvFNgnV_PQj57QQrmjjqlIQ",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "API_KEY",
+								"value": "{{API_KEY}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{bot}}/bot/start",
+							"host": [
+								"{{bot}}"
+							],
+							"path": [
+								"bot",
+								"start"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -2160,22 +2200,27 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://conse.app:7440",
+			"value": "https://conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://conse.app:7440",
+			"value": "https://conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://conse.app:7440",
+			"value": "https://conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "whitelist",
-			"value": "https://conse.app:7440",
+			"value": "https://conse.app:7439",
+			"type": "string"
+		},
+		{
+			"key": "bot",
+			"value": "https://conse.app:7439",
 			"type": "string"
 		},
 		{

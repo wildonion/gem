@@ -196,17 +196,20 @@ impl EventHandler for Handler{
         //// -------------------------------------------------
         //// registering global commands for each 
         //// guild that this bot is added to
-        let guilds = ready.guilds;
-        for guild in guilds{
-            let commands = GuildId::set_application_commands(&guild.id, &ctx.http, |commands| {
-                commands
-                    .create_application_command(|command| ctx::bot::cmds::slash::wrapup_register(command))
-                    .create_application_command(|command| ctx::bot::cmds::slash::expand_register(command))
-                    .create_application_command(|command| ctx::bot::cmds::slash::help_register(command))
-                    .create_application_command(|command| ctx::bot::cmds::slash::stats_register(command))
-            })
-            .await;
-        }
+        let _ = Command::create_global_application_command(&ctx.http, |command| {
+            ctx::bot::cmds::slash::wrapup_register(command)
+        })
+        .await;
+
+        let _ = Command::create_global_application_command(&ctx.http, |command| {
+            ctx::bot::cmds::slash::expand_register(command)
+        })
+        .await;
+
+        let _ = Command::create_global_application_command(&ctx.http, |command| {
+            ctx::bot::cmds::slash::help_register(command)
+        })
+        .await;
 
     }
 

@@ -66,7 +66,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * all TODOs inside the app
 
-* backend design pattern sketch using freeform.
+* backend design pattern sketch using freeform inside wiki.
 
 * communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 

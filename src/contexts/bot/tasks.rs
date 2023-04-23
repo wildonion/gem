@@ -217,7 +217,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// --------------------------------------------------------------------
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
-    gpt_request_command = format!("can you summerize what users said inside the bracket as a numbered bullet list along with their username? [{}]", messages);
+    gpt_request_command = format!("can you summarize the following discord messages as a numbered bullet list?\n{}", messages);
     let req_cmd = gpt_request_command.clone();
     response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
     info!("ChatGPT Response: {:?}", response);

@@ -333,7 +333,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
-    sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
+    // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
         unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());

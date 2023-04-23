@@ -9,10 +9,25 @@ use uuid::Uuid;
 
 
 
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MatchQueue{
+    pub players: Vec<Player>,
+    pub match_id: u16, 
+}
+
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Player{
+    pub pub_key: String,
+}
+
+
+
+
 // fire/emit/publish UserNotif events in ws/rpc/zmq server 
-// sub or listen to UserNotif events in ws/rpc/zmq client using an event loop or listener
-
-
+// sub or listen to UserNotif events in ws/rpc/zmq client
+// using an event loop or listener.
 // update UserNotif on every data changes through its related api calls
 // then fire the updated data event through the ws server so the client
 // can subs using gql subs or ws to the fired event 

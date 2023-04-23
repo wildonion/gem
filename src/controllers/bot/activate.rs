@@ -41,8 +41,8 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
         Some(passport_data) => {
             
             let token_data = passport_data.0;
-            let request = passport_data.1;
-            let response = passport_data.2;
+            let request = passport_data.1; //// the request object that is returned from the passport!{}
+            let response = passport_data.2; //// the response object that might be fulfilled if anything went wrong
 
             if token_data.is_some() && response.is_none() && request.is_some(){ //// if the response was empty means we have the passport data since the response must be fulfilled in this route
                 
