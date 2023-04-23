@@ -217,7 +217,15 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// --------------------------------------------------------------------
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
-    gpt_request_command = format!("can you summarize the following discord messages as a numbered bullet list?\n{}", messages);
+    gpt_request_command = format!("Summarize each member's contribution to the discussion. Then put it in a numbered list so its easy to read. Also there is a user called JOE, do not add JOE's contributions to your summary.
+
+    Here is how you should format your summaries: 
+    
+    1.  user1: summarize everything user 1 contributed to the discussion. 
+    2. user2: summarize everything user 2 contributed to the discussion.\n
+    
+                                    
+                                    {}", messages);
     let req_cmd = gpt_request_command.clone();
     response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
     info!("ChatGPT Response: {:?}", response);
