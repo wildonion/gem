@@ -153,42 +153,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
 
-
-    struct IpData<'i>{
-        pub ip: &'i str,
-    };
-    impl<'i> IpData<'i>{
-        fn new(ip: &'i str) -> IpData{ //// the lifetime of the passed in ip must be less or equal than the lifetime of the IpData struct the ip feild
-            IpData::<'i>{
-                ip,
-            }
-        }
-    }
-    let mut BoxedIp = Box::new(IpData::new("0.0.0.0"));
-    let mutable_boxed = BoxedIp.as_mut(); //// call as_mut() on the type requires that the type must defined mutable 
-    let ref_boxed = BoxedIp.as_ref();
-    let bytes_boxed_data = ref_boxed.ip.as_bytes();
-
-    fn GenericHanging<T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>) -> String
-    where F: FnOnce(String) -> hyper::Response<Body> + Send + Sync + 'static {
-        "test".to_string()
-    }
-    
-    let (sender_flag, mut receiver_flag) = 
-        tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
-    tokio::spawn(async move{
-
-        // solve heavy async task inside tokio green threadpool
-        // send data inside the pool to receive it in different 
-        // parts of the app
-        sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
-
-    });
-    while let Some(data) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
-        // do whatever with data 
-        // ...
-    }
-
     
 
      

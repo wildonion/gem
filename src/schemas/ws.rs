@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MatchQueue{
-    pub players: Vec<Player>,
+    pub players: Vec<Player>, //// user pool that can be used to start a match between them
     pub match_id: u16, 
 }
 
@@ -20,7 +20,15 @@ pub struct MatchQueue{
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Player{
     pub pub_key: String,
+    pub rank: u16,
 }
+
+pub struct CurrentMatch{
+    pub match_id: u16,
+    pub players: Vec<Player>,
+}
+
+
 
 
 

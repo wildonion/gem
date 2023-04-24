@@ -523,6 +523,56 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 
     }
 
+
+
+    // -----------------------------------------------------------------
+    // -----------------------------------------------------------------
+    struct IpData<'i>{
+        pub ip: &'i str,
+    };
+    impl<'i> IpData<'i>{
+        fn new(ip: &'i str) -> IpData{ //// the lifetime of the passed in ip must be less or equal than the lifetime of the IpData struct the ip feild
+            IpData::<'i>{
+                ip,
+            }
+        }
+    }
+    let mut BoxedIp = Box::new(IpData::new("0.0.0.0")); //// Box is a pointer to a heap allocation data of type T
+    let mutable_boxed = BoxedIp.as_mut(); //// call as_mut() on the type requires that the type must defined mutable 
+    let ref_boxed = BoxedIp.as_ref();
+    let bytes_boxed_data = ref_boxed.ip.as_bytes();
+
+    //// bounding generic T and F to traits and lifetimes
+    //// also traits must be behind pointer since they are
+    //// heap data types (heap data types in rust must be in 
+    //// form of borrowed type which means must be passed 
+    //// into other methods and functions by putting them 
+    //// behind a pointer or their slice types ) which their 
+    //// pointer which is a fat pointer must be in form 
+    //// Box<dyn Trait> or &dyn Trait 
+    fn setIpHosting<'s, T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>, ip_addr: Box<IpData>) 
+    -> &'s str //// return a reference always needs a valid lifetime such as the one which is behind &self or an specific one in function signature 
+    where F: FnOnce(String) -> hyper::Response<Body> + Send + Sync + 'static, T: Send + Sync + 's {
+        "test"
+    }
+    
+    let (sender_flag, mut receiver_flag) = 
+        tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
+    tokio::spawn(async move{
+
+        // solve heavy async task inside tokio green threadpool
+        // send data inside the pool to receive it in different 
+        // parts of the app
+        sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
+
+    });
+    while let Some(data) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
+        // do whatever with data 
+        // ...
+    }
+    // -----------------------------------------------------------------
+    // -----------------------------------------------------------------
+
     
     
     info!("collecting all chunks received from the receiver at time {:?}", chrono::Local::now().naive_local());
