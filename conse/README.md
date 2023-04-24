@@ -109,6 +109,8 @@ skill divorce afraid nice surface poverty host bright narrow media disorder tuna
 
 ## 🍟 Notes
 
+* Before running the deploy script make sure that you've installed the nodejs and also set the `cluster` field to the `mainnet` or the address of your node on either devnet or mainnet like Alchemy node, inside the `Anchor.toml` besides change the solana cluster using ```solana config set --url mainnet``` or ```solana config set --url <CUSTOM_RPC_ENDPOINT>``` also make sure that your account has enough balance for deploying the program.
+
 * once the authority gets changed the program id will be changed too, currently these programs are authorized with `8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF` 
 
 * use ```anchor keys list``` to list all the program ids of each contract.

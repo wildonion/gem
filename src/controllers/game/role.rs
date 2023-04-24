@@ -274,7 +274,9 @@ pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 
                     match roles.find(filter, None).await{
                         Ok(mut cursor) => {
-                            while let Some(role) = cursor.try_next().await.unwrap(){ //// calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                            //// getting the next document until there was 
+                            //// no error in reading the whole collection data
+                            while let Ok(Some(role)) = cursor.try_next().await{ //// calling try_next() method on cursor needs the cursor to be mutable - reading until awaiting on try_next() method doesn't return Error
                                 available_roles.roles.push(role);
                             }
                             let res = Response::builder(); //// creating a new response cause we didn't find any available route

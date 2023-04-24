@@ -28,13 +28,12 @@ gql subs ws client
                                                                                                 - noise protocol
                                                                                                 - ws and webrtc
                                                                                                 - muxer and yamux
-                                                                                            quic and udp
-                                                                                            tcp 
+                                                                                            tokio quic udp and tcp
                                                                                             rpc capnp/json pubsub 
                                                                                             zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
                                                                                             gql subs
                                                                                             ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
-                                                                                            connections that implement AsyncWrite and AsyncRead traits for reading/writing IO future objects 
+                                                                                            connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of IO future objects 
                                                                                             redis client pubsub + mongodb
 ➙ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
@@ -154,6 +153,26 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
 
+
+    struct IpData<'i>{
+        pub ip: &'i str,
+    };
+    impl<'i> IpData<'i>{
+        fn new(ip: &'i str) -> IpData{ //// the lifetime of the passed in ip must be less or equal than the lifetime of the IpData struct the ip feild
+            IpData::<'i>{
+                ip,
+            }
+        }
+    }
+    let mut BoxedIp = Box::new(IpData::new("0.0.0.0"));
+    let mutable_boxed = BoxedIp.as_mut(); //// call as_mut() on the type requires that the type must defined mutable 
+    let ref_boxed = BoxedIp.as_ref();
+    let bytes_boxed_data = ref_boxed.ip.as_bytes();
+
+    fn GenericHanging<T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>) -> String
+    where F: FnOnce(String) -> hyper::Response<Body> + Send + Sync + 'static {
+        "test".to_string()
+    }
     
     let (sender_flag, mut receiver_flag) = 
         tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
@@ -170,7 +189,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // ...
     }
 
-
+    
 
      
 
@@ -254,6 +273,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
+
+
     
 
 
@@ -283,6 +304,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
+
+
     // -------------------------------- setting up discord bot
     //
     // ---------------------------------------------------------------------------------------
@@ -300,6 +323,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
             }    
         }
     }
+
+
 
 
 

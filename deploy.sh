@@ -1,4 +1,9 @@
 #!/bin/bash
+if [[ ! -f "devops/openssl/conse_cert.pem" ]] && [[ ! -f "devops/openssl/conse_key.pem" ]]
+then
+    echo "openssl files doesn't exist creating new TLS certificate and key files for conse"
+    openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
+fi
 SERVER_IP=hostname -I | awk '{print $1}'
 sudo apt update
 sudo apt install apt-transport-https ca-certificates curl software-properties-common
@@ -11,7 +16,7 @@ sudo docker compose -f  docker-compose.yml build --no-cache
 sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db
-sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -p 8404:8404 -p 7440:7440 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
+sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -v devops/openssl:/usr/local/etc/haproxy -p 8404:8404 -p 7440:7440 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
 MONGODB_CONTAINER_ID=docker container ls  | grep 'mongodb' | awk '{print $1}'
 sudo docker cp devops/conse-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json
 sudo docker cp devops/conse-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json 
@@ -24,12 +29,15 @@ sudo chown -R root:root . && sudo chmod -R 777 . && sudo chmod -R 777 .
 sudo chown -R www-data:www-data . && sudo chmod -R 777 .
 sudo chmod +x /root && sudo chown -R root:root /root && sudo chmod -R 777 /root
 sudo chmod +x /root && sudo chown -R www-data:www-data /root && sudo chmod -R 777 /root
+sudo gpasswd -a www-data root && sudo chmod g+x /root && sudo -u www-data stat /root
 sudo apt update && sudo apt upgrade -y
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm
 npm install pm2@latest -g
 sudo apt install -y snapd
 sudo snap install core; sudo snap refresh core
+# sudo apt install mongodb-clients && sudo apt install mongodb && sudo apt install mongo-tools
+# sudo mkdir -p /data/db && sudo chmod -R 777 /data/db
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev librust-openssl-dev
@@ -54,14 +62,12 @@ if [[ $BUILDFOR == "programs" ]]; then
     elif [[ $BUILDFOR == "whitelist" ]]; then
         anchor build --program-name whitelist
         anchor deploy --program-name whitelist
+    elif [[ $BUILDFOR == "ognils" ]]; then
+    anchor build --program-name ognils
+    anchor deploy --program-name ognils
     if
 elif [[ $BUILDFOR == "gem" ]]; then
-    echo "[+] Building Conse PaaS using Pm2"
-    if [[ ! -f "devops/openssl/conse_cert.pem" ]] && [[ ! -f "devops/openssl/conse_key.pem" ]]
-    then
-        echo "openssl files doesn't exist creating new TLS certificate and key files for conse"
-        openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
-    fi
+    echo "[+] Building Conse using Pm2"
     cargo build --bin conse --release
     sudo rm /usr/bin/conse
     sudo cp target/release/conse /usr/bin/conse && sudo chmod +x /usr/bin/conse 

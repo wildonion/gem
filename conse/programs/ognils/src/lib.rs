@@ -12,7 +12,7 @@ pub mod ognils {
     
         Ok(())
     
-    }
+    } 
 
     pub fn finish_game(ctx: Context<GameResult>) -> Result<()>{
         
@@ -42,22 +42,22 @@ pub struct Cell{
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)]
 pub struct Player{
-   pub pub_key: PubKey,
+   pub pub_key: Pubkey,
    pub table: Vec<Cell>,
 }
 
 impl Player{
 
     fn create_table(&mut self, size: u16) -> Vec<Cell>{
-        self.table = (0..size)
-            .map(|_|{
-                0
-            })
-            .collect::<Vec<Cell>>();
+        self.table = Vec::with_capacity(size as usize);
+        for _ in 0..size{
+            self.table.push(Cell { x: 0, y: 0, value: 0, is_marked: false });
+        }
+        self.table
     }
 
     fn get_column_range(&self, x: u16) -> (u16, u16){
-
+        todo!()
     }
 }
 
@@ -84,13 +84,21 @@ pub struct GameStatePda{
 
 #[derive(Accounts)]
 pub struct StartGame<'info>{
+   #[account(mut)]
    pub signer: Signer<'info>,
    #[account(mut)]
    pub player: AccountInfo<'info>,
-   #[account(init, payer = signer, sapce = 300, seeds = [signer.key().as_ref(), player.key().as_ref()])]
+   #[account(init, payer = signer, space = 300, seeds = [signer.key().as_ref(), player.key().as_ref()], bump)]
    pub game_state_pda: Account<'info, GameStatePda>,
    pub system_program: Program<'info, System>,
 }
+
+
+#[derive(Accounts)]
+pub struct GameResult{
+
+}
+
 
 #[error_code]
 pub enum ErrorCode {
