@@ -20,8 +20,10 @@ pub mod ognils {
 
         if user_pda_lamports < amount {
             
-            // revert logic, payback amount to players
-            // ...
+            for player in players{
+                // revert logic, payback amount to players
+                // ...
+            }
             
             return err!(ErrorCode::InsufficientFund);
         }

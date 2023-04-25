@@ -3,6 +3,7 @@ if [[ ! -f "devops/openssl/conse_cert.pem" ]] && [[ ! -f "devops/openssl/conse_k
 then
     echo "openssl files doesn't exist creating new TLS certificate and key files for conse"
     openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
+    cat conse_key.pem conse_cert.pem > devops/openssl/conse.pem
 fi
 SERVER_IP=hostname -I | awk '{print $1}'
 sudo apt update
@@ -12,14 +13,15 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 apt-cache policy docker-ce
 sudo apt install docker-ce
 sudo systemctl status docker
+sudo docker network ls | grep gem > /dev/null || sudo docker network create --driver=bridge gem
 sudo docker compose -f  docker-compose.yml build --no-cache
 sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db
 sudo docker run -d --name haproxy --net gem -v devops/conf/haproxy.cfg:/usr/local/etc/haproxy -v devops/openssl:/usr/local/etc/haproxy -p 8404:8404 -p 7440:7440 -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4 
 MONGODB_CONTAINER_ID=docker container ls  | grep 'mongodb' | awk '{print $1}'
-sudo docker cp devops/conse-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json
-sudo docker cp devops/conse-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json 
+sudo docker cp devops/conse-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container
+sudo docker cp devops/conse-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json # root of the container 
 sudo docker exec mongodb mongoimport --db conse --collection roles devops/conse-collections/roles.json
 sudo docker exec mongodb mongoimport --db conse --collection sides devops/conse-collections/sides.json
 sudo docker ps -a && sudo docker compose ps -a
