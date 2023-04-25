@@ -18,9 +18,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🛠️ Production Setup
 
-> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0`.
-
-> Run ```sudo chmod +x deploy.sh && ./deploy.sh```
+> First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to setup the VPS for production then to update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with dev user to register a new god for the game.
 
 ## 🍟 Notes
 

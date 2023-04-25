@@ -14,15 +14,20 @@ pub mod ognils {
         let user_pda_account = &mut ctx.accounts.user_pda;
         let match_pda = &mut ctx.accounts.match_pda;
         let match_pda_account = match_pda.to_account_info();
+        let program_id = ctx.accounts.system_program.to_account_info();
         let user_pda_lamports = user_pda_account.to_account_info().lamports();
         let signer = ctx.accounts.signer.key();
         let server = ctx.accounts.server.key();
 
         if user_pda_lamports < amount {
-            
+            // revert the game and pay back all players selected from the queue 
             for player in players{
-                // revert logic, payback amount to players
-                // ...
+                let player_pubkey = player.key();
+                let player_seeds = &[b"slingo", player_pubkey.as_ref()];
+                let player_pda = Pubkey::find_program_address(player_seeds, &program_id.key());
+                let player_pda_account = player_pda.0;
+                // **match_pda_account.try_borrow_mut_lamports()? -= amount;
+                // **player_pda.try_borrow_mut_lamports()? += amount;
             }
             
             return err!(ErrorCode::InsufficientFund);
@@ -33,8 +38,8 @@ pub mod ognils {
         } 
 
 
-        **user_pda_account.try_borrow_mut_lamports()? -= amount;
-        **match_pda_account.try_borrow_mut_lamports()? += amount;
+        // create current match data on chain 
+        // ...
 
 
         Ok(())
@@ -43,8 +48,12 @@ pub mod ognils {
 
     pub fn finish_game(ctx: Context<FinishGame>, winners: Vec<Pubkey>) -> Result<()>{ 
         
-        // withdraw from matchPDA and spread between winners equally
-        // ...
+        
+        let match_pda_amout = **ctx.accounts.match_pda.try_borrow_lamports()?;
+        for winner in winners{
+            // withdraw from matchPDA and spread between winners equally
+            // ...
+        }
 
         Ok(())
     }
