@@ -36,7 +36,7 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
 
     match passport!{
         req,
-        DEV_ACCESS //// this is the access level that is required for this route
+        vec![DEV_ACCESS] //// vector of access levels
     } {
         Some(passport_data) => {
             

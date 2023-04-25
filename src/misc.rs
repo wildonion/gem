@@ -547,9 +547,10 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
     //// heap data types (heap data types in rust must be in 
     //// form of borrowed type which means must be passed 
     //// into other methods and functions by putting them 
-    //// behind a pointer or their slice types ) which their 
-    //// pointer which is a fat pointer must be in form 
-    //// Box<dyn Trait> or &dyn Trait 
+    //// behind a pointer or their slice types like &str for 
+    //// String and &[u8] or [u8; 32] for Vec) which must 
+    //// be in form Box<dyn Trait> or &dyn Trait also 
+    //// their pointer are fat pointers  
     fn setIpHosting<'s, T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>, ip_addr: Box<IpData>) 
     -> &'s str //// return a reference always needs a valid lifetime such as the one which is behind &self or an specific one in function signature 
     where F: FnOnce(String) -> hyper::Response<Body> + Send + Sync + 'static, T: Send + Sync + 's {
@@ -559,17 +560,25 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
     let (sender_flag, mut receiver_flag) = 
         tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
     tokio::spawn(async move{
-
         // solve heavy async task inside tokio green threadpool
         // send data inside the pool to receive it in different 
         // parts of the app
-        sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
-
+        std::thread::scope(|s|{
+            s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
+                sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
+            });
+            s.spawn(|| async{
+                sender_flag.send(2).await.unwrap();
+            });
+            s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
+                while let Some(input) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
+                    // do whatever with the collected data of all workers 
+                    // ...
+                }
+                let data: Vec<u8> = receiver_flag.try_recv().into_iter().take(2).collect();
+            });
+        });
     });
-    while let Some(data) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
-        // do whatever with data 
-        // ...
-    }
     // -----------------------------------------------------------------
     // -----------------------------------------------------------------
 
@@ -696,7 +705,7 @@ macro_rules! db {
 macro_rules! passport {
     (
       $req:expr,
-      $access:expr
+      $access_levels:expr
     ) 
     => {
 
@@ -716,7 +725,7 @@ macro_rules! passport {
                 let username = token_data.claims.username.clone();
                 let access_level = token_data.claims.access_level;
                 if middlewares::auth::user::exists(Some(&db.clone()), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
-                    if access_level == $access{ //// the passed in access_level must be equals with the one decoded one inside the JWT  
+                    if $access_levels.contains(&access_level){   
                         Some(
                                 (
                                     Some(token_data),

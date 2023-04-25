@@ -276,7 +276,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //// we're using tokio event loop handler to activate the discord bot in such
     //// a way that once we received the flag from the mpsc channel inside the event
     //// loop, other branches will be canceled
-    discord_bot_flag_sender.send(true).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
+    discord_bot_flag_sender.send(false).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
     tokio::select!{
         bot_flag = discord_bot_flag_receiver.recv() => {
             if let Some(_) = bot_flag{
@@ -315,6 +315,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .scope("/bot", routers::bot::register().await)
         .scope("/whitelist", routers::whitelist::register().await)
         .scope("/redis", routers::redis::register().await)
+        // .scope("/mmq") // TODO - used for match making queue
         // .scope("/ws") // TODO - used for chatapp routes
         // .scope("/gql") // TODO - used for subscriptions like sub to push notifs and chatapp
         .build()
