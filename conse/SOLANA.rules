@@ -135,6 +135,10 @@
     ========================================= 
     https://docs.solana.com/developing/programming-model/accounts#ownership-and-assignment-to-programs
 
+    each public key must be of type Account or AccountInfo in order the solana all accounts be known 
+    before the runtime for the solana since it must knows which account is being executed right now in 
+    runtime and which account is mutating the data on chain to avoid race condition on chain.
+
     account must be initialized means program will do a cpi to the runtime to set 
     the owner of the PDA to the program id to be able to mutate its data on chain 
     then in second call we can mutate its data on chain since only the program can 

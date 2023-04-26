@@ -1,4 +1,32 @@
 
+
+
+/*
+
+    for every player `init_user_pda` must be called before starting the game 
+    to initialize all the player PDAs inside the queue for the current matc
+
+    `init_match_pda` needs to be called by the server or a higher authority
+    to initialize the match PDA account and initialize its first data on chain.
+
+    `deposit` and `withdraw` both can be called by the user to deposit into 
+    the match PDA and withdraw from the user PDA account.
+
+    `start_game` will be called by the server after initializing the PDAs 
+    to generate the game logic on chain thus all player public keys inside 
+    the queue must be passed into this call. 
+
+    `finish_game` must be called by the server after the game has finished 
+    to pay the winners, thus it requires all the player PDAs to be passed 
+    in to the call, also there must be 6 PDAs inside the call since maximum
+    players inside the queue are 6 thus not all of them can be Some, it must 
+    be checked for its Some part before paying the winner.  
+
+*/
+
+
+
+
 use anchor_lang::prelude::*;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -8,40 +36,119 @@ pub mod ognils {
 
 
     use super::*;
-
-    pub fn start_game(ctx: Context<StartGame>, match_id: String, players: Vec<Pubkey>, player_commits: Vec<String>, amount: u64, rounds: u16, size: u16) -> Result<()> {
     
+    pub fn init_match_pda(ctx: Context<InitMatchPda>, match_id: String, bump: u8) -> Result<()>{
+
+        let server = &ctx.accounts.server;
+        let match_pda = &mut ctx.accounts.match_pda;
+        match_pda.current_match = CurrentMatch{
+            match_id: match_id.clone(),
+            bump,
+            is_locked: false,
+            server: server.key(),
+            announced_values: vec![],
+            players: vec![],
+        };
+
+        msg!("{:#?}", CurrentMatchEvent{ 
+            match_id: match_id.clone(), 
+            bump, 
+            server: server.key(), 
+            is_locked: false, 
+            announced_values: vec![], 
+            players: vec![] 
+        });
+
+        emit!(CurrentMatchEvent{ 
+            match_id: match_id.clone(), 
+            bump, 
+            server: server.key(), 
+            is_locked: false, 
+            announced_values: vec![], 
+            players: vec![] 
+        });
+
+        Ok(())
+
+    }
+    
+    pub fn init_user_pda(ctx: Context<InitUserPda>, amount: u64) -> Result<()> {
+        
+        let user_pda = &ctx.accounts.user_pda;
+        //// since there is no data inside user PDA account
+        //// there is no need to mutate anything in here,
+        //// chill and call next method :)
+        
+        // chill zone
+
+        //...
+        
+        Ok(())
+
+    } 
+
+    pub fn withdraw(ctx: Context<WithdrawFromUserPda>, player_bump: u8, amount: u64) -> Result<()>{
+
+        let user_pda = &mut ctx.accounts.user_pda;
+        let signer = &ctx.accounts.signer; //// only player can withdraw
+        let player = &ctx.accounts.player;
+        //// accounts fields doesn't implement Copy trait 
+        //// like Account fields are not Copy thus we must 
+        //// borrow the ctx in order not to move 
+        let match_pda = &mut ctx.accounts.match_pda; 
+        let match_pda_account = match_pda.to_account_info();
+        let current_match = match_pda.current_match.clone();
+
+        if signer.key != player.key{
+            return err!(ErrorCode::RestrictionError);
+        }
+
+        if current_match.is_locked{
+            return err!(ErrorCode::MatchIsLocked);
+        }   
+
+        let index = current_match.players.iter().position(|p| p.pub_key == player.key());
+        if index.is_some(){ //// we found a player
+            let player_index = index.unwrap();
+            let current_match_players = current_match.players.clone();
+            let mut find_player = current_match_players[player_index].clone();
+            if find_player.current_balance > 0{
+                find_player.current_balance -= amount;
+                **user_pda.try_borrow_mut_lamports()? -= amount;
+                **player.try_borrow_mut_lamports()? += amount;
+            } else{
+                return err!(ErrorCode::PlayerBalanceIsZero);
+            }
+        } else{
+            return err!(ErrorCode::PlayerDoesntExist);
+        }
+
+        Ok(())
+        
+    }
+
+    pub fn deposit(ctx: Context<DepositToMatchPda>, amount: u64) -> Result<()>{
+
         let user_pda_account = &mut ctx.accounts.user_pda;
         let match_pda = &mut ctx.accounts.match_pda;
         let match_pda_account = match_pda.to_account_info();
-        let program_id = ctx.accounts.system_program.to_account_info();
         let user_pda_lamports = user_pda_account.to_account_info().lamports();
         let signer = ctx.accounts.signer.key();
         let server = ctx.accounts.server.key();
+        
+        // let program_id = ctx.accounts.system_program.to_account_info();
+        // let player_pubkey = user_pda_account.key();
+        // let player_seeds = &[b"slingo", player_pubkey.as_ref()]; //// this is of type &[&[u8]; 2]
+        // let player_pda = Pubkey::find_program_address(player_seeds, &program_id.key()); //// output is an off curve public key and a bump that specify the iteration that this public key has generated 
+        // let player_pda_account = player_pda.0;
+        // let amounts: std::cell::RefMut<&mut [u8; 32]>; //// to use its value do **vals
 
-        // ----------------- players accounts ----------------------
-        //// can't move out of a type if it's behind a shread reference
-        let first_player_account = &ctx.accounts.first_player;
-        let second_player_account = &ctx.accounts.second_player;
-        let third_player_account = &ctx.accounts.third_player;
-        let fourth_player_account = &ctx.accounts.fourth_player;
-        let fifth_player_account = &ctx.accounts.fifth_player;
-        let sixth_player_account = &ctx.accounts.sixth_player;
-
-        if fifth_player_account.is_some(){
-            **fifth_player_account.try_borrow_mut_lamports()? -= amount;
-            **player_pda.try_borrow_mut_lamports()? += amount;
-        }
 
 
         if user_pda_lamports < amount {
             // revert the game and pay back all players selected from the queue 
-            for player in players{
-                let player_pubkey = player.key();
-                let player_seeds = &[b"slingo", player_pubkey.as_ref()];
-                let player_pda = Pubkey::find_program_address(player_seeds, &program_id.key());
-                let player_pda_account = player_pda.0;
-            }
+            **match_pda_account.try_borrow_mut_lamports()? -= amount;
+            **user_pda_account.try_borrow_mut_lamports()? += amount;
             
             return err!(ErrorCode::InsufficientFund);
         }
@@ -54,52 +161,105 @@ pub mod ognils {
         **user_pda_account.try_borrow_mut_lamports()? -= amount;
         **match_pda_account.try_borrow_mut_lamports()? += amount;
 
+        Ok(())
+
+    }
+
+    pub fn start_game(ctx: Context<StartGame>, players: Vec<Pubkey>, player_commits: Vec<String>, amount: u64, rounds: u16, size: u16) -> Result<()>{
+
         // create current match data on chain 
         // call create_table, get_column_range, create_announced_values
+        // emit and log events 
+        // set is_locked to true
         // ...
 
 
+
+        // msg!("{:#?}", CurrentMatchEvent{ 
+        //     match_id: match_id.clone(), 
+        //     bump, 
+        //     server: server.key(), 
+        //     is_locked: false, 
+        //     announced_values: vec![], 
+        //     players: players.clone() 
+        // });
+
+        // emit!(CurrentMatchEvent{ 
+        //     match_id: match_id.clone(), 
+        //     bump, 
+        //     server: server.key(), 
+        //     is_locked: false, 
+        //     announced_values: vec![], 
+        //     players: players.clone(),
+        // });
+
         Ok(())
-
-    } 
-
-    pub fn finish_game(ctx: Context<FinishGame>, winners: Vec<Pubkey>) -> Result<()>{ 
         
+    }
+
+    pub fn finish_game(ctx: Context<FinishGame>, player_bumps: Vec<u8>) -> Result<()>{ 
+        
+        //// since Copy traint is not implemented for ctx.accounts fields
+        //// like AccountInfo and Account we must borrow the ctx and because 
+        //// AccountInfo and Account fields don't imeplement Copy trait 
+        //// we must borrow their instance if we want to move them or 
+        //// call a method that takes the ownership of their instance 
+        //// like unwrap() in order not to be moved. 
+
+
+        let match_pda = &ctx.accounts.match_pda;
         // ----------------- players accounts ----------------------
         //// can't move out of a type if it's behind a shread reference
-        let first_player_account = &ctx.accounts.first_player;
-        let second_player_account = &ctx.accounts.second_player;
-        let third_player_account = &ctx.accounts.third_player;
-        let fourth_player_account = &ctx.accounts.fourth_player;
-        let fifth_player_account = &ctx.accounts.fifth_player;
-        let sixth_player_account = &ctx.accounts.sixth_player;
-        let match_pda_amout = **ctx.accounts.match_pda.try_borrow_lamports()?;
+        //// if there was Some means we have winners
+        let first_player_account = &ctx.accounts.first_user_pda;
+        let second_player_account = &ctx.accounts.second_user_pda;
+        let third_player_account = &ctx.accounts.third_user_pda;
+        let fourth_player_account = &ctx.accounts.fourth_user_pda;
+        let fifth_player_account = &ctx.accounts.fifth_user_pda;
+        let sixth_player_account = &ctx.accounts.sixth_user_pda;
+        let winners = vec![first_player_account, second_player_account, third_player_account,
+                                                     fourth_player_account, fifth_player_account, sixth_player_account];
         
-        // withdraw from matchPDA and spread between winners equally
-        // ...
+        let mut winner_count = 0;
+        let current_match_pda_amout = **ctx.accounts.match_pda.try_borrow_lamports()?;
+        if current_match_pda_amout > 0{
 
-        Ok(())
-    }
+            let winner_flags = winners
+                .into_iter()
+                .map(|w|{
+                    if w.is_some(){
+                        winner_count += 1;
+                        true
+                    } else{
+                        false
+                    }
+                })
+                .collect::<Vec<bool>>();
+            
+            let winner_reward = current_match_pda_amout / winner_count; //// spread between winners equally
 
-    pub fn withdraw(ctx: Context<WithdrawFromUserPda>, bump: u8) -> Result<()>{
+            for is_winner in winner_flags{
+                //// every element inside winner_flags is a boolean map to the winner index inside the winners 
+                //// vector also player accounts are behind a shared reference thus we can't move out of them
+                //// since unwrap(self) method takes the ownership of the type and return the Self because 
+                //// in its first param doesn't borrow the self or have &self, the solution is to use a borrow 
+                //// of the player account then unwrap() the borrow type like first_player_account.as_ref().unwrap()
+                //// with this way we don't lose the ownership of the first_player_account and we can call 
+                //// the to_account_info() method on it.
+                if is_winner{
+                    let winner_account = first_player_account.as_ref().unwrap().to_account_info();
+                    **winner_account.try_borrow_mut_lamports()? += winner_reward;
+                    **match_pda.try_borrow_mut_lamports()? -= winner_reward;
+                }
+            }
 
-        let user_pda = &mut ctx.accounts.user_pda;
-        let signer = &ctx.accounts.signer; //// only player can withdraw
-        let player = &ctx.accounts.player;
-        let pda = user_pda.to_account_info();
-        let current_pda_amount = pda.lamports(); 
-
-        if signer.key != player.key{
-            return err!(ErrorCode::RestrictionError);
+        } else{
+            return err!(ErrorCode::MatchPdaIsEmpty);
         }
 
-        **pda.try_borrow_mut_lamports()? -= current_pda_amount;
-        **player.try_borrow_mut_lamports()? += current_pda_amount;
-
-
         Ok(())
-    }
 
+    }
 
 }
 
@@ -114,10 +274,15 @@ pub struct Cell{
 pub struct Player{
    pub pub_key: Pubkey,
    pub table: Vec<Cell>,
+   pub current_balance: u64,
 }
+
 
 impl Player{
 
+    //// ----------------------------------------------------------------------------------------
+    //// ----------------------- on chain methods to build the game logic -----------------------
+    //// ----------------------------------------------------------------------------------------
     fn create_table(&mut self, size: u16) -> Vec<Cell>{
         self.table = Vec::with_capacity(size as usize);
         for _ in 0..size{
@@ -140,6 +305,9 @@ impl Player{
 
         todo!()
     } 
+    //// ----------------------------------------------------------------------------------------
+    //// ----------------------------------------------------------------------------------------
+    //// ----------------------------------------------------------------------------------------
 
 }
 
@@ -152,6 +320,9 @@ pub struct Round{
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)]
 pub struct CurrentMatch{
    pub match_id: String,
+   pub bump: u8,
+   pub server: Pubkey,
+   pub is_locked: bool,
    pub announced_values: Vec<Round>,
    pub players: Vec<Player>,
 }
@@ -164,10 +335,9 @@ pub struct MatchPda{
 
 
 #[derive(Accounts)]
-#[instruction(match_id: String)]
-pub struct StartGame<'info>{
+pub struct InitUserPda<'info>{
    #[account(mut)]
-   pub signer: Signer<'info>, //// server
+   pub signer: Signer<'info>, //// player
    #[account(mut)]
    pub player: AccountInfo<'info>,
    /// CHECK:
@@ -176,37 +346,72 @@ pub struct StartGame<'info>{
    /// CHECK:
    #[account(init, payer = signer, space = 300, seeds = [b"slingo", player.key().as_ref()], bump)]
    pub user_pda: AccountInfo<'info>,
-   #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), player.key().as_ref()], bump)]
+   #[account(mut, seeds = [match_pda.current_match.match_id.as_bytes(), player.key().as_ref()], bump)]
    pub match_pda: Account<'info, MatchPda>,
-   /// CHECK:
-   #[account(mut)]
-   pub first_player: Option<AccountInfo<'info>>,
-   /// CHECK:
-   #[account(mut)]
-   pub second_player: Option<AccountInfo<'info>>,
-   /// CHECK:
-   #[account(mut)]
-   pub third_player: Option<AccountInfo<'info>>,
-   /// CHECK:
-   #[account(mut)]
-   pub fourth_player: Option<AccountInfo<'info>>,
-   /// CHECK:
-   #[account(mut)]
-   pub fifth_player: Option<AccountInfo<'info>>,
-   /// CHECK:
-   #[account(mut)]
-   pub sixth_player: Option<AccountInfo<'info>>,
    pub system_program: Program<'info, System>,
 }
 
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
+pub struct DepositToMatchPda<'info>{
+   #[account(mut)]
+   pub signer: Signer<'info>, //// player
+   #[account(mut)]
+   pub player: AccountInfo<'info>,
+   /// CHECK:
+   #[account(mut)]
+   pub server: AccountInfo<'info>,
+   /// CHECK:
+   #[account(mut, seeds = [b"slingo", player.key().as_ref()], bump)]
+   pub user_pda: AccountInfo<'info>,
+   #[account(mut, seeds = [match_pda.current_match.match_id.as_bytes(), player.key().as_ref()], bump)]
+   pub match_pda: Account<'info, MatchPda>,
+   pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(match_id: String)]
+pub struct InitMatchPda<'info>{
+   #[account(mut)]
+   pub signer: Signer<'info>, //// server
+   #[account(mut)]
+   pub player: AccountInfo<'info>,
+   /// CHECK:
+   #[account(mut)]
+   pub server: AccountInfo<'info>,
+   #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), player.key().as_ref()], bump)]
+   pub match_pda: Account<'info, MatchPda>,
+   pub system_program: Program<'info, System>,
+}
+
+
+#[derive(Accounts)]
+#[instruction(match_id: String)]
+pub struct StartGame<'info>{
+   #[account(mut)]
+   pub signer: Signer<'info>, //// only server
+   #[account(mut)]
+   pub player: AccountInfo<'info>,
+   /// CHECK:
+   #[account(mut)]
+   pub server: AccountInfo<'info>,
+   #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), player.key().as_ref()], bump)]
+   pub match_pda: Account<'info, MatchPda>,
+   pub system_program: Program<'info, System>,
+}
+
+
+#[derive(Accounts)]
+#[instruction(player_bump: u8)]
 pub struct WithdrawFromUserPda<'info>{
     #[account(mut)]  
     pub signer: Signer<'info>, //// only player
-    #[account(mut, seeds = [b"slingo", player.key().as_ref()], bump = bump)]
+    #[account(mut, seeds = [b"slingo", player.key().as_ref()], bump = player_bump)]
     pub user_pda: AccountInfo<'info>,
+    #[account(mut, seeds = [match_pda.current_match.match_id.as_bytes(), 
+                            match_pda.current_match.server.key().as_ref()], 
+                            bump = match_pda.current_match.bump)]
+    pub match_pda: Account<'info, MatchPda>,
     /// CHECK:
     #[account(mut)]
     pub player: AccountInfo<'info>,
@@ -214,6 +419,7 @@ pub struct WithdrawFromUserPda<'info>{
 }
 
 #[derive(Accounts)]
+#[instruction(match_id: String, player_bumps: Vec<u8>)]
 pub struct FinishGame<'info>{
     #[account(mut)]  
     pub signer: Signer<'info>, //// only server
@@ -223,23 +429,23 @@ pub struct FinishGame<'info>{
     #[account(mut)]
     pub server: AccountInfo<'info>,
     /// CHECK:
-    #[account(mut)]
-    pub first_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", first_user_pda.key().as_ref()], bump = player_bumps[0])]
+    pub first_user_pda: Option<AccountInfo<'info>>,
     /// CHECK:
-    #[account(mut)]
-    pub second_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", second_user_pda.key().as_ref()], bump = player_bumps[1])]
+    pub second_user_pda: Option<AccountInfo<'info>>,
     /// CHECK:
-    #[account(mut)]
-    pub third_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", third_user_pda.key().as_ref()], bump = player_bumps[2])]
+    pub third_user_pda: Option<AccountInfo<'info>>,
     /// CHECK:
-    #[account(mut)]
-    pub fourth_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", fourth_user_pda.key().as_ref()], bump = player_bumps[3])]
+    pub fourth_user_pda: Option<AccountInfo<'info>>,
     /// CHECK:
-    #[account(mut)]
-    pub fifth_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", fifth_user_pda.key().as_ref()], bump = player_bumps[4])]
+    pub fifth_user_pda: Option<AccountInfo<'info>>,
     /// CHECK:
-    #[account(mut)]
-    pub sixth_player: Option<AccountInfo<'info>>,
+    #[account(mut, seeds = [b"slingo", sixth_user_pda.key().as_ref()], bump = player_bumps[5])]
+    pub sixth_user_pda: Option<AccountInfo<'info>>,
     pub system_program: Program<'info, System>,
 }
 
@@ -250,4 +456,24 @@ pub enum ErrorCode {
     InsufficientFund,
     #[msg("Restriction error!")]
     RestrictionError,
+    #[msg("Player Doesn't Exist!")]
+    PlayerDoesntExist,
+    #[msg("Player Balance Is Zero!")]
+    PlayerBalanceIsZero,
+    #[msg("Match Is Locked!")]
+    MatchIsLocked,
+    #[msg("Match PDA Is Empty!")]
+    MatchPdaIsEmpty,
+}
+
+
+#[event]
+#[derive(Debug)]
+pub struct CurrentMatchEvent{
+    pub match_id: String,
+    pub bump: u8,
+    pub server: Pubkey,
+    pub is_locked: bool,
+    pub announced_values: Vec<Round>,
+    pub players: Vec<Player>,
 }

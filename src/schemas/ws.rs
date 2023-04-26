@@ -31,7 +31,9 @@ pub struct CurrentMatch{
 
 
 
-// fire/emit/publish UserNotif events in ws/rpc/zmq server 
+// fire/emit/publish UserNotif events in ws/rpc/zmq server
+// like using emit!(UserNotif{}) macro which emit and fire an
+// event through the ws to clients 
 // sub or listen to UserNotif events in ws/rpc/zmq client
 // using an event loop or listener.
 // update UserNotif on every data changes through its related api calls
