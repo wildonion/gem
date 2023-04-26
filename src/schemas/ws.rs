@@ -31,8 +31,6 @@ pub struct CurrentMatch{
 
 
 
-
-
 // fire/emit/publish UserNotif events in ws/rpc/zmq server 
 // sub or listen to UserNotif events in ws/rpc/zmq client
 // using an event loop or listener.
@@ -50,7 +48,7 @@ pub struct UserNotif{
 pub struct NotifData{
     fired_at: Option<i64>,
     seen: bool,
-    topic: String, //// json string contains the actual data
+    topic: String, //// json string contains the actual data like fireing the player status (role and state changing) during the game 
 }
 
 impl UserNotif{

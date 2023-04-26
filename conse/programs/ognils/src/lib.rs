@@ -19,6 +19,21 @@ pub mod ognils {
         let signer = ctx.accounts.signer.key();
         let server = ctx.accounts.server.key();
 
+        // ----------------- players accounts ----------------------
+        //// can't move out of a type if it's behind a shread reference
+        let first_player_account = &ctx.accounts.first_player;
+        let second_player_account = &ctx.accounts.second_player;
+        let third_player_account = &ctx.accounts.third_player;
+        let fourth_player_account = &ctx.accounts.fourth_player;
+        let fifth_player_account = &ctx.accounts.fifth_player;
+        let sixth_player_account = &ctx.accounts.sixth_player;
+
+        if fifth_player_account.is_some(){
+            **fifth_player_account.try_borrow_mut_lamports()? -= amount;
+            **player_pda.try_borrow_mut_lamports()? += amount;
+        }
+
+
         if user_pda_lamports < amount {
             // revert the game and pay back all players selected from the queue 
             for player in players{
@@ -26,8 +41,6 @@ pub mod ognils {
                 let player_seeds = &[b"slingo", player_pubkey.as_ref()];
                 let player_pda = Pubkey::find_program_address(player_seeds, &program_id.key());
                 let player_pda_account = player_pda.0;
-                // **match_pda_account.try_borrow_mut_lamports()? -= amount;
-                // **player_pda.try_borrow_mut_lamports()? += amount;
             }
             
             return err!(ErrorCode::InsufficientFund);
@@ -38,7 +51,11 @@ pub mod ognils {
         } 
 
 
+        **user_pda_account.try_borrow_mut_lamports()? -= amount;
+        **match_pda_account.try_borrow_mut_lamports()? += amount;
+
         // create current match data on chain 
+        // call create_table, get_column_range, create_announced_values
         // ...
 
 
@@ -48,12 +65,18 @@ pub mod ognils {
 
     pub fn finish_game(ctx: Context<FinishGame>, winners: Vec<Pubkey>) -> Result<()>{ 
         
-        
+        // ----------------- players accounts ----------------------
+        //// can't move out of a type if it's behind a shread reference
+        let first_player_account = &ctx.accounts.first_player;
+        let second_player_account = &ctx.accounts.second_player;
+        let third_player_account = &ctx.accounts.third_player;
+        let fourth_player_account = &ctx.accounts.fourth_player;
+        let fifth_player_account = &ctx.accounts.fifth_player;
+        let sixth_player_account = &ctx.accounts.sixth_player;
         let match_pda_amout = **ctx.accounts.match_pda.try_borrow_lamports()?;
-        for winner in winners{
-            // withdraw from matchPDA and spread between winners equally
-            // ...
-        }
+        
+        // withdraw from matchPDA and spread between winners equally
+        // ...
 
         Ok(())
     }
@@ -100,11 +123,6 @@ impl Player{
         for _ in 0..size{
             self.table.push(Cell { x: 0, y: 0, value: 0 });
         }
-        //// since self.table is behind a mutable reference we can't 
-        //// move it around since rust doesn't allow use to move the 
-        //// heap type if it's behind a muable pointer the soultion 
-        //// can be either cloning which will return the type itself 
-        //// or Self, borrowing (use their slice form) or dereferencing.
         let table = self.table.clone();
         table 
     }
@@ -160,6 +178,24 @@ pub struct StartGame<'info>{
    pub user_pda: AccountInfo<'info>,
    #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), player.key().as_ref()], bump)]
    pub match_pda: Account<'info, MatchPda>,
+   /// CHECK:
+   #[account(mut)]
+   pub first_player: Option<AccountInfo<'info>>,
+   /// CHECK:
+   #[account(mut)]
+   pub second_player: Option<AccountInfo<'info>>,
+   /// CHECK:
+   #[account(mut)]
+   pub third_player: Option<AccountInfo<'info>>,
+   /// CHECK:
+   #[account(mut)]
+   pub fourth_player: Option<AccountInfo<'info>>,
+   /// CHECK:
+   #[account(mut)]
+   pub fifth_player: Option<AccountInfo<'info>>,
+   /// CHECK:
+   #[account(mut)]
+   pub sixth_player: Option<AccountInfo<'info>>,
    pub system_program: Program<'info, System>,
 }
 
@@ -168,7 +204,7 @@ pub struct StartGame<'info>{
 #[instruction(bump: u8)]
 pub struct WithdrawFromUserPda<'info>{
     #[account(mut)]  
-    pub signer: Signer<'info>,
+    pub signer: Signer<'info>, //// only player
     #[account(mut, seeds = [b"slingo", player.key().as_ref()], bump = bump)]
     pub user_pda: AccountInfo<'info>,
     /// CHECK:
@@ -180,12 +216,30 @@ pub struct WithdrawFromUserPda<'info>{
 #[derive(Accounts)]
 pub struct FinishGame<'info>{
     #[account(mut)]  
-    pub signer: Signer<'info>, //// the caller must be the server
+    pub signer: Signer<'info>, //// only server
     #[account(init, space = 300, payer = signer, seeds = [b"slingo", server.key().as_ref()], bump)]
     pub match_pda: AccountInfo<'info>,
     /// CHECK:
     #[account(mut)]
     pub server: AccountInfo<'info>,
+    /// CHECK:
+    #[account(mut)]
+    pub first_player: Option<AccountInfo<'info>>,
+    /// CHECK:
+    #[account(mut)]
+    pub second_player: Option<AccountInfo<'info>>,
+    /// CHECK:
+    #[account(mut)]
+    pub third_player: Option<AccountInfo<'info>>,
+    /// CHECK:
+    #[account(mut)]
+    pub fourth_player: Option<AccountInfo<'info>>,
+    /// CHECK:
+    #[account(mut)]
+    pub fifth_player: Option<AccountInfo<'info>>,
+    /// CHECK:
+    #[account(mut)]
+    pub sixth_player: Option<AccountInfo<'info>>,
     pub system_program: Program<'info, System>,
 }
 

@@ -2,7 +2,7 @@
 
 
 use hyper::Request;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::constants::*;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
@@ -26,9 +26,9 @@ pub async fn register_notif(req: Request<Body>) -> ConseResult<hyper::Response<B
 
 
     let res = Response::builder(); //// creating a new response cause we didn't find any available route
-    let response_body = ctx::app::Response::<ctx::app::Nill>{
+    let response_body = misc::app::Response::<misc::app::Nill>{
         message: NOT_IMPLEMENTED,
-        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
         status: 501,
     };
     let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

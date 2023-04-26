@@ -33,7 +33,7 @@ gql subs ws client
                                                                                             zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
                                                                                             gql subs
                                                                                             ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
-                                                                                            connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of IO future objects 
+                                                                                            connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
                                                                                             redis client pubsub + mongodb
 ➙ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
  (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
@@ -84,52 +84,27 @@ use futures::executor::block_on;
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri, Body};
-use openai::set_key;
-use self::contexts as ctx; // use crate::contexts as ctx; - ctx can be a wrapper around a predefined type so we can access all its field and methods
-use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
 use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
-use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; //// methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
-use openai::{ //// openai crate is using the reqwest lib under the hood
-    chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
-};
-use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
-                interaction::application_command::{CommandDataOption, CommandDataOptionValue}, command::CommandOption}, 
-                framework::standard::{macros::{help, hook}, 
-                HelpOptions, help_commands, CommandGroup}
-            };
-use serenity::model::Timestamp;
-use serenity::builder;
-use serenity::utils::Colour;
-use serenity::model::prelude::command::CommandOptionType;
-use serenity::client::bridge::gateway::ShardManager;
-use serenity::model::application::command::Command;
-use serenity::model::channel::Message;
-use serenity::model::application::interaction::{Interaction, InteractionResponseType};
-use serenity::model::gateway::Ready;
-use serenity::model::id::GuildId;
-use serenity::{prelude::*, 
-                model::prelude::ResumedEvent, 
-                framework::standard::{
-                    Args,
-                    CommandResult, macros::{command, group}
-                }
-            };
+
+
 
 pub mod middlewares;
-pub mod misc; //// we're importing the misc.rs in here as a public module thus we can access all the modules, functions and macros inside of it in here publicly
+pub mod misc; //// we're importing the misc.rs in here as a public module thus we can access all the modules, functions, macros and pre defined types inside of it in here publicly
 pub mod constants;
-pub mod contexts;
 pub mod schemas;
 pub mod controllers;
 pub mod routers;
 
 
 
+// first import a a rust crate file a module 
+// inside the current crate then use crate::module_name::*
+// to load all the methods, types and functions from the 
+// that module.
+// use crate::*; // load from lib.rs or main.rs
+// use self::*; // load from the module itself
+// use super::*; // load from the root of the crate 
 
-
-pub static GPT: Lazy<ctx::gpt::chat::Gpt> = Lazy::new(|| {
-    block_on(ctx::gpt::chat::Gpt::new())
-});
 
 
 
@@ -171,9 +146,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
-    let openai_key = env::var("OPENAI_KEY").expect("⚠️ no openai key variable set");
-    let discord_token = env::var("DISCORD_TOKEN").expect("⚠️ no discord token variable set");
-    let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
@@ -181,7 +153,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
     let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
-    set_key(openai_key);
     
 
     
@@ -246,7 +217,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //
     // ---------------------------------------------------------------------------------------
     let mut otp_auth = misc::otp::Auth::new(sms_api_token, sms_template); //// the return type is impl Otp trait which we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
-    let otp_info = ctx::app::OtpInfo{
+    let otp_info = misc::app::OtpInfo{
         //// since otp_auth is of type trait, in order 
         //// to have a trait in struct field or function
         //// param we have to use it behind a pointer 
@@ -264,29 +235,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-
-
-
-
-
-
-    // -------------------------------- setting up discord bot
-    //
-    // ---------------------------------------------------------------------------------------
-    //// we're using tokio event loop handler to activate the discord bot in such
-    //// a way that once we received the flag from the mpsc channel inside the event
-    //// loop, other branches will be canceled
-    discord_bot_flag_sender.send(false).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
-    tokio::select!{
-        bot_flag = discord_bot_flag_receiver.recv() => {
-            if let Some(_) = bot_flag{
-                info!("🏳️ receiving discord bot true flag");
-                misc::activate_discord_bot(discord_token.as_str(), 
-                                            serenity_shards.parse::<u64>().unwrap(), 
-                                            GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
-            }    
-        }
-    }
 
 
 
@@ -320,12 +268,12 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // .scope("/gql") // TODO - used for subscriptions like sub to push notifs and chatapp
         .build()
         .unwrap();
-    info!("🏃‍♀️ running {} server on port {} - {}", ctx::app::APP_NAME, port, chrono::Local::now().naive_local());
+    info!("🏃‍♀️ running {} server on port {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
-    let conse_graceful = conse_server.with_graceful_shutdown(ctx::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
+    let conse_graceful = conse_server.with_graceful_shutdown(misc::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
     // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
-        unwrapped_storage.db.clone().unwrap().mode = ctx::app::Mode::Off; //// set the db mode of the app storage to off
+        unwrapped_storage.db.clone().unwrap().mode = misc::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
     

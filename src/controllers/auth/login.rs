@@ -3,9 +3,8 @@
 
 
 
-use crate::contexts as ctx;
-use crate::schemas;
 use crate::misc;
+use crate::schemas;
 use crate::constants::*;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
 use chrono::Utc;
@@ -89,8 +88,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                             Err(e) => {
 
                                                 resp!{
-                                                    ctx::app::Nill, //// the data type
-                                                    ctx::app::Nill(&[]), //// the data itself
+                                                    misc::app::Nill, //// the data type
+                                                    misc::app::Nill(&[]), //// the data itself
                                                     &e.to_string(), //// response message
                                                     StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                                     "application/json" //// the content type 
@@ -100,8 +99,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                     } else{ //// if we're here means hash and raw are not match together and we have the unsuccessful login
 
                                         resp!{
-                                            ctx::app::Nill, //// the data type
-                                            ctx::app::Nill(&[]), //// the data itself
+                                            misc::app::Nill, //// the data type
+                                            misc::app::Nill(&[]), //// the data itself
                                             WRONG_CREDENTIALS, //// response message
                                             StatusCode::NOT_FOUND, //// status code
                                             "application/json" //// the content type 
@@ -112,8 +111,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                 Err(e) => {
 
                                     resp!{
-                                        ctx::app::Nill, //// the data type
-                                        ctx::app::Nill(&[]), //// the data itself
+                                        misc::app::Nill, //// the data type
+                                        misc::app::Nill(&[]), //// the data itself
                                         &e.to_string(), //// response message
                                         StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                         "application/json" //// the content type 
@@ -125,8 +124,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                         None => { //// means we didn't find any document related to this username and we have to tell the user do a signup
 
                             resp!{
-                                ctx::app::Nill, //// the data type
-                                ctx::app::Nill(&[]), //// the data itself
+                                misc::app::Nill, //// the data type
+                                misc::app::Nill(&[]), //// the data itself
                                 DO_SIGNUP, //// response message
                                 StatusCode::NOT_FOUND, //// status code
                                 "application/json" //// the content type 
@@ -143,8 +142,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                 Err(e) => {
                     
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         &e.to_string(), //// response message
                         StatusCode::NOT_ACCEPTABLE, //// status code
                         "application/json" //// the content type 
@@ -156,8 +155,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         Err(e) => {
             
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::BAD_REQUEST, //// status code
                 "application/json" //// the content type 

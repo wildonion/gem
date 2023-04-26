@@ -5,7 +5,6 @@
 
 use crate::misc;
 use crate::middlewares;
-use crate::contexts as ctx;
 use crate::passport; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::passport
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
 use crate::schemas;
@@ -61,8 +60,8 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
                 discord_bot_flag_sender.send(true).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
                             
                 resp!{
-                    ctx::app::Nill, //// the data type
-                    ctx::app::Nill(&[]), //// the data itself
+                    misc::app::Nill, //// the data type
+                    misc::app::Nill(&[]), //// the data itself
                     DISCORD_BOT_STARTED, //// response message
                     StatusCode::OK, //// status code
                     "application/json" //// the content type 
@@ -78,8 +77,8 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
         None => { //// passport data not found response
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 PASSPORT_DATA_NOT_FOUND, //// response message
                 StatusCode::NOT_ACCEPTABLE, //// status code
                 "application/json" //// the content type

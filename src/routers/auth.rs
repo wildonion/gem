@@ -27,7 +27,7 @@ use std::env;
 use mongodb::Client;
 use routerify::{Router, Middleware};
 use crate::middlewares;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::constants::*;
 use hyper::{header, Body, Response, StatusCode};
 use crate::controllers::auth::{
@@ -67,9 +67,9 @@ pub async fn register() -> Router<Body, hyper::Error>{
         // .data(app_storage) //// sharing the initialized app_storage between routers' threads
         .get("/page", |req| async move{
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
+            let response_body = misc::app::Response::<misc::app::Nill>{
                 message: WELCOME,
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 status: 200,
             };
             let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body

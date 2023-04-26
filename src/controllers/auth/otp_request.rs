@@ -4,7 +4,7 @@
 
 
 
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::constants::*;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
@@ -51,7 +51,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //////
     ////// UNCOMMENT THE FOLLOWING IF YOU'VE PASSED THE OTP INSTANCE THROUGH THE REQUEST DATA FROM THE MAIN
     //////
-    // let request_data = &req.data::<(MC, Arc<Mutex<ctx::app::OtpInfo>>)>().unwrap().to_owned(); //// getting the request data from the incoming request
+    // let request_data = &req.data::<(MC, Arc<Mutex<misc::app::OtpInfo>>)>().unwrap().to_owned(); //// getting the request data from the incoming request
     // let db = &request_data.0;
     // let request_otp_info = &request_data.1;
     
@@ -94,7 +94,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                     
                     //// Send is not implement for Mutex since Mutex will block the thread and we should avoid using it in async functions since async methods won't block the thread to get their job done
                     //// thus we can use tokio Mutex which is an async one : https://stackoverflow.com/a/67277503
-                    // let otp_auth = &mut request_otp_info.lock().await.otp_auth; //// the return type is &Box<Otp + Send + Sync> which is a reference (trat Clone is not implemented for ctx::app::OtpInfo thus we have to take a reference to the Box) to a Box contains a shareable trait (between threads) with static lifetime and we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
+                    // let otp_auth = &mut request_otp_info.lock().await.otp_auth; //// the return type is &Box<Otp + Send + Sync> which is a reference (trat Clone is not implemented for misc::app::OtpInfo thus we have to take a reference to the Box) to a Box contains a shareable trait (between threads) with static lifetime and we can only access the trait methods on the instance - it must be defined as mutable since later we want to get the sms response stream to decode the content, cause reading it is a mutable process
                     
                     /////// we've commented above line which is getting the otp_auth from the request data
                     /////// since we wanto have one otp request instance to the career per user.
@@ -187,8 +187,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                             // ...
 
                                             resp!{
-                                                ctx::app::Nill, //// the data type
-                                                ctx::app::Nill(&[]), //// the data itself
+                                                misc::app::Nill, //// the data type
+                                                misc::app::Nill(&[]), //// the data itself
                                                 OTP_CODE_HAS_BEEN_SENT, //// response message
                                                 StatusCode::OK, //// status code
                                                 "application/json" //// the content type 
@@ -219,8 +219,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                                 Err(e) => {
 
                                                     resp!{
-                                                        ctx::app::Nill, //// the data type
-                                                        ctx::app::Nill(&[]), //// the data itself
+                                                        misc::app::Nill, //// the data type
+                                                        misc::app::Nill(&[]), //// the data itself
                                                         &e.to_string(), //// response message
                                                         StatusCode::NOT_ACCEPTABLE, //// status code
                                                         "application/json" //// the content type 
@@ -240,8 +240,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             Err(e) => {
 
                                 resp!{
-                                    ctx::app::Nill, //// the data type
-                                    ctx::app::Nill(&[]), //// the data itself
+                                    misc::app::Nill, //// the data type
+                                    misc::app::Nill(&[]), //// the data itself
                                     &e.to_string(), //// response message
                                     StatusCode::NOT_ACCEPTABLE, //// status code
                                     "application/json" //// the content type 
@@ -251,8 +251,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                     } else{ /////// the status of the OTP career is not 200 means the code didn't send successfully to the receiver
 
                         resp!{
-                            ctx::app::Nill, //// the data type
-                            ctx::app::Nill(&[]), //// the data itself
+                            misc::app::Nill, //// the data type
+                            misc::app::Nill(&[]), //// the data itself
                             &"OTP didn't send from the career".to_string(), //// response message
                             StatusCode::SERVICE_UNAVAILABLE, //// status code
                             "application/json" //// the content type 
@@ -262,8 +262,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                 Err(e) => {
 
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         &e.to_string(), //// response message
                         StatusCode::NOT_ACCEPTABLE, //// status code
                         "application/json" //// the content type 
@@ -274,8 +274,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         Err(e) => {
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::BAD_REQUEST, //// status code
                 "application/json" //// the content type 

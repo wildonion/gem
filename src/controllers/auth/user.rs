@@ -6,10 +6,9 @@
 
 use crate::middlewares;
 use crate::schemas;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::constants::*;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
-use crate::misc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
@@ -88,8 +87,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                                         None => { //// means we didn't find any document related to this title and we have to tell the user do a signup first
 
                                             resp!{
-                                                ctx::app::Nill, //// the data type
-                                                ctx::app::Nill(&[]), //// the data itself
+                                                misc::app::Nill, //// the data type
+                                                misc::app::Nill(&[]), //// the data itself
                                                 DO_SIGNUP, //// response message
                                                 StatusCode::NOT_FOUND, //// status code
                                                 "application/json" //// the content type 
@@ -104,8 +103,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                                 Err(e) => {
 
                                     resp!{
-                                        ctx::app::Nill, //// the data type
-                                        ctx::app::Nill(&[]), //// the data itself
+                                        misc::app::Nill, //// the data type
+                                        misc::app::Nill(&[]), //// the data itself
                                         &e.to_string(), //// response message
                                         StatusCode::NOT_ACCEPTABLE, //// status code
                                         "application/json" //// the content type 
@@ -116,8 +115,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                         Err(e) => {
 
                             resp!{
-                                ctx::app::Nill, //// the data type
-                                ctx::app::Nill(&[]), //// the data itself
+                                misc::app::Nill, //// the data type
+                                misc::app::Nill(&[]), //// the data itself
                                 &e.to_string(), //// response message
                                 StatusCode::BAD_REQUEST, //// status code
                                 "application/json" //// the content type 
@@ -127,8 +126,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                 } else{ //// access denied for this user with none admin and dev access level
         
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         ACCESS_DENIED, //// response message
                         StatusCode::FORBIDDEN, //// status code
                         "application/json" //// the content type 
@@ -137,8 +136,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
             } else{ //// user doesn't exist :(
 
                 resp!{
-                    ctx::app::Nill, //// the data type
-                    ctx::app::Nill(&[]), //// the data itself
+                    misc::app::Nill, //// the data type
+                    misc::app::Nill(&[]), //// the data itself
                     DO_SIGNUP, //// response message
                     StatusCode::NOT_FOUND, //// status code
                     "application/json" //// the content type 
@@ -148,8 +147,8 @@ pub async fn edit_profile(req: Request<Body>) -> ConseResult<hyper::Response<Bod
         Err(e) => {
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
                 "application/json" //// the content type 
@@ -213,7 +212,7 @@ pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
                                 available_users.users.push(user);
                             }
                             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-                            let response_body = ctx::app::Response::<Vec<schemas::auth::UserInfo>>{
+                            let response_body = misc::app::Response::<Vec<schemas::auth::UserInfo>>{
                                 message: FETCHED,
                                 data: Some(available_users.users),
                                 status: 200,
@@ -228,8 +227,8 @@ pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
                             )
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 500,
                             };
@@ -249,8 +248,8 @@ pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
 
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -264,8 +263,8 @@ pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -280,8 +279,8 @@ pub async fn get_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };

@@ -4,7 +4,7 @@
 
 
 use crate::middlewares;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::constants::*;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
@@ -81,8 +81,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     let Some(header_value_api_key) = req.headers().get("API_KEY") else{
 
         resp!{
-            ctx::app::Nill, //// the data type
-            ctx::app::Nill(&[]), //// the data itself
+            misc::app::Nill, //// the data type
+            misc::app::Nill(&[]), //// the data itself
             HTTP_HEADER_ERR, //// response message
             StatusCode::INTERNAL_SERVER_ERROR, //// status code
             "application/json" //// the content type 
@@ -92,8 +92,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     let Ok(api_key) = header_value_api_key.to_str() else{ //// hased api key from the client
 
         resp!{
-            ctx::app::Nill, //// the data type
-            ctx::app::Nill(&[]), //// the data itself
+            misc::app::Nill, //// the data type
+            misc::app::Nill(&[]), //// the data itself
             NO_API_KEY, //// response message
             StatusCode::FORBIDDEN, //// status code
             "application/json" //// the content type 
@@ -109,8 +109,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
         }, 
         Err(e) => {
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
                 "application/json" //// the content type 
@@ -121,8 +121,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     if !dev{
 
         resp!{
-            ctx::app::Nill, //// the data type
-            ctx::app::Nill(&[]), //// the data itself
+            misc::app::Nill, //// the data type
+            misc::app::Nill(&[]), //// the data itself
             ACCESS_DENIED, //// response message
             StatusCode::FORBIDDEN, //// status code
             "application/json" //// the content type 
@@ -166,8 +166,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                     if !vefified_nft_mint_addresses{
 
                                         resp!{
-                                            ctx::app::Nill, //// the data type
-                                            ctx::app::Nill(&[]), //// the data itself
+                                            misc::app::Nill, //// the data type
+                                            misc::app::Nill(&[]), //// the data itself
                                             NOT_VERIFIED_NFT, //// response message
                                             StatusCode::NOT_ACCEPTABLE, //// status code
                                             "application/json" //// the content type 
@@ -182,8 +182,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                     if !schemas::whitelist::verify_owner(owner.clone(), &mint_addrs, &rpc_client).await{  
 
                                         resp!{
-                                            ctx::app::Nill, //// the data type
-                                            ctx::app::Nill(&[]), //// the data itself
+                                            misc::app::Nill, //// the data type
+                                            misc::app::Nill(&[]), //// the data itself
                                             NOT_VERIFIED_OWNER, //// response message
                                             StatusCode::NOT_ACCEPTABLE, //// status code
                                             "application/json" //// the content type 
@@ -238,8 +238,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                                     None => { //// means we didn't find any document related to this title and we have to tell the user to create a new event
 
                                                         resp!{
-                                                            ctx::app::Nill, //// the data type
-                                                            ctx::app::Nill(&[]), //// the data itself
+                                                            misc::app::Nill, //// the data type
+                                                            misc::app::Nill(&[]), //// the data itself
                                                             NOT_FOUND_DOCUMENT, //// response message
                                                             StatusCode::NOT_FOUND, //// status code
                                                             "application/json" //// the content type 
@@ -284,8 +284,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                                 Err(e) => {
 
                                                     resp!{
-                                                        ctx::app::Nill, //// the data type
-                                                        ctx::app::Nill(&[]), //// the data itself
+                                                        misc::app::Nill, //// the data type
+                                                        misc::app::Nill(&[]), //// the data itself
                                                         &e.to_string(), //// response message
                                                         StatusCode::NOT_ACCEPTABLE, //// status code
                                                         "application/json" //// the content type 
@@ -300,8 +300,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                                 Err(e) => {
 
                                     resp!{
-                                        ctx::app::Nill, //// the data type
-                                        ctx::app::Nill(&[]), //// the data itself
+                                        misc::app::Nill, //// the data type
+                                        misc::app::Nill(&[]), //// the data itself
                                         &e.to_string(), //// response message
                                         StatusCode::NOT_ACCEPTABLE, //// status code
                                         "application/json" //// the content type 
@@ -312,8 +312,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                         Err(e) => {
 
                             resp!{
-                                ctx::app::Nill, //// the data type
-                                ctx::app::Nill(&[]), //// the data itself
+                                misc::app::Nill, //// the data type
+                                misc::app::Nill(&[]), //// the data itself
                                 &e.to_string(), //// response message
                                 StatusCode::BAD_REQUEST, //// status code
                                 "application/json" //// the content type 
@@ -325,8 +325,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
                 } else{ //// access denied for this user with none admin and dev access level
 
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         ACCESS_DENIED, //// response message
                         StatusCode::FORBIDDEN, //// status code
                         "application/json" //// the content type 
@@ -335,8 +335,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
             } else{ //// user doesn't exist :(
 
                 resp!{
-                    ctx::app::Nill, //// the data type
-                    ctx::app::Nill(&[]), //// the data itself
+                    misc::app::Nill, //// the data type
+                    misc::app::Nill(&[]), //// the data itself
                     DO_SIGNUP, //// response message
                     StatusCode::NOT_FOUND, //// status code
                     "application/json" //// the content type 
@@ -346,8 +346,8 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
         Err(e) => {
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
                 "application/json" //// the content type 

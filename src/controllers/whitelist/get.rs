@@ -5,11 +5,10 @@
 
 
 use crate::middlewares;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::constants::*;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
-use crate::misc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
@@ -100,7 +99,7 @@ pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<B
                 available_whitelist.push(wl);
             }
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-            let response_body = ctx::app::Response::<Vec<schemas::whitelist::WhitelistInfo>>{
+            let response_body = misc::app::Response::<Vec<schemas::whitelist::WhitelistInfo>>{
                 message: FETCHED,
                 data: Some(available_whitelist),
                 status: 200,
@@ -115,8 +114,8 @@ pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<B
             )
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -168,7 +167,7 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
     match whitelist.find_one(filter, None).await.unwrap(){
         Some(whitelist_doc) => {
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-            let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{
+            let response_body = misc::app::Response::<schemas::whitelist::WhitelistInfo>{
                 message: FETCHED,
                 data: Some(whitelist_doc),
                 status: 200,
@@ -183,8 +182,8 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
             )
         },
        None => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: NOT_FOUND_DOCUMENT,
                 status: 404,
             };
@@ -238,7 +237,7 @@ pub async fn whitelist_owner_score(req: Request<Body>) -> ConseResult<hyper::Res
     match whitelist.find_one(filter, None).await.unwrap(){
         Some(whitelist_doc) => {
             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-            let response_body = ctx::app::Response::<schemas::whitelist::WhitelistInfo>{
+            let response_body = misc::app::Response::<schemas::whitelist::WhitelistInfo>{
                 message: FETCHED,
                 data: Some(whitelist_doc),
                 status: 200,
@@ -253,8 +252,8 @@ pub async fn whitelist_owner_score(req: Request<Body>) -> ConseResult<hyper::Res
             )
         },
        None => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: NOT_FOUND_DOCUMENT,
                 status: 404,
             };

@@ -8,10 +8,9 @@
 
 use std::io::{BufWriter, Write};
 use std::thread;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::constants::*;
-use crate::misc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next IO stream of future chunk and returns an Option in which the chunk might be either some value or none
 use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
@@ -139,7 +138,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //         let delta_ms = delta.as_secs() as f32 * 1000_f32 + (delta.subsec_nanos() as f32)/1000000 as f32; 
     //         // assert_eq!(3985935_u32, result); //// it'll panic on not equal condition
     //         info!("::::: the result is {:?} - [it might be different from the input] - | cost : {:?}\n\n", result, delta_ms);
-    //         let response_body = ctx::app::Response::<u32>{
+    //         let response_body = misc::app::Response::<u32>{
     //             message: SIMD_RESULT,
     //             data: Some(result),
     //             status: 200,
@@ -155,8 +154,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //     },
     //     Err(e) => {
     //         info!("::::: error in reading chunk caused by {:?}", e);
-    //         let response_body = ctx::app::Response::<ctx::app::Nill>{
-    //             data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+    //         let response_body = misc::app::Response::<misc::app::Nill>{
+    //             data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
     //             message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
     //             status: 406,
     //         };
@@ -193,7 +192,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             let delta_ms = delta.as_secs() as f32 * 1000_f32 + (delta.subsec_nanos() as f32)/1000000 as f32; 
                             // assert_eq!(3985935_u32, result); //// it'll panic on not equal condition
                             info!("::::: the result is {:?} - [it might be different from the input] - | cost : {:?}\n\n", result, delta_ms);
-                            let response_body = ctx::app::Response::<u32>{
+                            let response_body = misc::app::Response::<u32>{
                                 message: SIMD_RESULT,
                                 data: Some(result),
                                 status: 200,
@@ -209,8 +208,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                         },
                         Err(e) => {
                             info!("::::: error in reading chunk caused by {:?}", e);
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 406,
                             };
@@ -230,8 +229,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
 
                 },
                 Err(e) => {
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                         status: 406,
                     };
@@ -247,8 +246,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 400,
             };

@@ -7,7 +7,7 @@
 use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
 use routerify::prelude::*;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::resp; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
 use crate::constants::*;
@@ -40,7 +40,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
 
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let request_data = &req.data::<(Client, Arc<Mutex<ctx::app::OtpInfo>>)>().unwrap().to_owned(); //// getting the request data from the incoming request
+    let request_data = &req.data::<(Client, Arc<Mutex<misc::app::OtpInfo>>)>().unwrap().to_owned(); //// getting the request data from the incoming request
     let db = &request_data.0;
     let request_otp_info = &request_data.1;
 
@@ -72,8 +72,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             if time > otp_info_doc.exp_time{
 
                                 resp!{
-                                    ctx::app::Nill, //// the data type
-                                    ctx::app::Nill(&[]), //// the data itself
+                                    misc::app::Nill, //// the data type
+                                    misc::app::Nill(&[]), //// the data itself
                                     EXPIRED_OTP_CODE, //// response message
                                     StatusCode::NOT_ACCEPTABLE, //// status code
                                     "application/json" //// the content type 
@@ -104,8 +104,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                                 None => {
 
                                                     resp!{
-                                                        ctx::app::Nill, //// the data type
-                                                        ctx::app::Nill(&[]), //// the data itself
+                                                        misc::app::Nill, //// the data type
+                                                        misc::app::Nill(&[]), //// the data itself
                                                         DO_SIGNUP, //// response message
                                                         StatusCode::NOT_FOUND, //// status code
                                                         "application/json" //// the content type 
@@ -117,8 +117,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                     None => {
                                         
                                         resp!{
-                                            ctx::app::Nill, //// the data type
-                                            ctx::app::Nill(&[]), //// the data itself
+                                            misc::app::Nill, //// the data type
+                                            misc::app::Nill(&[]), //// the data itself
                                             DO_SIGNUP, //// response message
                                             StatusCode::NOT_FOUND, //// status code
                                             "application/json" //// the content type 
@@ -129,8 +129,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             } else{
 
                                 resp!{
-                                    ctx::app::Nill, //// the data type
-                                    ctx::app::Nill(&[]), //// the data itself
+                                    misc::app::Nill, //// the data type
+                                    misc::app::Nill(&[]), //// the data itself
                                     EXPIRED_OTP_CODE, //// response message
                                     StatusCode::NOT_ACCEPTABLE, //// status code
                                     "application/json" //// the content type 
@@ -141,8 +141,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                         None => { //// means we didn't find any document related to this otp and we have to tell the user do a signup
            
                             resp!{
-                                ctx::app::Nill, //// the data type
-                                ctx::app::Nill(&[]), //// the data itself
+                                misc::app::Nill, //// the data type
+                                misc::app::Nill(&[]), //// the data itself
                                 DO_SIGNUP, //// response message
                                 StatusCode::NOT_FOUND, //// status code
                                 "application/json" //// the content type 
@@ -159,8 +159,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                 Err(e) => {
 
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         &e.to_string(), //// response message
                         StatusCode::NOT_ACCEPTABLE, //// status code
                         "application/json" //// the content type 
@@ -172,8 +172,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         Err(e) => {
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::BAD_REQUEST, //// status code
                 "application/json" //// the content type 

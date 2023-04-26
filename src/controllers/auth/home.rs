@@ -3,7 +3,7 @@
 
 
 
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::middlewares;
 use crate::constants::*;
@@ -75,8 +75,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                 None => { //// means we didn't find any document related to this username and we have to tell the user do a signup
 
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         DO_SIGNUP, //// response message
                         StatusCode::NOT_FOUND, //// status code
                         "application/json" //// the content type 
@@ -92,8 +92,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         Err(e) => {
 
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
                 "application/json" //// the content type 

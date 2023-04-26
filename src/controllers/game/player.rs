@@ -8,7 +8,6 @@
 use crate::middlewares;
 use crate::misc;
 use crate::schemas;
-use crate::contexts as ctx;
 use crate::constants::*;
 use chrono::Utc;
 use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next future IO stream and returns an Option in which the chunk might be either some value or none
@@ -110,7 +109,7 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                                     wallet_address: user_doc.wallet_address,
                                                     balance: user_doc.balance
                                                 };
-                                                let response_body = ctx::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
+                                                let response_body = misc::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
                                                     data: Some(user_info),
                                                     message: UPDATED,
                                                     status: 200,
@@ -125,8 +124,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                                 )
                                             },
                                             None => {
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: NOT_FOUND_PLAYER,
                                                     status: 404,
                                                 };
@@ -144,8 +143,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                         //////////////////////////////////
                                         
                                     } else{
-                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                             message: ACCESS_DENIED,
                                             status: 403,
                                         };
@@ -160,8 +159,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                     }
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -177,8 +176,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -194,8 +193,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                     }
 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -209,8 +208,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -225,8 +224,8 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -311,7 +310,7 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                                     wallet_address: user_doc.wallet_address,
                                                     balance: user_doc.balance
                                                 };
-                                                let response_body = ctx::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
+                                                let response_body = misc::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
                                                     data: Some(user_info),
                                                     message: UPDATED,
                                                     status: 200,
@@ -326,8 +325,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                                 )
                                             },
                                             None => {
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: NOT_FOUND_PLAYER,
                                                     status: 404,
                                                 };
@@ -345,8 +344,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                         //////////////////////////////////
 
                                     } else{
-                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                             message: ACCESS_DENIED,
                                             status: 403,
                                         };
@@ -361,8 +360,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                                     }
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -378,8 +377,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -396,8 +395,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                 
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -411,8 +410,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -427,8 +426,8 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -512,7 +511,7 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                                                     wallet_address: user_doc.wallet_address,
                                                     balance: user_doc.balance
                                                 };
-                                                let response_body = ctx::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
+                                                let response_body = misc::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
                                                     data: Some(user_info),
                                                     message: UPDATED,
                                                     status: 200,
@@ -527,8 +526,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                                                 )
                                             },
                                             None => {
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: NOT_FOUND_PLAYER,
                                                     status: 404,
                                                 };
@@ -546,8 +545,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                                         //////////////////////////////////
 
                                     } else{
-                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                             message: ACCESS_DENIED,
                                             status: 403,
                                         };
@@ -562,8 +561,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                                     }
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -579,8 +578,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -597,8 +596,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                 
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -612,8 +611,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -628,8 +627,8 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -704,7 +703,7 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                                         let player_roles_info = db.clone().database(&db_name).collection::<schemas::game::PlayerRoleAbilityInfo>("player_role_ability_info"); //// connecting to player_role_ability_info collection to update the current_ability field - we want to deserialize all user bsons into the PlayerRoleAbilityInfo struct
                                         match player_roles_info.find_one_and_update(doc!{"user_id": user_id, "event_id": event_id, "role_id": role_id}, doc!{"$set": {"current_ability": Some(current_ability), "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){
                                             Some(user_doc) => {
-                                                let response_body = ctx::app::Response::<schemas::game::PlayerRoleAbilityInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is PlayerRoleAbilityInfo struct
+                                                let response_body = misc::app::Response::<schemas::game::PlayerRoleAbilityInfo>{ //// we have to specify a generic type for data field in Response struct which in our case is PlayerRoleAbilityInfo struct
                                                     data: Some(user_doc),
                                                     message: UPDATED,
                                                     status: 200,
@@ -719,8 +718,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                                                 )
                                             },
                                             None => {
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: NOT_FOUND_PLAYER,
                                                     status: 404,
                                                 };
@@ -738,8 +737,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                                         //////////////////////////////////
                                     
                                     } else{
-                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                             message: ACCESS_DENIED,
                                             status: 403,
                                         };
@@ -754,8 +753,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                                     }
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -771,8 +770,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -788,8 +787,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                     }    
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -803,8 +802,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -819,8 +818,8 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -913,7 +912,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                 if player_inside_this_event{
                                                     match god_votes_on_players.find_one(doc!{"user_id": vote_info.user_id, "event_id": vote_info.event_id}, None).await.unwrap(){
                                                         Some(vote_doc) => {
-                                                            let response_body = ctx::app::Response::<schemas::game::GodVotesOnPlayerInfo>{
+                                                            let response_body = misc::app::Response::<schemas::game::GodVotesOnPlayerInfo>{
                                                                 data: Some(vote_doc),
                                                                 message: FOUND_DOCUMENT, //// already voted
                                                                 status: 302,
@@ -938,7 +937,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                             };
                                                             match god_votes_on_players.insert_one(vote_info, None).await{ //// serializing the user doc which is of type RegisterRequest into the BSON to insert into the mongodb
                                                                 Ok(insert_result) => {
-                                                                    let response_body = ctx::app::Response::<ObjectId>{ //// we have to specify a generic type for data field in Response struct which in our case is ObjectId struct
+                                                                    let response_body = misc::app::Response::<ObjectId>{ //// we have to specify a generic type for data field in Response struct which in our case is ObjectId struct
                                                                         data: Some(insert_result.inserted_id.as_object_id().unwrap()),
                                                                         message: INSERTED,
                                                                         status: 201,
@@ -953,8 +952,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                                     )
                                                                 },
                                                                 Err(e) => {
-                                                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                                                         status: 406,
                                                                     };
@@ -971,8 +970,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                         },
                                                     }
                                                 } else{
-                                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                         message: NOT_FOUND_PLAYER_IN_EVENT,
                                                         status: 404,
                                                     };
@@ -986,8 +985,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                                     )
                                                 }
                                             } else{ //// only the god of the event (must have a group inside the event) can cast vote on player
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: ACCESS_DENIED,
                                                     status: 403,
                                                 };
@@ -1002,8 +1001,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                                             }
                                         },
                                         None => { //// no event found
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: NOT_FOUND_DOCUMENT,
                                                 status: 404,
                                             };
@@ -1022,8 +1021,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
             
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1039,8 +1038,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1056,8 +1055,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                     }    
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -1071,8 +1070,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -1087,8 +1086,8 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -1170,7 +1169,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                         };
                                         match player_chain_info.insert_one(player_chain_doc, None).await{
                                             Ok(insert_result) => {
-                                                let response_body = ctx::app::Response::<ObjectId>{ //// we have to specify a generic type for data field in Response struct which in our case is ObjectId struct
+                                                let response_body = misc::app::Response::<ObjectId>{ //// we have to specify a generic type for data field in Response struct which in our case is ObjectId struct
                                                     data: Some(insert_result.inserted_id.as_object_id().unwrap()),
                                                     message: INSERTED,
                                                     status: 201,
@@ -1185,8 +1184,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                                 )
                                             },
                                             Err(e) => {
-                                                let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                let response_body = misc::app::Response::<misc::app::Nill>{
+                                                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                     message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                                     status: 406,
                                                 };
@@ -1204,8 +1203,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                         //////////////////////////////////
 
                                     } else{
-                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                             message: ACCESS_DENIED,
                                             status: 403,
                                         };
@@ -1220,8 +1219,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                                     }
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1237,8 +1236,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1255,8 +1254,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                 
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -1270,8 +1269,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -1286,8 +1285,8 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -1374,7 +1373,7 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                                             side_id: user_doc.side_id,
                                                         };
                                                         let res = Response::builder(); //// creating a new response cause we didn't find any available route
-                                                        let response_body = ctx::app::Response::<schemas::game::ReservePlayerInfoResponseWithRoleName>{
+                                                        let response_body = misc::app::Response::<schemas::game::ReservePlayerInfoResponseWithRoleName>{
                                                             message: FETCHED,
                                                             data: Some(player_info),
                                                             status: 200,
@@ -1388,8 +1387,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                                                 .unwrap()
                                                         )
                                                     } else{
-                                                        let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                            data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                        let response_body = misc::app::Response::<misc::app::Nill>{
+                                                            data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                             message: ACCESS_DENIED,
                                                             status: 403,
                                                         };
@@ -1404,8 +1403,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                                     }
                                                 },
                                                 None => {
-                                                    let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                                    let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                         message: NOT_FOUND_DOCUMENT,
                                                         status: 404,
                                                     };
@@ -1421,8 +1420,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                                             }
                                         },
                                         None => {
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: NOT_FOUND_PLAYER,
                                                 status: 404,
                                             };
@@ -1441,8 +1440,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1458,8 +1457,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1474,8 +1473,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                         },
                     }
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -1489,8 +1488,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -1505,8 +1504,8 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -1576,7 +1575,7 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                                     match god_votes_on_players.find_one(doc! { "user_id": vote_info.user_id, "event_id": vote_info.event_id }, None).await.unwrap(){
                                         Some(vote_doc) => {
                                             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-                                            let response_body = ctx::app::Response::<schemas::game::GodVotesOnPlayerInfo>{
+                                            let response_body = misc::app::Response::<schemas::game::GodVotesOnPlayerInfo>{
                                                 message: FETCHED,
                                                 data: Some(vote_doc),
                                                 status: 200,
@@ -1591,8 +1590,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                                             )
                                         },
                                         None => {
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: NOT_FOUND_PLAYER,
                                                 status: 404,
                                             };
@@ -1611,8 +1610,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1628,8 +1627,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1644,8 +1643,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                         },
                     }
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -1659,8 +1658,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -1675,8 +1674,8 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -1753,7 +1752,7 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                                                 votes.push(god_vote_info);
                                             }
                                             let res = Response::builder(); //// creating a new response cause we didn't find any available route
-                                            let response_body = ctx::app::Response::<Vec<schemas::game::GodVotesOnPlayerInfo>>{ //// the return type is a vector of all god vote infos related to passed in player id
+                                            let response_body = misc::app::Response::<Vec<schemas::game::GodVotesOnPlayerInfo>>{ //// the return type is a vector of all god vote infos related to passed in player id
                                                 message: FETCHED,
                                                 data: Some(votes),
                                                 status: 200,
@@ -1768,8 +1767,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                                             )
                                         },
                                         Err(e) => {
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                                 status: 500,
                                             };
@@ -1788,8 +1787,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1805,8 +1804,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1826,8 +1825,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                     
                 
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -1841,8 +1840,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -1857,8 +1856,8 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -1929,7 +1928,7 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                                     let player_roles_info = db.clone().database(&db_name).collection::<schemas::game::PlayerRoleAbilityInfo>("player_role_ability_info"); //// connecting to player_role_ability_info collection to update the current_ability field - we want to deserialize all user bsons into the PlayerRoleAbilityInfo struct
                                     match player_roles_info.find_one(doc! { "user_id": player_id }, None).await.unwrap(){
                                         Some(player_role_ability_doc) => {
-                                            let response_body = ctx::app::Response::<schemas::game::PlayerRoleAbilityInfo>{
+                                            let response_body = misc::app::Response::<schemas::game::PlayerRoleAbilityInfo>{
                                                 message: FETCHED,
                                                 data: Some(player_role_ability_doc),
                                                 status: 200,
@@ -1944,8 +1943,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                                             )
                                         },
                                         None => {
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: NOT_FOUND_PLAYER,
                                                 status: 404,
                                             };
@@ -1964,8 +1963,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -1981,8 +1980,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -1997,8 +1996,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                         },
                     }
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -2012,8 +2011,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -2028,8 +2027,8 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
@@ -2103,7 +2102,7 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                                             while let Some(event) = cursor.try_next().await.unwrap(){ //// calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
                                                 available_chain_infos.chain_infos.push(event);
                                             }
-                                            let response_body = ctx::app::Response::<schemas::game::AvailableChainInfos>{
+                                            let response_body = misc::app::Response::<schemas::game::AvailableChainInfos>{
                                                 message: FETCHED,
                                                 data: Some(available_chain_infos),
                                                 status: 200,
@@ -2118,8 +2117,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                                             )
                                         },
                                         Err(e) => {
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                                 status: 500,
                                             };
@@ -2138,8 +2137,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -2155,8 +2154,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -2171,8 +2170,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                         },
                     }
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -2186,8 +2185,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -2202,8 +2201,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Re
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };

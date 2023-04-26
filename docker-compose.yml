@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
   conse:
     build:
-      dockerfile: './Dockerfile'
+      dockerfile: 'devops/docker/gem/Dockerfile'
     container_name: conse
     ports:
       - '7439:7438'

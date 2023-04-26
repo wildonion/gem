@@ -3,7 +3,7 @@
 
 
 use crate::middlewares;
-use crate::contexts as ctx;
+use crate::misc;
 use crate::schemas;
 use crate::constants::*;
 use chrono::Utc;
@@ -57,8 +57,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                         Some(user_doc) => { //// if we find a user with this username we have to tell the user do a login 
 
                             resp!{
-                                ctx::app::Nill, //// the data type
-                                ctx::app::Nill(&[]), //// the data itself
+                                misc::app::Nill, //// the data type
+                                misc::app::Nill(&[]), //// the data itself
                                 DO_LOGIN, //// response message
                                 StatusCode::FOUND, //// status code
                                 "application/json" //// the content type 
@@ -100,8 +100,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                         Err(e) => {
 
                                             resp!{
-                                                ctx::app::Nill, //// the data type
-                                                ctx::app::Nill(&[]), //// the data itself
+                                                misc::app::Nill, //// the data type
+                                                misc::app::Nill(&[]), //// the data itself
                                                 &e.to_string(), //// response message
                                                 StatusCode::NOT_ACCEPTABLE, //// status code
                                                 "application/json" //// the content type 
@@ -113,8 +113,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                 Err(e) => {
 
                                     resp!{
-                                        ctx::app::Nill, //// the data type
-                                        ctx::app::Nill(&[]), //// the data itself
+                                        misc::app::Nill, //// the data type
+                                        misc::app::Nill(&[]), //// the data itself
                                         &e.to_string(), //// response message
                                         StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                         "application/json" //// the content type 
@@ -133,8 +133,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                 Err(e) => {
 
                     resp!{
-                        ctx::app::Nill, //// the data type
-                        ctx::app::Nill(&[]), //// the data itself
+                        misc::app::Nill, //// the data type
+                        misc::app::Nill(&[]), //// the data itself
                         &e.to_string(), //// response message
                         StatusCode::NOT_ACCEPTABLE, //// status code
                         "application/json" //// the content type 
@@ -145,8 +145,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         Err(e) => {
             
             resp!{
-                ctx::app::Nill, //// the data type
-                ctx::app::Nill(&[]), //// the data itself
+                misc::app::Nill, //// the data type
+                misc::app::Nill(&[]), //// the data itself
                 &e.to_string(), //// response message
                 StatusCode::BAD_REQUEST, //// status code
                 "application/json" //// the content type 
@@ -223,7 +223,7 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                                                 wallet_address: user_doc.wallet_address,
                                                 balance: user_doc.balance
                                             };
-                                            let response_body = ctx::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
+                                            let response_body = misc::app::Response::<schemas::auth::UserUpdateResponse>{ //// we have to specify a generic type for data field in Response struct which in our case is UserUpdateResponse struct
                                                 data: Some(user_info),
                                                 message: UPDATED,
                                                 status: 200,
@@ -238,8 +238,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                                             )
                                         },
                                         None => { //// means we didn't find any document related to this user_id and we have to tell the user do a signup
-                                            let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                            let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                                 message: NOT_FOUND_PLAYER, //// document not found in database and the user must do a signup
                                                 status: 404,
                                             };
@@ -259,8 +259,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
 
                                 },
                                 Err(e) => {
-                                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                                    let response_body = misc::app::Response::<misc::app::Nill>{
+                                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                         message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                         status: 406,
                                     };
@@ -276,8 +276,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                             }
                         },
                         Err(e) => {
-                            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                                 message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 400,
                             };
@@ -292,8 +292,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                         },
                     }
                 } else{ //// access denied for this user with none admin and dev access level
-                    let response_body = ctx::app::Response::<ctx::app::Nill>{
-                        data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                         message: ACCESS_DENIED,
                         status: 403,
                     };
@@ -307,8 +307,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
                     )
                 }
             } else{ //// user doesn't exist :(
-                let response_body = ctx::app::Response::<ctx::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
-                    data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+                let response_body = misc::app::Response::<misc::app::Nill>{ //// we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                     message: DO_SIGNUP, //// document not found in database and the user must do a signup
                     status: 404,
                 };
@@ -323,8 +323,8 @@ pub async fn register_god(req: Request<Body>) -> ConseResult<hyper::Response<Bod
             }
         },
         Err(e) => {
-            let response_body = ctx::app::Response::<ctx::app::Nill>{
-                data: Some(ctx::app::Nill(&[])), //// data is an empty &[u8] array
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
                 message: &e, //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 500,
             };
