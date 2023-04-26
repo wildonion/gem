@@ -27,9 +27,33 @@
 
 
 
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::hash};
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+
+
+
+
+pub fn generate_table_for_player(player_commit: String) -> Vec<Cell>{
+
+    
+    let first_32bytes_input = format!("{}${}", player_commit, 0); //// sha256 bits has 32 bytes length
+    let first_hash = hash::hash(first_32bytes_input.as_bytes());
+    let first_part_table = first_hash.try_to_vec().unwrap();
+
+    let second_32bytes_input = format!("{}${}", player_commit, 1); //// sha256 bits has 32 bytes length
+    let second_hash = hash::hash(second_32bytes_input.as_bytes());
+    let second_part_table = &mut second_hash.try_to_vec().unwrap(); //// a mutable pointer to the second hash bytes
+
+    let mut table = first_part_table;
+    table.append(second_part_table);
+    
+
+    todo!()
+
+}
+
+
 
 #[program]
 pub mod ognils {
@@ -284,25 +308,14 @@ impl Player{
     //// ----------------------- on chain methods to build the game logic -----------------------
     //// ----------------------------------------------------------------------------------------
     fn create_table(&mut self, size: u16) -> Vec<Cell>{
-        self.table = Vec::with_capacity(size as usize);
-        for _ in 0..size{
-            self.table.push(Cell { x: 0, y: 0, value: 0 });
-        }
-        let table = self.table.clone();
-        table 
+        todo!()
     }
 
     fn get_column_range(&self, x: u16) -> (u16, u16){
-        for cell in self.table.clone(){
-            if cell.x == x{
-                return (cell.x, cell.y);
-            }
-        }
-        return (0,0)   
+        todo!()   
     }
 
     fn create_announced_values(&mut self, size: u16, max_rounds: u16) -> Vec<Vec<Round>>{
-
         todo!()
     } 
     //// ----------------------------------------------------------------------------------------
