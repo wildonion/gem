@@ -36,7 +36,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 pub fn generate_table_for_player(player_commit: String) -> Vec<Cell>{
 
-    
     let first_32bytes_input = format!("{}${}", player_commit, 0); //// sha256 bits has 32 bytes length
     let first_hash = hash::hash(first_32bytes_input.as_bytes());
     let first_part_table = first_hash.try_to_vec().unwrap();
@@ -47,7 +46,6 @@ pub fn generate_table_for_player(player_commit: String) -> Vec<Cell>{
 
     let mut table = first_part_table;
     table.append(second_part_table);
-    
 
     todo!()
 
@@ -99,6 +97,7 @@ pub mod ognils {
     pub fn init_user_pda(ctx: Context<InitUserPda>, amount: u64) -> Result<()> {
         
         let user_pda = &ctx.accounts.user_pda;
+        
         //// since there is no data inside user PDA account
         //// there is no need to mutate anything in here,
         //// chill and call next method :)
@@ -160,27 +159,20 @@ pub mod ognils {
         let signer = ctx.accounts.signer.key();
         let server = ctx.accounts.server.key();
         
+        // ----------------- finding a PDA logic ----------------- 
         // let program_id = ctx.accounts.system_program.to_account_info();
         // let player_pubkey = user_pda_account.key();
         // let player_seeds = &[b"slingo", player_pubkey.as_ref()]; //// this is of type &[&[u8]; 2]
         // let player_pda = Pubkey::find_program_address(player_seeds, &program_id.key()); //// output is an off curve public key and a bump that specify the iteration that this public key has generated 
         // let player_pda_account = player_pda.0;
-        // let amounts: std::cell::RefMut<&mut [u8; 32]>; //// to use its value do **vals
-
-
 
         if user_pda_lamports < amount {
-            // revert the game and pay back all players selected from the queue 
-            **match_pda_account.try_borrow_mut_lamports()? -= amount;
-            **user_pda_account.try_borrow_mut_lamports()? += amount;
-            
             return err!(ErrorCode::InsufficientFund);
         }
 
         if signer != server{
             return err!(ErrorCode::RestrictionError);
         } 
-
 
         **user_pda_account.try_borrow_mut_lamports()? -= amount;
         **match_pda_account.try_borrow_mut_lamports()? += amount;
@@ -189,7 +181,10 @@ pub mod ognils {
 
     }
 
-    pub fn start_game(ctx: Context<StartGame>, players: Vec<Pubkey>, player_commits: Vec<String>, amount: u64, rounds: u16, size: u16) -> Result<()>{
+    pub fn start_game(ctx: Context<StartGame>, 
+                        players: Vec<Pubkey>, player_commits: Vec<String>, 
+                        amount: u64, rounds: u16, size: u16) -> Result<()>
+    {
 
         // create current match data on chain 
         // call create_table, get_column_range, create_announced_values
@@ -368,7 +363,7 @@ pub struct InitUserPda<'info>{
 #[derive(Accounts)]
 pub struct DepositToMatchPda<'info>{
    #[account(mut)]
-   pub signer: Signer<'info>, //// player
+   pub signer: Signer<'info>, //// server
    #[account(mut)]
    pub player: AccountInfo<'info>,
    /// CHECK:

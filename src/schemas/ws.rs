@@ -26,6 +26,7 @@ pub struct Player{
 pub struct CurrentMatch{
     pub match_id: String,
     pub players: Vec<Player>,
+    pub room_id: String,
 }
 
 

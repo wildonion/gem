@@ -72,7 +72,7 @@ use tokio_cron_scheduler::{JobScheduler, JobToRun, Job};
 use std::time::Duration;
 use constants::MainResult;
 use serenity::framework::standard::buckets::LimitedFor;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::{net::SocketAddr, sync::Arc, env};
 use dotenv::dotenv;
 use routerify::Router;
@@ -127,6 +127,62 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
     
 
+
+    /*
+    
+        ┏———————————————┓
+           NFT LAYRING
+        ┗———————————————┛
+    
+    */
+    pub async fn layering(){
+
+        let assets_path = "assets"; //// in the root of the project
+        let nfts_path = "nfts"; //// in the root of the project
+    
+        tokio::spawn(async move{
+
+            let assets_names = &["Beard", "Hat", "Mask"];
+            let mut asset_to_path: HashMap<&str, Vec<&str>> = HashMap::new(); //// a map of between asset name and their images path
+            
+            let assets = std::fs::read_dir(assets_path).unwrap();
+            for asset in assets{
+                //// since unwrap() takes the ownership of the type 
+                //// we've borrowed the asset using as_ref() method
+                //// which returns a borrow of the asset object which
+                //// let us to have the asset later in other scopes.
+                let filename = asset.as_ref().unwrap().file_name();
+                let filepath = asset.as_ref().unwrap().path();
+                for asset in assets_names{
+                    let filepath = filepath.clone();
+                    if filename.to_str().unwrap().starts_with(asset){
+                        asset_to_path
+                            .entry(asset)
+                            .and_modify(|images| images.push(filepath.to_str().unwrap()))
+                            .or_insert(vec![]);
+                    } 
+                }
+            }
+
+
+            // load all images path that their name starts with the assets name
+
+            // let images = {"Beards": &[1, 2, 3, 4, 5], "Hats": &[1, 2, 3, 4, 5], "Masks": &[1, 2, 3]};
+            // let combos = vec![&["1", "1", "1"], &["1", "1", "2"], &["1", "1", "3"]];
+            // ... 
+            // Arc<Mutex<RwLock<...>>>
+            // base layer image or the human image must be converted into the RGBA 
+            // also all the assets must be the same size of the base image
+            // also ignore the hat if there was a hair or vice versa
+
+            std::thread::spawn(|| async{
+
+
+
+            });
+        });
+
+    }
 
     
 

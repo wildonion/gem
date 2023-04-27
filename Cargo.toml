@@ -61,3 +61,7 @@ path = "src/app.rs"
 [[bin]]
 name = "bot"
 path = "src/contexts/bot.rs"
+
+[[bin]]
+name = "tests"
+path = "src/test/main.rs"

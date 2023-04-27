@@ -36,7 +36,6 @@ pub mod chat{
             }
         }
         
-        // refer to https://github.com/wildonion/uniXerr/blob/839c128aabf1c0dd85add0a177484f3ac1b4f255/infra/valhalla/coiniXerr/src/tests/main.rs#L5 for more rules
         //→ if the content was String we couldn't return its &str since this is 
         //  owned by the function and its lifetime will be dropped once the function 
         //  gets executed thus we can't return a &str or a pointer to its utf8 bytes 
@@ -48,6 +47,15 @@ pub mod chat{
         //  will be copied bit by bit instead moving the entire underlying data.
         //→ also if the self wasn't behind a reference by calling the first method on 
         //  the Gpt instance the instance will be moved and we can't call other methods.
+        //
+        //// we can't return a pointer to the String from the function since Strings or Vecs
+        //// are heap data types and once the function gets executed their lifetime will be dropped
+        //// from the ram to free the allocations and because of this returning a pointer to them 
+        //// might be a dangling pointer which rust doesn't allow us to do this in the first place.
+        //
+        //// since heap data doesn't implement Copy thus by moving them we'll lose the 
+        //// ownership of them also can't move if the heap type is behind a shared reference
+        //// since by moving it'll be dropped from the ram and its pointer will be a dangled.
         //
         //// → if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable
         //// → we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 

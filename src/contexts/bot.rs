@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     //// we're using tokio event loop handler to activate the discord bot in such
     //// a way that once we received the flag from the mpsc channel inside the event
     //// loop, other branches will be canceled
-    discord_bot_flag_sender.send(false).await.unwrap(); //// this api call event sets this to true so we once we received the true flag we'll start the bot
+    discord_bot_flag_sender.send(true).await.unwrap();
     tokio::select!{
         bot_flag = discord_bot_flag_receiver.recv() => {
             if let Some(_) = bot_flag{
