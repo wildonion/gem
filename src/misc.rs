@@ -725,7 +725,73 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 
 
 
+/*
+    
+    ┏———————————————┓
+        NFT LAYRING
+    ┗———————————————┛
 
+*/
+pub async fn layering(){
+
+    #[derive(Serialize, Deserialize)]
+    pub struct Image{
+        pub hat: Vec<Vec<Vec<u8>>>, //// 32 X 32 X 4 => 32 Pixels and RGBA channels
+        pub mask: Vec<Vec<Vec<u8>>> //// 32 X 32 X 4 => 32 Pixels and RGBA channels
+    }
+
+    let (sender, receiver) = tokio::sync::mpsc::channel::<HashMap<&str, Vec<&str>>>(1024);
+
+    let assets_path = "assets"; //// in the root of the project
+    let nfts_path = "nfts"; //// in the root of the project
+
+    tokio::spawn(async move{
+
+        let assets_names = &["Beard", "Hat", "Mask"];
+        let mut asset_to_path: HashMap<&str, Vec<&str>> = HashMap::new(); //// a map of between asset name and their images path
+        for asset in assets_names{
+            asset_to_path.entry(asset).or_insert(vec![]);
+        }
+
+        let assets = std::fs::read_dir(assets_path).unwrap();
+        for asset in assets{
+            //// since unwrap() takes the ownership of the type 
+            //// we've borrowed the asset using as_ref() method
+            //// which returns a borrow of the asset object which
+            //// let us to have the asset later in other scopes.
+            let filename = asset.as_ref().unwrap().file_name();
+            let filepath = asset.as_ref().unwrap().path();
+            let asset_to_path_keys = asset_to_path.keys();
+            for key in asset_to_path_keys{
+                let filepath_str = filepath.to_str().unwrap();
+                if filepath_str.starts_with(*key){
+                    //// if a type is behind an immutable shared reference 
+                    //// it can't mutate the data unless we define it's 
+                    //// pointer as mutable in the first place or convert 
+                    //// it to an owned type which returns Self. 
+                    let mut key_images = asset_to_path.get(key).unwrap().to_owned();
+                    key_images.push(filepath_str);
+                }
+            }
+        }
+
+
+        for asset_path in asset_to_path.values(){
+            std::thread::spawn(|| async{
+                // let images = {"Beards": &[1, 2, 3, 4, 5], "Hats": &[1, 2, 3, 4, 5], "Masks": &[1, 2, 3]};
+                // let combos = vec![&["1", "1", "1"], &["1", "1", "2"], &["1", "1", "3"]];
+                // ... 
+                // Arc<Mutex<RwLock<...>>> using tokio channels
+                // base layer image or the human image must be converted into the RGBA 
+                // also all the assets must be the same size of the base image
+                // also ignore the hat if there was a hair or vice versa
+                // open each image in a separate thread
+                // ...
+            });
+        }
+    });
+
+}
 
 
 

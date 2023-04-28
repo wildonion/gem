@@ -29,6 +29,34 @@ services:
       - mongodb 
     networks:
       - 'gem'
+  bot:
+    build:
+      dockerfile: 'devops/docker/bot/Dockerfile'
+    container_name: wubot
+    depends_on:
+      - 'mongodb'
+    links:
+      - mongodb 
+    networks:
+      - 'gem'
+  haproxy:
+    image: eeacms/haproxy
+    container_name: wubot
+    depends_on:
+      - conse
+    ports:
+      - "443:443"
+      - "80:80"
+      - "8404:8404"
+      - "7440:7440"
+    volumes:
+      - devops/conf/haproxy.cfg:/usr/local/etc/haproxy
+      - devops/openssl:/usr/local/etc/haproxy
+    command: -c "haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg"
+    environment:
+      SERVER_IP: "${SERVER_IP}"
+    networks:
+      - 'gem'
 networks:
   gem:
     driver: bridge

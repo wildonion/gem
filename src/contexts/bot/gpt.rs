@@ -11,6 +11,15 @@ pub mod chat{
     //// ----------------------------------------------
     //// -------------- GPT STRUCTURE -----------------
     //// ----------------------------------------------
+    // at the time of this writing
+    // rate limits for the ChatGPT API?
+    // Free trial users: 20 RPM 40000 TPM
+    // Pay-as-you-go users (first 48 hours): 60 RPM 60,000 TPM
+    // Pay-as-you-go users (after 48 hours): 3500 RPM 90,000 TPM
+    // RPM = requests per minute
+    // TPM = tokens per minute
+
+
 
     #[derive(Clone, Debug)]
     pub struct Gpt{
@@ -21,18 +30,26 @@ pub mod chat{
 
     impl Gpt{
         
-        pub async fn new() -> Gpt{
-            let content = "Hello,"; //// starting conversation to feed later tokens to the GPT model for prediction
-            Self{
-                messages: vec![
-                    ChatCompletionMessage{
-                        role: ChatCompletionMessageRole::System,
-                        content: content.to_string(),
-                        name: None,
-                    }
-                ],
-                last_content: content.to_string(),
-                current_response: "".to_string()
+        pub async fn new(messages: Option<Vec<ChatCompletionMessage>>) -> Gpt{
+            if let Some(gpt_messages) = messages{
+                Self{
+                    messages: gpt_messages.clone(),
+                    last_content: gpt_messages[gpt_messages.len() - 1].content.to_string(),
+                    current_response: "".to_string()
+                }
+            } else{
+                let content = "Hello,"; //// starting conversation to feed later tokens to the GPT model for prediction
+                Self{
+                    messages: vec![
+                        ChatCompletionMessage{
+                            role: ChatCompletionMessageRole::System,
+                            content: content.to_string(),
+                            name: None,
+                        }
+                    ],
+                    last_content: content.to_string(),
+                    current_response: "".to_string()
+                }
             }
         }
         

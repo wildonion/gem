@@ -16,15 +16,21 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo run --bin conse```
 
+## 🏃🏻‍♀️ Run Conse Discord Bot Server
+
+```cargo run --bin bot```
+
+## 🏃🏿 Run Conse Test Codes
+
+```cargo run --bin tests```
+
 ## 🛠️ Production Setup
 
 > First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to setup the VPS for production then to update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with dev user to register a new god for the game.
 
 ## 🍟 Notes
 
-* in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge.
-
-* build the docker image from the `gem` server only (without `docker-compose`), using ```sudo docker build -t gem . && sudo docker -d run gem```. 
+* in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
 * clean docker cache using ```sudo docker buildx prune --all``` command.
 
@@ -42,7 +48,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * setup **TLS** using `tokio-rustls` or noise protocol for `hyper` and `ws` server in code.
 
-* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based locking api using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based locking api with rate limit feature using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * complete the **CPI** call from ticket program to whitelist after successful reservation. 
 

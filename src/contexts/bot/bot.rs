@@ -2,7 +2,9 @@
 
 
 
-use std::collections::HashSet;
+use serde::{Serialize, Deserialize};
+use mongodb::bson::oid::ObjectId;
+use std::collections::{HashSet, HashMap};
 use std::{net::SocketAddr, sync::Arc, env};
 use std::time::Duration;
 use dotenv::dotenv;
@@ -46,19 +48,21 @@ use serenity::{prelude::*,
             };
 
 
-#[path="misc.rs"]
-pub mod misc;
 #[path="gpt.rs"]
 pub mod gpt;
 pub mod daemon;
+pub mod schemas;
+pub mod handlers;
+pub mod cmds;
+pub mod tasks;
 
 
 
 
-pub static GPT: Lazy<gpt::chat::Gpt> = Lazy::new(|| {
-    block_on(gpt::chat::Gpt::new())
+
+pub static RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
+    HashMap::new()
 });
-
 
 
 
@@ -76,6 +80,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
     set_key(openai_key);
+    let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
+    let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
+    let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
+    let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
+    let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
+    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let db_addr = format!("{}://{}:{}", db_engine, db_host, db_port);
+    let db = mongodb::Client::with_uri_str(db_addr.as_str()).await.unwrap();
+
+
+
 
 
 
@@ -92,7 +107,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                 info!("🏳️ receiving discord bot true flag");
                 daemon::activate_discord_bot(discord_token.as_str(), 
                                             serenity_shards.parse::<u64>().unwrap(), 
-                                            GPT.clone()).await; //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+                                            RATELIMIT.clone()
+                                        ).await; 
             }    
         }
     }

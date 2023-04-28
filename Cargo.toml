@@ -1,5 +1,5 @@
 [package]
-name = "conse"
+name = "gem"
 version = "0.1.1"
 edition = "2021"
 
@@ -7,6 +7,7 @@ edition = "2021"
 
 
 [dependencies]
+async-std = "1.12.0"
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 mongodb = "2"
@@ -60,7 +61,7 @@ path = "src/app.rs"
 
 [[bin]]
 name = "bot"
-path = "src/contexts/bot.rs"
+path = "src/contexts/bot/bot.rs"
 
 [[bin]]
 name = "tests"

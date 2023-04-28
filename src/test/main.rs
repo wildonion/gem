@@ -736,6 +736,12 @@ pub async fn generic(){
             Pack{}
 	    }
 
+        // we can return a pointer to struct 
+        // by returning &Struct{} from the method
+        // since by doing this we're allocating 
+        // nothing on the stack and the allocation
+        // will be done once the caller gets the 
+        // returned data from the function.
 	    fn ref_struct(num_thread: &u8) -> &Pack{ //// returning ref from function to a pre allocated data type (not inside the function) Pack struct in our case, is ok
             let instance = Pack::new(); //// since new() method of the Pack struct will return a new instance of the struct which is allocated on the stack and is owned by the function thus we can't return a reference to it or as a borrowed type because it's owned by the function scope
             // &instance //// it's not ok to return a reference to `instance` since `instance` is a local variable which is owned by the current function and its lifetime is valid as long as the function is inside the stack and executing which means after executing the function its lifetime will be dropped
@@ -787,6 +793,17 @@ pub async fn generic(){
         //     names.insert("wildonion", "another_wildonion");
         //     names
         // }
+
+        //// in here we're actually implementing the trait for the return type
+        //// also the return type must implement the Interface trait in order 
+        //// to be able to return its instance,  
+        pub fn ref_to_trait(&self) -> &dyn Interface{
+            &Pack{}
+        }
+
+        pub fn ref_to_trait__(&self) -> &dyn Interface{
+            self //// can't return self in here 
+        }
 
 	    // NOTE - first param can also be &mut self; a mutable reference to the instance and its fields
 	    // NOTE - this technique is being used in methods like as_mut() in which it'll return a mutable
@@ -2317,6 +2334,11 @@ pub async fn unsafer(){
     //// (Clone trait must be implemented) it or dereference it by using `*` otherwise 
     //// we can' move out of it in our case `whitelist_data` which is of type String, can't be moved 
     //// since `String` type doesn't implement Copy trait we have to either borrow it or clone it. 
+    //
+    //// if there is a pointer of the heap data exists we can't return it or move it into the other scope 
+    //// since by moving heap data they will be dropped from the ram and their lifetime will be no longer exists
+    //// thus in some case except method calls we can use its borrow or slice type or clone the reference to dereference or 
+    //// convert it to owned using .to_owned() 
 
     let name = "wildonion".to_string();
     let pointer_to_name = &name; 
