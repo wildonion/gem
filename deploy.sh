@@ -16,7 +16,6 @@ apt-cache policy docker-ce && sudo apt install docker-ce && sudo systemctl statu
 sudo docker network ls | grep gem > /dev/null || sudo docker network create --driver=bridge gem
 sudo docker compose -f  docker-compose.yml build --no-cache && sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
-sudo docker exec -it mongodb mongod --bind_ip $SERVER_IP ########## allow only the server ip access the db 
 MONGODB_CONTAINER_ID=docker container ls  | grep 'mongodb' | awk '{print $1}'
 sudo docker cp devops/conse-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container
 sudo docker cp devops/conse-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json # root of the container 

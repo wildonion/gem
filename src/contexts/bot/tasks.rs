@@ -24,36 +24,6 @@ use crate::*;
 
 pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> (String, String, String){
     
-    //// ---------------------------
-    //// setting up the GPT instance
-    //// ---------------------------
-    //// we should avoid any blocking operation inside the command in order not to get 
-    //// the discord timeout response, thus we're creating the GPT instance per each 
-    //// request for summarization process. since locking on the mutex is a 
-    //// blocking process thus if we reaches the discord rate limit the locking process
-    //// might gets halted inside the thread and other requests won't be able to use 
-    //// the gpt_bot data since as long as the thread is locking the mutex other threads 
-    //// can't mutate it thus the bot will be halted. 
-    // let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
-
-    //// data inside the bot client must be safe to be shared between event and command handlers'
-    //// threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
-    //// that has implemented for the underlying data which is of type Arc<Mutex<Data>>
-    //// acquiring a write lock will block other event and command handlers which don't allow 
-    //// them to use the data until the lock is released.
-    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
-        Some(gpt) => gpt,
-        None => {
-            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
-            return response;
-        },
-    };
-    
-    let mut gpt_bot = gpt_data.lock().await;
-    let mut gpt_response = "".to_string();
-    let mut gpt_request_command = "".to_string();
-    
     //// -------------------------------------------------------------------------------
     //// fetching all channel messages before the initialized /catchup command timestamp
     //// -------------------------------------------------------------------------------
@@ -205,6 +175,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// --------------------------------------------------------------------
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
+    let mut gpt_request_command = "".to_string();
     gpt_request_command = format!("Summarize each member's contribution to the discussion. Then put it in a numbered list so its easy to read. Also there is a user called JOE, do not add JOE's contributions to your summary.
 
     Here is how you should format your summaries: 
@@ -214,6 +185,35 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     
                                     
                                     {}", messages);
+
+    //// ---------------------------
+    //// setting up the GPT instance
+    //// ---------------------------
+    //// we should avoid any blocking operation inside the command in order not to get 
+    //// the discord timeout response, thus we're creating the GPT instance per each 
+    //// request for summarization process. since locking on the mutex is a 
+    //// blocking process thus if we reaches the discord rate limit the locking process
+    //// might gets halted inside the thread and other requests won't be able to use 
+    //// the gpt_bot data since as long as the thread is locking the mutex other threads 
+    //// can't mutate it thus the bot will be halted. 
+    // let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
+
+    //// data inside the bot client must be safe to be shared between event and command handlers'
+    //// threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
+    //// that has implemented for the underlying data which is of type Arc<Mutex<Data>>
+    //// acquiring a write lock will block other event and command handlers which don't allow 
+    //// them to use the data until the lock is released.
+    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+    let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+        Some(gpt) => gpt,
+        None => {
+            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
+            return response;
+        },
+    };
+    
+    let mut gpt_bot = gpt_data.lock().await;
+    let mut gpt_response = "".to_string();
     let req_cmd = gpt_request_command.clone();
     let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
     if feed_result.is_rate_limit{

@@ -22,7 +22,7 @@ pub mod slash{
     pub fn catchup_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("catchup")
-            .description("conse wrap up summarizer")
+            .description("conse catch up")
             .create_option(|opt| {
                 opt
                     .name("hours")
@@ -38,7 +38,7 @@ pub mod slash{
     pub fn expand_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("expand")
-            .description("conse wrap up expand")
+            .description("conse catch up expand")
             .create_option(|opt| {
                 opt
                     .name("bullet")
@@ -54,7 +54,7 @@ pub mod slash{
     pub fn help_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("help")
-            .description("conse wrap up help")
+            .description("conse catch up help")
 
     }
 

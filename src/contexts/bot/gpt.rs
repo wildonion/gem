@@ -142,7 +142,6 @@ pub mod chat{
                     is_rate_limit: true,
                 };
             }
-            
             let returned_message = chat_completion.unwrap().choices.first().unwrap().message.clone();
             self.current_response = returned_message.content.to_string();
             messages.push(ChatCompletionMessage{ //// we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
