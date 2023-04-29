@@ -196,7 +196,7 @@ impl Handler{
                         //// inside the interaction response frame: The application did not respond
                         let footer = "".to_string();
                         let title = "".to_string();
-                        let content = format!("**Examples**:\nGet a CatchUp for the past 2 hours : use `/catchup 2`\nExpand on the 3rd bullet point from your CatchUp:  use `/expand 3`");
+                        let content = format!("**Examples**:\nGet a CatchUp for the past 2 hours : use `/catchup 2`\n");
                         if let Err(why) = command
                             .edit_original_interaction_response(&ctx.http, |edit| {
                                 edit
@@ -218,7 +218,37 @@ impl Handler{
                             error!("error editing original interaction response since {:#?}", why);
                         }
                     },
-                    _ => {} //// probably unknown command!
+                    _ => {
+                        // ----------------------------------------------------------------------------------------
+                        // --------------- editing interaction response since our task is done --------------------
+                        // ----------------------------------------------------------------------------------------
+                        //// if the above task gets halted in a logic that doesn't have proper 
+                        //// error handling we'll face the discord timeout which is the message 
+                        //// inside the interaction response frame: The application did not respond
+                        let footer = "".to_string();
+                        let title = "".to_string();
+                        let content = format!("**Uknown Command**");
+                        if let Err(why) = command
+                            .edit_original_interaction_response(&ctx.http, |edit| {
+                                edit
+                                    .allowed_mentions(|mentions| mentions.replied_user(true))
+                                    .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        e.color(Colour::from_rgb(235, 204, 120));
+                                        e.description(content);
+                                        e.title(title);
+                                        e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            f
+                                            .text(footer)
+                                        });
+                                        return e;
+                                    });
+                                    edit
+                            }) //// edit the thinking message with the command response
+                            .await
+                        {
+                            error!("error editing original interaction response since {:#?}", why);
+                        }
+                    }
                 }
             }
       });

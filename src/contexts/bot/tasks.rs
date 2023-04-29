@@ -9,6 +9,18 @@
         BOT SLASH TASKS
     ┗—————————————————————┛
 
+
+    📤  fix the rate limit issue of discord in /catchup command by queuing all the incoming interaction 
+        request to the bot to handle them separately inside a threadpool (tokio definitely 🚀 ) 
+    📤 fix the rate limit issue of chat GPT by handling each request to the openai server or the slash command as a 
+        separate async task inside a threadpool, this task is basically the async version of the slash command requests 
+        since every catchup slash commands is a separate api calling to the openai server 
+    📤 remove /expand command to avoid dead lock and blocking situation since expanding a bullet 
+        point needs the updated instance of the GPT structure in which it can only be acquired through 
+        the mutex locking which leads us to block the current thread thus the discord rate limit issue.
+
+
+
 */
 
 
