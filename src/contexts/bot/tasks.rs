@@ -154,7 +154,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         let mut messages_iterator = channel_messages.into_iter();
         while let Some(m) = messages_iterator.next(){
             if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp are the ones that are n hours ago
-                let user_message = format!("@{}: {}", m.author.name, m.content);
+                let user_message = format!("{}:{}", m.author.name, m.content);
                 hours_ago_messages.push(user_message);
             } else{
                 break;
@@ -180,39 +180,48 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
 
     Here is how you should format your summaries: 
     
-    1.  user1: summarize everything user 1 contributed to the discussion. 
+    1. user1: summarize everything user 1 contributed to the discussion. 
     2. user2: summarize everything user 2 contributed to the discussion.\n
     
                                     
                                     {}", messages);
 
-    //// ---------------------------
-    //// setting up the GPT instance
-    //// ---------------------------
+    /*
+        ┏—————————————————————————————————————————————————┓
+            LOCKING ON GPT INSTANCE TO ACQUIRE THE MUTEX  
+        ┗—————————————————————————————————————————————————┛
+        
+        DON'T UNCOMMENT THE FOLLOWING, TOO MANY LOCKS INSIDE 
+        THE COMMAND WILL FACE US DISCORD RATE LIMIT SINCE 
+        IT'LL HALT IN THE LOCKING PROCESS BECAUSE OTHER THREADS
+        WANT TO MUTATE THE DATA BUT THE FIRST THREAD IS NOT DONE
+        WITH THE ACQUIRED DATA.  
+    
+    */
     //// we should avoid any blocking operation inside the command in order not to get 
     //// the discord timeout response, thus we're creating the GPT instance per each 
-    //// request for summarization process. since locking on the mutex is a 
-    //// blocking process thus if we reaches the discord rate limit the locking process
-    //// might gets halted inside the thread and other requests won't be able to use 
-    //// the gpt_bot data since as long as the thread is locking the mutex other threads 
-    //// can't mutate it thus the bot will be halted. 
-    // let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
-
+    //// request for summarization process. since locking on the mutex is a blocking 
+    //// process thus if we reaches the discord rate limit the locking process might 
+    //// gets halted inside the thread and other requests won't be able to use the gpt_bot 
+    //// data since as long as the thread is locking the mutex other threads can't mutate 
+    //// it thus the bot will be halted. 
+    // 
     //// data inside the bot client must be safe to be shared between event and command handlers'
     //// threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
     //// that has implemented for the underlying data which is of type Arc<Mutex<Data>>
     //// acquiring a write lock will block other event and command handlers which don't allow 
     //// them to use the data until the lock is released.
-    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
-        Some(gpt) => gpt,
-        None => {
-            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
-            return response;
-        },
-    };
+    // let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+    // let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+    //     Some(gpt) => gpt,
+    //     None => {
+    //         let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
+    //         return response;
+    //     },
+    // };
+    // let mut gpt_bot = gpt_data.lock().await;
     
-    let mut gpt_bot = gpt_data.lock().await;
+    let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
     let mut gpt_response = "".to_string();
     let req_cmd = gpt_request_command.clone();
     let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
@@ -236,7 +245,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
            STORING CATCHUP DATA IN DB 
         ┗—————————————————————————————┛
         
-        DON'T UNCOMMENT THE FOLLOWING TO MANY LOCKS INSIDE 
+        DON'T UNCOMMENT THE FOLLOWING TOO MANY LOCKS INSIDE 
         THE COMMAND WILL FACE US DISCORD RATE LIMIT 
     
     */
@@ -298,83 +307,6 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
 
 
 }
-
-
-/* —————————————————————
-        EXPAND TASK
-————————————————————————*/
-
-pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, init_cmd: Timestamp) -> (String, String, String){
-    
-
-    //// ---------------------------
-    //// setting up the GPT instance
-    //// ---------------------------
-    //// data inside the bot client must be safe to 
-    //// be shared between event and command handlers'
-    //// threads thus they must be of type Arc<RwLock<TypeMapKey>>
-    //// in which TypeMapKey is a trait that has implemented for 
-    //// the underlying data which is of type Arc<Mutex<Data>>
-    //// acquiring a write lock will block other event and 
-    //// command handlers which don't allow them to use 
-    //// the data until the lock is released.
-    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
-        Some(gpt) => gpt,
-        None => {
-            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
-            return response;
-        },
-    };
-
-    let mut gpt_bot = gpt_data.lock().await;
-    let mut response = "".to_string();
-    let mut gpt_request_command = "".to_string();
-
-
-    //// ------------------------------------------------------------
-    //// feed the messages to the chat GPT to do an expanding process
-    //// ------------------------------------------------------------
-    let ordinal = if expand_which == 1{
-        "1st".to_string()
-    } else if expand_which == 2{
-        "2nd".to_string()
-    } else if expand_which == 3{
-        "3nd".to_string()
-    } else{
-        format!("{}th", expand_which)
-    };
-
-    gpt_request_command = format!("can you expand and explain more about the {} bullet list in the summarization discussion", ordinal);
-    let req_cmd = gpt_request_command.clone();
-    let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
-    if feed_result.is_rate_limit{
-        let title = format!("");
-        let description = "GPT rate limit".to_string().clone();
-        let footer = format!("");
-        let response = (description, footer, title);
-        return response ;
-    }
-
-    response = feed_result.current_response;
-    info!("ChatGPT Response: {:?}", response);
-    let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
-    let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap(); //// all the chat GPT messages  
-    
-    
-    let title = format!("Here is the {} bullet list expanded from your CatchUp", ordinal);
-    let description = response;
-    let footer = format!("📨 /expand requested at: {}", init_cmd.naive_local().to_string());
-    let response = (description, footer, title);
-    return response;
-
-    //// no need to update the ctx.data with the updated gpt_bot field 
-    //// since we're already modifying it directly through the 
-    //// write lock on the RwLock
-    //// ...
-
-}
-
 
 
 /* —————————————————————

@@ -35,22 +35,6 @@ pub mod slash{
     }
 
     //// command will be over written later thus it must be defined mutable
-    pub fn expand_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
-        command
-            .name("expand")
-            .description("conse catch up expand")
-            .create_option(|opt| {
-                opt
-                    .name("bullet")
-                    .description("bullet list number for expantion")
-                    .kind(CommandOptionType::Integer)
-                    .min_int_value(1)
-                    .max_int_value(1000)
-                    .required(true)
-            })
-    }
-
-    //// command will be over written later thus it must be defined mutable
     pub fn help_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("help")

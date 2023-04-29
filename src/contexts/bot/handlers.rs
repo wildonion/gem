@@ -105,53 +105,11 @@ impl Handler{
                         let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
                         let user_id = command.user.id.0;
                         let guild_id = command.guild_id.unwrap().0;
+                        //// spwaning the catchup task inside tokio green threadpool
+                        //// to be able to handle multiple commands at a same time 
+                        //// to avoid discord rate limit issue
                         tokio::spawn(async move{
                             let response = tasks::catchup(&ctx, value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id, guild_id).await;
-                            // ----------------------------------------------------------------------------------------
-                            // --------------- editing interaction response since our task is done --------------------
-                            // ----------------------------------------------------------------------------------------
-                            //// if the above task gets halted in a logic that doesn't have proper 
-                            //// error handling we'll face the discord timeout which is the message 
-                            //// inside the interaction response frame: The application did not respond
-                            if let Err(why) = command
-                                .edit_original_interaction_response(&ctx.http, |edit| {
-                                    edit
-                                        .allowed_mentions(|mentions| mentions.replied_user(true))
-                                        .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-                                            e.color(Colour::from_rgb(235, 204, 120));
-                                            e.description(response.0);
-                                            e.title(response.2);
-                                            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                                                f
-                                                .text(response.1.as_str())
-                                            });
-                                            return e;
-                                        });
-                                        edit
-                                }) //// edit the thinking message with the command response
-                                .await
-                            {
-                                error!("error editing original interaction response since {:#?}", why);
-                            }
-                        });
-                    },
-                    "expand" => {
-                        let value = command
-                            .data
-                            .options
-                            .get(0)
-                            .and_then(|opt| opt.value.as_ref())
-                            .and_then(|val| val.as_i64())
-                            .unwrap_or(1); //// default: expand first bullet list
-                        //// --------------------------------------------------------
-                        //// -------------------- EXAPND TASK -----------------------
-                        //// -------------------------------------------------------- 
-                        //// the following timestamp is approximate and may not exactly 
-                        //// match the time when the command was executed.
-                        let channel_id = command.channel_id;
-                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                        tokio::spawn(async move{
-                            let response = tasks::expand(&ctx, value as u32, channel_id, init_cmd_time).await;
                             // ----------------------------------------------------------------------------------------
                             // --------------- editing interaction response since our task is done --------------------
                             // ----------------------------------------------------------------------------------------
@@ -196,9 +154,9 @@ impl Handler{
                                                                         .unwrap();
                         let interaction_response_message_id = interaction_response_message.id.0;
                         let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                        tokio::spawn(async move{
-
-                        });
+                        //// spwaning the stats task inside tokio green threadpool
+                        //// to be able to handle multiple commands at a same time 
+                        //// to avoid discord rate limit issue
                         tokio::spawn(async move{
                             let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
                             // ----------------------------------------------------------------------------------------
@@ -415,11 +373,6 @@ impl EventHandler for Handler{
         //// guild that this bot is added to
         let _ = Command::create_global_application_command(&ctx.http, |command| {
             cmds::slash::catchup_register(command)
-        })
-        .await;
-
-        let _ = Command::create_global_application_command(&ctx.http, |command| {
-            cmds::slash::expand_register(command)
         })
         .await;
 
