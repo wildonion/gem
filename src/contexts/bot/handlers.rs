@@ -80,7 +80,7 @@ impl Handler{
                 // --------------- handling slash commands ------------------------
                 // ----------------------------------------------------------------
                 match command.data.name.as_str() {
-                    "wrapup" => {
+                    "catchup" => {
                         let value = command
                             .data
                             .options
@@ -89,7 +89,7 @@ impl Handler{
                             .and_then(|val| val.as_i64())
                             .unwrap_or(1); //// default: fetch 1 hour ago
                         //// --------------------------------------------------------
-                        //// -------------------- WRAPUP TASK -----------------------
+                        //// -------------------- CATCHUP TASK ----------------------
                         //// -------------------------------------------------------- 
                         //// the following timestamp is approximate and may not exactly 
                         //// match the time when the command was executed.
@@ -105,7 +105,7 @@ impl Handler{
                         let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
                         let user_id = command.user.id.0;
                         let guild_id = command.guild_id.unwrap().0;
-                        let response = tasks::wrapup(&ctx, value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id, guild_id).await;
+                        let response = tasks::catchup(&ctx, value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id, guild_id).await;
                         
                         // ----------------------------------------------------------------------------------------
                         // --------------- editing interaction response since our task is done --------------------
@@ -232,7 +232,7 @@ impl Handler{
                         //// inside the interaction response frame: The application did not respond
                         let footer = "".to_string();
                         let title = "".to_string();
-                        let content = format!("**Examples**:\nGet a WrapUp for the past 2 hours : use `/wrapup 2`\nExpand on the 3rd bullet point from your WrapUp:  use `/expand 3`");
+                        let content = format!("**Examples**:\nGet a CatchUp for the past 2 hours : use `/catchup 2`\nExpand on the 3rd bullet point from your CatchUp:  use `/expand 3`");
                         if let Err(why) = command
                             .edit_original_interaction_response(&ctx.http, |edit| {
                                 edit
@@ -408,7 +408,7 @@ impl EventHandler for Handler{
         //// registering global commands for each 
         //// guild that this bot is added to
         let _ = Command::create_global_application_command(&ctx.http, |command| {
-            cmds::slash::wrapup_register(command)
+            cmds::slash::catchup_register(command)
         })
         .await;
 

@@ -19,10 +19,10 @@ use crate::*;
 
 
 /* —————————————————————
-        WRAPUP TASK
+       CATCHUP TASK
 ————————————————————————*/
 
-pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> (String, String, String){
+pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> (String, String, String){
     
     //// ---------------------------
     //// setting up the GPT instance
@@ -45,7 +45,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
         Some(gpt) => gpt,
         None => {
-            let response = (format!("ChatGPT is not online :("), format!("📨 WrapUp requested at: {}", chrono::Local::now()), "".to_string());
+            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
             return response;
         },
     };
@@ -54,9 +54,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let mut gpt_response = "".to_string();
     let mut gpt_request_command = "".to_string();
     
-    //// ----------------------------------------------------------------------------
-    //// fetching all channel messages before the initialized /wrap command timestamp
-    //// ----------------------------------------------------------------------------
+    //// -------------------------------------------------------------------------------
+    //// fetching all channel messages before the initialized /catchup command timestamp
+    //// -------------------------------------------------------------------------------
     
     let command_time_offset = init_cmd.offset();
     let command_time_naive_local = init_cmd.naive_local(); //// initial command message datetime
@@ -196,9 +196,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     };
 
     if messages.is_empty(){
-        let footer = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+        let footer = format!("📨 CatchUp requested at: {} \n 🧩 CaughtUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
         let title = "".to_string();
-        let response = (format!("**Nothing to WrapUp in the past {} hours ago**", hours_ago), footer, title);
+        let response = (format!("**Nothing to CatchUp in the past {} hours ago**", hours_ago), footer, title);
         return response;
     }
     
@@ -225,9 +225,9 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     }
 
     gpt_response = feed_result.current_response;
-    let title = format!("Here is your WrapUp from {} hour(s) ago", hours_ago);
+    let title = format!("Here is your CatchUp from {} hour(s) ago", hours_ago);
     let description = gpt_response.clone();
-    let footer = format!("📨 /wrapup requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+    let footer = format!("📨 /catchup requested at: {} \n 🧩 CaughtUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
     let response = (description, footer, title);
     
 
@@ -257,7 +257,7 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     // let mut db = db_data.lock().await;
 
     //// we're building a new client everytime that a user request 
-    //// a wrapup, we can't use shared data pattern to bring the db 
+    //// a catchup, we can't use shared data pattern to bring the db 
     //// in here since we must lock on it to get the underlying connection 
     //// which will face us discord ratelimit and timeout issue
     let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
@@ -322,7 +322,7 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
         Some(gpt) => gpt,
         None => {
-            let response = (format!("ChatGPT is not online :("), format!("📨 WrapUp requested at: {}", chrono::Local::now()), "".to_string());
+            let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
             return response;
         },
     };
@@ -361,11 +361,8 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
     let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap(); //// all the chat GPT messages  
     
-    //// ----------------------------------------------
-    //// sending the GPT response to the channel itself 
-    //// ----------------------------------------------
     
-    let title = format!("Here is the {} bullet list expanded from your WrapUp", ordinal);
+    let title = format!("Here is the {} bullet list expanded from your CatchUp", ordinal);
     let description = response;
     let footer = format!("📨 /expand requested at: {}", init_cmd.naive_local().to_string());
     let response = (description, footer, title);

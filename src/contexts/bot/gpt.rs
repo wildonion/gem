@@ -18,6 +18,8 @@
         Visit https://platform.openai.com/account/billing to add a payment method.
     ```
 
+    we can update the RPM inside the admin panel to avoid openai rate limit
+
 */
 
 
@@ -127,7 +129,6 @@ pub mod chat{
                                                                         .unwrap();
             // rate limi reached probably :(
             // save openai error into a log file 
-            // to fix this maybe we should switch between other accounts to avoid rate limiting
             if let Err(e) = chat_completion.clone(){
                 let log_content = format!("[{}] - {}", chrono::Local::now(), e);
                 let log_name = format!("[{}]", chrono::Local::now());

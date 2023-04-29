@@ -19,9 +19,9 @@ pub mod slash{
     use super::*; //// loading all the crates that has loaded outside of this module
     
     //// command param will be over written later thus it must be defined mutable
-    pub fn wrapup_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
+    pub fn catchup_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
-            .name("wrapup")
+            .name("catchup")
             .description("conse wrap up summarizer")
             .create_option(|opt| {
                 opt
