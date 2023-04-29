@@ -1,6 +1,9 @@
 
 
 
+
+
+
 use crate::*;
 
 //// --------------------------------------------------------------------------------------
@@ -15,7 +18,7 @@ impl TypeMapKey for ShardManagerContainer {
 
 pub struct GptBot;
 impl TypeMapKey for GptBot{
-    type Value = Arc<tokio::sync::Mutex<gpt::chat::Gpt>>;
+    type Value = Arc<async_std::sync::Mutex<gpt::chat::Gpt>>;
 }
 pub struct Storage;
 impl TypeMapKey for Storage{
@@ -29,16 +32,236 @@ impl TypeMapKey for RateLimit{
 
 
 
-pub struct Handler; //// the discord bot commands and events listener/handler for emitted events and webhooks over ws and http 
-
+type CommandQueueSender = tokio::sync::mpsc::Sender<(Context, ApplicationCommandInteraction)>;
+type CommandQueueReceiver = tokio::sync::mpsc::Receiver<(Context, ApplicationCommandInteraction)>;
+//// the discord bot commands and events listener/handler for emitted events and webhooks over ws and http 
+pub struct Handler{
+    pub command_queue_sender: CommandQueueSender,
+}
 
 impl Handler{
 
-    async fn handle_rate_limited_command(&self, ctx: Context, interaction: Interaction){
+    pub async fn new(command_queue_sender: CommandQueueSender) -> Self{
+        Self{
+            command_queue_sender,
+        }
+    }
 
-        //// spawning a separate task per each command to handle 
-        //// each command asyncly inside tokio green threadpool
+    pub async fn handle_interaction_command(mut command_queue_receiver: CommandQueueReceiver){
+        //// receiving each command from the upside of the channel 
+        //// to handle them asyncly inside the tokio green threadpool
+        //// to avoid discord rate limit and getting The application did not respond message
         tokio::spawn(async move{
+            while let Some(command_data) = command_queue_receiver.recv().await{
+            
+                let ctx = command_data.0;
+                let command = command_data.1;
+
+                // ----------------------------------------------------------------------------------
+                // --------------- send the bot is thinking interaction response --------------------
+                // ----------------------------------------------------------------------------------
+                let interaction_response = command
+                    .create_interaction_response(&ctx.http, |response| {
+                        response
+                            .kind(InteractionResponseType::DeferredChannelMessageWithSource)
+                            .interaction_response_data(|message| message.content("")) //// bot is thinking
+                    })
+                    .await;
+
+                // ---------------------------------------------------------
+                // --------------- rate limit handler ----------------------
+                // ---------------------------------------------------------
+                // it's not needed to uncommnet it since we must handle each
+                // command as a separate async task coming from the jobq channel
+                // inside the tokio green threadpool to avoid discord rate limit
+                // Handler::handle_rate_limited_command(ctx.clone(), interaction.clone()).await;
+                
+                // ----------------------------------------------------------------
+                // --------------- handling slash commands ------------------------
+                // ----------------------------------------------------------------
+                match command.data.name.as_str() {
+                    "wrapup" => {
+                        let value = command
+                            .data
+                            .options
+                            .get(0)
+                            .and_then(|opt| opt.value.as_ref())
+                            .and_then(|val| val.as_i64())
+                            .unwrap_or(1); //// default: fetch 1 hour ago
+                        //// --------------------------------------------------------
+                        //// -------------------- WRAPUP TASK -----------------------
+                        //// -------------------------------------------------------- 
+                        //// the following timestamp is approximate and may not exactly 
+                        //// match the time when the command was executed.
+                        let channel_id = command.channel_id;
+                        let interaction_response_message = channel_id
+                                                                        .messages(&ctx.http, |retriever| retriever.limit(1))
+                                                                        .await
+                                                                        .unwrap()
+                                                                        .into_iter()
+                                                                        .next()
+                                                                        .unwrap();
+                        let interaction_response_message_id = interaction_response_message.id.0;
+                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                        let user_id = command.user.id.0;
+                        let guild_id = command.guild_id.unwrap().0;
+                        let response = tasks::wrapup(&ctx, value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id, guild_id).await;
+                        
+                        // ----------------------------------------------------------------------------------------
+                        // --------------- editing interaction response since our task is done --------------------
+                        // ----------------------------------------------------------------------------------------
+                        //// if the above task gets halted in a logic that doesn't have proper 
+                        //// error handling we'll face the discord timeout which is the message 
+                        //// inside the interaction response frame: The application did not respond
+                        if let Err(why) = command
+                            .edit_original_interaction_response(&ctx.http, |edit| {
+                                edit
+                                    .allowed_mentions(|mentions| mentions.replied_user(true))
+                                    .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        e.color(Colour::from_rgb(235, 204, 120));
+                                        e.description(response.0);
+                                        e.title(response.2);
+                                        e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            f
+                                            .text(response.1.as_str())
+                                        });
+                                        return e;
+                                    });
+                                    edit
+                            }) //// edit the thinking message with the command response
+                            .await
+                        {
+                            error!("error editing original interaction response since {:#?}", why);
+                        }
+                    },
+                    "expand" => {
+                        let value = command
+                            .data
+                            .options
+                            .get(0)
+                            .and_then(|opt| opt.value.as_ref())
+                            .and_then(|val| val.as_i64())
+                            .unwrap_or(1); //// default: expand first bullet list
+                        //// --------------------------------------------------------
+                        //// -------------------- EXAPND TASK -----------------------
+                        //// -------------------------------------------------------- 
+                        //// the following timestamp is approximate and may not exactly 
+                        //// match the time when the command was executed.
+                        let channel_id = command.channel_id;
+                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                        let response = tasks::expand(&ctx, value as u32, channel_id, init_cmd_time).await;
+                        
+                        // ----------------------------------------------------------------------------------------
+                        // --------------- editing interaction response since our task is done --------------------
+                        // ----------------------------------------------------------------------------------------
+                        //// if the above task gets halted in a logic that doesn't have proper 
+                        //// error handling we'll face the discord timeout which is the message 
+                        //// inside the interaction response frame: The application did not respond
+                        if let Err(why) = command
+                            .edit_original_interaction_response(&ctx.http, |edit| {
+                                edit
+                                    .allowed_mentions(|mentions| mentions.replied_user(true))
+                                    .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        e.color(Colour::from_rgb(235, 204, 120));
+                                        e.description(response.0);
+                                        e.title(response.2);
+                                        e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            f
+                                            .text(response.1.as_str())
+                                        });
+                                        return e;
+                                    });
+                                    edit
+                            }) //// edit the thinking message with the command response
+                            .await
+                        {
+                            error!("error editing original interaction response since {:#?}", why);
+                        }
+                    },
+                    "stats" => {
+                        //// --------------------------------------------------------
+                        //// -------------------- STATS TASK -----------------------
+                        //// -------------------------------------------------------- 
+                        //// the following timestamp is approximate and may not exactly 
+                        //// match the time when the command was executed.
+                        let channel_id = command.channel_id;
+                        let interaction_response_message = channel_id
+                                                                        .messages(&ctx.http, |retriever| retriever.limit(1))
+                                                                        .await
+                                                                        .unwrap()
+                                                                        .into_iter()
+                                                                        .next()
+                                                                        .unwrap();
+                        let interaction_response_message_id = interaction_response_message.id.0;
+                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                        let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
+
+                        // ----------------------------------------------------------------------------------------
+                        // --------------- editing interaction response since our task is done --------------------
+                        // ----------------------------------------------------------------------------------------
+                        //// if the above task gets halted in a logic that doesn't have proper 
+                        //// error handling we'll face the discord timeout which is the message 
+                        //// inside the interaction response frame: The application did not respond
+                        if let Err(why) = command
+                            .edit_original_interaction_response(&ctx.http, |edit| {
+                                edit
+                                    .allowed_mentions(|mentions| mentions.replied_user(true))
+                                    .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        e.color(Colour::from_rgb(235, 204, 120));
+                                        e.description(response.0);
+                                        e.title(response.2);
+                                        e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            f
+                                            .text(response.1.as_str())
+                                        });
+                                        return e;
+                                    });
+                                    edit
+                            }) //// edit the thinking message with the command response
+                            .await
+                        {
+                            error!("error editing original interaction response since {:#?}", why);
+                        }
+                    },
+                    "help" => {
+                        // ----------------------------------------------------------------------------------------
+                        // --------------- editing interaction response since our task is done --------------------
+                        // ----------------------------------------------------------------------------------------
+                        //// if the above task gets halted in a logic that doesn't have proper 
+                        //// error handling we'll face the discord timeout which is the message 
+                        //// inside the interaction response frame: The application did not respond
+                        let footer = "".to_string();
+                        let title = "".to_string();
+                        let content = format!("**Examples**:\nGet a WrapUp for the past 2 hours : use `/wrapup 2`\nExpand on the 3rd bullet point from your WrapUp:  use `/expand 3`");
+                        if let Err(why) = command
+                            .edit_original_interaction_response(&ctx.http, |edit| {
+                                edit
+                                    .allowed_mentions(|mentions| mentions.replied_user(true))
+                                    .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        e.color(Colour::from_rgb(235, 204, 120));
+                                        e.description(content);
+                                        e.title(title);
+                                        e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            f
+                                            .text(footer)
+                                        });
+                                        return e;
+                                    });
+                                    edit
+                            }) //// edit the thinking message with the command response
+                            .await
+                        {
+                            error!("error editing original interaction response since {:#?}", why);
+                        }
+                    },
+                    _ => {} //// probably unknown command!
+                }
+            }
+      });
+    }
+
+    async fn handle_rate_limited_command(ctx: Context, interaction: Interaction){
+
             if let Interaction::ApplicationCommand(command) = interaction.clone() {
 
                 ///// --------------------------------------------------------------------------
@@ -68,7 +291,7 @@ impl Handler{
                         // the mutex to acquire the underlying data.
 
                         let mut rate_limiter = rate_limiter.lock().await;
-                        let chill_zone_duration = 10_000u64;
+                        let chill_zone_duration = 10_000u64; //// 10 seconds rate limit
                         let user_id = command.user.id.0;
                         let now = chrono::Local::now().timestamp_millis() as u64;
                         let mut is_rate_limited = false;
@@ -103,7 +326,7 @@ impl Handler{
                                     message.allowed_mentions(|mentions| mentions.replied_user(true))
                                     .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                         e.color(Colour::from_rgb(235, 204, 120));
-                                        e.description("**🤕 You broke me, entering chill zone!**");
+                                        e.description("**rate limiter is not available!**");
                                         return e;
                                     });
                                     message
@@ -117,7 +340,7 @@ impl Handler{
                 ///// -----------------------------------------------------------------------------
                 ///// -----------------------------------------------------------------------------
             }
-        });
+        // });
     }
 
 }
@@ -153,152 +376,16 @@ impl EventHandler for Handler{
 
 
 
-        ┏———————————————————————┓
-           INTERACTION HANDLER
-        ┗———————————————————————┛
+        ┏———————————————————————————————┓
+           INTERACTION CREATION HANDLER
+        ┗———————————————————————————————┛
 
 
     */
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+
         if let Interaction::ApplicationCommand(command) = interaction.clone() {
-
-            self.handle_rate_limited_command(ctx.clone(), interaction.clone()).await;
-
-            //// oneshot channels are not async because there
-            //// is only one value can be sent at a time to 
-            //// the downside of the channel
-            let (wrapup_sender, mut wrapup_receiver) = oneshot::channel::<i64>(); //// reading from the wrapup channel is a mutable process
-            let (expand_sender, mut expand_receiver) = oneshot::channel::<i64>(); //// reading from the expand channel is a mutable process
-            let (stats_sender, mut stats_receiver) = oneshot::channel::<i64>();
-            let response_content = match command.data.name.as_str() {
-                "wrapup" => {
-                    let value = command
-                        .data
-                        .options
-                        .get(0)
-                        .and_then(|opt| opt.value.as_ref())
-                        .and_then(|val| val.as_i64())
-                        .unwrap_or(1); //// default: fetch 1 hour ago
-                    wrapup_sender.send(value).unwrap(); //// once we received the argument we'll send the value of this command to the downside of the channel to do its related task 
-                    format!("9-5s are hard. WrapUps are easy. I’m on it!")
-                },
-                "expand" => {
-                    let value = command
-                        .data
-                        .options
-                        .get(0)
-                        .and_then(|opt| opt.value.as_ref())
-                        .and_then(|val| val.as_i64())
-                        .unwrap_or(1); //// default: expand first bullet list
-                    expand_sender.send(value).unwrap(); //// once we received the argument we'll send the value of this command to the downside of the channel to do its related task 
-                    format!("Details make perfection, and perfection is not a detail")
-                
-                },
-                "stats" => {
-                    stats_sender.send(1).unwrap();
-                    format!("Checking server status")
-                },
-                "help" => {
-                    format!("**Examples**:\nGet a WrapUp for the past 2 hours : use `/wrapup 2`\nExpand on the 3rd bullet point from your WrapUp:  use `/expand 3`")
-                } 
-                _ => {
-                    format!("Uknown command!")
-                }
-            };
-
-            //// we first send the interaction response back to the slash command caller then 
-            //// after that we'll do our computation once we get the interaction response
-            //// message, the reason is the timeout of the interacton response is 3 seconds 
-            //// and any computation higher than 3 seconds will send the `The application did not respond`
-            //// error first then do the computations also we want to use the message id of the interaction
-            //// response later to fetch all the messages before that, the solution to this is
-            //// to use a oneshot channel in such a way that once the command argument received
-            //// we'll send the value to downside of the channel to in order not to wait on the
-            //// `response` of each tasks since each of them takes a long time to gets solved
-            //// and the interaction response timeout is 3 seconds thus we can't wait a long time
-            //// on their response to send the interaction response back to where it's called.
-            let interaction_response = command
-                .create_interaction_response(&ctx.http, |response| {
-                    response
-                        .kind(InteractionResponseType::DeferredChannelMessageWithSource)
-                        .interaction_response_data(|message| message.content("")) //// bot is thinking
-                })
-                .await;
-
-            if let Err(why) = command
-                    .edit_original_interaction_response(&ctx.http, |edit| edit.content(response_content.clone())) //// edit the thinking message with the command response
-                    .await
-                {
-                    error!("error editing original interaction response since {:#?}", why);
-                }
-
-            match interaction_response{ //// matching on interaction response to do the computational tasks after sending the initial command response
-                Ok(_) => {
-                    //// sleep 1 seconds for the interaction response message to be created 
-                    //// so its ID gets created inside the discrod db
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                    //// once we received data from the downside of each channel
-                    //// we'll do the heavy computational process
-                    if let Ok(wrapup_value) = wrapup_receiver.try_recv(){
-                        //// --------------------------------------------------------
-                        //// -------------------- WRAPUP TASK -----------------------
-                        //// -------------------------------------------------------- 
-                        //// the following timestamp is approximate and may not exactly 
-                        //// match the time when the command was executed.
-                        let channel_id = command.channel_id;
-                        let interaction_response_message = channel_id
-                                                                        .messages(&ctx.http, |retriever| retriever.limit(1))
-                                                                        .await
-                                                                        .unwrap()
-                                                                        .into_iter()
-                                                                        .next()
-                                                                        .unwrap();
-                        let interaction_response_message_id = interaction_response_message.id.0;
-                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                        let user_id = command.user.id.0;
-                        let guild_id = command.guild_id.unwrap().0;
-                        let response = tasks::wrapup(&ctx, wrapup_value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id, guild_id).await;
-                        info!("wrapup process response: {}", response);
-                    }
-                    
-                    if let Ok(stats_flag) = stats_receiver.try_recv(){
-                        if stats_flag == 1{
-                            //// --------------------------------------------------------
-                            //// -------------------- STATS TASK ------------------------
-                            //// --------------------------------------------------------
-                            //// the following timestamp is approximate and may not exactly 
-                            //// match the time when the command was executed.
-                            let channel_id = command.channel_id;
-                            let interaction_response_message = channel_id
-                                                                            .messages(&ctx.http, |retriever| retriever.limit(1))
-                                                                            .await
-                                                                            .unwrap()
-                                                                            .into_iter()
-                                                                            .next()
-                                                                            .unwrap();
-                            let interaction_response_message_id = interaction_response_message.id.0;
-                            let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                            let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
-                            info!("stats process response: {}", response);
-                        }
-                    }
-
-                    if let Ok(exapnd_value) = expand_receiver.try_recv(){
-                        //// --------------------------------------------------------
-                        //// -------------------- EXAPND TASK -----------------------
-                        //// -------------------------------------------------------- 
-                        //// the following timestamp is approximate and may not exactly 
-                        //// match the time when the command was executed.
-                        let channel_id = command.channel_id;
-                        let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                        let response = tasks::expand(&ctx, exapnd_value as u32, channel_id, init_cmd_time).await;
-                        info!("expand process response: {}", response);
-                    }
-                },
-                Err(why) => {
-                    info!("can't respond to slash command {:?}", why);
-                }
-            }
+            self.command_queue_sender.send((ctx, command)).await;
         }
     }
 

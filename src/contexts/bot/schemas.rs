@@ -27,17 +27,3 @@ pub struct CatchUpDoc{
     pub catchup_from: String,
     pub gpt_response: String,
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Chat{ //// pushing the current token to the vector so the GPT can be able to predict the next tokens based on the previous ones 
-    pub role: Role,
-    pub content: String,
-    pub name: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum Role{
-    System,
-    User,
-    Assistant,
-}

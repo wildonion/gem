@@ -2,8 +2,30 @@
 
 
 
+/*
+
+    at the time of this writing:
+    currently only chat gpt 3.5 or gpt-3.5-turbo is available for api calling with a rate limit of 3 messages per minute
+    gpt 4  is available newly which is in its beta stage but openai didn't add it for api calling also its rate limit is 
+    25 messages every 3 hours that's why after sending 10 messages per second the bot gets halted and faced discord rate 
+    limit since we'll reach the gpt rate limit and the rest logic will be dropped thus the bot gets halted which makes 
+    discord angry. 
+    ```
+        [2023-04-29 12:13:25.058610239 +02:00] - Rate limit reached for default-gpt-3.5-turbo in 
+        organization org-fxQTuZabNydHKpMpVHcA3it2 on requests per min. Limit: 3 / min. 
+        Please try again in 20s. Contact support@openai.com if you continue to have issues. 
+        Please add a payment method to your account to increase your rate limit. 
+        Visit https://platform.openai.com/account/billing to add a payment method.
+    ```
+
+*/
+
+
+
 pub mod chat{
 
+
+    use tokio::io::AsyncWriteExt; //// this is required to call the write_all() method of the Write trait on the created file 
 
     use crate::*;
 
@@ -26,6 +48,7 @@ pub mod chat{
         pub messages: Vec<ChatCompletionMessage>,
         pub last_content: String, //// utf8 bytes is easier to handle tokenization process later
         pub current_response: String,
+        pub is_rate_limit: bool,
     }
 
     impl Gpt{
@@ -35,7 +58,8 @@ pub mod chat{
                 Self{
                     messages: gpt_messages.clone(),
                     last_content: gpt_messages[gpt_messages.len() - 1].content.to_string(),
-                    current_response: "".to_string()
+                    current_response: "".to_string(),
+                    is_rate_limit: false,
                 }
             } else{
                 let content = "Hello,"; //// starting conversation to feed later tokens to the GPT model for prediction
@@ -48,7 +72,8 @@ pub mod chat{
                         }
                     ],
                     last_content: content.to_string(),
-                    current_response: "".to_string()
+                    current_response: "".to_string(),
+                    is_rate_limit: false,
                 }
             }
         }
@@ -99,9 +124,25 @@ pub mod chat{
             let chat_completion = ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
                                                                         .create()
                                                                         .await
-                                                                        .unwrap()
                                                                         .unwrap();
-            let returned_message = chat_completion.choices.first().unwrap().message.clone();
+            // rate limi reached probably :(
+            // save openai error into a log file 
+            // to fix this maybe we should switch between other accounts to avoid rate limiting
+            if let Err(e) = chat_completion.clone(){
+                let log_content = format!("[{}] - {}", chrono::Local::now(), e);
+                let log_name = format!("[{}]", chrono::Local::now());
+                let filepath = format!("openai-logs/{}.log", log_name);
+                let mut openai_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                openai_log.write_all(log_content.as_bytes()).await.unwrap();
+                return Self{
+                    messages: self.messages.clone(),
+                    last_content: self.last_content.clone(),
+                    current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
+                    is_rate_limit: true,
+                };
+            }
+            
+            let returned_message = chat_completion.unwrap().choices.first().unwrap().message.clone();
             self.current_response = returned_message.content.to_string();
             messages.push(ChatCompletionMessage{ //// we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
                 role: ChatCompletionMessageRole::Assistant,
@@ -118,6 +159,7 @@ pub mod chat{
                 messages,
                 last_content: content.to_string(),
                 current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
+                is_rate_limit: self.is_rate_limit,
             }
         }
 

@@ -5,7 +5,7 @@
 use crate::*;
 
 
-pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, ratelimit: HashMap<u64, u64>){
+pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt: gpt::chat::Gpt, db: mongodb::Client, ratelimit: HashMap<u64, u64>){
 
     //// each shard is a ws client to the discrod ws server also discord 
     //// requires that there be at least one shard for every 2500 guilds 
@@ -39,17 +39,21 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, rat
         },
     };
     if owners.is_some(){
+
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<(Context ,ApplicationCommandInteraction)>(100);
+        let event_handler = handlers::Handler::new(tx.clone()).await;
+
         let framework = StandardFramework::new()
                                                 .configure(|c| 
                                                     c
                                                         .on_mention(_bot_id)
                                                         .owners(owners.unwrap())
                                                 );
-        ///// gateway intents are predefined ws events 
+        ///// gateway intents are predefined ws event gateways
         let intents = GatewayIntents::all(); //// all the gateway intents must be on inside the https://discord.com/developers/applications/1092048595605270589/bot the privileged gateway intents section
         let mut bot_client = BotClient::builder(discord_token, intents)
                                                         .framework(framework)
-                                                        .event_handler(handlers::Handler)
+                                                        .event_handler(event_handler)
                                                         .await
                                                         .expect("😖 in creating discord bot client");
         {   
@@ -58,12 +62,21 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, rat
             //// it between shards' thread for handling user slash 
             //// commands rate limit
             let rate_limit = Arc::new(async_std::sync::Mutex::new(ratelimit.clone()));
+            //// creating a shareable db data to share it safely between 
+            //// shards' threads
+            let db_instance_cloned_mutexed = Arc::new(async_std::sync::Mutex::new(db.clone()));
+            //// building a new chat GPT instance for our summerization process
+            //// it must be Send to be shared and Sync or safe to move it between 
+            //// shards' and command handlers' threads 
+            let gpt_instance_cloned_mutexed = Arc::new(async_std::sync::Mutex::new(gpt.clone())); //// Mutex is inside the tokio::sync
             //// since we want to borrow the bot_client as immutable we must define 
             //// a new scope to do this because if a mutable pointer exists 
             //// an immutable one can't be there otherwise we get this Error:
             //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
             let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
             data.insert::<handlers::RateLimit>(rate_limit.clone()); //// writing the ratelimit data structure into the data variable of the bot client to pass it between shards' threads
+            data.insert::<handlers::Storage>(db_instance_cloned_mutexed.clone()); //// writing the db instance into the data variable of the bot client to pass it between shards' threads
+            data.insert::<handlers::GptBot>(gpt_instance_cloned_mutexed.clone()); //// writing the GPT bot instance into the data variable of the bot client to pass it between shards' threads 
             data.insert::<handlers::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a cloned shard manager inside the bot client data
         }
         //// moving the shreable shard (Arc<Mutex<ShardManager>>) 
@@ -91,6 +104,14 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, rat
                 }
             }
         });
+
+
+        //// handling each interaction command as a separate task 
+        //// coming from the receiver inside the tokio green threadpool
+        tokio::spawn(async move{
+            handlers::Handler::handle_interaction_command(rx).await;
+        });
+
         //// start the bot client with 2 shards or ws clients for listening
         //// for events, there is an ~5 second ratelimit period
         //// between when one shard can start after another.

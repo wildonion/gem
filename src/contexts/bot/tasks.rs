@@ -5,9 +5,9 @@
 
 /*
     
-    ┏———————————————————┓
-          BOT TASKS
-    ┗———————————————————┛
+    ┏—————————————————————┓
+        BOT SLASH TASKS
+    ┗—————————————————————┛
 
 */
 
@@ -15,41 +15,14 @@
 use crate::*;
 
 
-    /*  
-         ------------------------------------------------
-        |              SLASH COMMAND TASKS
-        |------------------------------------------------
-        | followings are related to slash commands' tasks
-        |
-
-    */
 
 
 
-pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> String{
+/* —————————————————————
+        WRAPUP TASK
+————————————————————————*/
 
-    //// data inside the bot client must be safe to 
-    //// be shared between event and command handlers'
-    //// threads thus they must be of type Arc<RwLock<TypeMapKey>>
-    //// in which TypeMapKey is a trait that has implemented for 
-    //// the underlying data which is of type Arc<Mutex<Data>>
-    //// acquiring a write lock will block other event and 
-    //// command handlers which don't allow them to use 
-    //// the data until the lock is released.
-    // let mut data = ctx.data.write().await; //// writing safely to the GptBot instance also write lock returns a mutable reference to the underlying gpt::Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    // let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> the GptBot structure
-    //     Some(gpt) => gpt,
-    //     None => {
-    //         let resp = format!("ChatGPT is not online :(");
-    //         if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-    //             m.content("ChatGPT is not online :(")
-    //         }).await{
-    //             error!("can't send message {:#?}", why);
-    //         }
-    //         return resp;
-    //     },
-    // };
-    // let mut gpt_bot = gpt_data.lock().await;
+pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> (String, String, String){
     
     //// ---------------------------
     //// setting up the GPT instance
@@ -61,11 +34,25 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     //// might gets halted inside the thread and other requests won't be able to use 
     //// the gpt_bot data since as long as the thread is locking the mutex other threads 
     //// can't mutate it thus the bot will be halted. 
+    // let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
 
-    let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
-    let mut response = "".to_string();
+    //// data inside the bot client must be safe to be shared between event and command handlers'
+    //// threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
+    //// that has implemented for the underlying data which is of type Arc<Mutex<Data>>
+    //// acquiring a write lock will block other event and command handlers which don't allow 
+    //// them to use the data until the lock is released.
+    let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+    let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+        Some(gpt) => gpt,
+        None => {
+            let response = (format!("ChatGPT is not online :("), format!("📨 WrapUp requested at: {}", chrono::Local::now()), "".to_string());
+            return response;
+        },
+    };
+    
+    let mut gpt_bot = gpt_data.lock().await;
+    let mut gpt_response = "".to_string();
     let mut gpt_request_command = "".to_string();
-
     
     //// ----------------------------------------------------------------------------
     //// fetching all channel messages before the initialized /wrap command timestamp
@@ -209,29 +196,11 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     };
 
     if messages.is_empty(){
-        if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-            let response = format!("**Nothing to WrapUp in the past {} hours ago**", hours_ago);
-            m.allowed_mentions(|mentions| mentions.replied_user(true))
-            .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-                e.color(Colour::from_rgb(235, 204, 120));
-                e.description(response);
-                e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                    let content = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
-                    f
-                        .text(content.as_str())
-                });
-                return e;
-            });
-            m
-        }).await{
-            error!("can't send message {:#?}", why);
-        }
-        return "no messages in the past hours ago".to_string();
+        let footer = format!("📨 WrapUp requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+        let title = "".to_string();
+        let response = (format!("**Nothing to WrapUp in the past {} hours ago**", hours_ago), footer, title);
+        return response;
     }
-    
-    //// if we're here means that all messages has been 
-    //// fetched successfully
-    let typing = channel_id.start_typing(&ctx.http).unwrap();
     
     //// --------------------------------------------------------------------
     //// feed the messages to the chat GPT to do a long summarization process
@@ -246,27 +215,21 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
                                     
                                     {}", messages);
     let req_cmd = gpt_request_command.clone();
-    response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
-    info!("ChatGPT Response: {:?}", response);
+    let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
+    if feed_result.is_rate_limit{
+        let title = format!("");
+        let description = "GPT rate limit".to_string().clone();
+        let footer = format!("");
+        let response = (description, footer, title);
+        return response;
+    }
 
-    // -----------------------------------------------------------------------
-    // ------------------- SAVING INTO DB AFTER FEEDING GPT ------------------ 
-    // -----------------------------------------------------------------------
-
-    /*
-        ┏—————————————————————————————┓
-             LOGGING INTO A FILE  
-        ┗—————————————————————————————┛
-
-        MAKE SURE THAT YOU'VE ALREAD SETUP THE 
-        gpt-logs FOLDER IN THE ROOT OF THE PROJECT
-
-    */
-
-    // let filename = format!("gpt-logs/channelId:{}-initializedCommandAt:{}-userId:{}.log", channel_id.0, command_time_naive_local.to_string(), user_id);
-    // let log_format = format!("[{}] ---- {}", chrono::Local::now(), response);
-    // let mut file = std::fs::File::create(filename.as_str()).unwrap();
-    // file.write_all(log_format.as_bytes()).unwrap();
+    gpt_response = feed_result.current_response;
+    let title = format!("Here is your WrapUp from {} hour(s) ago", hours_ago);
+    let description = gpt_response.clone();
+    let footer = format!("📨 /wrapup requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
+    let response = (description, footer, title);
+    
 
     /*
         ┏—————————————————————————————┓
@@ -304,63 +267,46 @@ pub async fn wrapup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_c
     let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db_addr = format!("{}://{}:{}", db_engine, db_host, db_port);
-    let db = mongodb::Client::with_uri_str(db_addr.as_str()).await.unwrap();
-    let catchup_data = db.database(&db_name).collection::<schemas::CatchUpDoc>("catchup_data");
-    let catchup_document = schemas::CatchUpDoc{
-        user_id,
-        channel_id: channel_id.0,
-        catchup_request_at: command_time_naive_local.to_string(),
-        catchup_from: start_fetching_from_string.clone(),
-        guild_id,
-        gpt_response: response.clone()
-    };
-    match catchup_data.insert_one(catchup_document, None).await{ //// serializing the user doc which is of type RegisterRequest into the BSON to insert into the mongodb
-        Ok(insert_result) => info!("inserted into the db with id {:#?}", insert_result.inserted_id.as_str()),
-        Err(e) => error!("can't insert catchup data into db since {:#?}", e),
-    };        
-
+    
+    tokio::spawn(async move{
+        let db = mongodb::Client::with_uri_str(db_addr.as_str()).await.unwrap();
+        let catchup_data = db.database(&db_name).collection::<schemas::CatchUpDoc>("catchup_data");
+        let catchup_document = schemas::CatchUpDoc{
+            user_id,
+            channel_id: channel_id.0,
+            catchup_request_at: command_time_naive_local.to_string(),
+            catchup_from: start_fetching_from_string.clone(),
+            guild_id,
+            gpt_response: gpt_response.clone()
+        };
+        match catchup_data.insert_one(catchup_document, None).await{ //// serializing the user doc which is of type RegisterRequest into the BSON to insert into the mongodb
+            Ok(insert_result) => info!("inserted into the db with id {:#?}", insert_result.inserted_id.as_str()),
+            Err(e) => error!("can't insert catchup data into db since {:#?}", e),
+        };        
+    });
+    
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
-
-    typing.stop().unwrap(); //// stop typing after feeding GPT, storing data in db and logging process
-
-    //// ----------------------------------------------
-    //// sending the GPT response to the channel itself 
-    //// ----------------------------------------------
-    let title = format!("Here is your WrapUp from {} hour(s) ago", hours_ago);
-    if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-        m.allowed_mentions(|mentions| mentions.replied_user(true))
-        .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-            e.color(Colour::from_rgb(235, 204, 120));
-            e.title(title.as_str());
-            e.description(response);
-            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 /wrapup requested at: {} \n 🧩 WrappedUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
-                f
-                    .text(content.as_str())
-            });
-            return e;
-        });
-        m
-    }).await{
-        error!("can't send message embedding because {:#?}", why);
-        return format!("can't send message embedding because {:#?}", why);
-    } else{
-        return format!(""); //// embedding has sent
-    }
-
+    
     //// no need to update the ctx.data with the updated gpt_bot field 
     //// since we're already modifying it directly through the 
     //// write lock on the RwLock
     //// ...
+    
+    return response;
+
 
 }
 
 
+/* —————————————————————
+        EXPAND TASK
+————————————————————————*/
 
-pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, init_cmd: Timestamp) -> String{
+pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, init_cmd: Timestamp) -> (String, String, String){
     
+
     //// ---------------------------
     //// setting up the GPT instance
     //// ---------------------------
@@ -376,23 +322,14 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
     let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
         Some(gpt) => gpt,
         None => {
-            let resp = format!("ChatGPT is not online :(");
-            if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-                m.content("ChatGPT is not online :(")
-            }).await{
-                error!("can't send message {:#?}", why);
-            }
-            return resp;
+            let response = (format!("ChatGPT is not online :("), format!("📨 WrapUp requested at: {}", chrono::Local::now()), "".to_string());
+            return response;
         },
     };
 
-    let mut gpt_bot = gpt_data.lock().await; //// acquiring the mutex by locking on the gpt_data task which blocks the current thread
+    let mut gpt_bot = gpt_data.lock().await;
     let mut response = "".to_string();
     let mut gpt_request_command = "".to_string();
-
-
-    // fetch from db for expand process
-    // ...
 
 
     //// ------------------------------------------------------------
@@ -408,41 +345,31 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
         format!("{}th", expand_which)
     };
 
-    let typing = channel_id.start_typing(&ctx.http).unwrap();
-
     gpt_request_command = format!("can you expand and explain more about the {} bullet list in the summarization discussion", ordinal);
     let req_cmd = gpt_request_command.clone();
-    response = gpt_bot.feed(req_cmd.as_str()).await.current_response;
+    let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
+    if feed_result.is_rate_limit{
+        let title = format!("");
+        let description = "GPT rate limit".to_string().clone();
+        let footer = format!("");
+        let response = (description, footer, title);
+        return response ;
+    }
+
+    response = feed_result.current_response;
     info!("ChatGPT Response: {:?}", response);
-
-    typing.stop().unwrap();
-
+    let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
+    let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap(); //// all the chat GPT messages  
+    
     //// ----------------------------------------------
     //// sending the GPT response to the channel itself 
     //// ----------------------------------------------
-    let gpt_bot_messages = &gpt_bot.messages; //// since messages is a vector of String which doesn't implement the Copy trait we must borrow it in here 
-    let messages_json_response = serde_json::to_string_pretty(&gpt_bot_messages).unwrap(); //// all the chat GPT messages  
+    
     let title = format!("Here is the {} bullet list expanded from your WrapUp", ordinal);
-    if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-        m.allowed_mentions(|mentions| mentions.replied_user(true))
-         .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-            e.color(Colour::from_rgb(235, 204, 120));
-            e.title(title.as_str());
-            e.description(response);
-            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 /expand requested at: {}", init_cmd.naive_local().to_string());
-                f
-                    .text(content.as_str())
-            });
-            return e;
-        });
-        m
-    }).await{
-        error!("can't send message embedding because {:#?}", why);
-        return format!("can't send message embedding because {:#?}", why);
-    } else{
-        return format!(""); //// embedding has sent
-    }
+    let description = response;
+    let footer = format!("📨 /expand requested at: {}", init_cmd.naive_local().to_string());
+    let response = (description, footer, title);
+    return response;
 
     //// no need to update the ctx.data with the updated gpt_bot field 
     //// since we're already modifying it directly through the 
@@ -452,7 +379,12 @@ pub async fn expand(ctx: &Context, expand_which: u32, channel_id: ChannelId, ini
 }
 
 
-pub async fn stats(ctx: &Context, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64) -> String{
+
+/* —————————————————————
+        STATS TASK
+————————————————————————*/
+
+pub async fn stats(ctx: &Context, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64) -> (String, String, String){
 
 
     // TODO - https://crates.io/crates/sysinfo
@@ -480,25 +412,9 @@ pub async fn stats(ctx: &Context, channel_id: ChannelId, init_cmd: Timestamp, co
     let cpu_info_json = serde_json::to_string_pretty(&json).unwrap();
 
     let title = format!("Here is the resources info of the conse server");
-    if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-        m.allowed_mentions(|mentions| mentions.replied_user(true))
-        .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-            e.color(Colour::from_rgb(235, 204, 120));
-            e.title(title.as_str());
-            e.description(cpu_info_json);
-            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-                let content = format!("📨 /stats requested at: {}", init_cmd.naive_local().to_string());
-                f
-                    .text(content.as_str())
-            });
-            return e;
-        });
-        m
-    }).await{
-        error!("can't send message embedding because {:#?}", why);
-        return format!("can't send message embedding because {:#?}", why);
-    } else{
-        return format!(""); //// embedding has sent
-    }
+    let description = cpu_info_json;
+    let footer = format!("📨 /stats requested at: {}", init_cmd.naive_local().to_string());
+    let response = (description, footer, title);
+    return response;
 
 }

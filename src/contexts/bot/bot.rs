@@ -1,7 +1,7 @@
 
 
 
-
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serde::{Serialize, Deserialize};
 use mongodb::bson::oid::ObjectId;
 use std::collections::{HashSet, HashMap};
@@ -59,6 +59,10 @@ pub mod tasks;
 
 
 
+pub static GPT: Lazy<gpt::chat::Gpt> = Lazy::new(|| {
+    block_on(gpt::chat::Gpt::new(None)) //// this gets triggered once so it's ok to use block_on instead of asyn
+});
+
 
 pub static RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
     HashMap::new()
@@ -107,6 +111,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                 info!("🏳️ receiving discord bot true flag");
                 daemon::activate_discord_bot(discord_token.as_str(), 
                                             serenity_shards.parse::<u64>().unwrap(), 
+                                            GPT.clone(), //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+                                            db.clone(),
                                             RATELIMIT.clone()
                                         ).await; 
             }    
