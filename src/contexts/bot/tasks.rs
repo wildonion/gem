@@ -18,12 +18,17 @@
     📤 remove /expand command to avoid dead lock and blocking situation since expanding a bullet 
         point needs the updated instance of the GPT structure in which it can only be acquired through 
         the mutex locking which leads us to block the current thread thus the discord rate limit issue.
+    📤 remove the whole db setup from the code since its IO load was too heavy which causes 
+        the bot got stuck in the halting mode.   
 
 
 
 */
 
 
+use std::io::SeekFrom;
+use tokio::fs::{self, OpenOptions};
+use tokio::io::{AsyncWriteExt, AsyncSeekExt};
 use crate::*;
 
 
@@ -264,63 +269,43 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     
 
     /*
-        ┏—————————————————————————————┓
-           STORING CATCHUP DATA IN DB 
-        ┗—————————————————————————————┛
+        ┏—————————————————————————————————┓
+           STORING CATCHUP DATA IN A FILE 
+        ┗—————————————————————————————————┛
         
-        DON'T UNCOMMENT THE FOLLOWING TOO MANY LOCKS INSIDE 
-        THE COMMAND WILL FACE US DISCORD RATE LIMIT 
-    
     */
 
-    // let mut data = ctx.data.write().await; //// writing safely to the Storage instance also write lock returns a mutable reference to the underlying mongodb::Client instance also data is of type Arc<RwLock<TypeMapKey>>
-    // let db_data = match data.get_mut::<handlers::Storage>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> the Storage structure
-    //     Some(db) => db,
-    //     None => {
-    //         let resp = format!("Storage is not accessible :(");
-    //         if let Err(why) = channel_id.send_message(&ctx.http, |m|{
-    //             m.content("Storage issue :(")
-    //         }).await{
-    //             error!("can't send message {:#?}", why);
-    //         }
-    //         return resp;
-    //     },
-    // };
-    // let mut db = db_data.lock().await;
-
-    //// we're building a new client everytime that a user request 
-    //// a catchup, we can't use shared data pattern to bring the db 
-    //// in here since we must lock on it to get the underlying connection 
-    //// which will face us discord ratelimit and timeout issue
-    let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
-    let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
-    let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
-    let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
-    let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
-    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let db_addr = format!("{}://{}:{}", db_engine, db_host, db_port);
-    
     tokio::spawn(async move{
-        let db = mongodb::Client::with_uri_str(db_addr.as_str()).await.unwrap();
-        let catchup_data = db.database(&db_name).collection::<schemas::CatchUpDoc>("catchup_data");
-        let catchup_document = schemas::CatchUpDoc{
-            user_id,
-            channel_id: channel_id.0,
-            catchup_request_at: command_time_naive_local.to_string(),
-            catchup_from: start_fetching_from_string.clone(),
-            guild_id,
-            gpt_response: gpt_response.clone(),
-            fetched_messages: messages.clone(),
-        };
-        match catchup_data.insert_one(catchup_document, None).await{ //// serializing the user doc which is of type RegisterRequest into the BSON to insert into the mongodb
-            Ok(insert_result) => info!("inserted into the db with id {:#?}", insert_result.inserted_id.as_str()),
-            Err(e) => error!("can't insert catchup data into db since {:#?}", e),
-        };        
+        
+        let mut gpt_ok = false;
+        if !gpt_response.is_empty(){
+            gpt_ok = true;
+        }
+
+        let log_content = format!("[{}] - userId:{}|channelId:{}|catchupRequestedAt:{}|catchupFrom:{}|guildId:{}|gptResponseOk:{}\n", chrono::Local::now(), user_id, channel_id.0, command_time_naive_local.to_string(), start_fetching_from_string.clone(), guild_id, gpt_ok);
+        let filepath = format!("gpt-logs/requests.log");
+        let mut gpt_log;
+
+        match fs::metadata("gpt-logs/requests.log").await {
+            Ok(_) => {
+                let mut file = OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(filepath.as_str())
+                    .await.unwrap();
+                file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                gpt_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                gpt_log.write_all(log_content.as_bytes()).await.unwrap();
+            },
+            Err(e) => {
+                let mut error_log = tokio::fs::File::create("error.log").await.unwrap();
+                error_log.write_all(e.to_string().as_bytes()).await.unwrap();
+            }
+        }
+
     });
-    
-    // -----------------------------------------------------------------------
-    // -----------------------------------------------------------------------
-    // -----------------------------------------------------------------------
     
     //// no need to update the ctx.data with the updated gpt_bot field 
     //// since we're already modifying it directly through the 

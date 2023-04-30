@@ -20,10 +20,6 @@ pub struct GptBot;
 impl TypeMapKey for GptBot{
     type Value = Arc<async_std::sync::Mutex<gpt::chat::Gpt>>;
 }
-pub struct Storage;
-impl TypeMapKey for Storage{
-    type Value = Arc<async_std::sync::Mutex<mongodb::Client>>;
-}
 
 pub struct RateLimit;
 impl TypeMapKey for RateLimit{
@@ -47,6 +43,9 @@ impl Handler{
         }
     }
 
+    //// reading from the channel is a mutable process since we're mutating the 
+    //// state of the mpsc channel structure by receiving the data from the 
+    //// upside of the channel to store in the queue of the structure.
     pub async fn handle_interaction_command(mut command_queue_receiver: CommandQueueReceiver){
         //// receiving each command from the upside of the channel 
         //// to handle them asyncly inside the tokio green threadpool

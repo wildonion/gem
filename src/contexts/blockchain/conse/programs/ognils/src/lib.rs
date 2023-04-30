@@ -34,7 +34,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 
 
-pub fn generate_table_for_player(player_commit: String) -> Vec<Cell>{
+pub fn generate_cell_values_for_player(player_commit: String) -> Vec<u8>{
 
     let first_32bytes_input = format!("{}${}", player_commit, 0); //// sha256 bits has 32 bytes length
     let first_hash = hash::hash(first_32bytes_input.as_bytes());
@@ -46,8 +46,7 @@ pub fn generate_table_for_player(player_commit: String) -> Vec<Cell>{
 
     let mut table = first_part_table;
     table.append(second_part_table);
-
-    todo!()
+    table
 
 }
 
@@ -187,7 +186,7 @@ pub mod ognils {
     {
 
         // create current match data on chain 
-        // call create_table, get_column_range, create_announced_values
+        // call create_table and create_announced_values
         // emit and log events 
         // set is_locked to true
         // ...
@@ -303,11 +302,18 @@ impl Player{
     //// ----------------------- on chain methods to build the game logic -----------------------
     //// ----------------------------------------------------------------------------------------
     fn create_table(&mut self, size: u16) -> Vec<Cell>{
-        todo!()
+        let mut cells: Vec<Cell>;
+        let (min, max) = self.get_column_range(x);
+        // fill each cell with the vector values generated 
+        // from calling the generate_cell_values_for_player method
+        // 5 X 5 || 6 X 6, 120 maximum
+        // 0 until 20 in a row  
     }
 
     fn get_column_range(&self, x: u16) -> (u16, u16){
-        todo!()   
+        let min = x * 20;
+        let max = (x + 1) * 20; 
+        return (min, max)
     }
 
     fn create_announced_values(&mut self, size: u16, max_rounds: u16) -> Vec<Vec<Round>>{
