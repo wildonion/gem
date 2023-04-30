@@ -4,7 +4,6 @@ RUN USER=root cargo new --bin gem
 WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
-COPY ./nfts.json ./nfts.json
 RUN cargo build --release
 RUN rm src/*.rs
 
@@ -34,7 +33,6 @@ COPY --from=builder /gem/target/release/bot ${APP}/bot
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
 COPY ./.env ${APP}/.env
-COPY ./nfts.json ${APP}/nfts.json
 
 USER $APP_USER
 WORKDIR ${APP}

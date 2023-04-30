@@ -2,46 +2,56 @@ version: "3.8"
 
 
 services:
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis
+    networks:
+      - 'net'
+    ports:
+      - 6379:6379
+    volumes:
+      - /devops/redis/:/data redis/redis-stack-server:latest
+    restart: unless-stopped
   mongodb:
     image : mongo
     container_name: mongodb
     networks:
-      - 'gem' 
+      - 'net' 
     environment:
       - PUID=1000
       - PGID=1000
     volumes:
-      - /home/root/gem/devops/database/mongodb:/data/db
+      - /devops/database/mongodb/:/data/db
     ports:
       - 27017:27017
     restart: unless-stopped
   conse:
     build:
-      dockerfile: 'devops/docker/gem/Dockerfile'
+      dockerfile: '/devops/docker/conse/Dockerfile'
     container_name: conse
     ports:
       - '7439:7438'
     volumes:
-      - './assets:/gem/assets'
+      - './assets/:/gem/assets'
     depends_on:
       - 'mongodb'
     links:
       - mongodb 
     networks:
-      - 'gem'
+      - 'net'
   bot:
     build:
-      dockerfile: 'devops/docker/bot/Dockerfile'
-    container_name: wubot
+      dockerfile: '/devops/docker/bot/Dockerfile'
+    container_name: catchup-bot
     depends_on:
       - 'mongodb'
     links:
       - mongodb 
     networks:
-      - 'gem'
+      - 'net'
   haproxy:
-    image: eeacms/haproxy
-    container_name: wubot
+    image: haproxytech/haproxy-alpine:2.4
+    container_name: haproxy
     depends_on:
       - conse
     ports:
@@ -50,13 +60,12 @@ services:
       - "8404:8404"
       - "7440:7440"
     volumes:
-      - devops/conf/haproxy.cfg:/usr/local/etc/haproxy
-      - devops/openssl:/usr/local/etc/haproxy
-    command: -c "haproxy -c -f /usr/local/etc/haproxy/haproxy.cfg"
+      - /devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - /devops/openssl/conse.pem:/usr/local/etc/conse.pem
     environment:
       SERVER_IP: "${SERVER_IP}"
     networks:
-      - 'gem'
+      - 'net'
 networks:
   gem:
     driver: bridge

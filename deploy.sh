@@ -5,7 +5,6 @@ then
     openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
     cat conse_key.pem conse_cert.pem > devops/openssl/conse.pem
 fi
-SERVER_IP=hostname -I | awk '{print $1}'
 # --------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------ DOCKER SETUP START ------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------------
@@ -13,8 +12,8 @@ sudo apt update && sudo apt install apt-transport-https ca-certificates curl sof
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
 apt-cache policy docker-ce && sudo apt install docker-ce && sudo systemctl status docker
-sudo docker network ls | grep gem > /dev/null || sudo docker network create --driver=bridge gem
-sudo docker compose -f  docker-compose.yml build --no-cache && sudo docker compose up -d --force-recreate
+SERVER_IP=$(hostname -I | awk '{print $1}')
+sudo docker compose -f docker-compose.yml build --no-cache && sudo docker compose up -d --force-recreate
 sudo docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -aq)
 MONGODB_CONTAINER_ID=docker container ls  | grep 'mongodb' | awk '{print $1}'
 sudo docker cp devops/conse-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container

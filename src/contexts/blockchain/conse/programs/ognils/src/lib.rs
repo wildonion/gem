@@ -181,9 +181,9 @@ pub mod ognils {
 
     }
 
-    pub fn start_game(ctx: Context<StartGame>, 
-                        players: Vec<Pubkey>, player_commits: Vec<String>, 
-                        amount: u64, rounds: u16, size: u16) -> Result<()>
+    pub fn start_game(ctx: Context<StartGame>, players: Vec<Pubkey>, 
+                        player_commits: Vec<String>, amount: u64, 
+                        rounds: u16, size: u16) -> Result<()>
     {
 
         // create current match data on chain 

@@ -26,4 +26,5 @@ pub struct CatchUpDoc{
     pub catchup_request_at: String,
     pub catchup_from: String,
     pub gpt_response: String,
+    pub fetched_messages: String
 }

@@ -66,7 +66,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDgwMGQ4MzVjYjQ4MWJlMzlhMGZiNCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzOTc2NTcyLCJpYXQiOjE2ODI0NDA1NzJ9.4_njcAcQS6alVOw4QDouv19V2wMaj2NHv1M81dTAT8cD4PCWzk82g13osEoTlu97SFsCLAyITjVBL8ddfkCD7Q",
 									"type": "string"
 								}
 							]
@@ -75,7 +75,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"_id\": \"6416ea5dcd31576b6d77e898\"\r\n}",
+							"raw": "{\r\n    \"_id\": \"644801a70ab54bd2cd2c9996\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -104,7 +104,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"wildonion\",\r\n    \"pwd\": \"20\"\r\n}\r\n",
+							"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -214,7 +214,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDgwMGQ4MzVjYjQ4MWJlMzlhMGZiNCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzOTc2NTcyLCJpYXQiOjE2ODI0NDA1NzJ9.4_njcAcQS6alVOw4QDouv19V2wMaj2NHv1M81dTAT8cD4PCWzk82g13osEoTlu97SFsCLAyITjVBL8ddfkCD7Q",
 									"type": "string"
 								}
 							]
@@ -990,7 +990,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzMGEzNmE3OGMxOThlMGQ2NTVjOGFlMiJ9LCJ1c2VybmFtZSI6ImJsdWVhc2giLCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5MzQxODA4NiwiaWF0IjoxNjYxODgyMDg2fQ.Uo_OZB8zr9b6oPXD3MXerJYDyxiIx-QbZGhFu0qGdMj5vZvSrW-utXpsuNAq9NCazmB5JghX1zJZcDV2zaqCNw",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDY2NWY2ZDU0YjBiYmM5OWNjOWQ5YyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzODcxMjY2LCJpYXQiOjE2ODIzMzUyNjZ9.ZtE-iPSOJHXicF_snYd-V0QYFQnEt_zSiG-qoUKLDO8yQbPLgQr-8nvtvGeVbmqw6kZ6g64yN66zReoskzkLig",
 									"type": "string"
 								}
 							]
@@ -1338,7 +1338,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MTZlODVmZDg0ZjYwMzIyMzg1NDZlZSJ9LCJ1c2VybmFtZSI6IndpbGRvbmlvbiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEwNzU5MzQ4LCJpYXQiOjE2NzkyMjMzNDh9.JnKzD5DJMLzGLQqKKBtlLHZerlqtR1MU-FlPiNxc5eoZwzEfjoi9gb76NEJPvXd0Z0I1uwXsgBSxOgY8RRsBFA",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDY2NWY2ZDU0YjBiYmM5OWNjOWQ5YyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzODcxMjY2LCJpYXQiOjE2ODIzMzUyNjZ9.ZtE-iPSOJHXicF_snYd-V0QYFQnEt_zSiG-qoUKLDO8yQbPLgQr-8nvtvGeVbmqw6kZ6g64yN66zReoskzkLig",
 									"type": "string"
 								}
 							]
@@ -2200,22 +2200,22 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://conse.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://conse.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://conse.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{
 			"key": "whitelist",
-			"value": "https://conse.app:7439",
+			"value": "https://api.conse.app:7439",
 			"type": "string"
 		},
 		{

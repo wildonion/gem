@@ -26,13 +26,19 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🛠️ Production Setup
 
+> Remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
+
 > First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to setup the VPS for production then to update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with dev user to register a new god for the game.
 
 ## 🍟 Notes
 
+* since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
+
+* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
+
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
-* clean docker cache using ```sudo docker buildx prune --all``` command.
+* clean docker cache using ```sudo docker buildx prune --all``` or ```docker system prune --all``` command.
 
 * register push notification strategy: client `<--hyper REST-->` register a push notif route using redis client `<--REDIS SERVER-->` register pubsub topic (emit events) on redis server.
 

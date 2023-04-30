@@ -160,13 +160,25 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// -----------------------------------------------------------
     //// concatenating all the channel messages into a single string
     //// -----------------------------------------------------------
+    let bot_username = env::var("BOT_USERNAME").expect("⚠️ no bot username variable set");
     let channel_messages = messages.unwrap_or_else(|_| vec![]);
     let messages = if channel_messages.len() > 1{
         let mut hours_ago_messages = vec![]; 
         let mut messages_iterator = channel_messages.into_iter();
         while let Some(m) = messages_iterator.next(){
             if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp are the ones that are n hours ago
-                let user_message = format!("{}:{}", m.author.name, m.content);
+                /*
+                    in fetching messages from the discord server all type of messages will be fetched including 
+                    the embeddings and since bot is sending response back in an embedding format they have no 
+                    content inside of themselves they are just embeddings can't get their content simply
+                    and because those messages that fetched contains the bot user, their content are empty 
+                    thus GPT in some how attached the actual messages by other user which contains the content 
+                    to the bot empty embedding and thus we'll just ignore what the bot said in total and go to other massage  
+                */
+                if m.author.name == bot_username{
+                    continue;
+                }
+                let user_message = format!("{}:{}, ", m.author.name, m.content);
                 hours_ago_messages.push(user_message);
             } else{
                 break;
@@ -188,10 +200,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
     let mut gpt_request_command = "".to_string();
-    gpt_request_command = format!("Summarize each member's contribution to the discussion. Then put it in a numbered list so its easy to read. Also there is a user called JOE, do not add JOE's contributions to your summary.
+    gpt_request_command = format!("Summarize each member's contribution to the discussion. Then put it in a numbered list so its easy to read. 
 
     Here is how you should format your summaries: 
-    
+
     1. user1: summarize everything user 1 contributed to the discussion. 
     2. user2: summarize everything user 2 contributed to the discussion.\n
     
@@ -209,20 +221,19 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         WANT TO MUTATE THE DATA BUT THE FIRST THREAD IS NOT DONE
         WITH THE ACQUIRED DATA.  
     
+        we should avoid any blocking operation inside the command in order not to get 
+        the discord timeout response, thus we're creating the GPT instance per each 
+        request for summarization process. since locking on the mutex is a blocking 
+        process thus if we reaches the discord rate limit the locking process might 
+        gets halted inside the thread and other requests won't be able to use the gpt_bot 
+        data since as long as the thread is locking the mutex other threads can't mutate 
+        it thus the bot will be halted. 
+        data inside the bot client must be safe to be shared between event and command handlers'
+        threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
+        that has implemented for the underlying data which is of type Arc<Mutex<Data>>
+        acquiring a write lock will block other event and command handlers which don't allow 
+        them to use the data until the lock is released.
     */
-    //// we should avoid any blocking operation inside the command in order not to get 
-    //// the discord timeout response, thus we're creating the GPT instance per each 
-    //// request for summarization process. since locking on the mutex is a blocking 
-    //// process thus if we reaches the discord rate limit the locking process might 
-    //// gets halted inside the thread and other requests won't be able to use the gpt_bot 
-    //// data since as long as the thread is locking the mutex other threads can't mutate 
-    //// it thus the bot will be halted. 
-    // 
-    //// data inside the bot client must be safe to be shared between event and command handlers'
-    //// threads thus they must be of type Arc<RwLock<TypeMapKey>> in which TypeMapKey is a trait 
-    //// that has implemented for the underlying data which is of type Arc<Mutex<Data>>
-    //// acquiring a write lock will block other event and command handlers which don't allow 
-    //// them to use the data until the lock is released.
     // let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
     // let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
     //     Some(gpt) => gpt,
@@ -298,7 +309,8 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
             catchup_request_at: command_time_naive_local.to_string(),
             catchup_from: start_fetching_from_string.clone(),
             guild_id,
-            gpt_response: gpt_response.clone()
+            gpt_response: gpt_response.clone(),
+            fetched_messages: messages.clone(),
         };
         match catchup_data.insert_one(catchup_document, None).await{ //// serializing the user doc which is of type RegisterRequest into the BSON to insert into the mongodb
             Ok(insert_result) => info!("inserted into the db with id {:#?}", insert_result.inserted_id.as_str()),
