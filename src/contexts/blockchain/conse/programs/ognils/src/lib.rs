@@ -51,6 +51,32 @@ pub fn generate_cell_values_for_player(player_commit: String) -> Vec<u8>{
 }
 
 
+pub fn create_table(size: u16, player_commit: String) -> Vec<Cell>{
+    let mut cells: Vec<Cell> = vec![];
+    // let (min, max) = self.get_column_range(x);
+    // fill each cell with the vector values generated 
+    // from calling the generate_cell_values_for_player method
+    // 5 X 5 || 6 X 6, 120 maximum
+    // 0 until 20 in a row  
+
+    let cell_values = crate::generate_cell_values_for_player(player_commit);
+
+    cells
+}
+
+pub fn get_column_range(x: u16) -> (u16, u16){
+    let min = x * 20;
+    let max = (x + 1) * 20; 
+    return (min, max)
+}
+
+pub fn create_announced_values(size: u16, max_rounds: u16) -> Vec<Vec<Round>>{
+    todo!()
+} 
+
+
+
+
 
 #[program]
 pub mod ognils {
@@ -73,7 +99,6 @@ pub mod ognils {
 
         msg!("{:#?}", CurrentMatchEvent{ 
             match_id: match_id.clone(), 
-            bump, 
             server: server.key(), 
             is_locked: false, 
             announced_values: vec![], 
@@ -82,7 +107,6 @@ pub mod ognils {
 
         emit!(CurrentMatchEvent{ 
             match_id: match_id.clone(), 
-            bump, 
             server: server.key(), 
             is_locked: false, 
             announced_values: vec![], 
@@ -176,44 +200,54 @@ pub mod ognils {
 
     }
 
-    pub fn start_game(ctx: Context<StartGame>, players: Vec<PlayerInfo>, 
-                        amount: u64, rounds: u16, size: u16) -> Result<()>
+    pub fn start_game(ctx: Context<StartGame>, players: Vec<PlayerInfo>, bump: u8,
+                      rounds: u16, size: u16, match_id: String) -> Result<()>
     {
 
-        // create current match data on chain 
-        // call create_table and create_announced_values
-        // emit and log events 
-        // set is_locked to true
-        // ...
+        let announced_values = create_announced_values(size, rounds);
 
+        let server = &ctx.accounts.server;
+        let server_pda = &mut ctx.accounts.match_pda;
+        
+        let mut players_data = vec![]; 
         for player in players{
             let player_table = vec![];
-            let mut player_instance = Player{
+            let player_instance = Player{
                 pub_key: player.pub_key,
                 table: player_table
             };
 
-            player_instance.create_table(size, player.commit); // creating the table with the passed in size 
+            create_table(size, player.commit); // creating the table with the passed in size 
+            players_data.push(player_instance);
         }
 
+        let current_match = CurrentMatch{
+            match_id: match_id.clone(),
+            bump,
+            server: server.key(),
+            is_locked: false,
+            announced_values: announced_values.clone(), 
+            players: players_data.clone()
+        };
 
-        // msg!("{:#?}", CurrentMatchEvent{ 
-        //     match_id: match_id.clone(), 
-        //     bump, 
-        //     server: server.key(), 
-        //     is_locked: false, 
-        //     announced_values: vec![], 
-        //     players: players.clone() 
-        // });
+        server_pda.current_match = current_match; //// updating the current_match field inside the PDA 
 
-        // emit!(CurrentMatchEvent{ 
-        //     match_id: match_id.clone(), 
-        //     bump, 
-        //     server: server.key(), 
-        //     is_locked: false, 
-        //     announced_values: vec![], 
-        //     players: players.clone(),
-        // });
+
+        msg!("{:#?}", CurrentMatchEvent{ 
+            match_id: match_id.clone(),  
+            server: server.key(), 
+            is_locked: false, 
+            announced_values: announced_values.clone(), 
+            players: players_data.clone() 
+        });
+
+        emit!(CurrentMatchEvent{ 
+            match_id: match_id.clone(),  
+            server: server.key(), 
+            is_locked: false, 
+            announced_values: announced_values.clone(), 
+            players: players_data.clone(),
+        });
 
         Ok(())
         
@@ -304,40 +338,6 @@ pub struct PlayerInfo{
    pub commit: String
 }
 
-
-impl Player{
-
-    //// ----------------------------------------------------------------------------------------
-    //// ----------------------- on chain methods to build the game logic -----------------------
-    //// ----------------------------------------------------------------------------------------
-    fn create_table(&mut self, size: u16, player_commit: String) -> Vec<Cell>{
-        let mut cells: Vec<Cell> = vec![];
-        // let (min, max) = self.get_column_range(x);
-        // fill each cell with the vector values generated 
-        // from calling the generate_cell_values_for_player method
-        // 5 X 5 || 6 X 6, 120 maximum
-        // 0 until 20 in a row  
-
-        let cell_values = crate::generate_cell_values_for_player(player_commit);
-
-        cells
-    }
-
-    fn get_column_range(&self, x: u16) -> (u16, u16){
-        let min = x * 20;
-        let max = (x + 1) * 20; 
-        return (min, max)
-    }
-
-    fn create_announced_values(&mut self, size: u16, max_rounds: u16) -> Vec<Vec<Round>>{
-        todo!()
-    } 
-    //// ----------------------------------------------------------------------------------------
-    //// ----------------------------------------------------------------------------------------
-    //// ----------------------------------------------------------------------------------------
-
-}
-
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)]
 pub struct Round{
     pub values: Vec<u16>,
@@ -350,7 +350,7 @@ pub struct CurrentMatch{
    pub bump: u8,
    pub server: Pubkey,
    pub is_locked: bool,
-   pub announced_values: Vec<Round>,
+   pub announced_values: Vec<Vec<Round>>,
    pub players: Vec<Player>,
 }
 
@@ -417,12 +417,10 @@ pub struct InitMatchPda<'info>{
 pub struct StartGame<'info>{
    #[account(mut)]
    pub signer: Signer<'info>, //// only server
-   #[account(mut)]
-   pub player: AccountInfo<'info>,
    /// CHECK:
    #[account(mut)]
    pub server: AccountInfo<'info>,
-   #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), player.key().as_ref()], bump)]
+   #[account(init, payer = signer, space = 300, seeds = [match_id.as_bytes(), server.key().as_ref()], bump)]
    pub match_pda: Account<'info, MatchPda>,
    pub system_program: Program<'info, System>,
 }
@@ -498,9 +496,8 @@ pub enum ErrorCode {
 #[derive(Debug)]
 pub struct CurrentMatchEvent{
     pub match_id: String,
-    pub bump: u8,
     pub server: Pubkey,
     pub is_locked: bool,
-    pub announced_values: Vec<Round>,
+    pub announced_values: Vec<Vec<Round>>,
     pub players: Vec<Player>,
 }

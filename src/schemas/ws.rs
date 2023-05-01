@@ -61,6 +61,12 @@ impl UserNotif{
     }
 }
 
+
+//// in order to call the NotifExt methods on the
+//// UserNotif struct the trait must be implemented 
+//// for the UserNotif struct and imported inside
+//// where we want to call the methods on the struct
+//// instance.
 pub trait NotifExt{
     type Data;
     fn set_user_notif(&mut self, notif_data: NotifData) -> Self;

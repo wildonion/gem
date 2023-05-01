@@ -27,6 +27,7 @@
 
 
 use std::io::SeekFrom;
+use chrono::NaiveDate;
 use tokio::fs::{self, OpenOptions};
 use tokio::io::{AsyncWriteExt, AsyncSeekExt};
 use crate::*;
@@ -50,11 +51,28 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     let date = command_time_naive_local.date();
     let time = command_time_naive_local.time();
 
-    let start_fetching_year = date.year();
+    let mut start_fetching_year = date.year();
     let mut start_fetching_day = date.day();
-    let start_fetching_month = date.month();
+    let mut start_fetching_month = date.month();
     let start_fetching_mins = time.minute();
     let start_fetching_secs = time.second();
+    
+    fn get_days_from_month(year: i32, month: u32) -> u32 {
+        NaiveDate::from_ymd_opt(
+            match month {
+                12 => year + 1,
+                _ => year,
+            },
+            match month {
+                12 => 1,
+                _ => month + 1,
+            },
+            1,
+        )
+        .unwrap()
+        .signed_duration_since(NaiveDate::from_ymd_opt(year, month, 1).unwrap())
+        .num_days() as u32
+    }
     
     //// if the requested time was smaller than the passed 
     //// in hours ago means we must fetch all the 
@@ -63,7 +81,18 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     let ago = time.hour() as i32 - hours_ago as i32; 
     start_fetching_day = if ago < 0{ // a day ago 
         start_fetching_day = if date.day() - 1 == 0{
-            date.day() //// since it might be the first day of the month 
+            let prev_month_num = start_fetching_month - 1;
+            let current_day;
+            if prev_month_num == 0{ //// means it's first month of the year and we have to fetch the last year 
+                start_fetching_year -= 1;
+                start_fetching_month = 12; //// last month is december 
+                current_day = 31; //// december has 31 days
+            } else{
+                start_fetching_month = prev_month_num;
+                let day = get_days_from_month(start_fetching_year, prev_month_num);
+                current_day = day;
+            }
+            current_day
         } else{
             date.day() - 1
         };
@@ -300,6 +329,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         ┏—————————————————————————————————┓
            STORING CATCHUP DATA IN A FILE 
         ┗—————————————————————————————————┛
+
+         when a new thread is spawned, the provided closure can 
+         only borrow items with a static lifetime. In other words, 
+         the borrowed values must be alive for the full program lifetime.
         
     */
 

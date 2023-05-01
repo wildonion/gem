@@ -46,8 +46,9 @@ services:
     depends_on:
       - 'mongodb'
     volumes:
-      - ./openai-logs:/usr/src/app/openai-logs
-      - ./gpt-logs:/usr/src/app/gpt-logs
+      - ./openai-logs/:/usr/src/app/openai-logs
+      - ./gpt-logs/:/usr/src/app/gpt-logs
+      - ./error-kind/:/usr/src/app/error-kind
     links:
       - mongodb 
     networks:
