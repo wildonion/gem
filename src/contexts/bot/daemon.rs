@@ -108,9 +108,10 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
             handlers::Handler::handle_interaction_command(rx).await;
         });
 
-        //// start the bot client with 2 shards or ws clients for listening
-        //// for events, there is an ~5 second ratelimit period
-        //// between when one shard can start after another.
+        //// start the bot client with specified shards or ws clients for listening
+        //// to events, there is an ~5 second ratelimit period between when one shard 
+        //// can start after another, also Discord recommends one shard per 
+        //// 1,000 to 2,000 servers
         if let Err(why) = bot_client.start_shards(serenity_shards).await{
             error!("😖 discord bot client error: {:?}", why);
         }

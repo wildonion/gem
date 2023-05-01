@@ -120,22 +120,18 @@ pub mod ognils {
         let match_pda = &mut ctx.accounts.match_pda; 
         let match_pda_account = match_pda.to_account_info();
         let current_match = match_pda.current_match.clone();
+        let player_pda_balance = player.try_lamports()?; 
 
         if signer.key != player.key{
             return err!(ErrorCode::RestrictionError);
         }
-
-        if current_match.is_locked{
-            return err!(ErrorCode::MatchIsLocked);
-        }   
 
         let index = current_match.players.iter().position(|p| p.pub_key == player.key());
         if index.is_some(){ //// we found a player
             let player_index = index.unwrap();
             let current_match_players = current_match.players.clone();
             let mut find_player = current_match_players[player_index].clone();
-            if find_player.current_balance > 0{
-                find_player.current_balance -= amount;
+            if player_pda_balance > 0{
                 **user_pda.try_borrow_mut_lamports()? -= amount;
                 **player.try_borrow_mut_lamports()? += amount;
             } else{
@@ -180,9 +176,8 @@ pub mod ognils {
 
     }
 
-    pub fn start_game(ctx: Context<StartGame>, players: Vec<Pubkey>, 
-                        player_commits: Vec<String>, amount: u64, 
-                        rounds: u16, size: u16) -> Result<()>
+    pub fn start_game(ctx: Context<StartGame>, players: Vec<PlayerInfo>, 
+                        amount: u64, rounds: u16, size: u16) -> Result<()>
     {
 
         // create current match data on chain 
@@ -191,6 +186,15 @@ pub mod ognils {
         // set is_locked to true
         // ...
 
+        for player in players{
+            let player_table = vec![];
+            let mut player_instance = Player{
+                pub_key: player.pub_key,
+                table: player_table
+            };
+
+            player_instance.create_table(size, player.commit); // creating the table with the passed in size 
+        }
 
 
         // msg!("{:#?}", CurrentMatchEvent{ 
@@ -292,7 +296,12 @@ pub struct Cell{
 pub struct Player{
    pub pub_key: Pubkey,
    pub table: Vec<Cell>,
-   pub current_balance: u64,
+}
+
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize, Default)]
+pub struct PlayerInfo{
+   pub pub_key: Pubkey,
+   pub commit: String
 }
 
 
@@ -301,13 +310,17 @@ impl Player{
     //// ----------------------------------------------------------------------------------------
     //// ----------------------- on chain methods to build the game logic -----------------------
     //// ----------------------------------------------------------------------------------------
-    fn create_table(&mut self, size: u16) -> Vec<Cell>{
-        let mut cells: Vec<Cell>;
-        let (min, max) = self.get_column_range(x);
+    fn create_table(&mut self, size: u16, player_commit: String) -> Vec<Cell>{
+        let mut cells: Vec<Cell> = vec![];
+        // let (min, max) = self.get_column_range(x);
         // fill each cell with the vector values generated 
         // from calling the generate_cell_values_for_player method
         // 5 X 5 || 6 X 6, 120 maximum
         // 0 until 20 in a row  
+
+        let cell_values = crate::generate_cell_values_for_player(player_commit);
+
+        cells
     }
 
     fn get_column_range(&self, x: u16) -> (u16, u16){

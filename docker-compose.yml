@@ -10,7 +10,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - /devops/redis/:/data redis/redis-stack-server:latest
+      - ./devops/data/redis/:/data redis/redis-stack-server:latest
     restart: unless-stopped
   mongodb:
     image : mongo
@@ -21,18 +21,18 @@ services:
       - PUID=1000
       - PGID=1000
     volumes:
-      - /devops/database/mongodb/:/data/db
+      - ./devops/data/mongodb/:/data/db
     ports:
       - 27017:27017
     restart: unless-stopped
   conse:
     build:
-      dockerfile: '/devops/docker/conse/Dockerfile'
+      dockerfile: './devops/docker/conse/Dockerfile'
     container_name: conse
     ports:
       - '7439:7438'
     volumes:
-      - './assets/:/gem/assets'
+      - assets
     depends_on:
       - 'mongodb'
     links:
@@ -41,10 +41,13 @@ services:
       - 'net'
   bot:
     build:
-      dockerfile: '/devops/docker/bot/Dockerfile'
+      dockerfile: './devops/docker/bot/Dockerfile'
     container_name: catchup-bot
     depends_on:
       - 'mongodb'
+    volumes:
+      - ./openai-logs:/usr/src/app/openai-logs
+      - ./gpt-logs:/usr/src/app/gpt-logs
     links:
       - mongodb 
     networks:
@@ -60,8 +63,8 @@ services:
       - "8404:8404"
       - "7440:7440"
     volumes:
-      - /devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-      - /devops/openssl/conse.pem:/usr/local/etc/conse.pem
+      - ./devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./devops/openssl/conse.pem:/usr/local/etc/conse.pem
     environment:
       SERVER_IP: "${SERVER_IP}"
     networks:

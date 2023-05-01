@@ -62,7 +62,11 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// correct time (see the time calculation logic).
     let ago = time.hour() as i32 - hours_ago as i32; 
     start_fetching_day = if ago < 0{ // a day ago 
-        start_fetching_day = date.day() - 1;
+        start_fetching_day = if date.day() - 1 == 0{
+            date.day() //// since it might be the first day of the month 
+        } else{
+            date.day() - 1
+        };
         start_fetching_day as u32
     } else{
         start_fetching_day as u32 
@@ -123,8 +127,40 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// ----------------------------------------------
     //// ----------------------------------------------
 
-    let d = chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day).unwrap();
-    let t = chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs).unwrap();
+    let d = match chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day){
+        Some(d) => {
+            d
+        },
+        None => {
+            let log_name = format!("[{}]", chrono::Local::now());
+            let filepath = format!("error-kind/{}-inappropriate-date.log", log_name);
+            let log_content = format!("year:{}|month:{}|day:{}", start_fetching_year, start_fetching_month, start_fetching_day);
+            let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+            error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
+            let footer = format!("");
+            let title = "".to_string();
+            let response = (format!("**I lost dates :(**"), footer, title);
+            return response;
+        }
+    };
+    
+    let t = match chrono::NaiveTime::from_hms_opt(start_fetching_hours, start_fetching_mins, start_fetching_secs){
+        Some(t) => {
+            t
+        },
+        None => {        
+            let log_name = format!("[{}]", chrono::Local::now());
+            let filepath = format!("error-kind/{}-inappropriate-time.log", log_name);
+            let log_content = format!("hours:{}|mins:{}|secs:{}", start_fetching_hours, start_fetching_mins, start_fetching_secs);
+            let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+            error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
+            let footer = format!("");
+            let title = "".to_string();
+            let response = (format!("**I lost times :(**"), footer, title);
+            return response;
+        }
+    };
+
     let start_fetching_from_timestamp = chrono::NaiveDateTime::new(d, t).timestamp() as u64;
     let start_fetching_from_string = chrono::NaiveDateTime::new(d, t).to_string();
 
@@ -197,23 +233,15 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     if messages.is_empty(){
         let footer = format!("📨 CatchUp requested at: {} \n 🧩 CaughtUp from: {} \n 🕰️ timezone: {:#?}", command_time_naive_local.to_string(), start_fetching_from_string, command_time_offset);
         let title = "".to_string();
-        let response = (format!("**Nothing to CatchUp in the past {} hours ago**", hours_ago), footer, title);
+        let response = (format!("**Nothing to CatchUp in the past {} hours**", hours_ago), footer, title);
         return response;
     }
-    
+
     //// --------------------------------------------------------------------
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
     let mut gpt_request_command = "".to_string();
-    gpt_request_command = format!("Summarize each member's contribution to the discussion. Then put it in a numbered list so its easy to read. 
-
-    Here is how you should format your summaries: 
-
-    1. user1: summarize everything user 1 contributed to the discussion. 
-    2. user2: summarize everything user 2 contributed to the discussion.\n
-    
-                                    
-                                    {}", messages);
+    gpt_request_command = format!("Summarize each member's contribution to the discussion:{}", messages);
 
     /*
         ┏—————————————————————————————————————————————————┓
