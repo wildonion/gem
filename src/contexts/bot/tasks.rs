@@ -361,8 +361,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
                 gpt_log.write_all(log_content.as_bytes()).await.unwrap();
             },
             Err(e) => {
-                let mut error_log = tokio::fs::File::create("error.log").await.unwrap();
-                error_log.write_all(e.to_string().as_bytes()).await.unwrap();
+                let log_name = format!("[{}]", chrono::Local::now());
+                let filepath = format!("error-kind/{}-gpt-reading-log-file.log", log_name);
+                let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
             }
         }
 

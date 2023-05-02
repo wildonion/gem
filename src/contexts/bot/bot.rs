@@ -3,7 +3,6 @@
 
 
 
-use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serde::{Serialize, Deserialize};
 use std::collections::{HashSet, HashMap};
 use std::{net::SocketAddr, sync::Arc, env};
@@ -29,6 +28,8 @@ use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId,
                 framework::standard::{macros::{help, hook}, 
                 HelpOptions, help_commands, CommandGroup}
             };
+use serenity::model::application::interaction::MessageFlags;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::{prelude::*, framework::StandardFramework, http, Client as BotClient};
 use serenity::model::Timestamp;
 use serenity::builder;
@@ -65,9 +66,14 @@ pub static GPT: Lazy<gpt::chat::Gpt> = Lazy::new(|| {
 });
 
 
-pub static RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
+pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
     HashMap::new()
 });
+
+pub static GUILD_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
+    HashMap::new()
+});
+
 
 
 
@@ -102,7 +108,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                 daemon::activate_discord_bot(discord_token.as_str(), 
                                             serenity_shards.parse::<u64>().unwrap(), 
                                             GPT.clone(), //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
-                                            RATELIMIT.clone()
+                                            USER_RATELIMIT.clone(),
+                                            GUILD_RATELIMIT.clone()
                                         ).await; 
             }    
         }

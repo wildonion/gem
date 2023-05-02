@@ -205,9 +205,8 @@ pub mod ognils {
     {
 
         let announced_values = create_announced_values(size, rounds);
-
         let server = &ctx.accounts.server;
-        let server_pda = &mut ctx.accounts.match_pda;
+        let server_pda = &mut ctx.accounts.match_pda; // a mutable pointer to the match pda since ctx.accounts fields doesn't implement Copy trait 
         
         let mut players_data = vec![]; 
         for player in players{

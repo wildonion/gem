@@ -5,7 +5,13 @@
 use crate::*;
 
 
-pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt: gpt::chat::Gpt, ratelimit: HashMap<u64, u64>){
+pub async fn activate_discord_bot(
+    discord_token: &str, 
+    serenity_shards: u64, 
+    gpt: gpt::chat::Gpt, 
+    user_ratelimit: HashMap<u64, u64>,
+    guild_ratelimit: HashMap<u64, u64>
+    ){
 
     //// each shard is a ws client to the discrod ws server also discord 
     //// requires that there be at least one shard for every 2500 guilds 
@@ -40,7 +46,7 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
     };
     if owners.is_some(){
 
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<(Context ,ApplicationCommandInteraction)>(100);
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<(Context, ApplicationCommandInteraction)>(131072);
         let event_handler = handlers::Handler::new(tx.clone()).await;
 
         let framework = StandardFramework::new()
@@ -58,10 +64,14 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
                                                         .expect("😖 in creating discord bot client");
         {   
 
-            //// building a shreable ratelimit data structure to share 
+            //// building a shreable guild_rate_limit data structure to share 
             //// it between shards' thread for handling user slash 
             //// commands rate limit
-            let rate_limit = Arc::new(async_std::sync::Mutex::new(ratelimit.clone()));
+            let guild_rate_limit = Arc::new(async_std::sync::Mutex::new(guild_ratelimit.clone()));
+            //// building a shreable user_ratelimit data structure to share 
+            //// it between shards' thread for handling user slash 
+            //// commands rate limit
+            let user_rate_limit = Arc::new(async_std::sync::Mutex::new(user_ratelimit.clone()));
             //// building a new chat GPT instance for our summerization process
             //// it must be Send to be shared and Sync or safe to move it between 
             //// shards' and command handlers' threads 
@@ -71,7 +81,8 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
             //// an immutable one can't be there otherwise we get this Error:
             //// cannot borrow `bot_client` as mutable because it is also borrowed as immutable
             let mut data = bot_client.data.write().await; //// data of the bot client is of type RwLock which can be written safely in other threads
-            data.insert::<handlers::RateLimit>(rate_limit.clone()); //// writing the ratelimit data structure into the data variable of the bot client to pass it between shards' threads
+            data.insert::<handlers::GuildRateLimit>(guild_rate_limit.clone()); //// writing the guild_rate_limit data structure into the data variable of the bot client to pass it between shards' threads
+            data.insert::<handlers::RateLimit>(user_rate_limit.clone()); //// writing the user_rate_limit data structure into the data variable of the bot client to pass it between shards' threads
             data.insert::<handlers::GptBot>(gpt_instance_cloned_mutexed.clone()); //// writing the GPT bot instance into the data variable of the bot client to pass it between shards' threads 
             data.insert::<handlers::ShardManagerContainer>(bot_client.shard_manager.clone()); //// writing a cloned shard manager inside the bot client data
         }
@@ -81,7 +92,7 @@ pub async fn activate_discord_bot(discord_token: &str, serenity_shards: u64, gpt
         tokio::spawn(async move{
             tokio::signal::ctrl_c().await.expect("😖 install the plugin CTRL+C signal to the server");
             shard_manager.lock().await.shutdown_all().await; //// once we received the ctrl + c we'll shutdown all shards or ws clients 
-            //// we'll print the current statuses of the two shards to the 
+            //// we'll print the current statuses of the shards to the 
             //// terminal every 30 seconds. This includes the ID of the shard, 
             //// the current connection stage, (e.g. "Connecting" or "Connected"), 
             //// and the approximate WebSocket latency (time between when a heartbeat 
