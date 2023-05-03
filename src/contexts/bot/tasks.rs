@@ -334,9 +334,11 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
          when a new thread is spawned, the provided closure can 
          only borrow items with a static lifetime. In other words, 
          the borrowed values must be alive for the full program lifetime.
-        
+          
     */
 
+    //// since we're doing IO we must put the task inside the
+    //// tokio green threadpool to avoid rate limit and halting issues
     tokio::spawn(async move{
         
         let mut gpt_ok = false;

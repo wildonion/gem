@@ -46,7 +46,8 @@ pub async fn activate_discord_bot(
     };
     if owners.is_some(){
 
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<(Context, ApplicationCommandInteraction)>(131072);
+        let bot_buffer_size = env::var("BOT_BUFFER_SIZE").expect("⚠️ no bot buffer size key variable set").parse::<u32>().unwrap();
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<(Context, ApplicationCommandInteraction)>(bot_buffer_size as usize);
         let event_handler = handlers::Handler::new(tx.clone()).await;
 
         let framework = StandardFramework::new()
