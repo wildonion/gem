@@ -56,6 +56,37 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     let mut start_fetching_month = date.month();
     let start_fetching_mins = time.minute();
     let start_fetching_secs = time.second();
+
+    //// ----------------------------------------------
+    //// ----------- TIME CALCULATION LOGIC -----------
+    //// ----------------------------------------------
+    /*  
+        -------------
+        Logic Example
+        -------------
+
+        requested time hour : 10 in the morning
+        hours ago           : 17
+        10 < 17{
+            start from hour = 10 + 24 - 17 = 34 - 17 = 17 or 5 in the evening
+            start from day  = 10 - 17 = -7 
+            -7 means that we've fallen into a day ago and must 
+            fetch from a day ago started at 17 or 5 in the morning 
+        }
+        
+        requested time hour : 10 in the morning
+        hours ago           : 10
+        10 == 10{
+            start from = 10 - 10 = 00 or 12 late night
+        }
+
+        requested time hour : 10 in the morning
+        hours ago           : 6
+        10 > 6{
+            start from = 10 - 6 = 4 in the morning
+        }
+
+    */
     
     fn get_days_from_month(year: i32, month: u32) -> u32 {
         NaiveDate::from_ymd_opt(
@@ -101,36 +132,6 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         start_fetching_day as u32 
     };
 
-    //// ----------------------------------------------
-    //// ----------- TIME CALCULATION LOGIC -----------
-    //// ----------------------------------------------
-    /*  
-        -------------
-        Logic Example
-        -------------
-
-        requested time hour : 10 in the morning
-        hours ago           : 17
-        10 < 17{
-            start from hour = 10 + 24 - 17 = 34 - 17 = 17 or 5 in the evening
-            start from day  = 10 - 17 = -7 
-            -7 means that we've fallen into a day ago and must 
-            fetch from a day ago started at 17 or 5 in the morning 
-        }
-        
-        requested time hour : 10 in the morning
-        hours ago           : 10
-        10 == 10{
-            start from = 10 - 10 = 00 or 12 late night
-        }
-
-        requested time hour : 10 in the morning
-        hours ago           : 6
-        10 > 6{
-            start from = 10 - 6 = 4 in the morning
-        }
-
-    */
     //// if the requested time was greater than the 
     //// passed in hours ago time simply the start time
     //// will be the hours ago of the requested time.
@@ -168,7 +169,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
             error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
             let footer = format!("");
             let title = "".to_string();
-            let response = (format!("**I lost dates :(**"), footer, title);
+            let response = (format!("**I lost dates**"), footer, title);
             return response;
         }
     };
@@ -185,7 +186,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
             error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
             let footer = format!("");
             let title = "".to_string();
-            let response = (format!("**I lost times :(**"), footer, title);
+            let response = (format!("**I lost times**"), footer, title);
             return response;
         }
     };
@@ -300,7 +301,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     // let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
     //     Some(gpt) => gpt,
     //     None => {
-    //         let response = (format!("ChatGPT is not online :("), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
+    //         let response = (format!("ChatGPT is not online"), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
     //         return response;
     //     },
     // };

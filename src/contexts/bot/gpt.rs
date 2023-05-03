@@ -103,7 +103,14 @@ pub mod chat{
         //
         //// → if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable
         //// → we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
-        //// → dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait 
+        //// → dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait
+        //
+        //// it's ok to return slices types like str and [] behind a pointer by using the lifetime of the self or a passed 
+        //// in one since they are on the stack but we can't return dynamic types behind a pointer since copy trait is not 
+        //// implemented for them and once the scope gets executed their lifetime will be dropped from the ram since they're 
+        //// expensive and rust doesn't store them forever thus it moves them to the newly scope but since there is a pointer of them 
+        //// exists in function we can't return the pointer and in other scopes we can't move them to the new scope
+        //// we could clone them or borrow them using using Rc, & or as_ref() 
         pub async fn feed(&mut self, content: &str) -> Gpt{
             
             //→ based on borrowing and ownership rules in rust we can't move a type into new scope when there

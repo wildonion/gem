@@ -377,7 +377,9 @@ pub async fn generic(){
             memory        +–––+–––+–––+–––+–––+–––+
         
         
-                    
+    let will store on the stack which may get new address later (we can pin it to the ram to avoid of changing its address), 
+    static and const will store on the data segment which will allocate nothing and have fixed address on the stack during execution 
+    also every type has a lifetime inside the stack including the heap data pointers
 			    
 	*/
 	let first_name = "Pascal"; // str - &str is a reference to String some where in the heap

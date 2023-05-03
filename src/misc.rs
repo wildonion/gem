@@ -182,6 +182,11 @@ pub mod app{
             )
         }
         
+        //// don't call a method which has self (not &self) as it's first 
+        //// param since by call it on the instance the instance will be 
+        //// dropped from the ram move borrowed form of the type in most 
+        //// cases unless its pointer is a shared pointer in which we 
+        //// must deref it using * or clone
         pub async fn GetMongoDbInstance(&self) -> Client{ //// it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
             Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
         }

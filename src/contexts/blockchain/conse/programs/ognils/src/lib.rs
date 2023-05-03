@@ -36,18 +36,10 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 pub fn generate_cell_values_for_player(player_commit: String) -> Vec<u8>{
 
-    let first_32bytes_input = format!("{}${}", player_commit, 0); //// sha256 bits has 32 bytes length
-    let first_hash = hash::hash(first_32bytes_input.as_bytes());
-    let first_part_table = first_hash.try_to_vec().unwrap();
-
-    let second_32bytes_input = format!("{}${}", player_commit, 1); //// sha256 bits has 32 bytes length
-    let second_hash = hash::hash(second_32bytes_input.as_bytes());
-    let second_part_table = &mut second_hash.try_to_vec().unwrap(); //// a mutable pointer to the second hash bytes
-
-    let mut table = first_part_table;
-    table.append(second_part_table);
-    table
-
+    let input = format!("{}${}", player_commit, 0); //// sha256 bits has 32 bytes length, each of which is in a range between 0 up to 255 
+    let hash = hash::hash(input.as_bytes());
+    let cells = hash.try_to_vec().unwrap();
+    cells
 }
 
 
