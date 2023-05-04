@@ -4,6 +4,7 @@ version: "3.8"
 services:
   redis:
     image: redis/redis-stack-server:latest
+    command: mongod --port 7441
     container_name: redis
     networks:
       - 'net'
@@ -23,7 +24,7 @@ services:
     volumes:
       - ./devops/data/mongodb/:/data/db
     ports:
-      - 27017:27017
+      - 7441:27017
     restart: unless-stopped
   conse:
     build:

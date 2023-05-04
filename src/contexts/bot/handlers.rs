@@ -110,7 +110,7 @@ impl Handler{
                 // ----------------------------------------------------------------------------
                 // --------------------- user command rate limiting ---------------------------
                 // ----------------------------------------------------------------------------
-                //// since we have a rate limit checker that must do a checkup every 10 seconds 
+                //// since we have a rate limit checker that must do a checkup every 15 seconds 
                 //// thus it's better to put the entire command handling process inside the 
                 //// tokio::spawn() to check each incoming command from the upside of the channel 
                 //// asyncly for user rate limit usage.  
@@ -125,7 +125,7 @@ impl Handler{
                                         .flags(MessageFlags::EPHEMERAL)
                                         .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                             e.color(Colour::from_rgb(204, 0, 0));
-                                            e.description("🥶 Please wait 15 seconds before trying again.");
+                                            e.description("🥶 cooldown");
                                             e.title("");
                                             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                 f
@@ -316,7 +316,7 @@ impl Handler{
         // thus we won't face the timeout issue of the discord while we're locking 
         // the mutex to acquire the underlying data.
         
-        let chill_zone_duration = 30_000u64; //// 10 seconds rate limit
+        let chill_zone_duration = 15_000u64; //// 15 seconds rate limit
         let user_id = command.user.id.0;
         let now = chrono::Local::now().timestamp_millis() as u64;
         let mut is_rate_limited = false;
