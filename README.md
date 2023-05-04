@@ -36,6 +36,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
 
+* connect to `mongodb` container using ```docker exec -it mongodb mongosh --port 7441```.
+
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
 * clean docker cache using ```sudo docker buildx prune --all``` or ```docker system prune --all``` command.

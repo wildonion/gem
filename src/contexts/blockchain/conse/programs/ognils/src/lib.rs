@@ -45,11 +45,6 @@ pub fn generate_cell_values_for_player(player_commit: String) -> Vec<u8>{
 
 pub fn create_table(size: u16, player_commit: String) -> Vec<Cell>{
     let mut cells: Vec<Cell> = vec![];
-    // let (min, max) = self.get_column_range(x);
-    // fill each cell with the vector values generated 
-    // from calling the generate_cell_values_for_player method
-    // 5 X 5 || 6 X 6, 120 maximum
-    // 0 until 20 in a row  
     pub fn is_duplicate(val: u16, col_vals: Vec<u16>) -> bool{
         for i in 0..col_vals.len(){
             if col_vals[i] == val{

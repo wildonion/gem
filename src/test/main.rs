@@ -514,7 +514,7 @@ pub async fn generic(){
         type Output = u8;
     }
     impl<'s> Structure<'s, u8>{
-        fn run(&mut self) -> Ben<DataAccount<String>>{ //// DataAccount default type is u8 but we're saying that we want to pass String
+        fn run(&mut self) -> &Ben<i32>{ //// DataAccount default type is u8 but we're saying that we want to pass String
             let mut bytes = [0u8; 32];
             /* 
                 we can't borrow the bytes since it'll be 
@@ -537,12 +537,30 @@ pub async fn generic(){
             // let option_name = Some(name);
             // return &option_name;
 
-            let instance = Ben{
-                new_data: DataAccount{
-                    data: &"wildonion".to_string()
-                }
-            };
-            instance
+            // following is of type: Ben<DataAccount<String>>
+            // let instance = Ben{
+            //     new_data: DataAccount{
+            //         data: &"wildonion".to_string()
+            //     }
+            // };
+            /*
+                we can't return the instance since 
+                it contains a field that has a temp
+                value behind a reference which is owned 
+                by the current function 
+            */
+            // instance
+
+            // if we allocate something on the heap 
+            // inside the function we can't return a 
+            // pointer to it, but it's ok with slices 
+            // following will allocate nothing on the stack 
+            // thus we're returning a pointer to the 
+            // struct itself directly to the caller.
+            &Ben{
+                new_data: 73
+            }
+
         }
     }
     //////////////////////// ------------------------------------------------------
