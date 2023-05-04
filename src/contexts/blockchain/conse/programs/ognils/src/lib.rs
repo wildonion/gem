@@ -50,8 +50,21 @@ pub fn create_table(size: u16, player_commit: String) -> Vec<Cell>{
     // from calling the generate_cell_values_for_player method
     // 5 X 5 || 6 X 6, 120 maximum
     // 0 until 20 in a row  
-
+    pub fn is_duplicate(val: u16, col_vals: Vec<u16>) -> bool{
+        for i in 0..col_vals.len(){
+            if col_vals[i] == val{
+                return true;
+            }
+        }
+        return false;
+    }
     let cell_values = crate::generate_cell_values_for_player(player_commit);
+    
+    for val in 0..size{
+        let col_vals: Vec<u16> = vec![];
+        let (min, max) = get_column_range(val);
+    }
+
 
     cells
 }

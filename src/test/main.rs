@@ -475,9 +475,10 @@ pub async fn generic(){
         data: 89
     };
 
+    //////////////////////// ------------------------------------------------------    
 
     #[derive(Debug)] // also it's possible to bound a type to trait using derive proc macro attribute
-    pub struct DataAccount<'lifetime, T=u8> // default type parameter is u8 also it can be any type
+    pub struct DataAccount<'lifetime, T=u8> // default type parameter is u8 also it can be any T type 
         where T: Send + Sync + 'lifetime{ // bounding the generic type to the traits and lifetime
         pub data: &'lifetime T,
     }
@@ -502,6 +503,49 @@ pub async fn generic(){
 
     let data_in_there = instance.new_data.data;
 
+    struct Structure<'lifetime, Generic> 
+        where Generic: Send + Sync + 'lifetime{
+            pub data: &'lifetime Generic,
+    }
+    trait Feature{
+        type Output;
+    }
+    impl<'s> Feature for Structure<'s, u8>{
+        type Output = u8;
+    }
+    impl<'s> Structure<'s, u8>{
+        fn run(&mut self) -> Ben<DataAccount<String>>{ //// DataAccount default type is u8 but we're saying that we want to pass String
+            let mut bytes = [0u8; 32];
+            /* 
+                we can't borrow the bytes since it'll be 
+                dropped at the end of the function and once
+                the function gets executed 
+            */
+            // let data: Rc<RefCell<&'s mut [u8; 32]>> = Rc::new(RefCell::new(&mut bytes));
+            let name = "wildonion".to_string();
+            /*
+                we can't return a pointer to the String 
+                since it's a heap data structure which 
+                will be dropped at the end of function 
+                and if there is a pointer of that exists 
+                we can't return it since the pointer may 
+                be converted to a dangling pointer.
+                also we can't return reference to local 
+                and temp variable which are owned by the 
+                function.
+            */
+            // let option_name = Some(name);
+            // return &option_name;
+
+            let instance = Ben{
+                new_data: DataAccount{
+                    data: &"wildonion".to_string()
+                }
+            };
+            instance
+        }
+    }
+    //////////////////////// ------------------------------------------------------
 
     /////////////////////////////////////////////////////////
     trait BorrowArray<T> where Self: Send + Sized{

@@ -201,6 +201,12 @@ impl Handler{
                                         .await;    
                                 });
                             },
+                            "reveal" => {
+
+                                // reveal last catchup logic
+                                // ...
+
+                            },
                             "help" => {
                                 let footer = "".to_string();
                                 let title = "".to_string();

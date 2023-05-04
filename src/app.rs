@@ -35,13 +35,10 @@ gql subs ws client
                                                                                             ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
                                                                                             connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
                                                                                             redis client pubsub + mongodb
-➙ an eventloop or event listener server can be one of the above sharded tlps which contains an event handler trait 
- (like riker and senerity EventHanlder traits, tokio channels and tokio::select!{} or ws, zmq and rpc pubsub server) 
- to handle the incoming published topics over zmq and rpc (json and capnp) server, 
-  emitted events over ws server or webhooks over http
+                                                                                            
 ➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
- server side, these handlers can be predefined traits or an event loop like tokio::select!{} which listen to the events 
- coming from the server over ws, zmq or rpc here is the flow of realtiming:
+ server side, these handlers can be predefined traits or an eventloop like tokio::select!{} which listen to the events 
+ coming from the shareded tlp servers over ws, zmq or rpc here is the flow of realtiming:
                     ws, gql, rpc and zmq pubs to fired or emitted events <--
                                                                             |
                                                         notifs or streaming of future io objects
