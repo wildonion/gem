@@ -107,14 +107,24 @@ impl Handler{
                 let ctx = command_data.0;
                 let command = command_data.1;
 
-                // ----------------------------------------------------------------------------
-                // --------------------- user command rate limiting ---------------------------
-                // ----------------------------------------------------------------------------
-                //// since we have a rate limit checker that must do a checkup every 15 seconds 
-                //// thus it's better to put the entire command handling process inside the 
-                //// tokio::spawn() to check each incoming command from the upside of the channel 
-                //// asyncly for user rate limit usage.  
-                tokio::spawn(async move{
+                // ----------------------------------------------------------------------------------
+                // --------------------- handling user command rate limit ---------------------------
+                // ----------------------------------------------------------------------------------
+                /*
+                    since we have a rate limit checker that must do a checkup every 15 seconds 
+                    thus it's better to put the entire command handling process inside the 
+                    tokio::spawn() to check each incoming command from the upside of the channel 
+                    asyncly for user rate limit usage.
+
+                    since the flow of the code in here depends on the user rate limit result thus 
+                    we must put the whole if and else block inside the tokio::spawn(async move{})
+                    because of the async nature of the whole code, a user may sends two requests 
+                    at a same time to here and before handling the rest of the code it might get
+                    halted in handling the first one logic which causes to application didn't 
+                    respond error from discord, thus these two if and else block logic must 
+                    be handled asyncly.  
+                */
+                tokio::spawn(async move{ //// spawning the rate limit checker async task to be solved in tokio green threadpool
                     if let Err(_) = Handler::check_rate_limit(&ctx, &command).await {
                         command
                             .create_interaction_response(&ctx.http, |response| {
@@ -125,7 +135,7 @@ impl Handler{
                                         .flags(MessageFlags::EPHEMERAL)
                                         .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                             e.color(Colour::from_rgb(204, 0, 0));
-                                            e.description("🥶 cooldown");
+                                            e.description("🥶 cooldown"); //// cooldown for 15 seconds to bypass discord rate limit
                                             e.title("");
                                             e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                 f
@@ -200,12 +210,6 @@ impl Handler{
                                         }) //// edit the thinking message with the command response
                                         .await;    
                                 });
-                            },
-                            "reveal" => {
-
-                                // reveal last catchup logic
-                                // ...
-
                             },
                             "help" => {
                                 let footer = "".to_string();

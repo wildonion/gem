@@ -475,7 +475,43 @@ pub async fn generic(){
         data: 89
     };
 
-    //////////////////////// ------------------------------------------------------    
+    //////////////////////// ------------------------------------------------------
+    
+    //////// -----------------------------------------------
+    //////// +++++++++++++++++++++++++++++++++++++++++++++++
+    //////// -----------------------------------------------
+    struct IpData<'i>{
+        pub ip: &'i str,
+    };
+    impl<'i> IpData<'i>{
+        fn new(ip: &'i str) -> IpData{ //// the lifetime of the passed in ip must be less or equal than the lifetime of the IpData struct the ip feild
+            IpData::<'i>{
+                ip,
+            }
+        }
+    }
+    let mut BoxedIp = Box::new(IpData::new("0.0.0.0")); //// Box is a pointer to a heap allocation data of type T
+    let mutable_boxed = BoxedIp.as_mut(); //// call as_mut() on the type requires that the type must defined mutable 
+    let ref_boxed = BoxedIp.as_ref();
+    let bytes_boxed_data = ref_boxed.ip.as_bytes();
+
+    //// bounding generic T and F to traits and lifetimes
+    //// also traits must be behind pointer since they are
+    //// heap data types (heap data types in rust must be in 
+    //// form of borrowed type which means must be passed 
+    //// into other methods and functions by putting them 
+    //// behind a pointer or their slice types like &str for 
+    //// String and &[u8] or [u8; 32] for Vec) which must 
+    //// be in form Box<dyn Trait> or &dyn Trait also 
+    //// their pointer are fat pointers  
+    fn setIpHosting<'s, T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>, ip_addr: Box<IpData>) 
+    -> &'s str //// return a reference always needs a valid lifetime such as the one which is behind &self or an specific one in function signature 
+    where F: FnOnce(String) -> hyper::Response<hyper::Body> + Send + Sync + 'static, T: Send + Sync + 's {
+        "test"
+    }
+    //////// -----------------------------------------------
+    //////// +++++++++++++++++++++++++++++++++++++++++++++++
+    //////// ----------------------------------------------- 
 
     #[derive(Debug)] // also it's possible to bound a type to trait using derive proc macro attribute
     pub struct DataAccount<'lifetime, T=u8> // default type parameter is u8 also it can be any T type 
@@ -1056,12 +1092,6 @@ pub async fn generic(){
         // if there was something went wrong we can return MyResult::Err(1);
         // ...
     } 
-
-	
-    
-
-
-
 
 
     

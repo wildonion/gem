@@ -1,14 +1,13 @@
 version: "3.8"
-
-
 services:
   redis:
     image: redis/redis-stack-server:latest
     container_name: redis
+    command: --port 7442
     networks:
       - 'net'
     ports:
-      - 6379:6379
+      - 7442:6379
     volumes:
       - ./devops/data/redis/:/data redis/redis-stack-server:latest
     restart: unless-stopped
@@ -33,7 +32,7 @@ services:
     ports:
       - '7439:7438'
     volumes:
-      - assets
+      - ./assets/:/usr/src/app/assets/
     depends_on:
       - 'mongodb'
     links:
@@ -44,15 +43,11 @@ services:
     build:
       dockerfile: './devops/docker/bot/Dockerfile'
     container_name: catchup-bot
-    depends_on:
-      - 'mongodb'
     volumes:
       - ./openai-logs/:/usr/src/app/openai-logs/
       - ./gpt-logs/:/usr/src/app/gpt-logs/
       - ./error-kind/:/usr/src/app/error-kind/
       - ./rate-limiter/:/usr/src/app/rate-limiter/
-    links:
-      - mongodb 
     networks:
       - 'net'
   haproxy:

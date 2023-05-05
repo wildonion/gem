@@ -1,6 +1,7 @@
 
 
 
+use crate::*;
 use std::io::Write;
 use std::sync::{Arc, mpsc::channel as heavy_mpsc, mpsc}; use std::time::{SystemTime, UNIX_EPOCH}; // NOTE - mpsc means multiple thread can access the Arc<Mutex<T>> (use Arc::new(&Arc<Mutex<T>>) to clone the arced and mutexed T which T can also be Receiver<T>) but only one of them can mutate the T out of the Arc by locking on the Mutex
 use std::{env, thread, fs}; 
@@ -30,7 +31,6 @@ use tokio::sync::oneshot::Receiver;
 use log::error;
 
 
-use crate::*;
 
 
 //// --------------------------------------------------------------------------
@@ -51,8 +51,6 @@ pub mod app{
     unsafe impl Send for Api{}
     unsafe impl Sync for Api{}
 
-
-
     pub struct Api{
         pub name: String,
         pub req: Option<hyper::Request<Body>>,
@@ -60,8 +58,6 @@ pub mod app{
         pub callback: Option<Callback>, //// the generic type of the callback field is the Callback type which is FnMut and a Future object for its return type inside the Box
         pub access_level: Option<u8>, //// it might be None and the api doesn't require an access level
     }
-
-
 
     impl Api{
 
@@ -91,10 +87,6 @@ pub mod app{
         // NOTE - since both api.post() and api.get() methods are async thus we have to await on them to run their callback closures
         //        which contain the logic of the whole controller. 
         // -----------------------------------------------------------------------------------------------------------------------------
-
-
-
-
 
         /*
             //// Example to create Api object:
@@ -149,7 +141,6 @@ pub mod app{
         }
     }
 
-
     #[derive(Clone, Debug)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
     pub struct Db{
         pub mode: Mode,
@@ -193,8 +184,6 @@ pub mod app{
 
     }
 
-
-
     #[derive(Clone, Debug)]
     pub struct Storage{
         pub id: Uuid,
@@ -210,15 +199,11 @@ pub mod app{
         }
     }
 
-
-
     #[derive(Copy, Clone, Debug)]
     pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
         On, //// zero byte size
         Off, //// zero byte size
     }
-
-
 
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Response<'m, T>{
@@ -227,19 +212,12 @@ pub mod app{
         pub status: u16,
     }
 
-
-
-
     pub struct OtpInfo{
         pub otp_auth: Box<dyn misc::otp::Otp + Send + Sync + 'static>, //// otp_auth is a trait of type Otp which must be Send Sync and static to be shareable between routers' threads - since we can't have a trait as a struct field directly due to its unknown size at compile time thus  we've put the Otp trait inside the Box since the Box has its own lifetime which avoid us using references and lifetimes inside the struct fields
     }
 
-
-
-
     #[derive(Serialize, Deserialize)]
     pub struct Nill<'n>(pub &'n [u8]); //// this will be used for empty data inside the data field of the Response struct - 'n is the lifetime of the &[u8] type cause every pointer needs a lifetime in order not to point to an empty location inside the memory (dangling pointer)
-
 
     pub async fn shutdown_signal(signal: Receiver<u8>){
         match signal.await{ //// await on signal to get the message in down side of the channel
@@ -304,11 +282,6 @@ pub mod jwt{
     }
 
 }
-
-
-
-
-
 
 
 
@@ -648,73 +621,12 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 
     }
 
-
-
-    // -----------------------------------------------------------------
-    // -----------------------------------------------------------------
-    struct IpData<'i>{
-        pub ip: &'i str,
-    };
-    impl<'i> IpData<'i>{
-        fn new(ip: &'i str) -> IpData{ //// the lifetime of the passed in ip must be less or equal than the lifetime of the IpData struct the ip feild
-            IpData::<'i>{
-                ip,
-            }
-        }
-    }
-    let mut BoxedIp = Box::new(IpData::new("0.0.0.0")); //// Box is a pointer to a heap allocation data of type T
-    let mutable_boxed = BoxedIp.as_mut(); //// call as_mut() on the type requires that the type must defined mutable 
-    let ref_boxed = BoxedIp.as_ref();
-    let bytes_boxed_data = ref_boxed.ip.as_bytes();
-
-    //// bounding generic T and F to traits and lifetimes
-    //// also traits must be behind pointer since they are
-    //// heap data types (heap data types in rust must be in 
-    //// form of borrowed type which means must be passed 
-    //// into other methods and functions by putting them 
-    //// behind a pointer or their slice types like &str for 
-    //// String and &[u8] or [u8; 32] for Vec) which must 
-    //// be in form Box<dyn Trait> or &dyn Trait also 
-    //// their pointer are fat pointers  
-    fn setIpHosting<'s, T, F>(input: T, output: Box<dyn std::error::Error + Send + Sync + 'static>, ip_addr: Box<IpData>) 
-    -> &'s str //// return a reference always needs a valid lifetime such as the one which is behind &self or an specific one in function signature 
-    where F: FnOnce(String) -> hyper::Response<Body> + Send + Sync + 'static, T: Send + Sync + 's {
-        "test"
-    }
-    
-    let (sender_flag, mut receiver_flag) = 
-        tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
-    tokio::spawn(async move{
-        // solve heavy async task inside tokio green threadpool
-        // send data inside the pool to receive it in different 
-        // parts of the app
-        std::thread::scope(|s|{
-            s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
-                sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
-            });
-            s.spawn(|| async{
-                sender_flag.send(2).await.unwrap();
-            });
-            s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
-                while let Some(input) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
-                    // do whatever with the collected data of all workers 
-                    // ...
-                }
-                let data: Vec<u8> = receiver_flag.try_recv().into_iter().take(2).collect();
-            });
-        });
-    });
-    // -----------------------------------------------------------------
-    // -----------------------------------------------------------------
-
-    
     
     info!("collecting all chunks received from the receiver at time {:?}", chrono::Local::now().naive_local());
     let bytes: Vec<u8> = receiver.iter().take(threads).collect(); //// collecting 4 packs of 8 bits to gather all incoming chunks from the channel
     info!("collected bytes -> {:?} at time {:?}", bytes, chrono::Local::now().naive_local());
     
     
-
     
     let boxed_array = self::into_box_slice(&bytes).await.unwrap(); //// converting &Vec<u8> to [u8] with a fixed size
     let result = *boxed_array; //// dereferencing the box pointer to get the value inside of it 
@@ -733,7 +645,7 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 /*
     
     ┏———————————————┓
-        NFT LAYRING
+       NFT LAYRING
     ┗———————————————┛
 
 */
@@ -776,9 +688,34 @@ pub async fn layering(){
                     //// it to an owned type which returns Self. 
                     let mut key_images = asset_to_path.get(key).unwrap().to_owned();
                     key_images.push(filepath_str);
+                    asset_to_path.entry(key).and_modify(|v| *v = key_images);
                 }
             }
         }
+
+
+        let (sender_flag, mut receiver_flag) = 
+        tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
+        tokio::spawn(async move{
+            // solve heavy async task inside tokio green threadpool
+            // send data inside the pool to receive it in different 
+            // parts of the app
+            std::thread::scope(|s|{
+                s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
+                    sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
+                });
+                s.spawn(|| async{
+                    sender_flag.send(2).await.unwrap();
+                });
+                s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
+                    while let Some(input) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
+                        // do whatever with the collected data of all workers 
+                        // ...
+                    }
+                    let data: Vec<u8> = receiver_flag.try_recv().into_iter().take(2).collect();
+                });
+            });
+        });
 
 
         for asset_path in asset_to_path.values(){

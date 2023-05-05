@@ -24,13 +24,19 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo run --bin tests```
 
+## 🛠️ Development Setup
+
+> To update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with dev user to register a new god for the game.
+
 ## 🛠️ Production Setup
 
-> Remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
-
-> First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to setup the VPS for production then to update a user access level to dev first signup the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with dev user to register a new god for the game.
+> First run ```sudo chmod +x setup.sh && ./setup.sh``` to up and run docker containers the to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to 0 manually inside db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
 ## 🍟 Notes
+
+* First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
+
+* Remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
 
 * since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
 
@@ -66,7 +72,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * sharding and scaling mechanism for `ws` server.
 
-* balance the loads between docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/), we could configure `mongodb`, `redis` and `HAproxy` services as a container inside the `DigitalOcean` PaaS.
+* balance the loads between conse docker service and image inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
+
+* since the conse bot doesn't have DB IO thus handling shared states between different instances can be almost impossible which is better not to run multiple instance of the bot for clustering and load balancing since the bot is already sharded. 
 
 * complete conse discrod monitoring bot, also run the bot loop `ws` shards based on a specific event inside the app. 
 

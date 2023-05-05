@@ -36,6 +36,8 @@ RUN chown -R $APP_USER:$APP_USER ${APP}
 COPY ./.env ${APP}/.env
 COPY ./nfts.json ${APP}/nfts.json
 
+RUN USER=root mkdir ${APP}/assets
+
 USER $APP_USER
 WORKDIR ${APP}
 
