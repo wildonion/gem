@@ -250,7 +250,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
     let api = Router::builder()
-        .data(db_instance.unwrap().clone()) //// shared state which will be available to every route handlers is the db_instance which must be Send + Syn + 'static to share between threads
+        .data(db_instance.unwrap().clone()) //// shared state which will be available to every route handlers is the db_instance which must be Send + Syn + 'static to share between threads also the Client object is Arc so we can share it safely between routers' threads
         .data(discord_bot_flag_sender.clone()) //// sharing the discord bot sender between routers' threads which must be Send + Syn + 'static or Arc<Mutex<Sender<bool>>> to share between threads
         .middleware(Middleware::pre(middlewares::logging::logger)) //// enable logging middleware on the incoming request then pass it to the next middleware - pre Middlewares will be executed before any route handlers and it will access the req object and it can also do some changes to the request object if required
         .middleware(Middleware::post(middlewares::cors::allow)) //// the path that will be fallen into this middleware is "/*" thus it has the OPTIONS route in it also post middleware accepts a response object as its param since it only can mutate the response of all the requests before sending them back to the client

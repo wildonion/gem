@@ -2,9 +2,11 @@
 
 
 use crate::*;
+use std::borrow::Borrow;
 use std::io::Write;
 use std::sync::{Arc, mpsc::channel as heavy_mpsc, mpsc}; use std::time::{SystemTime, UNIX_EPOCH}; // NOTE - mpsc means multiple thread can access the Arc<Mutex<T>> (use Arc::new(&Arc<Mutex<T>>) to clone the arced and mutexed T which T can also be Receiver<T>) but only one of them can mutate the T out of the Arc by locking on the Mutex
 use std::{env, thread, fs}; 
+use async_std::path::PathBuf;
 use chrono::Utc;
 use futures::TryStreamExt;
 use futures::{executor::block_on, future::{BoxFuture, FutureExt}}; // NOTE - block_on() function will block the current thread to solve the task
@@ -178,6 +180,11 @@ pub mod app{
         //// dropped from the ram move borrowed form of the type in most 
         //// cases unless its pointer is a shared pointer in which we 
         //// must deref it using * or clone
+        //
+        //// Client object uses std::sync::Arc internally, so it can safely be 
+        //// shared across threads or async tasks like tokio::spawn(async move{}) 
+        //// green threads also it is highly recommended to create a single 
+        //// Client and persist it for the lifetime of your application.
         pub async fn GetMongoDbInstance(&self) -> Client{ //// it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
             Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
         }
@@ -648,6 +655,8 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
        NFT LAYRING
     ┗———————————————┛
 
+    A MULTITHREADED AND ASYNC NFT LAYERING TOOLS
+
 */
 pub async fn layering(){
 
@@ -662,10 +671,18 @@ pub async fn layering(){
     let assets_path = "assets"; //// in the root of the project
     let nfts_path = "nfts"; //// in the root of the project
 
+    fn update_asset_to_path<'s>(
+        mut asset_to_path: HashMap<&'s str, Vec<String>>, 
+        key: &'s str, key_images: Vec<String>) 
+        -> HashMap<&'s str, Vec<String>>{
+        asset_to_path.entry(key).and_modify(|v| *v = key_images);
+        asset_to_path
+    } 
+
     tokio::spawn(async move{
 
         let assets_names = &["Beard", "Hat", "Mask"];
-        let mut asset_to_path: HashMap<&str, Vec<&str>> = HashMap::new(); //// a map of between asset name and their images path
+        let mut asset_to_path: HashMap<&str, Vec<String>> = HashMap::new(); //// a map of between asset name and their images path
         for asset in assets_names{
             asset_to_path.entry(asset).or_insert(vec![]);
         }
@@ -678,17 +695,19 @@ pub async fn layering(){
             //// let us to have the asset later in other scopes.
             let filename = asset.as_ref().unwrap().file_name();
             let filepath = asset.as_ref().unwrap().path();
-            let asset_to_path_keys = asset_to_path.keys();
-            for key in asset_to_path_keys{
-                let filepath_str = filepath.to_str().unwrap();
-                if filepath_str.starts_with(*key){
+            let filepath_string = filepath.display().to_string();
+            let mut asset_to_path_clone = asset_to_path.clone();
+            let asset_to_path_keys = asset_to_path_clone.keys();
+            let filepath_string_clone = filepath_string.clone();
+            for key in asset_to_path_keys{ 
+                if filepath_string_clone.starts_with(*key){
                     //// if a type is behind an immutable shared reference 
                     //// it can't mutate the data unless we define it's 
                     //// pointer as mutable in the first place or convert 
                     //// it to an owned type which returns Self. 
                     let mut key_images = asset_to_path.get(key).unwrap().to_owned();
-                    key_images.push(filepath_str);
-                    asset_to_path.entry(key).and_modify(|v| *v = key_images);
+                    key_images.push(filepath_string_clone.clone());
+                    asset_to_path = update_asset_to_path(asset_to_path.clone(), key, key_images);
                 }
             }
         }
@@ -703,6 +722,25 @@ pub async fn layering(){
             std::thread::scope(|s|{
                 s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
                     sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
+                    for asset_path in asset_to_path.values(){
+                        std::thread::spawn(|| async{
+                            // make a combo of each asset path in a separate thread asyncly 
+                            // i < combos.len()!{
+                            //     bin(i%3!).await;
+                            //     010
+                            //     01
+                            // }  
+                            // let images = {"Beards": &[1, 2, 3, 4, 5], "Hats": &[1, 2, 3, 4, 5], "Masks": &[1, 2, 3]};
+                            // let combos = vec![&["1", "1", "1"], &["1", "1", "2"], &["1", "1", "3"]];
+                            // ... 
+                            // Arc<Mutex<RwLock<...>>> using tokio channels
+                            // base layer image or the human image must be converted into the RGBA 
+                            // also all the assets must be the same size of the base image
+                            // also ignore the hat if there was a hair or vice versa
+                            // open each image in a separate thread
+                            // ...
+                        });
+                    }
                 });
                 s.spawn(|| async{
                     sender_flag.send(2).await.unwrap();
@@ -716,21 +754,6 @@ pub async fn layering(){
                 });
             });
         });
-
-
-        for asset_path in asset_to_path.values(){
-            std::thread::spawn(|| async{
-                // let images = {"Beards": &[1, 2, 3, 4, 5], "Hats": &[1, 2, 3, 4, 5], "Masks": &[1, 2, 3]};
-                // let combos = vec![&["1", "1", "1"], &["1", "1", "2"], &["1", "1", "3"]];
-                // ... 
-                // Arc<Mutex<RwLock<...>>> using tokio channels
-                // base layer image or the human image must be converted into the RGBA 
-                // also all the assets must be the same size of the base image
-                // also ignore the hat if there was a hair or vice versa
-                // open each image in a separate thread
-                // ...
-            });
-        }
     });
 
 }
@@ -833,6 +856,7 @@ macro_rules! db {
 macro_rules! passport {
     (
       $req:expr,
+      $db:expr,
       $access_levels:expr
     ) 
     => {
@@ -843,7 +867,6 @@ macro_rules! passport {
             use hyper::{header, StatusCode, Body, Response};
             
             let res = Response::builder();
-            let db = &$req.data::<Client>().unwrap().to_owned();
             let pass = middlewares::auth::pass($req).await;
 
             if pass.is_ok(){
@@ -852,7 +875,7 @@ macro_rules! passport {
                 let _id = token_data.claims._id;
                 let username = token_data.claims.username.clone();
                 let access_level = token_data.claims.access_level;
-                if middlewares::auth::user::exists(Some(&db.clone()), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
+                if middlewares::auth::user::exists(Some(&$db.clone()), _id, username.clone(), access_level).await{ //// finding the user with these info extracted from jwt
                     if $access_levels.contains(&access_level){   
                         Some(
                                 (

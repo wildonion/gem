@@ -46,6 +46,7 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 
     match passport!{
         req,
+        db.clone(),
         vec![DEV_ACCESS, ADMIN_ACCESS] //// vector of access levels
     } {
         Some(passport_data) => {

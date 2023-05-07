@@ -5,6 +5,8 @@
 
 
 
+use std::path::Component;
+
 use serenity::model::prelude::ReactionType;
 use tokio::{io::AsyncWriteExt, fs::{OpenOptions, self}};
 
@@ -205,12 +207,43 @@ impl Handler{
                                                         .text(response.1.as_str())
                                                     });
                                                     return e;
+                                                })
+                                                .components(|c|{
+                                                    return c;
                                                 });
                                                 edit
                                         }) //// edit the thinking message with the command response
                                         .await;    
                                 });
                             },
+                            "reveal" => {
+
+                                // tweet snapshot of last catchup
+                                // ...
+
+                                let footer = "".to_string();
+                                let title = "".to_string();
+                                let content = format!("");
+                                let edited_interaction_response = command
+                                    .edit_original_interaction_response(&ctx.http, |edit|{
+                                        edit
+                                            .embed(|e|{
+                                                e.color(Colour::from_rgb(235, 204, 120));
+                                                e.description(content);
+                                                e.title(title);
+                                                e.footer(|f|{
+                                                    f
+                                                        .text(footer)
+                                                });
+                                                return e;
+                                            });
+                                            edit
+                                    })
+                                    .await;
+
+
+                            },
+                            
                             "help" => {
                                 let footer = "".to_string();
                                 let title = "".to_string();
@@ -252,14 +285,23 @@ impl Handler{
                                 //// to be able to handle multiple commands at a same time 
                                 //// to avoid discord rate limit issue
                                 tokio::spawn(async move{
+                                    let guild_ids = ctx.cache.guilds();
+                                    let server_names = guild_ids
+                                                            .into_iter()
+                                                            .map(|g| {
+                                                                g.name(&ctx.cache).unwrap()
+                                                            })
+                                                            .collect::<Vec<String>>();
+                                    let server_name_json_string = serde_json::to_string_pretty(&server_names).unwrap();
                                     let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
+                                    let description = format!("{}\n|---{} SERVERS----|\n{}", response.2, server_names.len(), server_name_json_string);
                                     let edited_interaction_response = command
                                         .edit_original_interaction_response(&ctx.http, |edit| {
                                             edit
                                                 .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                     e.color(Colour::from_rgb(235, 204, 120));
                                                     e.description(response.0);
-                                                    e.title(response.2);
+                                                    e.title(description);
                                                     e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                         f
                                                         .text(response.1.as_str())
@@ -434,7 +476,7 @@ impl EventHandler for Handler{
                 of the mpsc channel to handle them asyncly to avoid
                 deadlocking and rate limiting
             */
-            self.command_queue_sender.send((ctx, command)).await;
+            self.command_queue_sender.send((ctx, command)).await; //// don't unwrap() since Context doesn't implement Debug trait
         }
     }
 
@@ -450,34 +492,34 @@ impl EventHandler for Handler{
         if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
             info!("🔗 {} bot is connected on shard id {}/{}", ready.user.name, shard[0], shard[1]);
             
-            // let guilds = ctx.cache.guilds(); //// getting all the guild that the bot is inside of them
-            // for guild_id in guilds{
-            //     let channels_result = guild_id.channels(&ctx.http).await;
-            //     if let Ok(channels) = channels_result{
-            //         for (cid, gc) in channels{
-            //             let id = cid.0;
-            //             let channel_id = ChannelId(id);
-            //             let initial_message = "Okay, let's rock it all";
-            //             channel_id.send_message(&ctx.http, |m|{
-            //                 m
-            //                     .allowed_mentions(|mentions| mentions.replied_user(true))
-            //                     .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-            //                         e.color(Colour::from_rgb(235, 204, 120));
-            //                         e.description(initial_message);
-            //                         e.title("");
-            //                         e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
-            //                             f
-            //                             .text("")
-            //                         });
-            //                         return e;
-            //                     });
-            //                     m
-            //                 }) //// edit the thinking message with the command response
-            //                 .await
-            //                 .unwrap();
-            //         } 
-            //     }
-            // }
+            let guilds = ctx.cache.guilds(); //// getting all the guild that the bot is inside of them
+            for guild_id in guilds{
+                let channels_result = guild_id.channels(&ctx.http).await;
+                if let Ok(channels) = channels_result{
+                    for (cid, gc) in channels{
+                        let id = cid.0;
+                        let channel_id = ChannelId(id);
+                        let initial_message = "Okay, let's rock it all";
+                        channel_id.send_message(&ctx.http, |m|{
+                            m
+                                .allowed_mentions(|mentions| mentions.replied_user(true))
+                                .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                    e.color(Colour::from_rgb(235, 204, 120));
+                                    e.description(initial_message);
+                                    e.title("");
+                                    e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                        f
+                                        .text("")
+                                    });
+                                    return e;
+                                });
+                                m
+                            }) //// edit the thinking message with the command response
+                            .await
+                            .unwrap();
+                    } 
+                }
+            }
         }
 
         //// -------------------------------------------------
@@ -492,6 +534,11 @@ impl EventHandler for Handler{
 
         let _ = Command::create_global_application_command(&ctx.http, |command| {
             cmds::slash::help_register(command)
+        })
+        .await;
+
+        let _ = Command::create_global_application_command(&ctx.http, |command| {
+            cmds::slash::stats_register(command)
         })
         .await;
 
