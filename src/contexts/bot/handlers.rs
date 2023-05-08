@@ -294,7 +294,7 @@ impl Handler{
                                                             .collect::<Vec<String>>();
                                     let server_name_json_string = serde_json::to_string_pretty(&server_names).unwrap();
                                     let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
-                                    let description = format!("{}\n|---{} SERVERS----|\n{}", response.2, server_names.len(), server_name_json_string);
+                                    let description = format!("{}\n|−−− {} servers −−−|\nnames: {}", response.2, server_names.len(), server_name_json_string);
                                     let edited_interaction_response = command
                                         .edit_original_interaction_response(&ctx.http, |edit| {
                                             edit

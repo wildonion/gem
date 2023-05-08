@@ -32,7 +32,12 @@ pub async fn start(req: hyper::Request<Body>) -> ConseResult<hyper::Response<Bod
     let db = &req.data::<Client>().unwrap().to_owned();
     let discord_bot_flag_sender = &req.data::<tokio::sync::mpsc::Sender<bool>>().unwrap().to_owned();
 
-
+    /*
+        @params: 
+            - @request       → hyper request object; since this struct doesn't implement Clone trait
+            - @storage       → instance inside the request object
+            - @access levels → vector of access levels
+    */
     match passport!{
         req,
         db.clone(),

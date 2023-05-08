@@ -44,10 +44,10 @@ services:
       dockerfile: './devops/docker/bot/Dockerfile'
     container_name: catchup-bot
     volumes:
-      - ./openai-logs/:/usr/src/app/openai-logs/
-      - ./gpt-logs/:/usr/src/app/gpt-logs/
-      - ./error-kind/:/usr/src/app/error-kind/
-      - ./rate-limiter/:/usr/src/app/rate-limiter/
+      - ./openai-logs:/usr/src/app/openai-logs
+      - ./gpt-logs:/usr/src/app/gpt-logs
+      - ./error-kind:/usr/src/app/error-kind
+      - ./rate-limiter:/usr/src/app/rate-limiter
     networks:
       - 'net'
   haproxy:

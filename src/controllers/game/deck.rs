@@ -43,7 +43,12 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
     let db = &req.data::<Client>().unwrap().to_owned();
 
 
-
+    /*
+        @params: 
+            - @request       → hyper request object; since this struct doesn't implement Clone trait
+            - @storage       → instance inside the request object
+            - @access levels → vector of access levels
+    */
     match passport!{
         req,
         db.clone(),

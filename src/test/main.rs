@@ -377,8 +377,8 @@ pub async fn generic(){
             memory        +–––+–––+–––+–––+–––+–––+
         
         
-    let will store on the stack which may get new address later (we can pin it to the ram to avoid of changing its address), 
-    static and const will store on the data segment which will allocate nothing and have fixed address on the stack during execution 
+    `let` will store on the stack which may get new address later (we can pin it to the ram to avoid of changing its address), 
+    `static` and `const` will store on the data segment which will allocate nothing and have fixed address on the stack during execution 
     also every type has a lifetime inside the stack including the heap data pointers
 			    
 	*/
@@ -916,7 +916,69 @@ pub async fn generic(){
             taker //// we're good to return a pointer to the taker since is not owned by the function 
         }  
 
-        // pub fn ref_to_str() -> HashMap<&str, &str>{ //// we can't return &str since we need a lifetime to do so
+        
+        /*
+            
+            we can return a reference from a method to a type that allocates
+            nothing on the stack like returning Pack{} directly without storing 
+            it inside a variable but we can't return a pointer to a type that is 
+            owned by the that method since that type is a local variable which 
+            has defined inside the method and once the method gets executed its
+            lifetime will be dropped from the ram thus its pointer will be remained
+            a dangling pointer which rust doesn't allow us to return the pointer 
+            to the local type in the first place in other words a type can't be 
+            moved if it's behind a pointer.
+            
+            if we want to return a double pointer the first one can be 
+            allocate nothing but in order to pointing to the first one 
+            the first one must be allocate space on the ram thus the in 
+            following we can't return ref_ since ref_ is a double pointer
+            to the self in which self is a reference to the instance in 
+            the first param of the method thus returning ref_ from the 
+            function is not possible because &Pack allocate nothing on 
+            the stack which is self but &&Pack must points to an allocated 
+            space on the stack or pointing to &Pack or self on the stack
+            or heap thus the self must be stored some where on the stack or 
+            heap then do this but rust doesn't allow us to return a pointer 
+            to a type which is owned by the function and is on the heap 
+            since once the function gets executed the type will be dropped 
+            and pointer will be converted into a dangling pointer.  
+        
+            Pack is zero sized type (ZST) and will be stored on the stack or 
+            heap depends on how is being used at runtime
+            
+            we cannot return a &&Pack directly because the inner reference 
+            (&Pack) is bound to the local scope of the function once the function returns, 
+            the inner reference would be invalid, and Rust's borrow checker prevents us 
+            from doing this to ensure memory safety.
+        
+        */
+        // fn as_ref__(&self) -> &&Pack{ 
+        //     let ref ref_ = self; 
+        //     // &self //// can't return &self since self is owned by the function also because self is borrowed
+        //     ref_ //// can't return ref_ since self is owned by the function also because self is borrowed
+        // }
+
+        //// can't move the type if it's behind a pointer and doesn't implement copy trait (heap data) 
+        //// since we can borrow mutably and return ref to stack types from function but not heap data 
+        //// thus any reference to the instance or the struct itself which contains a heap data field 
+        //// is not possible because heap data types are not Copy and once the scope that contains them
+        //// gets executed they will be dropped from the ram and any pointer to them will be converted 
+        //// into the a dangling pointer which rust doesn't allow us to do this in the first place. 
+        fn as_ref(&self) -> &Pack{
+            let ref_ = self;
+            //// here we're returning the self or ref_ which is an immutable pointer of Pack instance 
+            // ref_
+            self 
+        }
+
+        fn as_ref_(&self) -> &Pack{
+            let ref ref_ = self; 
+            let ref__ = &self; 
+            ref__
+        }
+
+        // pub fn ref_to_str() -> HashMap<&str, &str>{ //// we can't return &str since we need a specific lifetime to do so
         //     let names = HashMap::new();
         //     names.insert("wildonion", "another_wildonion");
         //     names
@@ -954,6 +1016,16 @@ pub async fn generic(){
             name //// name has static lifetime valid as long as the whol lifetime of the caller scope which can be the main function which will be valid as long as the main or the app is valid
 	    }
 		
+        /*
+        
+            if we try to return a reference to a local String or Vec or heap data 
+            variables within a function, we will run into lifetime issues, since 
+            the local variable is dropped when the function goes out of scope.
+            thus we can return the them in their slice form like &str for String
+            &[u8] for Vec with a specific lifetime or a lifetime which lives long
+            enough if the function gets executed 
+        
+        */
         // fn ret<'a>(name: String) -> &'a Vec<String>{
         //     //// this type is owned by the current function 
         //     //// thus if there is any pointer of this type 
@@ -1002,9 +1074,16 @@ pub async fn generic(){
             async move{ //// returning an async block from the function
                 26
             }
-
             // let res = run.await;
+            // let res = Pack::run().await;
         }
+
+        //// the following is another way of defining async method 
+        // pub async fn run() -> u8{
+        //     26
+        //     // let res = run.await;
+        //     // let res = Pack::run().await;
+        // }
 
         pub async fn _run() -> u8{ //// above implementation is equivalent to this one 
             26
@@ -1018,7 +1097,7 @@ pub async fn generic(){
 
 	}
 	
-
+    
 
 
     // =============================================================================================================================

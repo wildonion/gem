@@ -114,6 +114,16 @@ pub async fn activate_discord_bot(
         });
 
 
+        /*
+            it's better no to put the db ops inside tokio::task::spawn(async move{}) or tokio::spawn(async move{}) since  
+            async block may outlive the current function, but it might borrows a type which is owned by the current function
+            and types which are owned by the function will be dropped from the ram once the function gets executed
+            also async blocks are not executed immediately and must either take a reference or ownership of outside 
+            variables they use since async blocks will be pinned to the ram to be solved later which must have kinda a static 
+            lifetime, in our case in tokio::spawn(async move{}) the type will be moved between tokio green threads which force us 
+            to move the type into the tokio::spawn(async move{}) using `move` keyword which takes the ownership of the type or
+            take a reference to it like using Arc to share the data safely
+        */
         //// handling each interaction command as a separate task 
         //// coming from the receiver inside the tokio green threadpool
         tokio::spawn(async move{

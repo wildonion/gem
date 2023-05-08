@@ -16,25 +16,26 @@ COMMUNICATION PROTOCOLS
 gql subs ws client 
     |
     |
-    ------riker and tokio server (select!{}, spawn(), jobq channels) -------
-                                                                            |
-                                                    sharded tlps over noise-protocol and tokio-rustls
-                                                                            |
-                                                                            ----- sharded instances, nodes and servers -----
-                                                                                            hyper
-                                                                                            p2p stacks
-                                                                                                - kademlia
-                                                                                                - gossipsub over tcp and quic
-                                                                                                - noise protocol
-                                                                                                - ws and webrtc
-                                                                                                - muxer and yamux
-                                                                                            tokio quic udp and tcp
-                                                                                            rpc capnp/json pubsub 
-                                                                                            zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
-                                                                                            gql subs
-                                                                                            ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
-                                                                                            connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
-                                                                                            redis client pubsub + mongodb
+    ------riker and tokio server (select!{}, spawn(), jobq channels,
+           Arc<Mutex<RwLock<LazyStaticSharedStateData>>> + Send + Sync + 'static) -------
+                                                                                        |
+                                                                sharded tlps over noise-protocol and tokio-rustls
+                                                                                        |
+                                                                                        ----- sharded instances, nodes and servers -----
+                                                                                                        hyper
+                                                                                                        p2p stacks
+                                                                                                            - kademlia
+                                                                                                            - gossipsub over tcp and quic
+                                                                                                            - noise protocol
+                                                                                                            - ws and webrtc
+                                                                                                            - muxer and yamux
+                                                                                                        tokio quic udp and tcp
+                                                                                                        rpc capnp/json pubsub 
+                                                                                                        zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
+                                                                                                        gql subs
+                                                                                                        ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
+                                                                                                        connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
+                                                                                                        redis client pubsub + mongodb
                                                                                             
 ➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
  server side, these handlers can be predefined traits or an eventloop like tokio::select!{} which listen to the events 
@@ -108,18 +109,20 @@ pub mod routers;
 
 
 
+/* 
 
+    the return type of the error part in Result 
+    is a trait which is behind a pointer or Box 
+    since they have no size at compile time and their
+    implementor will be known at runtime thus they must 
+    be behind a pointer like &dyn or inside a Box
+    if we want to return them as a type.
 
-//// the return type of the error part in Result 
-//// is a trait which is behind a pointer or Box 
-//// since they have no size at compile time and their
-//// implementor will be known at runtime thus they must 
-//// be behind a pointer like &dyn or inside a Box
-//// if we want to return them as a type.
-//
-//// in Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> 
-//// we can return the structure that implements the Error trait for the error part
-//// which can be a custom error struct.
+    in Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> 
+    we can return the structure that implements the Error trait for the error part
+    which can be a custom error struct.
+
+*/
 #[tokio::main(flavor="multi_thread", worker_threads=10)] //// use the tokio multi threaded runtime by spawning 10 green threads
 async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ //// generic types can also be bounded to lifetimes ('static in this case) and traits inside the Box<dyn ... > - since the error that may be thrown has a dynamic size at runtime we've put all these traits inside the Box (a heap allocation pointer) and bound the error to Sync, Send and the static lifetime to be valid across the main function and sendable and implementable between threads
     
@@ -153,10 +156,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
     
-    
-    
 
-    
+
 
 
     // -------------------------------- app storage setup

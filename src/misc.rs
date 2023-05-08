@@ -723,21 +723,13 @@ pub async fn layering(){
                 s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
                     sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
                     for asset_path in asset_to_path.values(){
-                        std::thread::spawn(|| async{
+                        tokio::spawn(async move{
                             // make a combo of each asset path in a separate thread asyncly 
-                            // i < combos.len()!{
+                            // while idx < combos.len()!{
                             //     bin(i%3!).await;
                             //     010
                             //     01
-                            // }  
-                            // let images = {"Beards": &[1, 2, 3, 4, 5], "Hats": &[1, 2, 3, 4, 5], "Masks": &[1, 2, 3]};
-                            // let combos = vec![&["1", "1", "1"], &["1", "1", "2"], &["1", "1", "3"]];
-                            // ... 
-                            // Arc<Mutex<RwLock<...>>> using tokio channels
-                            // base layer image or the human image must be converted into the RGBA 
-                            // also all the assets must be the same size of the base image
-                            // also ignore the hat if there was a hair or vice versa
-                            // open each image in a separate thread
+                            // }
                             // ...
                         });
                     }
