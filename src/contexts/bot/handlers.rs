@@ -41,7 +41,9 @@ impl TypeMapKey for RateLimit{
 
 type CommandQueueSender = tokio::sync::mpsc::Sender<(Context, ApplicationCommandInteraction)>;
 type CommandQueueReceiver = tokio::sync::mpsc::Receiver<(Context, ApplicationCommandInteraction)>;
-//// the discord bot commands and events listener/handler for emitted events and webhooks over ws and http 
+
+//// the discord bot commands and events listener/handler 
+//// for emitted events and webhooks over ws and http 
 pub struct Handler{
     pub command_queue_sender: CommandQueueSender,
 }
@@ -105,7 +107,11 @@ impl Handler{
             //// waiting to receive every command asyncly to handle them 
             //// asyncly inside tokio green threadpool
             while let Some(command_data) = command_queue_receiver.recv().await{
-            
+                /*
+                    to share data from the main function between threads and other methods we must 
+                    build a context type that has all the setup structures and data inside of it to 
+                    mutating them during the lifetime of the app in other scopes, threads and methods.
+                */
                 let ctx = command_data.0;
                 let command = command_data.1;
 
@@ -215,35 +221,7 @@ impl Handler{
                                         }) //// edit the thinking message with the command response
                                         .await;    
                                 });
-                            },
-                            "reveal" => {
-
-                                // tweet snapshot of last catchup
-                                // ...
-
-                                let footer = "".to_string();
-                                let title = "".to_string();
-                                let content = format!("");
-                                let edited_interaction_response = command
-                                    .edit_original_interaction_response(&ctx.http, |edit|{
-                                        edit
-                                            .embed(|e|{
-                                                e.color(Colour::from_rgb(235, 204, 120));
-                                                e.description(content);
-                                                e.title(title);
-                                                e.footer(|f|{
-                                                    f
-                                                        .text(footer)
-                                                });
-                                                return e;
-                                            });
-                                            edit
-                                    })
-                                    .await;
-
-
-                            },
-                            
+                            },            
                             "help" => {
                                 let footer = "".to_string();
                                 let title = "".to_string();
@@ -350,78 +328,86 @@ impl Handler{
         ///// --------------------------------------------------------------------------
         ///// ---------------------------- RATE LIMIT LOGIC ----------------------------
         ///// --------------------------------------------------------------------------
-        //// data inside the bot client must be safe to be shared between event and 
-        //// command handlers' threads thus they must be of type Arc<RwLock<TypeMapKey>>
-        //// in which TypeMapKey is a trait that has implemented for the underlying data 
-        //// which is of type Arc<Mutex<Data>> acquiring a write lock will block other 
-        //// event and command handlers which don't allow them to use the data until 
-        //// the lock is released.
-        // IDEA: we can store the last usage timestamp of the user that 
-        // has called this command inside a Arc<Mutex<HashMap<u64, u64>>> 
-        // then use that inside the command handler threads
-        // to check the rate limit since we can send 50 messages 
-        // per second per server (guild) and up to 5 messages per second 
-        // per user in a direct message (DM) channel. For slash commands, 
-        // you can have a maximum of 100 commands per 60 seconds per application
-        // means that sending like 5 messages in less that 5 seconds 
-        // makes discord angry :) also async_std Mutex is faster than tokio Mutex
-        // thus we won't face the timeout issue of the discord while we're locking 
-        // the mutex to acquire the underlying data.
+        /*
         
+            data inside the bot client must be safe to be shared between event and 
+            command handlers' threads thus they must be of type Arc<RwLock<TypeMapKey>>
+            in which TypeMapKey is a trait that has implemented for the underlying data 
+            which is of type Arc<Mutex<Data>> acquiring a write lock will block other 
+            event and command handlers which don't allow them to use the data until 
+            the lock is released.
+
+            IDEA: we can store the last usage timestamp of the user that 
+            has called this command inside a Arc<Mutex<HashMap<u64, u64>>> 
+            then use that inside the command handler threads
+            to check the rate limit since we can send 50 messages 
+            per second per server (guild) and up to 5 messages per second 
+            per user in a direct message (DM) channel. For slash commands, 
+            you can have a maximum of 100 commands per 60 seconds per application
+            means that sending like 5 messages in less that 5 seconds 
+            makes discord angry :) also async_std Mutex is faster than tokio Mutex
+            thus we won't face the timeout issue of the discord while we're locking 
+            the mutex to acquire the underlying data.
+        
+        */
         let chill_zone_duration = 15_000u64; //// 15 seconds rate limit
         let user_id = command.user.id.0;
         let now = chrono::Local::now().timestamp_millis() as u64;
         let mut is_rate_limited = false;
         
-        {
-            let mut data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
-            let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
-            let mut rate_limiter = rate_limit_data.lock().await;
-            
-            if let Some(last_used) = rate_limiter.get(&user_id){
-                if now - *last_used < chill_zone_duration{
-                    is_rate_limited = true;
-                }
-            }
-    
-            if !is_rate_limited{
-                rate_limiter.insert(user_id, now);
-
-                //// -------------------------------------------------
-                //// -------------------- logging --------------------
-                //// -------------------------------------------------
-                let filepath = format!("rate-limiter/usage.log");
-                let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
-                let mut ratelimit_log; 
-
-                match fs::metadata("rate-limiter/usage.log").await {
-                    Ok(_) => {
-                        let mut file = OpenOptions::new()
-                            .append(true)
-                            .create(true)
-                            .open(filepath.as_str())
-                            .await.unwrap();
-                        file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
-                    },
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-                        ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
-                    },
-                    Err(e) => {
-                        let log_name = format!("[{}]", chrono::Local::now());
-                        let filepath = format!("error-kind/{}-ratelimit-reading-log-file.log", log_name);
-                        let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-                        error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
-                    }
-                }
-                
+        //// reading the mutexed data to acquire the lock on the ctx.data
+        let mut data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
+        let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
+        let mut rate_limiter = rate_limit_data.lock().await;
+        
+        if let Some(last_used) = rate_limiter.get(&user_id){
+            if now - *last_used < chill_zone_duration{
+                is_rate_limited = true;
             }
         }
-
+        
         if is_rate_limited{
             Err(())
         } else{
+            rate_limiter.insert(user_id, now);
+
+            let nodes = vec!["rediss://127.0.0.1/"];
+            let client = ClusterClient::new(nodes).unwrap();
+            let mut connection = client.get_async_connection().await.unwrap();
+            
+            let rate_limiter = rate_limiter.to_owned();
+            let _: () = connection.set("rate_limiter", rate_limiter).await.unwrap();
+
+            //// -------------------------------------------------
+            //// -------------------- logging --------------------
+            //// -------------------------------------------------
+            let filepath = format!("rate-limiter/usage.log");
+            let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
+            let mut ratelimit_log; 
+
+            match fs::metadata("rate-limiter/usage.log").await {
+                Ok(_) => {
+                    let mut file = OpenOptions::new()
+                        .append(true)
+                        .create(true)
+                        .open(filepath.as_str())
+                        .await.unwrap();
+                    file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
+                },
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                    ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
+                },
+                Err(e) => {
+                    let log_name = format!("[{}]", chrono::Local::now());
+                    let filepath = format!("error-kind/{}-ratelimit-reading-log-file.log", log_name);
+                    let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                    error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
+                }
+            }
+
             Ok(())
+
         }
 
         ///// -----------------------------------------------------------------------------
@@ -474,7 +460,8 @@ impl EventHandler for Handler{
             /*
                 sending the incoming slash commands to the downside 
                 of the mpsc channel to handle them asyncly to avoid
-                deadlocking and rate limiting
+                deadlocking and rate limiting by calling the 
+                command_queue_sender field of the event handler struct
             */
             self.command_queue_sender.send((ctx, command)).await; //// don't unwrap() since Context doesn't implement Debug trait
         }

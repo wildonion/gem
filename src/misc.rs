@@ -724,6 +724,10 @@ pub async fn layering(){
                     sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
                     for asset_path in asset_to_path.values(){
                         tokio::spawn(async move{
+                            // reading the shared sate data from the
+                            // receiver_flag mpsc receiver to acquire 
+                            // the lock on the mutexed data.
+                            // ... 
                             // make a combo of each asset path in a separate thread asyncly 
                             // while idx < combos.len()!{
                             //     bin(i%3!).await;

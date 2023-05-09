@@ -1,3 +1,12 @@
+
+## 🚀 Build and Deploy all Contracts 
+
+> Make sure you have a setup solana wallet using ```solana-keygen new``` command.
+
+```console
+sudo chmod +x deploy.sh && ./deploy.sh 
+```
+
 ## 💳 Setup Solana Wallet 
 
 * Generate a new keypair using ```solana-keygen new``` command, the following sample output is important for us! We'll use this public key as the program authority to deploy the program with it. 

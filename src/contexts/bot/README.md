@@ -14,8 +14,10 @@ sudo apt install libssl-dev libudev-dev pkg-config
 
 ## 📱 Features
 
-* show the sysinfo status of the conse server
+* show the sysinfo and servers status of the conse server
 
 * channel messages summerization using chat GPT
+
+* configured with 10 shards by default also we're using redis to manage the shared state data between clusters.
 
 > get token from [here](https://discord.com/developers/applications/1092048595605270589/bot)

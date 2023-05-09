@@ -156,6 +156,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     };
     //// ----------------------------------------------
     //// ----------------------------------------------
+    //// ----------------------------------------------
 
     let d = match chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day){
         Some(d) => {
