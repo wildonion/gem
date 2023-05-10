@@ -6,7 +6,6 @@
 
 
 use std::path::Component;
-
 use serenity::model::prelude::ReactionType;
 use tokio::{io::AsyncWriteExt, fs::{OpenOptions, self}};
 
@@ -32,11 +31,12 @@ impl TypeMapKey for GuildRateLimit{
     type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; //// guild_id and total usage
 }
 
+
+#[derive(Serialize, Deserialize)] //// serde traits are required to get data from redis
 pub struct RateLimit;
 impl TypeMapKey for RateLimit{
     type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; //// use async_std::sync::Mutex since it's faster that tokio::sync::Mutex
 }
-
 
 
 type CommandQueueSender = tokio::sync::mpsc::Sender<(Context, ApplicationCommandInteraction)>;
@@ -349,67 +349,84 @@ impl Handler{
             thus we won't face the timeout issue of the discord while we're locking 
             the mutex to acquire the underlying data.
         
+            ctx.data in order to be shared between tokio threads and shards must be 
+            static, sync and send or Arc also it must be safe to mutate it in other 
+            threads means it must be inside the mutex or rwlock to aqcuire the lock 
+            in other scopes and methods safely.
+
+            ctx.data in order to be shared between clusters and app instances must be 
+            stored in redis which can be published to the redis servers so other 
+            subscribers can subcribe to it once the redis server sent the broadcasted 
+            message or publish the topic contains the data.
+
         */
         let chill_zone_duration = 15_000u64; //// 15 seconds rate limit
         let user_id = command.user.id.0;
         let now = chrono::Local::now().timestamp_millis() as u64;
         let mut is_rate_limited = false;
         
-        //// reading the mutexed data to acquire the lock on the ctx.data
-        let mut data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
-        let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
-        let mut rate_limiter = rate_limit_data.lock().await;
-        
-        if let Some(last_used) = rate_limiter.get(&user_id){
-            if now - *last_used < chill_zone_duration{
-                is_rate_limited = true;
+
+        {
+            //// ------------------------------------------------------------------------
+            //// -------------------- reading from ctx.data to redis --------------------
+            //// ------------------------------------------------------------------------
+            //// reading the mutexed data to acquire the lock on the ctx.data
+            let data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
+            let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
+            let mut rate_limiter_mutexed = rate_limit_data.lock().await;
+            let to_owned_rate_limiter = rate_limiter_mutexed.to_owned();
+
+            if let Some(last_used) = rate_limiter_mutexed.get(&user_id){
+                if now - *last_used < chill_zone_duration{
+                    is_rate_limited = true;
+                }
             }
+
+            if !is_rate_limited{
+                
+                //// -------------------------------------------------------------
+                //// -------------------- writing to ctx.data  --------------------
+                //// -------------------------------------------------------------
+                //// this will be used to handle shared state between shards
+                rate_limiter_mutexed.insert(user_id, now);
+
+                //// -------------------------------------------------
+                //// -------------------- logging --------------------
+                //// -------------------------------------------------
+                let filepath = format!("rate-limiter/usage.log");
+                let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
+                let mut ratelimit_log; 
+
+                match fs::metadata("rate-limiter/usage.log").await {
+                    Ok(_) => {
+                        let mut file = OpenOptions::new()
+                            .append(true)
+                            .create(true)
+                            .open(filepath.as_str())
+                            .await.unwrap();
+                        file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
+                    },
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                        ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
+                    },
+                    Err(e) => {
+                        let log_name = format!("[{}]", chrono::Local::now());
+                        let filepath = format!("error-kind/{}-ratelimit-reading-log-file.log", log_name);
+                        let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                        error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
+                    }
+                }
+            }
+
         }
         
         if is_rate_limited{
             Err(())
         } else{
-            rate_limiter.insert(user_id, now);
-
-            let nodes = vec!["rediss://127.0.0.1/"];
-            let client = ClusterClient::new(nodes).unwrap();
-            let mut connection = client.get_async_connection().await.unwrap();
-            
-            let rate_limiter = rate_limiter.to_owned();
-            let _: () = connection.set("rate_limiter", rate_limiter).await.unwrap();
-
-            //// -------------------------------------------------
-            //// -------------------- logging --------------------
-            //// -------------------------------------------------
-            let filepath = format!("rate-limiter/usage.log");
-            let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
-            let mut ratelimit_log; 
-
-            match fs::metadata("rate-limiter/usage.log").await {
-                Ok(_) => {
-                    let mut file = OpenOptions::new()
-                        .append(true)
-                        .create(true)
-                        .open(filepath.as_str())
-                        .await.unwrap();
-                    file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
-                },
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                    ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-                    ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
-                },
-                Err(e) => {
-                    let log_name = format!("[{}]", chrono::Local::now());
-                    let filepath = format!("error-kind/{}-ratelimit-reading-log-file.log", log_name);
-                    let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-                    error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
-                }
-            }
-
             Ok(())
-
         }
-
+        
         ///// -----------------------------------------------------------------------------
         ///// -----------------------------------------------------------------------------
         ///// -----------------------------------------------------------------------------

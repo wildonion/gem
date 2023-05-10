@@ -961,6 +961,13 @@ macro_rules! passport {
     }
 }
 
+/*
+    we can define as many as response object 
+    since once the scope or method or the match
+    arm gets executed the lifetime of the response
+    object will be dropped from the ram since rust 
+    doesn't have gc :) 
+*/
 #[macro_export]
 macro_rules! resp {
     (
@@ -1062,9 +1069,11 @@ macro_rules! contract {
     //     event_name
     // }
 
-    ($name:ident, $signer:expr, //// ident can be used to pass struct
+    (
+     $name:ident, $signer:expr, //// ident can be used to pass struct
      [$($fields:ident: $type:ty),*]; 
-     [$($method_type:expr => [$($method:item),*]),* ]) 
+     [$($method_type:expr => [$($method:item),*]),* ]
+    ) 
      
      => {
             #[near_bindgen]

@@ -308,7 +308,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     // };
     // let mut gpt_bot = gpt_data.lock().await;
     
-    let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup per each request
+    let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup chat history per each request
     let mut gpt_response = "".to_string();
     let req_cmd = gpt_request_command.clone();
     let feed_result = gpt_bot.feed(req_cmd.as_str()).await;

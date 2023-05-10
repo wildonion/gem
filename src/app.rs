@@ -66,6 +66,11 @@ gql subs ws client
 #![macro_use] //// apply the macro_use attribute to the root cause it's an inner attribute (the `!` mark) and will be effect on all things inside this crate 
 
 
+use redis::FromRedisValue;
+use redis::JsonAsyncCommands;
+use redis::cluster::ClusterClient;
+use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
+use redis::RedisResult;
 use serde::{Serialize, Deserialize};
 use tokio_cron_scheduler::{JobScheduler, JobToRun, Job};
 use std::time::Duration;
@@ -148,6 +153,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
+    let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
@@ -156,6 +162,54 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
 
     
+
+
+
+
+
+
+
+
+
+    let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
+    let mut connection = client.get_async_connection().await.unwrap();
+
+    //// ------------------------------------------------------------
+    //// -------------------- reading from redis --------------------
+    //// ------------------------------------------------------------
+    // let redis_result_rate_limiter: RedisResult<String> = connection.get("rate_limiter").await;
+    // let rate_limiter = match redis_result_rate_limiter{
+    //     Ok(data) => {
+    //         let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+    //         rl_data
+    //     },
+    //     Err(e) => {
+    //         let rl_data = serde_json::to_string(&to_owned_rate_limiter).unwrap();
+    //         let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
+    //         let log_name = format!("[{}]", chrono::Local::now());
+    //         let filepath = format!("error-kind/{}-ratelimit-redis-log-file.log", log_name);
+    //         let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+    //         error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
+    //         HashMap::new()
+    //     }
+    // };
+
+    //// ----------------------------------------------------------
+    //// -------------------- writing to redis --------------------
+    //// ----------------------------------------------------------
+    //// this will be used to handle shared state between clusters
+    // let rl_data = serde_json::to_string(&to_owned_rate_limiter).unwrap();
+    // let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
+
+
+
+
+
+
+
+
+
+
 
 
 

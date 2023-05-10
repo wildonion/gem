@@ -13,15 +13,16 @@ pub async fn activate_discord_bot(
     guild_ratelimit: HashMap<u64, u64>
     ){
 
-    //// each shard is a ws client to the discrod ws server also discord 
-    //// requires that there be at least one shard for every 2500 guilds 
-    //// (discrod servers) that a bot is on.
-    //
-    //// data of each bot client must be safe to send between other shards' 
-    //// threads means they must be Arc<Mutex<Data>> + Send + Sync + 'static
-    //// or an RwLock type also each shard must be Arced and Mutexed to 
-    //// be shareable between threads.
-
+    /* 
+        each shard is a ws client to the discrod ws server also discord 
+        requires that there be at least one shard for every 2500 guilds 
+        (discrod servers) that a bot is on.
+        
+        data of each bot client must be safe to send between other shards' 
+        threads means they must be Arc<Mutex<Data>> + Send + Sync + 'static
+        or an RwLock type also each shard must be Arced and Mutexed to 
+        be shareable between threads.
+    */
     let http = http::Http::new(&discord_token);
     let (owners, _bot_id) = match http.get_current_application_info().await{ //// fetching bot owner and id, application id is the id of the created http channel
         Ok(info) => {

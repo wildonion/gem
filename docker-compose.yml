@@ -33,6 +33,7 @@ services:
       - '7439:7438'
     volumes:
       - ./devops/data/assets/:/usr/src/app/assets/
+      - '.:/usr/src/app'
     depends_on:
       - 'mongodb'
     links:
@@ -44,10 +45,10 @@ services:
       dockerfile: './devops/docker/bot/Dockerfile'
     container_name: catchup-bot
     volumes:
-      - ./devops/data/openai-logs:/usr/src/app/openai-logs
-      - ./devops/data/gpt-logs:/usr/src/app/gpt-logs
-      - ./devops/data/error-kind:/usr/src/app/error-kind
-      - ./devops/data/rate-limiter:/usr/src/app/rate-limiter
+      - ./devops/data/openai-logs:/usr/src/app/openai-logs/
+      - ./devops/data/gpt-logs:/usr/src/app/gpt-logs/
+      - ./devops/data/error-kind:/usr/src/app/error-kind/
+      - ./devops/data/rate-limiter:/usr/src/app/rate-limiter/
     networks:
       - 'net'
   haproxy:

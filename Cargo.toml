@@ -10,7 +10,7 @@ edition = "2021"
 async-std = "1.12.0"
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
-redis = { version = "0.23.0", features = ["tokio-rustls-comp", "cluster-async"] }
+redis = { version = "0.23.0", features = ["tokio-comp", "cluster-async", "json"] }
 mongodb = "2"
 futures = "0.3"
 futures-util = "0.3"
@@ -53,8 +53,8 @@ name = "conse"
 path = "src/app.rs"
 
 [[bin]]
-name = "bot"
-path = "src/contexts/bot/bot.rs"
+name = "dis-bot"
+path = "src/contexts/bot/discord/bot.rs"
 
 [[bin]]
 name = "tests"
