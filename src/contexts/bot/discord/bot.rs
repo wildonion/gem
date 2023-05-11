@@ -1,7 +1,11 @@
 
 
 
-
+use redis::FromRedisValue;
+use redis::JsonAsyncCommands;
+use redis::cluster::ClusterClient;
+use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
+use redis::RedisResult;
 use serde::{Serialize, Deserialize};
 use std::{rc::Rc, cell::RefCell};
 use std::collections::{HashSet, HashMap};

@@ -6,6 +6,8 @@
 
 
 use std::path::Component;
+
+use redis::RedisResult;
 use serenity::model::prelude::ReactionType;
 use tokio::{io::AsyncWriteExt, fs::{OpenOptions, self}};
 
@@ -325,6 +327,10 @@ impl Handler{
 
     async fn check_rate_limit(ctx: &Context, command: &ApplicationCommandInteraction) -> Result<(), ()>{
 
+        let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
+        let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
+        let mut connection = client.get_async_connection().await.unwrap();
+
         ///// --------------------------------------------------------------------------
         ///// ---------------------------- RATE LIMIT LOGIC ----------------------------
         ///// --------------------------------------------------------------------------
@@ -370,13 +376,33 @@ impl Handler{
             //// ------------------------------------------------------------------------
             //// -------------------- reading from ctx.data to redis --------------------
             //// ------------------------------------------------------------------------
-            //// reading the mutexed data to acquire the lock on the ctx.data
+            // reading the mutexed data to acquire the lock on the ctx.data
             let data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
             let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
             let mut rate_limiter_mutexed = rate_limit_data.lock().await;
-            let to_owned_rate_limiter = rate_limiter_mutexed.to_owned();
 
-            if let Some(last_used) = rate_limiter_mutexed.get(&user_id){
+            //// ------------------------------------------------------------
+            //// -------------------- reading from redis --------------------
+            //// ------------------------------------------------------------
+            let redis_result_rate_limiter: RedisResult<String> = connection.get("rate_limiter").await;
+            let mut redis_rate_limiter = match redis_result_rate_limiter{
+                Ok(data) => {
+                    let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+                    rl_data
+                },
+                Err(e) => {
+                    let empty_rate_limiter = HashMap::<u64, u64>::new();
+                    let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
+                    let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
+                    let log_name = format!("[{}]", chrono::Local::now());
+                    let filepath = format!("error-kind/{}-ratelimit-redis-log-file.log", log_name);
+                    let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                    error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
+                    HashMap::new()
+                }
+            };
+
+            if let Some(last_used) = redis_rate_limiter.get(&user_id){
                 if now - *last_used < chill_zone_duration{
                     is_rate_limited = true;
                 }
@@ -389,6 +415,14 @@ impl Handler{
                 //// -------------------------------------------------------------
                 //// this will be used to handle shared state between shards
                 rate_limiter_mutexed.insert(user_id, now);
+                
+                //// ----------------------------------------------------------
+                //// -------------------- writing to redis --------------------
+                //// ----------------------------------------------------------
+                //// this will be used to handle shared state between clusters
+                redis_rate_limiter.insert(user_id, now); //// updating the redis rate limiter map
+                let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
+                let _: () = connection.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
                 //// -------------------------------------------------
                 //// -------------------- logging --------------------
@@ -398,7 +432,7 @@ impl Handler{
                 let mut ratelimit_log; 
 
                 match fs::metadata("rate-limiter/usage.log").await {
-                    Ok(_) => {
+                    Ok(_) => { //// if the file was there then append to it
                         let mut file = OpenOptions::new()
                             .append(true)
                             .create(true)
@@ -406,7 +440,7 @@ impl Handler{
                             .await.unwrap();
                         file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
                     },
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => { //// if the file wasn't there then create a new one
                         ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                         ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
                     },
@@ -503,7 +537,7 @@ impl EventHandler for Handler{
                     for (cid, gc) in channels{
                         let id = cid.0;
                         let channel_id = ChannelId(id);
-                        let initial_message = "Okay, let's rock it all";
+                        let initial_message = "Okay, I just woke up :/";
                         channel_id.send_message(&ctx.http, |m|{
                             m
                                 .allowed_mentions(|mentions| mentions.replied_user(true))

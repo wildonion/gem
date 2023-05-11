@@ -158,50 +158,11 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
-    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
-    
-
-    
-
-
-
-
-
-
-
-
-
     let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
-    let mut connection = client.get_async_connection().await.unwrap();
+    let mut redis_conn = client.get_async_connection().await.unwrap();
+    
 
-    //// ------------------------------------------------------------
-    //// -------------------- reading from redis --------------------
-    //// ------------------------------------------------------------
-    // let redis_result_rate_limiter: RedisResult<String> = connection.get("rate_limiter").await;
-    // let rate_limiter = match redis_result_rate_limiter{
-    //     Ok(data) => {
-    //         let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
-    //         rl_data
-    //     },
-    //     Err(e) => {
-    //         let rl_data = serde_json::to_string(&to_owned_rate_limiter).unwrap();
-    //         let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
-    //         let log_name = format!("[{}]", chrono::Local::now());
-    //         let filepath = format!("error-kind/{}-ratelimit-redis-log-file.log", log_name);
-    //         let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-    //         error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
-    //         HashMap::new()
-    //     }
-    // };
-
-    //// ----------------------------------------------------------
-    //// -------------------- writing to redis --------------------
-    //// ----------------------------------------------------------
-    //// this will be used to handle shared state between clusters
-    // let rl_data = serde_json::to_string(&to_owned_rate_limiter).unwrap();
-    // let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
-
-
+    
 
 
 
@@ -304,9 +265,10 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
+    let arced_redis_conn = Arc::new(redis_conn);
     let api = Router::builder()
+        .data(arced_redis_conn.clone()) //// sharing the redis connection between hyper routers' threads also the redis_conn must be sync and send in order to be shared 
         .data(db_instance.unwrap().clone()) //// shared state which will be available to every route handlers is the db_instance which must be Send + Syn + 'static to share between threads also the Client object is Arc so we can share it safely between routers' threads
-        .data(discord_bot_flag_sender.clone()) //// sharing the discord bot sender between routers' threads which must be Send + Syn + 'static or Arc<Mutex<Sender<bool>>> to share between threads
         .middleware(Middleware::pre(middlewares::logging::logger)) //// enable logging middleware on the incoming request then pass it to the next middleware - pre Middlewares will be executed before any route handlers and it will access the req object and it can also do some changes to the request object if required
         .middleware(Middleware::post(middlewares::cors::allow)) //// the path that will be fallen into this middleware is "/*" thus it has the OPTIONS route in it also post middleware accepts a response object as its param since it only can mutate the response of all the requests before sending them back to the client
         .scope("/auth", routers::auth::register().await)
@@ -323,13 +285,14 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     info!("🏃‍♀️ running {} server on port {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(misc::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
-    // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
         unwrapped_storage.db.clone().unwrap().mode = misc::app::Mode::Off; //// set the db mode of the app storage to off
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
     
     
+    // TODO - 
+    // sender.send(0).unwrap(); //// sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
     
     
 

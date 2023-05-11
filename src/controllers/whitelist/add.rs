@@ -116,7 +116,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
 
     /*
         @params: 
-            - @request       → hyper request object; since this struct doesn't implement Clone trait
+            - @request       → hyper request object; since this struct doesn't implement Clone trait and we must pass it then return it
             - @storage       → instance inside the request object
             - @access levels → vector of access levels
     */
