@@ -253,15 +253,14 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-
-
-
     
     // -------------------------------- building the conse api server from the registered routers
     //
-    //      we're sharing the db_instance state between routers' threads to get the data inside each api
-    //      and for this the db data must be shareable and safe to send between threads which must be bounded
-    //      to Send + Sync traits 
+    //      we're sharing the db_instance and redis connection state between 
+    //      routers' threads to get the data inside each api also for this the 
+    //      db and redis connection data must be shareable and safe to send 
+    //      between threads which must be bounded to Send + Sync traits 
+    //
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
     let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None

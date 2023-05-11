@@ -660,10 +660,19 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 */
 pub async fn layering(){
 
-    #[derive(Serialize, Deserialize)]
+    pub const WIDTH: usize = 32;
+    pub const HEIGHT: usize = 32;
+    pub const RGBA: usize = 4;
+
     pub struct Image{
-        pub hat: Vec<Vec<Vec<u8>>>, //// 32 X 32 X 4 => 32 Pixels and RGBA channels
-        pub mask: Vec<Vec<Vec<u8>>> //// 32 X 32 X 4 => 32 Pixels and RGBA channels
+        /*
+            there must be HEIGHT number of [u8; RGBA]
+            which is like 32 rows X 4 cols and  
+            WIDTH number of [[u8; RGBA]; HEIGHT]
+            which is like 32 X 32 X 4
+        */
+        pub hat: [[[u8; RGBA]; HEIGHT]; WIDTH], //// 32 X 32 X 4 => 32 Pixels and RGBA channels
+        pub mask: [[[u8; RGBA]; HEIGHT]; WIDTH] //// 32 X 32 X 4 => 32 Pixels and RGBA channels
     }
 
     let (sender, receiver) = tokio::sync::mpsc::channel::<HashMap<&str, Vec<&str>>>(1024);
@@ -680,6 +689,9 @@ pub async fn layering(){
     } 
 
     tokio::spawn(async move{
+
+        // hashmap can be a 3d arr also and reading 
+        // from it is slower that arr and vec 
 
         let assets_names = &["Beard", "Hat", "Mask"];
         let mut asset_to_path: HashMap<&str, Vec<String>> = HashMap::new(); //// a map of between asset name and their images path
@@ -716,9 +728,10 @@ pub async fn layering(){
         let (sender_flag, mut receiver_flag) = 
         tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
         tokio::spawn(async move{
-            // solve heavy async task inside tokio green threadpool
-            // send data inside the pool to receive it in different 
-            // parts of the app
+
+            type Job<T> = std::thread::JoinHandle<T>; 
+            let job: Job<_> = std::thread::spawn(||{});
+            
             std::thread::scope(|s|{
                 s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
                     sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel

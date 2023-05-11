@@ -85,7 +85,7 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
                                     match groups.find_one(group_filter, None).await.unwrap(){ //// first we have to check that the caller owns a group
                                         Some(group_doc) => god_has_a_group = true, //// if we're here means the caller of this api has a already and owned group
                                         None => {},
-                                    } //// there is no need to be a ; in here since we don't return anything from the match arms 
+                                    }
 
                                     if god_has_a_group || access_level == DEV_ACCESS{
                                         
