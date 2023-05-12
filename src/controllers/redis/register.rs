@@ -1,8 +1,8 @@
 
 
+
 use crate::constants::*;
 use crate::misc;
-use crate::constants::*;
 use crate::passport; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::passport
 use crate::resp;
 use crate::schemas; //// this has been imported from the misc inside the app.rs and we can simply import it in here using crate::resp
@@ -74,7 +74,6 @@ pub async fn register_notif(req: hyper::Request<Body>) -> ConseResult<hyper::Res
                     None => {},
                 }
 
-                
                 if god_has_a_group || access_level == DEV_ACCESS{
                     
                     // TODO - parse request object to get request data

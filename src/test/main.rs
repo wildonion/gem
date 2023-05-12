@@ -477,6 +477,31 @@ pub async fn generic(){
 
     //////////////////////// ------------------------------------------------------
     
+    pub enum Service{
+        Available(u8),
+        Off,
+        On
+    }
+    pub struct Closure<F> //// we can't use default type param while we're using where clause
+        where F: FnOnce(String) -> String{
+        pub callback: F,
+        pub service: Service
+    }
+    impl<F: FnOnce(String) -> String> Closure<F>{
+        
+        fn gettertor(&self) -> &impl FnOnce(String) -> String{ // return trait in here since closures are traits
+            let cb = &self.callback;
+            cb
+        }
+
+        fn settertor() -> fn() -> String{
+            fn get_name() -> String{
+                "wildonion".to_string()
+            }
+            get_name
+        }  
+    }
+    
     //////// -----------------------------------------------
     //////// +++++++++++++++++++++++++++++++++++++++++++++++
     //////// -----------------------------------------------
@@ -953,6 +978,13 @@ pub async fn generic(){
             from doing this to ensure memory safety.
         
         */
+        //// in the following the return type is a double pointer
+        //// which the first one must gets allocated on the satck 
+        //// first in order to return a pointer to that and since
+        //// we've allocated something on the ram (stack or heap) 
+        //// which is owned by current function thus we can't return
+        //// a pointer to the type which that type is owned by the 
+        //// function.
         // fn as_ref__(&self) -> &&Pack{ 
         //     let ref ref_ = self; 
         //     // &self //// can't return &self since self is owned by the function also because self is borrowed

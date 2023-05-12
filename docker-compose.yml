@@ -51,6 +51,12 @@ services:
       - ./devops/data/rate-limiter:/usr/src/app/rate-limiter/
     networks:
       - 'net'
+  panel:
+    build:
+      dockerfile: './devops/docker/panel/Dockerfile'
+    container_name: panel
+    networks:
+      - 'net'
   haproxy:
     image: haproxytech/haproxy-alpine:2.4
     container_name: haproxy

@@ -16,6 +16,10 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ```cargo run --bin conse```
 
+## 🏃🏽‍♀️ Run Conse Actix Panel Server
+
+```cargo run --bin panel```
+
 ## 🏃🏻‍♀️ Run Conse Discord Bot Server
 
 ```cargo run --bin dis-bot```
@@ -35,6 +39,18 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 > To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh --port 7441``` or you can go inside using ```sudo docker exec -it mongodb mongosh --port 7441``` command.
 
 > After updating application's `docker-compose.yml` file, we should rebuild our container images by running ```./deploy.sh``` script again.
+
+## 🗃️ Directory Explained
+
+* `src`: all in-game APIs which are related to the player app.
+    * `contexts`: 
+        * `bot`: Discord and Twitter bots .
+        * `panel`: Dev and Admin panel app written in Yew and Tauri.
+        * `blockchain`: Solana Anchor smart contract.
+    * `controllers`: in game API async controllers.
+    * `routers`: in game API routers.
+    * `schemas`: in game Db schemas.
+* `devops`: all devops configs and setup files.
 
 ## 🍟 Notes
 
@@ -58,33 +74,19 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * subscribing to realtiming chat strategy: client `<--gql subscription ws-->` hyper gql ws server contains redis and mongodb clients setup `<--REDIS & MONGODB SERVER-->` store data on redis for caching and persistence in mongodb.
 
-* remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
-
-* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025475584&scope=bot%20applications.commands) we can add the conse bot to discord servers.  
-
 ## 🚧 WIP
 
-* setup **TLS** using `tokio-rustls` or noise protocol for `hyper` and `ws` server in code.
+* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (`hash(**user_id + time + ip + user agent**)`) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
-* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based locking api with rate limit feature to avoid api call spamming using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
-* complete the **CPI** call from ticket program to whitelist after successful reservation. 
+* complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification.
 
-* handle different versions of [hyper](https://hyper.rs/) in `main.rs` using its env var also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
-
-* complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification also add redis server docker image inside the `docker-compose.yml`.
-
-* sharding and scaling mechanism for `ws` server.
+* setup **TLS** using `tokio-rustls` or noise protocol for `hyper`, `actix` and `ws` server in code also sharding and scaling mechanism for `ws` server.
 
 * balance the loads between conse docker service and image inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
 
-* since the conse bot doesn't have DB IO thus handling shared states between different instances can be almost impossible which is better not to run multiple instance of the bot for clustering and load balancing since the bot is already sharded. 
-
-* complete conse discrod monitoring bot, also run the bot loop `ws` shards based on a specific event inside the app. 
-
-* implement [http proxy](https://github.com/hyperium/hyper/blob/master/examples/http_proxy.rs) based on hyper.
-
-* all TODOs inside the app
+* all TODOs inside the app, `panel` and twitter bot services.
 
 * backend design pattern sketch using freeform inside wiki.
 

@@ -116,12 +116,10 @@ pub mod routers;
 
 /* 
 
-    the return type of the error part in Result 
-    is a trait which is behind a pointer or Box 
-    since they have no size at compile time and their
-    implementor will be known at runtime thus they must 
-    be behind a pointer like &dyn or inside a Box
-    if we want to return them as a type.
+    the return type of the error part in Result is a trait which is behind a pointer or Box 
+    since they have no size at compile time and their implementor will be known at runtime 
+    thus they must be behind a pointer like &dyn or inside a Box if we want to return them 
+    as a type.
 
     in Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> 
     we can return the structure that implements the Error trait for the error part
@@ -133,8 +131,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
     
 
-    
-
+     
      
 
 
@@ -153,19 +150,16 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
-    let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
     let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
+    let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
     let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
     let mut redis_conn = client.get_async_connection().await.unwrap();
     
 
     
-
-
-
 
 
 
@@ -225,7 +219,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
     
 
-
+    /* 
     // -------------------------------- initializing the otp info instance
     //
     // ---------------------------------------------------------------------------------------
@@ -243,7 +237,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
                                                             otp_info
                                                         )
                                                     );
-    
+    */
 
 
 
@@ -254,12 +248,17 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
     
-    // -------------------------------- building the conse api server from the registered routers
+    // -------------------------------- building conse apis from the registered routers
     //
     //      we're sharing the db_instance and redis connection state between 
     //      routers' threads to get the data inside each api also for this the 
     //      db and redis connection data must be shareable and safe to send 
     //      between threads which must be bounded to Send + Sync traits 
+    //
+    //      since every api or router is an async task that must be handled 
+    //      inside the hyper threads thus the data that we want to use inside 
+    //      of them and share it between other routers must be 
+    //      Arc<Mutex<Data> + Send + Sync 
     //
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
@@ -281,7 +280,20 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         // .scope("/gql") // TODO - used for subscriptions like sub to push notifs and chatapp
         .build()
         .unwrap();
-    info!("🏃‍♀️ running {} server on port {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());
+
+
+
+
+
+
+
+
+
+
+    // -------------------------------- building conse server
+    //
+    // --------------------------------------------------------------------------------------------------------
+    info!("🚀 {} has launched from {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; //// build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(misc::app::shutdown_signal(receiver)); //// in shutdown_signal() function we're listening to the data coming from the sender   
     if let Err(e) = conse_graceful.await{ //// awaiting on the server to start and handle the shutdown signal if there was any error
@@ -295,9 +307,11 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     
     
 
-    Ok(())
-    
 
+
+
+
+    Ok(())
 
 
 
