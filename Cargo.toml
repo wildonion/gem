@@ -10,6 +10,9 @@ edition = "2021"
 async-std = "1.12.0"
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
+tokio-rustls = "0.24.0"
+rustls = "0.21.1"
+surrealdb = "1.0.0-beta.9+20230402"
 redis = { version = "0.23.0", features = ["tokio-comp", "cluster-async", "json"] }
 mongodb = "2"
 futures = "0.3"

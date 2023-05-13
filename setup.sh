@@ -1,11 +1,19 @@
 #!/bin/bash
 sudo chown -R root:root . && sudo chmod -R 777 . && sudo chmod -R 777 .
 sudo chmod +x /root && sudo chown -R root:root /root && sudo chmod -R 777 /root
-if [[ ! -f "devops/openssl/conse_cert.pem" ]] && [[ ! -f "devops/openssl/conse_key.pem" ]]
+if [[ ! -f "devops/cert/conse_cert.pem" ]] && [[ ! -f "devops/cert/conse_key.pem" ]]
 then
-    echo "openssl files doesn't exist creating new TLS certificate and key files for conse"
-    openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout conse_key.pem -out conse_cert.pem
-    cat conse_key.pem conse_cert.pem > devops/openssl/conse.pem
+    echo "cert files doesn't exist creating new SSL certificate and key files for conse using certbot,
+    ensure that you have a domain that points to this machine and that it can accepts inbound connections 
+    from the internet"
+    echo "[?] enter domain to put ssl on it: "  
+    read DOMAIN  
+    if [ -z "$DOMAIN" ]
+    then
+        echo "domain not entered!"
+    else
+        sudo certbot certonly && sudo cp /etc/letsencrypt/live/$domain/fullchain.pem devops/cert/conse.pem
+    fi
 fi
 # --------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------ DOCKER INSTALL START ------------------------------------------------------

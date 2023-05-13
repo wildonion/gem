@@ -1343,6 +1343,13 @@ pub async fn generic(){
     impl InterfaceMe for BoxedShodeh{} //// implementing for a boxed type
     impl InterfaceMe for (){} // we must impl InterfaceMe for () in order to be able to impl InterfaceMe for () (the return type) inside the test_() function
     
+
+    let callbackhaste = move |function: fn() -> ()|{
+        function()
+    };
+    fn runhaste(){}
+    callbackhaste(runhaste);
+
     (||async move{})().await; // building, calling and awaiting at the same time
     let this = (||async move{})(); // building and calling closure at the same time
     this.await; // await on the this since the closure body is a future object

@@ -2,11 +2,14 @@
 
 
 use crate::*;
+use crate::resp;
+use crate::constants::*;
+
 
 // god and dev panel using yew and tauri 
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Dev{
     pub id: u8,
 }
@@ -14,15 +17,19 @@ pub struct Dev{
 
 #[get("/panel/dev/api/{id}")]
 async fn index(req: HttpRequest, id: web::Path<u8>) -> Result<HttpResponse, actix_web::Error> {
+    
     let id = id.to_owned();
-    let mut res = HttpResponse::Ok();
-    Ok(
-        res
-            .json(
-                Dev{id}
-            )
-    )
+    let data = Dev{id};
+    
+    resp!{
+        data.clone(), //// response data
+        FETCHED, //// response message
+        StatusCode::OK, //// status code
+    }
+
 }
+
+
 
 
 

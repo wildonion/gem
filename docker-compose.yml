@@ -73,7 +73,7 @@ services:
       - "7440:7440"
     volumes:
       - ./devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-      - ./devops/openssl/conse.pem:/usr/local/etc/conse.pem
+      - ./devops/cert/conse.pem:/usr/local/etc/conse.pem
     environment:
       SERVER_IP: "${SERVER_IP}"
     networks:
