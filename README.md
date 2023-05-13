@@ -82,8 +82,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification.
 
-* setup **TLS** using `tokio-rustls` or noise protocol for `hyper`, `actix` and `ws` server in code also sharding and scaling mechanism for `ws` server.
-
 * balance the loads between conse docker service and image inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
 
 * all TODOs inside the app, `panel` and twitter bot services.

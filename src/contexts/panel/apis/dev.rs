@@ -15,12 +15,12 @@ pub struct Dev{
 #[get("/panel/dev/api/{id}")]
 async fn index(req: HttpRequest, id: web::Path<u8>) -> Result<HttpResponse, actix_web::Error> {
     let id = id.to_owned();
+    let mut res = HttpResponse::Ok();
     Ok(
-        HttpResponse::Ok().json(
-            Dev{
-                id,
-            }
-        )
+        res
+            .json(
+                Dev{id}
+            )
     )
 }
 

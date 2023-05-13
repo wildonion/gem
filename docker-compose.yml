@@ -54,7 +54,11 @@ services:
   panel:
     build:
       dockerfile: './devops/docker/panel/Dockerfile'
-    container_name: panel
+    container_name: conse
+    ports:
+      - '7443:7442'
+    volumes:
+      - '.:/usr/src/app' 
     networks:
       - 'net'
   haproxy:
