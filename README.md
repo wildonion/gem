@@ -76,13 +76,15 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🚧 WIP
 
+* setup **TLS/SSL** for `hyper`, `ws` and `actix` servers using `tokio-rustls` and `openssl` based on certbot certificate files.
+
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (`hash(**user_id + time + ip + user agent**)`) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
 * complete graphql, redis and websocket routes and controllers setup for realtime strategies like game monitoring, chatapp and push notification.
 
-* balance the loads between conse docker service and image inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
+* balance the loads between conse docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS on `gem` repo, also CI/CD configuration files based on the latest commits and managing containers using [portainer](https://www.portainer.io/).
 
 * all TODOs inside the app, `panel` and twitter bot services.
 

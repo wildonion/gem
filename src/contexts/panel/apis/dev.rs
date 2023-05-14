@@ -1,25 +1,45 @@
 
 
 
+
 use crate::*;
 use crate::resp;
 use crate::constants::*;
 
 
-// god and dev panel using yew and tauri 
 
+/*
+     ------------------------
+    |        SCHEMAS
+    | ------------------------
+    |
+    |
 
+*/
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Dev{
     pub id: u8,
 }
 
 
+/*
+     ------------------------
+    |          APIS
+    | ------------------------
+    |
+    |
+    
+*/
 #[get("/panel/dev/api/{id}")]
-async fn index(req: HttpRequest, id: web::Path<u8>) -> Result<HttpResponse, actix_web::Error> {
+pub async fn index(
+        req: HttpRequest, 
+        id: web::Path<u8>, 
+        redis_conn: web::Data<RedisConnection> //// shared state data 
+    ) -> Result<HttpResponse, actix_web::Error> {
     
     let id = id.to_owned();
     let data = Dev{id};
+    let redis_conn = redis_conn.to_owned();
     
     resp!{
         data.clone(), //// response data
@@ -27,15 +47,4 @@ async fn index(req: HttpRequest, id: web::Path<u8>) -> Result<HttpResponse, acti
         StatusCode::OK, //// status code
     }
 
-}
-
-
-
-
-
-
-
-
-pub fn dev_service_init(config: &mut web::ServiceConfig){
-    config.service(index);
 }

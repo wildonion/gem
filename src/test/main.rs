@@ -1102,6 +1102,12 @@ pub async fn generic(){
             WO // we must return const value from the constant function
         }
 
+        pub fn closure_are_traits() -> impl FnOnce(String) -> String{ //// returning a closure from the function since closures are traits we can use -> impl ... syntax to implement the FnOnce for the return type 
+            |name: String|{
+                name
+            }
+        }
+
         pub fn run() -> impl std::future::Future<Output=u8>{ //// implementing the Future trait for the return type of the function by doing this we have to return an async block from the function
             async move{ //// returning an async block from the function
                 26

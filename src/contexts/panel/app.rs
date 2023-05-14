@@ -1,48 +1,57 @@
 
 
+
+use futures::executor::block_on;
+use once_cell::sync::Lazy;
+use redis::aio::Connection as RedisConnection;
+use redis::FromRedisValue;
+use redis::JsonAsyncCommands;
+use redis::cluster::ClusterClient;
+use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
+use redis::RedisResult;
+use surrealdb::engine::remote::ws::Ws;
+use surrealdb::opt::auth::Root;
+use surrealdb::sql::Thing;
+use surrealdb::Surreal;
+use surrealdb::engine::remote::ws::Client as SurrealClient;
 use hyper::StatusCode;
 use actix_web::{web, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
 use actix_web::middleware::Logger;
 use actix_multipart::Multipart;
 use env_logger::Env;
 use serde::{Serialize, Deserialize};
-use crate::apis::dev::dev_service_init;
+use std::sync::Arc;
 
 mod apis;
 mod misc;
 mod constants;
+mod services;
 
+/*
+    
+    ---- shared state data between clusters using redis 
+    ---- shared state data between tokio::spawn() green threadpool using jobq channels by locking on the mutexed data if we want to mutate it   
+            and routers' threads using arc, mutex and rwlock also data must be Send + Sync + 'static
+            also handle incoming async events into the server using tokio::select!{} eventloop 
+
+    todo - load env var issue
+    todo - streaming over ws <----> tokio tcp, upd quic, rpc, zmq pubsub and hyper and actix for game backend on surrealdb and redis
+    todo - enum storage key 
+    todo - passport!{} macro 
+    todo - pointers and borrowing 
+    todo - return traits
+    todo - god and dev panel using yew and tauri 
+
+*/
 
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-  
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
-    let redis_node_addr = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-    let host = std::env::var("HOST").expect("⚠️ no host variable set");
-    let port = std::env::var("PANEL_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap();
-    let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
-    let mut redis_conn = client.get_async_connection().await.unwrap();
-    
-
-    // TODO - surrealdb setups
-    // ...
 
 
-
-
-    let server = HttpServer::new(|| {
-        App::new()
-            .wrap(Logger::default())
-            .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
-            .configure(dev_service_init) // dev_service_init is a closure of type traits which can be called inside the configure method
-        })
-        .bind((host.as_str(), port))?
-        .workers(10)
-        .run()
-        .await;
-
-    server
+    server!{
+        services::init
+    }
 
 
 }
