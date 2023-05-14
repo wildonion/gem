@@ -56,7 +56,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
 
-* Remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
+* Remember to change the `DB_HOST`, `REDIS_HOST` and `SURREAL_DB_HOST` in `.env` file to their container name.
 
 * since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
 

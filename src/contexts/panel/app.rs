@@ -27,22 +27,6 @@ mod misc;
 mod constants;
 mod services;
 
-/*
-    
-    ---- shared state data between clusters using redis 
-    ---- shared state data between tokio::spawn() green threadpool using jobq channels   
-            and routers' threads using arc, mutex and rwlock also data must be Send + Sync + 'static
-            also handle incoming async events into the server using tokio::select!{} eventloop 
-
-    todo - load env var issue
-    todo - streaming over ws <----> tokio tcp, upd quic, rpc, zmq pubsub and hyper and actix for game backend like mmq on surrealdb and redis
-    todo - enum storage key 
-    todo - passport!{} macro 
-    todo - pointers and borrowing 
-    todo - return traits
-    todo - god and dev panel using yew and tauri 
-
-*/
 
 
 #[actix_web::main]
@@ -50,7 +34,7 @@ async fn main() -> std::io::Result<()> {
 
 
     server!{
-        services::init
+        services::init //// passing the api services 
     }
 
 
