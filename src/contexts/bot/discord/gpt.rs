@@ -32,6 +32,9 @@ pub mod chat{
     use crate::*;
 
 
+    pub const GPT_PROMPT: &str = "Summarise the discussion from the discord server but remove any greetings. Include only the items that created the most engagement. Use a sarcastically whimsical tone";
+
+
     //// ----------------------------------------------
     //// -------------- GPT STRUCTURE -----------------
     //// ----------------------------------------------

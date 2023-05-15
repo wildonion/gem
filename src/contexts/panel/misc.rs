@@ -194,7 +194,14 @@ macro_rules! server {
                     .app_data(app_storage.clone())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
-                    .configure(services::init)
+                    .service(
+                        actix_web::web::scope("/panel/api/dev")
+                            .configure(services::init_dev)   
+                    )
+                    .service(
+                        actix_web::web::scope("/panel/api/admin")
+                            .configure(services::init_admin)
+                    )
                 }) //// each thread of the HttpServer instance needs its own app factory 
                 .bind((host.as_str(), port))
                 .unwrap()

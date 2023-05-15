@@ -30,7 +30,7 @@ pub struct Dev{
     |
 
 */
-#[get("/panel/dev/api/reveal-role")]
+#[get("/reveal-role")]
 pub async fn index(
         req: HttpRequest, 
         id: web::Path<u8>, 

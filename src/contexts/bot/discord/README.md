@@ -14,6 +14,13 @@
 sudo apt install libssl-dev libudev-dev pkg-config
 ```
 
+## 🚀 Deploy
+
+```console
+sudo docker build -t catchup-bot .
+sudo docker run --name catchup-bot -v ./devops/data/openai-logs:/usr/src/app/openai-logs/ -v ./devops/data/gpt-logs:/usr/src/app/gpt-logs/ -v ./devops/data/error-kind:/usr/src/app/error-kind/ -v ./devops/data/rate-limiter:/usr/src/app/rate-limiter/ -d catchup-bot
+```
+
 ## 📱 Features
 
 * show the sysinfo and servers status of the conse server
