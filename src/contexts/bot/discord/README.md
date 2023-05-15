@@ -8,6 +8,8 @@
 
 ## 📋 Requirements
 
+> Make sure that the redis server is up and running before starting the bot, otherwise it'll halt on `The application did not respond`.
+
 ```console
 sudo apt install libssl-dev libudev-dev pkg-config
 ```

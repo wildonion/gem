@@ -253,6 +253,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
                 let user_message = format!("{}:{}, ", m.author.name, m.content);
                 hours_ago_messages.push(user_message);
             } else{
+                hours_ago_messages.reverse(); //// reverse the fetched messages so GPT can summarize from the recent one to the latest one
                 break;
             }
         }
@@ -272,7 +273,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     //// feed the messages to the chat GPT to do a long summarization process
     //// --------------------------------------------------------------------
     let mut gpt_request_command = "".to_string();
-    gpt_request_command = format!("Summarize each member's contribution to the discussion:{}", messages);
+    gpt_request_command = format!("Summarise the discussion from the discord server but remove any greetings. Include only the items that created the most engagement. Use a sarcastically whimsical tone:{}", messages);
 
     /*
         ┏—————————————————————————————————————————————————┓

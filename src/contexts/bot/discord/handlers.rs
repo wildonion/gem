@@ -5,7 +5,7 @@
 
 
 
-use std::path::Component;
+use std::{path::Component, fmt::format};
 
 use redis::RedisResult;
 use serenity::model::prelude::ReactionType;
@@ -266,22 +266,26 @@ impl Handler{
                                 //// to avoid discord rate limit issue
                                 tokio::spawn(async move{
                                     let guild_ids = ctx.cache.guilds();
+                                    let mut pretty_names = String::from("");
                                     let server_names = guild_ids
                                                             .into_iter()
                                                             .map(|g| {
-                                                                g.name(&ctx.cache).unwrap()
+                                                                let g_name = g.name(&ctx.cache).unwrap();
+                                                                let pretty = format!("- {},\n", g_name.clone());
+                                                                pretty_names.push_str(pretty.as_str());
+                                                                g_name
                                                             })
                                                             .collect::<Vec<String>>();
                                     let server_name_json_string = serde_json::to_string_pretty(&server_names).unwrap();
                                     let response = tasks::stats(&ctx, channel_id, init_cmd_time, interaction_response_message_id).await;
-                                    let description = format!("{}\n|−−− {} servers −−−|\nnames: {}", response.2, server_names.len(), server_name_json_string);
+                                    let description = format!("🥞 **{}** servers\n {}\n{}", server_names.len(), pretty_names, response.0);
                                     let edited_interaction_response = command
                                         .edit_original_interaction_response(&ctx.http, |edit| {
                                             edit
                                                 .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                     e.color(Colour::from_rgb(235, 204, 120));
-                                                    e.description(response.0);
-                                                    e.title(description);
+                                                    e.description(description);
+                                                    e.title(response.2);
                                                     e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                         f
                                                         .text(response.1.as_str())

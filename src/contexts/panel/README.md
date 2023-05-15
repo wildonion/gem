@@ -1,7 +1,10 @@
 
 
 
-
-## Actix based Dev and Admin Panel APIs using Redis and SurrealDb 
+# gem admin and dev panel APIs using Actix, Redis and Mongodb
 
 > Remember to run conse hyper server first.
+
+## 🚧 WIPs
+
+* complete god and dev panel using `yew` and `tauri` 

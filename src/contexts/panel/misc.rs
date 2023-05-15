@@ -4,6 +4,76 @@ use crate::*;
 
 
 
+#[derive(Clone, Debug)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
+pub struct Db{
+    pub mode: Mode,
+    pub engine: Option<String>,
+    pub url: Option<String>,
+    pub instance: Option<Client>,
+}
+
+impl Default for Db{
+    fn default() -> Db {
+        Db{
+            mode: self::Mode::Off,
+            engine: None,
+            url: None,
+            instance: None,
+        }
+    }
+}
+
+impl Db{
+    
+    pub async fn new() -> Result<Db, Box<dyn std::error::Error>>{
+        Ok(
+            Db{ //// building an instance with generic type C which is the type of the db client instance
+                mode: Mode::On, //// 1 means is on 
+                engine: None, 
+                url: None,
+                instance: None,
+            }
+        )
+    }
+    
+    //// don't call a method which has self (not &self) as it's first 
+    //// param since by call it on the instance the instance will be 
+    //// dropped from the ram move borrowed form of the type in most 
+    //// cases unless its pointer is a shared pointer in which we 
+    //// must deref it using * or clone
+    //
+    //// Client object uses std::sync::Arc internally, so it can safely be 
+    //// shared across threads or async tasks like tokio::spawn(async move{}) 
+    //// green threads also it is highly recommended to create a single 
+    //// Client and persist it for the lifetime of your application.
+    pub async fn GetMongoDbInstance(&self) -> Client{ //// it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
+        Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
+    }
+
+}
+
+#[derive(Clone, Debug)]
+pub struct Storage{
+    pub id: Uuid,
+    pub db: Option<Db>, //// we could have no db at all
+}
+
+impl Storage{
+    pub async fn get_db(&self) -> Option<&Client>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().instance.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
+            Mode::Off => None, //// no db is available cause it's off
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
+    On, //// zero byte size
+    Off, //// zero byte size
+}
+
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{
     pub data: Option<T>,
@@ -69,21 +139,48 @@ macro_rules! server {
             env_logger::init_from_env(Env::default().default_filter_or("info"));
             let host = std::env::var("HOST").expect("⚠️ no host variable set");
             let port = std::env::var("PANEL_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap();
-            let surrealdb_port = std::env::var("SURREAL_DB_PORT").expect("⚠️ no surrealdb port variable set").parse::<u16>().unwrap();
-            let surrealdb_host = std::env::var("SURREAL_DB_HOST").expect("⚠️ no surrealdb host variable set");
+            let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
+            let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
+            let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
+            let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
+            let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
+            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let redis_node_addr = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-        
+
+            let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
+                db_name,
+                db_engine,
+                db_host,
+                db_port,
+                db_username,
+                db_password
+            };
+
             let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
             let redis_conn = client.get_async_connection().await.unwrap();
             let arced_redis_conn = Arc::new(redis_conn);
-            let surrealdb_addr = format!("{}:{}", surrealdb_host, surrealdb_port);
-            let storage = Surreal::new::<Ws>(surrealdb_addr.as_str()).await.unwrap();
-
+    
             /*
                 the HttpServer::new function takes a factory function that 
                 produces an instance of the App, not the App instance itself. 
                 This is because each worker thread needs to have 
                 its own App instance.
+
+                shared state data between tokio::spawn() green threadpool using 
+                jobq channels and clusters using redis and routers' threads using 
+                arc, mutex and rwlock also data must be Send + Sync + 'static also 
+                handle incoming async events into the server 
+                using tokio::select!{} eventloop. 
+
+                we're sharing the db_instance and redis connection state between 
+                routers' threads to get the data inside each api also for this the 
+                db and redis connection data must be shareable and safe to send 
+                between threads which must be bounded to Send + Sync traits 
+
+                since every api or router is an async task that must be handled 
+                inside the hyper threads thus the data that we want to use inside 
+                of them and share it between other routers must be 
+                Arc<Mutex<Data> + Send + Sync 
             */
             HttpServer::new(move ||{
                 App::new()
@@ -92,9 +189,9 @@ macro_rules! server {
                     */
                     .app_data(arced_redis_conn.clone())
                     /* 
-                        SURREALDB SHARED STATE
+                        MONGODB SHARED STATE
                     */
-                    .app_data(storage.clone())
+                    .app_data(app_storage.clone())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
                     .configure(services::init)
@@ -107,4 +204,89 @@ macro_rules! server {
 
         }
     };
+}
+
+#[macro_export]
+macro_rules! db {
+
+    ($name:expr, $engine:expr, $host:expr, $port:expr, $username:expr, $password:expr) => {
+                
+        { //// this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
+            
+            use crate::misc::*;
+            
+            let empty_app_storage = Some( //// putting the Arc-ed db inside the Option
+                Arc::new( //// cloning app_storage to move it between threads
+                    Storage{ //// defining db context 
+                        id: Uuid::new_v4(),
+                        db: Some(
+                            Db{
+                                mode: Mode::Off,
+                                instance: None,
+                                engine: None,
+                                url: None,
+                            }
+                        ),
+                    }
+                )
+            );
+            let app_storage = if $engine.as_str() == "mongodb"{
+                info!("➔ 🛢️ switching to mongodb on address: [{}:{}]", $host, $port);
+                let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
+                let db_addr = if environment == "dev"{
+                    format!("{}://{}:{}", $engine, $host, $port)
+                } else if environment == "prod"{
+                    format!("{}://{}:{}@{}:{}", $engine, $username, $password, $host, $port)
+                } else{
+                    "".to_string()
+                };
+                match Db::new().await{
+                    Ok(mut init_db) => { //// init_db instance must be mutable since we want to mutate its fields
+                        init_db.engine = Some($engine);
+                        init_db.url = Some(db_addr);
+                        let mongodb_instance = init_db.GetMongoDbInstance().await; //// the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
+                        Some( //// putting the Arc-ed db inside the Option
+                            Arc::new( //// cloning app_storage to move it between threads
+                                Storage{ //// defining db context 
+                                    id: Uuid::new_v4(),
+                                    db: Some(
+                                        Db{
+                                            mode: init_db.mode,
+                                            instance: Some(mongodb_instance),
+                                            engine: init_db.engine,
+                                            url: init_db.url,
+                                        }
+                                    ),
+                                }
+                            )
+                        )
+                    },
+                    Err(e) => {
+                        error!("😕 init db error - {}", e);
+                        empty_app_storage //// whatever the error is we have to return and empty app storage instance 
+                    }
+                }
+            } else if $engine.as_str() == "postgres"{
+                info!("➔ 🛢️ switching to postgres on address: [{}:{}]", $host, $port);
+                let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");                
+                if environment == "dev"{
+                    format!("{}://{}:{}", $engine, $host, $port)
+                } else if environment == "prod"{
+                    format!("{}://{}:{}@{}:{}", $engine, $username, $password, $host, $port)
+                } else{
+                    "".to_string()
+                };
+        
+                // TODO 
+                todo!();
+            
+            } else{
+                empty_app_storage
+            };
+
+            app_storage //// returning the created app_storage
+
+        }
+    };
+
 }

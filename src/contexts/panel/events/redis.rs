@@ -39,7 +39,7 @@ pub struct CurrentMatch{
 // using an event loop or listener.
 // update UserNotif on every data changes through its related api calls
 // then fire the updated data event through the ws server so the client
-// can subs using gql subs or ws to the fired event 
+// can subs using ws to the fired event 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserNotif{
     user_id: String,

@@ -13,7 +13,7 @@ Coded by
 =======================
 COMMUNICATION PROTOCOLS
 =======================
-gql subs ws client 
+ws client 
     |
     |
     ------riker and tokio server (select!{}, spawn(), jobq channels,
@@ -32,7 +32,6 @@ gql subs ws client
                                                                                                         tokio quic udp and tcp
                                                                                                         rpc capnp/json pubsub 
                                                                                                         zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
-                                                                                                        gql subs
                                                                                                         ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
                                                                                                         connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
                                                                                                         redis client pubsub + mongodb
@@ -40,12 +39,12 @@ gql subs ws client
 ➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
  server side, these handlers can be predefined traits or an eventloop like tokio::select!{} which listen to the events 
  coming from the shareded tlp servers over ws, zmq or rpc here is the flow of realtiming:
-                    ws, gql, rpc and zmq pubs to fired or emitted events <--
-                                                                            |
-                                                        notifs or streaming of future io objects
-                                                                            |
-                                                                            ---> ws, gql, rpc and zmq subs or event handler traits for subscribing to emitted events
-                    gql subs + ws + redis client <------> ws server + redis server
+                    ws, rpc and zmq pubs to fired or emitted events <---
+                                                                        |
+                                                    notifs or streaming of future io objects
+                                                                        |
+                                                                        ---> ws, rpc and zmq subs or event handler traits for subscribing to emitted events
+                    ws + redis client <------> ws server + redis server
                     http request to set push notif <------> http hyper server to publish topic in redis server
                     json/capnp rpc client <------> json/capnp rpc server
                     zmq subs <------> zmq pub server
@@ -272,12 +271,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .scope("/auth", routers::auth::register().await)
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
-        .scope("/bot", routers::bot::register().await)
         .scope("/whitelist", routers::whitelist::register().await)
-        .scope("/redis", routers::redis::register().await)
-        // .scope("/mmq") // TODO - used for match making queue
-        // .scope("/ws") // TODO - used for chatapp routes
-        // .scope("/gql") // TODO - used for subscriptions like sub to push notifs and chatapp
         .build()
         .unwrap();
 

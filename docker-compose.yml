@@ -3,25 +3,13 @@ services:
   redis:
     image: redis/redis-stack-server:latest
     container_name: redis
-    command: --port 7442
     networks:
       - 'net'
     ports:
-      - 7442:6379
+      - 6379:6379
     volumes:
       - ./devops/data/redis/:/data redis/redis-stack-server:latest
-    restart: unless-stopped
-  surrealdb:
-    image: surrealdb/surrealdb:latest
-    container_name: surrealdb
-    command: surreal start --bind 0.0.0.0:7445
-    networks:
-      - 'net'
-    ports:
-      - 7445:8000
-    volumes:
-      - ./devops/data/surrealdb/database.db:/database.db
-    restart: unless-stopped    
+    restart: unless-stopped 
   mongodb:
     image : mongo
     command: mongod --port 7441

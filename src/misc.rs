@@ -847,7 +847,7 @@ macro_rules! db {
                     "".to_string()
                 };
         
-                // TODO 
+                // TODO - configure surrealdb instance
                 todo!();
             
             } else{

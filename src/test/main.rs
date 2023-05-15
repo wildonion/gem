@@ -1453,6 +1453,7 @@ pub async fn generic(){
     // returning traits from the function or us it as a function param by:
     //      - Box<dyn Trait>
     //      - &dyn Trait  
+    //      - impl Trait
     //--------------------------------------------------------------------
     struct UseramHa;
     // the following is wrong since we're using trait bounds
