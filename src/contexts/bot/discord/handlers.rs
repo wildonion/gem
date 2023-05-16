@@ -107,7 +107,7 @@ impl Handler{
         //// at the same time.
         tokio::spawn(async move{
             //// waiting to receive every command asyncly to handle them 
-            //// asyncly inside tokio green threadpool
+            //// asyncly and concurrently inside tokio green threadpool
             while let Some(command_data) = command_queue_receiver.recv().await{
                 /*
                     to share data from the main function between threads and other methods we must 

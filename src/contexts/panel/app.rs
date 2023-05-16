@@ -30,9 +30,7 @@ mod events;
 async fn main() -> std::io::Result<()> {
 
 
-    server!{
-        services::init //// passing the api services 
-    }
+    server!{}
 
 
 }

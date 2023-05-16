@@ -38,7 +38,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"username\": \"dev\",\r\n    \"phone\": \"00000000000\",\r\n    \"pwd\": \"dev@1234\",\r\n    \"status\": 0\r\n}",
+							"raw": "{\r\n    \"username\": \"conse\",\r\n    \"phone\": \"00000000000\",\r\n    \"pwd\": \"conse@1234\",\r\n    \"status\": 0\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -66,7 +66,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDgwMGQ4MzVjYjQ4MWJlMzlhMGZiNCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzOTc2NTcyLCJpYXQiOjE2ODI0NDA1NzJ9.4_njcAcQS6alVOw4QDouv19V2wMaj2NHv1M81dTAT8cD4PCWzk82g13osEoTlu97SFsCLAyITjVBL8ddfkCD7Q",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
 									"type": "string"
 								}
 							]
@@ -75,7 +75,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"_id\": \"644801a70ab54bd2cd2c9996\"\r\n}",
+							"raw": "{\r\n    \"_id\": \"64621a2cfaa14bfd1469f226\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -214,7 +214,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDgwMGQ4MzVjYjQ4MWJlMzlhMGZiNCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzOTc2NTcyLCJpYXQiOjE2ODI0NDA1NzJ9.4_njcAcQS6alVOw4QDouv19V2wMaj2NHv1M81dTAT8cD4PCWzk82g13osEoTlu97SFsCLAyITjVBL8ddfkCD7Q",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2NjkxLCJpYXQiOjE2ODQxNTA2OTF9.pgnLHpY-jCfTnJCnnIobu9-yCF8o0vPUiwQllfngygSNg6kcV7L0gUp47RlAbbLkBc3qKanCAP1oNoK5ogqjlw",
 									"type": "string"
 								}
 							]
@@ -959,7 +959,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzMTVmOTlhODk3OGQ3NjFlOTdhOWIzYSJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjk0NjA5OTQ5LCJpYXQiOjE2NjMwNzM5NDl9.7LsCinZW8kzZt_Kimiv4ztHL1sF7QHmkWdWd1UIOgPaGiRKx1BXZadEtCPV9E3y5-CD8hVWttiMNyhL3BAzOgg",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
 									"type": "string"
 								}
 							]
@@ -990,7 +990,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDY2NWY2ZDU0YjBiYmM5OWNjOWQ5YyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzODcxMjY2LCJpYXQiOjE2ODIzMzUyNjZ9.ZtE-iPSOJHXicF_snYd-V0QYFQnEt_zSiG-qoUKLDO8yQbPLgQr-8nvtvGeVbmqw6kZ6g64yN66zReoskzkLig",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
 									"type": "string"
 								}
 							]
@@ -1338,7 +1338,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NDY2NWY2ZDU0YjBiYmM5OWNjOWQ5YyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzEzODcxMjY2LCJpYXQiOjE2ODIzMzUyNjZ9.ZtE-iPSOJHXicF_snYd-V0QYFQnEt_zSiG-qoUKLDO8yQbPLgQr-8nvtvGeVbmqw6kZ6g64yN66zReoskzkLig",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
 									"type": "string"
 								}
 							]
@@ -2136,45 +2136,6 @@
 					"response": []
 				}
 			]
-		},
-		{
-			"name": "Discord Bot",
-			"item": [
-				{
-					"name": "Start Bot",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MDcyZjEyMjhmNWFmMDE5NTI0OWU5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5NzI4NzI4LCJpYXQiOjE2NzgxOTI3Mjh9.FMxy65Ed28vaNCGZzmCpZiNV157HzF7I8SeWbR4siVKX-uh021kRmFFzLOMuC-vzvFNgnV_PQj57QQrmjjqlIQ",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "API_KEY",
-								"value": "{{API_KEY}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{bot}}/bot/start",
-							"host": [
-								"{{bot}}"
-							],
-							"path": [
-								"bot",
-								"start"
-							]
-						}
-					},
-					"response": []
-				}
-			]
 		}
 	],
 	"event": [
@@ -2216,11 +2177,6 @@
 		{
 			"key": "whitelist",
 			"value": "https://api.conse.app:7439",
-			"type": "string"
-		},
-		{
-			"key": "bot",
-			"value": "https://conse.app:7439",
 			"type": "string"
 		},
 		{

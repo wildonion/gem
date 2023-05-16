@@ -26,3 +26,11 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 
 
 }
+
+pub fn init_mmq(config: &mut web::ServiceConfig){
+    
+    // other routs
+    // ...
+
+
+}

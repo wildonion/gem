@@ -125,7 +125,7 @@ macro_rules! resp {
 #[macro_export]
 macro_rules! server {
     (
-        $api_services:expr
+        /* ... args here ... */
     ) => {
         
         {
@@ -166,11 +166,12 @@ macro_rules! server {
                 This is because each worker thread needs to have 
                 its own App instance.
 
-                shared state data between tokio::spawn() green threadpool using 
-                jobq channels and clusters using redis and routers' threads using 
-                arc, mutex and rwlock also data must be Send + Sync + 'static also 
-                handle incoming async events into the server 
-                using tokio::select!{} eventloop. 
+                handle streaming async tasks like socket connections in a none blocking
+                manner concurrently using tokio::spawn(async move{}) and shared state 
+                data between tokio::spawn() green threadpool using jobq channels and 
+                clusters using redis and routers' threads using arc, mutex and rwlock 
+                also data must be Send + Sync + 'static also handle incoming async 
+                events into the server using tokio::select!{} eventloop. 
 
                 we're sharing the db_instance and redis connection state between 
                 routers' threads to get the data inside each api also for this the 
@@ -195,11 +196,15 @@ macro_rules! server {
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
                     .service(
-                        actix_web::web::scope("/panel/api/dev")
+                        actix_web::web::scope("/panel/api/dev/notif/register")
                             .configure(services::init_dev)   
                     )
                     .service(
-                        actix_web::web::scope("/panel/api/admin")
+                        actix_web::web::scope("/panel/api/admin/notif/register")
+                            .configure(services::init_admin)
+                    )
+                    .service(
+                        actix_web::web::scope("/panel/api/mmq")
                             .configure(services::init_admin)
                     )
                 }) //// each thread of the HttpServer instance needs its own app factory 

@@ -1708,6 +1708,62 @@ pub async fn generic(){
         //-------------------------------------
         //-------------------------------------
         //-------------------------------------
+
+
+    // **************************************************************************
+    // **************************************************************************
+    // **************************************************************************
+    // --------------------------------------------------------------------------
+    ///////////////////////// CLOSURE TYPES EXAMPLE /////////////////////////////
+    // --------------------------------------------------------------------------
+    struct Run<F, T = fn() -> String> //// T has a default type parameter
+        where F: FnOnce(String) -> String{
+        data: F,
+        another_data: T
+    }
+    trait InterfaceExt{}
+    impl<F, T> InterfaceExt for Run<F, T> where F: FnOnce(String) -> String{}
+    
+    fn runYours() -> impl FnOnce(String) -> String{ //// return closure using -> impl Trait 
+        |name: String|{
+            name
+        }
+    } 
+
+    fn runYours_() -> &'static dyn FnOnce(String) -> String{ //// return closure using -> &dyn | or Box<dyn 
+        &|name: String|{
+            name
+        }
+    }
+
+    fn run_() -> impl InterfaceExt{
+        fn catch(name: String) -> String{name}
+        let instance = Run{
+            data: |you|{
+                you
+            },
+            another_data: catch
+        };
+        instance
+    }
+
+    fn run__() -> Box<dyn FnOnce(String) -> String>{
+        Box::new(
+            |name: String|{
+                name
+            }
+        )
+    }
+
+    fn start<'lifetime, F>(cls: F) -> () where F: FnOnce(String) -> String + 'lifetime{ /* ... */ } 
+    fn start_(cls: Box<dyn FnOnce(String) -> String>){ /* ... */ }
+    fn start__(cls: fn() -> String){ /* ... */ }
+    fn start___(cls: impl FnOnce(String) -> String){ /* ... */ }
+    // **************************************************************************
+    // **************************************************************************
+    // **************************************************************************
+
+
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++    
     'aSexyLabeledBlock:{
         type EmptyType = ();

@@ -44,8 +44,7 @@ pub async fn index(
     let storage = storage.as_ref().to_owned();
     let db = storage.unwrap().get_db().await.unwrap();
 
-    
-    // https://redis.com/blog/how-to-create-notification-services-with-redis-websockets-and-vue-js/
+
     // 🥑 todo - check the header jwt token with hyper server /check-token api
     // 🥑 todo - if the access level was dev then: 
     // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
@@ -56,17 +55,9 @@ pub async fn index(
     //           server docker on the VPS in the meanwhile 
     //           we're sure that the /reveal/roles api has 
     //           called by the dev or the god thus players 
-    //           can see the roles without refreshing the page :)
+    //           can see the roles without refreshing the page :) 
 
-
-
-    // return traits using Box, impl and dyn 
-    // bound generic to traits and lifetimes in function and struct signature 
-    // struct and function param as trait
-    // ...
-
-
-    
+        
     resp!{
         data.clone(), //// response data
         FETCHED, //// response message

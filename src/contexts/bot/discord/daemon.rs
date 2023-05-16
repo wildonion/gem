@@ -127,6 +127,7 @@ pub async fn activate_discord_bot(
         */
         //// handling each interaction command as a separate task 
         //// coming from the receiver inside the tokio green threadpool
+        //// in a concurrent manner
         tokio::spawn(async move{
             handlers::Handler::handle_interaction_command(rx).await;
         });

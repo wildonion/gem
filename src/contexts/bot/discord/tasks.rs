@@ -340,7 +340,9 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     */
 
     //// since we're doing IO we must put the task inside the
-    //// tokio green threadpool to avoid rate limit and halting issues
+    //// tokio green threadpool to avoid rate limit and halting 
+    //// issues since tokio::spawn(async move{}) handle async 
+    //// tasks concurrently
     tokio::spawn(async move{
         
         let mut gpt_ok = false;

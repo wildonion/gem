@@ -1,6 +1,38 @@
 
 
 
+
+
+
+/*
+
+
+========================
+DISCORD BOT ARCHITECTURE
+========================
+- tokio::spawn(async move{}) : handle async event in concurrent manner 
+- tokio::select!{}           : eventloop to listen and subs to incoming events
+- tokio::sync::mpsc          : jobq channel to share Arc<Mutex<SharedStateData>> between tokio green threads
+ 
+
+discord client app ----------------------------------------------------------- send response to the client ---------------------------------------------------------------------------------------------
+    |                                                                                                                                                                                                   |             
+     ---------------- trigger / commands of a bot                                                                                                                                                       |
+                            |                                                                                                                                                                           |
+                             --------ws channel-------- send requests to the discord ws server to fire the / event                                                                                      |
+                                                                    |                                                                                                                                   | 
+                                                                     -------ws client channel--------                                                                                                   |
+                                                                                                    |                                                                                                   |
+                                                                        tokio::select!{} eventloop inside the bot code catches the fired / event through                                                |
+                                                                        ws client which is connected to the discord ws server                                                                           |
+                                                                                                    |                                                                                                   | 
+                                                                                                    -------------- tokio::spawn(async move{handle the / event inside the bot code})                     |     
+                                                                                                                                                |                                                       |
+                                                                                                                                                ------------ send response back to the discord ws server 
+
+*/
+
+
 use redis::FromRedisValue;
 use redis::JsonAsyncCommands;
 use redis::cluster::ClusterClient;
