@@ -212,6 +212,12 @@ pub mod app{
         Off, //// zero byte size
     }
 
+    /*
+        can't bound the T to ?Sized since 
+        T is inside the Option which the size
+        of the Option depends on the T at 
+        compile time 
+    */
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Response<'m, T>{
         pub data: Option<T>,
@@ -970,7 +976,7 @@ macro_rules! passport {
                         )
                     )
             }
-        };
+        }
     }
 }
 

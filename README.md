@@ -56,6 +56,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * first run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
 
+* note that if you want to use an authorized mongodb connection just setup the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
+
 * remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
 
 * remember to change the `DB_PORT` in `.env` file to `7441` since the 27017 port inside `mongodb` container will be mapped to `7441` inside the VPS. 

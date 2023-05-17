@@ -1719,7 +1719,8 @@ pub async fn generic(){
     struct Run<F, T = fn() -> String> //// T has a default type parameter
         where F: FnOnce(String) -> String{
         data: F,
-        another_data: T
+        another_data: T,
+        third_data: fn() -> ()
     }
     trait InterfaceExt{}
     impl<F, T> InterfaceExt for Run<F, T> where F: FnOnce(String) -> String{}
@@ -1730,7 +1731,7 @@ pub async fn generic(){
         }
     } 
 
-    fn runYours_() -> &'static dyn FnOnce(String) -> String{ //// return closure using -> &dyn | or Box<dyn 
+    fn runYours_() -> &'static dyn FnOnce(String) -> String{ //// return closure using -> &dy Trait
         &|name: String|{
             name
         }
@@ -1738,16 +1739,31 @@ pub async fn generic(){
 
     fn run_() -> impl InterfaceExt{
         fn catch(name: String) -> String{name}
+        fn catch_me(){}
         let instance = Run{
             data: |you|{
                 you
             },
-            another_data: catch
+            another_data: catch,
+            third_data: catch_me
         };
-        instance
+        /* 
+            returning the instance of the Run struct 
+            since the return type is InterfaceExt means
+            we must return a type that this trait is already 
+            implemented for it, we can't return the trait 
+            directly with this syntax inside the function
+            signature, we have to put it inside the Box
+            which has its own lifetime or put it behind 
+            &dyn with a valid lifetime like 'static 
+        */
+        instance 
     }
 
-    fn run__() -> Box<dyn FnOnce(String) -> String>{
+    //// Box<dyn Trait> has its own lifetime since Box
+    //// since Box has its own lifetime but &dyn Trait 
+    //// needs a valid lifetime like 'static
+    fn run__() -> Box<dyn FnOnce(String) -> String>{ //// return closure using -> Box<dyn Trait>
         Box::new(
             |name: String|{
                 name

@@ -24,7 +24,6 @@ pub static UNAUTHORISED: &str = "Unauthorised";
 pub static METHOD_NOT_ALLOWED: &str = "Method Not Allowed";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static NO_API_KEY: &str = "No Api Key";
-pub static DISCORD_BOT_STARTED: &str = "Conse Discord Bot Started Successfully";
 pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static ACCESS_DENIED: &str = "Access Denied";

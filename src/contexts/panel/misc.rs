@@ -74,6 +74,12 @@ pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) t
 }
 
 
+/*
+    can't bound the T to ?Sized since 
+    T is inside the Option which the size
+    of the Option depends on the T at 
+    compile time 
+*/
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{
     pub data: Option<T>,
@@ -91,7 +97,8 @@ pub struct Response<'m, T>{
 */
 #[macro_export]
 macro_rules! resp {
-    (
+    (   
+        $data_type:ty,
         $data:expr,
         $msg:expr,
         $code:expr,
@@ -104,7 +111,7 @@ macro_rules! resp {
             let code = $code.as_u16();
             let mut res = HttpResponse::build($code);
             
-            let response_data = Response{
+            let response_data = Response::<$data_type>{
                 data: Some($data),
                 message: $msg,
                 status: code
@@ -181,7 +188,7 @@ macro_rules! server {
                 since every api or router is an async task that must be handled 
                 inside the hyper threads thus the data that we want to use inside 
                 of them and share it between other routers must be 
-                Arc<Mutex<Data> + Send + Sync 
+                Arc<Mutex<Data>> + Send + Sync + 'static 
             */
             HttpServer::new(move ||{
                 App::new()
@@ -195,14 +202,23 @@ macro_rules! server {
                     .app_data(app_storage.clone())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
+                    /*
+                        DEV PUSH NOTIF REGISTERATION SERIVE 
+                    */
                     .service(
                         actix_web::web::scope("/panel/api/dev/notif/register")
                             .configure(services::init_dev)   
                     )
+                    /*
+                        ADMIN PUSH NOTIF REGISTERATION SERIVE 
+                    */
                     .service(
                         actix_web::web::scope("/panel/api/admin/notif/register")
                             .configure(services::init_admin)
                     )
+                    /*
+                        MMQ SERIVE
+                    */
                     .service(
                         actix_web::web::scope("/panel/api/mmq")
                             .configure(services::init_admin)
@@ -213,8 +229,7 @@ macro_rules! server {
                 .workers(10)
                 .run()
                 .await
-
-        }
+        };
     };
 }
 
@@ -302,3 +317,38 @@ macro_rules! db {
     };
 
 }
+
+#[macro_export]
+macro_rules! passport {
+    (
+      $token:expr
+    ) 
+    => {
+
+        { //// this is required if we want to import modules and use the let statements
+            
+            let host = std::env::var("HOST").expect("⚠️ no host variable set");
+            let port = std::env::var("CONSE_PORT").expect("⚠️ no port variable set");
+            let check_token_api = format!("{}:{}/auth/check-token", host, port);
+            let mut resp: Result<actix_web::HttpResponse, actix_web::Error>;
+
+            let response_value: serde_json::Value = reqwest::Client::new()
+                        .post(check_token_api.as_str())
+                        .header("Authorization", $token)
+                        .send()
+                        .await.unwrap()
+                        .json()
+                        .await.unwrap();
+
+            let response = serde_json::from_value::<Response<&[u8]>>(response_value).unwrap();
+            
+            if response.message == "Access Granted"{
+                true
+            } else{
+                false
+            }
+            
+        }
+    }
+}
+    
