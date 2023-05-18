@@ -332,7 +332,7 @@ macro_rules! passport {
             let check_token_api = format!("{}:{}/auth/check-token", host, port);
             let mut resp: Result<actix_web::HttpResponse, actix_web::Error>;
 
-            let response_value: serde_json::Value = reqwest::Client::new()
+            let mut response_value: serde_json::Value = reqwest::Client::new()
                         .post(check_token_api.as_str())
                         .header("Authorization", $token)
                         .send()
@@ -340,9 +340,8 @@ macro_rules! passport {
                         .json()
                         .await.unwrap();
 
-            let response = serde_json::from_value::<Response<&[u8]>>(response_value).unwrap();
-            
-            if response.message == "Access Granted"{
+            let msg = response_value["message"].take();
+            if msg == serde_json::json!("Access Granted"){
                 true
             } else{
                 false

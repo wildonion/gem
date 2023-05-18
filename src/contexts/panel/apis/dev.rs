@@ -64,14 +64,7 @@ pub async fn index(
                 let db = storage.unwrap().get_db().await.unwrap();   
 
                 // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
-                // 🥑 todo - also call the /reveal/roles api of the hyper server
-                // 🥑 note - later on client can subs to the fired or 
-                //           emitted reveal role event and topics by 
-                //           sending websocket connections to the redis 
-                //           server docker on the VPS in the meanwhile 
-                //           we're sure that the /reveal/roles api has 
-                //           called by the dev or the god thus players 
-                //           can see the roles without refreshing the page :)                 
+                // 🥑 todo - also call the /reveal/roles api of the hyper server                 
 
                 resp!{
                     Dev, //// the data type

@@ -30,7 +30,11 @@ mod events;
 async fn main() -> std::io::Result<()> {
 
 
-    server!{}
+    let server = server!
+    {
+        /* SERVER SETUP */
+    };
+    server
 
 
 }

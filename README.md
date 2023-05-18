@@ -72,6 +72,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * clean docker cache using ```sudo docker buildx prune --all``` or ```docker system prune --all``` command.
 
+* conse client can subscribes to the fired or emitted role reveal event and topics by sending websocket connections to the redis server docker on the VPS in the meanwhile we're sure that the `/reveal/roles` API has been called by the dev or the god inside the panel thus players can see their roles without refreshing the page.
+
 ## 🚧 WIP
 
 * setup **TLS/SSL** for `hyper`, `ws` and `actix` servers using `tokio-rustls` and `openssl` over certbot certificate files, note that for this we must have a domain poiting to the VPS that the gem is inside.  

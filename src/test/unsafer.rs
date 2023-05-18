@@ -558,6 +558,12 @@ pub async fn unsafer(){
     println!("size string name -> {:#?}", size_of_val(&string_name));
     println!("size byte name -> {:#?}", size_of_val(byte_name));
     
+    let mut a = String::from("wildonion");
+    let mut b = &mut a;
+    *b = String::from("changed"); // now a has changed too 
+    
+    println!("b {}", b);
+    println!("a {}", a);
     
     
     
