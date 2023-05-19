@@ -16,6 +16,7 @@ use actix_web::middleware::Logger;
 use actix_multipart::Multipart;
 use env_logger::Env;
 use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 mod apis;

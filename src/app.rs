@@ -16,25 +16,25 @@ COMMUNICATION PROTOCOLS
 ws client 
     |
     |
-    ------riker and tokio server (select!{}, spawn(), jobq channels,
-           Arc<Mutex<RwLock<LazyStaticSharedStateData>>> + Send + Sync + 'static) -------
-                                                                                        |
-                                                                sharded tlps over noise-protocol and tokio-rustls
-                                                                                        |
-                                                                                        ----- sharded instances, nodes and servers -----
-                                                                                                        hyper
-                                                                                                        p2p stacks
-                                                                                                            - kademlia
-                                                                                                            - gossipsub over tcp and quic
-                                                                                                            - noise protocol
-                                                                                                            - ws and webrtc
-                                                                                                            - muxer and yamux
-                                                                                                        tokio quic udp and tcp
-                                                                                                        rpc capnp/json pubsub 
-                                                                                                        zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
-                                                                                                        ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
-                                                                                                        connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
-                                                                                                        redis client pubsub + mongodb
+    ------riker and tokio server (select!{}, spawn(), jobq channels, sharded mutexes
+           Arc<Vec<Mutex<RwLock<LazyStaticSharedStateData>>>> + Send + Sync + 'static) ---------
+                                                                                                |
+                                                                        sharded tlps over noise-protocol and tokio-rustls
+                                                                                                |
+                                                                                                ----- sharded instances, nodes and servers -----
+                                                                                                                hyper
+                                                                                                                p2p stacks
+                                                                                                                    - kademlia
+                                                                                                                    - gossipsub over tcp and quic
+                                                                                                                    - noise protocol
+                                                                                                                    - ws and webrtc
+                                                                                                                    - muxer and yamux
+                                                                                                                tokio quic udp and tcp
+                                                                                                                rpc capnp/json pubsub 
+                                                                                                                zmq pubsub (a queue that contains the tasks each of which can be solved inside a tokio::spawn(async move{}))
+                                                                                                                ws (push notif on data changes, chatapp, realtime monit, webhook setups, mmq and order matching engine)
+                                                                                                                connections that implement AsyncWrite and AsyncRead traits for reading/writing streaming of encoded IO future objects 
+                                                                                                                redis client pubsub + mongodb
                                                                                             
 ➙ event driven means we must have an event handler or listener on client side to subs to fired or emitted events on the 
  server side, these handlers can be predefined traits or an eventloop like tokio::select!{} which listen to the events 
@@ -55,6 +55,19 @@ ws client
                             shard 1 <---------- full duplex streaming and multiplexing over tokio tcp and quic, zmq/ json and capnp rpc pubsub ----------> shard 2  
                                 |                                                                                                                              |
                                 --------------------------------------- cassandra and mongodb -----------------------------------------------------------------
+
+➙ message queues are pub sub based also we can crate one using redis data structures instead of using RMQ or ZMQ, subscribers 
+ are event listeners which has an event loop waiting for incoming async job or event which has been broadcasted using the publisher 
+ through the channel, we can use tokio job or message queue channel to send the Arc<Vec<Mutex<RwLock<LazyStaticSharedStateData>>>> + Send + Sync + 'static 
+ between different threads of tokio::spawn(async move{}) of the different parts of the app also the event listener inside the app can 
+ be created using the tokio::select!{} event loop in which we can listen to the incoming async jobs or events from the publishers 
+ to subscribe to them using their receivers once we get received them inside the loop.
+
+➙ there is a default job queue channel inside tokio spawn to solve the task coming from other parts of the app or a socket 
+ connection asyncly inside its green threads thus we can use tokio socket amd tokio::spawn as a job queue or message queue 
+ to solve handle the incoming async tasks, jobs or events or events from socket clients inside of it.
+
+
 */
 
 

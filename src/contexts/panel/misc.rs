@@ -165,7 +165,7 @@ macro_rules! server {
 
             let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
             let redis_conn = client.get_async_connection().await.unwrap();
-            let arced_redis_conn = Arc::new(redis_conn);
+            let arced_redis_conn = Arc::new(redis_conn); //// no need to put in Mutex since we don't want to mutate it
     
             /*
                 the HttpServer::new function takes a factory function that 

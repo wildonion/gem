@@ -617,7 +617,8 @@ pub async fn generic(){
             // pointer to it, but it's ok with slices 
             // following will allocate nothing on the stack 
             // thus we're returning a pointer to the 
-            // struct itself directly to the caller.
+            // struct itself directly to the caller
+            // of the run() method.
             &Ben{
                 new_data: 73
             }
@@ -948,12 +949,12 @@ pub async fn generic(){
             nothing on the stack like returning Pack{} directly without storing 
             it inside a variable but we can't return a pointer to a type that is 
             owned by the that method since that type is a local variable which 
-            has defined inside the method and once the method gets executed its
-            lifetime will be dropped from the ram thus its pointer will be remained
-            a dangling pointer which rust doesn't allow us to return the pointer 
-            to the local type in the first place in other words a type can't be 
-            moved if it's behind a pointer.
-            
+            has defined inside the method, allocated space on the stack and once 
+            the method gets executed its lifetime will be dropped from the ram thus 
+            its pointer will be remained a dangling pointer which rust doesn't allow 
+            us to return the pointer to the local type in the first place in other 
+            words a type can't be moved if it's behind a pointer.
+
             if we want to return a double pointer the first one can be 
             allocate nothing but in order to pointing to the first one 
             the first one must be allocate space on the ram thus the in 
@@ -1055,7 +1056,7 @@ pub async fn generic(){
             the local variable is dropped when the function goes out of scope.
             thus we can return the them in their slice form like &str for String
             &[u8] for Vec with a specific lifetime or a lifetime which lives long
-            enough if the function gets executed 
+            enough if the function gets executed like 'static lifetime
         
         */
         // fn ret<'a>(name: String) -> &'a Vec<String>{
