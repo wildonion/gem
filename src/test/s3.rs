@@ -8,6 +8,13 @@
 use crate::*;
 
 
+/* 
+    if we want to use Result<(), impl std::error::Error + Send + Sync + 'static>
+    as the return type thus the error variable must be sepecified also the Error trait
+    must be implemented for the error type (impl Error for ErrorType{}) since 
+    we're implementing the Error trait for the error type in return type   
+*/
+
 pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
     
     /*

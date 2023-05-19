@@ -1718,7 +1718,32 @@ pub async fn generic(){
     // **************************************************************************
     // --------------------------------------------------------------------------
     ///////////////////////// CLOSURE TYPES EXAMPLE /////////////////////////////
+    // we cant only use impl Trait syntax in function return type
     // --------------------------------------------------------------------------
+
+    //// since we have a closure inside the Box which is of 
+    //// type trait, thus we can call it in a different ways
+    //// like the following
+    let mut d_boxed = Box::new(||{
+        let name = String::from("wildonion");
+        name
+    });
+    //// we can call the d_boxed since the closure trait
+    //// is behind a pointer which is Box in our case thus 
+    //// we can call the closure directly by calling the 
+    //// d_boxed type, means we're calling the Boxed type
+    //// which is a pointer to a closure
+    d_boxed(); 
+    //// since d_boxed is a Boxed type which is a pointer 
+    //// to a heap data which is a closure tratit (traits are ?Sized) thus in order
+    //// to call the closure directrly we can deref the Boxed type 
+    //// then call the closure. 
+    (*d_boxed)();
+    //// as_mut() will convert the d_boxed() into 
+    //// the type inside the Box which is &mut dyn FnMut(String) -> String
+    //// then we can call the trait using ()
+    d_boxed.as_mut()(); 
+
     struct Run<F, T = fn() -> String> //// T has a default type parameter
         where F: FnOnce(String) -> String{
         data: F,
