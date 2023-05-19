@@ -82,13 +82,14 @@ pub async fn index(
                     the pool at the end of each mutex free process which is something that will
                     be taken care of by semaphores.
                 */
-
+                
+                type Db = HashMap<i32, String>;
                 let shards = 10;
-                let (mutex_data_sender, mut mutex_data_receiver) = tokio::sync::mpsc::channel::<HashMap<i32, String>>(shards as usize);
-                let (map_shards_sender, mut map_shards_receiver) = tokio::sync::broadcast::channel::<Vec<Arc<tokio::sync::Mutex<HashMap<i32, String>>>>>(shards as usize);
+                let (mutex_data_sender, mut mutex_data_receiver) = tokio::sync::mpsc::channel::<Db>(shards as usize);
+                let (map_shards_sender, mut map_shards_receiver) = tokio::sync::broadcast::channel::<Vec<Arc<tokio::sync::Mutex<Db>>>>(shards as usize);
                 let send_sync_map = Arc::new(tokio::sync::Mutex::new(HashMap::new())); //// no need to put in Mutex since we don't want to mutate it
                 
-                let mut map_shards: Vec<Arc<tokio::sync::Mutex<HashMap<i32, String>>>> = vec![];
+                let mut map_shards: Vec<Arc<tokio::sync::Mutex<Db>>> = vec![];
                 let mutex_data_sender = mutex_data_sender.clone();
                 
                 /*
@@ -114,7 +115,7 @@ pub async fn index(
                     that we'll always use an udpated version of the shards 
 
                 */
-                tokio::select!{
+                tokio::select!{ //// instead of using while let ... syntax
                     sent_shards = map_shards_receiver.recv() => {
                         if let Ok(shards) = sent_shards{
                             map_shards = shards;
@@ -168,7 +169,7 @@ pub async fn index(
                     one to update the whole vector and remove forks.  
                 */
                 tokio::spawn(async move{
-                    tokio::select!{
+                    tokio::select!{ //// instead of using while let ... syntax
                         mutex_data = mutex_data_receiver.recv() => {
                             if let Some(largest_data) = mutex_data{
                                 info!("🏳️ receiving largest mutex data");
@@ -185,12 +186,13 @@ pub async fn index(
                                 } else{
 
                                     /* MEANS THAT NO MUTEX HAS BEEN MUTATED YET */
+                                    // ...
                                 }
 
                             } else{
                                 
                                 /* SOMETHING WENT WRONG IN SENDING TO CHANNEL */
-                                
+                                // ...
                             }    
                         }
                     }
