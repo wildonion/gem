@@ -62,6 +62,8 @@ use std::fmt;
 
 
 mod unsafer;
+mod shared;
+
 
 
 pub static mut ARR: [u8; 3] = [0 as u8; 3]; //// filling the array with zeros 3 times
