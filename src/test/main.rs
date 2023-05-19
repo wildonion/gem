@@ -62,7 +62,7 @@ use std::fmt;
 
 
 mod unsafer;
-mod shared;
+mod s3;
 
 
 
