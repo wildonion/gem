@@ -5,7 +5,6 @@ WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
 COPY ./addrs.json ./addrs.json
-RUN cargo build --release
 RUN rm core/*.rs
 
 ADD . ./
