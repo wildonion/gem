@@ -5,7 +5,7 @@ WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
 COPY ./addrs.json ./addrs.json
-RUN rm core/*.rs
+RUN rm src/*.rs
 
 ADD . ./
 

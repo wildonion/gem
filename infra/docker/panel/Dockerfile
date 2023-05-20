@@ -4,7 +4,7 @@ RUN USER=root cargo new --bin gem
 WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
-RUN rm core/*.rs
+RUN rm src/*.rs
 
 ADD . ./
 
