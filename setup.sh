@@ -8,7 +8,7 @@ apt-cache policy docker-ce && sudo apt install docker-ce && sudo systemctl statu
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 sudo apt update && sudo apt upgrade -y
-cargo install sqlx-cli --no-default-features --features native-tls,postgres
+cargo install diesel_cli --no-default-features --features postgres
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm && sudo npm install pm2@latest -g
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb

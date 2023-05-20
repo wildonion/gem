@@ -4,12 +4,13 @@ use crate::*;
 
 
 
-#[derive(Clone, Debug)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
+#[derive(Clone)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
 pub struct Db{
     pub mode: Mode,
     pub engine: Option<String>,
     pub url: Option<String>,
     pub instance: Option<Client>,
+    pub pool: Option<r2d2::Pool<ConnectionManager<PgConnection>>>
 }
 
 impl Default for Db{
@@ -19,6 +20,7 @@ impl Default for Db{
             engine: None,
             url: None,
             instance: None,
+            pool: None
         }
     }
 }
@@ -32,6 +34,7 @@ impl Db{
                 engine: None, 
                 url: None,
                 instance: None,
+                pool: None
             }
         )
     }
@@ -50,18 +53,31 @@ impl Db{
         Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
     }
 
+    pub async fn GetPostgresPool(&self) -> r2d2::Pool<ConnectionManager<PgConnection>>{
+        let uri = self.url.as_ref().unwrap().as_str();
+        let manager = ConnectionManager::<PgConnection>::new(uri);
+        let pool = r2d2::Pool::builder().build(manager).unwrap();
+        pool
+    }
+
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Storage{
     pub id: Uuid,
     pub db: Option<Db>, //// we could have no db at all
 }
 
 impl Storage{
-    pub async fn get_db(&self) -> Option<&Client>{
+    pub async fn get_mongodb(&self) -> Option<&Client>{
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().instance.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
+            Mode::Off => None, //// no db is available cause it's off
+        }
+    }
+    pub async fn get_pgdb(&self) -> Option<&r2d2::Pool<ConnectionManager<PgConnection>>>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&r2d2::Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, //// no db is available cause it's off
         }
     }
@@ -256,6 +272,7 @@ macro_rules! db {
                                 instance: None,
                                 engine: None,
                                 url: None,
+                                pool: None
                             }
                         ),
                     }
@@ -286,6 +303,7 @@ macro_rules! db {
                                             instance: Some(mongodb_instance),
                                             engine: init_db.engine,
                                             url: init_db.url,
+                                            pool: None
                                         }
                                     ),
                                 }
@@ -300,17 +318,40 @@ macro_rules! db {
             } else if $engine.as_str() == "postgres"{
                 info!("➔ 🛢️ switching to postgres on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");                
-                if environment == "dev"{
+                let db_addr = if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)
                 } else if environment == "prod"{
-                    format!("{}://{}:{}@{}:{}", $engine, $username, $password, $host, $port)
+                    format!("{}://{}:{}@{}:{}/{}", $engine, $username, $password, $host, $port, $name)
                 } else{
                     "".to_string()
                 };
-        
-                // TODO 
-                todo!();
-            
+                match Db::new().await{
+                    Ok(mut init_db) => { //// init_db instance must be mutable since we want to mutate its fields
+                        init_db.engine = Some($engine);
+                        init_db.url = Some(db_addr);
+                        let pg_pool = init_db.GetPostgresPool().await; //// the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
+                        Some( //// putting the Arc-ed db inside the Option
+                            Arc::new( //// cloning app_storage to move it between threads
+                                Storage{ //// defining db context 
+                                    id: Uuid::new_v4(),
+                                    db: Some(
+                                        Db{
+                                            mode: init_db.mode,
+                                            instance: None,
+                                            engine: init_db.engine,
+                                            url: init_db.url,
+                                            pool: Some(pg_pool)
+                                        }
+                                    ),
+                                }
+                            )
+                        )
+                    },
+                    Err(e) => {
+                        error!("😕 init db error - {}", e);
+                        empty_app_storage //// whatever the error is we have to return and empty app storage instance 
+                    }
+                }
             } else{
                 empty_app_storage
             };

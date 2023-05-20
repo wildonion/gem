@@ -839,7 +839,7 @@ pub async fn generic(){
                 ..Default::default() //// fillint the remaining field with default values
             };        
 
-            let FuckMe{a, ..} = instanceFuckMe;
+            let FuckMe{a: first_input, ..} = instanceFuckMe;
 
             // let User{username, age} = user; //// unpacking struct
             let User{username: name, age: sen} = user; //// unpacking struct with arbitrary field names

@@ -63,9 +63,11 @@ pub async fn index(
 
                 let id = id.to_owned();
                 let data = Dev{id};
-                let redis_conn = redis_conn.to_owned();
                 let storage = storage.as_ref().to_owned();
-                let db = storage.unwrap().get_db().await.unwrap();   
+                
+                let redis_conn = redis_conn.to_owned();
+                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();   
+                let pg_pool = storage.unwrap().get_pgdb().await.unwrap();   
 
                 // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
                 // 🥑 todo - also call the /reveal/roles api of the hyper server                 

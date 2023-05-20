@@ -59,17 +59,21 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 * first run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
 
-* note that if you want to use an authorized mongodb connection just setup the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
+* note that if you want to use an authorized a db (mongodb or postgres) connection just update the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
 
 * remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
 
-* remember to change the `DB_PORT` in `.env` file to `7441` since the 27017 port inside `mongodb` container will be mapped to `7441` inside the VPS. 
+* remember to change the `DB_PORT` of mongodb container in `.env` file to `7441` since the 27017 port inside `mongodb` container will be mapped to `7441` inside the VPS.
+
+* if you want to use the mongodb as the db engine just comment the `postgres` db setup block in `.env` and uncomment the `mongodb` one. 
 
 * since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
 
-* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
+* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
 
 * connect to `mongodb` container either in portrainer or terminal using ```docker exec -it mongodb mongosh --port 7441```.
+
+* connect to `mongodb` container either in portrainer or terminal using ```docker exec -it postgres psql -u postgres conse```.
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
