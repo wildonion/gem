@@ -297,7 +297,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
 
 
 
-    // -------------------------------- building conse server
+    // -------------------------------- building conse server from the apis
     //
     // --------------------------------------------------------------------------------------------------------
     info!("🚀 {} has launched from {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());

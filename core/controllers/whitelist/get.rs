@@ -46,7 +46,7 @@ pub async fn mint_addrs(req: Request<Body>) -> ConseResult<hyper::Response<Body>
     ///// ==============================================================================
     //// we can pass a buffer of file data (path buffer) 
     //// or tcp stream bytes into the from_reader()
-    let file = std::fs::File::open("nfts.json").expect("file should open read only"); //// the file must be inside where we run the `cargo run` command or the root dir
+    let file = std::fs::File::open("addrs.json").expect("file should open read only"); //// the file must be inside where we run the `cargo run` command or the root dir
     let nfts_value: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
     let nfts_json_string = serde_json::to_string(&nfts_value).unwrap();
     let nft = serde_json::from_str::<schemas::whitelist::Nft>(&nfts_json_string).unwrap(); //// we must map the json string into the Nft struct to fill its vector

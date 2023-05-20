@@ -4,13 +4,13 @@ RUN USER=root cargo new --bin gem
 WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
-COPY ./nfts.json ./nfts.json
+COPY ./addrs.json ./addrs.json
 RUN cargo build --release
-RUN rm src/*.rs
+RUN rm core/*.rs
 
 ADD . ./
 
-RUN cargo build --bin panel --release
+RUN cargo build --bin conse --release
 
 
 FROM debian:buster-slim
@@ -20,7 +20,7 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 7442
+EXPOSE 7438
 
 ENV TZ=Etc/UTC \
     APP_USER=appuser
@@ -29,13 +29,16 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/panel ${APP}/panel
+COPY --from=builder /gem/target/release/conse ${APP}/conse
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
 COPY ./.env ${APP}/.env
+COPY ./addrs.json ${APP}/addrs.json
+
+RUN USER=root mkdir ${APP}/assets
 
 USER $APP_USER
 WORKDIR ${APP}
 
-CMD ["./panel"]
+CMD ["./conse"]

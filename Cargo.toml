@@ -52,16 +52,16 @@ openssl = { version = "0.10", features = ["v110"] }
 
 [[bin]]
 name = "conse"
-path = "src/app.rs"
+path = "core/app.rs"
 
 [[bin]]
 name = "dis-bot"
-path = "src/contexts/bot/discord/bot.rs"
+path = "core/contexts/bot/discord/bot.rs"
 
 [[bin]]
 name = "panel"
-path = "src/contexts/panel/app.rs"
+path = "core/contexts/panel/app.rs"
 
 [[bin]]
 name = "tests"
-path = "src/test/main.rs"
+path = "test/main.rs"

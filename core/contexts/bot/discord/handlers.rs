@@ -399,7 +399,7 @@ impl Handler{
                     let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
                     let _: () = connection.set("rate_limiter", rl_data).await.unwrap();
                     let log_name = format!("[{}]", chrono::Local::now());
-                    let filepath = format!("error-kind/{}-ratelimit-redis-log-file.log", log_name);
+                    let filepath = format!("logs/error-kind/{}-ratelimit-redis-log-file.log", log_name);
                     let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                     error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
                     HashMap::new()
@@ -431,11 +431,11 @@ impl Handler{
                 //// -------------------------------------------------
                 //// -------------------- logging --------------------
                 //// -------------------------------------------------
-                let filepath = format!("rate-limiter/usage.log");
+                let filepath = format!("logs/rate-limiter/usage.log");
                 let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
                 let mut ratelimit_log; 
 
-                match fs::metadata("rate-limiter/usage.log").await {
+                match fs::metadata("logs/rate-limiter/usage.log").await {
                     Ok(_) => { //// if the file was there then append to it
                         let mut file = OpenOptions::new()
                             .append(true)
@@ -450,7 +450,7 @@ impl Handler{
                     },
                     Err(e) => {
                         let log_name = format!("[{}]", chrono::Local::now());
-                        let filepath = format!("error-kind/{}-ratelimit-reading-log-file.log", log_name);
+                        let filepath = format!("logs/error-kind/{}-ratelimit-reading-log-file.log", log_name);
                         let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                         error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
                     }

@@ -35,7 +35,6 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
     let (map_shards_sender, mut map_shards_receiver) = tokio::sync::broadcast::channel::<Vec<Arc<tokio::sync::Mutex<Db>>>>(shards as usize);
     
     let send_sync_map = Arc::new(tokio::sync::Mutex::new(HashMap::new())); //// no need to put in Mutex since we don't want to mutate it
-    let mut map_shards: Vec<Arc<tokio::sync::Mutex<Db>>> = vec![];
     let mutex_data_sender = mutex_data_sender.clone();
     
     /*
@@ -45,10 +44,7 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
         during the lock acquisition inside the app.
 
     */
-    for _ in 0..shards{
-        map_shards.push(send_sync_map.clone());
-    }
-
+    let mut map_shards = vec![send_sync_map; shards];
     let mut current_data_length = map_shards[0].lock().await.len();
 
 
@@ -121,7 +117,7 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
                         // update the whole shards with the largest_data
                         let new_shards = vec![Arc::new(tokio::sync::Mutex::new(largest_data)); shards];
 
-                        // broadcast the new shards to the channel
+                        // broadcast the new shards to the channel so all receivers can use the updated version
                         map_shards_sender.send(new_shards).unwrap();
                         
                     } else{

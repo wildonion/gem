@@ -351,10 +351,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         }
 
         let log_content = format!("[{}] - userId:{}|channelId:{}|catchupRequestedAt:{}|catchupFrom:{}|guildId:{}|gptResponseOk:{}\n", chrono::Local::now(), user_id, channel_id.0, command_time_naive_local.to_string(), start_fetching_from_string.clone(), guild_id, gpt_ok);
-        let filepath = format!("gpt-logs/requests.log");
+        let filepath = format!("logs/gpt-logs/requests.log");
         let mut gpt_log;
 
-        match fs::metadata("gpt-logs/requests.log").await {
+        match fs::metadata("logs/gpt-logs/requests.log").await {
             Ok(_) => {
                 let mut file = OpenOptions::new()
                     .append(true)

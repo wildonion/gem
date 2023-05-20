@@ -174,9 +174,9 @@ macro_rules! server {
                 its own App instance.
 
                 handle streaming async tasks like socket connections in a none blocking
-                manner concurrently using tokio::spawn(async move{}) and shared state 
-                data between tokio::spawn() green threadpool using jobq channels and 
-                clusters using redis and routers' threads using arc, mutex and rwlock 
+                manner asyncly and concurrently using tokio::spawn(async move{}) and 
+                shared state data between tokio::spawn() green threadpool using jobq channels 
+                and clusters using redis and routers' threads using arc, mutex and rwlock 
                 also data must be Send + Sync + 'static also handle incoming async 
                 events into the server using tokio::select!{} eventloop. 
 
@@ -189,6 +189,10 @@ macro_rules! server {
                 inside the hyper threads thus the data that we want to use inside 
                 of them and share it between other routers must be 
                 Arc<Mutex<Data>> + Send + Sync + 'static 
+
+                mongodb and redis connection instances must be only Arc (shareable)
+                to share them between threads since we don't want to mutate them 
+                in actix routers' threads. 
             */
             HttpServer::new(move ||{
                 App::new()
@@ -221,7 +225,7 @@ macro_rules! server {
                     */
                     .service(
                         actix_web::web::scope("/panel/api/mmq")
-                            .configure(services::init_admin)
+                            .configure(services::init_mmq)
                     )
                 }) //// each thread of the HttpServer instance needs its own app factory 
                 .bind((host.as_str(), port))

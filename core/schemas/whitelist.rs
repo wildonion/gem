@@ -9,7 +9,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 
 ///// the following will be used to load all the 
-//// nft mint addresses inside the nfts.json into
+//// nft mint addresses inside the addrs.json into
 //// this struct. 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 pub struct Nft{

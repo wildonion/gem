@@ -43,7 +43,7 @@ pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
     //// from_reader() accepts a buffer path or tcp stream
     //// then it returns a serde Value which can be converted
     //// into the json string that can be mapped into a structure.
-    let file = std::fs::File::open("nfts.json").unwrap(); //// the file must be inside where we run the `cargo run` command or the root dir
+    let file = std::fs::File::open("addrs.json").unwrap(); //// the file must be inside where we run the `cargo run` command or the root dir
     let nfts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
     let nfts_json_string = serde_json::to_string(&nfts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
     let nft = serde_json::from_str::<schemas::whitelist::Nft>(&nfts_json_string).unwrap(); 

@@ -828,6 +828,19 @@ pub async fn generic(){
                 ..user //// filling the remaining fields with other User instance
             };
 
+            #[derive(Default)]
+            struct FuckMe{
+                a: u8,
+                b: String
+            }
+
+            let instanceFuckMe = FuckMe{
+                a: 23,
+                ..Default::default() //// fillint the remaining field with default values
+            };        
+
+            let FuckMe{a, ..} = instanceFuckMe;
+
             // let User{username, age} = user; //// unpacking struct
             let User{username: name, age: sen} = user; //// unpacking struct with arbitrary field names
             // let User{..} = user; //// unpacking struct with `..` since we don't care about all fields
@@ -1058,7 +1071,9 @@ pub async fn generic(){
             the local variable is dropped when the function goes out of scope.
             thus we can return the them in their slice form like &str for String
             &[u8] for Vec with a specific lifetime or a lifetime which lives long
-            enough if the function gets executed like 'static lifetime
+            enough if the function gets executed like 'static lifetime, note that 
+            we can't return them behind a valid reference at all since they're owned
+            by the function scope and no matter how they cant be used! 
         
         */
         // fn ret<'a>(name: String) -> &'a Vec<String>{

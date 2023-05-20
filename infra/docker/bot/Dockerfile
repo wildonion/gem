@@ -4,13 +4,12 @@ RUN USER=root cargo new --bin gem
 WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
-COPY ./nfts.json ./nfts.json
 RUN cargo build --release
-RUN rm src/*.rs
+RUN rm core/*.rs
 
 ADD . ./
 
-RUN cargo build --bin conse --release
+RUN cargo build --bin bot --release
 
 
 FROM debian:buster-slim
@@ -20,8 +19,6 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 7438
-
 ENV TZ=Etc/UTC \
     APP_USER=appuser
 
@@ -29,16 +26,17 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/conse ${APP}/conse
+COPY --from=builder /gem/target/release/bot ${APP}/bot
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
 COPY ./.env ${APP}/.env
-COPY ./nfts.json ${APP}/nfts.json
-
-RUN USER=root mkdir ${APP}/assets
+RUN USER=root mkdir ${APP}/openai-logs
+RUN USER=root mkdir ${APP}/gpt-logs
+RUN USER=root mkdir ${APP}/error-kind
+RUN USER=root mkdir ${APP}/rate-limiter
 
 USER $APP_USER
 WORKDIR ${APP}
 
-CMD ["./conse"]
+CMD ["./bot"]

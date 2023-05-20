@@ -8,7 +8,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ./devops/data/redis/:/data redis/redis-stack-server:latest
+      - ./infra/data/redis/:/data redis/redis-stack-server:latest
     restart: unless-stopped 
   mongodb:
     image : mongo
@@ -20,19 +20,16 @@ services:
       - PUID=1000
       - PGID=1000
     volumes:
-      - ./devops/data/mongodb/:/data/db
+      - ./infra/data/mongodb/:/data/db
     ports:
       - 7441:27017
     restart: unless-stopped
   conse:
     build:
-      dockerfile: './devops/docker/conse/Dockerfile'
+      dockerfile: './infra/docker/conse/Dockerfile'
     container_name: conse
     ports:
       - '7439:7438'
-    volumes:
-      - ./devops/data/assets/:/usr/src/app/assets/
-      - '.:/usr/src/app'
     depends_on:
       - 'mongodb'
     links:
@@ -41,23 +38,18 @@ services:
       - 'net'
   bot:
     build:
-      dockerfile: './devops/docker/bot/Dockerfile'
+      dockerfile: './infra/docker/bot/Dockerfile'
     container_name: catchup-bot
     volumes:
-      - ./devops/data/openai-logs:/usr/src/app/openai-logs/
-      - ./devops/data/gpt-logs:/usr/src/app/gpt-logs/
-      - ./devops/data/error-kind:/usr/src/app/error-kind/
-      - ./devops/data/rate-limiter:/usr/src/app/rate-limiter/
+      - ./infra/data/logs:/usr/src/app/logs/
     networks:
       - 'net'
   panel:
     build:
-      dockerfile: './devops/docker/panel/Dockerfile'
+      dockerfile: './infra/docker/panel/Dockerfile'
     container_name: conse
     ports:
       - '7443:7442'
-    volumes:
-      - '.:/usr/src/app' 
     networks:
       - 'net'
   haproxy:
@@ -71,13 +63,13 @@ services:
       - "8404:8404"
       - "7440:7440"
     volumes:
-      - ./devops/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-      - ./devops/cert/conse.pem:/usr/local/etc/conse.pem
+      - ./infra/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./infra/cert/conse.pem:/usr/local/etc/conse.pem
     environment:
       SERVER_IP: "${SERVER_IP}"
     networks:
       - 'net'
 networks:
-  gem:
+  net:
     driver: bridge
   

@@ -5,11 +5,11 @@ WORKDIR ./gem
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
 RUN cargo build --release
-RUN rm src/*.rs
+RUN rm core/*.rs
 
 ADD . ./
 
-RUN cargo build --bin bot --release
+RUN cargo build --bin panel --release
 
 
 FROM debian:buster-slim
@@ -19,6 +19,8 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
+EXPOSE 7442
+
 ENV TZ=Etc/UTC \
     APP_USER=appuser
 
@@ -26,17 +28,13 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/bot ${APP}/bot
+COPY --from=builder /gem/target/release/panel ${APP}/panel
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
 COPY ./.env ${APP}/.env
-RUN USER=root mkdir ${APP}/openai-logs
-RUN USER=root mkdir ${APP}/gpt-logs
-RUN USER=root mkdir ${APP}/error-kind
-RUN USER=root mkdir ${APP}/rate-limiter
 
 USER $APP_USER
 WORKDIR ${APP}
 
-CMD ["./bot"]
+CMD ["./panel"]

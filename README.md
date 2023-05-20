@@ -1,12 +1,13 @@
 
 
+
+# 🤏 Conse
+
+Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain. 
+
 <p align="center">
     <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
 </p>
-
-## 🤏 Conse
-
-Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain. 
 
 ## 🛠️ Development Setup
 
@@ -36,15 +37,15 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
-> First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker containers then to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
-
 > To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh --port 7441``` or you can go inside using ```sudo docker exec -it mongodb mongosh --port 7441``` command.
 
 > After updating application's `docker-compose.yml` file, we should rebuild our container images by running ```./deploy.sh``` script again.
 
+First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker containers then to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+
 ## 🗃️ Directory Explained
 
-* `src`: all in-game APIs which are related to the player app.
+* `core`: all in-game APIs which are related to the player app.
     * `contexts`: 
         * `bot`: Discord and Twitter bots .
         * `panel`: Dev and Admin panel app written in Yew and Tauri.
@@ -52,7 +53,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
     * `controllers`: in game API async controllers.
     * `routers`: in game API routers.
     * `schemas`: in game Db schemas.
-* `devops`: all devops configs and setup files.
+* `infra`: all infra configs and setup files.
 
 ## 🍟 Notes
 
@@ -80,13 +81,13 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * setup **TLS/SSL** for `hyper`, `ws` and `actix` servers using `tokio-rustls` and `openssl` over certbot certificate files, note that for this we must have a domain poiting to the VPS that the gem is inside.  
 
-* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (`hash(**user_id + time + ip + user agent**)`) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * all TODOs inside the app, `panel` and twitter bot services also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
 * check the containers status using using [portainer](https://www.portainer.io/), balance the loads between conse docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS over `gem` repo.
 
-* backend design pattern sketch using freeform inside wiki.
+* backend design pattern sketch using freeform and moongodb ERD schemas inside wiki also publish the gem to docker hub.
 
 * communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 

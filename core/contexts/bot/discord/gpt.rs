@@ -142,7 +142,7 @@ pub mod chat{
             if let Err(e) = chat_completion.clone(){
                 let log_content = format!("[{}] - {}", chrono::Local::now(), e);
                 let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("openai-logs/{}.log", log_name);
+                let filepath = format!("logs/openai-logs/{}.log", log_name);
                 let mut openai_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                 openai_log.write_all(log_content.as_bytes()).await.unwrap();
                 return Self{
