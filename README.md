@@ -57,6 +57,8 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 ## 🍟 Notes
 
+* use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file for your postgres table and ```diesel migration redo``` to drop the table.
+
 * first run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
 
 * note that if you want to use an authorized a db (mongodb or postgres) connection just update the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.

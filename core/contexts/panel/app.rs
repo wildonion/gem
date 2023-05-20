@@ -2,9 +2,10 @@
 
 
 
-use r2d2_diesel::ConnectionManager;
-use diesel::PgConnection;
 use diesel::prelude::*;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::result::Error;
 use redis::aio::Connection as RedisConnection;
 use redis::FromRedisValue;
 use redis::JsonAsyncCommands;

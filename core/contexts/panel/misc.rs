@@ -10,7 +10,7 @@ pub struct Db{
     pub engine: Option<String>,
     pub url: Option<String>,
     pub instance: Option<Client>,
-    pub pool: Option<r2d2::Pool<ConnectionManager<PgConnection>>>
+    pub pool: Option<Pool<ConnectionManager<PgConnection>>>
 }
 
 impl Default for Db{
@@ -53,10 +53,10 @@ impl Db{
         Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
     }
 
-    pub async fn GetPostgresPool(&self) -> r2d2::Pool<ConnectionManager<PgConnection>>{
+    pub async fn GetPostgresPool(&self) -> Pool<ConnectionManager<PgConnection>>{
         let uri = self.url.as_ref().unwrap().as_str();
         let manager = ConnectionManager::<PgConnection>::new(uri);
-        let pool = r2d2::Pool::builder().build(manager).unwrap();
+        let pool = Pool::builder().test_on_check_out(true).build(manager).unwrap();
         pool
     }
 
@@ -75,9 +75,9 @@ impl Storage{
             Mode::Off => None, //// no db is available cause it's off
         }
     }
-    pub async fn get_pgdb(&self) -> Option<&r2d2::Pool<ConnectionManager<PgConnection>>>{
+    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&r2d2::Pool<ConnectionManager<PgConnection>>> or Option<&T>
+            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, //// no db is available cause it's off
         }
     }
