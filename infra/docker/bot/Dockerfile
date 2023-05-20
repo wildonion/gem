@@ -8,7 +8,7 @@ RUN rm core/*.rs
 
 ADD . ./
 
-RUN cargo build --bin bot --release
+RUN cargo build --bin dis-bot --release
 
 
 FROM debian:buster-slim
@@ -25,15 +25,16 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/bot ${APP}/bot
+COPY --from=builder /gem/target/release/dis-bot ${APP}/bot
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
 COPY ./.env ${APP}/.env
-RUN USER=root mkdir ${APP}/openai-logs
-RUN USER=root mkdir ${APP}/gpt-logs
-RUN USER=root mkdir ${APP}/error-kind
-RUN USER=root mkdir ${APP}/rate-limiter
+RUN USER=root mkdir ${APP}/logs
+RUN USER=root mkdir ${APP}/logs/openai-logs
+RUN USER=root mkdir ${APP}/logs/gpt-logs
+RUN USER=root mkdir ${APP}/logs/error-kind
+RUN USER=root mkdir ${APP}/logs/rate-limiter
 
 USER $APP_USER
 WORKDIR ${APP}
