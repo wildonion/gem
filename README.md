@@ -37,11 +37,11 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
-> To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh --port 7441``` or you can go inside using ```sudo docker exec -it mongodb mongosh --port 7441``` command.
+> To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
 > After updating application's `docker-compose.yml` file, we should rebuild our container images by running ```./deploy.sh``` script again.
 
-First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker containers then to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS then ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker containers then to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
 ## 🗃️ Directory Explained
 
@@ -61,18 +61,6 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 * use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file for your postgres table, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to your database.
 
-* first run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
-
-* note that if you want to use an authorized db (mongodb or postgres) connection just update the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
-
-* since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
-
-* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-adminer`, `gem-conse-panel`, `gem-conse`, `gem-haproxy` and `gem-bot` containers.
-
-* connect to `mongodb` container either in portrainer or terminal using ```docker exec -it mongodb mongosh --port 7441```.
-
-* connect to `postgres` container either in portrainer or terminal using ```docker exec -it postgres psql -u postgres conse```.
-
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
 * clean docker cache using ```sudo docker buildx prune --all``` or ```docker system prune --all``` command.
@@ -85,7 +73,7 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
-* all TODOs inside the app, `panel` and twitter bot services also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
+* all TODOs inside the app and `panel` service also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
 * check the containers status using using [portainer](https://www.portainer.io/), balance the loads between conse docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS over `gem` repo.
 

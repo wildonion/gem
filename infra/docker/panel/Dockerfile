@@ -7,7 +7,6 @@ COPY ./.env ./.env
 RUN rm src/*.rs
 
 RUN USER=root echo DB_ENGINE=postgres >> .env
-RUN USER=root echo DB_USERNAME=postgres >> .env
 RUN USER=root echo DB_HOST=postgres >> .env
 RUN USER=root echo DB_PORT=5432 >> .env
 RUN USER=root echo ENVIRONMENT=prod >> .env
@@ -18,6 +17,8 @@ ADD . ./
 RUN apt install -y libpq-dev
 RUN cargo install diesel_cli --no-default-features --features postgres
 RUN cargo build --bin panel --release
+
+RUN diesel setup && diesel migration run
 
 
 FROM debian:buster-slim
@@ -44,8 +45,5 @@ COPY ./.env ${APP}/.env
 
 USER $APP_USER
 WORKDIR ${APP}
-
-
-RUN diesel setup && diesel migration run
 
 CMD ["./panel"]

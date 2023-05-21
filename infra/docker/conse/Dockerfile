@@ -9,7 +9,7 @@ RUN rm src/*.rs
 
 RUN USER=root echo DB_ENGINE=mongodb >> .env
 RUN USER=root echo DB_HOST=mongodb >> .env
-RUN USER=root echo DB_PORT=7441 >> .env
+RUN USER=root echo DB_PORT=27017 >> .env
 RUN USER=root echo ENVIRONMENT=dev >> .env
 
 ADD . ./
