@@ -35,8 +35,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🚀 Production Setup
 
-> remember to remove the current `.env` and rename the `.env.prod` to a new one.
-
 > Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
 > To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh --port 7441``` or you can go inside using ```sudo docker exec -it mongodb mongosh --port 7441``` command.
@@ -69,7 +67,7 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 * since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
 
-* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-adminer`, `gem-conse-panel`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
+* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-adminer`, `gem-conse-panel`, `gem-conse`, `gem-haproxy` and `gem-bot` containers.
 
 * connect to `mongodb` container either in portrainer or terminal using ```docker exec -it mongodb mongosh --port 7441```.
 

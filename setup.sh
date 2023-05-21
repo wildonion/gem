@@ -18,7 +18,6 @@ wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubun
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo apt update -y && sudo apt upgrade && sudo apt install -y libpq-dev pkg-config build-essential libudev-dev libssl-dev librust-openssl-dev
 
-
 if [[ ! -f "infra/cert/conse_cert.pem" ]] && [[ ! -f "infra/cert/conse_key.pem" ]]
 then
     echo "cert files doesn't exist creating new SSL certificate and key files for conse using certbot,
