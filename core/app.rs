@@ -274,7 +274,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     //
     // --------------------------------------------------------------------------------------------------------
     let unwrapped_storage = app_storage.unwrap(); //// unwrapping the app storage to create a db instance
-    let db_instance = unwrapped_storage.get_db().await; //// getting the db inside the app storage; it might be None
+    let db_instance = unwrapped_storage.get_mongodb().await; //// getting the db inside the app storage; it might be None
     let arced_redis_conn = Arc::new(redis_conn);
     let api = Router::builder()
         .data(arced_redis_conn.clone()) //// sharing the redis connection between hyper routers' threads also the redis_conn must be sync and send in order to be shared 

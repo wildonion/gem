@@ -63,6 +63,7 @@ use std::fmt;
 
 mod unsafer;
 mod s3;
+mod layering;
 
 
 
@@ -844,7 +845,7 @@ pub async fn generic(){
             // let User{username, age} = user; //// unpacking struct
             let User{username: name, age: sen} = user; //// unpacking struct with arbitrary field names
             // let User{..} = user; //// unpacking struct with `..` since we don't care about all fields
-            
+
             let hello = "Здравствуйте";
             let s = &hello[0..2];
             // every index is the place of an element inside the ram which has 1 byte size which is taken by that element
@@ -943,7 +944,7 @@ pub async fn generic(){
 	    }
 
         fn run_taker(taker: &mut Commander) -> &Commander{
-            let instance = &Commander{};
+            let instance = &Commander{}; //// instance allocate nothing on the stack since Commander has no fields
             instance
             // or
             // &Commander{} 

@@ -24,6 +24,29 @@ services:
     ports:
       - 7441:27017
     restart: unless-stopped
+  postgres:
+    image: postgres
+    container_name: postgres
+    networks:
+      - 'net' 
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./infra/data/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    restart: always
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - 7543:8080
+    depends_on:
+      - 'postgres'
+    links:
+      - postgres 
+    restart: always
   conse:
     build:
       dockerfile: './infra/docker/conse/Dockerfile'
@@ -41,15 +64,21 @@ services:
       dockerfile: './infra/docker/bot/Dockerfile'
     container_name: catchup-bot
     volumes:
-      - ./infra/data/logs:/usr/src/app/logs/
+      - ./infra/data/dis-bot-logs:/usr/src/app/logs/
     networks:
       - 'net'
   panel:
     build:
       dockerfile: './infra/docker/panel/Dockerfile'
-    container_name: conse
+    container_name: conse-panel
     ports:
       - '7443:7442'
+    depends_on:
+      - 'mongodb'
+      - 'postgres'
+    links:
+      - mongodb 
+      - postgres
     networks:
       - 'net'
   haproxy:

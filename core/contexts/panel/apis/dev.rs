@@ -2,9 +2,6 @@
 
 
 
-use std::time::Duration;
-
-use serenity::model::prelude::Connection;
 
 use crate::*;
 use crate::resp;

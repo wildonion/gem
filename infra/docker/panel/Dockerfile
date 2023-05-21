@@ -36,4 +36,11 @@ COPY ./.env ${APP}/.env
 USER $APP_USER
 WORKDIR ${APP}
 
+RUN echo DB_ENGINE=postgres >> .env
+RUN echo DB_USERNAME=postgres >> .env
+RUN echo DB_HOST=postgres >> .env
+RUN echo DB_PORT=5432 >> .env
+RUN echo DB_PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70 >> .env
+RUN echo ENVIRONMENT=prod >> .env
+
 CMD ["./panel"]

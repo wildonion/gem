@@ -35,6 +35,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🚀 Production Setup
 
+> remember to remove the current `.env` and rename the `.env.prod` to a new one.
+
 > Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
 > To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh --port 7441``` or you can go inside using ```sudo docker exec -it mongodb mongosh --port 7441``` command.
@@ -49,33 +51,29 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
     * `contexts`: 
         * `bot`: Discord and Twitter bots .
         * `panel`: Dev and Admin panel app written in Yew and Tauri.
-        * `blockchain`: Solana Anchor smart contract.
-    * `controllers`: in game API async controllers.
-    * `routers`: in game API routers.
-    * `schemas`: in game Db schemas.
-* `infra`: all infra configs and setup files.
+        * `blockchain`: Solana Anchor smart contracts.
+    * `controllers`: in-game API async controllers.
+    * `routers`: in-game API routers.
+    * `schemas`: in-game mongodb schemas.
+* `infra`: all infrastructure configs and setup files.
 
 ## 🍟 Notes
 
-* use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file for your postgres table and ```diesel migration redo``` to drop the table.
+* all docker container the mounted volumes are inside `infra/data` folder. 
+
+* use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file for your postgres table, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to your database.
 
 * first run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS for both development and production.
 
-* note that if you want to use an authorized a db (mongodb or postgres) connection just update the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
-
-* remember to change the `DB_HOST` and `REDIS_HOST` in `.env` file to their container name.
-
-* remember to change the `DB_PORT` of mongodb container in `.env` file to `7441` since the 27017 port inside `mongodb` container will be mapped to `7441` inside the VPS.
-
-* if you want to use the mongodb as the db engine just comment the `postgres` db setup block in `.env` and uncomment the `mongodb` one. 
+* note that if you want to use an authorized db (mongodb or postgres) connection just update the `DB_USERNAME` and `DB_PASSWORD` inside the `.env` and change the `ENVIRONMENT` variable to `prod`.
 
 * since we're using docker compose to build the docker images the network that continas those images will be `gem_net` because ther directory name that the `docker-compose.yml` file is inside of is `gem` thus docker will create a network bridge with the prefix of the directory name or `gem` in this case and put every network created inside the `docker-compose.yml` file into this category.    
 
-* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
+* `gem_net` is the network that contains `gem-redis`, `gem-mongodb`, `gem-postgres`, `gem-adminer`, `gem-conse-panel`, `gem-conse`, `gem-haproxy` and `gem-catchup-bot` containers.
 
 * connect to `mongodb` container either in portrainer or terminal using ```docker exec -it mongodb mongosh --port 7441```.
 
-* connect to `mongodb` container either in portrainer or terminal using ```docker exec -it postgres psql -u postgres conse```.
+* connect to `postgres` container either in portrainer or terminal using ```docker exec -it postgres psql -u postgres conse```.
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 
@@ -93,7 +91,7 @@ First run ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker cont
 
 * check the containers status using using [portainer](https://www.portainer.io/), balance the loads between conse docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS over `gem` repo.
 
-* backend design pattern sketch using freeform and moongodb ERD schemas inside wiki also publish the gem to docker hub.
+* backend design pattern sketch using freeform and moongodb ERD schemas inside wiki.
 
 * communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 

@@ -12,6 +12,10 @@ hyper = { version = "0.14", features = ["full"] }
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = "0.24.0"
+actix-cors = "0.6.4"
+actix-web = { version = "4", features = ["openssl"] }
+actix-multipart = "0.6.0"
+utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
 diesel = { version = "2.0.4", features = ["postgres", "r2d2"] }
 rustls = "0.21.1"
 redis = { version = "0.23.0", features = ["tokio-comp", "cluster-async", "json"] }
@@ -47,8 +51,6 @@ openai = "1.0.0-alpha.8"
 once_cell = "1.17.1"
 sysinfo = "0.28.4"
 tokio-cron-scheduler = "0.9.4"
-actix-web = { version = "4", features = ["openssl"] }
-actix-multipart = "0.6.0"
 openssl = { version = "0.10", features = ["v110"] }
 
 [[bin]]

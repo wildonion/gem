@@ -4,6 +4,9 @@ use crate::*;
 
 
 
+// inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs
+
+
 #[derive(Clone)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
 pub struct Db{
     pub mode: Mode,
@@ -220,6 +223,14 @@ macro_rules! server {
                         MONGODB SHARED STATE
                     */
                     .app_data(app_storage.clone())
+                    .wrap(
+                        Cors::default()
+                            .allow_any_origin()
+                            .allowed_methods(vec!["GET", "POST"])
+                            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                            .allowed_header(header::CONTENT_TYPE)
+                            .max_age(3600)
+                    )
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
                     /*
@@ -235,6 +246,13 @@ macro_rules! server {
                     .service(
                         actix_web::web::scope("/panel/api/admin/notif/register")
                             .configure(services::init_admin)
+                    )
+                    /*
+                        HEALTH SERIVE
+                    */
+                    .service(
+                        actix_web::web::scope("/panel/api/health")
+                            .configure(services::init_health)
                     )
                     /*
                         MMQ SERIVE

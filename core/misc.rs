@@ -2,6 +2,10 @@
 
 
 use crate::*;
+use diesel::prelude::*;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::result::Error as DieselError;
 use std::borrow::Borrow;
 use std::io::Write;
 use std::sync::{Arc, mpsc::channel as heavy_mpsc, mpsc}; use std::time::{SystemTime, UNIX_EPOCH}; // NOTE - mpsc means multiple thread can access the Arc<Mutex<T>> (use Arc::new(&Arc<Mutex<T>>) to clone the arced and mutexed T which T can also be Receiver<T>) but only one of them can mutate the T out of the Arc by locking on the Mutex
@@ -143,12 +147,13 @@ pub mod app{
         }
     }
 
-    #[derive(Clone, Debug)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
+    #[derive(Clone)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
     pub struct Db{
         pub mode: Mode,
         pub engine: Option<String>,
         pub url: Option<String>,
         pub instance: Option<Client>,
+        pub pool: Option<Pool<ConnectionManager<PgConnection>>>
     }
 
     impl Default for Db{
@@ -158,6 +163,7 @@ pub mod app{
                 engine: None,
                 url: None,
                 instance: None,
+                pool: None
             }
         }
     }
@@ -167,10 +173,11 @@ pub mod app{
         pub async fn new() -> Result<Db, Box<dyn std::error::Error>>{
             Ok(
                 Db{ //// building an instance with generic type C which is the type of the db client instance
-                    mode: super::app::Mode::On, //// 1 means is on 
+                    mode: Mode::On, //// 1 means is on 
                     engine: None, 
                     url: None,
                     instance: None,
+                    pool: None
                 }
             )
         }
@@ -189,18 +196,31 @@ pub mod app{
             Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
         }
 
+        pub async fn GetPostgresPool(&self) -> Pool<ConnectionManager<PgConnection>>{
+            let uri = self.url.as_ref().unwrap().as_str();
+            let manager = ConnectionManager::<PgConnection>::new(uri);
+            let pool = Pool::builder().test_on_check_out(true).build(manager).unwrap();
+            pool
+        }
+
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone)]
     pub struct Storage{
         pub id: Uuid,
         pub db: Option<Db>, //// we could have no db at all
     }
 
     impl Storage{
-        pub async fn get_db(&self) -> Option<&Client>{
+        pub async fn get_mongodb(&self) -> Option<&Client>{
             match self.db.as_ref().unwrap().mode{
                 Mode::On => self.db.as_ref().unwrap().instance.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
+                Mode::Off => None, //// no db is available cause it's off
+            }
+        }
+        pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
                 Mode::Off => None, //// no db is available cause it's off
             }
         }
@@ -655,128 +675,6 @@ pub async fn simd<F>(number: u32, ops: F) -> Result<u32, String> where F: Fn(u8)
 
 
 
-/*
-    
-    ┏———————————————┓
-       NFT LAYRING
-    ┗———————————————┛
-
-    A MULTITHREADED AND ASYNC NFT LAYERING TOOLS
-
-*/
-pub async fn layering(){
-
-    pub const WIDTH: usize = 32;
-    pub const HEIGHT: usize = 32;
-    pub const RGBA: usize = 4;
-
-    pub struct Image{
-        /*
-            there must be HEIGHT number of [u8; RGBA]
-            which is like 32 rows X 4 cols and  
-            WIDTH number of [[u8; RGBA]; HEIGHT]
-            which is like 32 X 32 X 4
-        */
-        pub hat: [[[u8; RGBA]; HEIGHT]; WIDTH], //// 32 X 32 X 4 => 32 Pixels and RGBA channels
-        pub mask: [[[u8; RGBA]; HEIGHT]; WIDTH] //// 32 X 32 X 4 => 32 Pixels and RGBA channels
-    }
-
-    let (sender, receiver) = tokio::sync::mpsc::channel::<HashMap<&str, Vec<&str>>>(1024);
-
-    let assets_path = "assets"; //// in the root of the project
-    let nfts_path = "nfts"; //// in the root of the project
-
-    fn update_asset_to_path<'s>(
-        mut asset_to_path: HashMap<&'s str, Vec<String>>, 
-        key: &'s str, key_images: Vec<String>) 
-        -> HashMap<&'s str, Vec<String>>{
-        asset_to_path.entry(key).and_modify(|v| *v = key_images);
-        asset_to_path
-    } 
-
-    tokio::spawn(async move{
-
-        // hashmap can be a 3d arr also and reading 
-        // from it is slower that arr and vec 
-
-        let assets_names = &["Beard", "Hat", "Mask"];
-        let mut asset_to_path: HashMap<&str, Vec<String>> = HashMap::new(); //// a map of between asset name and their images path
-        for asset in assets_names{
-            asset_to_path.entry(asset).or_insert(vec![]);
-        }
-
-        let assets = std::fs::read_dir(assets_path).unwrap();
-        for asset in assets{
-            //// since unwrap() takes the ownership of the type 
-            //// we've borrowed the asset using as_ref() method
-            //// which returns a borrow of the asset object which
-            //// let us to have the asset later in other scopes.
-            let filename = asset.as_ref().unwrap().file_name();
-            let filepath = asset.as_ref().unwrap().path();
-            let filepath_string = filepath.display().to_string();
-            let mut asset_to_path_clone = asset_to_path.clone();
-            let asset_to_path_keys = asset_to_path_clone.keys();
-            let filepath_string_clone = filepath_string.clone();
-            for key in asset_to_path_keys{ 
-                if filepath_string_clone.starts_with(*key){
-                    //// if a type is behind an immutable shared reference 
-                    //// it can't mutate the data unless we define it's 
-                    //// pointer as mutable in the first place or convert 
-                    //// it to an owned type which returns Self. 
-                    let mut key_images = asset_to_path.get(key).unwrap().to_owned();
-                    key_images.push(filepath_string_clone.clone());
-                    asset_to_path = update_asset_to_path(asset_to_path.clone(), key, key_images);
-                }
-            }
-        }
-
-
-        let (sender_flag, mut receiver_flag) = 
-        tokio::sync::mpsc::channel::<u8>(1024); //// mpsc means multiple thread can read the data but only one of them can mutate it at a time
-        tokio::spawn(async move{
-
-            type Job<T> = std::thread::JoinHandle<T>; 
-            let job: Job<_> = std::thread::spawn(||{});
-            
-            std::thread::scope(|s|{
-                s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
-                    sender_flag.send(1).await.unwrap(); //// sending data to the downside of the tokio jobq channel
-                    for asset_path in asset_to_path.values(){
-                        tokio::spawn(async move{
-                            // reading the shared sate data from the
-                            // receiver_flag mpsc receiver to acquire 
-                            // the lock on the mutexed data.
-                            // ... 
-                            // make a combo of each asset path in a separate thread asyncly 
-                            // while idx < combos.len()!{
-                            //     bin(i%3!).await;
-                            //     010
-                            //     01
-                            // }
-                            // ...
-                        });
-                    }
-                });
-                s.spawn(|| async{
-                    sender_flag.send(2).await.unwrap();
-                });
-                s.spawn(|| async{ //// making the closure body as async to solve async task inside of it 
-                    while let Some(input) = receiver_flag.recv().await{ //// waiting on data stream to receive them asyncly
-                        // do whatever with the collected data of all workers 
-                        // ...
-                    }
-                    let data: Vec<u8> = receiver_flag.try_recv().into_iter().take(2).collect();
-                });
-            });
-        });
-    });
-
-}
-
-
-
-
-
 // ------------------------------ macros
 // -----------------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------------
@@ -801,6 +699,7 @@ macro_rules! db {
                                 instance: None,
                                 engine: None,
                                 url: None,
+                                pool: None
                             }
                         ),
                     }
@@ -831,6 +730,7 @@ macro_rules! db {
                                             instance: Some(mongodb_instance),
                                             engine: init_db.engine,
                                             url: init_db.url,
+                                            pool: None
                                         }
                                     ),
                                 }
@@ -845,17 +745,40 @@ macro_rules! db {
             } else if $engine.as_str() == "postgres"{
                 info!("➔ 🛢️ switching to postgres on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");                
-                if environment == "dev"{
+                let db_addr = if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)
                 } else if environment == "prod"{
-                    format!("{}://{}:{}@{}:{}", $engine, $username, $password, $host, $port)
+                    format!("{}://{}:{}@{}:{}/{}", $engine, $username, $password, $host, $port, $name)
                 } else{
                     "".to_string()
                 };
-        
-                // TODO - configure surrealdb instance
-                todo!();
-            
+                match Db::new().await{
+                    Ok(mut init_db) => { //// init_db instance must be mutable since we want to mutate its fields
+                        init_db.engine = Some($engine);
+                        init_db.url = Some(db_addr);
+                        let pg_pool = init_db.GetPostgresPool().await; //// the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
+                        Some( //// putting the Arc-ed db inside the Option
+                            Arc::new( //// cloning app_storage to move it between threads
+                                Storage{ //// defining db context 
+                                    id: Uuid::new_v4(),
+                                    db: Some(
+                                        Db{
+                                            mode: init_db.mode,
+                                            instance: None,
+                                            engine: init_db.engine,
+                                            url: init_db.url,
+                                            pool: Some(pg_pool)
+                                        }
+                                    ),
+                                }
+                            )
+                        )
+                    },
+                    Err(e) => {
+                        error!("😕 init db error - {}", e);
+                        empty_app_storage //// whatever the error is we have to return and empty app storage instance 
+                    }
+                }
             } else{
                 empty_app_storage
             };
@@ -1019,93 +942,5 @@ macro_rules! resp {
             return response;
 
         }
-    }
-}
-
-#[macro_export]
-macro_rules! contract {
-
-    /*
-
-        contract!{
-
-            NftContract, //// name of the contract
-            "wildonion.near", //// the contract owner
-            /////////////////////
-            //// contract fields
-            /////////////////////
-            [
-                contract_owner: AccountId, 
-                deposit_by_owner: HashMap<AccountId, near_sdk::json_types::U128>, 
-                contract_balance: near_sdk::json_types::U128
-            ]; //// fields
-            /////////////////////
-            //// contract methods
-            /////////////////////
-            [ 
-                "init" => [ //// array of init methods
-                    pub fn init_contract(){
-            
-                    }
-                ],
-                "private" => [ //// array of private methods
-                    pub fn get_all_deposits(){
-
-                    }
-                ],
-                "payable" => [ //// array of payable methods
-                    pub fn deposit(){
-            
-                    }
-                ],
-                "external" => [ //// array of external methods
-                    fn get_address_bytes(){
-
-                    }
-                ]
-            ]
-
-        }
-
-    */
-
-    // event!{
-    //     name: "list_owner",
-    //     log: [NewOwner, AddDeposit],
-
-    //     // event methods
-
-    //     fn add_owner(){
-
-    //     } 
-
-    //     fn add_deposit(){
-            
-    //     }
-    // }
-
-    // emit!{
-    //     event_name
-    // }
-
-    (
-     $name:ident, $signer:expr, //// ident can be used to pass struct
-     [$($fields:ident: $type:ty),*]; 
-     [$($method_type:expr => [$($method:item),*]),* ]
-    ) 
-     
-     => {
-            #[near_bindgen]
-            #[derive(serde::Deserialize, serde::Serialize)]
-            pub struct $name{
-                $($fields: $type),*
-            }
-
-            impl $name{
-                        
-                // https://stackoverflow.com/questions/64790850/how-do-i-write-a-macro-that-returns-the-implemented-method-of-a-struct-based-on
-                // TODO - implement methods here 
-                // ...
-            }
     }
 }

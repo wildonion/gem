@@ -1,6 +1,11 @@
 
 
 
+
+// fire, emit or publish a redis event or topic like role reveal topic 
+
+
+
 use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -32,9 +37,9 @@ pub struct CurrentMatch{
 
 
 
-// fire/emit/publish UserNotif events in ws/rpc/zmq server
+// fire/emit/publish UserNotif events in ws/rpc/zmq server or using redis
 // like using emit!(UserNotif{}) macro which emit and fire an
-// event through the ws to clients 
+// event through the redis streaming channel to clients 
 // sub or listen to UserNotif events in ws/rpc/zmq client
 // using an event loop or listener.
 // update UserNotif on every data changes through its related api calls
