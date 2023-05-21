@@ -6,6 +6,13 @@ COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
 RUN rm src/*.rs
 
+RUN USER=root echo DB_ENGINE=postgres >> .env
+RUN USER=root echo DB_USERNAME=postgres >> .env
+RUN USER=root echo DB_HOST=postgres >> .env
+RUN USER=root echo DB_PORT=5432 >> .env
+RUN USER=root echo ENVIRONMENT=prod >> .env
+RUN USER=root echo DATABASE_URL=postgres://postgres:geDteDd0Ltg2135FJYQ6rjNYHYkGQa70@postgres/conse >> .env
+
 ADD . ./
 
 RUN apt install -y libpq-dev
@@ -38,12 +45,6 @@ COPY ./.env ${APP}/.env
 USER $APP_USER
 WORKDIR ${APP}
 
-RUN echo DB_ENGINE=postgres >> .env
-RUN echo DB_USERNAME=postgres >> .env
-RUN echo DB_HOST=postgres >> .env
-RUN echo DB_PORT=5432 >> .env
-RUN echo ENVIRONMENT=prod >> .env
-RUN echo DATABASE_URL=postgres://postgres:geDteDd0Ltg2135FJYQ6rjNYHYkGQa70@postgres/conse >> .env
 
 RUN diesel setup && diesel migration run
 

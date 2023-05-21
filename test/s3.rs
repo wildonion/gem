@@ -20,6 +20,8 @@ use crate::*;
 pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
     
     /*
+
+    
         shared state sharding to decrease the time lock, we can use a shard from 
         the pool to update the mutex by locking on it inside a thread (either blocking 
         using std::sync::Mutex or none blocking using tokio::sync::Mutex) and if other 
@@ -28,7 +30,30 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
         currently being locked or not also we have to update the whole shards inside 
         the pool at the end of each mutex free process which is something that will
         be taken care of by semaphores.
+        
+        
+        struct Data{id: String}
+        let (sender, mut receiver) = tokio::sync::mpsc::channel::<Arc<tokio::sync::Mutex<Data>>>(1024);
+        let data_ = Arc::new(tokio::sync::Mutex::new(Data{id: "0".to_string()}));
+        tokio::spawn(async move{
+            sender.send(data_).await;
+        });
+        tokio::select!{
+            data = receiver.recv() => {
+                if let Some(d) = data{
+                    // we got data
+                    // ...
+                }
+            }
+        }
+    
+    
     */
+
+
+
+
+
     
     type Db = HashMap<i32, String>;
     let shards = 10;

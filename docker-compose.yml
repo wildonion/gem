@@ -86,11 +86,13 @@ services:
     container_name: haproxy
     depends_on:
       - conse
+      - panel
     ports:
       - "443:443"
       - "80:80"
       - "8404:8404"
       - "7440:7440"
+      - "7444:7444"
     volumes:
       - ./infra/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
       - ./infra/cert/conse.pem:/usr/local/etc/conse.pem

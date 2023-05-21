@@ -66,6 +66,7 @@ pub async fn index(
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();   
                 let pg_pool = storage.unwrap().get_pgdb().await.unwrap();   
 
+
                 // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
                 // 🥑 todo - also call the /reveal/roles api of the hyper server                 
                 // ...

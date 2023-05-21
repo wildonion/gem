@@ -15,6 +15,7 @@ tokio-rustls = "0.24.0"
 actix-cors = "0.6.4"
 actix-web = { version = "4", features = ["openssl"] }
 actix-multipart = "0.6.0"
+utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
 diesel = { version = "2.0.4", features = ["postgres", "r2d2"] }
 rustls = "0.21.1"

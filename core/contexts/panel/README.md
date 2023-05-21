@@ -21,6 +21,16 @@
 
 * admin login with email
 
+## 🛠️ Tools
+
+* utoipa open api doc
+
+* redis for realtime streaming using pubsub pattern
+
+* postgres db to store data
+
+* actix web to create the http server
+
 ## 🚧 WIPs
 
 * complete god and dev panel using `yew` and `tauri` 

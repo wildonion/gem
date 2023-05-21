@@ -7,6 +7,11 @@ COPY ./.env ./.env
 COPY ./addrs.json ./addrs.json
 RUN rm src/*.rs
 
+RUN USER=root echo DB_ENGINE=mongodb >> .env
+RUN USER=root echo DB_HOST=mongodb >> .env
+RUN USER=root echo DB_PORT=7441 >> .env
+RUN USER=root echo ENVIRONMENT=dev >> .env
+
 ADD . ./
 
 RUN cargo build --bin conse --release
@@ -39,10 +44,5 @@ RUN USER=root mkdir ${APP}/assets
 
 USER $APP_USER
 WORKDIR ${APP}
-
-RUN echo DB_ENGINE=mongodb >> .env
-RUN echo DB_HOST=mongodb >> .env
-RUN echo DB_PORT=7441 >> .env
-RUN echo ENVIRONMENT=dev >> .env
 
 CMD ["./conse"]
