@@ -43,7 +43,7 @@ RUN echo DB_USERNAME=postgres >> .env
 RUN echo DB_HOST=postgres >> .env
 RUN echo DB_PORT=5432 >> .env
 RUN echo ENVIRONMENT=prod >> .env
-RUN echo DATABASE_URL=postgres://postgres:geDteDd0Ltg2135FJYQ6rjNYHYkGQa70@postgres/conse 
+RUN echo DATABASE_URL=postgres://postgres:geDteDd0Ltg2135FJYQ6rjNYHYkGQa70@postgres/conse >> .env
 
 RUN diesel setup && diesel migration run
 
