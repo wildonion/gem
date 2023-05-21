@@ -95,7 +95,7 @@ services:
       - ./infra/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
       - ./infra/cert/conse.pem:/usr/local/etc/conse.pem
     environment:
-      SERVER_IP: "${SERVER_IP}"
+      SERVER_IP: "${SERVER_IP=$(hostname -I | awk '{print $1}')}"
     networks:
       - 'net'
 networks:
