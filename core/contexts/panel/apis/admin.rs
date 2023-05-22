@@ -20,7 +20,7 @@ use crate::misc::*;
 
 */
 #[derive(Serialize, Deserialize, Clone)]
-pub struct Dev{
+pub struct Admin{
     pub id: u8,
 }
 
@@ -38,19 +38,21 @@ pub struct Dev{
 pub async fn index(
         req: HttpRequest, 
         username: web::Path<String>, 
-        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
    
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_conn.to_owned();
+    let redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
 
 
             // ...
-
+            // diesel setup 
+            // diesel migration generate <MIGRAION_NAME>
+            // diesel migration run
 
             resp!{
                 String, //// the data type

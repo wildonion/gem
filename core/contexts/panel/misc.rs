@@ -151,7 +151,9 @@ macro_rules! resp {
 #[macro_export]
 macro_rules! server {
     (
+        
         /* ... args here ... */
+
     ) => {
         
         {
@@ -161,6 +163,8 @@ macro_rules! server {
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
             
+            env::set_var("RUST_LOG", "trace");
+            // env::set_var("RUST_LOG", "actix_web=debug");
             dotenv().expect("⚠️ .env file not found");
             env_logger::init_from_env(Env::default().default_filter_or("info"));
             let host = std::env::var("HOST").expect("⚠️ no host variable set");
@@ -175,6 +179,7 @@ macro_rules! server {
             let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
             let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
             let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
+            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
 
             let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
                 db_name,
@@ -185,9 +190,8 @@ macro_rules! server {
                 db_password
             };
 
-            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
-            let redis_conn = client.get_async_connection().await.unwrap();
-            let arced_redis_conn = Arc::new(redis_conn); //// no need to put in Mutex since we don't want to mutate it
+            let shared_arced_redis_conn = Data::new(client.clone());
+            let shared_storage = Data::new(app_storage.clone());
     
             /*
                 the HttpServer::new function takes a factory function that 
@@ -221,11 +225,11 @@ macro_rules! server {
                     /* 
                         REDIS SHARED STATE
                     */
-                    .app_data(Data::new(arced_redis_conn.clone()))
+                    .app_data(Data::clone(&shared_arced_redis_conn))
                     /* 
                         MONGODB SHARED STATE
                     */
-                    .app_data(Data::new(app_storage.clone()))
+                    .app_data(Data::clone(&shared_storage))
                     .wrap(
                         Cors::default()
                             .allow_any_origin()
