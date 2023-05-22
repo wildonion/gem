@@ -7,11 +7,6 @@ COPY ./.env ./.env
 COPY ./addrs.json ./addrs.json
 RUN rm src/*.rs
 
-RUN USER=root echo DB_ENGINE=mongodb >> .env
-RUN USER=root echo DB_HOST=mongodb >> .env
-RUN USER=root echo DB_PORT=27017 >> .env
-RUN USER=root echo ENVIRONMENT=dev >> .env
-
 ADD . ./
 
 RUN cargo build --bin conse --release
@@ -20,7 +15,13 @@ RUN cargo build --bin conse --release
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
+ENV DB_ENGINE=mongodb
+ENV DB_HOST=mongodb
+ENV DB_PORT=27017
+ENV ENVIRONMENT=dev
+
 RUN apt-get update \
+    && apt-get install libpq5 -y \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 

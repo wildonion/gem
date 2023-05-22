@@ -63,22 +63,34 @@ pub async fn reveal_role(
                 let storage = storage.as_ref().to_owned();
                 
                 let redis_conn = redis_conn.to_owned();
-                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();   
-                let pg_pool = storage.unwrap().get_pgdb().await.unwrap();   
+                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
-
-                // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
-                // 🥑 todo - also call the /reveal/roles api of the hyper server                 
-                // ...
-
-
-                resp!{
-                    Dev, //// the data type
-                    data.clone(), //// response data
-                    FETCHED, //// response message
-                    StatusCode::OK, //// status code
+                match storage.clone().unwrap().get_pgdb().await{
+                    Some(pg_pool) => {
+            
+                        
+                        // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
+                        // 🥑 todo - also call the /reveal/roles api of the hyper server                 
+                        // ...
+            
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            FETCHED, //// response message
+                            StatusCode::OK, //// status code
+                        } 
+            
+            
+                    },
+                    None => {
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            STORAGE_ISSUE, //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                        }
+                    }
                 }
-
 
                 //// -------------------------------------------------------------------------------------
                 //// -------------------------------------------------------------------------------------
@@ -108,23 +120,38 @@ pub async fn reveal_role(
 
 }
 
+#[get("/index")]
 pub async fn index(
     req: HttpRequest, 
         id: web::Path<u8>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
+   
+    match storage.as_ref().clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
 
 
-    
-
-        resp!{
-            &[u8], //// the data type
-            &[], //// response data
-            FETCHED, //// response message
-            StatusCode::OK, //// status code
-        }   
+            // ...
 
 
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                FETCHED, //// response message
+                StatusCode::OK, //// status code
+            } 
+
+
+        },
+        None => {
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+            }
+        }
+    }
 
 }

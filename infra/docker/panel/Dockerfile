@@ -6,11 +6,6 @@ COPY ./Cargo.toml ./Cargo.toml
 COPY ./.env ./.env 
 RUN rm src/*.rs
 
-RUN USER=root echo DB_ENGINE=postgres >> .env
-RUN USER=root echo DB_HOST=postgres >> .env
-RUN USER=root echo DB_PORT=5432 >> .env
-RUN USER=root echo ENVIRONMENT=prod >> .env
-
 ADD . ./
 
 RUN cargo build --bin panel --release
@@ -18,7 +13,13 @@ RUN cargo build --bin panel --release
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
+ENV DB_ENGINE=postgres
+ENV DB_HOST=postgres
+ENV DB_PORT=5432
+ENV ENVIRONMENT=prod
+
 RUN apt-get update \
+    && apt-get install libpq5 -y \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 

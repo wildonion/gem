@@ -171,7 +171,10 @@ macro_rules! server {
             let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
             let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let redis_node_addr = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+            let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
+            let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+            let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
 
             let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
                 db_name,
@@ -182,7 +185,7 @@ macro_rules! server {
                 db_password
             };
 
-            let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
+            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             let redis_conn = client.get_async_connection().await.unwrap();
             let arced_redis_conn = Arc::new(redis_conn); //// no need to put in Mutex since we don't want to mutate it
     
