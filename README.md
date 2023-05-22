@@ -39,7 +39,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
-> Remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values.
+> Remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values using ```echo OPENAI_KEY=<TOKEN> >> .env``` and ```echo DISCORD_TOKEN=<TOKNE> >> .env``` commands.
 
 > After updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
 
@@ -50,18 +50,20 @@ First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS then ```su
 * `core`: all in-game APIs which are related to the player app.
     * `contexts`: 
         * `bot`: Discord and Twitter bots .
-        * `panel`: Dev and Admin panel app written in Yew and Tauri.
+        * `panel`: Dev and Admin panel app written in Yew.
         * `blockchain`: Solana Anchor smart contracts.
     * `controllers`: in-game API async controllers.
     * `routers`: in-game API routers.
     * `schemas`: in-game mongodb schemas.
 * `infra`: all infrastructure configs and setup files.
 
-> All `conse`, `panel` and `bot` are just different binaries which sharing a same `Cargo.toml` setup.
+> **NOTE**: All `conse`, `panel` and `bot` are just different binaries and sharing a same `Cargo.toml` setup.
 
 ## 🍟 Notes
 
 * all docker container the mounted volumes are inside `infra/data` folder. 
+
+* before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
 
 * use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database.
 

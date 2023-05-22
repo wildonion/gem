@@ -1,5 +1,7 @@
 
-
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/assets/yewrustwasm.avif"
+</p>
 
 # gem admin and dev panel APIs using Actix, Redis, Mongodb and Postgres
 
@@ -33,4 +35,4 @@
 
 ## 🚧 WIPs
 
-* complete god and dev panel using `yew` and `tauri` 
+* complete god and dev panel using `yew`

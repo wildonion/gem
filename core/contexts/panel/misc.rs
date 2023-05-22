@@ -221,11 +221,11 @@ macro_rules! server {
                     /* 
                         REDIS SHARED STATE
                     */
-                    .app_data(arced_redis_conn.clone())
+                    .app_data(Data::new(arced_redis_conn.clone()))
                     /* 
                         MONGODB SHARED STATE
                     */
-                    .app_data(app_storage.clone())
+                    .app_data(Data::new(app_storage.clone()))
                     .wrap(
                         Cors::default()
                             .allow_any_origin()
@@ -240,14 +240,14 @@ macro_rules! server {
                         DEV PUSH NOTIF REGISTERATION SERIVE 
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/dev/notif/register")
+                        actix_web::web::scope("/panel/api/dev")
                             .configure(services::init_dev)   
                     )
                     /*
                         ADMIN PUSH NOTIF REGISTERATION SERIVE 
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/admin/notif/register")
+                        actix_web::web::scope("/panel/api/admin")
                             .configure(services::init_admin)
                     )
                     /*

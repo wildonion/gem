@@ -33,23 +33,28 @@ pub struct Dev{
     |
 
 */
-#[get("/index")]
+
+#[get("/index/{username}")]
 pub async fn index(
-    req: HttpRequest, 
-        id: web::Path<u8>, 
+        req: HttpRequest, 
+        username: web::Path<String>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
    
-    match storage.as_ref().clone().unwrap().get_pgdb().await{
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_conn.to_owned();
+
+    match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
 
 
             // ...
 
+
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
+                String, //// the data type
+                username.to_owned(), //// response data
                 FETCHED, //// response message
                 StatusCode::OK, //// status code
             } 

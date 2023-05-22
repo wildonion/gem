@@ -19,7 +19,7 @@ use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
 use actix_cors::Cors;
-use actix_web::{web, http::header, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
+use actix_web::{web, web::Data, http::header, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
 use actix_web::middleware::Logger;
 use actix_multipart::Multipart;
 use env_logger::Env;

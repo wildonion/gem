@@ -32,7 +32,7 @@ pub struct Dev{
     |
 
 */
-#[get("/reveal-role")]
+#[get("/notif/register/reveal-role/{id}")]
 pub async fn reveal_role(
         req: HttpRequest, 
         id: web::Path<u8>, 
@@ -60,8 +60,8 @@ pub async fn reveal_role(
 
                 let id = id.to_owned();
                 let data = Dev{id};
+
                 let storage = storage.as_ref().to_owned();
-                
                 let redis_conn = redis_conn.to_owned();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
@@ -120,15 +120,19 @@ pub async fn reveal_role(
 
 }
 
-#[get("/index")]
+#[get("/index/{username}")]
 pub async fn index(
     req: HttpRequest, 
-        id: web::Path<u8>, 
+        username: web::Path<String>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
    
-    match storage.as_ref().clone().unwrap().get_pgdb().await{
+    
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_conn.to_owned();
+
+    match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
 
 
