@@ -166,8 +166,10 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let sms_template = env::var("SMS_TEMPLATE").expect("⚠️ no sms template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
-    let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
-    let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
+    let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
+    let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+    let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
+    let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
     let mut redis_conn = client.get_async_connection().await.unwrap();
     
 
