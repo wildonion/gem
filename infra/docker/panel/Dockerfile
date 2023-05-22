@@ -14,14 +14,14 @@ RUN USER=root echo DATABASE_URL=postgres://postgres:geDteDd0Ltg2135FJYQ6rjNYHYkG
 
 ADD . ./
 
-RUN apt install -y libpq-dev
-RUN cargo install diesel_cli --no-default-features --features postgres
 RUN cargo build --bin panel --release
 
 
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
+RUN cargo install diesel_cli --no-default-features --features postgres
+RUN apt-get install -y libpq-dev && apt-get install libpq5
 RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
