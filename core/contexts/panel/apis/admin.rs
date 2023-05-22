@@ -7,22 +7,8 @@ use crate::resp;
 use crate::passport;
 use crate::constants::*;
 use crate::misc::*;
+use crate::schema::users;
 
-
-
-
-/*
-     ------------------------
-    |        SCHEMAS
-    | ------------------------
-    |
-    |
-
-*/
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Admin{
-    pub id: u8,
-}
 
 
 /*
@@ -34,8 +20,8 @@ pub struct Admin{
 
 */
 
-#[get("/index/{username}")]
-pub async fn index(
+#[post("/login")]
+pub async fn login(
         req: HttpRequest, 
         username: web::Path<String>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
@@ -47,12 +33,11 @@ pub async fn index(
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
-
+            
 
             // ...
-            // diesel setup 
-            // diesel migration generate <MIGRAION_NAME>
-            // diesel migration run
+
+
 
             resp!{
                 String, //// the data type

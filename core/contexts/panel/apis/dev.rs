@@ -10,19 +10,6 @@ use crate::constants::*;
 use crate::misc::*;
 
 
-/*
-     ------------------------
-    |        SCHEMAS
-    | ------------------------
-    |
-    |
-
-*/
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Dev{
-    pub id: u8,
-}
-
 
 /*
      ------------------------
@@ -57,9 +44,6 @@ pub async fn reveal_role(
                 //// -------------------------------------------------------------------------------------
                 //// ------------------------------- ACCESS GRANTED REGION -------------------------------
                 //// -------------------------------------------------------------------------------------
-
-                let id = id.to_owned();
-                let data = Dev{id};
 
                 let storage = storage.as_ref().to_owned();
                 let redis_conn = redis_conn.to_owned();
@@ -120,8 +104,8 @@ pub async fn reveal_role(
 
 }
 
-#[get("/index/{username}")]
-pub async fn index(
+#[post("/login")]
+pub async fn login(
     req: HttpRequest, 
         username: web::Path<String>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
@@ -135,9 +119,17 @@ pub async fn index(
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
 
+
+            #[derive(Serialize, Deserialize, Clone)]
+            pub struct Dev{
+                pub name: String,
+            }
+
             resp!{
-                String, //// the data type
-                username.to_owned(), //// response data
+                Dev, //// the data type
+                Dev{
+                    name: username.to_owned()
+                }, //// response data
                 FETCHED, //// response message
                 StatusCode::OK, //// status code
             } 

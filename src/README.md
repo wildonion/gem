@@ -1,4 +1,0 @@
-
-
-
-## Diesel Schema

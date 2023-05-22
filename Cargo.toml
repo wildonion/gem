@@ -17,7 +17,7 @@ actix-web = { version = "4", features = ["openssl"] }
 actix-multipart = "0.6.0"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
-diesel = { version = "2.0.4", features = ["postgres", "r2d2"] }
+diesel = { version = "2.0.4", features = ["postgres", "r2d2", "uuid", "chrono"] }
 rustls = "0.21.1"
 redis = { version = "0.23.0", features = ["tokio-comp", "cluster-async", "json"] }
 mongodb = "2"
