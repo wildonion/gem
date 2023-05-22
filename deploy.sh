@@ -9,6 +9,8 @@ sudo docker run -d --network gem --name postgres --restart unless-stopped -p 543
 sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
 sudo docker run -d --link mongodb --network gem --name mongo-express --restart always -p 7544:8081 -e ME_CONFIG_MONGODB_SERVER=mongodb mongo-express
 
+diesel setup && diesel migration run
+
 sudo docker build -t conse-panel -f infra/docker/panel/Dockerfile .
 sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 

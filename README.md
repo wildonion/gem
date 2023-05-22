@@ -55,6 +55,8 @@ First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS then ```su
     * `schemas`: in-game mongodb schemas.
 * `infra`: all infrastructure configs and setup files.
 
+> All `conse`, `panel` and `bot` are just different binaries which sharing a same `Cargo.toml` setup.
+
 ## 🍟 Notes
 
 * all docker container the mounted volumes are inside `infra/data` folder. 

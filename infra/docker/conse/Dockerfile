@@ -20,7 +20,6 @@ RUN cargo build --bin conse --release
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
-RUN apt-get install -y libpq-dev && apt-get install libpq5
 RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
