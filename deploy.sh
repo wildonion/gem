@@ -9,14 +9,14 @@ sudo docker run -d --network gem --name postgres --restart unless-stopped -p 543
 sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
 sudo docker run -d --link mongodb --network gem --name mongo-express --restart always -p 7544:8081 -e ME_CONFIG_MONGODB_SERVER=mongodb mongo-express
 
-sudo docker build -t conse-panel infra/docker/panel/
+sudo docker build -t conse-panel -f infra/docker/panel/Dockerfile .
 sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
-sudo docker build -t catchup-bot infra/docker/bot/
+sudo docker build -t catchup-bot -f infra/docker/bot/Dockerfile .
 sudo docker run -d --link redis --network gem --name catchup-bot -v ./infra/data/dis-bot-logs:/usr/src/app/logs/ catchup-bot
 
-sudo docker build -t conse infra/docker/conse/
-sudo docker run -d --link mongodb --network gem --name -p 7439:7438 conse conse
+sudo docker build -t conse -f infra/docker/conse/Dockerfile .
+sudo docker run -d --link mongodb --network gem --name conse -p 7439:7438 conse
 
 sudo docker run -d --link conse --link conse-panel --network gem --name haproxy --restart unless-stopped -p 443:443 -p 80:80 -p 8404:8404 -p 7440:7440 -p 7444:7444 -v ./infra/conf/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg -v ./infra/cert/conse.pem:/usr/local/etc/conse.pem -e SERVER_IP=$SERVER_IP haproxytech/haproxy-alpine:2.4
 
@@ -26,5 +26,6 @@ sudo docker cp infra/conse-collections/sides.json $MONGODB_CONTAINER_ID:/sides.j
 
 sudo docker exec mongodb mongoimport --db conse --collection roles roles.json # roles.json is now inside the root of the mongodb container
 sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # sides.json is now inside the root of the mongodb container
+
 
 sudo docker ps -a && sudo docker compose ps -a && sudo docker images

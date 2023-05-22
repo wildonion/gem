@@ -18,8 +18,6 @@ RUN apt install -y libpq-dev
 RUN cargo install diesel_cli --no-default-features --features postgres
 RUN cargo build --bin panel --release
 
-RUN diesel setup && diesel migration run
-
 
 FROM debian:buster-slim
 ARG APP=/usr/src/app
