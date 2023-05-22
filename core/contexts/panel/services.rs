@@ -10,7 +10,7 @@ use crate::*;
 
 pub fn init_dev(config: &mut web::ServiceConfig){
 
-    config.service(apis::dev::index);
+    config.service(apis::dev::reveal_role);
     
     // other routs
     // ...

@@ -33,7 +33,7 @@ pub struct Dev{
 
 */
 #[get("/reveal-role")]
-pub async fn index(
+pub async fn reveal_role(
         req: HttpRequest, 
         id: web::Path<u8>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
@@ -105,5 +105,26 @@ pub async fn index(
             StatusCode::FORBIDDEN, //// status code
         }
     }
+
+}
+
+pub async fn index(
+    req: HttpRequest, 
+        id: web::Path<u8>, 
+        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+
+    
+
+        resp!{
+            &[u8], //// the data type
+            &[], //// response data
+            FETCHED, //// response message
+            StatusCode::OK, //// status code
+        }   
+
+
 
 }
