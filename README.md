@@ -13,29 +13,22 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Note that to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with that user to register a new god for the game.
 
-### 🧪 Test Conse Hyper Server
-
-```cargo test --bin conse```
-
-### 🏃 Run Conse Hyper Server
-
-```cargo run --bin conse```
-
-### 🏃🏽‍♀️ Run Conse Actix Panel Server
-
-```cargo run --bin panel```
-
-### 🏃🏻‍♀️ Run Conse Discord Bot Server
-
-```cargo run --bin dis-bot```
-
-### 🏃🏿 Run Conse Test Codes
-
-```cargo run --bin tests```
-
+```bash
+# 🧪 Test Conse Hyper Server
+cargo test --bin conse
+# 🏃 Run Conse Hyper Server
+cargo run --bin conse
+# 🏃🏽‍♀️ Run Conse Actix Panel Server
+cargo run --bin panel
+# 🏃🏻‍♀️ Run Conse Discord Bot Server
+cargo run --bin dis-bot
+# 🏃🏿 Run Conse Test Codes
+cargo run --bin tests
+```
+    
 ## 🚀 Production Setup
 
-```console
+```bash
 # -----------------------
 # ---- read/write access
 sudo chown -R root:root . && sudo chmod -R 777 .
