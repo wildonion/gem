@@ -43,4 +43,18 @@ sudo docker run -d --link redis --network gem --name conse-catchup-bot -v ./infr
 sudo docker build -t --no-cache conse -f infra/docker/conse/Dockerfile .
 sudo docker run -d --link mongodb --network gem --name conse -p 7439:7438 conse
 
+# If you use the host network mode for a container, 
+# that container’s network stack is not isolated from the 
+# Docker host (the container shares the host’s networking namespace), 
+# and the container does not get its own IP-address allocated. 
+# For instance, if you run a container which binds to port 80 and 
+# you use host networking, the container’s application is available 
+# on port 80 on the host’s IP address thus we use the host network 
+# so we can access containers on 127.0.0.1 with their exposed ports 
+# inside the nginx conf without their dns name or ip address. 
+sudo docker build -t --no-cache nginx -f infra/docker/nginx/Dockerfile .
+sudo docker stop nginx
+sudo docker rm -f nginx
+sudo docker run -d -it -p 80:80 -p 443:443 --name nginx --network host nginx
+
 sudo docker ps -a && sudo docker compose ps -a && sudo docker images

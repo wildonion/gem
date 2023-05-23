@@ -72,7 +72,11 @@ pub static SEEDS: &[&[u8]; 2] = &["wildonion".as_bytes(), &[233]];
 
 
 
-
+// we can access all the following in exports module using exports::*
+pub mod exports{
+    pub struct Test;
+    pub async fn run(){}
+}
 
 
 
@@ -1736,7 +1740,18 @@ pub async fn generic(){
     ///////////////////////// CLOSURE TYPES EXAMPLE /////////////////////////////
     // we cant only use impl Trait syntax in function return type
     // --------------------------------------------------------------------------
-
+    let workers = 10;
+    type Job = Box<dyn Fn() -> () + Send + Sync>;
+    for worker in 0..workers{
+        let job: Job = Box::new(||{});
+        let thread = std::thread::spawn(move ||{
+            // job()
+            (*job)()
+        });
+    }
+    struct RunnerTar<C=std::pin::Pin<Box<dyn Interface>>>{
+        data: C ////
+    }
     //// since we have a closure inside the Box which is of 
     //// type trait, thus we can call it in a different ways
     //// like the following
@@ -1760,6 +1775,12 @@ pub async fn generic(){
     //// then we can call the trait using ()
     d_boxed.as_mut()(); 
 
+    //// closure traits can't be defined as a type
+    //// since they are heap data which their size
+    //// are unknown at compile time and must be 
+    //// behind a pointer like &'valid dyn or inside the 
+    //// Box with a valid lifetime 
+    // type ClosureTrait = FnOnce(String) -> String; 
     struct Run<F, T = fn() -> String> //// T has a default type parameter
         where F: FnOnce(String) -> String{
         data: F,

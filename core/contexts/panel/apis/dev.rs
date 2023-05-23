@@ -20,7 +20,7 @@ use crate::misc::*;
 
 */
 #[get("/notif/register/reveal-role/{id}")]
-pub async fn reveal_role(
+async fn reveal_role(
         req: HttpRequest, 
         id: web::Path<u8>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
@@ -105,7 +105,7 @@ pub async fn reveal_role(
 }
 
 #[post("/login")]
-pub async fn login(
+async fn login(
     req: HttpRequest, 
         username: web::Path<String>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
@@ -146,4 +146,11 @@ pub async fn login(
         }
     }
 
+}
+
+
+
+pub mod exports{
+    pub use super::login;
+    pub use super::reveal_role;
 }

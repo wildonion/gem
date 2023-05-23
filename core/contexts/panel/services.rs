@@ -18,8 +18,8 @@ use crate::*;
 */
 pub fn init_dev(config: &mut web::ServiceConfig){
 
-    config.service(apis::dev::reveal_role);
-    config.service(apis::dev::login);
+    config.service(apis::dev::exports::reveal_role);
+    config.service(apis::dev::exports::login);
     
     // other routs maybe ?
     // ...
@@ -37,7 +37,9 @@ pub fn init_dev(config: &mut web::ServiceConfig){
 */
 pub fn init_admin(config: &mut web::ServiceConfig){
     
-    config.service(apis::admin::login);
+    config.service(apis::admin::exports::login);
+    config.service(apis::admin::exports::register_new_admin);
+    config.service(apis::admin::exports::register_new_task);
 
     // other routs maybe ?
     // ...
@@ -55,7 +57,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 */
 pub fn init_user(config: &mut web::ServiceConfig){
     
-    config.service(apis::health::index);
+    config.service(apis::health::exports::index);
     
     // other routs maybe ?
     // ...

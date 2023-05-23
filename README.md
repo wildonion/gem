@@ -35,15 +35,25 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ## 🚀 Production Setup
 
-> Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
+```console
+# -----------------------
+# ---- read/write access
+sudo chown -R root:root . && sudo chmod -R 777 .
+sudo chmod +x /root && sudo chown -R root:root /root && sudo chmod -R 777 /root
+cd scripts
+# ---------------
+# ---- setup VPS
+./setup.sh
+# ---------------
+# ---- deploy containers
+./deploy.sh
+# ---------------
+# ---- renew nginx 
+./renew.sh
+```
+> **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
-> To access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
-
-> Remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values using ```echo OPENAI_KEY=<TOKEN> >> .env``` and ```echo DISCORD_TOKEN=<TOKNE> >> .env``` commands.
-
-> After updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
-
-First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS then ```sudo chmod +x deploy.sh && ./deploy.sh``` to up and run docker containers then to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+> **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
 ## 🗃️ Directory Explained
 
@@ -59,13 +69,21 @@ First run ```sudo chmod +x setup.sh && ./setup.sh``` to setup the VPS then ```su
 
 > **NOTE**: All `conse`, `panel` and `bot` are just different binaries and sharing a same `Cargo.toml` setup.
 
-## 🍟 Notes
+## 🍟 Good 2 Know
+
+* to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
+
+* remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values using ```echo OPENAI_KEY=<TOKEN> >> .env``` and ```echo DISCORD_TOKEN=<TOKNE> >> .env``` commands.
+
+* after updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
+
+* to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
 * all docker container the mounted volumes are inside `infra/data` folder. 
 
 * before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
 
-* use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database.
+* use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
 * in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
 

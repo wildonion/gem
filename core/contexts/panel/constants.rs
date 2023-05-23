@@ -14,3 +14,6 @@ pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static NOT_FOUND_TOKEN: &str = "No Token Is Provided In Header";
 pub static INVALID_TOKEN: &str = "Invalid Token";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
+pub static ACCESS_GRANTED: &str = "Access Granted";
+pub static ACCESS_DENIED: &str = "Access Denied";
+pub static USER_NOT_FOUND: &str = "User Not Found";

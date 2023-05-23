@@ -28,7 +28,7 @@ pub struct Health{
 
 */
 #[get("/reveal-role")]
-pub async fn index(
+async fn index(
         req: HttpRequest, 
         id: web::Path<u8>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
@@ -46,4 +46,9 @@ pub async fn index(
             StatusCode::OK, //// status code
         }
 
+}
+
+
+pub mod exports{
+    pub use super::index;
 }

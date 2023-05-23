@@ -7,12 +7,8 @@ use utoipa_swagger_ui::{SwaggerUi, Url};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
-use diesel::result::Error;
 use redis::aio::Connection as RedisConnection;
-use redis::FromRedisValue;
-use redis::JsonAsyncCommands;
 use redis::Client as RedisClient;
-use redis::cluster::ClusterClient;
 use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use hyper::StatusCode;

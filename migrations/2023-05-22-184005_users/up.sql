@@ -1,9 +1,16 @@
 -- Your SQL goes here
-CREATE TABLE users (
+
+CREATE TYPE UserRole AS ENUM ('admin', 'dev', 'user');
+
+CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
+  username VARCHAR NOT NULL,
   twitter_username VARCHAR NOT NULL,
+  facebook_username VARCHAR NOT NULL,
+  discord_username VARCHAR NOT NULL,
   wallet_address VARCHAR NOT NULL,
-  user_role VARCHAR NOT NULL,
+  user_role UserRole NOT NULL,
+  pswd VARCHAR NOT NULL,
   last_login TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL

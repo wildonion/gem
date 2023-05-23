@@ -244,28 +244,28 @@ macro_rules! server {
                         DEV PUSH NOTIF REGISTERATION SERIVE 
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/dev")
+                        actix_web::web::scope("/dev")
                             .configure(services::init_dev)   
                     )
                     /*
                         ADMIN PUSH NOTIF REGISTERATION SERIVE 
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/admin")
+                        actix_web::web::scope("/admin")
                             .configure(services::init_admin)
                     )
                     /*
                         HEALTH SERIVE
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/health")
+                        actix_web::web::scope("/health")
                             .configure(services::init_health)
                     )
                     /*
                         MMQ SERIVE
                     */
                     .service(
-                        actix_web::web::scope("/panel/api/mmq")
+                        actix_web::web::scope("/mmq")
                             .configure(services::init_mmq)
                     )
                 }) //// each thread of the HttpServer instance needs its own app factory 

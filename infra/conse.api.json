@@ -2161,22 +2161,22 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://api.conse.app:7439",
+			"value": "https://conse.app:7439/api",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://api.conse.app:7439",
+			"value": "https://conse.app:7439/api",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://api.conse.app:7439",
+			"value": "https://conse.app:7439/api",
 			"type": "string"
 		},
 		{
 			"key": "whitelist",
-			"value": "https://api.conse.app:7439",
+			"value": "https://conse.app:7439/api",
 			"type": "string"
 		},
 		{
