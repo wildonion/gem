@@ -54,7 +54,11 @@ pub struct NewUser<'l> {
 
 impl User{
 
-    pub fn get_token(&self) -> &str{
+    pub fn generate_token(&self) -> &str{
+
+        // generate jwt token from user_id
+        // ...
+
         let token = "";
         token
     }

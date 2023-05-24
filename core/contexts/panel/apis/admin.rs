@@ -64,11 +64,25 @@ pub(super) async fn login(
                     };
 
                     /* if we're here means that the password was correct */
-                    let token = user.get_token();
-                    
+                    let token = user.generate_token();
+
+                    /*
+                        since cookie can be stored inside the request object thus for peers on the same network 
+                        which have an equal ip address they share a same cookie thus we'll face the bug of which 
+                        every user can be every user in which they can see other peer's jwt info inside their browser!
+                    */
+                    let now = chrono::Local::now().timestamp_nanos();
+                    let now_str = format!("{}", now).as_str();
+                    let time_hash = Sha3_512::new()
+                                .chain_update(now_str.as_bytes())
+                                .finalize();
+                    let cookie_value = format!("{}+{}", time_hash, token);
+                    /* stroing the generated jwt inside the cookie and send the cookie */
+                    let cookie = Cookie::build("jwt", cookie_value).same_site(cookie::SameSite::Strict).finish();
+            
                     resp!{
-                        &str, //// the data type
-                        token, //// response data
+                        Cookie, //// the data type
+                        cookie, //// response data
                         FETCHED, //// response message
                         StatusCode::OK, //// status code
                     } 
@@ -106,7 +120,10 @@ async fn register_new_admin(
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
-        // need token 
+        let jwt_cookie = req.cookie("jwt").unwrap();
+        let token = jwt_cookie.value();
+
+        // decode token to check the user info like access level
         // ...
 
         resp!{
