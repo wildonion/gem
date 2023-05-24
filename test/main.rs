@@ -1775,6 +1775,55 @@ pub async fn generic(){
     //// then we can call the trait using ()
     d_boxed.as_mut()(); 
 
+
+
+    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    struct Useram{
+        pswd: String
+    }
+    impl Useram{
+        pub fn get_token(&self) -> &str{
+            "token"
+        }
+    }
+    let user = Useram{pswd: "wildonion".to_string()};
+    /* 
+        since we're putting the return type of the Box which is
+        another Box contains a future object inside the Pin thus 
+        all the types inside the second Box must be live long anough
+        and be valid across .await until the value gets pinned from
+        the ram. we can solve this by moving the that type into the 
+        async block or the future object. 
+    */
+    let token: Box<dyn FnOnce() -> 
+        Arc<std::pin::Pin<Box<dyn std::future::Future<Output=String> + Send + Sync + 'static>>> //// a shared pinned box object 
+            + Send + Sync + 'static> = 
+            Box::new(|| Arc::new(Box::pin(
+                    /* 
+                        by using move keyword we can move the user into this scope so it can 
+                        have a valid lifetime across .await since the following async block will
+                        be pinned into the ram which all the types inside the async block must be 
+                        valid until the future object gets unpinned.  
+                    */
+                    async move{
+                        user.get_token().to_string()
+                    }
+                ))
+            );
+    /* 
+        here we can't deref the token object to call it 
+        and it MUST be remained behind a pointer since 
+        by derefing it we'll get a trait object which 
+        has defined by ourselves in the code, not the 
+        compiler, that it's size is not known at compile 
+        time thus we can't allow it to be inside the Box
+        or behind a pointer to use it
+    */
+    // let get_token = (*token)().await; 
+    let get_token = token(); /* here token is callable since it's just only behind a heap data pointer which is Box */
+    // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
     //// closure traits can't be defined as a type
     //// since they are heap data which their size
     //// are unknown at compile time and must be 
@@ -1790,11 +1839,21 @@ pub async fn generic(){
     trait InterfaceExt{}
     impl<F, T> InterfaceExt for Run<F, T> where F: FnOnce(String) -> String{}
     
+    // -> impl Trait only allowed in function not in trait return type
+    // since we can't impl a trait for the return type of another trait!!
     fn runYours() -> impl FnOnce(String) -> String{ //// return closure using -> impl Trait 
         |name: String|{
             name
         }
     } 
+
+    fn runOurs() -> Box<impl FnOnce(String) -> String>{
+        Box::new(
+            |name:String|{
+                name
+            }
+        )
+    }
 
     fn runYours_() -> &'static dyn FnOnce(String) -> String{ //// return closure using -> &dy Trait
         &|name: String|{

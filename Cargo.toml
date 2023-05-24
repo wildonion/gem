@@ -70,3 +70,7 @@ path = "core/contexts/panel/app.rs"
 [[bin]]
 name = "tests"
 path = "test/main.rs"
+
+[[bin]]
+name = "argon2test"
+path = "test/argon2test.rs"

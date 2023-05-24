@@ -22,9 +22,10 @@ use crate::schema::users::dsl::*;
 */
 
 #[post("/login")]
-async fn login(
+pub(super) async fn login(
         req: HttpRequest, 
-        user_id: web::Path<i32>, 
+        user_id: web::Path<i32>,
+        password: web::Path<String>,
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -52,15 +53,22 @@ async fn login(
             match user.user_role{
                 UserRole::Admin => {
 
-                    // step 1 - generate code 
-                    // step 2 - pswd: hash of the time and the code is the password ???? time hash api 
-                    // step 3 - generate token
-                    
-                    let token = user.get_token();
+                    let hash_pswd = user.hash_pswd(password.as_str()).unwrap();
+                    let Ok(_) = user.verify_pswd(hash_pswd.as_str()) else{
+                        resp!{
+                            i32, //// the data type
+                            user_id.to_owned(), //// response data
+                            WRONG_PASSWORD, //// response message
+                            StatusCode::FORBIDDEN, //// status code
+                        }
+                    };
 
+                    /* if we're here means that the password was correct */
+                    let token = user.get_token();
+                    
                     resp!{
-                        i32, //// the data type
-                        user_id.to_owned(), //// response data
+                        &str, //// the data type
+                        token, //// response data
                         FETCHED, //// response message
                         StatusCode::OK, //// status code
                     } 

@@ -17,3 +17,4 @@ pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static USER_NOT_FOUND: &str = "User Not Found";
+pub static WRONG_PASSWORD: &str = "Wrong Password";

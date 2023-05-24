@@ -18,7 +18,7 @@ if [[ $is_new_domain == "Y" || $is_new_domain == "y" ]]; then
     sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $REALPTH_GEM/infra/cert/key-conse.pem && sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $REALPTH_GEM/infra/docker/nginx/key-conse.pem
     echo "okay now you can use $REALPTH_GEM/infra/docker/nginx/key-conse.pem and $REALPTH_GEM/infra/docker/nginx/cert-conse.pem in your nginx conf"
 else
-    echo "if it's not about adding domain, maybe new config file is going to be added into the nginx docker, i don't know! 🤔"
+    echo "if it's not about adding domain, maybe a new config file is going to be added into the nginx docker, i don't know! 🤔"
 fi
 # If you use the host network mode for a container, 
 # that container’s network stack is not isolated from the 

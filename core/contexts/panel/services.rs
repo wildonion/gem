@@ -56,9 +56,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 
 */
 pub fn init_user(config: &mut web::ServiceConfig){
-    
-    config.service(apis::health::exports::index);
-    
+        
     // other routs maybe ?
     // ...
 
@@ -74,7 +72,9 @@ pub fn init_user(config: &mut web::ServiceConfig){
 
 */
 pub fn init_health(config: &mut web::ServiceConfig){
-    
+
+    config.service(apis::health::exports::index);
+
     // other routs maybe ?
     // ...
 

@@ -59,4 +59,16 @@ impl User{
         token
     }
 
+    pub fn hash_pswd(&self, pswd: &str) -> Result<String, argon2::Error>{
+        let salt = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
+        let salt_bytes = salt.as_bytes();
+        let password_bytes = pswd.as_bytes();
+        argon2::hash_encoded(password_bytes, salt_bytes, &argon2::Config::default())
+    }
+
+    pub fn verify_pswd(&self, raw_pswd: &str) -> Result<bool, argon2::Error>{
+        let password_bytes = raw_pswd.as_bytes();
+        Ok(argon2::verify_encoded(&self.pswd, password_bytes).unwrap())
+    }
+
 }

@@ -24,6 +24,8 @@ cargo run --bin panel
 cargo run --bin dis-bot
 # 🏃🏿 Run Conse Test Codes
 cargo run --bin tests
+# 🏃🏿 Run Conse Argon2 Test Codes
+cargo run --bin argon2test
 ```
     
 ## 🚀 Production Setup
@@ -47,6 +49,8 @@ cd scripts
 > **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
 > **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
+
+> **NOTE**: For every new domain inside the VPS there must be a new config file inside the `infra/docker/nginx` folder related to the domain name. 
 
 ## 🗃️ Directory Explained
 
@@ -86,13 +90,9 @@ cd scripts
 
 ## 🚧 WIP
 
-* setup **TLS/SSL** for `hyper`, `ws` and `actix` servers using `tokio-rustls` and `openssl` over certbot certificate files, note that for this we must have a domain poiting to the VPS that the gem is inside.  
-
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * all TODOs inside the app and `panel` service also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
-
-* check the containers status using using [portainer](https://www.portainer.io/), balance the loads between conse docker services and images inside the `docker-compose` file using `k8s` on `DigitalOcean` PaaS over `gem` repo.
 
 * backend design pattern sketch using freeform and moongodb ERD schemas inside wiki.
 
