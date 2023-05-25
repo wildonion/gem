@@ -3,9 +3,9 @@
     <img src="https://github.com/wildonion/gem/blob/master/assets/yewrustwasm.avif"
 </p>
 
-# gem admin and dev panel macro based APIs using Actix, Redis, Mongodb and Postgres
+# functional and macro based design pattern for gem admin and dev panel APIs using Actix, Redis, Mongodb and Postgres
 
-**🦀 Rust flows in you 🌊**: Write codes that you want to care about them in the future!
+**🦀 Rust flows in you 🌊**: write codes that are the matter-of-futer flows!
 
 ## 🧐 Good 2 Know
 

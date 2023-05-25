@@ -9,7 +9,8 @@ use crate::constants::*;
 use crate::misc::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
-
+use crate::schema::tasks::dsl::*;
+use crate::schema::tasks;
 
 
 
@@ -187,7 +188,7 @@ async fn register_new_admin(
 #[post("/register-new-task")]
 async fn register_new_task(
         req: HttpRequest, 
-        new_task: web::Json<NewTask>, 
+        new_task: web::Json<NewTaskRequest>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -205,11 +206,24 @@ async fn register_new_task(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+                    
+                    let task = NewTaskRequest{
+                        task_name: new_task.task_name.clone(),
+                        task_description: new_task.task_description.clone(),
+                        task_score: new_task.task_score,
+                        admin_id: new_task.admin_id,
+                    };
 
-         
-                    // register new task 
-                    // publish new task to all users with user role using redis 
+
+                    // add new task to db using join
+                    // publish/fire new task/event or topic to all 
+                    //  users who have user role, using redis 
                     // ...
+
+                    let inserted_admin_id = diesel::insert_into(tasks::table)
+                        .values(&task)
+                        .execute(connection)
+                        .unwrap();
 
 
                     resp!{

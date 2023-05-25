@@ -32,4 +32,22 @@ pub struct Task{
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct NewTask;
+pub struct NewTaskRequest{
+    pub task_name: String,
+    pub task_description: String,
+    pub task_score: i32,
+    pub admin_id: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=tasks)]
+pub struct NewTask<'t>{
+    pub task_name: &'t str,
+    pub task_description: &'t str,
+    pub task_score: i32,
+    pub admin_id: i32
+}
+
+impl Task{
+
+}
