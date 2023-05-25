@@ -28,7 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     println!("dev password is {:?}", dev_pass.unwrap());
     println!("admin password is {:?}", admin_pass.unwrap());
 
-
     Ok(())
 
 

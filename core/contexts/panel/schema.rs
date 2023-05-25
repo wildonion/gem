@@ -7,6 +7,18 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    tasks (id) {
+        id -> Int4,
+        task_name -> Varchar,
+        task_description -> Nullable<Varchar>,
+        task_score -> Int4,
+        admin_id -> Int4,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Userrole;
 
@@ -19,8 +31,16 @@ diesel::table! {
         wallet_address -> Nullable<Varchar>,
         user_role -> Userrole,
         pswd -> Varchar,
-        last_login -> Timestamptz,
+        token_time -> Nullable<Int8>,
+        last_login -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
 }
+
+diesel::joinable!(tasks -> users (admin_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    tasks,
+    users,
+);
