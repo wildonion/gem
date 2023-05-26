@@ -1,3 +1,4 @@
 target
 Cargo.lock
 infra/data
+infra/docker/nginx/build

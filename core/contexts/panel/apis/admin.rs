@@ -22,6 +22,93 @@ use crate::schema::tasks;
     |
 
 */
+#[post("/notif/register/reveal-role/{id}")]
+async fn reveal_role(
+        req: HttpRequest, 
+        _id: web::Path<i32>, 
+        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    
+    if let Some(header_value) = req.headers().get("Authorization"){
+    
+        let token = header_value.to_str().unwrap();
+        
+        /*
+            @params: 
+                - @request       → actix request object
+                - @storage       → instance inside the request object
+                - @access levels → vector of access levels
+        */
+        match passport!{ token }{
+            true => {
+
+                //// -------------------------------------------------------------------------------------
+                //// ------------------------------- ACCESS GRANTED REGION -------------------------------
+                //// -------------------------------------------------------------------------------------
+
+                let storage = storage.as_ref().to_owned();
+                let redis_conn = redis_conn.to_owned();
+                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
+
+                match storage.clone().unwrap().get_pgdb().await{
+                    Some(pg_pool) => {
+            
+                        
+                        // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
+                        // 🥑 todo - also call the /reveal/roles api of the hyper server                 
+                        // ...
+
+                        let mq = events::redis::mmq::MatchQueue{..Default::default()};
+                        let role = events::redis::role::Reveal;
+            
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            FETCHED, //// response message
+                            StatusCode::OK, //// status code
+                        } 
+            
+            
+                    },
+                    None => {
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            STORAGE_ISSUE, //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                        }
+                    }
+                }
+
+                //// -------------------------------------------------------------------------------------
+                //// -------------------------------------------------------------------------------------
+                //// -------------------------------------------------------------------------------------
+
+            },
+            false => {
+                
+                resp!{
+                    &[u8], //// the date type
+                    &[], //// the data itself
+                    INVALID_TOKEN, //// response message
+                    StatusCode::FORBIDDEN, //// status code
+                }
+            }
+        }
+
+    } else{
+        
+        resp!{
+            &[u8], //// the date type
+            &[], //// the data itself
+            NOT_AUTH_HEADER, //// response message
+            StatusCode::FORBIDDEN, //// status code
+        }
+    }
+
+}
 
 #[post("/login")]
 pub(super) async fn login(
@@ -137,7 +224,7 @@ async fn register_new_admin(
                         pswd: hash_pswd.as_str()
                     };
 
-                    let inserted_admin_id = diesel::insert_into(users::table)
+                    let affected_row = diesel::insert_into(users::table)
                         .values(&new_admin)
                         .execute(connection)
                         .unwrap();
@@ -207,29 +294,108 @@ async fn register_new_task(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    let task = NewTaskRequest{
-                        task_name: new_task.task_name.clone(),
-                        task_description: new_task.task_description.clone(),
+                    let single_task = tasks
+                                .filter(task_name.eq(new_task.task_name.clone()))
+                                .first::<Task>(connection);
+
+                    let Ok(task) = single_task else{
+                        resp!{
+                            String, //// the data type
+                            new_task.task_name.clone(), //// response data
+                            FOUND_TASK, //// response message
+                            StatusCode::FOUND, //// status code
+                        } 
+                    };
+
+                    let task = NewTask{
+                        task_name: new_task.task_name.as_str(),
+                        task_description: Some(new_task.task_description.as_str()),
                         task_score: new_task.task_score,
                         admin_id: new_task.admin_id,
                     };
 
-
-                    // add new task to db using join
                     // publish/fire new task/event or topic to all 
                     //  users who have user role, using redis 
                     // ...
 
-                    let inserted_admin_id = diesel::insert_into(tasks::table)
+                    let affected_row = diesel::insert_into(tasks::table)
                         .values(&task)
                         .execute(connection)
                         .unwrap();
-
 
                     resp!{
                         &[u8], //// the data type
                         &[], //// response data
                         CREATED, //// response message
+                        StatusCode::OK, //// status code
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        response can be one of the following:
+                        
+                        - NOT_FOUND_TOKEN
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND 
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                        - NOT_FOUND_JWT_VALUE
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+            }
+        }
+    }         
+
+
+}
+
+#[post("/delete-task")]
+async fn delete_task(
+        req: HttpRequest, 
+        task_id: web::Path<i32>, 
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_client.get_async_connection().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+            match User::passport(req, UserRole::Admin, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    let num_deleted = diesel::delete(tasks.filter(tasks::id.eq(task_id.to_owned())))
+                        .execute(connection)
+                        .unwrap();
+
+                    resp!{
+                        &[u8], //// the data type
+                        &[], //// response data
+                        DELETED, //// response message
                         StatusCode::OK, //// status code
                     }
 
@@ -276,5 +442,7 @@ async fn register_new_task(
 pub mod exports{
     pub use super::login;
     pub use super::register_new_admin;
-    pub use super::register_new_task;    
+    pub use super::register_new_task; 
+    pub use super::delete_task;
+    pub use super::reveal_role;   
 }

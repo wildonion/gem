@@ -241,18 +241,25 @@ macro_rules! server {
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
                     /*
-                        DEV PUSH NOTIF REGISTERATION SERIVE 
+                        INIT DEV SERIVE APIs 
                     */
                     .service(
                         actix_web::web::scope("/dev")
                             .configure(services::init_dev)   
                     )
                     /*
-                        ADMIN PUSH NOTIF REGISTERATION SERIVE 
+                        INIT ADMIN SERIVE APIs
                     */
                     .service(
                         actix_web::web::scope("/admin")
                             .configure(services::init_admin)
+                    )
+                    /*
+                        INIT USER SERIVE APIs 
+                    */
+                    .service(
+                        actix_web::web::scope("/user")
+                            .configure(services::init_user)
                     )
                     /*
                         HEALTH SERIVE
@@ -260,13 +267,6 @@ macro_rules! server {
                     .service(
                         actix_web::web::scope("/health")
                             .configure(services::init_health)
-                    )
-                    /*
-                        MMQ SERIVE
-                    */
-                    .service(
-                        actix_web::web::scope("/mmq")
-                            .configure(services::init_mmq)
                     )
                 }) //// each thread of the HttpServer instance needs its own app factory 
                 .bind((host.as_str(), port))

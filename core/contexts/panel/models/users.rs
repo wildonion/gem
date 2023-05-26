@@ -32,7 +32,7 @@ pub struct User{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Queryable,)]
+#[derive(Serialize, Deserialize, Clone, Debug, Queryable)]
 pub struct FetchUser{
     pub id: i32,
     pub username: String,

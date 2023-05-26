@@ -9,6 +9,14 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
     <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
 </p>
 
+```
+🌍 MAIN SITE ==> https://conse.app/
+👨🏻‍⚖️ ADMIN PANEL ==> https://admin.conse.app/
+🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
+🗺️ MAIN API ROUTE ==> https://api.conse.app/
+🎙️ HOSTED ON ==> BeAnotherJoe VPS
+```
+
 ## 🛠️ Development Setup
 
 > Note that to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with that user to register a new god for the game.
@@ -50,7 +58,11 @@ cd scripts
 
 > **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
-> **NOTE**: For every new domain inside the VPS there must be a new config file inside the `infra/docker/nginx` folder related to the domain name. 
+> **NOTE**: For every new (sub)domain inside the VPS there must be a new config file inside the `infra/docker/nginx` folder related to that (sub)domain name.
+
+> **NOTE**: Currently there must be two registered domains by default, one is `conse.app` which hosts the UI and the API routes and the other is `panel.conse.app` which hosts the panel UI.
+
+> **NOTE**: To serve static files using nginx just make sure you copied the `build` folder of JS projects into `infra/docker/nginx` folder.   
 
 ## 🗃️ Directory Explained
 
@@ -90,13 +102,11 @@ cd scripts
 
 ## 🚧 WIP
 
-* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise`, `ring` and `ed25519-dalek` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * all TODOs inside the app and `panel` service also create a proc macro attribute like `#[passport]` to put on top of the auth controllers.
 
 * backend design pattern sketch using freeform and moongodb ERD schemas inside wiki.
-
-* communication between Conse and the [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) must be done through the TCP stream since [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) supports TCP stream.
 
 * use an AI model like [STEM](https://github.com/wildonion/stem) which suggests player the tips and tricks for a new game based on behavioural graph of the player collected by the history of each event's `phases` field
 

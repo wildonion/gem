@@ -917,7 +917,6 @@ pub async fn god_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
                     ////////////////////////////////// DB Ops
                     
                     
-                    let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
                     let mut all_god_events = vec![];
                     let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); //// selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
                     let mut events_cursor = events.find(doc!{"group_info.god_id": _id.unwrap().to_string()}, None).await.unwrap(); //// we must define the cursor as mutable since fetching all events is a mutable operation

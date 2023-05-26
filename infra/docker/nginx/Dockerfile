@@ -8,9 +8,18 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY build /usr/share/nginx/html
 
 # Copy the SSL certificate and private key to the container
-#conseapp:
-COPY /etc/letsencrypt/live/conse.app/fullchain.pem /etc/nginx/cert-conse.pem
-COPY /etc/letsencrypt/live/conse.app/privkey.pem /etc/nginx/key-conse.pem
+#conse.app:
+COPY cert-conse.app.pem /etc/nginx/cert-conse.app.pem
+COPY key-conse.app.pem /etc/nginx/key-conse.app.pem
+#panel.conse.app:
+COPY cert-panel.conse.app.pem /etc/nginx/cert-panel.conse.app.pem
+COPY key-panel.conse.app.pem /etc/nginx/key-panel.conse.app.pem
+#api.panel.conse.app:
+COPY cert-api.panel.conse.app.pem /etc/nginx/cert-api.panel.conse.app.pem
+COPY key-api.panel.conse.app.pem /etc/nginx/key-api.panel.conse.app.pem
+#api.conse.app:
+COPY cert-api.conse.app.pem /etc/nginx/cert-api.conse.app.pem
+COPY key-api.conse.app.pem /etc/nginx/key-api.conse.app.pem
 
 # COPY /etc/letsencrypt/live/deadcat.ir/fullchain.pem /etc/nginx/cert.pem
 # COPY /etc/letsencrypt/live/deadcat.ir/privkey.pem /etc/nginx/key.pem
@@ -23,7 +32,10 @@ EXPOSE 443
 
 # Configure Nginx to serve the React application over HTTPS
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY conse.conf /etc/nginx/conse.conf
+COPY conse.app.conf /etc/nginx/conse.conf
+COPY panel.conse.app.conf /etc/nginx/conse.conf
+COPY api.panel.conse.app.conf /etc/nginx/conse.conf
+COPY api.conse.app.conf /etc/nginx/conse.conf
 
 
 # Start Nginx in the foreground when the Docker container starts

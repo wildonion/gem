@@ -3,11 +3,13 @@
     <img src="https://github.com/wildonion/gem/blob/master/assets/yewrustwasm.avif"
 </p>
 
-# functional and macro based design pattern for gem admin and dev panel APIs using Actix, Redis, Mongodb and Postgres
+# functional, macro and access level based design pattern for gem admin and dev panel APIs.
 
 **🦀 Rust flows in you 🌊**: write codes that are the matter-of-futer flows!
 
 ## 🧐 Good 2 Know
+
+* this is a micro service in which all its APIs are designed based on access levels not the database models. 
 
 * to use dev APIs Remember to run conse hyper server first.
 
