@@ -19,7 +19,7 @@ use crate::misc::*;
     |
 
 */
-#[post("/get/admin/{id}/data")]
+#[get("/get/admin/{id}/data")]
 async fn get_admin_data(
         req: HttpRequest, 
         id: web::Path<String>, //// mongodb object id of admin or god 
@@ -54,6 +54,7 @@ async fn get_admin_data(
             
                         
                         // 🥑 todo - fetch all events related to the passed in admin (god) id from mongodb
+                        // 🥑 todo - fetch all events related to the passed in admin (god) id using hyper api calls
                         // ...
             
                         resp!{
@@ -107,7 +108,7 @@ async fn get_admin_data(
 
 }
 
-#[post("/get/user/{id}/data")]
+#[get("/get/user/{id}/data")]
 async fn get_user_data(
         req: HttpRequest, 
         id: web::Path<String>, //// mongodb object id of user or player 
@@ -142,6 +143,7 @@ async fn get_user_data(
             
                         
                         // 🥑 todo - fetch all events related to the passed in user (player) id from mongodb
+                        // 🥑 todo - fetch all events related to the passed in user (player) id using hyper api calls
                         // ...
             
                         resp!{

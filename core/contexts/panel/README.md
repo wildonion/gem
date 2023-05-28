@@ -25,7 +25,7 @@
 
 * user task reports
 
-* reveal role
+* reveal role by admin
 
 * register new event by sending SMS
 
@@ -45,6 +45,10 @@
 
 ## 🚧 WIPs
 
+* admin SMS panel to register new event
+
+* create a proc macro attribute like `#[passport]` to put on top of the admin and dev apis, struct and their fields
+
 * completing god and dev panel app using `yew`
 
 * generating swagger doc with utoipa 
@@ -52,3 +56,11 @@
 * custom error type inside `error.rs`
 
 * publish reveal role and task topics  
+
+* dev apis related to the conse hyper server 
+
+* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+
+* backend design pattern sketch using freeform and ERD schemas inside wiki.
+
+* `MMQ` and order matching engine to suggests players events and other games based on their past experiences, scores (MMR) and earned tokens also and order matching engine for players to sell their minted roles based on highest or lowest order in order book.
