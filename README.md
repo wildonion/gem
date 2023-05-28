@@ -16,7 +16,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 👨🏻‍⚖️ ADMIN PANEL ==> https://admin.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
 🗺️ MAIN API ROUTE ==> https://api.conse.app/
-🎙️ HOSTED ON ==> BeAnotherJoe VPS
+🎙️ HOSTED ON ==> ...
 ```
 
 ## 🛠️ Development Setup
