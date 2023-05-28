@@ -9,6 +9,7 @@ pub const ADMIN_ACCESS: u8 = 1; // God access
 pub static FETCHED: &str = "Fetched Successfully";
 pub static CREATED: &str = "Created Successfully";
 pub static DELETED: &str = "Deleted Successfully";
+pub static UPDATED: &str = "Updated Successfully";
 pub static FOUND_TASK: &str = "Task Has Already Registered";
 pub static STORAGE_ISSUE: &str = "Storage Is Not Available";
 pub static IAM_HEALTHY: &str = "Ok";

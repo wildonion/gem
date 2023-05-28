@@ -97,7 +97,10 @@ pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) t
     can't bound the T to ?Sized since 
     T is inside the Option which the size
     of the Option depends on the T at 
-    compile time 
+    compile time hence the T must be 
+    Sized, also we're using a lifetime 
+    to use the str slices in message
+
 */
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{
@@ -121,6 +124,7 @@ macro_rules! resp {
         $data:expr,
         $msg:expr,
         $code:expr,
+        $cookie:expr,
     ) => {
 
         {
@@ -136,13 +140,20 @@ macro_rules! resp {
                 status: code
             };
             
-            let response = Ok(
+            let resp = if let Some(cookie) = $cookie{
+                res
+                    .cookie(cookie)
+                    .json(
+                        response_data
+                    )
+            } else{
                 res
                     .json(
                         response_data
                     )
-            );
-            return response;
+            }; 
+
+            return Ok(resp);
         }
     }
 }
@@ -152,7 +163,7 @@ macro_rules! resp {
 macro_rules! server {
     (
         
-        /* ... args here ... */
+        /* ... setup args here ... */
 
     ) => {
         

@@ -18,7 +18,7 @@ use crate::constants::*;
 
 */
 
-#[derive(Queryable, Selectable, Identifiable, Associations, Debug, PartialEq)]
+#[derive(Queryable, Selectable, Serialize, Deserialize, Identifiable, Associations, Debug, PartialEq)]
 #[diesel(belongs_to(User, foreign_key=admin_id))]
 #[diesel(table_name=tasks)]
 pub struct Task{
@@ -31,12 +31,29 @@ pub struct Task{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NewTaskRequest{
     pub task_name: String,
     pub task_description: String,
     pub task_score: i32,
     pub admin_id: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EditTaskRequest{
+    pub task_id: i32,
+    pub task_name: String,
+    pub task_description: String,
+    pub task_score: i32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[derive(Insertable, AsChangeset)]
+#[diesel(table_name=tasks)]
+pub struct EditTask<'t>{
+    pub task_name: &'t str,
+    pub task_description: &'t str,
+    pub task_score: i32,
 }
 
 #[derive(Insertable)]

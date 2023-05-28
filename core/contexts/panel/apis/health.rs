@@ -48,6 +48,7 @@ async fn index(
             iam_healthy, //// response data
             IAM_HEALTHY, //// response message
             StatusCode::OK, //// status code
+            None,
         }
 
 }
@@ -89,6 +90,7 @@ async fn check_token(
                                 _id, //// response data
                                 USER_NOT_FOUND, //// response message
                                 StatusCode::NOT_FOUND, //// status code
+                                None,
                             } 
                         };
 
@@ -97,6 +99,7 @@ async fn check_token(
                             user, //// response data
                             FETCHED, //// response message
                             StatusCode::OK, //// status code
+                            None,
                         }
     
                     },
@@ -127,6 +130,7 @@ async fn check_token(
                     &[], //// response data
                     STORAGE_ISSUE, //// response message
                     StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                    None,
                 }
             }
         }

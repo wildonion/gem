@@ -61,6 +61,7 @@ async fn get_admin_data(
                             &[], //// response data
                             FETCHED, //// response message
                             StatusCode::OK, //// status code
+                            None,
                         } 
             
             
@@ -71,6 +72,7 @@ async fn get_admin_data(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None,
                         }
                     }
                 }
@@ -87,6 +89,7 @@ async fn get_admin_data(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
+                    None,
                 }
             }
         }
@@ -98,6 +101,7 @@ async fn get_admin_data(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
+            None,
         }
     }
 
@@ -145,6 +149,7 @@ async fn get_user_data(
                             &[], //// response data
                             FETCHED, //// response message
                             StatusCode::OK, //// status code
+                            None,
                         } 
             
             
@@ -155,6 +160,7 @@ async fn get_user_data(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None,
                         }
                     }
                 }
@@ -171,6 +177,7 @@ async fn get_user_data(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
+                    None,
                 }
             }
         }
@@ -182,6 +189,7 @@ async fn get_user_data(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
+            None,
         }
     }
 

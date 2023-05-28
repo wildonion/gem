@@ -16,7 +16,7 @@ use crate::constants::*;
     diesel migration redo           ---> drop tables 
 
 */
-#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq)]
+#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct User{
     pub id: i32,
     pub username: String,
@@ -32,8 +32,24 @@ pub struct User{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Queryable)]
+#[derive(Serialize, Deserialize, Clone, Debug, Queryable, Selectable)]
+#[diesel(table_name=users)]
 pub struct FetchUser{
+    pub id: i32,
+    pub username: String,
+    pub twitter_username: Option<String>,
+    pub facebook_username: Option<String>,
+    pub discord_username: Option<String>,
+    pub wallet_address: Option<String>,
+    pub user_role: UserRole,
+    pub token_time: Option<i64>,
+    pub last_login: Option<chrono::NaiveDateTime>,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct UserLoginData{
     pub id: i32,
     pub username: String,
     pub twitter_username: Option<String>,
@@ -64,6 +80,14 @@ pub struct NewUser<'l> {
     pub pswd: &'l str,
 }
 
+#[derive(Insertable, AsChangeset)]
+#[diesel(table_name=users)]
+#[derive(Clone, Debug)]
+pub struct EditUserByAdmin<'p>{
+    pub user_role: UserRole,
+    pub pswd: &'p str
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWTClaims{
     pub _id: i32, //// mongodb object id
@@ -77,6 +101,13 @@ pub struct JWTClaims{
 pub struct NewAdminInfoRequest{
     pub username: String,
     pub password: String
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EditUserByAdminRequest{
+    pub user_id: i32,
+    pub role: String,
+    pub password: Option<String>
 }
 
 impl User{
@@ -287,7 +318,7 @@ impl User{
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
         
-        let cookie_value = format!("{}::{}", time_hash_hex_string, token);
+        let cookie_value = format!("{}::{}", token, time_hash_hex_string);
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
                                     .finish();
