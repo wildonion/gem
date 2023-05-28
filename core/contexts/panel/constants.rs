@@ -20,6 +20,7 @@ pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static USER_NOT_FOUND: &str = "User Not Found";
+pub static TASK_NOT_FOUND: &str = "Task Not Found";
 pub static WRONG_PASSWORD: &str = "Wrong Password";
 pub static NOT_FOUND_COOKIE_EXP: &str = "No Expiration Time Found In Cookie";
 pub static EXPIRED_COOKIE: &str = "Cookie Has Expired";

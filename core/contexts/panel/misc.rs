@@ -101,6 +101,13 @@ pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) t
     Sized, also we're using a lifetime 
     to use the str slices in message
 
+    in the case of passing &[] data we must 
+    specify the type of T and pass the type to 
+    the Response signature like Response::<&[Type]>{} 
+    since the size of [] can't be known 
+    at compile time for T and we must put 
+    it behind a pointer like &[]    
+
 */
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{

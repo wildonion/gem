@@ -48,3 +48,7 @@
 * completing god and dev panel app using `yew`
 
 * generating swagger doc with utoipa 
+
+* custom error type inside `error.rs`
+
+* publish reveal role and task topics  

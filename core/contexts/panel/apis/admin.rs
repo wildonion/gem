@@ -130,80 +130,78 @@ pub(super) async fn login(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-            let single_user = users
-                                .filter(username.eq(user_name.to_owned()))
-                                .first::<User>(connection);
 
-            let Ok(user) = single_user else{
-                resp!{
-                    String, //// the data type
-                    user_name.to_owned(), //// response data
-                    USER_NOT_FOUND, //// response message
-                    StatusCode::NOT_FOUND, //// status code
-                    None,
-                } 
-            };
+            /* we can pass usernmae by reference or its slice form instead of cloning it */
+            match User::find_by_username(&user_name, connection).await{
+                Ok(user) => {
 
-            match user.user_role{
-                UserRole::Admin => {
-
-                    let hash_pswd = User::hash_pswd(password.as_str()).unwrap();
-                    let Ok(_) = user.verify_pswd(hash_pswd.as_str()) else{
-                        resp!{
-                            String, //// the data type
-                            user_name.to_owned(), //// response data
-                            WRONG_PASSWORD, //// response message
-                            StatusCode::FORBIDDEN, //// status code
-                            None,
+                    match user.user_role{
+                        UserRole::Admin => {
+        
+                            let hash_pswd = User::hash_pswd(password.as_str()).unwrap();
+                            let Ok(_) = user.verify_pswd(hash_pswd.as_str()) else{
+                                resp!{
+                                    String, //// the data type
+                                    user_name.to_owned(), //// response data
+                                    WRONG_PASSWORD, //// response message
+                                    StatusCode::FORBIDDEN, //// status code
+                                    None,
+                                }
+                            };
+        
+                            /* generate cookie from token time and jwt */
+                            let cookie_info = user.generate_cookie().unwrap();
+                            let cookie_token_time = cookie_info.1;
+        
+                            let now = chrono::Local::now().naive_local();
+                            let updated_user = diesel::update(users.find(user.id))
+                                .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                                .execute(connection)
+                                .unwrap();
+                            
+                            let user_login_data = UserLoginData{
+                                id: user.id,
+                                username: user.username.clone(),
+                                twitter_username: user.twitter_username.clone(),
+                                facebook_username: user.facebook_username.clone(),
+                                discord_username: user.discord_username.clone(),
+                                wallet_address: user.wallet_address.clone(),
+                                user_role: user.user_role.clone(),
+                                token_time: user.token_time,
+                                last_login: user.last_login,
+                                created_at: user.created_at,
+                                updated_at: user.updated_at,
+                            };
+        
+        
+                            resp!{
+                                UserLoginData, //// the data type
+                                user_login_data, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code,
+                                Some(cookie_info.0), //// response cookie 
+                            } 
+        
+                        },
+                        _ => {
+        
+                            resp!{
+                                String, //// the data type
+                                user_name.to_owned(), //// response data
+                                ACCESS_DENIED, //// response message
+                                StatusCode::FORBIDDEN, //// status code
+                                None,
+                            } 
                         }
-                    };
-
-                    /* generate cookie from token time and jwt */
-                    let cookie_info = user.generate_cookie().unwrap();
-                    let cookie_token_time = cookie_info.1;
-
-                    let now = chrono::Local::now().naive_local();
-                    let updated_user = diesel::update(users.find(user.id))
-                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
-                        .execute(connection)
-                        .unwrap();
-                    
-                    let user_login_data = UserLoginData{
-                        id: user.id,
-                        username: user.username.clone(),
-                        twitter_username: user.twitter_username.clone(),
-                        facebook_username: user.facebook_username.clone(),
-                        discord_username: user.discord_username.clone(),
-                        wallet_address: user.wallet_address.clone(),
-                        user_role: user.user_role.clone(),
-                        token_time: user.token_time,
-                        last_login: user.last_login,
-                        created_at: user.created_at,
-                        updated_at: user.updated_at,
-                    };
-
-
-                    resp!{
-                        UserLoginData, //// the data type
-                        user_login_data, //// response data
-                        FETCHED, //// response message
-                        StatusCode::OK, //// status code,
-                        Some(cookie_info.0), //// response cookie 
-                    } 
-
+                    }
                 },
-                _ => {
+                Err(resp) => {
 
-                    resp!{
-                        String, //// the data type
-                        user_name.to_owned(), //// response data
-                        ACCESS_DENIED, //// response message
-                        StatusCode::FORBIDDEN, //// status code
-                        None,
-                    } 
+                    /* USER NOT FOUND response */
+                    resp
+
                 }
             }
-
         },
         None => {
             
@@ -242,26 +240,25 @@ async fn register_new_admin(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let hash_pswd = User::hash_pswd(new_admin.password.as_str()).unwrap();
-                    let new_admin = NewUser{
-                        username: new_admin.username.as_str(),
-                        user_role: UserRole::Admin,
-                        pswd: hash_pswd.as_str()
-                    };
+                    /* to_owned() will take the NewAdminInfoRequest instance out of the web::Json*/
+                    match User::insert_new_admin(new_admin.to_owned(), connection).await{
+                        Ok(_) => {
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                CREATED, //// response message
+                                StatusCode::CREATED, //// status code
+                                None,
+                            }
+                        }, 
+                        Err(resp) => {
 
-                    let affected_row = diesel::insert_into(users::table)
-                        .values(&new_admin)
-                        .execute(connection)
-                        .unwrap();
-
-
-                    resp!{
-                        &[u8], //// the data type
-                        &[], //// response data
-                        CREATED, //// response message
-                        StatusCode::CREATED, //// status code
-                        None,
+                            /* DIESEL INSERT ERROR RESPONSE */
+                            resp
+                        }
                     }
+
+
 
                 },
                 Err(resp) => {
@@ -322,60 +319,31 @@ async fn edit_user(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* fetch user info based on the data inside jwt */ 
-                    let single_user = users
-                        .filter(users::id.eq(new_user.user_id.to_owned()))
-                        .first::<User>(connection);
+                    match User::edit_by_admin(new_user.to_owned(), connection).await{
+                        Ok(updated_user) => {
 
-                    let Ok(user) = single_user else{
-                        resp!{
-                            i32, //// the data type
-                            _id.to_owned(), //// response data
-                            USER_NOT_FOUND, //// response message
-                            StatusCode::NOT_FOUND, //// status code
-                            None,
+                            resp!{
+                                FetchUser, //// the data type
+                                updated_user, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None,
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* 
+                                response can be one of the following:
+                                
+                                - DIESEL EDIT ERROR RESPONSE
+                                - USER_NOT_FOUND 
+
+                            */
+                            resp
+
                         }
-                    };
-                    
-                    /* if the passed in password was some then we must updated the password */
-                    let password = if let Some(password) = &new_user.password{ //// borrowing the new_user to prevent from moving
-
-                        /* we can pass &str to the method by borrowing the String since String will be coerced into &str at compile time */
-                        User::hash_pswd(password).unwrap()
-
-                    } else{
-                        
-                        /* if the passed in password was none then we must use the old one */
-                        user.pswd
-
-                    };
-                    
-                    let updated_user = diesel::update(users.find(new_user.user_id.to_owned()))
-                        .set(EditUserByAdmin{
-                            user_role: {
-                                let role = new_user.role.as_str(); 
-                                match role{
-                                    "user" => UserRole::User,
-                                    "admin" => UserRole::Admin,
-                                    _ => UserRole::Dev
-                                }
-                            },
-                            /* pswd is of type &str thus by borrowing password we can convert it into &str */
-                            pswd: &password
-                        })
-                        .returning(FetchUser::as_returning())
-                        .get_result(connection)
-                        .unwrap();
-
-
-                    resp!{
-                        FetchUser, //// the data type
-                        updated_user, //// response data
-                        UPDATED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
                     }
-
                 },
                 Err(resp) => {
                     
@@ -433,16 +401,34 @@ async fn delete_user(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    let num_deleted = diesel::delete(users.filter(users::id.eq(user_id.to_owned())))
-                        .execute(connection)
-                        .unwrap();
+                    match User::delete_by_admin(user_id.to_owned(), connection).await{
+                        Ok(num_deleted) => {
 
-                    resp!{
-                        &[u8], //// the data type
-                        &[], //// response data
-                        DELETED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
+                            if num_deleted == 0{
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    DELETED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None,
+                                }
+                            } else{
+                                
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    TASK_NOT_FOUND, //// response message
+                                    StatusCode::NOT_FOUND, //// status code
+                                    None,
+                                }
+                            }
+
+                        },  
+                        Err(resp) => {
+
+                            /* DIESEL DELETE RESPONSE */
+                            resp
+                        }
                     }
 
                 },
@@ -505,14 +491,21 @@ async fn get_users(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    let results = users.load::<User>(connection).unwrap();
+                    match User::get_all(connection).await{
+                        Ok(all_users) => {
+                            resp!{
+                                Vec<User>, //// the data type
+                                all_users, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None,
+                            }
+                        },
+                        Err(resp) => {
 
-                    resp!{
-                        Vec<User>, //// the data type
-                        results, //// response data
-                        FETCHED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
+                        }
                     }
 
                 },
@@ -573,43 +566,31 @@ async fn register_new_task(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    let single_task = tasks
-                                .filter(task_name.eq(new_task.task_name.clone()))
-                                .first::<Task>(connection);
+                    match Task::insert(new_task.to_owned(), redis_conn, connection).await{
+                        Ok(_) => {
 
-                    let Ok(task) = single_task else{
-                        resp!{
-                            String, //// the data type
-                            new_task.task_name.clone(), //// response data
-                            FOUND_TASK, //// response message
-                            StatusCode::FOUND, //// status code
-                            None,
-                        } 
-                    };
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                CREATED, //// response message
+                                StatusCode::CREATED, //// status code
+                                None,
+                            }
 
-                    let task = NewTask{
-                        task_name: new_task.task_name.as_str(),
-                        task_description: Some(new_task.task_description.as_str()),
-                        task_score: new_task.task_score,
-                        admin_id: new_task.admin_id,
-                    };
+                        },
+                        Err(resp) => {
+                            
+                            /* 
+                                response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                                - FOUND_TASK
+                            */
+                            resp
 
-                    // publish/fire new task event/topic using redis 
-                    // ... 
-
-                    let affected_row = diesel::insert_into(tasks::table)
-                        .values(&task)
-                        .execute(connection)
-                        .unwrap();
-
-                    resp!{
-                        &[u8], //// the data type
-                        &[], //// response data
-                        CREATED, //// response message
-                        StatusCode::CREATED, //// status code
-                        None,
-                    }
-
+                        }
+                    } 
+                    
                 },
                 Err(resp) => {
                     
@@ -669,17 +650,35 @@ async fn delete_task(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    
-                    let num_deleted = diesel::delete(tasks.filter(tasks::id.eq(task_id.to_owned())))
-                        .execute(connection)
-                        .unwrap();
 
-                    resp!{
-                        &[u8], //// the data type
-                        &[], //// response data
-                        DELETED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
+                    match Task::delete(task_id.to_owned(), connection).await{
+                        Ok(num_deleted) => {
+
+                            if num_deleted == 0{
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    DELETED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None,
+                                }
+                            } else{
+                                
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    TASK_NOT_FOUND, //// response message
+                                    StatusCode::NOT_FOUND, //// status code
+                                    None,
+                                }
+                            }
+
+                        },
+                        Err(resp) => {
+                            
+                            /* DIESEL DELETE ERROR RESPONSE */
+                            resp
+                        }
                     }
 
                 },
@@ -743,28 +742,23 @@ async fn edit_task(
                     let role = token_data.user_role;
                     
                     
-                    let updated_task = diesel::update(tasks.find(new_task.task_id.to_owned()))
-                        .set(EditTask{
-                            /* 
-                                task name and description are of type &str 
-                                thus by borrowing new_task struct fields we
-                                can convert them into &str 
-                            */
-                            task_name: &new_task.task_name, 
-                            task_description: &new_task.task_description,
-                            task_score: new_task.task_score
-                        })
-                        .returning(Task::as_returning())
-                        .get_result(connection)
-                        .unwrap();
+                    match Task::edit(new_task.to_owned(), connection).await{
+                        Ok(updated_task) => {
 
+                            resp!{
+                                Task, //// the data type
+                                updated_task, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None,
+                            }
 
-                    resp!{
-                        Task, //// the data type
-                        updated_task, //// response data
-                        UPDATED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
+                        },
+                        Err(resp) => {
+                            
+                            /* DIESEL EDIT ERROR RESPONSE */
+                            resp
+                        }
                     }
 
                 },
@@ -824,28 +818,24 @@ async fn get_admin_tasks(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    /* get the passed in admin info by its id */
-                    let user = users::table
-                        .filter(users::id.eq(user_id.to_owned()))
-                        .select(User::as_select())
-                        .get_result::<User>(connection)
-                        .unwrap();
+                    match Task::get_all_admin(user_id.to_owned(), connection).await{
+                        Ok(admin_tasks) => {
 
-                    /* get all tasks belonging to the passed in admin id */
-                    let admin_tasks = Task::belonging_to(&user)
-                        .select(Task::as_select())
-                        .load(connection)
-                        .unwrap();
+                            resp!{
+                                Vec<Task>, //// the data type
+                                admin_tasks, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None,
+                            }
 
+                        },
+                        Err(resp) => {
 
-                    resp!{
-                        Vec<Task>, //// the data type
-                        admin_tasks, //// response data
-                        FETCHED, //// response message
-                        StatusCode::OK, //// status code
-                        None,
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
+                        }
                     }
-
                 },
                 Err(resp) => {
                     

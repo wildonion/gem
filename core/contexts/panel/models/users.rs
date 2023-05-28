@@ -367,4 +367,169 @@ impl User{
         Ok(argon2::verify_encoded(&self.pswd, password_bytes).unwrap())
     }
 
+    pub async fn find_by_username(user_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+
+        let single_user = users
+            .filter(username.eq(user_name.to_string()))
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_name),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
+    pub async fn insert_new_admin(user: NewAdminInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+
+        let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
+        let user = NewUser{
+            username: user.username.as_str(),
+            user_role: UserRole::Admin,
+            pswd: hash_pswd.as_str()
+        };
+
+        match diesel::insert_into(users::table)
+            .values(&user)
+            .execute(connection)
+            {
+                Ok(affected_row) => Ok(affected_row),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+
+        /* fetch user info based on the data inside jwt */ 
+        let single_user = users
+            .filter(users::id.eq(new_user.user_id.to_owned()))
+            .first::<User>(connection);
+
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(new_user.user_id.to_owned()),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+        
+        /* if the passed in password was some then we must updated the password */
+        let password = if let Some(password) = &new_user.password{ //// borrowing the user to prevent from moving
+
+            /* we can pass &str to the method by borrowing the String since String will be coerced into &str at compile time */
+            User::hash_pswd(password).unwrap()
+
+        } else{
+            
+            /* if the passed in password was none then we must use the old one */
+            user.pswd
+
+        };
+        
+        match diesel::update(users.find(new_user.user_id.to_owned()))
+            .set(EditUserByAdmin{
+                user_role: {
+                    let role = new_user.role.as_str(); 
+                    match role{
+                        "user" => UserRole::User,
+                        "admin" => UserRole::Admin,
+                        _ => UserRole::Dev
+                    }
+                },
+                /* pswd is of type &str thus by borrowing password we can convert it into &str */
+                pswd: &password
+            })
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => Ok(updated_user),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn delete_by_admin(user_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+
+        match diesel::delete(users.filter(users::id.eq(user_id.to_owned())))
+            .execute(connection)
+            {
+                Ok(num_deleted) => Ok(num_deleted),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+    
+    }
+
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<User>, Result<HttpResponse, actix_web::Error>>{
+
+        match users.load::<User>(connection)
+        {
+            Ok(all_users) => Ok(all_users),
+            Err(e) => {
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: &e.to_string(),
+                    status: 500
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
+
+    }
+
+    pub async fn edit(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+
+        todo!()
+        
+    }
+
+
 }
