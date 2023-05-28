@@ -40,7 +40,7 @@ async fn index(
     ) -> Result<HttpResponse, actix_web::Error> {
 
         let iam_healthy = Health{
-            status: "Alive".to_string()
+            status: "🥞 Alive".to_string()
         };
     
         resp!{

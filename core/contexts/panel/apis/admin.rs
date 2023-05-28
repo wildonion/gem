@@ -149,7 +149,7 @@ pub(super) async fn login(
                                 }
                             };
         
-                            /* generate cookie from token time and jwt */
+                            /* generate cookie 🍪 from token time and jwt */
                             let cookie_info = user.generate_cookie().unwrap();
                             let cookie_token_time = cookie_info.1;
         
@@ -264,7 +264,7 @@ async fn register_new_admin(
                 Err(resp) => {
                     
                     /* 
-                        based on the flow response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -334,7 +334,7 @@ async fn edit_user(
                         Err(resp) => {
 
                             /* 
-                                response can be one of the following:
+                                🥝 response can be one of the following:
                                 
                                 - DIESEL EDIT ERROR RESPONSE
                                 - USER_NOT_FOUND 
@@ -348,7 +348,7 @@ async fn edit_user(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -435,7 +435,7 @@ async fn delete_user(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -512,7 +512,7 @@ async fn get_users(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -581,7 +581,7 @@ async fn register_new_task(
                         Err(resp) => {
                             
                             /* 
-                                response can be one of the following:
+                                🥝 response can be one of the following:
                                 
                                 - DIESEL INSERT ERROR RESPONSE
                                 - FOUND_TASK
@@ -595,7 +595,7 @@ async fn register_new_task(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -685,7 +685,7 @@ async fn delete_task(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -765,7 +765,7 @@ async fn edit_task(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH
@@ -840,7 +840,7 @@ async fn get_admin_tasks(
                 Err(resp) => {
                     
                     /* 
-                        response can be one of the following:
+                        🥝 response can be one of the following:
                         
                         - NOT_FOUND_TOKEN
                         - NOT_FOUND_COOKIE_TIME_HASH

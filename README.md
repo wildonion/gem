@@ -6,6 +6,7 @@
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - an AI model like [STEM](https://github.com/wildonion/stem) which will suggests players the tips and tricks for a new game based on behavioural graph of the each player collected by the history of each event's `phases` field inside the game.
 - [uniXerr](https://github.com/wildonion/uniXerr) coin generation AI model which players get rewarded based on their scores and positions, collected by each event manager inside the game, then update the balance field of the user based on those attributes.
+- order matching engine to suggests players events and other games based on their past experiences, scores (MMR) and earned tokens also players can sell their minted roles based on highest or lowest order setup in conse order book.
 
 <p align="center">
     <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
