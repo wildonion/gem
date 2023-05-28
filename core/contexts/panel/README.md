@@ -35,7 +35,7 @@
 
 ## 🛠️ Tools
 
-* utoipa open api doc
+* utoipa open api doc with swagger ui
 
 * redis for realtime task and reveal role streaming using pubsub pattern
 
@@ -46,3 +46,5 @@
 ## 🚧 WIPs
 
 * completing god and dev panel app using `yew`
+
+* generating swagger doc with utoipa 
