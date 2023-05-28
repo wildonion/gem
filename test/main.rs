@@ -947,6 +947,7 @@ pub async fn generic(){
 
 	    }
 
+        // - it's ok to return pointer to a struct which has no fields cause it can allocate nothing on the stack and there is no data to be owned by the scope
         fn run_taker(taker: &mut Commander) -> &Commander{
             let instance = &Commander{}; //// instance allocate nothing on the stack since Commander has no fields
             instance
@@ -1012,6 +1013,10 @@ pub async fn generic(){
         //     ref_ //// can't return ref_ since self is owned by the function also because self is borrowed
         // }
 
+        // ---------------- THUS             
+        // - can't move out of a type if it's behind a pointer but we can pass by ref
+        // - can't return pointer to a heap data which is owned by the function we can use Box instead but we're okey to return slice with a valid lifetime
+        // ----------------
         //// can't move the type if it's behind a pointer and doesn't implement copy trait (heap data) 
         //// since we can borrow mutably and return ref to stack types from function but not heap data 
         //// thus any reference to the instance or the struct itself which contains a heap data field 
@@ -1739,6 +1744,7 @@ pub async fn generic(){
     // --------------------------------------------------------------------------
     ///////////////////////// CLOSURE TYPES EXAMPLE /////////////////////////////
     // we cant only use impl Trait syntax in function return type
+    // calling the boxed closure traits by unboxing or dereferencing the boxed value
     // --------------------------------------------------------------------------
     let workers = 10;
     type Job = Box<dyn Fn() -> () + Send + Sync>;
@@ -1746,7 +1752,7 @@ pub async fn generic(){
         let job: Job = Box::new(||{});
         let thread = std::thread::spawn(move ||{
             // job()
-            (*job)()
+            (*job)() //// job ca be a socket connection
         });
     }
     struct RunnerTar<C=std::pin::Pin<Box<dyn Interface>>>{
@@ -1755,6 +1761,10 @@ pub async fn generic(){
     //// since we have a closure inside the Box which is of 
     //// type trait, thus we can call it in a different ways
     //// like the following
+    //
+    //// if we have closure inside the Box since Box is a 
+    //// pointer we can deref it first like (*boxed)() 
+    //// then call it or we can call it directly like boxed() 
     let mut d_boxed = Box::new(||{
         let name = String::from("wildonion");
         name
@@ -1774,6 +1784,19 @@ pub async fn generic(){
     //// the type inside the Box which is &mut dyn FnMut(String) -> String
     //// then we can call the trait using ()
     d_boxed.as_mut()(); 
+
+    // we can't have Pin<Box<impl Future<Output = i32>>> 
+    // the impl Timpl Trait will be added by compiler 
+    // - return traits from method using -> impl TraitLikeClosure, Box<dyn Trait> or &'valid dyn Trait which implements trait for the return type
+    // - use traits like closures in struct field and method param using where or Box
+    // - pin async block into the ram so we can await on it in future 
+    // - since async blocks are future objects we must put them behind a pointer thus we must pin the boxed future object
+    // - also the future object must be valid across threads thus we must bound the Future object to Send + Sync + 'static
+    let dejavo = Box::pin(async move{
+        32
+    });
+
+    dejavo.await;
 
 
 

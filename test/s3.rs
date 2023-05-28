@@ -19,8 +19,73 @@ use rand_chacha::{rand_core, ChaCha12Rng};
     we're implementing the Error trait for the error type in return type   
 */
 
+pub struct Response;
+pub struct Request;
+pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
+    where F: FnMut(Request, Response) -> A + Send + Sync + 'static,
+    A: futures::future::Future<Output=Result<Response, ()>> + Send + Sync + 'static
+    {
+
+    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+    /* ---------------------------------------- TOKIO TCP SOCKET SERVER SHARED STATE EXAMPLE TO HANDLE INCOMING CONNECTIONS ASYNCLY ---------------------------------------- */
+    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+    struct Data{id: String}
+    let (sender, mut receiver) = tokio::sync::mpsc::channel::<Arc<tokio::sync::Mutex<Data>>>(1024);
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:2001").await.unwrap();
+    tokio::spawn(async move{
+            
+        // handle streaming async tasks like socket connections in a none blocking
+        // manner asyncly and concurrently using tokio::spawn(async move{}) and 
+        // shared state data between tokio::spawn() green threadpool using jobq channels 
+        // and clusters using redis and routers' threads using arc, mutex and rwlock 
+        // also data must be Send + Sync + 'static also handle incoming async 
+        // events into the server using tokio::select!{} eventloop. 
+
+        while let Ok((stream, addr)) = listener.accept().await{ 
+            
+            // discord message queue cache send message from bot asyncly even after the bot has started.
+            // ...
+            // since in all http server every router api is an async task that contains a 
+            // request handler which must handle the incoming tcp request like parseing in 
+            // tokio green threadpool thus the data that must be shared between these apis 
+            // must be Arc<tokio::sync::Mutex<Data>> + Send + Sync + 'static 
+            // ...
+            // parse request data and share it between 
+            // different threads using tokio jobq channels
+            // ...
+            
+            let data_ = Arc::new(tokio::sync::Mutex::new(Data{id: "0".to_string()}));
+        
+            api(Request{}, Response{}).await;
+
+            sender.send(data_).await;
+
+        }
+    });
+
+    /* waiting inside the eventloop to receive the shared data asyncly once the data sent to channel */
+    tokio::select!{
+        data = receiver.recv() => {
+            if let Some(d) = data{
+                // we got data
+                // ...
+            }
+        }
+    }
+    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+
+    Ok(())
+}
+
+
 pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
     
+
     /*
 
         the shared data must be an arced mutex or Send + Sync in order to share
@@ -35,27 +100,9 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
         something that will be taken care of by semaphores, also we've used tokio 
         mutex to lock on the mutex asyncly instead of using std mutex which 
         is a blocking manner.
-        
-        
-        struct Data{id: String}
-        let (sender, mut receiver) = tokio::sync::mpsc::channel::<Arc<tokio::sync::Mutex<Data>>>(1024);
-        let data_ = Arc::new(tokio::sync::Mutex::new(Data{id: "0".to_string()}));
-        tokio::spawn(async move{
-            sender.send(data_).await;
-        });
-        tokio::select!{
-            data = receiver.recv() => {
-                if let Some(d) = data{
-                    // we got data
-                    // ...
-                }
-            }
-        }
     
     
     */
-
-
 
     pub const LAZY_STATIC_SHARED_DATA: Lazy<Db> = Lazy::new(||{
         HashMap::new()
@@ -92,7 +139,7 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
         that we'll always use an udpated version of the shards 
 
     */
-    tokio::select!{ //// instead of using while let ... syntax
+    tokio::select!{ //// instead of using while let ... syntax on the receiver
         sent_shards = map_shards_receiver.recv() => {
             if let Ok(shards) = sent_shards{
                 map_shards = shards;
@@ -147,7 +194,7 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
 
     */
     tokio::spawn(async move{
-        tokio::select!{ //// instead of using while let ... syntax
+        tokio::select!{ //// instead of using while let ... syntax on the receiver
             mutex_data = mutex_data_receiver.recv() => {
                 if let Some(largest_data) = mutex_data{
                     
