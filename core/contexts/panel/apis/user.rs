@@ -1,12 +1,6 @@
 
 
 
-// task apis
-//  - verify twitter account
-//  - check new tasks (get all tasks)
-//  - do a task to get the score, (users_tasks [current_score, user_id, task_id, done_at]) 
-//  - progress page api (m:n)
-
 use crate::*;
 use crate::models::{users::*, tasks::*};
 use crate::resp;
@@ -27,7 +21,7 @@ use crate::schema::tasks;
     |
 
 */
-#[post("/login")]
+#[post("/login/{wallet}")]
 async fn login(
         req: HttpRequest, 
         wallet: web::Path<String>, 
@@ -128,7 +122,7 @@ async fn login(
 
 }
 
-#[post("/verify-twitter-account")]
+#[post("/verify-twitter-account/{account_name}")]
 async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>, 
@@ -144,7 +138,7 @@ async fn verify_twitter_account(
             
             let connection = &mut pg_pool.get().unwrap();
 
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
             match User::passport(req, UserRole::User, connection){
                 Ok(token_data) => {
                     
@@ -208,7 +202,6 @@ async fn verify_twitter_account(
 #[get("/get-tasks")]
 async fn get_tasks(
         req: HttpRequest, 
-        user_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -221,7 +214,7 @@ async fn get_tasks(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
             match User::passport(req, UserRole::User, connection){
                 Ok(token_data) => {
                     
@@ -229,11 +222,11 @@ async fn get_tasks(
                     let role = token_data.user_role;
                     
                     match Task::get_all(connection).await{
-                        Ok(admin_tasks) => {
+                        Ok(all_tasks) => {
 
                             resp!{
                                 Vec<Task>, //// the data type
-                                admin_tasks, //// response data
+                                all_tasks, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
                                 None, //// cookie
@@ -283,10 +276,145 @@ async fn get_tasks(
 
 }
 
+#[post("/do-task")]
+pub async fn do_task(
+        req: HttpRequest,
+
+        ////////////////////
+        ////////////////////  
+        
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_client.get_async_connection().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, UserRole::User, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    let wallet = token_data.wallet.unwrap();
+
+
+                    /*
+                    
+                        //  - do a task to get the score, (users_tasks [current_score, user_wallet, task_id, done_at]) 
+                        //  - progress page api (m:n)
+                    
+                    */
+
+
+                    todo!()
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_TOKEN
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND 
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                        - NOT_FOUND_JWT_VALUE
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+            
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None, //// cookie
+            }
+        }
+    }
+}
+
+#[post("/report-tasks/{wallet}")]
+pub async fn tasks_report(
+        req: HttpRequest,
+        wallet: web::Path<String>, 
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_client.get_async_connection().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, UserRole::User, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    let wallet = token_data.wallet.unwrap();
+
+                    todo!()
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_TOKEN
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND 
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                        - NOT_FOUND_JWT_VALUE
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+            
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None, //// cookie
+            }
+        }
+    }
+}
+
+
 pub mod exports{
     pub use super::login;
     pub use super::verify_twitter_account;
     pub use super::get_tasks;
-    // pub use super::do_task;
-    // pub use super::tasks_report;
+    pub use super::do_task;
+    pub use super::tasks_report;
 }

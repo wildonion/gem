@@ -63,6 +63,12 @@ pub struct UserLoginData{
     pub updated_at: chrono::NaiveDateTime,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LoginInfoRequest{
+    pub username: String,
+    pub password: String
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[derive(diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::Userrole"]

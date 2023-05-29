@@ -117,8 +117,7 @@ async fn reveal_role(
 #[post("/login")]
 pub(super) async fn login(
         req: HttpRequest, 
-        user_name: web::Path<String>,
-        password: web::Path<String>,
+        login_info: web::Json<LoginInfoRequest>,
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -130,6 +129,9 @@ pub(super) async fn login(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
+
+            let user_name = login_info.to_owned().username;
+            let password = login_info.to_owned().password;
 
             /* we can pass usernmae by reference or its slice form instead of cloning it */
             match User::find_by_username(&user_name, connection).await{
@@ -235,7 +237,7 @@ async fn register_new_admin(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -314,7 +316,7 @@ async fn edit_user(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -380,7 +382,7 @@ async fn edit_user(
     }
 }
 
-#[post("/delete-user")]
+#[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
         user_id: web::Path<i32>, 
@@ -396,7 +398,7 @@ async fn delete_user(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -473,7 +475,6 @@ async fn delete_user(
 #[post("/get-users")]
 async fn get_users(
         req: HttpRequest, 
-        user_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -486,7 +487,7 @@ async fn get_users(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -561,7 +562,7 @@ async fn register_new_task(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -630,7 +631,7 @@ async fn register_new_task(
 
 }
 
-#[post("/delete-task")]
+#[post("/delete-task/{task_id}")]
 async fn delete_task(
         req: HttpRequest, 
         task_id: web::Path<i32>, 
@@ -646,7 +647,7 @@ async fn delete_task(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -736,7 +737,7 @@ async fn edit_task(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
@@ -797,7 +798,7 @@ async fn edit_task(
     }
 }
 
-#[post("/get-admin-tasks")]
+#[post("/get-admin-tasks/{user_id}")]
 async fn get_admin_tasks(
         req: HttpRequest, 
         user_id: web::Path<i32>, 
@@ -813,7 +814,7 @@ async fn get_admin_tasks(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            /* ONLY ADMIN CAN DO THIS LOGIC */
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
             match User::passport(req, UserRole::Admin, connection){
                 Ok(token_data) => {
                     
