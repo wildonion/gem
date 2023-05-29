@@ -76,6 +76,7 @@ pub enum UserRole{
 #[diesel(table_name=users)]
 pub struct NewUser<'l> {
     pub username: &'l str,
+    pub wallet_address: &'l str,
     pub user_role: UserRole,
     pub pswd: &'l str,
 }
@@ -85,13 +86,16 @@ pub struct NewUser<'l> {
 #[derive(Clone, Debug)]
 pub struct EditUserByAdmin<'p>{
     pub user_role: UserRole,
+    pub username: &'p str,
+    pub wallet_address: &'p str,
     pub pswd: &'p str
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWTClaims{
     pub _id: i32, //// mongodb object id
-    pub username: String,
+    pub username: Option<String>,
+    pub wallet: Option<String>,
     pub user_role: UserRole,
     pub exp: i64, //// expiration timestamp
     pub iat: i64, //// issued timestamp
@@ -100,6 +104,7 @@ pub struct JWTClaims{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NewAdminInfoRequest{
     pub username: String,
+    pub wallet: String,
     pub password: String
 }
 
@@ -107,6 +112,8 @@ pub struct NewAdminInfoRequest{
 pub struct EditUserByAdminRequest{
     pub user_id: i32,
     pub role: String,
+    pub username: String,
+    pub wallet: String,
     pub password: Option<String>
 }
 
@@ -285,7 +292,8 @@ impl User{
         
         let payload = JWTClaims{
             _id: self.id,
-            username: self.username.clone(), /* here username and user_role are behind a reference which can't be moved thus we must clone them */
+            username: Some(self.username.clone()), /* here username and user_role are behind a reference which can't be moved thus we must clone them */
+            wallet: self.wallet_address.clone(),
             user_role: self.user_role.clone(),
             exp: exp_time,
             iat: now
@@ -297,7 +305,16 @@ impl User{
     
     }
 
-    pub fn generate_cookie(&self) -> Option<(Cookie, i64)>{
+    /* 
+        since self is not behind & thus the Cookie can't use the lifetime of the self reference hence we 
+        must specify the 'static lifetime for the Cookie also the reason that the self is not behind a pointer
+        is because this function returns a Cookie instance which takes a valid lifetime in which we can't return
+        it from the the caller space of this method since rust says can't returns a value referencing data owned by 
+        the current function means that the returned cookie instance from here to the caller space has a reference 
+        to the instance of User struct in which we can't return the cookie instance from the caller scope to other scopes
+        in other words we can't return reference to a data which is owned by the current function. 
+    */
+    pub fn generate_cookie(self) -> Option<(Cookie<'static>, i64)>{
 
         /* if we're here means that the password was correct */
         let token = self.generate_token().unwrap();
@@ -313,12 +330,13 @@ impl User{
         hasher.update(time_hash_now_now_str.as_str());
         let time_hash = hasher.finalize();
 
+        /* every 2 chars is 1 byte thus in sha256 we have 32 bytes elements which is 64 chars in hex */
         let time_hash_hex_string = time_hash
                                         .into_iter()
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
         
-        let cookie_value = format!("{}::{}", token, time_hash_hex_string);
+        let cookie_value = format!("{token:}::{time_hash_hex_string:}");
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
                                     .finish();
@@ -342,6 +360,7 @@ impl User{
         hasher.update(utt_string.as_str());
         let time_hash = hasher.finalize();
 
+        /* every 2 chars is 1 byte thus in sha256 we have 32 bytes elements which is 64 chars in hex */
         let time_hash_hex_string = time_hash
                                         .into_iter()
                                         .map(|byte| format!("{:02x}", byte))
@@ -388,11 +407,107 @@ impl User{
 
     }
 
+    pub async fn find_by_wallet(wallet: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+
+        let single_user = users
+            .filter(wallet_address.eq(wallet.to_string()))
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(wallet),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
+    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserLoginData, Cookie), Result<HttpResponse, actix_web::Error>>{
+
+        let new_user = NewUser{
+            username: "",
+            wallet_address: &wallet,
+            user_role: UserRole::User,
+            pswd: "",
+        };
+        
+        match diesel::insert_into(users::table)
+            .values(&new_user)
+            .returning(User::as_returning())
+            .get_result::<User>(connection)
+            {
+                Ok(fetched_user) => {
+
+                    let user_login_data = UserLoginData{
+                        id: fetched_user.id,
+                        username: fetched_user.username.clone(),
+                        twitter_username: fetched_user.twitter_username.clone(),
+                        facebook_username: fetched_user.facebook_username.clone(),
+                        discord_username: fetched_user.discord_username.clone(),
+                        wallet_address: fetched_user.wallet_address.clone(),
+                        user_role: fetched_user.user_role.clone(),
+                        token_time: fetched_user.token_time,
+                        last_login: fetched_user.last_login,
+                        created_at: fetched_user.created_at,
+                        updated_at: fetched_user.updated_at,
+                    };
+
+                    /* generate cookie 🍪 from token time and jwt */
+                    /* since generate_cookie() takes the ownership of the user instance we must clone it then call this */
+                    /* generate_cookie() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
+                    let Some(cookie_info) = fetched_user.clone().generate_cookie() else{
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: CANT_GENERATE_COOKIE,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+                    };
+                    
+                    let cookie = cookie_info.0;
+                    let cookie_token_time = cookie_info.1;
+
+                    /* update the login token time */
+                    let now = chrono::Local::now().naive_local();
+                    let updated_user = diesel::update(users.find(fetched_user.id))
+                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                        .execute(connection)
+                        .unwrap();
+                    
+                    Ok((user_login_data, cookie))
+
+                },
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+    
+    }
+    
+
     pub async fn insert_new_admin(user: NewAdminInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let user = NewUser{
             username: user.username.as_str(),
+            wallet_address: user.wallet.as_str(),
             user_role: UserRole::Admin,
             pswd: hash_pswd.as_str()
         };
@@ -459,8 +574,13 @@ impl User{
                         _ => UserRole::Dev
                     }
                 },
-                /* pswd is of type &str thus by borrowing password we can convert it into &str */
-                pswd: &password
+                /* 
+                    pswd, username and wallet is of type &str thus by borrowing these 
+                    feilds from new_user instance we can convert them into &str 
+                */
+                pswd: &password,
+                username: &new_user.username,
+                wallet_address: &new_user.wallet
             })
             .returning(FetchUser::as_returning())
             .get_result(connection)
@@ -525,11 +645,49 @@ impl User{
 
     }
 
-    pub async fn edit(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+    pub async fn logout(req: HttpRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), Result<HttpResponse, actix_web::Error>>{
 
         todo!()
-        
+
     }
 
+    pub async fn update_social_account(
+        wallet: &str, 
+        account_name: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+
+
+            let Ok(user) = User::find_by_wallet(wallet, connection).await else{
+                let resp = Response{
+                    data: Some(wallet),
+                    message: USER_NOT_FOUND,
+                    status: 404
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                );
+            };
+
+            match diesel::update(users.find(user.id))
+                .set(twitter_username.eq(account_name))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => Ok(updated_user),
+                    Err(e) => {
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: &e.to_string(),
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+
+                    }
+                }
+
+    }
 
 }

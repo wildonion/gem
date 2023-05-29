@@ -68,7 +68,8 @@ pub struct NewTask<'t>{
 impl Task{
 
 
-    pub async fn insert(new_task: NewTaskRequest, 
+    pub async fn insert(
+        new_task: NewTaskRequest, 
         redis_connection: RedisConnection, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
         
@@ -220,5 +221,25 @@ impl Task{
 
     }
 
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<Task>, Result<HttpResponse, actix_web::Error>>{
+
+        match tasks.load::<Task>(connection)
+        {
+            Ok(all_tasks) => Ok(all_tasks),
+            Err(e) => {
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: &e.to_string(),
+                    status: 500
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
+
+    }
 
 }

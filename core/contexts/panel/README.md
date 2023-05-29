@@ -59,6 +59,8 @@
 
 * conse `errors` and `jobs` folder
 
+* macros inside the `misc.rs`
+
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
 * generating swagger doc with utoipa 

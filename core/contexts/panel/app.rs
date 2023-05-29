@@ -29,7 +29,7 @@ use std::sync::Arc;
 use std::env;
 use chrono::Utc;
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey, TokenData};
-
+use std::fmt::Write;
 
 mod apis;
 mod misc;

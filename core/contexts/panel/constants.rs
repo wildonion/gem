@@ -24,6 +24,7 @@ pub static TASK_NOT_FOUND: &str = "Task Not Found";
 pub static WRONG_PASSWORD: &str = "Wrong Password";
 pub static NOT_FOUND_COOKIE_EXP: &str = "No Expiration Time Found In Cookie";
 pub static EXPIRED_COOKIE: &str = "Cookie Has Expired";
+pub static CANT_GENERATE_COOKIE: &str = "Can't Generate Cookie";
 pub static NOT_FOUND_JWT_VALUE: &str = "No Value Found In Cookie";
 pub static NOT_FOUND_TOKEN: &str = "JWT Not Found In Cookie";
 pub static INVALID_COOKIE_FORMAT: &str = "Invalid Cookie Format";

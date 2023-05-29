@@ -68,7 +68,7 @@ async fn reveal_role(
                             &[], //// response data
                             FETCHED, //// response message
                             StatusCode::CREATED, //// status code
-                            None,
+                            None, //// cookie
                         } 
             
             
@@ -79,7 +79,7 @@ async fn reveal_role(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None,
+                            None, //// cookie
                         }
                     }
                 }
@@ -96,7 +96,7 @@ async fn reveal_role(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
-                    None,
+                    None, //// cookie
                 }
             }
         }
@@ -108,7 +108,7 @@ async fn reveal_role(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
-            None,
+            None, //// cookie
         }
     }
 
@@ -145,14 +145,17 @@ pub(super) async fn login(
                                     user_name.to_owned(), //// response data
                                     WRONG_PASSWORD, //// response message
                                     StatusCode::FORBIDDEN, //// status code
-                                    None,
+                                    None, //// cookie
                                 }
                             };
         
                             /* generate cookie 🍪 from token time and jwt */
-                            let cookie_info = user.generate_cookie().unwrap();
+                            /* since generate_cookie() takes the ownership of the user instance we must clone it then call this */
+                            /* generate_cookie() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
+                            let cookie_info = user.clone().generate_cookie().unwrap();
                             let cookie_token_time = cookie_info.1;
-        
+                            
+                            /* update the login token time */
                             let now = chrono::Local::now().naive_local();
                             let updated_user = diesel::update(users.find(user.id))
                                 .set((last_login.eq(now), token_time.eq(cookie_token_time)))
@@ -172,14 +175,13 @@ pub(super) async fn login(
                                 created_at: user.created_at,
                                 updated_at: user.updated_at,
                             };
-        
-        
+
                             resp!{
                                 UserLoginData, //// the data type
                                 user_login_data, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code,
-                                Some(cookie_info.0), //// response cookie 
+                                Some(cookie_info.0), //// cookie 
                             } 
         
                         },
@@ -190,7 +192,7 @@ pub(super) async fn login(
                                 user_name.to_owned(), //// response data
                                 ACCESS_DENIED, //// response message
                                 StatusCode::FORBIDDEN, //// status code
-                                None,
+                                None, //// cookie
                             } 
                         }
                     }
@@ -210,7 +212,7 @@ pub(super) async fn login(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }
@@ -248,7 +250,7 @@ async fn register_new_admin(
                                 &[], //// response data
                                 CREATED, //// response message
                                 StatusCode::CREATED, //// status code
-                                None,
+                                None, //// cookie
                             }
                         }, 
                         Err(resp) => {
@@ -289,7 +291,7 @@ async fn register_new_admin(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }        
@@ -327,7 +329,7 @@ async fn edit_user(
                                 updated_user, //// response data
                                 UPDATED, //// response message
                                 StatusCode::OK, //// status code
-                                None,
+                                None, //// cookie
                             }
 
                         },
@@ -372,7 +374,7 @@ async fn edit_user(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }
@@ -410,7 +412,7 @@ async fn delete_user(
                                     &[], //// response data
                                     DELETED, //// response message
                                     StatusCode::OK, //// status code
-                                    None,
+                                    None, //// cookie
                                 }
                             } else{
                                 
@@ -419,7 +421,7 @@ async fn delete_user(
                                     &[], //// response data
                                     TASK_NOT_FOUND, //// response message
                                     StatusCode::NOT_FOUND, //// status code
-                                    None,
+                                    None, //// cookie
                                 }
                             }
 
@@ -460,7 +462,7 @@ async fn delete_user(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }         
@@ -498,7 +500,7 @@ async fn get_users(
                                 all_users, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
-                                None,
+                                None, //// cookie
                             }
                         },
                         Err(resp) => {
@@ -537,7 +539,7 @@ async fn get_users(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }         
@@ -574,7 +576,7 @@ async fn register_new_task(
                                 &[], //// response data
                                 CREATED, //// response message
                                 StatusCode::CREATED, //// status code
-                                None,
+                                None, //// cookie
                             }
 
                         },
@@ -620,7 +622,7 @@ async fn register_new_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }         
@@ -660,7 +662,7 @@ async fn delete_task(
                                     &[], //// response data
                                     DELETED, //// response message
                                     StatusCode::OK, //// status code
-                                    None,
+                                    None, //// cookie
                                 }
                             } else{
                                 
@@ -669,7 +671,7 @@ async fn delete_task(
                                     &[], //// response data
                                     TASK_NOT_FOUND, //// response message
                                     StatusCode::NOT_FOUND, //// status code
-                                    None,
+                                    None, //// cookie
                                 }
                             }
 
@@ -710,7 +712,7 @@ async fn delete_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }         
@@ -750,7 +752,7 @@ async fn edit_task(
                                 updated_task, //// response data
                                 UPDATED, //// response message
                                 StatusCode::OK, //// status code
-                                None,
+                                None, //// cookie
                             }
 
                         },
@@ -789,7 +791,7 @@ async fn edit_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }
@@ -826,7 +828,7 @@ async fn get_admin_tasks(
                                 admin_tasks, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
-                                None,
+                                None, //// cookie
                             }
 
                         },
@@ -865,7 +867,7 @@ async fn get_admin_tasks(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None, //// cookie
             }
         }
     }         
