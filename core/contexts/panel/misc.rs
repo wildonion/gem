@@ -339,6 +339,23 @@ macro_rules! server {
                         actix_web::web::scope("/health")
                             .configure(services::init_health)
                     )
+                    /*
+                        SWAGGER UI SERIVES
+                    */
+                    .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
+                        (
+                            Url::new("admin", "/api-docs/openapi1.json"),
+                            apis::admin::AdminApiDoc::openapi(),
+                        ),
+                        (
+                            Url::new("dev", "/api-docs/openapi2.json"),
+                            apis::dev::DevApiDoc::openapi(),
+                        ),
+                        (
+                            Url::new("user", "/api-docs/openapi3.json"),
+                            apis::user::UserApiDoc::openapi(),
+                        )
+                    ]))
                 }) //// each thread of the HttpServer instance needs its own app factory 
                 .bind((host.as_str(), port))
                 .unwrap()

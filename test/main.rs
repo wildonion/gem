@@ -1799,6 +1799,69 @@ pub async fn generic(){
     dejavo.await;
 
 
+    struct Link<'link, D, F: Send + Sync> 
+    where D: Send + Sync,
+    F: FnOnce() -> String{
+        pub data: F,
+        pub link: &'link D
+    }
+    impl<D: Send + Sync, F: Send + Sync> Link<'_, D, F> 
+        where F: FnOnce() -> String{
+        
+        fn run() -> impl FnMut() -> u32{
+            ||{
+                {
+                    let item_remaining = 32; 
+                    item_remaining
+                }
+            }
+        }
+
+        fn start(cmd: impl FnOnce() -> ()){
+            cmd();
+        }
+
+        async fn create_component(async_block: impl futures::Future<Output=String>){
+            async_block.await;
+        }
+
+        //////--------------------------------------------------------------
+        ////// we can't return impl Trait as the return type of fn() pointer
+        //////-------------------------------------------------------------- 
+        // type Function = fn() -> impl futures::Future<Output=String>;
+        // async fn create_component_method<L>(async_block: fn() -> impl futures::Future<Output=String>) {
+        //     async_block().await;
+        // }
+        //////--------------------------------------------------------------
+        ////// we can't return impl Trait as the return type of traits 
+        //////--------------------------------------------------------------
+        // async fn create_component_method<L>(async_block: L) where L: Fn() -> impl futures::Future<Output=String>{
+        //     async_block().await;
+        // }
+        //////--------------------------------------------------------------
+        ////// we can't .await after calling async_block() since future objects 
+        ////// in Box must be pinned to the ram to be valid across scopes for later solves
+        //////--------------------------------------------------------------
+        // async fn create_component_method<L>(async_block: L) where L: Fn() -> Box<dyn futures::Future<Output=String>>{
+        //     let res = async_block();
+        // }
+        //////--------------------------------------------------------------
+        ////// generic type L is a trait which its return type is an async block, the reason
+        ////// we put the future object inside a pinned boxed is because we can't simply return
+        ////// a trait as the return type of another trait thus we have to put it inside the Box
+        ////// or behind a valid pointer like &'valid dyn Trait (because traits are dynamic sized types)
+        ////// also in order to solve the boxed future after calling the async_block trait, the future 
+        ////// object must be valid across scopes since we don't know the exact place of its solving 
+        ////// which it might be inside different scopes other than where it has initialized and because
+        ////// of this reason we must also pin the pointer of the future object into the ram to prevent 
+        ////// its location from moving (or replacing by another type) until we await on it to get the result
+        ////// since once we move into other scopes its lifetime will be checked by the borrow checker
+        ////// and if it has already pinned the rust can't move it and drop its lifetime
+        //////--------------------------------------------------------------
+        async fn create_component_method<L>(async_block: L) where L: Fn() -> std::pin::Pin<Box<dyn futures::Future<Output=String>>>{
+            let res = async_block().await;
+        }
+    }
 
     // ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
     struct Useram{

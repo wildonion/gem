@@ -7,6 +7,8 @@ read DISCORD_TOKEN
 echo OPENAI_KEY=$OPENAI_TOKEN >> .env
 echo DISCORD_TOKEN=$DISCORD_TOKEN >> .env
 
+echo "☕ sit back and drink your coffee :)"
+
 sudo chmod 666 /var/run/docker.sock && docker system prune --all
 export SERVER_IP=$(hostname -I | awk '{print $1}')
 export PASSEORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70

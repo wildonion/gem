@@ -15,12 +15,31 @@ use crate::schema::tasks;
 
 /*
      ------------------------
+    |          DOCS
+    | ------------------------
+    |
+    |
+
+*/
+#[derive(OpenApi)]
+#[openapi(paths(login))]
+pub struct UserApiDoc;
+
+/*
+     ------------------------
     |          APIS
     | ------------------------
     |
     |
 
 */
+#[utoipa::path(
+    context_path="/admin",
+    responses(
+        (status=200, description="Fetched Successfully", body=Result<HttpResponse, actix_web::Error>),
+        (status=201, description="Created Successfully", body=Result<HttpResponse, actix_web::Error>)
+    )
+)]
 #[post("/login/{wallet}")]
 async fn login(
         req: HttpRequest, 

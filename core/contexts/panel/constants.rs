@@ -7,7 +7,8 @@
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
 pub static FETCHED: &str = "Fetched Successfully";
-pub static LOGOUT: &str = "loggedout Successfully";
+pub static LOGGEDIN: &str = "Loggedin Successfully";
+pub static LOGOUT: &str = "Loggedout Successfully";
 pub static CREATED: &str = "Created Successfully";
 pub static DELETED: &str = "Deleted Successfully";
 pub static UPDATED: &str = "Updated Successfully";

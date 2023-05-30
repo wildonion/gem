@@ -10,6 +10,19 @@ use crate::constants::*;
 use crate::misc::*;
 
 
+/*
+     ------------------------
+    |          DOCS
+    | ------------------------
+    |
+    |
+
+*/
+#[derive(OpenApi)]
+#[openapi(paths(get_admin_data))]
+#[openapi(paths(get_user_data))]
+pub struct DevApiDoc;
+
 
 /*
      ------------------------
@@ -19,6 +32,12 @@ use crate::misc::*;
     |
 
 */
+#[utoipa::path(
+    context_path="/dev",
+    responses(
+        (status=201, description="Fetched Successfully", body=Result<HttpResponse, actix_web::Error>)
+    )
+)]
 #[get("/get/admin/{id}/data")]
 async fn get_admin_data(
         req: HttpRequest, 
@@ -108,6 +127,12 @@ async fn get_admin_data(
 
 }
 
+#[utoipa::path(
+    context_path="/dev",
+    responses(
+        (status=201, description="Fetched Successfully", body=Result<HttpResponse, actix_web::Error>)
+    )
+)]
 #[get("/get/user/{id}/data")]
 async fn get_user_data(
         req: HttpRequest, 

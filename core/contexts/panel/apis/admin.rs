@@ -18,12 +18,40 @@ use crate::schema::users_tasks;
 
 /*
      ------------------------
+    |          DOCS
+    | ------------------------
+    |
+    |
+
+*/
+#[derive(OpenApi)]
+#[openapi(paths(reveal_role))]
+// #[openapi(paths(login))]
+// #[openapi(paths(egister_new_admin))]
+// #[openapi(paths(register_new_task))]
+// #[openapi(paths(delete_task))]
+// #[openapi(paths(edit_task))]
+// #[openapi(paths(delete_user))]
+// #[openapi(paths(get_users))]
+// #[openapi(paths(get_admin_tasks))]
+// #[openapi(paths(get_users_tasks))]
+pub struct AdminApiDoc;
+
+
+/*
+     ------------------------
     |          APIS
     | ------------------------
     |
     |
 
 */
+#[utoipa::path(
+    context_path="/admin",
+    responses(
+        (status=201, description="Created Successfully", body=Result<HttpResponse, actix_web::Error>)
+    )
+)]
 #[post("/notif/register/reveal-role/{id}")]
 async fn reveal_role(
         req: HttpRequest, 
@@ -68,7 +96,7 @@ async fn reveal_role(
                         resp!{
                             &[u8], //// the data type
                             &[], //// response data
-                            FETCHED, //// response message
+                            CREATED, //// response message
                             StatusCode::CREATED, //// status code
                             None, //// cookie
                         } 
@@ -116,6 +144,12 @@ async fn reveal_role(
 
 }
 
+#[utoipa::path(
+    context_path="/admin",
+    responses(
+        (status=200, description="Loggedin Successfully", body=Result<HttpResponse, actix_web::Error>)
+    )
+)]
 #[post("/login")]
 pub(super) async fn login(
         req: HttpRequest, 
@@ -183,7 +217,7 @@ pub(super) async fn login(
                             resp!{
                                 UserLoginData, //// the data type
                                 user_login_data, //// response data
-                                FETCHED, //// response message
+                                LOGGEDIN, //// response message
                                 StatusCode::OK, //// status code,
                                 Some(cookie_info.0), //// cookie 
                             } 

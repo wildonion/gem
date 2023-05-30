@@ -25,28 +25,30 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
     where F: FnMut(Request, Response) -> A + Send + Sync + 'static,
     A: futures::future::Future<Output=Result<Response, ()>> + Send + Sync + 'static
     {
-
-    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-    /* ---------------------------------------- TOKIO TCP SOCKET SERVER SHARED STATE EXAMPLE TO HANDLE INCOMING CONNECTIONS ASYNCLY ---------------------------------------- */
-    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+    
+    /* ----------------------------------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------------- */
+    /* ----- TOKIO TCP SOCKET SERVER SHARED STATE EXAMPLE TO HANDLE INCOMING CONNECTIONS ASYNCLY ----- */
+    /* ----------------------------------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------------- */
 
     struct Data{id: String}
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<Arc<tokio::sync::Mutex<Data>>>(1024);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:2001").await.unwrap();
     tokio::spawn(async move{
             
-        // handle streaming async tasks like socket connections in a none blocking
-        // manner asyncly and concurrently using tokio::spawn(async move{}) and 
-        // shared state data between tokio::spawn() green threadpool using jobq channels 
-        // and clusters using redis and routers' threads using arc, mutex and rwlock 
-        // also data must be Send + Sync + 'static also handle incoming async 
-        // events into the server using tokio::select!{} eventloop. 
+        // handle streaming async tasks like accepting packets from a socket connections in a none blocking
+        // manner or asyncly and concurrently can be done using tokio::spawn(async move{}) also moving 
+        // shared state data between tokio::spawn() green threadpool is done using jobq channels 
+        // and between clusters using redis and routers' threads by putting the data in arc, mutex and rwlock 
+        // which forces us to have a Send + Sync + 'static data in the meanwhile handle incoming async 
+        // events into the server can be done using tokio::select!{} eventloop. 
 
         while let Ok((stream, addr)) = listener.accept().await{ 
             
             // discord message queue cache send message from bot asyncly even after the bot has started.
             // ...
-            // since in all http server every router api is an async task that contains a 
+            // since in all http servers every router api is an async task that contains a 
             // request handler which must handle the incoming tcp request like parseing in 
             // tokio green threadpool thus the data that must be shared between these apis 
             // must be Arc<tokio::sync::Mutex<Data>> + Send + Sync + 'static 
@@ -73,13 +75,13 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
             }
         }
     }
-    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-    /* ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-
+    /* ----------------------------------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------------------------------- */
 
 
     Ok(())
+
 }
 
 
