@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use crate::models::{users::*, tasks::*};
+use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -11,6 +11,8 @@ use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
+use crate::schema::users_tasks::dsl::*;
+use crate::schema::users_tasks;
 
 
 
@@ -385,7 +387,7 @@ async fn edit_user(
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
-        user_id: web::Path<i32>, 
+        doer_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -405,7 +407,7 @@ async fn delete_user(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match User::delete_by_admin(user_id.to_owned(), connection).await{
+                    match User::delete_by_admin(doer_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
                             if num_deleted == 0{
@@ -631,10 +633,10 @@ async fn register_new_task(
 
 }
 
-#[post("/delete-task/{task_id}")]
+#[post("/delete-task/{job_id}")]
 async fn delete_task(
         req: HttpRequest, 
-        task_id: web::Path<i32>, 
+        job_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -654,7 +656,7 @@ async fn delete_task(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match Task::delete(task_id.to_owned(), connection).await{
+                    match Task::delete(job_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
                             if num_deleted == 0{
@@ -798,10 +800,10 @@ async fn edit_task(
     }
 }
 
-#[post("/get-admin-tasks/{user_id}")]
+#[post("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
         req: HttpRequest, 
-        user_id: web::Path<i32>, 
+        owner_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -821,7 +823,7 @@ async fn get_admin_tasks(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match Task::get_all_admin(user_id.to_owned(), connection).await{
+                    match Task::get_all_admin(owner_id.to_owned(), connection).await{
                         Ok(admin_tasks) => {
 
                             resp!{
@@ -876,7 +878,82 @@ async fn get_admin_tasks(
 
 }
 
+#[get("/get-users-tasks")]
+async fn get_users_tasks(
+        req: HttpRequest,  
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
 
+    let storage = storage.as_ref().to_owned();
+    let redis_conn = redis_client.get_async_connection().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
+            match User::passport(req, UserRole::Admin, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match UserTask::tasks_per_user(connection).await{
+                        Ok(all_users_tasks) => {
+
+                            resp!{
+                                Vec<(User, Vec<Task>)>, //// the data type
+                                all_users_tasks, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
+                        }
+                    }
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_TOKEN
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND 
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                        - NOT_FOUND_JWT_VALUE
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None, //// cookie
+            }
+        }
+    }         
+
+
+}
 
 
 pub mod exports{
@@ -890,4 +967,5 @@ pub mod exports{
     pub use super::delete_user;
     pub use super::get_users;
     pub use super::get_admin_tasks;
+    pub use super::get_users_tasks;
 }

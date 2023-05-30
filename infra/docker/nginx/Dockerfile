@@ -4,8 +4,9 @@ FROM nginx:latest
 # Remove the default Nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the build folder of the React application to the Nginx root directory
-COPY build /usr/share/nginx/html
+# Copy the build folder of the React applications to the Nginx root directory
+COPY build/conse /usr/share/nginx/html/conse
+COPY build/panel /usr/share/nginx/html/conse-panel
 
 # Copy the SSL certificate and private key to the container
 #conse.app:

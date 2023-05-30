@@ -17,7 +17,7 @@ use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
 use actix_cors::Cors;
-use actix_web::{web, cookie::{self, Cookie, Expiration, time::Duration, time::OffsetDateTime}, 
+use actix_web::{web, cookie::{self, Cookie, time::Duration, time::OffsetDateTime}, 
                 web::Data, http::header, App, HttpRequest, 
                 HttpServer, Responder, HttpResponse, get, post, ResponseError};
 use actix_web::middleware::Logger;
@@ -38,7 +38,7 @@ mod services;
 mod events;
 mod models;
 mod schema;
-
+mod error;
 
 
 #[actix_web::main]
@@ -47,8 +47,9 @@ async fn main() -> std::io::Result<()> {
 
     let server = server!
     {
-        /* SERVER SETUP */
+        /* SERVER CONFIGS */
     };
+    
     server
 
 

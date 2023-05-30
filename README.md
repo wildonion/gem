@@ -57,15 +57,35 @@ cd scripts
 # ---- renew nginx 
 ./renew.sh
 ```
-> **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
+- **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
-> **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
+- **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
-> **NOTE**: For every new (sub)domain inside the VPS there must be a new config file inside the `infra/docker/nginx` folder related to that (sub)domain name.
+- **NOTE**: For every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
 
-> **NOTE**: Currently there must be two registered domains by default, one is `conse.app` which hosts the UI and the API routes and the other is `panel.conse.app` which hosts the panel UI.
+- **NOTE**: There must be three registered (sub)domains in DNS panel of `conse.app`: `api.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse hyper APIs, Actix APIs and the panel UI respectively.
 
-> **NOTE**: To serve static files using nginx just make sure you copied the `build` folder of JS projects into `infra/docker/nginx` folder.   
+- **NOTE**: To serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
+
+- **NOTE**: Multiple domains can point to a same VPS which can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
+
+**DNS records of conse.app domain**
+
+```
+Type	    Hostname	               Value	          TTL (seconds)	
+A	    conse.app              directs to 64.226.71.201	     3600
+A	    api.conse.app   	   directs to 68.183.137.151     3600 
+A	    panel.conse.app    	   directs to 68.183.201.134     3600 
+```
+**DNS records of wildonion.io domain**
+
+```
+Type	    Hostname	               Value	          TTL (seconds)	
+A	    wildonion.io           directs to 64.226.71.201	     3600
+A	    api.wildonion.app      directs to 68.183.137.154     3600 
+A	    admin.wildonion.app    directs to 68.183.201.129     3600 
+```
+in the above records `wildonion.io` and `conse.app` are pointing to a same VPS but their (sub)domains are pointing to different VPS-es.  
 
 ## 🗃️ Directory Explained
 

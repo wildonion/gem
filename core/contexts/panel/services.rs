@@ -56,6 +56,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::delete_user);
     config.service(apis::admin::exports::get_users);
     config.service(apis::admin::exports::get_admin_tasks);
+    config.service(apis::admin::exports::get_users_tasks);
 
     // other routs maybe ?
     // ...

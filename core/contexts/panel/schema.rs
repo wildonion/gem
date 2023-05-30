@@ -38,9 +38,20 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    users_tasks (user_id, task_id) {
+        user_id -> Int4,
+        task_id -> Int4,
+        done_at -> Timestamptz,
+    }
+}
+
 diesel::joinable!(tasks -> users (admin_id));
+diesel::joinable!(users_tasks -> tasks (task_id));
+diesel::joinable!(users_tasks -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     tasks,
     users,
+    users_tasks,
 );

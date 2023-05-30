@@ -2,7 +2,7 @@
 
 
 use crate::*;
-use crate::models::{users::*, tasks::*};
+use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -276,13 +276,11 @@ async fn get_tasks(
 
 }
 
-#[post("/do-task")]
+#[post("/do-task/{task_id}/{user_id}")]
 pub async fn do_task(
         req: HttpRequest,
-
-        ////////////////////
-        ////////////////////  
-        
+        task_id: web::Path<i32>,
+        user_id: web::Path<i32>,
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -303,16 +301,29 @@ pub async fn do_task(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
+                    match UserTask::insert(user_id.to_owned(), task_id.to_owned(), connection).await{
+                        Ok(_) => {
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                CREATED, //// response message
+                                StatusCode::CREATED, //// status code
+                                None, //// cookie
+                            }
+                        },
+                        Err(resp) => {
 
-                    /*
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                                - TASK_NOT_FOUND
+                            */
+                            resp
+                        }
+                    }
                     
-                        //  - do a task to get the score, (users_tasks [current_score, user_wallet, task_id, done_at]) 
-                        //  - progress page api (m:n)
-                    
-                    */
 
-
-                    todo!()
 
                 },
                 Err(resp) => {
@@ -349,10 +360,10 @@ pub async fn do_task(
     }
 }
 
-#[post("/report-tasks/{wallet}")]
+#[post("/report-tasks/{user_id}")]
 pub async fn tasks_report(
         req: HttpRequest,
-        wallet: web::Path<String>, 
+        user_id: web::Path<i32>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -373,7 +384,25 @@ pub async fn tasks_report(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
-                    todo!()
+
+                    match UserTask::reports(user_id.to_owned(), connection).await{
+                        Ok(user_stask_reports) => {
+
+                            resp!{
+                                FetchUserTaskReport, //// the data type
+                                user_stask_reports, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
+                        }
+                    }
 
                 },
                 Err(resp) => {

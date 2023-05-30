@@ -18,7 +18,7 @@ use crate::constants::*;
 
 */
 
-#[derive(Queryable, Selectable, Serialize, Deserialize, Identifiable, Associations, Debug, PartialEq)]
+#[derive(Queryable, Selectable, Serialize, Deserialize, Identifiable, Associations, Debug, PartialEq, Clone)]
 #[diesel(belongs_to(User, foreign_key=admin_id))]
 #[diesel(table_name=tasks)]
 pub struct Task{
@@ -98,7 +98,7 @@ impl Task{
             admin_id: new_task.admin_id,
         };
 
-        // publish/fire new task event/topic using redis 
+        // 🥑 todo - publish/fire new task event/topic using redis 
         // ... 
 
         match diesel::insert_into(tasks::table)

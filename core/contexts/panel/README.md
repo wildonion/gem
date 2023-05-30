@@ -17,6 +17,8 @@
 
 * current dev and admin passwords are `d3v@%$^$3hjsD` and `4dmin@%$^$3hjsD` respectively.
 
+* if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```. 
+
 ## 🍟 Features
 
 * register new task 
@@ -49,11 +51,11 @@
 
 * create a proc macro attribute like `#[passport]` to put on top of the admin and dev apis, struct and their fields
 
-* completing god and dev panel app using `yew`
+* complete god and dev panel app using `yew`
 
 * custom error type inside `error.rs`
 
-* publish reveal role and task topics  
+* redis publish reveal role, task and mmq topics  
 
 * dev and user apis related to the conse hyper server 
 
@@ -66,5 +68,3 @@
 * generating swagger doc with utoipa 
 
 * backend design pattern sketch using freeform and ERD schemas inside wiki.
-
-* redis `MMQ`
