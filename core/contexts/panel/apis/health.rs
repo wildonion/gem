@@ -68,7 +68,7 @@ async fn check_token(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -153,20 +153,53 @@ async fn logout(
             
             let connection = &mut pg_pool.get().unwrap();
 
-            match User::logout(req, connection).await{
-                Ok(_) => {
+            match User::passport(req, None, connection){
+                Ok(token_data) => {
                     
-                    todo!()
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match User::logout(_id, connection).await{
+                        Ok(_) => {
+                            
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                LOGOUT, //// response message
+                                StatusCode::OK, //// status code
+                                None,
+                            }
+        
+                        },
+                        Err(resp) => {
+            
+                            /* DIESEL UPDATE ERROR RESPONSE */
+                            resp
+        
+                        }
+                    }
 
                 },
                 Err(resp) => {
-    
-                
-                    todo!()
-
+                    
+                    /* 
+                        🥝 based on the flow response can be one of the following:
+                        
+                        - NOT_FOUND_TOKEN
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND 
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                        - NOT_FOUND_JWT_VALUE
+                    */
+                    resp
                 }
             }
-            
+
         },
         None => {
 

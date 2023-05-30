@@ -240,7 +240,7 @@ async fn register_new_admin(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -319,7 +319,7 @@ async fn edit_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -401,7 +401,7 @@ async fn delete_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -490,7 +490,7 @@ async fn get_users(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -565,7 +565,7 @@ async fn register_new_task(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -650,7 +650,7 @@ async fn delete_task(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -740,7 +740,7 @@ async fn edit_task(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -817,7 +817,7 @@ async fn get_admin_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -894,7 +894,7 @@ async fn get_users_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, UserRole::Admin, connection){
+            match User::passport(req, Some(UserRole::Admin), connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

@@ -69,13 +69,11 @@ impl UserTask{
             
         };
 
-        let user_task = NewUserTask{
-            task_id: job_id,
-            user_id: doer_id
-        };
-
         match diesel::insert_into(users_tasks::table)
-            .values(&user_task)
+            .values(&NewUserTask{
+                task_id: job_id,
+                user_id: doer_id
+            })
             .execute(connection)
             {
                 Ok(affected_row) => Ok(affected_row),
@@ -196,13 +194,13 @@ impl UserTask{
 
                 }
             };
-        
+    
         /* all users including their tasks */
         let tasks_per_user: Vec<(User, Vec<Task>)> = jobs
             .grouped_by(&all_users)
             .into_iter()
             .zip(all_users)
-            .map(|(b, author)| (author, b.into_iter().map(|(_, book)| book).collect()))
+            .map(|(t, user)| (user, t.into_iter().map(|(_, task)| task).collect()))
             .collect();
 
         Ok(tasks_per_user)

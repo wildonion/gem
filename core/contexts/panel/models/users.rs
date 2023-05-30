@@ -32,7 +32,7 @@ pub struct User{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Queryable, Selectable)]
+#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=users)]
 pub struct FetchUser{
     pub id: i32,
@@ -131,7 +131,7 @@ impl User{
         decoded_token
     }
 
-    pub fn passport(req: HttpRequest, pass_role: UserRole, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
+    pub fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
         
         /* checking that the request cookie has the jwt key */
         let Some(cookie) = req.cookie("jwt") else{
@@ -247,16 +247,18 @@ impl User{
                             }
 
                             /* check that the user is authorized with the passed in role */
-                            if user.user_role != pass_role{
-                                let resp = Response{
-                                    data: Some(_id.to_owned()),
-                                    message: ACCESS_DENIED,
-                                    status: 403
-                                };
-                                return Err(
-                                    Ok(HttpResponse::Forbidden().json(resp))
-                                );
-                            } 
+                            if pass_role.is_some(){
+                                if user.user_role != pass_role.unwrap(){
+                                    let resp = Response{
+                                        data: Some(_id.to_owned()),
+                                        message: ACCESS_DENIED,
+                                        status: 403
+                                    };
+                                    return Err(
+                                        Ok(HttpResponse::Forbidden().json(resp))
+                                    );
+                                } 
+                            }
 
                             /* returning token data, if we're here means that nothing went wrong */
                             Ok(token_data)
@@ -651,9 +653,27 @@ impl User{
 
     }
 
-    pub async fn logout(req: HttpRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), Result<HttpResponse, actix_web::Error>>{
+    pub async fn logout(who: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), Result<HttpResponse, actix_web::Error>>{
 
-        todo!()
+        match diesel::update(users.find(who))
+            .set(token_time.eq(0))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => Ok(()),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
 
     }
 
