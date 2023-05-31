@@ -9,7 +9,7 @@ use crate::schema::tasks;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
-use crate::models::{users::User, tasks::{Task, TaskData}};
+use crate::models::{users::{User, UserData, UserRole}, tasks::{Task, TaskData}};
 
 
 
@@ -168,7 +168,7 @@ impl UserTask{
 
     }
 
-    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<(User, Vec<Task>)>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<(UserData, Vec<TaskData>)>, Result<HttpResponse, actix_web::Error>>{
 
         let all_users = match users::table
             .select(User::as_select())
@@ -210,12 +210,52 @@ impl UserTask{
             };
     
         /* all users including their tasks */
-        let tasks_per_user: Vec<(User, Vec<Task>)> = jobs
+        let tasks_per_user: Vec<(UserData, Vec<TaskData>)> = jobs
             .grouped_by(&all_users)
             .into_iter()
             .zip(all_users)
             /* converting the zipped users and jobs pairs into Vec<(User, Vec<Task>)> using map */
-            .map(|(t, user)| (user, t.into_iter().map(|(_, task)| task).collect()))
+            .map(|(t, user)| {
+                let user_data = UserData { 
+                    id: user.id, 
+                    username: user.username, 
+                    twitter_username: user.twitter_username, 
+                    facebook_username: user.facebook_username, 
+                    discord_username: user.discord_username, 
+                    wallet_address: user.wallet_address, 
+                    user_role: {
+                        match user.user_role.clone(){
+                            UserRole::Admin => "Admin".to_string(),
+                            UserRole::User => "User".to_string(),
+                            _ => "Dev".to_string(),
+                        }
+                    },
+                    token_time: user.token_time,
+                    last_login: { 
+                        if user.last_login.is_some(){
+                            Some(user.last_login.unwrap().to_string())
+                        } else{
+                            Some("".to_string())
+                        }
+                    },
+                    created_at: user.created_at.to_string(),
+                    updated_at: user.updated_at.to_string(),
+                };
+                (user_data, t.into_iter().map(|(_, task)| {
+                    let task_data = TaskData{
+                        id: task.id,
+                        task_name: task.task_name,
+                        task_description: task.task_description,
+                        task_score: task.task_score,
+                        admin_id: task.admin_id,
+                        created_at: task.created_at.to_string(),
+                        updated_at: task.updated_at.to_string(),
+                    };
+
+                    task_data
+
+                }).collect())
+            })
             .collect();
 
         Ok(tasks_per_user)

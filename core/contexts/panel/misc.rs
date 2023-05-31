@@ -355,6 +355,10 @@ macro_rules! server {
                         (
                             Url::new("user", "/api-docs/openapi3.json"),
                             apis::user::UserApiDoc::openapi(),
+                        ),
+                        (
+                            Url::new("health", "/api-docs/openapi4.json"),
+                            apis::health::HealthApiDoc::openapi(),
                         )
                     ]))
                 }) //// each thread of the HttpServer instance needs its own app factory 

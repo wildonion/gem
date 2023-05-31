@@ -19,8 +19,20 @@ use crate::schema::users;
     |
 
 */
-
-
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        index,
+        check_token,
+        logout,
+    ),
+    components(
+        schemas(
+            UserData,
+        )
+    )
+)]
+pub struct HealthApiDoc;
 
 /*
      ------------------------
@@ -30,7 +42,7 @@ use crate::schema::users;
     |
 
 */
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct Health{
     pub status: String,
 }
@@ -44,6 +56,12 @@ pub struct Health{
     |
 
 */
+#[utoipa::path(
+    context_path = "/health",
+    responses(
+        (status=200, description="I'm Alive", body=Health),
+    ),
+)]
 #[get("/check-server")]
 async fn index(
         req: HttpRequest, 
@@ -65,6 +83,22 @@ async fn index(
 
 }
 
+#[utoipa::path(
+    context_path = "/health",
+    responses(
+        (status=200, description="Fetched Successfully", body=UserData),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[get("/check-token")]
 async fn check_token(
         req: HttpRequest, 
@@ -106,9 +140,35 @@ async fn check_token(
                         } 
                     };
 
+                    let user_data = UserData { 
+                        id: user.id, 
+                        username: user.username, 
+                        twitter_username: user.twitter_username, 
+                        facebook_username: user.facebook_username, 
+                        discord_username: user.discord_username, 
+                        wallet_address: user.wallet_address, 
+                        user_role: {
+                            match user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
+                        token_time: user.token_time,
+                        last_login: { 
+                            if user.last_login.is_some(){
+                                Some(user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: user.created_at.to_string(),
+                        updated_at: user.updated_at.to_string(),
+                    };
+
                     resp!{
-                        FetchUser, //// the data type
-                        user, //// response data
+                        UserData, //// the data type
+                        user_data, //// response data
                         FETCHED, //// response message
                         StatusCode::OK, //// status code
                         None::<Cookie<'_>>,
@@ -118,18 +178,18 @@ async fn check_token(
                 Err(resp) => {
                     
                     /* 
-                        based on the flow response can be one of the following:
+                        🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -149,6 +209,22 @@ async fn check_token(
 
 }
 
+#[utoipa::path(
+    context_path = "/health",
+    responses(
+        (status=200, description="Loggedout Successfully", body=UserData),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[post("/logout")]
 async fn logout(
         req: HttpRequest, 

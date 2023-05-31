@@ -19,8 +19,19 @@ use crate::misc::*;
 
 */
 #[derive(OpenApi)]
-#[openapi(paths(get_admin_data))]
-#[openapi(paths(get_user_data))]
+#[openapi(
+    paths(
+        get_admin_data,
+        get_user_data,
+    ),
+    // components(
+    //     schemas(
+    //         UserData,
+    //         FetchUserTaskReport,
+    //         TaskData
+    //     )
+    // )
+)]
 pub struct DevApiDoc;
 
 
@@ -33,15 +44,21 @@ pub struct DevApiDoc;
 
 */
 #[utoipa::path(
-    context_path="/dev",
+    context_path = "/dev",
     responses(
-        (status=201, description="Fetched Successfully", body=Result<HttpResponse, actix_web::Error>)
-    )
+        (status=200, description="Fetched Successfully", body=[u8]),
+        (status=403, description="Invalid Token", body=[u8]),
+        (status=403, description="No Authorization Header Is Provided", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("admin_id", description = "admin id")
+    ),
 )]
-#[get("/get/admin/{id}/data")]
+#[get("/get/admin/{admin_id}/data")]
 async fn get_admin_data(
         req: HttpRequest, 
-        id: web::Path<String>, //// mongodb object id of admin or god 
+        admin_id: web::Path<String>, //// mongodb object id of admin or god 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -128,15 +145,21 @@ async fn get_admin_data(
 }
 
 #[utoipa::path(
-    context_path="/dev",
+    context_path = "/dev",
     responses(
-        (status=201, description="Fetched Successfully", body=Result<HttpResponse, actix_web::Error>)
-    )
+        (status=200, description="Fetched Successfully", body=[u8]),
+        (status=403, description="Invalid Token", body=[u8]),
+        (status=403, description="No Authorization Header Is Provided", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("user_id", description = "user id")
+    ),
 )]
-#[get("/get/user/{id}/data")]
+#[get("/get/user/{user_id}/data")]
 async fn get_user_data(
         req: HttpRequest, 
-        id: web::Path<String>, //// mongodb object id of user or player 
+        user_id: web::Path<String>, //// mongodb object id of user or player 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {

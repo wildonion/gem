@@ -42,7 +42,6 @@ use crate::schema::users_tasks;
     components(
         schemas(
             UserData,
-            FetchUserTaskReport,
             TaskData
         )
     )
@@ -62,7 +61,7 @@ pub struct AdminApiDoc;
     context_path = "/admin",
     responses(
         (status=201, description="Created Successfully", body=[u8]),
-        (status=403, description="Invalid Token", body=UserData),
+        (status=403, description="Invalid Token", body=[u8]),
         (status=403, description="No Authorization Header Is Provided", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
@@ -847,7 +846,7 @@ async fn delete_task(
                                 
                                 resp!{
                                     i32, //// the data type
-                                    job_id, //// response data
+                                    job_id.to_owned(), //// response data
                                     TASK_NOT_FOUND, //// response message
                                     StatusCode::NOT_FOUND, //// status code
                                     None::<Cookie<'_>>, //// cookie
