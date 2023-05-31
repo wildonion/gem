@@ -111,6 +111,7 @@ impl Task{
 
         // 🥑 todo - publish/fire new task event/topic using redis 
         // ... 
+        let publish_task = events::redis::task::Register;
 
         match diesel::insert_into(tasks::table)
             .values(&task)
