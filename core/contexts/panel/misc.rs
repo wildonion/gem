@@ -202,7 +202,8 @@ macro_rules! resp {
             
             let resp = if let Some(cookie) = $cookie{
                 res
-                    .cookie(cookie)
+                    .cookie(cookie.clone())
+                    .append_header(("cookie", cookie.value()))
                     .json(
                         response_data
                     )
@@ -342,7 +343,7 @@ macro_rules! server {
                     /*
                         SWAGGER UI SERIVES
                     */
-                    .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
+                    .service(SwaggerUi::new("/swagger/{_:.*}").urls(vec![
                         (
                             Url::new("admin", "/api-docs/openapi1.json"),
                             apis::admin::AdminApiDoc::openapi(),

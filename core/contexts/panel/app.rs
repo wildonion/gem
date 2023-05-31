@@ -3,6 +3,11 @@
 
 use sha2::{Digest, Sha256};
 use utoipa::OpenApi;
+use utoipa::{ToSchema, IntoParams};
+use utoipa::{
+    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+    Modify
+};
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;

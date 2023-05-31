@@ -11,6 +11,9 @@ use crate::*;
 use once_cell::sync::Lazy;
 use rand::{Rng, SeedableRng, RngCore};
 use rand_chacha::{rand_core, ChaCha12Rng};
+use tokio::io::AsyncWriteExt;
+use futures::StreamExt;
+
 
 /* 
     if we want to use Result<(), impl std::error::Error + Send + Sync + 'static>
@@ -22,7 +25,7 @@ use rand_chacha::{rand_core, ChaCha12Rng};
 pub struct Response;
 pub struct Request;
 pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
-    where F: FnMut(Request, Response) -> A + Send + Sync + 'static,
+    where F: FnMut(Request, Response) -> A + Send + Sync + 'static + Clone,
     A: futures::future::Future<Output=Result<Response, ()>> + Send + Sync + 'static
     {
     
@@ -44,7 +47,7 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
         // which forces us to have a Send + Sync + 'static data in the meanwhile handle incoming async 
         // events into the server can be done using tokio::select!{} eventloop. 
 
-        while let Ok((stream, addr)) = listener.accept().await{ 
+        while let Ok((mut stream, addr)) = listener.accept().await{ 
             
             // discord message queue cache send message from bot asyncly even after the bot has started.
             // ...
@@ -56,12 +59,30 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
             // parse request data and share it between 
             // different threads using tokio jobq channels
             // ...
-            
-            let data_ = Arc::new(tokio::sync::Mutex::new(Data{id: "0".to_string()}));
-        
-            api(Request{}, Response{}).await;
 
-            sender.send(data_).await;
+            let mut api = api.clone();
+            let sender = sender.clone();
+            let data_ = Arc::new(tokio::sync::Mutex::new(Data{id: "0".to_string()}));
+            
+            /* 
+                also we're handling apis of each connection 
+                inside tokio green threadpool asyncly to avoid
+                halting issues
+            */
+            tokio::spawn(async move{
+            
+                /* calling the api of this connection */
+                api(Request{}, Response{}).await;
+                
+                /* sending data_ to the down side of the channel */
+                sender.send(data_).await;
+
+                /* http server closes the connection after handling each task */
+                if let Err(e) = stream.shutdown().await{
+                    error!("error in closing tcp connection");
+                }
+            
+            });
 
         }
     });

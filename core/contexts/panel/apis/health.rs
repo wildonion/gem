@@ -10,6 +10,18 @@ use crate::schema::users::dsl::*;
 use crate::schema::users;
 
 
+
+/*
+     -------------------------------
+    |          SWAGGER DOCS
+    | ------------------------------
+    |
+    |
+
+*/
+
+
+
 /*
      ------------------------
     |        SCHEMAS
@@ -48,7 +60,7 @@ async fn index(
             iam_healthy, //// response data
             IAM_HEALTHY, //// response message
             StatusCode::OK, //// status code
-            None,
+            None::<Cookie<'_>>,
         }
 
 }
@@ -90,7 +102,7 @@ async fn check_token(
                             _id, //// response data
                             USER_NOT_FOUND, //// response message
                             StatusCode::NOT_FOUND, //// status code
-                            None,
+                            None::<Cookie<'_>>,
                         } 
                     };
 
@@ -99,7 +111,7 @@ async fn check_token(
                         user, //// response data
                         FETCHED, //// response message
                         StatusCode::OK, //// status code
-                        None,
+                        None::<Cookie<'_>>,
                     }
 
                 },
@@ -130,7 +142,7 @@ async fn check_token(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None,
+                None::<Cookie<'_>>,
             }
         }
     }
@@ -167,7 +179,7 @@ async fn logout(
                                 &[], //// response data
                                 LOGOUT, //// response message
                                 StatusCode::OK, //// status code
-                                None,
+                                None::<Cookie<'_>>,
                             }
         
                         },
@@ -208,7 +220,7 @@ async fn logout(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
 
         }

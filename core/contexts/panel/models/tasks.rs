@@ -31,7 +31,18 @@ pub struct Task{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct TaskData{
+    pub id: i32,
+    pub task_name: String,
+    pub task_description: Option<String>,
+    pub task_score: i32,
+    pub admin_id: i32, // amdin id who has defined the tasks
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct NewTaskRequest{
     pub task_name: String,
     pub task_description: String,
@@ -39,7 +50,7 @@ pub struct NewTaskRequest{
     pub admin_id: i32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct EditTaskRequest{
     pub task_id: i32,
     pub task_name: String,
@@ -143,7 +154,7 @@ impl Task{
             }
     }
 
-    pub async fn edit(new_task: EditTaskRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Task, Result<HttpResponse, actix_web::Error>>{
+    pub async fn edit(new_task: EditTaskRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, Result<HttpResponse, actix_web::Error>>{
 
         match diesel::update(tasks.find(new_task.task_id.to_owned()))
             .set(EditTask{
@@ -159,7 +170,19 @@ impl Task{
             .returning(Task::as_returning())
             .get_result(connection)
             {
-                Ok(updated_task) => Ok(updated_task),
+                Ok(updated_task) => {
+                    Ok(
+                        TaskData{
+                            id: updated_task.id,
+                            task_name: updated_task.task_name,
+                            task_description: updated_task.task_description,
+                            task_score: updated_task.task_score,
+                            admin_id: updated_task.admin_id,
+                            created_at: updated_task.created_at.to_string(),
+                            updated_at: updated_task.updated_at.to_string(),
+                        }
+                    )
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{
@@ -176,7 +199,7 @@ impl Task{
                     
     }
 
-    pub async fn get_all_admin(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<Task>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all_admin(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, Result<HttpResponse, actix_web::Error>>{
 
         /* get the passed in admin info by its id */
         let user = match users::table
@@ -204,7 +227,23 @@ impl Task{
             .select(Task::as_select())
             .load(connection)
             {
-                Ok(admin_tasks) => Ok(admin_tasks),
+                Ok(admin_tasks) => {
+                    Ok(
+                        admin_tasks
+                            .clone()
+                            .into_iter()
+                            .map(|t| TaskData{
+                                id: t.id,
+                                task_name: t.task_name,
+                                task_description: t.task_description,
+                                task_score: t.task_score,
+                                admin_id: t.admin_id,
+                                created_at: t.created_at.to_string(),
+                                updated_at: t.updated_at.to_string(),
+                            })
+                            .collect::<Vec<TaskData>>()
+                    )
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{
@@ -221,11 +260,26 @@ impl Task{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<Task>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, Result<HttpResponse, actix_web::Error>>{
 
         match tasks.load::<Task>(connection)
         {
-            Ok(all_tasks) => Ok(all_tasks),
+            Ok(all_tasks) => {
+                Ok(
+                    all_tasks
+                        .into_iter()
+                        .map(|t| TaskData{
+                            id: t.id,
+                            task_name: t.task_name,
+                            task_description: t.task_description,
+                            task_score: t.task_score,
+                            admin_id: t.admin_id,
+                            created_at: t.created_at.to_string(),
+                            updated_at: t.updated_at.to_string(),
+                        })
+                        .collect::<Vec<TaskData>>()
+                )
+            },
             Err(e) => {
 
                 let resp = Response::<&[u8]>{

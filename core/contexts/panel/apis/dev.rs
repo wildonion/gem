@@ -11,9 +11,9 @@ use crate::misc::*;
 
 
 /*
-     ------------------------
-    |          DOCS
-    | ------------------------
+     -------------------------------
+    |          SWAGGER DOCS
+    | ------------------------------
     |
     |
 
@@ -42,7 +42,7 @@ pub struct DevApiDoc;
 async fn get_admin_data(
         req: HttpRequest, 
         id: web::Path<String>, //// mongodb object id of admin or god 
-        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -65,7 +65,7 @@ async fn get_admin_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = redis_conn.to_owned();
+                let redis_conn = redis_client.get_async_connection().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -81,7 +81,7 @@ async fn get_admin_data(
                             &[], //// response data
                             FETCHED, //// response message
                             StatusCode::OK, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         } 
             
             
@@ -92,7 +92,7 @@ async fn get_admin_data(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         }
                     }
                 }
@@ -109,7 +109,7 @@ async fn get_admin_data(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
-                    None, //// cookie
+                    None::<Cookie<'_>>, //// cookie
                 }
             }
         }
@@ -121,7 +121,7 @@ async fn get_admin_data(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
-            None, //// cookie
+            None::<Cookie<'_>>, //// cookie
         }
     }
 
@@ -137,7 +137,7 @@ async fn get_admin_data(
 async fn get_user_data(
         req: HttpRequest, 
         id: web::Path<String>, //// mongodb object id of user or player 
-        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -160,7 +160,7 @@ async fn get_user_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = redis_conn.to_owned();
+                let redis_conn = redis_client.get_async_connection().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -176,7 +176,7 @@ async fn get_user_data(
                             &[], //// response data
                             FETCHED, //// response message
                             StatusCode::OK, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         } 
             
             
@@ -187,7 +187,7 @@ async fn get_user_data(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         }
                     }
                 }
@@ -204,7 +204,7 @@ async fn get_user_data(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
-                    None, //// cookie
+                    None::<Cookie<'_>>, //// cookie
                 }
             }
         }
@@ -216,7 +216,7 @@ async fn get_user_data(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
-            None, //// cookie
+            None::<Cookie<'_>>, //// cookie
         }
     }
 

@@ -17,24 +17,36 @@ use crate::schema::users_tasks;
 
 
 /*
-     ------------------------
-    |          DOCS
-    | ------------------------
+     -------------------------------
+    |          SWAGGER DOCS
+    | ------------------------------
     |
     |
 
 */
 #[derive(OpenApi)]
-#[openapi(paths(reveal_role))]
-// #[openapi(paths(login))]
-// #[openapi(paths(egister_new_admin))]
-// #[openapi(paths(register_new_task))]
-// #[openapi(paths(delete_task))]
-// #[openapi(paths(edit_task))]
-// #[openapi(paths(delete_user))]
-// #[openapi(paths(get_users))]
-// #[openapi(paths(get_admin_tasks))]
-// #[openapi(paths(get_users_tasks))]
+#[openapi(
+    paths(
+        reveal_role,   
+        login,
+        register_new_admin,
+        register_new_task, 
+        delete_task,
+        edit_task,
+        edit_user,
+        delete_user,
+        get_users,
+        get_admin_tasks,
+        get_users_tasks,
+    ),
+    components(
+        schemas(
+            UserData,
+            FetchUserTaskReport,
+            TaskData
+        )
+    )
+)]
 pub struct AdminApiDoc;
 
 
@@ -47,15 +59,21 @@ pub struct AdminApiDoc;
 
 */
 #[utoipa::path(
-    context_path="/admin",
+    context_path = "/admin",
     responses(
-        (status=201, description="Created Successfully", body=Result<HttpResponse, actix_web::Error>)
-    )
+        (status=201, description="Created Successfully", body=[u8]),
+        (status=403, description="Invalid Token", body=UserData),
+        (status=403, description="No Authorization Header Is Provided", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("event_id", description = "event id")
+    ),
 )]
-#[post("/notif/register/reveal-role/{id}")]
+#[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
         req: HttpRequest, 
-        _id: web::Path<i32>, 
+        event_id: web::Path<i32>, 
         redis_conn: web::Data<RedisConnection>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
@@ -98,7 +116,7 @@ async fn reveal_role(
                             &[], //// response data
                             CREATED, //// response message
                             StatusCode::CREATED, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         } 
             
             
@@ -109,7 +127,7 @@ async fn reveal_role(
                             &[], //// response data
                             STORAGE_ISSUE, //// response message
                             StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None, //// cookie
+                            None::<Cookie<'_>>, //// cookie
                         }
                     }
                 }
@@ -126,7 +144,7 @@ async fn reveal_role(
                     &[], //// the data itself
                     INVALID_TOKEN, //// response message
                     StatusCode::FORBIDDEN, //// status code
-                    None, //// cookie
+                    None::<Cookie<'_>>, //// cookie
                 }
             }
         }
@@ -138,17 +156,22 @@ async fn reveal_role(
             &[], //// the data itself
             NOT_AUTH_HEADER, //// response message
             StatusCode::FORBIDDEN, //// status code
-            None, //// cookie
+            None::<Cookie<'_>>, //// cookie
         }
     }
 
 }
 
 #[utoipa::path(
-    context_path="/admin",
+    context_path = "/admin",
+    request_body = NewAdminInfoRequest,
     responses(
-        (status=200, description="Loggedin Successfully", body=Result<HttpResponse, actix_web::Error>)
-    )
+        (status=200, description="Loggedin Successfully", body=UserData),
+        (status=403, description="Wrong Password", body=String),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=500, description="Storage Issue", body=[u8]),
+        (status=403, description="Access Denied", body=String), // access denied by wallet
+    ),
 )]
 #[post("/login")]
 pub(super) async fn login(
@@ -183,7 +206,7 @@ pub(super) async fn login(
                                     user_name.to_owned(), //// response data
                                     WRONG_PASSWORD, //// response message
                                     StatusCode::FORBIDDEN, //// status code
-                                    None, //// cookie
+                                    None::<Cookie<'_>>, //// cookie
                                 }
                             };
         
@@ -200,22 +223,34 @@ pub(super) async fn login(
                                 .execute(connection)
                                 .unwrap();
                             
-                            let user_login_data = UserLoginData{
+                            let user_login_data = UserData{
                                 id: user.id,
                                 username: user.username.clone(),
                                 twitter_username: user.twitter_username.clone(),
                                 facebook_username: user.facebook_username.clone(),
                                 discord_username: user.discord_username.clone(),
                                 wallet_address: user.wallet_address.clone(),
-                                user_role: user.user_role.clone(),
+                                user_role: {
+                                    match user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::Dev => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
                                 token_time: user.token_time,
-                                last_login: user.last_login,
-                                created_at: user.created_at,
-                                updated_at: user.updated_at,
+                                last_login: { 
+                                    if user.last_login.is_some(){
+                                        Some(user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: user.created_at.to_string(),
+                                updated_at: user.updated_at.to_string(),
                             };
 
                             resp!{
-                                UserLoginData, //// the data type
+                                UserData, //// the data type
                                 user_login_data, //// response data
                                 LOGGEDIN, //// response message
                                 StatusCode::OK, //// status code,
@@ -230,7 +265,7 @@ pub(super) async fn login(
                                 user_name.to_owned(), //// response data
                                 ACCESS_DENIED, //// response message
                                 StatusCode::FORBIDDEN, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             } 
                         }
                     }
@@ -250,13 +285,30 @@ pub(super) async fn login(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    request_body = NewAdminInfoRequest,
+    responses(
+        (status=201, description="Created Successfully", body=[u8]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[post("/register-new-admin")]
 async fn register_new_admin(
         req: HttpRequest,  
@@ -288,7 +340,7 @@ async fn register_new_admin(
                                 &[], //// response data
                                 CREATED, //// response message
                                 StatusCode::CREATED, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
                         }, 
                         Err(resp) => {
@@ -306,16 +358,16 @@ async fn register_new_admin(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -329,13 +381,30 @@ async fn register_new_admin(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }        
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    request_body = EditUserByAdminRequest,
+    responses(
+        (status=200, description="Updated Successfully", body=[UserData]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[post("/edit-user")]
 async fn edit_user(
         req: HttpRequest, 
@@ -363,11 +432,11 @@ async fn edit_user(
                         Ok(updated_user) => {
 
                             resp!{
-                                FetchUser, //// the data type
+                                UserData, //// the data type
                                 updated_user, //// response data
                                 UPDATED, //// response message
                                 StatusCode::OK, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
 
                         },
@@ -390,16 +459,16 @@ async fn edit_user(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -412,12 +481,31 @@ async fn edit_user(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=200, description="Deleted Successfully", body=[u8]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("user_id", description = "user id")
+    ),
+)]
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
@@ -444,22 +532,22 @@ async fn delete_user(
                     match User::delete_by_admin(doer_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
-                            if num_deleted == 0{
+                            if num_deleted > 0{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
                                     DELETED, //// response message
                                     StatusCode::OK, //// status code
-                                    None, //// cookie
+                                    None::<Cookie<'_>>, //// cookie
                                 }
                             } else{
                                 
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    TASK_NOT_FOUND, //// response message
+                                    i32, //// the data type
+                                    doer_id.to_owned(), //// response data
+                                    USER_NOT_FOUND, //// response message
                                     StatusCode::NOT_FOUND, //// status code
-                                    None, //// cookie
+                                    None::<Cookie<'_>>, //// cookie
                                 }
                             }
 
@@ -477,16 +565,16 @@ async fn delete_user(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -500,7 +588,7 @@ async fn delete_user(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         
@@ -508,6 +596,22 @@ async fn delete_user(
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=200, description="Fetched Successfully", body=[UserData]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[post("/get-users")]
 async fn get_users(
         req: HttpRequest, 
@@ -533,11 +637,11 @@ async fn get_users(
                     match User::get_all(connection).await{
                         Ok(all_users) => {
                             resp!{
-                                Vec<User>, //// the data type
+                                Vec<UserData>, //// the data type
                                 all_users, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
                         },
                         Err(resp) => {
@@ -553,16 +657,16 @@ async fn get_users(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -576,12 +680,30 @@ async fn get_users(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    request_body = NewTaskRequest,
+    responses(
+        (status=201, description="Created Successfully", body=[TaskData]),
+        (status=302, description="Task Has Already Registered", body=[TaskData]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+)]
 #[post("/register-new-task")]
 async fn register_new_task(
         req: HttpRequest, 
@@ -613,7 +735,7 @@ async fn register_new_task(
                                 &[], //// response data
                                 CREATED, //// response message
                                 StatusCode::CREATED, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
 
                         },
@@ -636,16 +758,16 @@ async fn register_new_task(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -659,7 +781,7 @@ async fn register_new_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         
@@ -667,6 +789,26 @@ async fn register_new_task(
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=200, description="Deleted Successfully", body=[u8]),
+        (status=404, description="Task Not Found", body=i32), // not found by id
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("job_id", description = "task id")
+    ),
+)]
 #[post("/delete-task/{job_id}")]
 async fn delete_task(
         req: HttpRequest, 
@@ -693,22 +835,22 @@ async fn delete_task(
                     match Task::delete(job_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
-                            if num_deleted == 0{
+                            if num_deleted > 0{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
                                     DELETED, //// response message
                                     StatusCode::OK, //// status code
-                                    None, //// cookie
+                                    None::<Cookie<'_>>, //// cookie
                                 }
                             } else{
                                 
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
+                                    i32, //// the data type
+                                    job_id, //// response data
                                     TASK_NOT_FOUND, //// response message
                                     StatusCode::NOT_FOUND, //// status code
-                                    None, //// cookie
+                                    None::<Cookie<'_>>, //// cookie
                                 }
                             }
 
@@ -726,16 +868,16 @@ async fn delete_task(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -749,7 +891,7 @@ async fn delete_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         
@@ -757,6 +899,27 @@ async fn delete_task(
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    request_body = EditTaskRequest,
+    responses(
+        (status=200, description="Updated Successfully", body=[TaskData]),
+        (status=404, description="Task Not Found", body=[u8]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("job_id", description = "task id")
+    ),
+)]
 #[post("/edit-task")]
 async fn edit_task(
         req: HttpRequest, 
@@ -785,11 +948,11 @@ async fn edit_task(
                         Ok(updated_task) => {
 
                             resp!{
-                                Task, //// the data type
+                                TaskData, //// the data type
                                 updated_task, //// response data
                                 UPDATED, //// response message
                                 StatusCode::OK, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
 
                         },
@@ -806,16 +969,16 @@ async fn edit_task(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -828,12 +991,31 @@ async fn edit_task(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=200, description="Fetched Successfully", body=[TaskData]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("owner_id", description = "task owner id")
+    ),
+)]
 #[post("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
         req: HttpRequest, 
@@ -861,11 +1043,11 @@ async fn get_admin_tasks(
                         Ok(admin_tasks) => {
 
                             resp!{
-                                Vec<Task>, //// the data type
+                                Vec<TaskData>, //// the data type
                                 admin_tasks, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
 
                         },
@@ -881,16 +1063,16 @@ async fn get_admin_tasks(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -904,7 +1086,7 @@ async fn get_admin_tasks(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         
@@ -912,6 +1094,25 @@ async fn get_admin_tasks(
 
 }
 
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=200, description="Fetched Successfully", body=[(UserData, [TaskData])]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("owner_id", description = "task owner id")
+    ),
+)]
 #[get("/get-users-tasks")]
 async fn get_users_tasks(
         req: HttpRequest,  
@@ -938,11 +1139,11 @@ async fn get_users_tasks(
                         Ok(all_users_tasks) => {
 
                             resp!{
-                                Vec<(User, Vec<Task>)>, //// the data type
+                                Vec<(UserData, Vec<TaskData>)>, //// the data type
                                 all_users_tasks, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
-                                None, //// cookie
+                                None::<Cookie<'_>>, //// cookie
                             }
 
                         },
@@ -958,16 +1159,16 @@ async fn get_users_tasks(
                     /* 
                         🥝 response can be one of the following:
                         
+                        - NOT_FOUND_COOKIE_VALUE
                         - NOT_FOUND_TOKEN
-                        - NOT_FOUND_COOKIE_TIME_HASH
                         - INVALID_COOKIE_TIME_HASH
                         - INVALID_COOKIE_FORMAT
                         - EXPIRED_COOKIE
-                        - USER_NOT_FOUND 
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
                         - ACCESS_DENIED, 
                         - NOT_FOUND_COOKIE_EXP
                         - INTERNAL_SERVER_ERROR 
-                        - NOT_FOUND_JWT_VALUE
                     */
                     resp
                 }
@@ -981,7 +1182,7 @@ async fn get_users_tasks(
                 &[], //// response data
                 STORAGE_ISSUE, //// response message
                 StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None, //// cookie
+                None::<Cookie<'_>>, //// cookie
             }
         }
     }         

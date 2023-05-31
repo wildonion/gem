@@ -9,7 +9,7 @@ use crate::schema::tasks;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
-use crate::models::{users::User, tasks::Task};
+use crate::models::{users::User, tasks::{Task, TaskData}};
 
 
 
@@ -40,10 +40,10 @@ pub struct NewUserTask{
     pub user_id: i32
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct FetchUserTaskReport{
     pub total_score: i32,
-    pub done_tasks: Vec<Task>,
+    pub done_tasks: Vec<TaskData>,
 }
 
 impl UserTask{
@@ -133,7 +133,21 @@ impl UserTask{
                                 .into_iter()
                                 .sum()
                         },
-                        done_tasks: tasks_info,
+                        done_tasks: {
+                            tasks_info
+                                .clone()
+                                .into_iter()
+                                .map(|t| TaskData{
+                                    id: t.id,
+                                    task_name: t.task_name,
+                                    task_description: t.task_description,
+                                    task_score: t.task_score,
+                                    admin_id: t.admin_id,
+                                    created_at: t.created_at.to_string(),
+                                    updated_at: t.updated_at.to_string(),
+                                })
+                                .collect::<Vec<TaskData>>()
+                        },
                     };    
                     
                     Ok(report)
@@ -200,6 +214,7 @@ impl UserTask{
             .grouped_by(&all_users)
             .into_iter()
             .zip(all_users)
+            /* converting the zipped users and jobs pairs into Vec<(User, Vec<Task>)> using map */
             .map(|(t, user)| (user, t.into_iter().map(|(_, task)| task).collect()))
             .collect();
 

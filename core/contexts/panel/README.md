@@ -7,6 +7,8 @@
 
 **🦀 Rust flows in you 🌊**: write codes that are the matter-of-futer flows!
 
+**☕ sit-back-and-drink-your-coffee** scripts do deploy the project on VPS!
+
 ## 🧐 Good 2 Know
 
 * this is a micro service in which all its APIs are designed based on access levels not the database models. 
@@ -19,29 +21,13 @@
 
 * if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```. 
 
-## 🍟 Features
-
-* register new task 
-
-* register new admin
-
-* user task reports
-
-* reveal role by admin
-
-* register new event by sending SMS
-
-* user login with wallet
-
-* admin login with email
-
 ## 🛠️ Tools
 
 * utoipa open api doc with swagger ui
 
 * redis for realtime task and reveal role streaming using pubsub pattern
 
-* postgres db to store data
+* postgres and mongo db to store data
 
 * actix based http server
 
@@ -64,7 +50,5 @@
 * macros inside the `misc.rs`
 
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
-
-* generating swagger doc with utoipa 
 
 * backend design pattern sketch using freeform and ERD schemas inside wiki.

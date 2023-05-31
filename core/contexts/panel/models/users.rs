@@ -48,28 +48,28 @@ pub struct FetchUser{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UserLoginData{
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+pub struct UserData{
     pub id: i32,
     pub username: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub wallet_address: Option<String>,
-    pub user_role: UserRole,
+    pub user_role: String,
     pub token_time: Option<i64>,
-    pub last_login: Option<chrono::NaiveDateTime>,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
+    pub last_login: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct LoginInfoRequest{
     pub username: String,
     pub password: String
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
 #[derive(diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::Userrole"]
 pub enum UserRole{
@@ -107,14 +107,14 @@ pub struct JWTClaims{
     pub iat: i64, //// issued timestamp
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct NewAdminInfoRequest{
     pub username: String,
     pub wallet: String,
     pub password: String
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct EditUserByAdminRequest{
     pub user_id: i32,
     pub role: String,
@@ -137,7 +137,7 @@ impl User{
         let Some(cookie) = req.cookie("jwt") else{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
-                message: NOT_FOUND_JWT_VALUE,
+                message: NOT_FOUND_COOKIE_VALUE,
                 status: 404
             };
             return Err(
@@ -436,7 +436,7 @@ impl User{
 
     }
 
-    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserLoginData, Cookie), Result<HttpResponse, actix_web::Error>>{
+    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
 
         let new_user = NewUser{
             username: "",
@@ -452,18 +452,30 @@ impl User{
             {
                 Ok(fetched_user) => {
 
-                    let user_login_data = UserLoginData{
+                    let user_login_data = UserData{
                         id: fetched_user.id,
                         username: fetched_user.username.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
                         discord_username: fetched_user.discord_username.clone(),
                         wallet_address: fetched_user.wallet_address.clone(),
-                        user_role: fetched_user.user_role.clone(),
+                        user_role: {
+                            match fetched_user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
                         token_time: fetched_user.token_time,
-                        last_login: fetched_user.last_login,
-                        created_at: fetched_user.created_at,
-                        updated_at: fetched_user.updated_at,
+                        last_login: { 
+                            if fetched_user.last_login.is_some(){
+                                Some(fetched_user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: fetched_user.created_at.to_string(),
+                        updated_at: fetched_user.updated_at.to_string(),
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -541,7 +553,7 @@ impl User{
 
     }
 
-    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, Result<HttpResponse, actix_web::Error>>{
 
         /* fetch user info based on the data inside jwt */ 
         let single_user = users
@@ -593,7 +605,35 @@ impl User{
             .returning(FetchUser::as_returning())
             .get_result(connection)
             {
-                Ok(updated_user) => Ok(updated_user),
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            username: updated_user.username, 
+                            twitter_username: updated_user.twitter_username, 
+                            facebook_username: updated_user.facebook_username, 
+                            discord_username: updated_user.discord_username, 
+                            wallet_address: updated_user.wallet_address, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                        }
+                    )
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{
@@ -632,11 +672,42 @@ impl User{
     
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<User>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, Result<HttpResponse, actix_web::Error>>{
 
         match users.load::<User>(connection)
         {
-            Ok(all_users) => Ok(all_users),
+            Ok(all_users) => {
+                Ok(
+                    all_users
+                        .into_iter()
+                        .map(|u| UserData { 
+                            id: u.id, 
+                            username: u.username, 
+                            twitter_username: u.twitter_username, 
+                            facebook_username: u.facebook_username, 
+                            discord_username: u.discord_username, 
+                            wallet_address: u.wallet_address, 
+                            user_role: {
+                                match u.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: u.token_time,
+                            last_login: { 
+                                if u.last_login.is_some(){
+                                    Some(u.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: u.created_at.to_string(),
+                            updated_at: u.updated_at.to_string(),
+                        })
+                        .collect::<Vec<UserData>>()
+                )
+            },
             Err(e) => {
 
                 let resp = Response::<&[u8]>{
@@ -680,7 +751,7 @@ impl User{
     pub async fn update_social_account(
         wallet: &str, 
         account_name: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUser, Result<HttpResponse, actix_web::Error>>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, Result<HttpResponse, actix_web::Error>>{
 
 
             let Ok(user) = User::find_by_wallet(wallet, connection).await else{
@@ -699,7 +770,35 @@ impl User{
                 .returning(FetchUser::as_returning())
                 .get_result(connection)
                 {
-                    Ok(updated_user) => Ok(updated_user),
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                username: updated_user.username, 
+                                twitter_username: updated_user.twitter_username, 
+                                facebook_username: updated_user.facebook_username, 
+                                discord_username: updated_user.discord_username, 
+                                wallet_address: updated_user.wallet_address, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                            }
+                        )
+                    },
                     Err(e) => {
 
                         let resp = Response::<&[u8]>{
