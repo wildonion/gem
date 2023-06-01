@@ -4,8 +4,9 @@
 use crate::*;
 use crate::models::users::User;
 use crate::misc::Response;
-use crate::schema::{tasks, users};
+use crate::schema::{tasks, users, users_tasks};
 use crate::schema::tasks::dsl::*;
+use crate::schema::users_tasks::dsl::*;
 use crate::constants::*;
 
 
@@ -134,12 +135,39 @@ impl Task{
 
     }
 
-    pub async fn delete(task_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
         
-        match diesel::delete(tasks.filter(tasks::id.eq(task_id)))
+        match diesel::delete(tasks.filter(tasks::id.eq(job_id)))
             .execute(connection)
             {
-                Ok(num_deleted) => Ok(num_deleted),
+                Ok(_) => {
+                
+                    /* 
+                        we must also delete the associated records from the users_tasks table 
+                        since a task is deleted thus all the users who have done this task must
+                        deleted from the users_tasks table too 
+                    */
+                    let deleted_rows = match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(task_id)))
+                    .execute(connection)
+                    {
+                        Ok(num_deleted) => num_deleted,
+                        Err(e) => {
+
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+
+                        }
+                    };
+                    
+                    Ok(deleted_rows)
+                    
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{
@@ -153,6 +181,7 @@ impl Task{
 
                 }
             }
+        
     }
 
     pub async fn edit(new_task: EditTaskRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, Result<HttpResponse, actix_web::Error>>{
