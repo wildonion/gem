@@ -49,13 +49,13 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🔥 **Solana** on-chain **B2C** whitelist contract to burn the past event roles for whitelist spots
 
-* 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible responses 
+* 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible server's responses 
 
 * 🎒 supports **postgres**, **mongodb** and **redis** as the app storage  
 
 * 🛎️ **actix web** and **hyper** based HTTP servers
 
-* 📣 redis streaming channel to publish the reveal role and new task topics 
+* 📣 **redis** based streaming channel to publish the reveal role and new task topics 
 
 ## 🗃️ Directory and Structure Explained
 
@@ -75,7 +75,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 * `scripts`: deployment scripts
 * `test`: gem test codes
 
-**NOTE**: All `conse`, `panel` and `bot` are just different binaries and sharing a same `Cargo.toml` setup.
+**NOTE**: All `conse`, `panel` and `bot` services are just different binaries which are sharing a same `Cargo.toml` setup.
 
 ## 🛠️ Development Setup
 
@@ -98,7 +98,7 @@ cargo run --bin argon2test
     
 ## 🚀 Production Setup
 
-> Before go for production, read the following notes please: 
+> Before going for production, read the following notes: 
 
 - **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
 
