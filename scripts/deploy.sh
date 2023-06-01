@@ -1,4 +1,7 @@
 #!/bin/bash
+DIRECTORY=..
+REALPTH_GEM=TRUEDIR=$(cd -- "$DIRECTORY" && pwd)
+
 sudo rm .env && sudo mv .env.prod .env
 echo "[?] Enter OpenAI token: "
 read OPENAI_TOKEN
@@ -60,3 +63,7 @@ sudo docker rm -f nginx
 sudo docker run -d -it -p 80:80 -p 443:443 --name nginx --network host nginx
 
 sudo docker ps -a && sudo docker compose ps -a && sudo docker images
+
+cd $REALPTH_GEM/jobs && crontab -u root -l > $REALPTH_GEM/infra/gemcron
+find . -name "*.cron" -type f -exec cat {} >> $REALPTH_GEM/infra/gemcron \;
+crontab -u root -l 

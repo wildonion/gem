@@ -104,7 +104,7 @@ async fn reveal_role(
             
                         
                         // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
-                        // 🥑 todo - also call the /reveal/roles api of the hyper server                 
+                        // 🥑 todo - also call the /reveal/roles api of the conse hyper server                 
                         // ...
 
                         let mq = events::redis::mmq::MatchQueue{..Default::default()};

@@ -2,4 +2,4 @@
 
 
 
-gem errors
+## gem possible errors handler
