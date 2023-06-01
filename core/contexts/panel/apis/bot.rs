@@ -1,7 +1,7 @@
 
 
 use crate::*;
-use crate::models::{users::*, tasks::*, users_tasks::*};
+use crate::models::{users::*, tasks::*, users_tasks::*, bot::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -61,7 +61,7 @@ pub struct BotApiDoc;
 #[utoipa::path(
     context_path = "/bot",
     responses(
-        (status=200, description="Task Verified Successfully", body=UserData),
+        (status=200, description="Task Verified Successfully", body=[u8]),
         (status=403, description="Bot Is Busy", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="User Not Found", body=String), // not found by wallet
@@ -80,8 +80,8 @@ pub struct BotApiDoc;
         ("twitter_username", description = "twitter username")
     ),
 )]
-#[post("/verify-task/{job_id}/{twitter_username}")]
-async fn verify_task(
+#[post("/verify-twitter-task/{job_id}/{twitter_username}")]
+async fn verify_twitter_task(
         req: HttpRequest,
         account_name: web::Path<String>, 
         redis_client: web::Data<RedisClient>, //// redis shared state data 
@@ -104,17 +104,45 @@ async fn verify_task(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
+                    let bot = Bot::new();
+
+
+                    /*
+
+                        - user login to get the activity code 
+                        - user tweet the code then frontend call the verify username api
+                        - every 24 hours user gets verified to see that the task is done or not
+                            if the task is in there then we'll insert into users_tasks table if it's not in there already 
+                            if the task is not inside his/her twitter then we'll remove it from the users_tasks table 
                     
-                    // 🥑 todo - call conse twitter apis to verify a user activities to check the task as done
-                    // 🥑 todo - call the other one twitter bot apis here
-                    // 🥑 todo - call /do-task/{task_id}/{user_id} api to done a user task after successful verification
-                    // ... 
+                    */
 
 
+                    // step1) find the task name related to the passed in id
+                    // step2) if it's started with twitter-* then check the name after `-`
+                    /* step3) 
+                    
+                        let res = if name.starts_with("username"){
+                            bot.verify_username()
+                        } else if name.starts_with("tweet"){
+                            bot.verify_tweets()
+                        } else if name.starts_with("likes"){
+                            bot.verify_likes()
+                        } else if name.starts_with("retweets"){
+                            bot.verify_retweets()
+                        } else if name.starts_with("hashtags"){
+                            bot.verify_hashtags()
+                        } else{
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                INVALID_TWITTER_TASK_NAME, //// response message
+                                StatusCode::NOT_ACCEPTABLE, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+                        }
 
-
-
-
+                    */
 
 
                     todo!()
@@ -155,5 +183,5 @@ async fn verify_task(
 
 
 pub mod exports{
-    pub use super::verify_task;
+    pub use super::verify_twitter_task;
 }

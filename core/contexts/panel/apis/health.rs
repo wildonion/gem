@@ -114,7 +114,7 @@ async fn check_token(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            match User::passport(req, Some(UserRole::Admin), connection){
+            match User::passport(req, None, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

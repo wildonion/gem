@@ -116,7 +116,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
 */
 pub fn init_bot(config: &mut web::ServiceConfig){
 
-    config.service(apis::bot::exports::verify_task);
+    config.service(apis::bot::exports::verify_twitter_task);
 
     // other routs maybe ?
     // ...
