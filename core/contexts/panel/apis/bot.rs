@@ -46,10 +46,10 @@ pub struct BotApiDoc;
     following apis will be used to check that a user task 
     is done or not which sents a request to the twitter bot 
     to check the twitter activities of the passed in username,
-    also there must be cronjob set to call this API every 
-    for example 24 hours since the tweet by the user user 
-    may be deleted in the pas hours and thus the user can't
-    gets scored. 
+    also there must be an scheduler inside the code to call 
+    this API every like 24 hours constantly since the tweet 
+    by the user may be deleted in the pas hours and thus the 
+    shouldn't gets scored. 
 
     twitter tasks can be the followings:
         - tweet
@@ -116,7 +116,7 @@ async fn verify_task(
 
 
 
-                    
+
                     todo!()
 
                 },

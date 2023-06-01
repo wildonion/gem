@@ -17,7 +17,10 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 👨🏻‍⚖️ ADMIN PANEL ==> https://admin.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
 🗺️ MAIN API ROUTE ==> https://api.conse.app/
-🎙️ HOSTED ON ==> ...
+🎙️ HOSTED ON ==> Digitalocean
+🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
+🖼️ GEM DESIGN PATTERN SKETCH ==> https://github.com/wildonion/gem/wiki/Gem-Design-Pattern-Sketch
+🥪 GEM ERD SCHEMAS ==> https://github.com/wildonion/gem/wiki/Gem-ERD-Schemas
 ```
 
 ## 🍩 V0.1.3 Features
@@ -28,17 +31,17 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🦾 functional, macro, MVC and ACL based design pattern server APIs
 
-* ☢️ best error handling syntax
+* ☢️ better error handling using **match** and **Option** syntax
 
-* 🧑🏻‍💼 game managers can define score based tasks for users, register new event, reveal role and advertise their event using SMS panel  
+* 🧑🏻‍💼 game managers can define score based twitter tasks for users, register new event, reveal role and advertise their events vis SMS inside the panel  
 
-* 🍪 cookie and **JWT** based authentication strategy
+* 🍪 **cookie** and **JWT** based authentication strategy
 
 * 🔐 **Argon2** as the **KDF** used for password hasing
 
 * 🥝 server health-check APIs
 
-* ✅ user tasks verification using the twitter APIs
+* ✅ automatic user twitter tasks verification system using **tokio-cron-scheduler** 
 
 * 🍅 catchup discord bot for channel messages summarization 
 
@@ -206,4 +209,4 @@ cd scripts
 
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 
-* backend design pattern sketch using freeform and ERD schemas inside wiki.
+* complete [wiki pages](https://github.com/wildonion/gem/wiki/)
