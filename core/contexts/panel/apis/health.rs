@@ -123,7 +123,7 @@ async fn check_token(
                     
                     let single_user = users
                             .filter(id.eq(_id))
-                            .select((id, username, twitter_username, 
+                            .select((id, username, activity_code, twitter_username, 
                                     facebook_username, discord_username,
                                     wallet_address, user_role, token_time,
                                     last_login, created_at, updated_at))
@@ -143,6 +143,7 @@ async fn check_token(
                     let user_data = UserData { 
                         id: user.id, 
                         username: user.username, 
+                        activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 
                         facebook_username: user.facebook_username, 
                         discord_username: user.discord_username, 

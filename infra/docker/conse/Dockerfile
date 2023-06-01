@@ -18,6 +18,7 @@ ARG APP=/usr/src/app
 ENV DB_ENGINE=mongodb
 ENV DB_HOST=mongodb
 ENV DB_PORT=27017
+# since we won't use a secured mongodb connection 
 ENV ENVIRONMENT=dev
 
 RUN apt-get update \

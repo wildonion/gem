@@ -380,7 +380,7 @@ pub mod otp{
         async fn send_code(&mut self) -> Result<OtpSuccess, hyper::Error>{
 
             let code: String = (0..4).map(|_|{
-            let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
+                let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
                 CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
             }).collect();
 

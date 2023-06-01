@@ -105,3 +105,21 @@ pub fn init_health(config: &mut web::ServiceConfig){
 
 
 }
+
+/*
+     --------------------------------
+    |     REGISTER BOT ROUTES
+    | -------------------------------
+    |
+    |
+
+*/
+pub fn init_bot(config: &mut web::ServiceConfig){
+
+    config.service(apis::bot::exports::verify_task);
+
+    // other routs maybe ?
+    // ...
+
+
+}

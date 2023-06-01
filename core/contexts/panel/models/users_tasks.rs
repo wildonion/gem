@@ -219,6 +219,7 @@ impl UserTask{
                 let user_data = UserData { 
                     id: user.id, 
                     username: user.username, 
+                    activity_code: user.activity_code,
                     twitter_username: user.twitter_username, 
                     facebook_username: user.facebook_username, 
                     discord_username: user.discord_username, 

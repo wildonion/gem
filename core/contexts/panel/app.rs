@@ -1,12 +1,16 @@
 
 
-
+use rand::Rng;
+use rand::random;
 use sha2::{Digest, Sha256};
 use utoipa::OpenApi;
 use utoipa::{ToSchema, IntoParams};
 use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
-    Modify
+    openapi::security::{
+        ApiKey, 
+        ApiKeyValue, 
+        SecurityScheme
+    },
 };
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use diesel::prelude::*;

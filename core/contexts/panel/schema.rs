@@ -25,6 +25,7 @@ diesel::table! {
     users (id) {
         id -> Int4,
         username -> Varchar,
+        activity_code -> Varchar,
         twitter_username -> Nullable<Varchar>,
         facebook_username -> Nullable<Varchar>,
         discord_username -> Nullable<Varchar>,

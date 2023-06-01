@@ -94,6 +94,7 @@ async fn login(
                     let user_login_data = UserData{
                         id: user.id,
                         username: user.username.clone(),
+                        activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
                         discord_username: user.discord_username.clone(),

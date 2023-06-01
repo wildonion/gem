@@ -1,11 +1,31 @@
 
 
 use crate::*;
+use crate::constants::CHARSET;
 
+
+pub fn gen_chars(size: u32) -> String{
+    let mut rng = rand::thread_rng();
+    (0..size).map(|_|{
+        char::from_u32(rng.gen_range(65..91)).unwrap() // generating a char from the random output of type u32 using from_u32() method
+    }).collect()
+}
+
+pub fn gen_random_number(from: u32, to: u32) -> u32{
+    let mut rng = rand::thread_rng(); // we can't share this between threads and across .awaits
+    rng.gen_range(from..to)
+} 
+
+pub fn gen_random_idx(idx: usize) -> usize{
+    if idx < CHARSET.len(){
+        idx
+    } else{
+        gen_random_idx(random::<u8>() as usize)
+    }
+}
 
 
 // inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs
-
 
 #[derive(Clone)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
 pub struct Db{
@@ -78,11 +98,16 @@ impl Storage{
             Mode::Off => None, //// no db is available cause it's off
         }
     }
-    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{
+    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, //// no db is available cause it's off
         }
+    }
+    pub async fn get_redis(&self) -> Option<RedisClient>{
+
+        todo!()
+
     }
 }
 
@@ -341,6 +366,13 @@ macro_rules! server {
                             .configure(services::init_health)
                     )
                     /*
+                        BOT SERIVE
+                    */
+                    .service(
+                        actix_web::web::scope("/bot")
+                            .configure(services::init_bot)
+                    )
+                    /*
                         SWAGGER UI SERIVES
                     */
                     .service(SwaggerUi::new("/swagger/{_:.*}").urls(vec![
@@ -359,6 +391,10 @@ macro_rules! server {
                         (
                             Url::new("health", "/api-docs/openapi4.json"),
                             apis::health::HealthApiDoc::openapi(),
+                        ),
+                        (
+                            Url::new("bot", "/api-docs/openapi5.json"),
+                            apis::bot::BotApiDoc::openapi(),
                         )
                     ]))
                 }) //// each thread of the HttpServer instance needs its own app factory 

@@ -39,7 +39,7 @@ diesel setup && diesel migration run
 sudo docker build -t --no-cache conse-panel -f infra/docker/panel/Dockerfile .
 sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
-sudo docker build -t --no-cache conse-catchup-bot -f infra/docker/bot/Dockerfile .
+sudo docker build -t --no-cache conse-catchup-bot -f infra/docker/dis-bot/Dockerfile .
 sudo docker run -d --link redis --network gem --name conse-catchup-bot -v ./infra/data/dis-bot-logs:/usr/src/app/logs/ conse-catchup-bot
 
 sudo docker build -t --no-cache conse -f infra/docker/conse/Dockerfile .

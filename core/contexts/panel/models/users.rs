@@ -2,7 +2,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
 use crate::schema::users;
 use crate::schema::users::dsl::*;
 use crate::constants::*;
@@ -20,6 +20,7 @@ use crate::constants::*;
 pub struct User{
     pub id: i32,
     pub username: String,
+    pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
@@ -37,6 +38,7 @@ pub struct User{
 pub struct FetchUser{
     pub id: i32,
     pub username: String,
+    pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
@@ -52,6 +54,7 @@ pub struct FetchUser{
 pub struct UserData{
     pub id: i32,
     pub username: String,
+    pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
@@ -82,6 +85,7 @@ pub enum UserRole{
 #[diesel(table_name=users)]
 pub struct NewUser<'l> {
     pub username: &'l str,
+    pub activity_code: &'l str,
     pub wallet_address: &'l str,
     pub user_role: UserRole,
     pub pswd: &'l str,
@@ -438,8 +442,15 @@ impl User{
 
     pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
 
+        let random_chars = gen_chars(gen_random_number(5, 11));
+        let random_code: String = (0..4).map(|_|{
+            let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
+            CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+        }).collect();
+
         let new_user = NewUser{
             username: "",
+            activity_code: &random_code,
             wallet_address: &wallet,
             user_role: UserRole::User,
             pswd: "",
@@ -455,6 +466,7 @@ impl User{
                     let user_login_data = UserData{
                         id: fetched_user.id,
                         username: fetched_user.username.clone(),
+                        activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
                         discord_username: fetched_user.discord_username.clone(),
@@ -527,6 +539,7 @@ impl User{
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let user = NewUser{
             username: user.username.as_str(),
+            activity_code: "",
             wallet_address: user.wallet.as_str(),
             user_role: UserRole::Admin,
             pswd: hash_pswd.as_str()
@@ -610,6 +623,7 @@ impl User{
                         UserData { 
                             id: updated_user.id, 
                             username: updated_user.username, 
+                            activity_code: updated_user.activity_code, 
                             twitter_username: updated_user.twitter_username, 
                             facebook_username: updated_user.facebook_username, 
                             discord_username: updated_user.discord_username, 
@@ -683,6 +697,7 @@ impl User{
                         .map(|u| UserData { 
                             id: u.id, 
                             username: u.username, 
+                            activity_code: u.activity_code, 
                             twitter_username: u.twitter_username, 
                             facebook_username: u.facebook_username, 
                             discord_username: u.discord_username, 
@@ -775,6 +790,7 @@ impl User{
                             UserData { 
                                 id: updated_user.id, 
                                 username: updated_user.username, 
+                                activity_code: updated_user.activity_code, 
                                 twitter_username: updated_user.twitter_username, 
                                 facebook_username: updated_user.facebook_username, 
                                 discord_username: updated_user.discord_username, 

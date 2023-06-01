@@ -2,8 +2,12 @@
 name = "gem"
 version = "0.1.3"
 edition = "2021"
-
-
+authors = ["wildonion <abarmardeatashyne@gmail.com>"]
+description = "Conse Rust Services"
+homepage = "https://github.com/wildonion/gem/"
+keywords = ["game","web","app", "rust"]
+license = "UNLICENSED"
+repository = "https://github.com/wildonion/gem/"
 
 
 [dependencies]

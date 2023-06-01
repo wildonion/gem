@@ -1,11 +1,7 @@
 
 
 
-// --------------------
-// shared state pooling
-// -------------------- 
 
-// https://github.com/wildonion/s3
 
 use crate::*;
 use once_cell::sync::Lazy;
@@ -34,7 +30,8 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
     /* ----- TOKIO TCP SOCKET SERVER SHARED STATE EXAMPLE TO HANDLE INCOMING CONNECTIONS ASYNCLY ----- */
     /* ----------------------------------------------------------------------------------------------- */
     /* ----------------------------------------------------------------------------------------------- */
-
+    
+    #[derive(Debug)] // required to be implemented to unwrap() the sender result after awaiting
     struct Data{id: String}
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<Arc<tokio::sync::Mutex<Data>>>(1024);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:2001").await.unwrap();
@@ -72,10 +69,10 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
             tokio::spawn(async move{
             
                 /* calling the api of this connection */
-                api(Request{}, Response{}).await;
+                api(Request{}, Response{}).await.unwrap();
                 
                 /* sending data_ to the down side of the channel */
-                sender.send(data_).await;
+                sender.send(data_).await.unwrap();
 
                 /* http server closes the connection after handling each task */
                 if let Err(e) = stream.shutdown().await{
@@ -107,7 +104,12 @@ pub async fn start_server<F, A>(mut api: F) -> Result<(), Box<dyn std::error::Er
 
 
 pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
-    
+
+    // --------------------
+    // shared state pooling
+    // -------------------- 
+
+    // https://github.com/wildonion/s3    
 
     /*
 
@@ -131,7 +133,15 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
         HashMap::new()
     });
     
-    type Db = HashMap<i32, String>;
+    /* 
+        this is an in memory data storage with a unique i32 
+        storage key which will be create randomly also it must 
+        be safe to be shared between threads or must be
+        Arc<tokio::sync::Mutex<Db>> in which an arced and mutexed
+        data is also bounded to Send and Sync traits and has a 
+        valid lifetime across threads like 'static
+    */
+    type Db = HashMap<i32, String>; 
     let shards = 10;
 
     let rand_generator = Arc::new(tokio::sync::Mutex::new(ChaCha12Rng::from_entropy()));
@@ -193,7 +203,7 @@ pub async fn sharded_shared_state() -> Result<(), Box<dyn std::error::Error + Se
                     let mut rng = generator.lock().await;
                     let random = rng.to_owned().gen::<i32>();
 
-                    // udpate the gaurd 
+                    // udpate the gaurd by inserting a new random unique storage key 
                     let value = format!("value is {}", idx);
                     gaurd.insert((idx as i32) * random, value);
 

@@ -1,3 +1,3 @@
 
 
-## Rust tests
+## Rust syntax tests
