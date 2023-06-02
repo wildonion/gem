@@ -82,7 +82,7 @@ impl Task{
 
     pub async fn insert(
         new_task: NewTaskRequest, 
-        redis_connection: RedisConnection, 
+        redis_connection: &RedisClient, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
         
         let single_task = tasks
@@ -112,7 +112,8 @@ impl Task{
 
         // 🥑 todo - publish/fire new task event/topic using redis 
         // ... 
-        let publish_task = events::redis::task::Register;
+        let publish_task_topic = events::redis::task::Register;
+
 
         match diesel::insert_into(tasks::table)
             .values(&task)

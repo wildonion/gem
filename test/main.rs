@@ -62,8 +62,7 @@ use log::{error, info};
 
 
 
-mod unsafer;
-mod s3;
+mod llu;
 mod layering;
 
 
@@ -760,6 +759,10 @@ pub async fn generic(){
 	    Box::new(Pack {})
 	}
     pub struct Commander{}
+    struct Command<'c, G: Send + Sync + 'static>{ // 'static lifetime is for G, 'c is for the cmd pointer which is a String slice
+        pub shared: Arc<Mutex<G>>,
+        pub cmd: &'c str
+    }
     /////////////////////////////////////////////////////////////////
     //// since rust doesn't have gc thus by moving a type into a new scope 
     //// its lifetime will be dropped unless it implements the Copy trait 

@@ -58,8 +58,7 @@ pub struct DevApiDoc;
 #[get("/get/admin/{admin_id}/data")]
 async fn get_admin_data(
         req: HttpRequest, 
-        admin_id: web::Path<String>, //// mongodb object id of admin or god 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        admin_id: web::Path<String>, //// mongodb object id of admin or god  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -82,7 +81,7 @@ async fn get_admin_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = redis_client.get_async_connection().await.unwrap();
+                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -159,8 +158,7 @@ async fn get_admin_data(
 #[get("/get/user/{user_id}/data")]
 async fn get_user_data(
         req: HttpRequest, 
-        user_id: web::Path<String>, //// mongodb object id of user or player 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        user_id: web::Path<String>, //// mongodb object id of user or player  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -183,7 +181,7 @@ async fn get_user_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = redis_client.get_async_connection().await.unwrap();
+                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{

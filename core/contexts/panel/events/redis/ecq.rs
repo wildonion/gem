@@ -1,9 +1,9 @@
 
 
 
-
-
-// fire, emit or publish a redis event or topic like role reveal topic 
+// https://github.com/wildonion/redis4
+// admins or gods can collaborate with others and share their events using redis based ecq 
+// fire, emit or publish a redis event or topic like ecq event
 
 
 
@@ -17,9 +17,9 @@ use uuid::Uuid;
 
 
 #[derive(Serialize, Deserialize, Clone, Default)]
-pub struct MatchQueue{
+pub struct CollaborationQueue{
     pub players: Vec<Player>, //// user pool that can be used to start a match between them
-    pub match_id: String, 
+    pub event_id: String, 
 }
 
 
@@ -30,7 +30,7 @@ pub struct Player{
 }
 
 pub struct CurrentMatch{
-    pub match_id: String,
+    pub event_id: String,
     pub players: Vec<Player>,
     pub room_id: String,
 }

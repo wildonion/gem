@@ -64,8 +64,7 @@ pub struct Health{
 )]
 #[get("/check-server")]
 async fn index(
-        req: HttpRequest, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -101,13 +100,12 @@ async fn index(
 )]
 #[get("/check-token")]
 async fn check_token(
-        req: HttpRequest, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -228,14 +226,13 @@ async fn check_token(
 )]
 #[post("/logout")]
 async fn logout(
-        req: HttpRequest, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {

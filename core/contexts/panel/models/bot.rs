@@ -8,19 +8,23 @@ use crate::constants::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Bot{
-    pub endpoint: String,
-    token: String 
+    access_token: String, 
+    access_token_secret: String,
+    consumer_key: String,
+    consumer_secret: String 
 }
 
 impl Bot{
 
     pub fn new() -> Self{
 
-        // 🥑 todo - read from env 
+        // 🥑 todo - read from env also update deploy.sh to ask user input for these like discord bot  
 
         Self{
-            endpoint: "".to_string(),
-            token: "".to_string(),
+            access_token: "".to_string(),
+            access_token_secret: "".to_string(),
+            consumer_key: "".to_string(),
+            consumer_secret: "".to_string(),
         }
     }
 

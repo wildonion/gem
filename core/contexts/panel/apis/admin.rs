@@ -72,8 +72,7 @@ pub struct AdminApiDoc;
 #[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
         req: HttpRequest, 
-        event_id: web::Path<i32>, 
-        redis_conn: web::Data<RedisConnection>, //// redis shared state data 
+        event_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -96,7 +95,7 @@ async fn reveal_role(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = redis_conn.to_owned();
+                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -107,7 +106,7 @@ async fn reveal_role(
                         // 🥑 todo - also call the /reveal/roles api of the conse hyper server                 
                         // ...
 
-                        let mq = events::redis::mmq::MatchQueue{..Default::default()};
+                        let cq = events::redis::ecq::CollaborationQueue{..Default::default()}; // filling all the fields with default values 
                         let role = events::redis::role::Reveal;
             
                         resp!{
@@ -175,13 +174,13 @@ async fn reveal_role(
 #[post("/login")]
 pub(super) async fn login(
         req: HttpRequest, 
-        login_info: web::Json<LoginInfoRequest>,
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        login_info: web::Json<LoginInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
    
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -312,13 +311,13 @@ pub(super) async fn login(
 #[post("/register-new-admin")]
 async fn register_new_admin(
         req: HttpRequest,  
-        new_admin: web::Json<NewAdminInfoRequest>,
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        new_admin: web::Json<NewAdminInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -408,13 +407,13 @@ async fn register_new_admin(
 #[post("/edit-user")]
 async fn edit_user(
         req: HttpRequest, 
-        new_user: web::Json<EditUserByAdminRequest>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        new_user: web::Json<EditUserByAdminRequest>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -509,13 +508,13 @@ async fn edit_user(
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
-        doer_id: web::Path<i32>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        doer_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -614,13 +613,12 @@ async fn delete_user(
 )]
 #[post("/get-users")]
 async fn get_users(
-        req: HttpRequest, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -707,13 +705,13 @@ async fn get_users(
 #[post("/register-new-task")]
 async fn register_new_task(
         req: HttpRequest, 
-        new_task: web::Json<NewTaskRequest>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        new_task: web::Json<NewTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -812,13 +810,13 @@ async fn register_new_task(
 #[post("/delete-task/{job_id}")]
 async fn delete_task(
         req: HttpRequest, 
-        job_id: web::Path<i32>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        job_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -923,13 +921,13 @@ async fn delete_task(
 #[post("/edit-task")]
 async fn edit_task(
         req: HttpRequest, 
-        new_task: web::Json<EditTaskRequest>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        new_task: web::Json<EditTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -1019,13 +1017,13 @@ async fn edit_task(
 #[post("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
         req: HttpRequest, 
-        owner_id: web::Path<i32>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        owner_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -1115,13 +1113,13 @@ async fn get_admin_tasks(
 )]
 #[get("/get-users-tasks")]
 async fn get_users_tasks(
-        req: HttpRequest,  
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,   
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {

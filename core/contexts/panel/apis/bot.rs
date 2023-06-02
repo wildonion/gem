@@ -84,12 +84,11 @@ pub struct BotApiDoc;
 async fn verify_twitter_task(
         req: HttpRequest,
         account_name: web::Path<String>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {

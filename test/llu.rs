@@ -441,8 +441,36 @@ pub async fn unsafer(){
     //// to move the name if its pointer is being used by 
     //// other scopes.
     println!(">>>>>>>>> pointer {:?}", pointer_to_name);
+    println!(">>>>>>>>> pointer {:?}", another_name);
+    println!(">>>>>>>>> pointer {:?}", name);
 
 
+    /////////////////////////////////////////////
+    // if we pass a mutable pointer to the type 
+    // to the method calls then by mutating the 
+    // pointer the value of that type outside the 
+    // method will be mutated too.
+    /////////////////////////////////////////////
+
+    fn s5(mut name: &mut String){
+        *name = "main".to_string();
+        
+    }
+
+    fn int(mut int: &mut u32){
+        *int = 23;
+    }
+
+    let mut man = "wildonion".to_string();
+    let mut num = 21;
+    
+    let mut mut_pointer_to_man = &mut man;
+    // let another_man = man; // can't move man here since it's borrowed and is behind a pointer
+    s5(mut_pointer_to_man);
+    println!("{}", man);
+    
+    int(&mut num);    
+    println!("{}", num);
 
     ///// ------------------------------------------------------------------------ /////
     

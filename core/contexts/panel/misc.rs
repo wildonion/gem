@@ -24,6 +24,60 @@ pub fn gen_random_idx(idx: usize) -> usize{
     }
 }
 
+/* 
+    >>>>>>>> u8 bytes -> &str using str::from_utf8()
+    >>>>>>>> &str -> u8 bytes using as_bytes() or as_bytes_mut()
+    >>>>>>>> u8 -> u16 using transmute or shift bits operations (shift 2 bytes) or u8 to hex ascii string then to u16 using self::from_hex_string_to_u16() function
+    >>>>>>>> u8 -> hex ascii string using self::from_u8_to_hex_string() function
+    >>>>>>>> hex ascii string to u8 or u16 using from_str_radix()
+    >>>>>>>> u8 -> hex ascii vector using :x? in println! macro or dividing operations : u8 bytes % 16 
+*/
+pub fn from_u8_to_hex_string(bytes: &[u8]) -> Result<String, ()> { //// take a reference from u8 and will return a hex String
+    
+    use hex::*;
+    
+    /*
+        let hex_ascii_string = "hello world".as_bytes().iter().map(|x| format!("{:02x}", x)).collect::<String>()
+        >> let mut s = String::new();
+        >> use std::fmt::Write as FmtWrite; // renaming import to avoid collision
+        >> for b in "hello world".as_bytes() { write!(s, "{:02x}", b); }
+        ()
+        >> s
+        "68656c6c6f20776f726c64"
+        >> 
+    */
+    let hex_arr = &[0x23u8, 0xF2u8];
+    let mut buffer = String::with_capacity(bytes.len() * 2); //// length of the String must be double of the size of the u8 cause we want to write u16 or hex into this buffer
+    for &b in bytes {
+        write!(&mut buffer, "{:02x}", b).expect("⚠️ writing to String buffer error for hex ascii"); //// writing formatted data into the buffer which is the String - panic on any error
+    }
+    Ok(buffer)
+}
+
+pub fn from_hex_string_to_u8(hex_string: &str) -> Result<Vec<u8>, ()>{
+    let mut hex_bytes = hex_string.as_bytes().iter().filter_map(|b| {
+        match b {
+            b'0'..=b'9' => Some(b - b'0'),
+            b'a'..=b'f' => Some(b - b'a' + 10),
+            b'A'..=b'F' => Some(b - b'A' + 10),
+            _ => None,
+        }
+    }).fuse();
+
+    let mut bytes = Vec::new();
+    while let (Some(h), Some(l)) = (hex_bytes.next(), hex_bytes.next()) {
+        bytes.push(h << 4 | l)
+    }
+    Ok(bytes)
+}
+
+pub fn from_hex_string_to_u16(s: &str) -> Result<Vec<u16>, std::num::ParseIntError> {
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u16::from_str_radix(&s[i..i + 2], 16))
+        .collect()
+}
+
 
 // inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs
 
@@ -33,7 +87,8 @@ pub struct Db{
     pub engine: Option<String>,
     pub url: Option<String>,
     pub instance: Option<Client>,
-    pub pool: Option<Pool<ConnectionManager<PgConnection>>>
+    pub pool: Option<Pool<ConnectionManager<PgConnection>>>,
+    pub redis: Option<RedisClient>,
 }
 
 impl Default for Db{
@@ -43,7 +98,8 @@ impl Default for Db{
             engine: None,
             url: None,
             instance: None,
-            pool: None
+            pool: None,
+            redis: None
         }
     }
 }
@@ -57,7 +113,8 @@ impl Db{
                 engine: None, 
                 url: None,
                 instance: None,
-                pool: None
+                pool: None,
+                redis: None,
             }
         )
     }
@@ -104,10 +161,11 @@ impl Storage{
             Mode::Off => None, //// no db is available cause it's off
         }
     }
-    pub async fn get_redis(&self) -> Option<RedisClient>{
-
-        todo!()
-
+    pub async fn get_redis(&self) -> Option<&RedisClient>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, //// no db is available cause it's off
+        }
     }
 }
 
@@ -139,59 +197,6 @@ pub struct Response<'m, T>{
     pub data: Option<T>,
     pub message: &'m str, //// &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
     pub status: u16,
-}
-
-///////////// >>>>>>>> u8 bytes -> &str using str::from_utf8()
-///////////// >>>>>>>> &str -> u8 bytes using as_bytes() or as_bytes_mut()
-///////////// >>>>>>>> u8 -> u16 using transmute or shift bits operations (shift 2 bytes) or u8 to hex ascii string then to u16 using self::from_hex_string_to_u16() function
-///////////// >>>>>>>> u8 -> hex ascii string using self::from_u8_to_hex_string() function
-///////////// >>>>>>>> hex ascii string to u8 or u16 using from_str_radix()
-///////////// >>>>>>>> u8 -> hex ascii vector using :x? in println! macro or dividing operations : u8 bytes % 16 
-
-pub fn from_u8_to_hex_string(bytes: &[u8]) -> Result<String, ()> { //// take a reference from u8 and will return a hex String
-    
-    use hex::*;
-    
-    /*
-        let hex_ascii_string = "hello world".as_bytes().iter().map(|x| format!("{:02x}", x)).collect::<String>()
-        >> let mut s = String::new();
-        >> use std::fmt::Write as FmtWrite; // renaming import to avoid collision
-        >> for b in "hello world".as_bytes() { write!(s, "{:02x}", b); }
-        ()
-        >> s
-        "68656c6c6f20776f726c64"
-        >> 
-    */
-    let hex_arr = &[0x23u8, 0xF2u8];
-    let mut buffer = String::with_capacity(bytes.len() * 2); //// length of the String must be double of the size of the u8 cause we want to write u16 or hex into this buffer
-    for &b in bytes {
-        write!(&mut buffer, "{:02x}", b).expect("⚠️ writing to String buffer error for hex ascii"); //// writing formatted data into the buffer which is the String - panic on any error
-    }
-    Ok(buffer)
-}
-
-pub fn from_hex_string_to_u8(hex_string: &str) -> Result<Vec<u8>, ()>{
-    let mut hex_bytes = hex_string.as_bytes().iter().filter_map(|b| {
-        match b {
-            b'0'..=b'9' => Some(b - b'0'),
-            b'a'..=b'f' => Some(b - b'a' + 10),
-            b'A'..=b'F' => Some(b - b'A' + 10),
-            _ => None,
-        }
-    }).fuse();
-
-    let mut bytes = Vec::new();
-    while let (Some(h), Some(l)) = (hex_bytes.next(), hex_bytes.next()) {
-        bytes.push(h << 4 | l)
-    }
-    Ok(bytes)
-}
-
-pub fn from_hex_string_to_u16(s: &str) -> Result<Vec<u16>, std::num::ParseIntError> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u16::from_str_radix(&s[i..i + 2], 16))
-        .collect()
 }
 
 
@@ -273,10 +278,6 @@ macro_rules! server {
             let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
-            let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-            let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
-            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
 
             let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
                 db_name,
@@ -287,7 +288,6 @@ macro_rules! server {
                 db_password
             };
 
-            let shared_arced_redis_conn = Data::new(client.clone());
             let shared_storage = Data::new(app_storage.clone());
     
             /*
@@ -320,11 +320,7 @@ macro_rules! server {
             HttpServer::new(move ||{
                 App::new()
                     /* 
-                        REDIS SHARED STATE
-                    */
-                    .app_data(Data::clone(&shared_arced_redis_conn))
-                    /* 
-                        MONGODB SHARED STATE
+                        APP STORAGE SHARED STATE
                     */
                     .app_data(Data::clone(&shared_storage))
                     .wrap(
@@ -415,6 +411,11 @@ macro_rules! db {
         { //// this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use crate::misc::*;
+
+            let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
+            let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+            let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
+            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             
             let empty_app_storage = Some( //// putting the Arc-ed db inside the Option
                 Arc::new( //// cloning app_storage to move it between threads
@@ -426,7 +427,8 @@ macro_rules! db {
                                 instance: None,
                                 engine: None,
                                 url: None,
-                                pool: None
+                                pool: None,
+                                redis: None
                             }
                         ),
                     }
@@ -457,7 +459,8 @@ macro_rules! db {
                                             instance: Some(mongodb_instance),
                                             engine: init_db.engine,
                                             url: init_db.url,
-                                            pool: None
+                                            pool: None,
+                                            redis: Some(client.clone())
                                         }
                                     ),
                                 }
@@ -494,7 +497,8 @@ macro_rules! db {
                                             instance: None,
                                             engine: init_db.engine,
                                             url: init_db.url,
-                                            pool: Some(pg_pool)
+                                            pool: Some(pg_pool),
+                                            redis: Some(client.clone())
                                         }
                                     ),
                                 }

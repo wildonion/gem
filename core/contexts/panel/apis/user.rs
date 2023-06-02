@@ -63,13 +63,12 @@ pub struct UserApiDoc;
 #[post("/login/{wallet}")]
 async fn login(
         req: HttpRequest, 
-        wallet: web::Path<String>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        wallet: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -198,13 +197,12 @@ async fn login(
 #[post("/verify-twitter-account/{account_name}")]
 async fn verify_twitter_account(
         req: HttpRequest,
-        account_name: web::Path<String>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        account_name: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -290,13 +288,12 @@ async fn verify_twitter_account(
 )]
 #[get("/get-tasks")]
 async fn get_tasks(
-        req: HttpRequest, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -390,13 +387,12 @@ async fn get_tasks(
 pub async fn do_task(
         req: HttpRequest,
         task_id: web::Path<i32>,
-        user_id: web::Path<i32>,
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        user_id: web::Path<i32>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -493,13 +489,12 @@ pub async fn do_task(
 #[post("/report-tasks/{user_id}")]
 pub async fn tasks_report(
         req: HttpRequest,
-        user_id: web::Path<i32>, 
-        redis_client: web::Data<RedisClient>, //// redis shared state data 
+        user_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = redis_client.get_async_connection().await.unwrap();
+    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
