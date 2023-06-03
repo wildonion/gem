@@ -59,18 +59,6 @@ async fn main() -> std::io::Result<()> {
         /* SERVER CONFIGS */
     };
 
-
-
-    /* USER TASK VERIFICATION USING TOKIO SCHEDULER */
-
-    // 🥑 todo - put this shit in a macro
-    // 🥑 todo - fetch every user info to call the following api agins the fetched info every 8 hours  
-    // 🥑 todo - call /verify-task/{job_id}/{twitter_username} api for each user every 15 seconds 
-    //           to avoid twitter rate limit and spamming api issues
-    // ... 
-
-
-
     server
 
 

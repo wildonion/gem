@@ -142,6 +142,10 @@ impl UserTask{
                                     task_name: t.task_name,
                                     task_description: t.task_description,
                                     task_score: t.task_score,
+                                    hashtag: t.hashtag,
+                                    tweet_content: t.tweet_content,
+                                    retweet_id: t.retweet_id,
+                                    like_tweet_id: t.like_tweet_id,
                                     admin_id: t.admin_id,
                                     created_at: t.created_at.to_string(),
                                     updated_at: t.updated_at.to_string(),
@@ -248,6 +252,10 @@ impl UserTask{
                         task_name: task.task_name,
                         task_description: task.task_description,
                         task_score: task.task_score,
+                        hashtag: task.hashtag,
+                        tweet_content: task.tweet_content,
+                        retweet_id: task.retweet_id,
+                        like_tweet_id: task.like_tweet_id,
                         admin_id: task.admin_id,
                         created_at: task.created_at.to_string(),
                         updated_at: task.updated_at.to_string(),
@@ -261,6 +269,22 @@ impl UserTask{
 
         Ok(tasks_per_user)
 
+    }
+
+    pub async fn find(doer_id: i32, job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> bool{
+
+        let single_user_task = users_tasks
+            .filter(users_tasks::user_id.eq(doer_id))
+            .filter(users_tasks::task_id.eq(job_id))
+            .first::<UserTask>(connection);
+
+        let Ok(_) = single_user_task else{
+
+            return false;
+            
+        };
+
+        return true;
     }
 
 }

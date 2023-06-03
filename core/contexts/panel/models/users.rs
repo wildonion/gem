@@ -440,10 +440,31 @@ impl User{
 
     }
 
+    pub async fn find_by_id(user_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+
+        let single_user = users
+            .filter(users::id.eq(user_id))
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
     pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
-        let random_code: String = (0..4).map(|_|{
+        let random_code: String = (0..5).map(|_|{
             let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
             CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();

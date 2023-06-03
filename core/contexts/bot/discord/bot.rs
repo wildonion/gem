@@ -10,6 +10,7 @@
 ========================
 DISCORD BOT ARCHITECTURE
 ========================
+- rustls and native_tls to communicate with secured socket discord server
 - tokio::spawn(async move{}) : handle async event in concurrent manner 
 - tokio::select!{}           : eventloop to listen and subs to incoming events
 - tokio::sync::mpsc          : jobq channel to share Arc<Mutex<SharedStateData>> between tokio green threads

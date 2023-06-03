@@ -39,9 +39,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🔐 **Argon2** as the **KDF** used for password hasing
 
-* 🥝 server health-check APIs
-
-* ✅ automatic user twitter tasks verification system using **tokio-cron-scheduler** 
+* 🥝 server health-check APIs 
 
 * 🍅 catchup discord bot for channel messages summarization 
 
@@ -175,7 +173,9 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted role reveal event and topics by sending websocket connections to the redis server docker on the VPS in the meanwhile we're sure that the `/reveal/roles` API has been called by the dev or the god inside the panel thus players can see their roles without refreshing the page.
 
-* twitter tasks defined by admins for users are prefixed with `twitter-*` and are twitter activities such as tweet, likes, hashtags and retweet which will be checked by conse twitter APIs to see if it's done correctly or not.  
+* twitter tasks defined by admins for users are prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet for a specific tweet which will be checked by conse twitter APIs to see if it's already done correctly or not.  
+
+* once the user is loggedin, first the `/bot/verify-twitter-task/{job_id}/{twitter_username}` API must be called with **user** token to verify the user tasks then with the activity code which is inside the user data response we must activate the user twitter by compling the user to tweet the activity code, after that the `/user/verify-twitter-account/{account_name}` API must be called to update the twitter username of the user inside the db.
 
 * this is a micro service in which all its APIs are designed based on access levels not the database models. 
 
@@ -193,21 +193,19 @@ cd scripts
 
 * redis publish reveal role and ecq topics  
 
-* dev apis related to the conse hyper server 
-
 * twitter APIs for task verification
+
+* dev APIs related to the conse hyper server 
 
 * solana ticket reservation contract 
 
-* proc macro attribute like `#[passport]` to put on top of the admin and dev apis, struct and their fields
+* macros inside the `misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
 
 * god and dev panel app using `yew`
 
 * custom error type inside `error.rs`
 
 * conse `errors` handler service and `jobs` folder
-
-* macros inside the `misc.rs`
 
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
 

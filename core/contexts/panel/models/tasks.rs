@@ -24,9 +24,13 @@ use crate::constants::*;
 #[diesel(table_name=tasks)]
 pub struct Task{
     pub id: i32,
-    pub task_name: String,
+    pub task_name: String, /* username, code, tweet, retweet, hashtag, like */
     pub task_description: Option<String>,
     pub task_score: i32,
+    pub hashtag: String, /* hashtag that must be inside one of the user tweets */
+    pub tweet_content: String, /* content that the user must tweet it */
+    pub retweet_id: String, /* the tweet id that its content must be matched with one of the user tweet content */
+    pub like_tweet_id: String, /* the tweet id that must be inside user likes */
     pub admin_id: i32, // amdin id who has defined the tasks
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -38,6 +42,10 @@ pub struct TaskData{
     pub task_name: String,
     pub task_description: Option<String>,
     pub task_score: i32,
+    pub hashtag: String,
+    pub tweet_content: String,
+    pub retweet_id: String,
+    pub like_tweet_id: String,
     pub admin_id: i32, // amdin id who has defined the tasks
     pub created_at: String,
     pub updated_at: String,
@@ -48,6 +56,10 @@ pub struct NewTaskRequest{
     pub task_name: String,
     pub task_description: String,
     pub task_score: i32,
+    pub hashtag: String,
+    pub tweet_content: String,
+    pub retweet_id: String,
+    pub like_tweet_id: String,
     pub admin_id: i32,
 }
 
@@ -56,6 +68,10 @@ pub struct EditTaskRequest{
     pub task_id: i32,
     pub task_name: String,
     pub task_description: String,
+    pub hashtag: String,
+    pub tweet_content: String,
+    pub retweet_id: String,
+    pub like_tweet_id: String,
     pub task_score: i32,
 }
 
@@ -65,6 +81,10 @@ pub struct EditTaskRequest{
 pub struct EditTask<'t>{
     pub task_name: &'t str,
     pub task_description: &'t str,
+    pub hashtag: &'t str,
+    pub tweet_content: &'t str,
+    pub retweet_id: &'t str,
+    pub like_tweet_id: &'t str,
     pub task_score: i32,
 }
 
@@ -74,11 +94,50 @@ pub struct NewTask<'t>{
     pub task_name: &'t str,
     pub task_description: Option<&'t str>,
     pub task_score: i32,
+    pub hashtag: &'t str,
+    pub tweet_content: &'t str,
+    pub retweet_id: &'t str,
+    pub like_tweet_id: &'t str,
     pub admin_id: i32
 }
 
 impl Task{
 
+
+    pub async fn find_by_id(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, Result<HttpResponse, actix_web::Error>>{
+
+        let single_task = tasks
+            .filter(id.eq(job_id))
+            .first::<Task>(connection);
+                        
+        let Ok(task) = single_task else{
+            let resp = Response{
+                data: Some(job_id),
+                message: TASK_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(
+            TaskData{
+                id: task.id,
+                task_name: task.task_name,
+                task_description: task.task_description,
+                task_score: task.task_score,
+                hashtag: task.hashtag,
+                tweet_content: task.tweet_content,
+                retweet_id: task.retweet_id,
+                like_tweet_id: task.like_tweet_id,
+                admin_id: task.admin_id,
+                created_at: task.created_at.to_string(),
+                updated_at: task.updated_at.to_string(),
+            }
+        )
+
+    }
 
     pub async fn insert(
         new_task: NewTaskRequest, 
@@ -107,6 +166,10 @@ impl Task{
             task_name: new_task.task_name.as_str(),
             task_description: Some(new_task.task_description.as_str()),
             task_score: new_task.task_score,
+            hashtag: &new_task.hashtag,
+            tweet_content: &new_task.tweet_content,
+            retweet_id: &new_task.retweet_id,
+            like_tweet_id: &new_task.like_tweet_id,
             admin_id: new_task.admin_id,
         };
 
@@ -196,7 +259,11 @@ impl Task{
                 */
                 task_name: &new_task.task_name, 
                 task_description: &new_task.task_description,
-                task_score: new_task.task_score
+                task_score: new_task.task_score,
+                hashtag: &new_task.hashtag,
+                tweet_content: &new_task.tweet_content,
+                retweet_id: &new_task.retweet_id,
+                like_tweet_id: &new_task.like_tweet_id,
             })
             .returning(Task::as_returning())
             .get_result(connection)
@@ -208,6 +275,10 @@ impl Task{
                             task_name: updated_task.task_name,
                             task_description: updated_task.task_description,
                             task_score: updated_task.task_score,
+                            hashtag: updated_task.hashtag,
+                            tweet_content: updated_task.tweet_content,
+                            retweet_id: updated_task.retweet_id,
+                            like_tweet_id: updated_task.like_tweet_id,
                             admin_id: updated_task.admin_id,
                             created_at: updated_task.created_at.to_string(),
                             updated_at: updated_task.updated_at.to_string(),
@@ -268,6 +339,10 @@ impl Task{
                                 task_name: t.task_name,
                                 task_description: t.task_description,
                                 task_score: t.task_score,
+                                hashtag: t.hashtag,
+                                tweet_content: t.tweet_content,
+                                retweet_id: t.retweet_id,
+                                like_tweet_id: t.like_tweet_id,
                                 admin_id: t.admin_id,
                                 created_at: t.created_at.to_string(),
                                 updated_at: t.updated_at.to_string(),
@@ -304,6 +379,10 @@ impl Task{
                             task_name: t.task_name,
                             task_description: t.task_description,
                             task_score: t.task_score,
+                            hashtag: t.hashtag,
+                            tweet_content: t.tweet_content,
+                            retweet_id: t.retweet_id,
+                            like_tweet_id: t.like_tweet_id,
                             admin_id: t.admin_id,
                             created_at: t.created_at.to_string(),
                             updated_at: t.updated_at.to_string(),

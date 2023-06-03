@@ -9,8 +9,36 @@ echo "[?] Enter Discord token: "
 read DISCORD_TOKEN
 echo OPENAI_KEY=$OPENAI_TOKEN >> .env
 echo DISCORD_TOKEN=$DISCORD_TOKEN >> .env
+echo "[?] Enter Twitter keys: "
+echo "\t>> bearer token: "
+read TWITTER_BEARER_TOKEN
+echo TWITTER_BEARER_TOKEN=$TWITTER_BEARER_TOKEN >> .env
 
-echo "☕ sit back and drink your coffee :)"
+echo "\t>> access token: "
+read TWITTER_ACCESS_TOKEN
+echo TWITTER_ACCESS_TOKEN=$TWITTER_ACCESS_TOKEN >> .env
+
+echo "\t>> access token secret: "
+read TWITTER_ACCESS_TOKEN_SECRET
+echo TWITTER_ACCESS_TOKEN_SECRET=$TWITTER_ACCESS_TOKEN_SECRET >> .env
+
+echo "\t>> consumer key: "
+read TWITTER_CONSUMER_KEY
+echo TWITTER_CONSUMER_KEY=$TWITTER_CONSUMER_KEY >> .env
+
+echo "\t>> consumer secret: "
+read TWITTER_CONSUMER_SECRET
+echo TWITTER_CONSUMER_SECRET=$TWITTER_CONSUMER_SECRET >> .env
+
+echo "\t>> client id: "
+read TWITTER_CLIENT_ID
+echo TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID >> .env
+
+echo "\t>> client secret: "
+read TWITTER_CLIENT_SECRET
+echo TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET >> .env
+
+echo "☕ Okay, sit back and drink your coffee :)"
 
 sudo chmod 666 /var/run/docker.sock && docker system prune --all
 export SERVER_IP=$(hostname -I | awk '{print $1}')

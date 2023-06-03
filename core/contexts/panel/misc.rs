@@ -161,7 +161,7 @@ impl Storage{
             Mode::Off => None, //// no db is available cause it's off
         }
     }
-    pub async fn get_redis(&self) -> Option<&RedisClient>{
+    pub async fn get_redis(&self) -> Option<&RedisClient>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().redis.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
             Mode::Off => None, //// no db is available cause it's off
@@ -533,8 +533,7 @@ macro_rules! passport {
             let host = std::env::var("HOST").expect("⚠️ no host variable set");
             let port = std::env::var("CONSE_PORT").expect("⚠️ no port variable set");
             let check_token_api = format!("{}:{}/auth/check-token", host, port);
-            let mut resp: Result<actix_web::HttpResponse, actix_web::Error>;
-
+            
             let mut response_value: serde_json::Value = reqwest::Client::new()
                         .post(check_token_api.as_str())
                         .header("Authorization", $token)
@@ -553,4 +552,98 @@ macro_rules! passport {
         }
     }
 }
-    
+
+#[macro_export]
+macro_rules! verify {
+    (
+      $endpoint:expr,
+      $body:expr,
+      $task_id:expr,
+      $doer_id:expr,
+      $connection: expr
+    ) 
+    => {
+
+        { //// this is required if we want to import modules and use the let statements
+
+            use crate::models::bot::Twitter;
+
+            let response_value: serde_json::Value = reqwest::Client::new()
+                .post($endpoint)
+                .json(&$body)
+                .send()
+                .await.unwrap()
+                .json()
+                .await.unwrap();
+
+            if response_value.get("data").is_some(){
+                match diesel::delete(users_tasks
+                    .filter(users_tasks::task_id.eq($task_id)))
+                    .filter(users_tasks::user_id.eq($doer_id))
+                .execute($connection)
+                {
+                    Ok(num_deleted) => {
+                        
+                        if num_deleted > 0{
+
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: TASK_NOT_VERIFIED,
+                                status: 406
+                            };
+                            return Ok(
+                                HttpResponse::NotAcceptable().json(resp)
+                            );                                
+
+                        } else{
+                            
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: USER_TASK_HAS_ALREADY_BEEN_DELETED_BEFORE,
+                                status: 417
+                            };
+                            return Ok(
+                                HttpResponse::ExpectationFailed().json(resp)
+                            ); 
+
+                        }
+                    
+                    },
+                    Err(e) => {
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: &e.to_string(),
+                            status: 500
+                        };
+                        return Ok(
+                            HttpResponse::InternalServerError().json(resp)
+                        );
+
+                    }
+                }
+            } else{
+                match UserTask::find($doer_id, $task_id, $connection).await{
+                    false => {
+                        let res = Twitter::do_task($doer_id, $task_id, $connection).await;
+                        return res;
+                    },
+                    _ => {
+
+                        /* user task has already been inserted  */
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                            status: 200
+                        };
+                        return Ok(
+                            HttpResponse::Ok().json(resp)
+                        );
+
+                    }
+                }
+            }
+            
+        }
+    }
+}

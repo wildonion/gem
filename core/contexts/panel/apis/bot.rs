@@ -23,12 +23,11 @@ use crate::schema::tasks;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        
+        verify_twitter_task
     ),
     components(
         schemas(
             UserData,
-            FetchUserTaskReport,
             TaskData
         )
     )
@@ -46,22 +45,22 @@ pub struct BotApiDoc;
     following apis will be used to check that a user task 
     is done or not which sents a request to the twitter bot 
     to check the twitter activities of the passed in username,
-    also there must be an scheduler inside the code to call 
-    this API every like 24 hours constantly since the tweet 
-    by the user may be deleted in the pas hours and thus the 
-    shouldn't gets scored. 
+    also this API must be called once the user loggedin to 
+    the site to verify his/her tasks. 
 
-    twitter tasks can be the followings:
-        - tweet
-        - retweet
-        - hashtags
-        - likes 
 
 */
 #[utoipa::path(
     context_path = "/bot",
     responses(
+        (status=200, description="The User Task Has Already Been Inserted", body=[u8]),
+        (status=417, description="The User Task Has Deleted Before", body=[u8]),
+        (status=406, description="Task Couldn't Be Verified Successfully (Maybe User Has Deleted/Twitter Rate Limit Issue), Deleted Relevant User Task", body=[u8]),
+        (status=406, description="Not A Twitter Tasks", body=[u8]),
+        (status=406, description="Invalid Twitter Task Type", body=[u8]),
         (status=200, description="Task Verified Successfully", body=[u8]),
+        (status=406, description="Task Can't Be Verified Successfully", body=[u8]),
+        (status=404, description="Task Not Found", body=i32), // not found by id
         (status=403, description="Bot Is Busy", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="User Not Found", body=String), // not found by wallet
@@ -77,13 +76,14 @@ pub struct BotApiDoc;
     ),
     params(
         ("job_id", description = "task id"),
-        ("twitter_username", description = "twitter username")
+        ("doer_id", description = "user id")
     ),
 )]
-#[post("/verify-twitter-task/{job_id}/{twitter_username}")]
+#[post("/verify-twitter-task/{job_id}/{doer_id}")]
 async fn verify_twitter_task(
         req: HttpRequest,
-        account_name: web::Path<String>, 
+        job_id: web::Path<i32>,
+        doer_id: web::Path<i32>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -103,48 +103,74 @@ async fn verify_twitter_task(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
-                    let bot = Bot::new();
+                    let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+                    let bot = Twitter::new(Some(bot_endpoint));
 
+                    /* use this instance if you want to use conse twitter APIs */
+                    // let bot = Twitter::new(None);
 
-                    /*
+                    match Task::find_by_id(job_id.to_owned(), connection).await{
+                        Ok(task) => {
+                            
+                            let mut splitted_name = task.task_name.split("-");
+                            let task_starts_with = splitted_name.next().unwrap();
+                            let task_type = splitted_name.next().unwrap(); 
+                            
+                            if task_starts_with.starts_with("twitter-"){
+                                
+                                match task_type{
+                                    "username" => {
+                                        bot.verify_username(task, connection, doer_id.to_owned()).await
+                                    },
+                                    "code" => {
+                                        bot.verify_activity_code(task, connection, doer_id.to_owned()).await
+                                    },
+                                    "tweet" => {
+                                        bot.verify_tweet(task, connection, doer_id.to_owned()).await
+                                    },
+                                    "retweet" => {
+                                        bot.verify_retweet(task, connection, doer_id.to_owned()).await
+                                    },
+                                    "hashtag" => {
+                                        bot.verify_hashtag(task, connection, doer_id.to_owned()).await
+                                    },
+                                    "like" => {
+                                        bot.verify_like(task, connection, doer_id.to_owned()).await
+                                    },
+                                    _ => {
 
-                        - user login to get the activity code 
-                        - user tweet the code then frontend call the verify username api
-                        - every 24 hours user gets verified to see that the task is done or not
-                            if the task is in there then we'll insert into users_tasks table if it's not in there already 
-                            if the task is not inside his/her twitter then we'll remove it from the users_tasks table 
-                    
-                    */
+                                        resp!{
+                                            &[u8], //// the data type
+                                            &[], //// response data
+                                            INVALID_TWITTER_TASK_NAME, //// response message
+                                            StatusCode::NOT_ACCEPTABLE, //// status code
+                                            None::<Cookie<'_>>, //// cookie
+                                        }
 
+                                    }
+                                }
 
-                    // step1) find the task name related to the passed in id
-                    // step2) if it's started with twitter-* then check the name after `-`
-                    /* step3) 
-                    
-                        let res = if name.starts_with("username"){
-                            bot.verify_username()
-                        } else if name.starts_with("tweet"){
-                            bot.verify_tweets()
-                        } else if name.starts_with("likes"){
-                            bot.verify_likes()
-                        } else if name.starts_with("retweets"){
-                            bot.verify_retweets()
-                        } else if name.starts_with("hashtags"){
-                            bot.verify_hashtags()
-                        } else{
-                            resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                INVALID_TWITTER_TASK_NAME, //// response message
-                                StatusCode::NOT_ACCEPTABLE, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                            } else{
+
+                                /* maybe discord tasks :) */
+
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    NOT_A_TWITTER_TASK, //// response message
+                                    StatusCode::NOT_ACCEPTABLE, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
                             }
+
+                        },
+                        Err(resp) => {
+                            
+                            /* NOT_FOUND_TASK */
+                            resp
                         }
-
-                    */
-
-
-                    todo!()
+                    }
 
                 },
                 Err(resp) => {
