@@ -47,13 +47,13 @@ impl Twitter{
             } else{
                 Some("".to_string()) // we're using conse twitter APIs
             },
-            bearer_token: "".to_string(),
-            access_token: "".to_string(),
-            access_token_secret: "".to_string(),
-            consumer_key: "".to_string(),
-            consumer_secret: "".to_string(),
-            client_id: "".to_string(),
-            client_secret: "".to_string(),
+            bearer_token,
+            access_token,
+            access_token_secret,
+            consumer_key,
+            consumer_secret,
+            client_id,
+            client_secret,
         }
     }
 

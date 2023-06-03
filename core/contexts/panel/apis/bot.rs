@@ -30,6 +30,9 @@ use crate::schema::tasks;
             UserData,
             TaskData
         )
+    ),
+    tags(
+        (name = "task verification", description = "Twitter Bot Task Verification.")
     )
 )]
 pub struct BotApiDoc;
@@ -54,8 +57,8 @@ pub struct BotApiDoc;
     context_path = "/bot",
     responses(
         (status=200, description="The User Task Has Already Been Inserted", body=[u8]),
-        (status=417, description="The User Task Has Deleted Before", body=[u8]),
-        (status=406, description="Task Couldn't Be Verified Successfully (Maybe User Has Deleted/Twitter Rate Limit Issue), Deleted Relevant User Task", body=[u8]),
+        (status=417, description="The User Task Has Been Deleted Before", body=[u8]),
+        (status=406, description="Task Couldn't Be Verified Successfully (Maybe User Has Been Deleted/Twitter Rate Limit Issue), Deleted Relevant User Task", body=[u8]),
         (status=406, description="Not A Twitter Tasks", body=[u8]),
         (status=406, description="Invalid Twitter Task Type", body=[u8]),
         (status=200, description="Task Verified Successfully", body=[u8]),
@@ -68,7 +71,7 @@ pub struct BotApiDoc;
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Expired", body=[u8]),
+        (status=403, description="Cookie Has Been Expired", body=[u8]),
         (status=406, description="Invalid Cookie Time Hash", body=[u8]),
         (status=403, description="Access Denied", body=i32),
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),

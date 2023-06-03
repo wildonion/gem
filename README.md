@@ -17,6 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 👨🏻‍⚖️ ADMIN PANEL ==> https://admin.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
 🗺️ MAIN API ROUTE ==> https://api.conse.app/
+📡 SWAGGER DOC ==> https://api.panel.conse.app/swagger/
 🎙️ HOSTED ON ==> Digitalocean
 🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
 🖼️ GEM DESIGN PATTERN SKETCH ==> https://github.com/wildonion/gem/wiki/Gem-Design-Pattern-Sketch
