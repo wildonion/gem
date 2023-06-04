@@ -36,9 +36,29 @@ use crate::schema::tasks;
             FetchUserTaskReport,
             TaskData
         )
+    ),
+    tags(
+        (name = "crate::apis::user", description = "User Endpoints")
+    ),
+    info(
+        title = "User Access APIs"
+    ),
+    modifiers(&SecurityAddon),
+    security(
+        ("jwt" = [])
     )
 )]
 pub struct UserApiDoc;
+struct SecurityAddon;
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "jwt",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        )
+    }
+}
 
 /*
      ------------------------
@@ -57,8 +77,9 @@ pub struct UserApiDoc;
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("wallet", description = "wallet address")
+        ("wallet" = String, Path, description = "wallet address")
     ),
+    tag = "crate::apis::user",
 )]
 #[post("/login/{wallet}")]
 async fn login(
@@ -180,7 +201,7 @@ async fn login(
         (status=200, description="Updated Successfully", body=UserData),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="User Not Found", body=String), // not found by wallet
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -191,8 +212,9 @@ async fn login(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("account_name", description = "twitter account")
+        ("account_name" = String, Path, description = "twitter account")
     ),
+    tag = "crate::apis::user",
 )]
 #[post("/verify-twitter-account/{account_name}")]
 async fn verify_twitter_account(
@@ -275,7 +297,7 @@ async fn verify_twitter_account(
     responses(
         (status=200, description="Fetched Successfully", body=[TaskData]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -285,6 +307,7 @@ async fn verify_twitter_account(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::user",
 )]
 #[get("/get-tasks")]
 async fn get_tasks(
@@ -368,7 +391,7 @@ async fn get_tasks(
         (status=201, description="Created Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -379,9 +402,10 @@ async fn get_tasks(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("task_id", description = "task id"),
-        ("user_id", description = "user id"),
+        ("task_id" = i32, Path, description = "task id"),
+        ("user_id" = i32, Path, description = "user id"),
     ),
+    tag = "crate::apis::user",
 )]
 #[post("/do-task/{task_id}/{user_id}")]
 pub async fn do_task(
@@ -472,7 +496,7 @@ pub async fn do_task(
         (status=200, description="Fetched Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -483,8 +507,9 @@ pub async fn do_task(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("user_id", description = "user id"),
+        ("user_id" = i32, Path, description = "user id"),
     ),
+    tag = "crate::apis::user",
 )]
 #[post("/report-tasks/{user_id}")]
 pub async fn tasks_report(

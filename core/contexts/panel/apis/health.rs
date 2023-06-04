@@ -29,10 +29,31 @@ use crate::schema::users;
     components(
         schemas(
             UserData,
+            Health,
         )
+    ),
+    tags(
+        (name = "crate::apis::health", description = "Tasks Verification Endpoints")
+    ),
+    info(
+        title = "Health Access APIs"
+    ),
+    modifiers(&SecurityAddon),
+    security(
+        ("jwt" = [])
     )
 )]
 pub struct HealthApiDoc;
+struct SecurityAddon;
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "jwt",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        )
+    }
+}
 
 /*
      ------------------------
@@ -61,6 +82,7 @@ pub struct Health{
     responses(
         (status=200, description="I'm Alive", body=Health),
     ),
+    tag = "crate::apis::health",
 )]
 #[get("/check-server")]
 async fn index(
@@ -87,7 +109,7 @@ async fn index(
     responses(
         (status=200, description="Fetched Successfully", body=UserData),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -97,6 +119,7 @@ async fn index(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::health",
 )]
 #[get("/check-token")]
 async fn check_token(
@@ -213,7 +236,7 @@ async fn check_token(
     responses(
         (status=200, description="Loggedout Successfully", body=UserData),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -223,6 +246,7 @@ async fn check_token(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::health",
 )]
 #[post("/logout")]
 async fn logout(

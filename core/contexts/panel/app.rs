@@ -12,6 +12,8 @@ use utoipa::{
         SecurityScheme
     },
 };
+use utoipa::Modify;
+use utoipa::openapi::security::{Http, HttpAuthScheme};
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
@@ -39,6 +41,7 @@ use std::env;
 use chrono::Utc;
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey, TokenData};
 use std::fmt::Write;
+use tokio_cron_scheduler::{JobScheduler, Job};
 
 mod apis;
 mod misc;
@@ -54,12 +57,21 @@ mod error;
 async fn main() -> std::io::Result<()> {
 
 
+    /*         
+        run twitter task verification scheduler
+
+        tas_scheduler!(
+            JobScheduler::new().await.unwrap()
+        ).await;
+
+
+    */
+        
     let server = server!
     {
         /* SERVER CONFIGS */
     };
 
     server
-
 
 }

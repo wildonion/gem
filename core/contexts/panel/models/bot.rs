@@ -72,7 +72,7 @@ impl Twitter{
             };
 
 
-            let user_existance_endpoint = format!("{}/user-existance api", self.endpoint.as_ref().unwrap());
+            let user_existance_endpoint = format!("{}/user-existance", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
             map.insert("username", user.twitter_username.unwrap());
             

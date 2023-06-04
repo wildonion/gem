@@ -18,7 +18,7 @@ use crate::schema::users_tasks;
 
 /*
      -------------------------------
-    |          SWAGGER DOCS
+    |          SWAGGER DOC
     | ------------------------------
     |
     |
@@ -42,11 +42,36 @@ use crate::schema::users_tasks;
     components(
         schemas(
             UserData,
-            TaskData
+            TaskData,
+            LoginInfoRequest,
+            NewAdminInfoRequest,
+            EditUserByAdminRequest,
+            NewTaskRequest,
+            EditTaskRequest
         )
+    ),
+    tags(
+        (name = "crate::apis::admin", description = "Admin Endpoints")
+    ),
+    info(
+        title = "Admin Access APIs"
+    ),
+    modifiers(&SecurityAddon),
+    security(
+        ("jwt" = [])
     )
 )]
 pub struct AdminApiDoc;
+struct SecurityAddon;
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "jwt",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        )
+    }
+}
 
 
 /*
@@ -66,13 +91,14 @@ pub struct AdminApiDoc;
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("event_id", description = "event id")
+        ("event_id" = String, Path, description = "event id")
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
         req: HttpRequest, 
-        event_id: web::Path<i32>,  
+        event_id: web::Path<String>, //// mongodb objectid
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -162,7 +188,7 @@ async fn reveal_role(
 
 #[utoipa::path(
     context_path = "/admin",
-    request_body = NewAdminInfoRequest,
+    request_body = LoginInfoRequest,
     responses(
         (status=200, description="Loggedin Successfully", body=UserData),
         (status=403, description="Wrong Password", body=String),
@@ -170,6 +196,7 @@ async fn reveal_role(
         (status=500, description="Storage Issue", body=[u8]),
         (status=403, description="Access Denied", body=String), // access denied by wallet
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/login")]
 pub(super) async fn login(
@@ -297,7 +324,7 @@ pub(super) async fn login(
     responses(
         (status=201, description="Created Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -307,6 +334,7 @@ pub(super) async fn login(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/register-new-admin")]
 async fn register_new_admin(
@@ -393,7 +421,7 @@ async fn register_new_admin(
     responses(
         (status=200, description="Updated Successfully", body=[UserData]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -403,6 +431,7 @@ async fn register_new_admin(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/edit-user")]
 async fn edit_user(
@@ -491,7 +520,7 @@ async fn edit_user(
     responses(
         (status=200, description="Deleted Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -502,8 +531,9 @@ async fn edit_user(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("user_id", description = "user id")
+        ("user_id" = i32, Path, description = "user id")
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
@@ -600,7 +630,7 @@ async fn delete_user(
     responses(
         (status=200, description="Fetched Successfully", body=[UserData]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -610,6 +640,7 @@ async fn delete_user(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/get-users")]
 async fn get_users(
@@ -691,7 +722,7 @@ async fn get_users(
         (status=201, description="Created Successfully", body=[TaskData]),
         (status=302, description="Task Has Already Been Registered", body=[TaskData]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -701,6 +732,7 @@ async fn get_users(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/register-new-task")]
 async fn register_new_task(
@@ -793,7 +825,7 @@ async fn register_new_task(
         (status=200, description="Deleted Successfully", body=[u8]),
         (status=404, description="Task Not Found", body=i32), // not found by id
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -804,8 +836,9 @@ async fn register_new_task(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("job_id", description = "task id")
+        ("job_id" = i32, Path, description = "task id")
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/delete-task/{job_id}")]
 async fn delete_task(
@@ -904,7 +937,7 @@ async fn delete_task(
         (status=200, description="Updated Successfully", body=[TaskData]),
         (status=404, description="Task Not Found", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -914,9 +947,7 @@ async fn delete_task(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
-    params(
-        ("job_id", description = "task id")
-    ),
+    tag = "crate::apis::admin",
 )]
 #[post("/edit-task")]
 async fn edit_task(
@@ -1000,7 +1031,7 @@ async fn edit_task(
     responses(
         (status=200, description="Fetched Successfully", body=[TaskData]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -1011,8 +1042,9 @@ async fn edit_task(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("owner_id", description = "task owner id")
+        ("owner_id" = i32, Path, description = "task owner id")
     ),
+    tag = "crate::apis::admin",
 )]
 #[post("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
@@ -1097,7 +1129,7 @@ async fn get_admin_tasks(
     responses(
         (status=200, description="Fetched Successfully", body=[(UserData, [TaskData])]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie", body=[u8]),
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
         (status=406, description="Invalid Cookie Format", body=[u8]),
@@ -1107,9 +1139,7 @@ async fn get_admin_tasks(
         (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
-    params(
-        ("owner_id", description = "task owner id")
-    ),
+    tag = "crate::apis::admin",
 )]
 #[get("/get-users-tasks")]
 async fn get_users_tasks(

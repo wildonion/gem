@@ -8,6 +8,11 @@ use crate::resp;
 use crate::passport;
 use crate::constants::*;
 use crate::misc::*;
+use crate::models::{
+    users::UserData,
+    users_tasks::FetchUserTaskReport,
+    tasks::TaskData
+};
 
 
 /*
@@ -24,15 +29,35 @@ use crate::misc::*;
         get_admin_data,
         get_user_data,
     ),
-    // components(
-    //     schemas(
-    //         UserData,
-    //         FetchUserTaskReport,
-    //         TaskData
-    //     )
-    // )
+    components(
+        schemas(
+            UserData,
+            FetchUserTaskReport,
+            TaskData
+        )
+    ),
+    tags(
+        (name = "crate::apis::dev", description = "Dev Endpoints")
+    ),
+    info(
+        title = "Dev Access APIs"
+    ),
+    modifiers(&SecurityAddon),
+    security(
+        ("jwt" = [])
+    )
 )]
 pub struct DevApiDoc;
+struct SecurityAddon;
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "jwt",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        )
+    }
+}
 
 
 /*
@@ -52,8 +77,9 @@ pub struct DevApiDoc;
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("admin_id", description = "admin id")
+        ("admin_id" = String, Path, description = "admin id")
     ),
+    tag = "crate::apis::dev",
 )]
 #[get("/get/admin/{admin_id}/data")]
 async fn get_admin_data(
@@ -152,8 +178,9 @@ async fn get_admin_data(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("user_id", description = "user id")
+        ("user_id" = String, Path, description = "user id")
     ),
+    tag = "crate::apis::dev",
 )]
 #[get("/get/user/{user_id}/data")]
 async fn get_user_data(

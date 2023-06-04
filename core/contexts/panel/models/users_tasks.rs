@@ -48,6 +48,25 @@ pub struct FetchUserTaskReport{
 
 impl UserTask{
 
+    pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, Result<HttpResponse, actix_web::Error>>{
+
+        match users_tasks.load::<UserTask>(connection)
+            {
+                Ok(users_task_data) => Ok(users_task_data),
+                Err(e) => {
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
+
+    }
+
     pub async fn insert(
         doer_id: i32, job_id: i32, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
