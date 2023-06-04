@@ -33,13 +33,13 @@ impl Twitter{
 
     pub fn new(api: Option<String>) -> Self{
         
-        let bearer_token = env::var("TWITTER_BEARER_TOKEN").unwrap();
-        let access_token = env::var("TWITTER_ACCESS_TOKEN").unwrap();
-        let access_token_secret = env::var("TWITTER_ACCESS_TOKEN_SECRET").unwrap();
-        let consumer_key = env::var("TWITTER_CONSUMER_KEY").unwrap();
-        let consumer_secret = env::var("TWITTER_CONSUMER_SECRET").unwrap();
-        let client_id = env::var("TWITTER_CLIENT_ID").unwrap();
-        let client_secret = env::var("TWITTER_CLIENT_SECRET").unwrap();
+        let bearer_token = env::var("TWITTER_BEARER_TOKEN").unwrap_or("".to_string());
+        let access_token = env::var("TWITTER_ACCESS_TOKEN").unwrap_or("".to_string());
+        let access_token_secret = env::var("TWITTER_ACCESS_TOKEN_SECRET").unwrap_or("".to_string());
+        let consumer_key = env::var("TWITTER_CONSUMER_KEY").unwrap_or("".to_string());
+        let consumer_secret = env::var("TWITTER_CONSUMER_SECRET").unwrap_or("".to_string());
+        let client_id = env::var("TWITTER_CLIENT_ID").unwrap_or("".to_string());
+        let client_secret = env::var("TWITTER_CLIENT_SECRET").unwrap_or("".to_string());
         
         Self{
             endpoint: if api.is_some(){

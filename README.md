@@ -1,7 +1,7 @@
 
 
 
-# 🤏 Conse
+# 🤏 Conse Backend Rust Services
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of the each player collected by the history of each event's `phases` field inside the game.
@@ -86,7 +86,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Before developing, read the following notes: 
 
-- **NOTE**: * all docker container the mounted volumes are inside `infra/data` folder. 
+- **NOTE**: all docker container the mounted volumes are inside `infra/data` folder. 
 
 - **NOTE**: if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```. 
 
@@ -94,7 +94,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 - **NOTE**: use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
-- **NOTE**: that to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the conse binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with that user to register a new god for the game.
+- **NOTE**: to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the conse binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with that user to register a new god for the game.
 
 - **NOTE**: in development environment remember to fill the `OPENAI_KEY`, `DISCORD_TOKEN`, `TWITTER_BEARER_TOKEN`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`, `TWITTER_CONSUMER_KEY`, `TWITTER_CONSUMER_SECRET`, `TWITTER_CLIENT_ID` and `TWITTER_CLIENT_SECRET` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
 
@@ -117,17 +117,19 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
+- **NOTE**: in order to use twitter APIs you must have a paid developer account.
+
 - **NOTE**: to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
 - **NOTE**: to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
 - **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
 
-- **NOTE**: to update a user access level to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+- **NOTE**: to update a user access level of the conse hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
-- **NOTE**: in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the gem container they must be in the same network called `gem`. 
+- **NOTE**: in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the panel container they must be in the same network called `gem`. 
 
-- **NOTE**: Make sure that you have a domain up and running that is pointing to the machine where the `gem` is hosted on.
+- **NOTE**: Make sure that you have the `conse.app` domain enabled and is pointing to the machine where the `gem` codes is hosted on.
 
 - **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
