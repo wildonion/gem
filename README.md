@@ -56,7 +56,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers
 
-* 📣 **redis** based streaming channel to publish the reveal role and new task topics
+* 📣 **redis** based streaming channel to publish the reveal role, new task defined by admins and task verification logs topics
 
 * 🎯 **ECQ** (Event Collaboration Queue) using **redis** streams 
 
@@ -194,7 +194,7 @@ cd scripts
 
 * admin SMS panel to register new event
 
-* redis publish reveal role and ecq topics  
+* redis publish reveal role, new task and task verification logs and ecq topics  
 
 * twitter APIs for task verification
 
