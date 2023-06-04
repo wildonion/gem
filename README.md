@@ -186,7 +186,7 @@ cd scripts
 
 * twitter tasks defined by admins for users are prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
-* every day at 7 AM all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
+* every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 
 * once the user is loggedin, first the `/bot/verify-twitter-task/{job_id}/{twitter_username}` API must be called with **user** token to verify the user tasks then we must compel the user to tweet the activity code which is inside the user data response, after that the `/user/verify-twitter-account/{account_name}` API must be called to update the twitter username of the user inside the db.
 

@@ -1,6 +1,5 @@
 #!/bin/bash
-DIRECTORY=..
-REALPTH_GEM=TRUEDIR=$(cd -- "$DIRECTORY" && pwd)
+
 
 sudo rm .env && sudo mv .env.prod .env
 echo "[?] Enter OpenAI token: "
@@ -67,13 +66,13 @@ sudo docker run -d --network gem --name postgres --restart unless-stopped -p 543
 sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
 diesel setup && diesel migration run
 
-sudo docker build -t --no-cache conse-panel -f infra/docker/panel/Dockerfile .
+sudo docker build -t conse-panel -f infra/docker/panel/Dockerfile . --no-cache
 sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
-sudo docker build -t --no-cache conse-catchup-bot -f infra/docker/dis-bot/Dockerfile .
+sudo docker build -t conse-catchup-bot -f infra/docker/dis-bot/Dockerfile . --no-cache
 sudo docker run -d --link redis --network gem --name conse-catchup-bot -v ./infra/data/dis-bot-logs:/usr/src/app/logs/ conse-catchup-bot
 
-sudo docker build -t --no-cache conse -f infra/docker/conse/Dockerfile .
+sudo docker build -t conse -f infra/docker/conse/Dockerfile . --no-cache
 sudo docker run -d --link mongodb --network gem --name conse -p 7439:7438 conse
 
 # If you use the host network mode for a container, 
@@ -92,6 +91,10 @@ sudo docker run -d -it -p 80:80 -p 443:443 --name nginx --network host nginx
 
 sudo docker ps -a && sudo docker compose ps -a && sudo docker images
 
-cd $REALPTH_GEM/jobs && crontab -u root -l > $REALPTH_GEM/infra/gemcron
-find . -name "*.cron" -type f -exec cat {} >> $REALPTH_GEM/infra/gemcron \;
+
+jobs="/$USER/gem/jobs/*"
+for f in $jobs
+do
+  crontab $f
+done  
 crontab -u root -l 
