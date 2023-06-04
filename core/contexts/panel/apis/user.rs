@@ -44,9 +44,6 @@ use crate::schema::tasks;
         title = "User Access APIs"
     ),
     modifiers(&SecurityAddon),
-    security(
-        ("jwt" = [])
-    )
 )]
 pub struct UserApiDoc;
 struct SecurityAddon;
@@ -215,6 +212,9 @@ async fn login(
         ("account_name" = String, Path, description = "twitter account")
     ),
     tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/verify-twitter-account/{account_name}")]
 async fn verify_twitter_account(
@@ -308,6 +308,9 @@ async fn verify_twitter_account(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[get("/get-tasks")]
 async fn get_tasks(
@@ -406,6 +409,9 @@ async fn get_tasks(
         ("user_id" = i32, Path, description = "user id"),
     ),
     tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/do-task/{task_id}/{user_id}")]
 pub async fn do_task(
@@ -510,6 +516,9 @@ pub async fn do_task(
         ("user_id" = i32, Path, description = "user id"),
     ),
     tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/report-tasks/{user_id}")]
 pub async fn tasks_report(

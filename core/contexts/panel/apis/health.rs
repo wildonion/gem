@@ -39,9 +39,6 @@ use crate::schema::users;
         title = "Health Access APIs"
     ),
     modifiers(&SecurityAddon),
-    security(
-        ("jwt" = [])
-    )
 )]
 pub struct HealthApiDoc;
 struct SecurityAddon;
@@ -120,6 +117,9 @@ async fn index(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::health",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[get("/check-token")]
 async fn check_token(

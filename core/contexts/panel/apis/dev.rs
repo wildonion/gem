@@ -43,9 +43,6 @@ use crate::models::{
         title = "Dev Access APIs"
     ),
     modifiers(&SecurityAddon),
-    security(
-        ("jwt" = [])
-    )
 )]
 pub struct DevApiDoc;
 struct SecurityAddon;
@@ -80,6 +77,9 @@ impl Modify for SecurityAddon {
         ("admin_id" = String, Path, description = "admin id")
     ),
     tag = "crate::apis::dev",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[get("/get/admin/{admin_id}/data")]
 async fn get_admin_data(
@@ -181,6 +181,9 @@ async fn get_admin_data(
         ("user_id" = String, Path, description = "user id")
     ),
     tag = "crate::apis::dev",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[get("/get/user/{user_id}/data")]
 async fn get_user_data(

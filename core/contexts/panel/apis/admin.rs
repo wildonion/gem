@@ -57,9 +57,6 @@ use crate::schema::users_tasks;
         title = "Admin Access APIs"
     ),
     modifiers(&SecurityAddon),
-    security(
-        ("jwt" = [])
-    )
 )]
 pub struct AdminApiDoc;
 struct SecurityAddon;
@@ -94,6 +91,9 @@ impl Modify for SecurityAddon {
         ("event_id" = String, Path, description = "event id")
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
@@ -335,6 +335,9 @@ pub(super) async fn login(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/register-new-admin")]
 async fn register_new_admin(
@@ -432,6 +435,9 @@ async fn register_new_admin(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/edit-user")]
 async fn edit_user(
@@ -534,6 +540,9 @@ async fn edit_user(
         ("user_id" = i32, Path, description = "user id")
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
@@ -641,6 +650,9 @@ async fn delete_user(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/get-users")]
 async fn get_users(
@@ -733,6 +745,9 @@ async fn get_users(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/register-new-task")]
 async fn register_new_task(
@@ -839,6 +854,9 @@ async fn register_new_task(
         ("job_id" = i32, Path, description = "task id")
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/delete-task/{job_id}")]
 async fn delete_task(
@@ -948,6 +966,9 @@ async fn delete_task(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/edit-task")]
 async fn edit_task(
@@ -1045,6 +1066,9 @@ async fn edit_task(
         ("owner_id" = i32, Path, description = "task owner id")
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
@@ -1140,6 +1164,9 @@ async fn get_admin_tasks(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[get("/get-users-tasks")]
 async fn get_users_tasks(
