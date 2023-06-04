@@ -55,7 +55,7 @@ pub struct BotApiDoc;
     to check the twitter activities of the passed in username,
     this API must be called in two ways:
         - once the user loggedin to the site to verify his/her tasks. 
-        - using a cronjob every 8 hours to check the user task is verified or not
+        - using a cronjob every day at 7 AM to check that all users tasks are verified or not
 
 */
 #[utoipa::path(

@@ -3,9 +3,9 @@ name = "gem"
 version = "0.1.3"
 edition = "2021"
 authors = ["wildonion <abarmardeatashyne@gmail.com>"]
-description = "Conse Rust Services"
+description = "Conse Rust Backend Services"
 homepage = "https://github.com/wildonion/gem/"
-keywords = ["game","web","app", "rust"]
+keywords = ["game","web","app", "rust", "crypto"]
 license = "UNLICENSED"
 repository = "https://github.com/wildonion/gem/"
 

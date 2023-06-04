@@ -286,7 +286,7 @@ macro_rules! server {
                 db_port,
                 db_username,
                 db_password
-            };
+            }.await;
 
             let shared_storage = Data::new(app_storage.clone());
     
@@ -405,97 +405,11 @@ macro_rules! server {
 }
 
 #[macro_export]
-macro_rules! tas_scheduler {
-
-    ($twitter_task_scheduler:expr) => {
-
-        async {
-
-            use std::env;
-            use dotenv::dotenv;
-
-            dotenv().expect("⚠️ .env file not found");
-            env_logger::init_from_env(Env::default().default_filter_or("info"));
-            let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
-            let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
-            let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
-            let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
-            let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
-            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-
-            let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
-                db_name,
-                db_engine,
-                db_host,
-                db_port,
-                db_username,
-                db_password
-            };
-
-            let shared_storage = Data::new(app_storage.clone());
-
-            let mut jj = Job::new_repeated(std::time::Duration::from_secs(5), move |_uuid, _l| {
-                info!("{:?} twitter task verification repeated every 8 hours", chrono::Utc::now());
-                
-                use crate::models::users_tasks::UserTask;
-        
-                let panel_port = env::var("PANEL_PORT").unwrap();
-                let api = format!("0.0.0.0:{}", panel_port);
-                let connection = &mut shared_storage
-                    .clone()
-                    .as_ref()
-                    .to_owned()
-                    .clone()
-                    .unwrap()
-                    .get_pgdb_sync()
-                    .unwrap()
-                    .get()
-                    .unwrap();
-        
-                let Some(users_tasks_data) = UserTask::all(connection) else{
-                    panic!("can't laod users tasks data from diesel");
-                };
-        
-                for user_task in users_tasks_data{
-                    
-                    let api_path = format!("{}/bot/verify-user/{}/twitter-task/{}", api, user_task.task_id, user_task.user_id);
-                    let client = reqwest::blocking::Client::new();
-                    let res = client
-                        .post(api_path.as_str())
-                        .send()
-                        .unwrap();
-                    
-                    /* wait 15 seconds to avoid twitter rate limit issue */
-                    std::thread::sleep(std::time::Duration::from_secs(15));
-        
-                }
-              
-              }).unwrap();
-            
-            jj.on_start_notification_add(&$twitter_task_scheduler, Box::new(|job_id, notification_id, type_of_notification| {
-            Box::pin(async move {
-                info!("🕵️‍♀️ Twitter Task Verification Job {:?} was started, notification {:?} ran ({:?})", job_id, notification_id, type_of_notification);
-            })
-            })).await.unwrap();
-        
-            jj.on_stop_notification_add(&$twitter_task_scheduler, Box::new(|job_id, notification_id, type_of_notification| {
-            Box::pin(async move {
-                info!("🕵️‍♀️ Twitter Task Verification Job {:?} was completed, notification {:?} ran ({:?})", job_id, notification_id, type_of_notification);
-            })
-            })).await.unwrap();
-
-            $twitter_task_scheduler.add(jj).await.unwrap();
-        }
-    }
-}
-
-#[macro_export]
 macro_rules! db {
 
     ($name:expr, $engine:expr, $host:expr, $port:expr, $username:expr, $password:expr) => {
                 
-        { //// this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
+        async { //// this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use crate::misc::*;
 
