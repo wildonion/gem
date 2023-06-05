@@ -21,6 +21,9 @@ COPY key-api.panel.conse.app.pem /etc/nginx/key-api.panel.conse.app.pem
 #api.conse.app:
 COPY cert-api.conse.app.pem /etc/nginx/cert-api.conse.app.pem
 COPY key-api.conse.app.pem /etc/nginx/key-api.conse.app.pem
+#adminer.conse.app:
+COPY cert-adminer.conse.app.pem /etc/nginx/cert-adminer.conse.app.pem
+COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
 
 # COPY /etc/letsencrypt/live/deadcat.ir/fullchain.pem /etc/nginx/cert.pem
 # COPY /etc/letsencrypt/live/deadcat.ir/privkey.pem /etc/nginx/key.pem
@@ -37,6 +40,7 @@ COPY conse.app.conf /etc/nginx/conse.conf
 COPY panel.conse.app.conf /etc/nginx/conse.conf
 COPY api.panel.conse.app.conf /etc/nginx/conse.conf
 COPY api.conse.app.conf /etc/nginx/conse.conf
+COPY adminer.conse.app.conf /etc/nginx/conse.conf
 
 
 # Start Nginx in the foreground when the Docker container starts

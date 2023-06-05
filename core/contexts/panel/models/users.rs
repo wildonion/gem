@@ -466,6 +466,7 @@ impl User{
         let cookie_value = format!("{token:}::{time_hash_hex_string:}");
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
+                                    .secure(true)
                                     .finish();
         let cookie_exp_days = env::var("COOKIE_EXPIRATION_DAYS").expect("⚠️ no cookie exporation days variable set").parse::<i64>().unwrap();
         let mut now = OffsetDateTime::now_utc();

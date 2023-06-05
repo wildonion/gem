@@ -13,13 +13,15 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 </p>
 
 ```bash
-# dev username/password  : devdevy/d3v@%$^$3hjsD
-# admin username/password: adminy/4dmin@%$^$3hjsD
+# panel dev username/password  : devdevy/d3v@%$^$3hjsD
+# panel admin username/password: adminy/4dmin@%$^$3hjsD
+# adminer username/password: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
 🗺️ MAIN API ROUTE ==> https://api.conse.app/
 📡 SWAGGER DOC ==> https://api.panel.conse.app/swagger/
+🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🎙️ HOSTED ON ==> Digitalocean
 🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
 🖼️ GEM DESIGN PATTERN SKETCH ==> https://github.com/wildonion/gem/wiki/Gem-Design-Pattern-Sketch
@@ -192,7 +194,7 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications by sending websocket connections to the redis server docker on the VPS.
 
-* twitter tasks defined by admins for users are prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
+* twitter tasks defined by admins for users, their names must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
 * every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 

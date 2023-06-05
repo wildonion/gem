@@ -224,6 +224,9 @@ async fn check_users_tassk(
                             let r = res.text().await.unwrap();
                             responses.push(r);
 
+                            // 🥑 todo - publish or fire the task verification response and logs topic or event using redis pubsub
+                            // ...
+
                             /* wait 15 seconds to avoid twitter rate limit issue */
                             std::thread::sleep(std::time::Duration::from_secs(15));
                             

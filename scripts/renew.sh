@@ -16,7 +16,7 @@ if [[ $is_new_domain == "Y" || $is_new_domain == "y" ]]; then
     sudo docker stop $NGINX_CONTAINER_ID && sudo certbot certonly --standalone -d $DOMAIN && sudo docker start $NGINX_CONTAINER_ID
     sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $REALPTH_GEM/infra/cert/cert-$DOMAIN.pem && sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $REALPTH_GEM/infra/docker/nginx/cert-$DOMAIN.pem
     sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $REALPTH_GEM/infra/cert/key-$DOMAIN.pem && sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $REALPTH_GEM/infra/docker/nginx/key-$DOMAIN.pem
-    echo "okay now you can use $REALPTH_GEM/infra/docker/nginx/key-$DOMAIN.pem and $REALPTH_GEM/infra/docker/nginx/cert-$DOMAIN.pem in your nginx conf"
+    echo "okay now you can use $REALPTH_GEM/infra/docker/nginx/key-$DOMAIN.pem and $REALPTH_GEM/infra/docker/nginx/cert-$DOMAIN.pem in your nginx Dockerfile"
 else
     echo "if it's not about adding domain, maybe a new config file is going to be added into the nginx docker, i don't know! 🤔"
 fi
