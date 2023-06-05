@@ -192,8 +192,7 @@ impl User{
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
                         .filter(id.eq(_id))
-                        .filter(user_role.eq(role))
-                        .filter(token_time.eq(_token_time))
+                        .filter(user_role.eq(role.clone()))
                         .first::<User>(connection);
 
                     if single_user.is_err(){
@@ -209,9 +208,10 @@ impl User{
 
                     let user = single_user.unwrap();
 
-                    /* check that the user is authorized with the passed in role */
+                    /* check that the user is authorized with the passed in role and the one inside the jwt */
                     if pass_role.is_some(){
-                        if user.user_role != pass_role.unwrap(){
+                        if user.user_role != pass_role.unwrap() &&
+                            user.user_role != role{
                             let resp = Response{
                                 data: Some(_id.to_owned()),
                                 message: ACCESS_DENIED,
