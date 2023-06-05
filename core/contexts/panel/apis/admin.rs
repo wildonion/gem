@@ -236,10 +236,11 @@ pub(super) async fn login(
                             };
         
                             /* generate cookie 🍪 from token time and jwt */
-                            /* since generate_cookie() takes the ownership of the user instance we must clone it then call this */
-                            /* generate_cookie() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
-                            let cookie_info = user.clone().generate_cookie().unwrap();
-                            let cookie_token_time = cookie_info.1;
+                            /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+                            /* generate_cookie_and_jwt() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
+                            let keys_info = user.clone().generate_cookie_and_jwt().unwrap();
+                            let cookie_token_time = keys_info.1;
+                            let jwt = keys_info.2;
                             
                             /* update the login token time */
                             let now = chrono::Local::now().naive_local();
@@ -280,7 +281,7 @@ pub(super) async fn login(
                                 user_login_data, //// response data
                                 LOGGEDIN, //// response message
                                 StatusCode::OK, //// status code,
-                                Some(cookie_info.0), //// cookie 
+                                Some(keys_info.0), //// cookie 
                             } 
         
                         },

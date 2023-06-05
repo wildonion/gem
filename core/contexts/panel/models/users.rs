@@ -416,7 +416,7 @@ impl User{
         to the instance of User struct in which we can't return the cookie instance from the caller scope to other scopes
         in other words we can't return reference to a data which is owned by the current function. 
     */
-    pub fn generate_cookie(self) -> Option<(Cookie<'static>, i64)>{
+    pub fn generate_cookie_and_jwt(self) -> Option<(Cookie<'static>, i64, String)>{
 
         /* if we're here means that the password was correct */
         let token = self.generate_token().unwrap();
@@ -447,7 +447,7 @@ impl User{
         now += Duration::days(cookie_exp_days);
         cookie.set_expires(now);
 
-        Some((cookie, time_hash_now))
+        Some((cookie, time_hash_now, token))
 
     }
 
@@ -602,9 +602,9 @@ impl User{
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
-                    /* since generate_cookie() takes the ownership of the user instance we must clone it then call this */
-                    /* generate_cookie() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
-                    let Some(cookie_info) = fetched_user.clone().generate_cookie() else{
+                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+                    /* generate_cookie_and_jwt() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
+                    let Some(cookie_info) = fetched_user.clone().generate_cookie_and_jwt() else{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: CANT_GENERATE_COOKIE,
