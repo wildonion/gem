@@ -193,6 +193,7 @@ impl User{
                     let single_user = users
                         .filter(id.eq(_id))
                         .filter(user_role.eq(role))
+                        .filter(token_time.eq(_token_time))
                         .first::<User>(connection);
 
                     if single_user.is_err(){
