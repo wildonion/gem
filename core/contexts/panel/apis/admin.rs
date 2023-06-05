@@ -548,7 +548,7 @@ async fn edit_user(
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
-        doer_id: web::Path<i32>,  
+        doer_id: web::Path<i32>,  //// doer is the user who do task
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -655,7 +655,7 @@ async fn delete_user(
         ("jwt" = [])
     )
 )]
-#[post("/get-users")]
+#[get("/get-users")]
 async fn get_users(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
@@ -1071,7 +1071,7 @@ async fn edit_task(
         ("jwt" = [])
     )
 )]
-#[post("/get-admin-tasks/{owner_id}")]
+#[get("/get-admin-tasks/{owner_id}")]
 async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  

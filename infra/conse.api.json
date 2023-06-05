@@ -2136,6 +2136,522 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Panel Service",
+			"item": [
+				{
+					"name": "Admin APIs",
+					"item": [
+						{
+							"name": "Login",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"adminy\",\n    \"password\": \"4dmin@%$^$3hjsD\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/login",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reveal Role",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/notif/register/reveal-role/6308b1242c90659836904860",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"notif",
+										"register",
+										"reveal-role",
+										"6308b1242c90659836904860"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Register New Admin",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"\",\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/register-new-admin",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"register-new-admin"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit User",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\",\n    \"username\": \"\",\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/edit-user",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"edit-user"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/delete-user/3",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"delete-user",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Register New Task",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"task_name\": \"twitter-\",\n    \"task_description\": \"\",\n    \"task_score\": \"\",\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"admin_id\": \"\"\n\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/register-new-task",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"register-new-task"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Task",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/delete-task/2",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"delete-task",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Edit Task",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"task_id\": 1,\n    \"task_name\": \"\",\n    \"task_description\": \"\",\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"task_score\": 1 \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/edit-task",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"edit-task"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Users",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/get-users",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"get-users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Admin Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/get-admin-tasks/2",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"get-admin-tasks",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Users Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/get-users-tasks",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"get-users-tasks"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "User APIs",
+					"item": [
+						{
+							"name": "Login",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/login/8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"login",
+										"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify Twitter Username",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/verify-twitter-account/_wildonion",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"verify-twitter-account",
+										"_wildonion"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/get-tasks",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"get-tasks"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Report User Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/report-tasks/2",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"report-tasks",
+										"2"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Dev APIs",
+					"item": [
+						{
+							"name": "Get Admin Data",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-dev}}/get/admin/6308b1242c90659836904860/data",
+									"host": [
+										"{{panel-dev}}"
+									],
+									"path": [
+										"get",
+										"admin",
+										"6308b1242c90659836904860",
+										"data"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Data",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-dev}}/get/user/6308b1242c90659836904860/data",
+									"host": [
+										"{{panel-dev}}"
+									],
+									"path": [
+										"get",
+										"user",
+										"6308b1242c90659836904860",
+										"data"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Health APIs",
+					"item": [
+						{
+							"name": "Check Token",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-health}}/check-token",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"check-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Logout",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-health}}/logout",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check Server Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-health}}/check-server",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"check-server"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Bot APIs",
+					"item": [
+						{
+							"name": "Verify User Task",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-bot}}/verify-user/1/twitter-task/2",
+									"host": [
+										"{{panel-bot}}"
+									],
+									"path": [
+										"verify-user",
+										"1",
+										"twitter-task",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check Users Tasks | CRONTJOB API",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-bot}}/check-users-tasks",
+									"host": [
+										"{{panel-bot}}"
+									],
+									"path": [
+										"check-users-tasks"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "**NOTE** that dev APIs require conse hyper server **JWT** to be passed to request Authorization header.\n\n**NOTE** that you can get the **JWT** from the response cookie of the admin and user `login` API which is the first part of `::` sign.\n\n**NOTE** that to define twitter tasks we must prefix the `task_name` field inside the register new task API with `twitter-\\\\*` which `\\\\*` can be one of the following task names:\n\n- username\n- code\n- tweet\n- retweet\n- hashtag\n- like"
 		}
 	],
 	"event": [
@@ -2161,27 +2677,52 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://conse.app:7439/api",
+			"value": "https://api.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://conse.app:7439/api",
+			"value": "https://api.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://conse.app:7439/api",
+			"value": "https://api.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "whitelist",
-			"value": "https://conse.app:7439/api",
+			"value": "https://api.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "API_KEY",
 			"value": "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$xyuPmb2pZQ4P2atgLPwc3ocE5VrEamWBkOxE9SBrdrE",
+			"type": "string"
+		},
+		{
+			"key": "panel-admin",
+			"value": "https://api.panel.conse.app/admin",
+			"type": "string"
+		},
+		{
+			"key": "panel-user",
+			"value": "https://api.panel.conse.app/user",
+			"type": "string"
+		},
+		{
+			"key": "panel-dev",
+			"value": "https://api.panel.conse.app/dev",
+			"type": "string"
+		},
+		{
+			"key": "panel-health",
+			"value": "https://api.panel.conse.app/health",
+			"type": "string"
+		},
+		{
+			"key": "panel-bot",
+			"value": "https://api.panel.conse.app/bot",
 			"type": "string"
 		}
 	]

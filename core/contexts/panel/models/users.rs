@@ -66,7 +66,7 @@ pub struct UserData{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct LoginInfoRequest{
     pub username: String,
     pub password: String
@@ -107,6 +107,7 @@ pub struct JWTClaims{
     pub username: Option<String>,
     pub wallet: Option<String>,
     pub user_role: UserRole,
+    pub token_time: i64,
     pub exp: i64, //// expiration timestamp
     pub iat: i64, //// issued timestamp
 }
@@ -186,10 +187,12 @@ impl User{
                     let token_data = token.claims;
                     let _id = token_data._id;
                     let role = token_data.user_role.clone();
+                    let _token_time = token_data.token_time;
 
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
                         .filter(id.eq(_id))
+                        .filter(user_role.eq(role))
                         .first::<User>(connection);
 
                     if single_user.is_err(){
@@ -217,6 +220,26 @@ impl User{
                                 Ok(HttpResponse::Forbidden().json(resp))
                             );
                         } 
+                    }
+
+                    /*
+                        if the current token time of the fetched user 
+                        wasn't equal to the one inside the passed in JWT
+                        into the request header means that the user did
+                        a logout since by logging out the token time will
+                        be set to zero.
+                    */
+                    if user.token_time.unwrap() != _token_time{
+                        
+                        let resp = Response{
+                            data: Some(_id.to_owned()),
+                            message: DO_LOGIN,
+                            status: 403
+                        };
+                        return Err(
+                            Ok(HttpResponse::Forbidden().json(resp))
+                        );
+                        
                     }
 
                     /* returning token data, if we're here means that nothing went wrong */
@@ -387,7 +410,7 @@ impl User{
         }
     }
 
-    fn generate_token(&self) -> Result<String, jsonwebtoken::errors::Error>{
+    fn generate_token(&self, _token_time: i64) -> Result<String, jsonwebtoken::errors::Error>{
         
         let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
         let exp_time = now + env::var("JWT_EXPIRATION").expect("⚠️ found no jwt expiration time").parse::<i64>().unwrap();
@@ -397,6 +420,7 @@ impl User{
             username: Some(self.username.clone()), /* here username and user_role are behind a reference which can't be moved thus we must clone them */
             wallet: self.wallet_address.clone(),
             user_role: self.user_role.clone(),
+            token_time: _token_time,
             exp: exp_time,
             iat: now
         };
@@ -418,9 +442,6 @@ impl User{
     */
     pub fn generate_cookie_and_jwt(self) -> Option<(Cookie<'static>, i64, String)>{
 
-        /* if we're here means that the password was correct */
-        let token = self.generate_token().unwrap();
-
         /*
             since cookie can be stored inside the request object thus for peers on the same network 
             which have an equal ip address they share a same cookie thus we'll face the bug of which 
@@ -437,6 +458,9 @@ impl User{
                                         .into_iter()
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
+
+        /* if we're here means that the password was correct */
+        let token = self.generate_token(time_hash_now).unwrap();
         
         let cookie_value = format!("{token:}::{time_hash_hex_string:}");
         let mut cookie = Cookie::build("jwt", cookie_value)

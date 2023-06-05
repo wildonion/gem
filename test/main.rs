@@ -759,7 +759,7 @@ pub async fn generic(){
 	    Box::new(Pack {})
 	}
     pub struct Commander{}
-    struct Command<'c, G: Send + Sync + 'static>{ // 'static lifetime is for G, 'c is for the cmd pointer which is a String slice
+    struct Command<'c, G: Send + Sync + 'static, const N: usize>{ // 'static lifetime is for G, 'c is for the cmd pointer which is a String slice
         pub shared: Arc<Mutex<G>>,
         pub cmd: &'c str
     }

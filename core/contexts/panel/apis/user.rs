@@ -27,7 +27,6 @@ use crate::schema::tasks;
         login,
         verify_twitter_account,
         get_tasks,
-        do_task,
         tasks_report,
     ),
     components(
@@ -392,114 +391,6 @@ async fn get_tasks(
 #[utoipa::path(
     context_path = "/user",
     responses(
-        (status=201, description="Created Successfully", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("task_id" = i32, Path, description = "task id"),
-        ("user_id" = i32, Path, description = "user id"),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
-#[post("/do-task/{task_id}/{user_id}")]
-pub async fn do_task(
-        req: HttpRequest,
-        task_id: web::Path<i32>,
-        user_id: web::Path<i32>, 
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
-    ) -> Result<HttpResponse, actix_web::Error> {
-
-    let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-            
-            let connection = &mut pg_pool.get().unwrap();
-
-            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, Some(UserRole::User), connection){
-                Ok(token_data) => {
-                    
-                    let _id = token_data._id;
-                    let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
-
-                    match UserTask::insert(user_id.to_owned(), task_id.to_owned(), connection).await{
-                        Ok(_) => {
-                            resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                CREATED, //// response message
-                                StatusCode::CREATED, //// status code
-                                None::<Cookie<'_>>, //// cookie
-                            }
-                        },
-                        Err(resp) => {
-
-                            /* 
-                                🥝 response can be one of the following:
-                                
-                                - DIESEL INSERT ERROR RESPONSE
-                                - TASK_NOT_FOUND
-                            */
-                            resp
-                        }
-                    }
-                    
-
-
-                },
-                Err(resp) => {
-                    
-                    /* 
-                        🥝 response can be one of the following:
-                        
-                        - NOT_FOUND_COOKIE_VALUE
-                        - NOT_FOUND_TOKEN
-                        - INVALID_COOKIE_TIME_HASH
-                        - INVALID_COOKIE_FORMAT
-                        - EXPIRED_COOKIE
-                        - USER_NOT_FOUND
-                        - NOT_FOUND_COOKIE_TIME_HASH
-                        - ACCESS_DENIED, 
-                        - NOT_FOUND_COOKIE_EXP
-                        - INTERNAL_SERVER_ERROR 
-                    */
-                    resp
-                }
-            }
-
-        },
-        None => {
-            
-            resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
-            }
-        }
-    }
-}
-
-#[utoipa::path(
-    context_path = "/user",
-    responses(
         (status=200, description="Fetched Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="Task Not Found", body=i32), // not found by id
@@ -521,7 +412,7 @@ pub async fn do_task(
         ("jwt" = [])
     )
 )]
-#[post("/report-tasks/{user_id}")]
+#[get("/report-tasks/{user_id}")]
 pub async fn tasks_report(
         req: HttpRequest,
         user_id: web::Path<i32>,  
@@ -604,6 +495,5 @@ pub mod exports{
     pub use super::login;
     pub use super::verify_twitter_account;
     pub use super::get_tasks;
-    pub use super::do_task;
     pub use super::tasks_report;
 }
