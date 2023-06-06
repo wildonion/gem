@@ -63,10 +63,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🎯 **actix ws** server for streaming over redis subscribed topics  
 
-## 🪟 Schemas and ERDs
-
-> Note that to regenerate the ERD from the postgres database just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
-
 ### 🗃️ Directory and Structure Explained
 
 > Note that to use dev panel APIs Remember to run conse hyper server first.
@@ -184,6 +180,10 @@ cd scripts
 # ---- renew nginx 
 ./renew.sh
 ```
+    
+## 🪟 Schemas and ERDs
+
+> Note that to regenerate the ERD from the postgres database just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
 
 ### 🥪 Conse Panel Postgres ERD Schema
 
