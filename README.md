@@ -217,7 +217,7 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
 
-* pubsub new task topic and task verification response are `tasks` and `task-verification-responses` respectively.   
+* pubsub new task, twitter task verification response, **ECQ** and reveal role topics are `tasks`, `task-verification-responses`, `ecq-{event_id}`, `reveal-role-{event_id}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
@@ -233,7 +233,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, new task, twitter task verification responses and ecq (for registered events) topics  
 
-* websocket server for streaming over redis subscribed topics.
+* websocket server for streaming over redis subscribed topics + setup it's nginx config file
 
 * redis response caching 
 
