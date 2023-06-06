@@ -59,29 +59,33 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), new task defined by admins and task verification logs topics
 
-* 💾 **redis** http response caching to handle low latencies   
+* 💾 **redis** http response caching to avoid high latencies   
 
 * 🎯 **actix ws** server for streaming over redis subscribed topics  
 
-## 🥪 Conse Panel Postgres ERD Schema
+## 🪟 Schemas adn ERDs
+
+> Note that to regenerate the ERD from the postgres database just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
+
+### 🥪 Conse Panel Postgres ERD Schema
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
 </p>
 
-## 🍢 Conse Mongodb ERD Schema
+### 🍢 Conse Mongodb ERD Schema
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-## 🖼️ Conse Panel Architecture Diagram
+### 🖼️ Conse Panel Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
 
-## 🗃️ Directory and Structure Explained
+### 🗃️ Directory and Structure Explained
 
 > Note that to use dev panel APIs Remember to run conse hyper server first.
 
@@ -212,8 +216,6 @@ cd scripts
 * **admins** are game managers and **users** are players. 
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
-
-* 
 
 * pubsub new task topic and task verification response are `tasks` and `task-verification-responses` respectively.   
 
