@@ -57,9 +57,11 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers
 
-* 📣 **redis** based pubsub streaming channel to publish the reveal role, new task defined by admins and task verification logs topics
+* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), new task defined by admins and task verification logs topics
 
-* 🎯 **ECQ** (Event Collaboration Queue) using **redis** pubsub streams 
+* 💾 **redis** http response caching to handle low latencies   
+
+* 🎯 **actix ws** server for streaming over redis subscribed topics  
 
 ## 🥪 Conse Panel Postgres ERD Schema
 
@@ -73,9 +75,11 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-## 🖼️ Conse Panel Design Pattern Schema
+## 🖼️ Conse Panel Architecture Diagram
 
-...
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
+</p>
 
 ## 🗃️ Directory and Structure Explained
 
@@ -207,7 +211,11 @@ cd scripts
 
 * **admins** are game managers and **users** are players. 
 
-* conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications by sending websocket connections to the redis server docker on the VPS.
+* conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
+
+* 
+
+* pubsub new task topic and task verification response are `tasks` and `task-verification-responses` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
@@ -221,7 +229,11 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role and ecq (for registered events) topics  
+* redis pubsub streaming to publish reveal role, new task, twitter task verification responses and ecq (for registered events) topics  
+
+* websocket server for streaming over redis subscribed topics.
+
+* redis response caching 
 
 * twitter APIs for task verification
 
@@ -237,4 +249,4 @@ cd scripts
 
 * conse `errors` handler service and `jobs` crontabs folder
 
-* `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum and licensing, updating and verification using its commit (like ssh keys), also time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.

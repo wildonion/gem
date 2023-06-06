@@ -225,14 +225,13 @@ async fn check_users_tassk(
                             responses.push(r.clone());
 
                             /* publishing the new task topic to the redis pubsub channel */
-                    
-                            info!("📢 publishing task verification response to redis pubsub [task-verification-response] channel");
+                            info!("📢 publishing task verification response to redis pubsub [task-verification-responses] channel");
 
                             let mut conn = redis_client.get_connection().unwrap();   
-                            let _: () = conn.publish("task-verification-response".to_string(), r.clone()).unwrap();
+                            let _: () = conn.publish("task-verification-responses".to_string(), &r).unwrap();
 
                             /* wait 15 seconds to avoid twitter rate limit issue */
-                            std::thread::sleep(std::time::Duration::from_secs(15));
+                            tokio::time::sleep(tokio::time::Duration::from_secs(15)).await; /* sleep asyncly to avoid blocking issues */
                             
                         }
 
