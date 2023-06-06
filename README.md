@@ -67,24 +67,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Note that to regenerate the ERD from the postgres database just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
 
-### 🥪 Conse Panel Postgres ERD Schema
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
-</p>
-
-### 🍢 Conse Mongodb ERD Schema
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
-</p>
-
-### 🖼️ Conse Panel Architecture Diagram
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
-</p>
-
 ### 🗃️ Directory and Structure Explained
 
 > Note that to use dev panel APIs Remember to run conse hyper server first.
@@ -142,7 +124,7 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
+- **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
 - **NOTE**: in order to use twitter APIs you must have a paid developer account.
 
@@ -203,6 +185,24 @@ cd scripts
 ./renew.sh
 ```
 
+### 🥪 Conse Panel Postgres ERD Schema
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
+</p>
+
+### 🍢 Conse Mongodb ERD Schema
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
+</p>
+
+### 🖼️ Conse Panel Architecture Diagram
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
+</p>
+
 ## 🧐 WrapUps 
 
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
@@ -233,7 +233,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, new task, twitter task verification responses and ecq (for registered events) topics  
 
-* websocket server for streaming over redis subscribed topics + setup it's nginx config file
+* websocket server for streaming over redis subscribed topics + setup it's nginx config file (ws://ws.panel.conse.app)
 
 * redis response caching 
 
