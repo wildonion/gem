@@ -229,6 +229,7 @@ async fn check_users_tassk(
 
                             let mut conn = redis_client.get_connection().unwrap();   
                             let _: () = conn.publish("task-verification-responses".to_string(), &r).unwrap();
+                            let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone());
 
                             /* wait 15 seconds to avoid twitter rate limit issue */
                             tokio::time::sleep(tokio::time::Duration::from_secs(15)).await; /* sleep asyncly to avoid blocking issues */

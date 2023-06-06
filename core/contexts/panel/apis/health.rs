@@ -247,6 +247,9 @@ async fn check_token(
         (status=500, description="Storage Issue", body=[u8])
     ),
     tag = "crate::apis::health",
+    security(
+        ("jwt" = [])
+    )
 )]
 #[post("/logout")]
 async fn logout(

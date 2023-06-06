@@ -24,6 +24,7 @@ use redis::Client as RedisClient;
 use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use redis::Commands;
+use redis::RedisError;
 use hyper::StatusCode;
 use uuid::Uuid;
 use log::{info, error};
@@ -58,16 +59,6 @@ mod error;
 async fn main() -> std::io::Result<()> {
 
 
-    /*         
-        run twitter task verification scheduler
-
-        tas_scheduler!(
-            JobScheduler::new().await.unwrap()
-        ).await;
-
-
-    */
-        
     let server = server!
     {
         /* SERVER CONFIGS */
