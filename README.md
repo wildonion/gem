@@ -189,7 +189,7 @@ cd scripts
 ./setup.sh
 # ---------------
 # ---- deploy containers
-./deploy.sh
+./redeploy.sh
 # ---------------
 # ---- renew nginx 
 ./renew.sh
