@@ -763,6 +763,9 @@ pub async fn generic(){
         pub shared: Arc<Mutex<G>>,
         pub cmd: &'c str
     }
+    fn fuckMe() -> &'static str{
+        "wildonion"
+    }
     /////////////////////////////////////////////////////////////////
     //// since rust doesn't have gc thus by moving a type into a new scope 
     //// its lifetime will be dropped unless it implements the Copy trait 
