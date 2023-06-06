@@ -15,3 +15,4 @@ sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo apt update -y && sudo apt upgrade && sudo apt install -y libpq-dev pkg-config build-essential libudev-dev libssl-dev librust-openssl-dev
 sudo apt install snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
+cargo install sqlant && sudo apt install openjdk-11-jdk && sudo apt install graphviz

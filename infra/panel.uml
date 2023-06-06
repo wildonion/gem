@@ -1,0 +1,59 @@
+@startuml 
+
+hide circle
+skinparam linetype ortho
+
+entity "**tasks**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""admin_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""task_name""</b>: //""character varying""  //
+* <b>""task_description""</b>: //""character varying""  //
+* <b>""task_score""</b>: //""integer""  //
+* <b>""hashtag""</b>: //""character varying""  //
+* <b>""tweet_content""</b>: //""character varying""  //
+* <b>""retweet_id""</b>: //""character varying""  //
+* <b>""like_tweet_id""</b>: //""character varying""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+}
+
+entity "**__diesel_schema_migrations**" {
+# <b>""version""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""run_on""</b>: //""timestamp without time zone""  //
+}
+
+entity "**users_tasks**" {
+# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+---
+* <b>""done_at""</b>: //""timestamp with time zone""  //
+}
+
+entity "**users**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""username""</b>: //""character varying""  //
+* <b>""activity_code""</b>: //""character varying""  //
+* <b>""twitter_username""</b>: //""character varying""  //
+* <b>""facebook_username""</b>: //""character varying""  //
+* <b>""discord_username""</b>: //""character varying""  //
+* <b>""wallet_address""</b>: //""character varying""  //
+* <b>""user_role""</b>: //""userrole""  //
+* <b>""pswd""</b>: //""character varying""  //
+* <b>""token_time""</b>: //""bigint""  //
+* <b>""last_login""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+}
+
+
+"**tasks**" }o--|| "**users**"
+
+"**users_tasks**" }o--|| "**tasks**"
+
+"**users_tasks**" }o--|| "**users**"
+
+
+@enduml

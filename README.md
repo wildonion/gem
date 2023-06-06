@@ -24,7 +24,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🎙️ HOSTED ON ==> Digitalocean
 🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
-🖼️ GEM DESIGN PATTERN SKETCH ==> https://github.com/wildonion/gem/wiki/Gem-Design-Pattern-Sketch
 🥪 GEM ERD SCHEMAS ==> https://github.com/wildonion/gem/wiki/Gem-ERD-Schemas
 ```
 
@@ -61,6 +60,22 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 * 📣 **redis** based pubsub streaming channel to publish the reveal role, new task defined by admins and task verification logs topics
 
 * 🎯 **ECQ** (Event Collaboration Queue) using **redis** pubsub streams 
+
+## 🥪 Conse Panel Postgres ERD Schema
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
+</p>
+
+## 🍢 Conse Mongodb ERD Schema
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
+</p>
+
+## 🖼️ Conse Panel Design Pattern Schema
+
+...
 
 ## 🗃️ Directory and Structure Explained
 
@@ -221,5 +236,3 @@ cd scripts
 * conse `errors` handler service and `jobs` crontabs folder
 
 * `ed25519` keypair for server checksum, verification using its commit (like ssh keys) and **SSL/TLS** certificate, updating app and time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
-
-* complete [wiki pages](https://github.com/wildonion/gem/wiki/)

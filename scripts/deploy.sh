@@ -66,6 +66,8 @@ sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # 
 sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v .infra/data/postgres:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSEORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
 sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
 diesel setup && diesel migration run
+sqlant postgresql://postgres:$PASSEORD@localhost/conse > infra/panel.uml
+java -jar infra/plantuml.jar infra/panel.uml
 
 sudo docker stop conse-panel
 sudo docker rm -f conse-panel

@@ -60,6 +60,9 @@ sysinfo = "0.28.4"
 tokio-cron-scheduler = "0.9.4"
 openssl = { version = "0.10", features = ["v110"] }
 
+
+
+
 [[bin]]
 name = "conse"
 path = "core/app.rs"
