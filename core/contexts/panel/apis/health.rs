@@ -269,6 +269,13 @@ async fn logout(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* 
+                        🔐 logout supports also for jwt only, it sets the token time field 
+                        inside the users table related to the logged in user to 0, this wiill 
+                        be checked inside the **passport** function to see that the token time 
+                        inside the passed in jwt to the request header must be the one 
+                        inside the users table
+                    */
                     match User::logout(_id, connection).await{
                         Ok(_) => {
                             

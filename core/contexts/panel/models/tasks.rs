@@ -1,6 +1,8 @@
 
 
 
+
+
 use crate::*;
 use crate::models::users::User;
 use crate::misc::Response;
@@ -141,7 +143,7 @@ impl Task{
 
     pub async fn insert(
         new_task: NewTaskRequest, 
-        redis_connection: &RedisClient, 
+        redis_client: &RedisClient, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
         
         let single_task = tasks
@@ -173,9 +175,13 @@ impl Task{
             admin_id: new_task.admin_id,
         };
 
-        // 🥑 todo - publish/fire new task event/topic using redis 
-        // ... 
-        let publish_task_topic = events::redis::task::Register;
+        /* publishing the new task topic to the redis pubsub channel */
+
+        info!("📢 publishing new task to redis pubsub [tasks] channel");
+
+        let new_task_string = serde_json::to_string_pretty(&new_task).unwrap();
+        let mut conn = redis_client.get_connection().unwrap();   
+        let _: () = conn.publish("tasks".to_string(), new_task_string).unwrap();
 
 
         match diesel::insert_into(tasks::table)

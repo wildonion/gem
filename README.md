@@ -37,7 +37,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * ☢️ better error handling using **match** and **Option** syntax
 
-* 🧑🏻‍💼 game managers can define score based twitter tasks for users, register new event, reveal role, collaborate with others and share their events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
+* 🧑🏻‍💼 game managers can define score based twitter tasks for users, reveal role, collaborate with others and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
 
 * 🍪 **cookie** and **JWT** based authentication strategy
 
@@ -209,7 +209,9 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications by sending websocket connections to the redis server docker on the VPS.
 
-* twitter tasks defined by admins for users, their names must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
+* twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
+
+* admins can define multiple twitter task in the same activity like task 1 be like `twitter-username` and task 2 be like `twitter-username-1`.   
 
 * every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 
@@ -219,7 +221,7 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, new task and twitter task verification logs and ecq topics  
+* redis pubsub streaming to publish reveal role and ecq (for registered events) topics  
 
 * twitter APIs for task verification
 

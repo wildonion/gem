@@ -120,22 +120,22 @@ async fn verify_twitter_task(
                     if task_starts_with.starts_with("twitter-"){
                         
                         match task_type{
-                            "username" => {
+                            "username" | "username-"=> { /* all task names start with username */
                                 bot.verify_username(task, connection, doer_id.to_owned()).await
                             },
-                            "code" => {
+                            "code" | "code-" => { /* all task names start with code */
                                 bot.verify_activity_code(task, connection, doer_id.to_owned()).await
                             },
-                            "tweet" => {
+                            "tweet" | "tweet-" => { /* all task names start with tweet */
                                 bot.verify_tweet(task, connection, doer_id.to_owned()).await
                             },
-                            "retweet" => {
+                            "retweet" | "retweet-" => { /* all task names start with retweet */
                                 bot.verify_retweet(task, connection, doer_id.to_owned()).await
                             },
-                            "hashtag" => {
+                            "hashtag" | "hashtag-" => { /* all task names start with hashtag */
                                 bot.verify_hashtag(task, connection, doer_id.to_owned()).await
                             },
-                            "like" => {
+                            "like" | "like-" => { /* all task names start with like */
                                 bot.verify_like(task, connection, doer_id.to_owned()).await
                             },
                             _ => {
@@ -194,7 +194,7 @@ async fn check_users_tassk(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -222,10 +222,14 @@ async fn check_users_tassk(
                                 .unwrap();
                             
                             let r = res.text().await.unwrap();
-                            responses.push(r);
+                            responses.push(r.clone());
 
-                            // 🥑 todo - publish or fire the task verification response and logs topic or event using redis pubsub
-                            // ...
+                            /* publishing the new task topic to the redis pubsub channel */
+                    
+                            info!("📢 publishing task verification response to redis pubsub [task-verification-response] channel");
+
+                            let mut conn = redis_client.get_connection().unwrap();   
+                            let _: () = conn.publish("task-verification-response".to_string(), r.clone()).unwrap();
 
                             /* wait 15 seconds to avoid twitter rate limit issue */
                             std::thread::sleep(std::time::Duration::from_secs(15));
