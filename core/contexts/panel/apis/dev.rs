@@ -107,7 +107,7 @@ async fn get_admin_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+                let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -211,7 +211,7 @@ async fn get_user_data(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+                let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{

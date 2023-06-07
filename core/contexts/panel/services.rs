@@ -76,7 +76,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     
     config.service(apis::user::exports::login);
     config.service(apis::user::verify_twitter_account);
-    config.service(apis::user::get_tasks);
     config.service(apis::user::tasks_report);
 
     // other routs maybe ?
@@ -97,6 +96,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
 
     config.service(apis::health::exports::index);
     config.service(apis::health::exports::check_token);
+    config.service(apis::health::get_tasks);
     config.service(apis::health::exports::logout);
 
     // other routs maybe ?

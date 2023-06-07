@@ -57,6 +57,10 @@ pub struct BotApiDoc;
         - once the user loggedin to the site to verify his/her tasks 
         - using a cronjob every day at 7 AM to check that all users tasks are verified or not
 
+    also this API doesn't need JWT in header since it'll be called 
+    by the /check-users-tasks API which will be called by the crontab   
+
+
 */
 #[utoipa::path(
     context_path = "/bot",
@@ -71,7 +75,6 @@ pub struct BotApiDoc;
         (status=404, description="Task Not Found", body=i32), // not found by id
         (status=403, description="Bot Is Busy", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="User Not Found", body=String), // not found by wallet
         (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
@@ -91,8 +94,7 @@ pub struct BotApiDoc;
 #[post("/verify-user/{doer_id}/twitter-task/{job_id}")]
 async fn verify_twitter_task(
         req: HttpRequest,
-        job_id: web::Path<i32>,
-        doer_id: web::Path<i32>, 
+        path: web::Path<(i32, i32)>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -110,6 +112,9 @@ async fn verify_twitter_task(
             /* use this instance if you want to use conse twitter APIs */
             // let bot = Twitter::new(None);
 
+            let doer_id = path.0;
+            let job_id = path.1;
+
             match Task::find_by_id(job_id.to_owned(), connection).await{
                 Ok(task) => {
                     
@@ -117,26 +122,26 @@ async fn verify_twitter_task(
                     let task_starts_with = splitted_name.next().unwrap();
                     let task_type = splitted_name.next().unwrap(); 
                     
-                    if task_starts_with.starts_with("twitter-"){
+                    if task_starts_with.starts_with("twitter"){
                         
                         match task_type{
                             "username" | "username-"=> { /* all task names start with username */
-                                bot.verify_username(task, connection, doer_id.to_owned()).await
+                                bot.verify_username(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             "code" | "code-" => { /* all task names start with code */
-                                bot.verify_activity_code(task, connection, doer_id.to_owned()).await
+                                bot.verify_activity_code(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             "tweet" | "tweet-" => { /* all task names start with tweet */
-                                bot.verify_tweet(task, connection, doer_id.to_owned()).await
+                                bot.verify_tweet(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             "retweet" | "retweet-" => { /* all task names start with retweet */
-                                bot.verify_retweet(task, connection, doer_id.to_owned()).await
+                                bot.verify_retweet(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             "hashtag" | "hashtag-" => { /* all task names start with hashtag */
-                                bot.verify_hashtag(task, connection, doer_id.to_owned()).await
+                                bot.verify_hashtag(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             "like" | "like-" => { /* all task names start with like */
-                                bot.verify_like(task, connection, doer_id.to_owned()).await
+                                bot.verify_like(task, connection, redis_conn, doer_id.to_owned()).await
                             },
                             _ => {
 
@@ -213,7 +218,7 @@ async fn check_users_tassk(
                         
                         for user_task in users_tasks_data{
                     
-                            let api_path = format!("{}/bot/verify-user/{}/twitter-task/{}", api, user_task.task_id, user_task.user_id);
+                            let api_path = format!("{}/bot/verify-user/{}/twitter-task/{}", api, user_task.user_id, user_task.task_id);
                             let client = reqwest::Client::new();
                             let res = client
                                 .post(api_path.as_str())
@@ -224,14 +229,13 @@ async fn check_users_tassk(
                             let r = res.text().await.unwrap();
                             responses.push(r.clone());
 
-                            /* publishing the new task topic to the redis pubsub channel */
+                            /* publishing the task verification response topic to the redis pubsub channel */
                             info!("📢 publishing task verification response to redis pubsub [task-verification-responses] channel");
 
-                            let mut conn = redis_client.get_connection().unwrap();   
-                            let _: () = conn.publish("task-verification-responses".to_string(), &r).unwrap();
+                            let mut conn = redis_client.get_connection().unwrap();
                             let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone());
 
-                            /* wait 15 seconds to avoid twitter rate limit issue */
+                            /* wait 15 seconds asyncly to avoid twitter rate limit issue */
                             tokio::time::sleep(tokio::time::Duration::from_secs(15)).await; /* sleep asyncly to avoid blocking issues */
                             
                         }

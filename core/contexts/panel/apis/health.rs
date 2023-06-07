@@ -8,6 +8,7 @@ use crate::misc::*;
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
+use crate::models::{tasks::*, users_tasks::*};
 
 
 
@@ -24,12 +25,14 @@ use crate::schema::users;
     paths(
         index,
         check_token,
+        get_tasks,
         logout,
     ),
     components(
         schemas(
             UserData,
             Health,
+            TaskData
         )
     ),
     tags(
@@ -128,7 +131,7 @@ async fn check_token(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -259,7 +262,7 @@ async fn logout(
 
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -337,8 +340,105 @@ async fn logout(
 
 }
 
+#[utoipa::path(
+    context_path = "/health",
+    responses(
+        (status=200, description="Fetched Successfully", body=[TaskData]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Been Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    tag = "crate::apis::health",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[get("/get-tasks")]
+async fn get_tasks(
+        req: HttpRequest,  
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, None, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match Task::get_all(connection).await{
+                        Ok(all_tasks) => {
+
+                            resp!{
+                                Vec<TaskData>, //// the data type
+                                all_tasks, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
+                        }
+                    }
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
+        }
+    }         
+
+
+}
+
 pub mod exports{
     pub use super::index;
     pub use super::check_token;
     pub use super::logout;
+    pub use super::get_tasks;
 }

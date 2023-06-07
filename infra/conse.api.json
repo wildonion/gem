@@ -2231,7 +2231,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\",\n    \"username\": \"\",\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\",\n    \"username\": \"\",\n    \"wallet\": \"\"\n    // \"password\": \"\" // it may not pass\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2453,26 +2453,6 @@
 							"response": []
 						},
 						{
-							"name": "Get Tasks",
-							"request": {
-								"auth": {
-									"type": "bearer"
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/get-tasks",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"get-tasks"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Report User Tasks",
 							"request": {
 								"auth": {
@@ -2550,26 +2530,6 @@
 					"name": "Health APIs",
 					"item": [
 						{
-							"name": "Check Token",
-							"request": {
-								"auth": {
-									"type": "bearer"
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-health}}/check-token",
-									"host": [
-										"{{panel-health}}"
-									],
-									"path": [
-										"check-token"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Logout",
 							"request": {
 								"auth": {
@@ -2590,6 +2550,26 @@
 							"response": []
 						},
 						{
+							"name": "Check Token",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-health}}/check-token",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"check-token"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Check Server Health",
 							"request": {
 								"method": "GET",
@@ -2601,6 +2581,26 @@
 									],
 									"path": [
 										"check-server"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Tasks",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-health}}/get-tasks",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"get-tasks"
 									]
 								}
 							},

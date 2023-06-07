@@ -46,6 +46,12 @@ pub struct FetchUserTaskReport{
     pub done_tasks: Vec<TaskData>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+pub struct UserTaskData{
+    pub user: UserData,
+    pub tasks: Vec<TaskData>
+}
+
 impl UserTask{
 
     pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, Result<HttpResponse, actix_web::Error>>{
@@ -191,7 +197,7 @@ impl UserTask{
 
     }
 
-    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<(UserData, Vec<TaskData>)>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, Result<HttpResponse, actix_web::Error>>{
 
         let all_users = match users::table
             .select(User::as_select())
@@ -212,7 +218,7 @@ impl UserTask{
                 }
             };
 
-        let jobs = match UserTask::belonging_to(&all_users)
+        let jobs: Vec<(UserTask, Task)> = match UserTask::belonging_to(&all_users)
             .inner_join(tasks::table)
             .select((UserTask::as_select(), Task::as_select()))
             .load(connection)
@@ -233,40 +239,45 @@ impl UserTask{
             };
     
         /* all users including their tasks */
-        let tasks_per_user: Vec<(UserData, Vec<TaskData>)> = jobs
+        let tasks_per_user: Vec<UserTaskData> = jobs
             .grouped_by(&all_users)
             .into_iter()
             .zip(all_users)
-            /* converting the zipped users and jobs pairs into Vec<(User, Vec<Task>)> using map */
             .map(|(t, user)| {
-                let user_data = UserData { 
-                    id: user.id, 
-                    username: user.username, 
-                    activity_code: user.activity_code,
-                    twitter_username: user.twitter_username, 
-                    facebook_username: user.facebook_username, 
-                    discord_username: user.discord_username, 
-                    wallet_address: user.wallet_address, 
-                    user_role: {
-                        match user.user_role.clone(){
-                            UserRole::Admin => "Admin".to_string(),
-                            UserRole::User => "User".to_string(),
-                            _ => "Dev".to_string(),
-                        }
+                let mut user_task_data = UserTaskData{
+                    user: UserData { 
+                        id: user.id, 
+                        username: user.username, 
+                        activity_code: user.activity_code,
+                        twitter_username: user.twitter_username, 
+                        facebook_username: user.facebook_username, 
+                        discord_username: user.discord_username, 
+                        wallet_address: user.wallet_address, 
+                        user_role: {
+                            match user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
+                        token_time: user.token_time,
+                        last_login: { 
+                            if user.last_login.is_some(){
+                                Some(user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: user.created_at.to_string(),
+                        updated_at: user.updated_at.to_string(),
                     },
-                    token_time: user.token_time,
-                    last_login: { 
-                        if user.last_login.is_some(){
-                            Some(user.last_login.unwrap().to_string())
-                        } else{
-                            Some("".to_string())
-                        }
-                    },
-                    created_at: user.created_at.to_string(),
-                    updated_at: user.updated_at.to_string(),
+                    tasks: vec![]
                 };
-                (user_data, t.into_iter().map(|(_, task)| {
-                    let task_data = TaskData{
+
+                let _ = t
+                .into_iter()
+                .map(|(_, task)| {
+                    user_task_data.tasks.push(TaskData{
                         id: task.id,
                         task_name: task.task_name,
                         task_description: task.task_description,
@@ -278,11 +289,11 @@ impl UserTask{
                         admin_id: task.admin_id,
                         created_at: task.created_at.to_string(),
                         updated_at: task.updated_at.to_string(),
-                    };
+                    });
+                });
+                
+                user_task_data
 
-                    task_data
-
-                }).collect())
             })
             .collect();
 

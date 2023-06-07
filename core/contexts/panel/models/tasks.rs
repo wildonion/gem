@@ -206,19 +206,19 @@ impl Task{
 
     }
 
-    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(usize, usize), Result<HttpResponse, actix_web::Error>>{
         
         match diesel::delete(tasks.filter(tasks::id.eq(job_id)))
             .execute(connection)
             {
-                Ok(_) => {
+                Ok(task_deleted_rows) => {
                 
                     /* 
                         we must also delete the associated records from the users_tasks table 
                         since a task is deleted thus all the users who have done this task must
                         deleted from the users_tasks table too 
                     */
-                    let deleted_rows = match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(task_id)))
+                    let users_tasks_deleted_rows = match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(task_id)))
                     .execute(connection)
                     {
                         Ok(num_deleted) => num_deleted,
@@ -236,7 +236,7 @@ impl Task{
                         }
                     };
                     
-                    Ok(deleted_rows)
+                    Ok((task_deleted_rows, users_tasks_deleted_rows))
                     
                 },
                 Err(e) => {

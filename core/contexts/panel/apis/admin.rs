@@ -121,7 +121,7 @@ async fn reveal_role(
                 //// -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+                let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -206,7 +206,7 @@ pub(super) async fn login(
     ) -> Result<HttpResponse, actix_web::Error> {
    
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -348,7 +348,7 @@ async fn register_new_admin(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -448,7 +448,7 @@ async fn edit_user(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -553,7 +553,7 @@ async fn delete_user(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -662,7 +662,7 @@ async fn get_users(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -758,7 +758,7 @@ async fn register_new_task(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -773,7 +773,7 @@ async fn register_new_task(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match Task::insert(new_task.to_owned(), redis_conn, connection).await{
+                    match Task::insert(new_task.to_owned(), redis_client, connection).await{
                         Ok(_) => {
 
                             resp!{
@@ -867,7 +867,7 @@ async fn delete_task(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -885,16 +885,25 @@ async fn delete_task(
                     match Task::delete(job_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
-                            if num_deleted > 0{
+                            if num_deleted.0 > 0 && num_deleted.1 == 0{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
-                                    DELETED, //// response message
+                                    TASK_DELETED_WITH_NO_DOER, //// response message
+                                    StatusCode::OK, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+                            } else if num_deleted.0 > 0 && num_deleted.1 > 0{
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    TASK_DELETED_WITH_DOER, //// response message
                                     StatusCode::OK, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
                             } else{
                                 
+                                /* task didn't found thus no users_tasks record related to the task is exists */
                                 resp!{
                                     i32, //// the data type
                                     job_id.to_owned(), //// response data
@@ -979,7 +988,7 @@ async fn edit_task(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -1079,7 +1088,7 @@ async fn get_admin_tasks(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -1176,7 +1185,7 @@ async fn get_users_tasks(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -1195,7 +1204,7 @@ async fn get_users_tasks(
                         Ok(all_users_tasks) => {
 
                             resp!{
-                                Vec<(UserData, Vec<TaskData>)>, //// the data type
+                                Vec<UserTaskData>, //// the data type
                                 all_users_tasks, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code

@@ -561,7 +561,8 @@ macro_rules! verify {
       $body:expr,
       $task_id:expr,
       $doer_id:expr,
-      $connection: expr
+      $connection:expr,
+      $redis_client:expr
     ) 
     => {
 
@@ -577,74 +578,124 @@ macro_rules! verify {
                 .json()
                 .await.unwrap();
 
-            if response_value.get("data").is_some(){
-                match diesel::delete(users_tasks
-                    .filter(users_tasks::task_id.eq($task_id)))
-                    .filter(users_tasks::user_id.eq($doer_id))
-                .execute($connection)
-                {
-                    Ok(num_deleted) => {
-                        
-                        if num_deleted > 0{
+            /* publishing the twitter bot response to the redis pubsub channel */
+            info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
 
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: TASK_NOT_VERIFIED,
-                                status: 406
-                            };
-                            return Ok(
-                                HttpResponse::NotAcceptable().json(resp)
-                            );                                
+            let mut conn = $redis_client.get_connection().unwrap();   
+            let _: Result<_, RedisError> = conn.publish::<String, String, String>("twitter-bot-response".to_string(), response_value.to_string());
 
-                        } else{
-                            
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: USER_TASK_HAS_ALREADY_BEEN_DELETED_BEFORE,
-                                status: 417
-                            };
-                            return Ok(
-                                HttpResponse::ExpectationFailed().json(resp)
-                            ); 
+            /* I believe that the bot code has some shity response structure :) since I didn't designed it*/
 
+            let data_field = response_value.get("data");
+            if data_field.is_some(){
+                let status = data_field.unwrap().get("status");
+                if status.is_some(){
+
+                    let bool_status = status.unwrap().to_string();
+                    if bool_status == "false"{
+
+                        /* twitter error */
+
+                        match diesel::delete(users_tasks
+                            .filter(users_tasks::task_id.eq($task_id)))
+                            .filter(users_tasks::user_id.eq($doer_id))
+                            .execute($connection)
+                            {
+                                Ok(num_deleted) => {
+                                    
+                                    if num_deleted > 0{
+            
+                                        let resp = Response::<&[u8]>{
+                                            data: Some(&[]),
+                                            message: TASK_NOT_VERIFIED,
+                                            status: 406
+                                        };
+                                        return Ok(
+                                            HttpResponse::NotAcceptable().json(resp)
+                                        );                                
+            
+                                    } else{
+                                        
+                                        let resp = Response::<&[u8]>{
+                                            data: Some(&[]),
+                                            message: USER_TASK_HAS_ALREADY_BEEN_DELETED,
+                                            status: 417
+                                        };
+                                        return Ok(
+                                            HttpResponse::ExpectationFailed().json(resp)
+                                        ); 
+            
+                                    }
+                                
+                                },
+                                Err(e) => {
+            
+                                    let resp = Response::<&[u8]>{
+                                        data: Some(&[]),
+                                        message: &e.to_string(),
+                                        status: 500
+                                    };
+                                    return Ok(
+                                        HttpResponse::InternalServerError().json(resp)
+                                    );
+            
+                                }
+                            }
+
+                    } else{
+
+                        /* task is verified by twitter */
+
+                        match UserTask::find($doer_id, $task_id, $connection).await{
+                            false => {
+
+                                /* try to insert into users_tasks since it's done */
+                                let res = Twitter::do_task($doer_id, $task_id, $connection).await;
+                                return res;
+                            },
+                            _ => {
+        
+                                /* user task has already been inserted  */
+                                let resp = Response::<&[u8]>{
+                                    data: Some(&[]),
+                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                    status: 200
+                                };
+                                return Ok(
+                                    HttpResponse::Ok().json(resp)
+                                );
+        
+                            }
                         }
-                    
-                    },
-                    Err(e) => {
-
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: &e.to_string(),
-                            status: 500
-                        };
-                        return Ok(
-                            HttpResponse::InternalServerError().json(resp)
-                        );
 
                     }
+                } else{
+
+                    /* twitter rate limit issue */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: TWITTER_RATE_LIMIT,
+                        status: 406
+                    };
+                    return Ok(
+                        HttpResponse::NotAcceptable().json(resp)
+                    );  
+                
                 }
             } else{
-                match UserTask::find($doer_id, $task_id, $connection).await{
-                    false => {
-                        let res = Twitter::do_task($doer_id, $task_id, $connection).await;
-                        return res;
-                    },
-                    _ => {
 
-                        /* user task has already been inserted  */
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                            status: 200
-                        };
-                        return Ok(
-                            HttpResponse::Ok().json(resp)
-                        );
+                /* twitter rate limit issue */
 
-                    }
-                }
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: TWITTER_RATE_LIMIT,
+                    status: 406
+                };
+                return Ok(
+                    HttpResponse::NotAcceptable().json(resp)
+                );  
             }
-            
         }
     }
 }

@@ -62,6 +62,7 @@ impl Twitter{
     pub async fn verify_username(&self, 
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient,
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -74,14 +75,15 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/user-existance", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             
             verify!(
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
                 
             
@@ -100,7 +102,8 @@ impl Twitter{
 
     pub async fn verify_activity_code(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -113,7 +116,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/user-verification", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("code", user.activity_code); /* activity code used to check that the user is activated or not */
             
             verify!(
@@ -121,7 +124,8 @@ impl Twitter{
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
 
 
@@ -141,7 +145,8 @@ impl Twitter{
 
     pub async fn verify_tweet(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -154,7 +159,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", "".to_string()); /* for like and retweet  */
             map.insert("type", "tweet".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -165,7 +170,8 @@ impl Twitter{
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
 
         } else{
@@ -184,7 +190,8 @@ impl Twitter{
 
     pub async fn verify_like(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -196,7 +203,7 @@ impl Twitter{
             
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", task.like_tweet_id); /* for like and retweet  */
             map.insert("type", "like".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -207,7 +214,8 @@ impl Twitter{
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
 
         } else{
@@ -227,7 +235,8 @@ impl Twitter{
 
     pub async fn verify_retweet(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -240,7 +249,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", task.retweet_id); /* for like and retweet  */
             map.insert("type", "retweet".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -251,7 +260,8 @@ impl Twitter{
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
 
         } else{
@@ -269,7 +279,8 @@ impl Twitter{
 
     pub async fn verify_hashtag(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
         if self.endpoint.is_some(){
@@ -282,7 +293,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap());
+            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", "".to_string()); /* for like and retweet  */
             map.insert("type", "hashtag".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -293,7 +304,8 @@ impl Twitter{
                 map,
                 task.id,
                 doer_id,
-                connection
+                connection,
+                redis_client
             )
 
         } else{

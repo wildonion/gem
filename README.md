@@ -57,9 +57,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers
 
-* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), new task defined by admins and task verification logs topics
+* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), new task defined by admins, task verification logs and twitter bot responses topics
 
-* 💾 **redis** http response caching to avoid high latencies   
+* 💾 **redis** http response caching to avoid high latencies cause I believe reading from RAM is much faster than HardDisk.   
 
 * 🎯 **actix ws** server for streaming over redis subscribed topics  
 
@@ -119,6 +119,8 @@ cargo run --bin argon2test
 ## 🚀 Production Setup
 
 > Before going for production, read the following notes: 
+
+- **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which must be set to an external twitter bot server endpoint to send requests to verify users' tasks.
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
@@ -205,6 +207,8 @@ cd scripts
 
 ## 🧐 WrapUps 
 
+* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body**.
+
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
 
 * admin and user login APIs of conse panel returns a response which contains the generated cookie for the user in which we can use the first part of `::` sign, as the **JWT** to send authorized requests in postman and swagger UI. 
@@ -217,7 +221,7 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
 
-* pubsub new task, twitter task verification response, **ECQ** and reveal role topics are `tasks`, `task-verification-responses`, `ecq-{event_id}`, `reveal-role-{event_id}` respectively.   
+* pubsub new task, twitter task verification response, twitter bot response, **ECQ** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `reveal-role-{event_id}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
@@ -231,7 +235,7 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, new task, twitter task verification responses and ecq (for registered events) topics  
+* redis pubsub streaming to publish reveal role, new task, twitter task verification responses, twitter bot responses and ecq (for registered events) topics  
 
 * websocket server for streaming over redis subscribed topics + setup it's nginx config file (ws://ws.panel.conse.app)
 
@@ -251,4 +255,4 @@ cd scripts
 
 * conse `errors` handler service and `jobs` crontabs folder
 
-* `ed25519` keypair for server checksum and licensing, updating and verification using its commit (like ssh keys), also time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
+* `ed25519` keypair for server checksum and licensing, updating and verification using its commit (like ssh keys), also time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid guarded api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.
