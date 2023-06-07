@@ -1835,9 +1835,30 @@ pub async fn generic(){
             async_block.await;
         }
 
-        //////--------------------------------------------------------------
-        ////// we can't return impl Trait as the return type of fn() pointer
-        //////-------------------------------------------------------------- 
+        /* ------------------------------------------ 
+            we can't use impl Trait in function param 
+            since we have to give an explicit type to the 
+            describe which rust doesn't accept impl Trait 
+            in fn() pointer param, compiler will set the type 
+            of describe to fn col<impl Trait>() later
+        ------------------------------------------ */
+        fn callmehore(){
+            fn colided<Z>(cls: Z) -> () 
+            where Z: FnOnce(String) -> ()
+            {
+                let name = "wildonion".to_string();
+                cls(name);
+            }
+            
+            let describe = colided;
+            describe(|name: String|{
+                ()
+            });
+        }
+
+        //////-------------------------------------------------------------------------------
+        ////// we can't return impl Trait as the return type of fn() pointer or as its param
+        //////-------------------------------------------------------------------------------
         // type Function = fn() -> impl futures::Future<Output=String>;
         // async fn create_component_method<L>(async_block: fn() -> impl futures::Future<Output=String>) {
         //     async_block().await;
