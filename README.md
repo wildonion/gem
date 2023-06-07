@@ -241,7 +241,7 @@ cd scripts
 
 * redis response caching 
 
-* twitter APIs for task verification
+* call twitter APIs using `twitter-v2` crate for task verification
 
 * dev APIs related to the conse hyper server 
 
