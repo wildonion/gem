@@ -208,7 +208,11 @@ impl User{
 
                     let user = single_user.unwrap();
 
-                    /* check that the user is authorized with the passed in role and the one inside the jwt */
+                    /* 
+                        check that the user is authorized with the 
+                        passed in role and the one inside the jwt
+                        since some the routes require role guard 
+                    */
                     if pass_role.is_some(){
                         if user.user_role != pass_role.unwrap() &&
                             user.user_role != role{
@@ -227,8 +231,8 @@ impl User{
                         if the current token time of the fetched user 
                         wasn't equal to the one inside the passed in JWT
                         into the request header means that the user did
-                        a logout since by logging out the token time will
-                        be set to zero.
+                        a logout or did a login again since by logging out 
+                        the token time will be set to zero.
                     */
                     if user.token_time.unwrap() != _token_time{
                         
@@ -739,8 +743,8 @@ impl User{
                 user_role: {
                     let role = new_user.role.as_str(); 
                     match role{
-                        "user" => UserRole::User,
-                        "admin" => UserRole::Admin,
+                        "User" => UserRole::User,
+                        "Admin" => UserRole::Admin,
                         _ => UserRole::Dev
                     }
                 },

@@ -224,7 +224,18 @@ pub(super) async fn login(
                     match user.user_role{
                         UserRole::Admin => {
         
-                            let Ok(_) = user.verify_pswd(password.as_str()) else{
+                            let Ok(pswd_flag) = user.verify_pswd(password.as_str()) else{
+                                let err_msg = user.verify_pswd(password.as_str()).unwrap_err();
+                                resp!{
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    &err_msg.to_string(), //// response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+                            };
+
+                            if !pswd_flag{
                                 resp!{
                                     String, //// the data type
                                     user_name.to_owned(), //// response data
@@ -232,7 +243,7 @@ pub(super) async fn login(
                                     StatusCode::FORBIDDEN, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
-                            };
+                            }
         
                             /* generate cookie 🍪 from token time and jwt */
                             /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */

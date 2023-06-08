@@ -2231,7 +2231,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\",\n    \"username\": \"\",\n    \"wallet\": \"\"\n    // \"password\": \"\" // it may not pass\n}",
+									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\", // uppercase: Admin, User, Dev\n    \"username\": \"\",\n    \"wallet\": \"\"\n    // \"password\": \"\" // it may not pass\n}",
 									"options": {
 										"raw": {
 											"language": "json"

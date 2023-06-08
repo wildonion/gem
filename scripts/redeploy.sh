@@ -99,7 +99,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sudo docker ps -a && sudo docker compose ps -a && sudo docker images
   
 else
-    echo "> Redeploying Rust Codes Only"
+    echo "> Redeploying Rust Services Only"
     echo "☕ Okay, sit back and drink your coffee :)"
 
     sudo docker stop conse-panel

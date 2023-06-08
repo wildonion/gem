@@ -13,9 +13,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 </p>
 
 ```bash
-# panel dev username/password  : devdevy/d3v@%$^$3hjsD
-# panel admin username/password: adminy/4dmin@%$^$3hjsD
-# adminer username/password: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+# panel dev username/password              : devdevy/d3v@%$^$3hjsD
+# panel admin username/password            : adminy/4dmin@%$^$3hjsD
+# postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
@@ -207,7 +207,7 @@ cd scripts
 
 ## 🧐 WrapUps 
 
-* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body**.
+* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body** of the `/admin/edit-user` API, also the `role` field must be **uppercase**.
 
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
 

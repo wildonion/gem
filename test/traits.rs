@@ -1427,11 +1427,11 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
 
                 let callback = cls(name);
                 let res = match callback{
-                    () => false,
-                    _ => true,
-                    |_| () => true,
-                    |_| () | _ => false,
-                    _ | _ => true
+                    () => false, /* matches any value */
+                    _ => true, /* _ means any value */
+                    |_| () => true, /* |_|() matches any result of calling the callback */
+                    |_| () | _ => false, /* matches any result of calling the callback or _ */
+                    _ | _ => true /* matches any value or any value */
                 };
             }
             

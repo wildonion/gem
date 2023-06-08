@@ -5,7 +5,7 @@
 use crate::*;
 
 
-
+// every instance of PanelError must have to_string() method
 // custom error struct (lifetime, slice types, generic, return pointer (Box<dyn Trait> or &dyn Trait and -> impl Trait from its methods) 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
