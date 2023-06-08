@@ -224,8 +224,7 @@ pub(super) async fn login(
                     match user.user_role{
                         UserRole::Admin => {
         
-                            let hash_pswd = User::hash_pswd(password.as_str()).unwrap();
-                            let Ok(_) = user.verify_pswd(hash_pswd.as_str()) else{
+                            let Ok(_) = user.verify_pswd(password.as_str()) else{
                                 resp!{
                                     String, //// the data type
                                     user_name.to_owned(), //// response data

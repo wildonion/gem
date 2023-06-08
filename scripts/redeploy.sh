@@ -69,7 +69,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sudo docker exec mongodb mongoimport --db conse --collection roles roles.json # roles.json is now inside the root of the mongodb container
     sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # sides.json is now inside the root of the mongodb container
 
-    sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v infra/data/postgres:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSEORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
+    sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v infra/data/postgres/:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSEORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
     sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
     diesel setup && diesel migration run
     sqlant postgresql://postgres:$PASSEORD@localhost/conse > infra/panel.uml
@@ -87,7 +87,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sudo docker stop nginx
     sudo docker rm -f nginx
     sudo docker build -t --no-cache nginx -f infra/docker/nginx/Dockerfile .
-    sudo docker run -d -it -p 80:80 -p 443:443 --name nginx --network host nginx
+    sudo docker run -d -it -p 80:80 -v infra/data/nginx/confs/:/etc/nginx -v infra/data/nginx/wwws/:/usr/share/nginx/ -p 443:443 --name nginx --network host nginx
 
     jobs="jobs/*"
     for f in $jobs
@@ -110,7 +110,7 @@ else
     sudo docker stop conse-catchup-bot
     sudo docker rm -f conse-catchup-bot
     sudo docker build -t conse-catchup-bot -f infra/docker/dis-bot/Dockerfile . --no-cache
-    sudo docker run -d --link redis --network gem --name conse-catchup-bot -v infra/data/dis-bot-logs:/usr/src/app/logs/ conse-catchup-bot
+    sudo docker run -d --link redis --network gem --name conse-catchup-bot -v infra/data/dis-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
 
     sudo docker stop conse
     sudo docker rm -f conse

@@ -77,20 +77,20 @@ impl Twitter{
             let mut map = HashMap::new();
             map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
                 
             
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user existance logic using twitter API 
+            // 🥑 todo - verify user existance logic 
             // ...
 
             todo!()
@@ -119,20 +119,20 @@ impl Twitter{
             map.insert("username", user.twitter_username.unwrap_or("".to_string()));
             map.insert("code", user.activity_code); /* activity code used to check that the user is activated or not */
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
 
 
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user activity code logic using twitter API 
+            // 🥑 todo - verify user activity code logic 
             // ...
 
             todo!()
@@ -165,19 +165,19 @@ impl Twitter{
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
             map.insert("hashtag", task.hashtag); /* hashtag to check that the user tweet contains it or not  */
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
 
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user tweet logic using twitter API 
+            // 🥑 todo - verify user tweet logic 
             // ...
 
             todo!()
@@ -209,19 +209,19 @@ impl Twitter{
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
             map.insert("hashtag", task.hashtag); /* hashtag to check that the user tweet contains it or not  */
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
 
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user like logic using twitter API
+            // 🥑 todo - verify user like logic
             // ...
         }
 
@@ -255,19 +255,19 @@ impl Twitter{
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
             map.insert("hashtag", task.hashtag); /* hashtag to check that the user tweet contains it or not  */
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
 
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user retweet logic using twitter API
+            // 🥑 todo - verify user retweet logic
 
             // ...
         }
@@ -299,19 +299,19 @@ impl Twitter{
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
             map.insert("hashtag", task.hashtag); /* hashtag to check that the user tweet contains it or not  */
             
-            verify!(
+            verify!{
                 user_existance_endpoint.as_str(), 
                 map,
                 task.id,
                 doer_id,
                 connection,
                 redis_client
-            )
+            }
 
         } else{
 
             // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user hashtag logic using twitter API
+            // 🥑 todo - verify user hashtag logic
             // ...
         }
 
