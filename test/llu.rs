@@ -514,6 +514,13 @@ pub async fn unsafer(){
     // ----------------
     //  BORROWING RULE
     // ---------------
+    /*
+
+        when a type is going to dropped at the end of a block or scope 
+        there it can't be a borrow of that type or basically if the 
+        type is behind a pointer there it can'e be moved
+    
+    */
     //// we can borrow in order to prevent from moving but 
     ////        - can't later move the type into new scope since it has a borrow, we can clone it or move its borrow 
     ////        - can't mutate the borrowed if it's not a mutable borrow 
