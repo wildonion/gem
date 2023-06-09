@@ -24,17 +24,9 @@ entity "**__diesel_schema_migrations**" {
 * <b>""run_on""</b>: //""timestamp without time zone""  //
 }
 
-entity "**users_tasks**" {
-# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
-# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
----
-* <b>""done_at""</b>: //""timestamp with time zone""  //
-}
-
 entity "**users**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
 * <b>""username""</b>: //""character varying""  //
 * <b>""activity_code""</b>: //""character varying""  //
 * <b>""twitter_username""</b>: //""character varying""  //
@@ -46,6 +38,14 @@ entity "**users**" {
 * <b>""token_time""</b>: //""bigint""  //
 * <b>""last_login""</b>: //""timestamp with time zone""  //
 * <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+}
+
+entity "**users_tasks**" {
+# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+---
+* <b>""done_at""</b>: //""timestamp with time zone""  //
 }
 
 
@@ -57,3 +57,4 @@ entity "**users**" {
 
 
 @enduml
+

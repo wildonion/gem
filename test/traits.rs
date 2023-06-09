@@ -1,10 +1,238 @@
 
 
 
+
+
+/* LIFETIMES, BOX, PIN, TRAITS, GENERICS */
+
 use crate::*;
 
 
+struct Cacher<U, T> where T: FnMut(U) -> U{
+    closure: T,
+    map: HashMap<U, U>,
+    result: Option<U>,
+}
+
+impl<U, T> Cacher<U, T> where T: FnMut(U) -> U, U: Eq + Hash + Display + Copy{
+    fn new(_: U, closure: T) -> Cacher<U, T>{
+        Cacher{
+            closure,
+            map: HashMap::new(),
+            result: None,
+        }
+    }
+
+    fn value(&mut self, arg: U) -> U {
+        match self.result{
+            Some(v) => v,
+            None => {
+                let result = self.map.entry(arg).or_insert((self.closure)(arg));
+                self.result = Some(*result);
+                *result
+            }
+        }
+    }
+}
+
+
+fn generate_workout(intensity: u32, random_number: u32) {
+    let mut a_simple_var: u8 = 34;
+	let callback = move |num: u32| -> u32 {
+            a_simple_var = 56;
+            println!("a simple var just moved here");
+            println!("calculating slowly...");
+            num+1 // we can add one to the num because this closure can mutate its environment vairable and it moves them to its scope!
+        
+      };
+      
+    let mut expensive_result = Cacher::new(34, callback);
+    if intensity < 25 {
+        println!("Today, do {} pushups!", expensive_result.value(intensity));
+        println!("Next, do {} situps!", expensive_result.value(intensity));
+    } else {
+        if random_number == 3 {
+            println!("Take a break today! Remember to stay hydrated!");
+        } else {
+            println!(
+                "Today, run for {} minutes!", expensive_result.value(intensity)
+            );
+        }
+    }
+}
+
+
+async fn cls_fn() {
+    fn return_cls() -> Box<dyn FnOnce(i32) -> i32>{ //// instances of FnOnce can be called, but might not be callable multiple times. Because of this, if the only thing known about a type is that it implements FnOnce, it can only be called once - FnOnce is a supertrait of FnMut
+        Box::new(|x| x + 1)
+    }    
+    function_with_callback(return_cls()); // use .await to suspend the function execution for solving the future
+}
+
+async fn function_with_callback(cb: Box<dyn FnOnce(i32) -> i32>){
+    cb(32);
+    #[derive(Clone)]
+    struct Request{
+        pub user: u32,
+        pub access: u32,
+    }
+    
+    let res = run(move |req: Request|{
+        println!("user {} has access {}", req.user, req.access);
+    });
+    
+    
+    fn run<C>(cls: C) where C: FnOnce(Request) + Send + 'static {
+        let req = Request{user: 2893, access: 1};
+        cls(req);
+    }
+}
+
+
+
 async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+
+    {
+        'outer: loop{ // outter labeled block 
+            println!("this is the outer loop");
+            'inner: loop{ // inner labeled block 
+                println!("this is the inner loop");
+                // break; // only the inner loop
+
+                break 'outer;
+            }
+
+            println!("this print will never be reached"); //// this is an unreachable code
+        }
+
+
+
+
+        let mut counter = 0;
+        let result = loop{
+            counter += 1;
+            if counter == 10{
+            break counter * 2;
+            }
+        };
+        println!("counter is {}", counter);
+        println!("result is {}", result);
+
+    }
+
+
+    // ------------------------------ testing trait Copy and Clone for closure ------------------------------
+    let outside_num = 353;
+        let callback = move |num: i32| {
+            let got_outside_num = outside_num;
+            let copy_of_num = num; //// trait Copy is implemented for i32 thus has trait Clone so we don't need to clone it and we can also access it after it's moved into copy_of_num var 
+        };
+
+    // ------------------------------ testing trait Copy and Clone for i32 and String/str ------------------------------
+    let name = String::from("wildonion");
+    let name_slice = &name[0..3]; // pointing to an offset on the heap by borrowing some parts of the name String
+    let anot_cop_of_slice = name_slice; // this is ok cause the Copy trait is implemented for &T which is &str in here
+    // NOTE - we have still access to name_slice in here
+    // ...
+    // this is no ok cause name is on the heap with a saved reference to the heap on the stack also it doesn't implement Copy trait
+    // the Clone trait is implemented for that because of double free pointer issue at runtime and the implementation of drop trait.
+    // let another_name = name;
+    // println!("name is droped {:?}", name); 
+    let another_name = name.clone(); // we used the clone method here to copy the whole the reference on the stack and the whole data on the heap as well 
+    let another_name = &name; // this is ok cause the Copy trait is implemented for &T which in our case is &String which is coerced &str or string slice which is saved somewhere in the memory(heap, stack or binary)
+    let number: i32 = 3534;
+    let another_number = number; // this is ok cause the number it's on the stack thus the drop trait is not implemented for that(still got the number even it's moved) so we can copy the whole number variable into another_number
+
+    // ------------------------------ testing trait Copy and Clone for u8 and Vec<u8> ------------------------------
+    // u8 implements Copy
+    let x: u8 = 123;
+    let y = x;
+    // x can still be used
+    println!("x={}, y={}", x, y);
+
+    // Vec<u8> implements Clone, but not Copy
+    let v: Vec<u8> = vec![1, 2, 3];
+    let w = v.clone();
+    //let w = v // This would *move* the value, rendering v unusable.
+
+    // ------------------------------ testing trait Copy and Clone for structs ------------------------------
+    #[derive(Debug, Clone, Copy)]
+    pub struct PointCloneAndCopy {
+        pub x: f64,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct PointCloneOnly {
+        pub x: f64,
+    }
+
+    fn test_copy_and_clone() {
+        let p1 = PointCloneAndCopy { x: 0. };
+        let p2 = p1; // because type has `Copy`, it gets copied automatically.
+        println!("{:?} {:?}", p1, p2);
+    }
+
+    fn test_clone_only() {
+        let p1 = PointCloneOnly { x: 0. };
+        // let p2 = p1; // because type has no `Copy`, this is a move instead. to avoid moving we can clone the p1
+        // println!("{:?} {:?}", p1, p2);
+    }
+
+
+
+    // reading image pixels or bytes which is utf8 and each pixel is between 0 up to 255
+    // ...
+    if let Ok(bytes) = fs::read("/home/wildonion/Pictures/test.jpg"){
+        println!("image bytes >>>> {:?}", bytes);
+    }
+
+
+
+    'outer: for x in 0..5 {
+        'inner: for y in 0..5 {
+            println!("{},{}", x, y);
+            if y == 3 {
+                break 'outer;
+            }
+        }
+    }
+
+
+    // 	::::::::::iterator for struct::::::::::
+    struct Alternate {
+        state: i32,
+    }
+
+    impl Iterator for Alternate {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<i32> {
+            let val = self.state;
+            self.state = self.state + 1;
+
+            // if it's even, Some(i32), else None
+            if val % 2 == 0 {
+                Some(val)
+            } else {
+                None
+            }
+        }
+    }
+
+    let mut iter = Alternate { state: 0 };
+
+    // we can see our iterator going back and forth
+    assert_eq!(iter.next(), Some(0));
+    assert_eq!(iter.next(), None);
+    assert_eq!(iter.next(), Some(2));
+    assert_eq!(iter.next(), None);
+
+
+    let simulated_user_specified_value = 10;
+    let simulated_random_number = 7;
+    generate_workout(simulated_user_specified_value, simulated_random_number);
+
+
 
 
     // =============================================================================================================================
@@ -443,6 +671,13 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
             // cause place 0 and 1 inside the ram each takes 1 byte and the size of the
             // first element is two bytes thus &hello[0..2] which is index 0 and 1 both returns 3 
             // and we can't have string indices in rust due to this reason!
+
+            // we don't have string indices instead we have to access it using a range like [0..2] which gives us the first byte of the string
+            // because string[1] means that returning the first char of the string that is 1 byte but if we have a utf16 string the first char 
+            // is 2 bytes thus string[1] can't return the first char since it thinks that the every char of string is 1 byte hence rust doesn't
+            // allow us to this in the first place because String will be coerced into slices or &str in compile time which we don't know where 
+            // it will be placed which is either in heap, binary or stack thus the size it's unknown and because of this rust compiler can't know
+            // the exact size of string and it's type in first place  
 
 
             ///////////////////////////////////////////// ENUM MATCH TEST
@@ -1413,6 +1648,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
         }
 
         /* ------------------------------------------ 
+            in the following example:
             we can't use impl Trait in function param 
             since we have to give an explicit type to the 
             describe which rust doesn't accept impl Trait 
@@ -1427,7 +1663,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
 
                 let callback = cls(name);
                 let res = match callback{
-                    () => false, /* matches any value */
+                    () => false, /* matches any value this will be matched since the return type of closure is () */
                     _ => true, /* _ means any value */
                     |_| () => true, /* |_|() matches any result of calling the callback */
                     |_| () | _ => false, /* matches any result of calling the callback or _ */
@@ -1440,7 +1676,13 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
                 ()
             });
 
-            /* bounding the param type to closure trait directly without using where but by using impl Trait */
+            /* 
+                bounding the param type to closure trait directly 
+                without using where but by using impl Trait, 
+                in this case we didn't store the bolided into 
+                a new type thus we can call it directly with 
+                no problem
+            */
             fn bolided(cls: impl FnOnce(String) -> ()){
                 let name = "wildonion".to_string();
                 cls(name);
@@ -1483,6 +1725,11 @@ async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>
         ////// its location from moving (or replacing by another type) until we await on it to get the result
         ////// since once we move into other scopes its lifetime will be checked by the borrow checker
         ////// and if it has already pinned the rust can't move it and drop its lifetime
+        /// 
+        ////// since future objects are traits and traits don't have fixed size (since they're heap data types) thus we must
+        ////// put them inside the Box and pin that Box to the ram, by pinning them we can go to other scopes without losing 
+        ////// their ownership (since the're pinned to ram and can't be moved) and await on the pinned boxed future whenever
+        ////// and where ever we want 
         //////--------------------------------------------------------------
         async fn create_component_method<L>(async_block: L) where L: Fn() -> std::pin::Pin<Box<dyn futures::Future<Output=String>>>{
             let res = async_block().await;

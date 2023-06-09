@@ -104,7 +104,8 @@ async fn login(
                     let now = chrono::Local::now().naive_local();
                     let updated_user = diesel::update(users.find(user.id))
                         .set((last_login.eq(now), token_time.eq(cookie_token_time)))
-                        .execute(connection)
+                        .returning(FetchUser::as_returning())
+                        .get_result(connection)
                         .unwrap();
                     
                     let user_login_data = UserData{
@@ -122,16 +123,16 @@ async fn login(
                                 _ => "Dev".to_string(),
                             }
                         },
-                        token_time: user.token_time,
+                        token_time: updated_user.token_time,
                         last_login: { 
-                            if user.last_login.is_some(){
-                                Some(user.last_login.unwrap().to_string())
+                            if updated_user.last_login.is_some(){
+                                Some(updated_user.last_login.unwrap().to_string())
                             } else{
                                 Some("".to_string())
                             }
                         },
                         created_at: user.created_at.to_string(),
-                        updated_at: user.updated_at.to_string(),
+                        updated_at: updated_user.updated_at.to_string(),
                     };
 
                     resp!{

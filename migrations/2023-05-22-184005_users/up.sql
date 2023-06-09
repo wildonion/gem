@@ -4,19 +4,21 @@ CREATE TYPE UserRole AS ENUM ('admin', 'dev', 'user');
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
-  username VARCHAR NOT NULL,
+  username VARCHAR NOT NULL UNIQUE,
   activity_code VARCHAR NOT NULL,
-  twitter_username VARCHAR DEFAULT NULL,
-  facebook_username VARCHAR DEFAULT NULL,
-  discord_username VARCHAR DEFAULT NULL,
-  wallet_address VARCHAR DEFAULT NULL,
+  twitter_username VARCHAR DEFAULT NULL UNIQUE,
+  facebook_username VARCHAR DEFAULT NULL UNIQUE,
+  discord_username VARCHAR DEFAULT NULL UNIQUE,
+  wallet_address VARCHAR DEFAULT NULL UNIQUE,
   user_role UserRole NOT NULL DEFAULT 'user',
   pswd VARCHAR NOT NULL,
   token_time BigInt DEFAULT NULL,
   last_login TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
+SELECT diesel_manage_updated_at('users');
 
 -- insert first dev and admin ever :)
 INSERT INTO users (username, activity_code, user_role, pswd) 

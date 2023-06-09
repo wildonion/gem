@@ -3,12 +3,139 @@ use crate::*;
 
 
 
+pub static mut ARR: [u8; 3] = [0 as u8; 3]; //// filling the array with zeros 3 times
+pub static SEEDS: &[&[u8]; 2] = &["wildonion".as_bytes(), &[233]];
+
+
+
+// we can access all the following in exports module using exports::*
+pub mod exports{
+    pub struct Test;
+    pub async fn run(){}
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
 pub async fn unsafer(){
+
+    // =============================================================================================================================
+    //// in order to change the content of a type using its pointer we have to define the pointer as mutable
+    /*
+	
+        let mut my_name = "Pascal".to_string();
+        my_name.push_str( " Precht");
+        let last_name = &my_name[7..];
+        
+        
+        
+                         buffer
+                        /    capacity
+                       /    /   length
+                      /    /   /
+                    +–––+–––+–––+
+        stack frame │ • │ 8 │ 6 │ <- my_name: String
+                    +–│–+–––+–––+
+                      │
+                    [–│–––––––– capacity –––––––––––]
+                      │
+                    +–V–+–––+–––+–––+–––+–––+–––+–––+
+               heap │ P │ a │ s │ c │ a │ l │   │   │
+                    +–––+–––+–––+–––+–––+–––+–––+–––+
+
+                    [––––––– length ––––––––]
+                    
+                    
+                    
+        Notice that last_name does not store capacity information on the stack. 
+        This is because it’s just a reference to a slice of another String that manages its capacity. 
+        The string slice, or str itself, is what’s considered ”unsized”. 
+        Also, in practice string slices are always references so their type will always be &str instead of str.
+                    
+                    
+
+                    my_name: String   last_name: &str
+                    [––––––––––––]    [–––––––]
+                    +–––+––––+––––+–––+–––+–––+
+        stack frame │ • │ 16 │ 13 │   │ • │ 6 │ 
+                    +–│–+––––+––––+–––+–│–+–––+
+                      │                 │
+                      │                 +–––––––––+
+                      │                           │
+                      │                           │
+                      │                         [–│––––––– str –––––––––]
+                    +–V–+–––+–––+–––+–––+–––+–––+–V–+–––+–––+–––+–––+–––+–––+–––+–––+
+               heap │ P │ a │ s │ c │ a │ l │   │ P │ r │ e │ c │ h │ t │   │   │   │
+                    +–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+–––+
+                    
+                    
+
+        string literals are a bit special. They are string slices that refer to “preallocated text” 
+        that is stored in read-only memory as part of the executable. In other words, 
+        it’s memory that ships with our program and doesn’t rely on buffers allocated in the heap.
+        that said, there’s still an entry on the stack that points to that preallocated memory when the program is executed:
+
+        
+        let my_name = "Pascal Precht";
+        
+        
+                    my_name: &str
+                    [–––––––––––]
+                      +–––+–––+
+        stack frame   │ • │ 6 │ 
+                      +–│–+–––+
+                        │                 
+                        +––+                
+                            │
+            preallocated  +–V–+–––+–––+–––+–––+–––+
+            read-only     │ P │ a │ s │ c │ a │ l │
+            memory        +–––+–––+–––+–––+–––+–––+
+        
+        
+    `let` will store on the stack which may get new address later (we can pin it to the ram to avoid of changing its address), 
+    `static` and `const` will store on the data segment which will allocate nothing and have fixed address on the stack during execution 
+    also every type has a lifetime inside the stack including the heap data pointers and tha't why we can't return a pointer to 
+    the heap data which are owned by the function since once the function gets executed its data will be dropped from the ram
+    and the pointer that we've just returned it will be a dangling pointer.
+			    
+	*/
+	let first_name = "Pascal"; // str - &str is a reference to String some where in the heap
+    let last_name = "Precht".to_string(); // turn to String
+    let another_last_name = String::from("Precht");
+    greet(first_name); // first_name is &str by default
+    greet(&last_name); // last_name is passed by reference
+    greet(&another_last_name); // another_last_name is passed by reference
+
+    fn greet(name: &str) {
+        println!("Hello, {}!", name);
+    }
+
+        
+    let name = String::from("erfan"); // String
+    let another_name = "another erfan"; // str
+    // let combined = name + &another_name;
+    // name.push_str(&another_name); // name moved due to above operator
+    // println!("{}", combined);
+    // println!("{}", name); // error - borrowed after move
+    println!("{}", another_name);
+
+    let sample_string = String::from("wildonion");
+    let bytes = sample_string.bytes(); // turn a string into buffer (asccii)
+    println!("[..] two first bytes of the string are : {}", &sample_string[0..2]); // byte indices
+    println!("[..] the string bytes : {:?}", bytes);
+
+    let text = "hello hello from wildonion here double again again wildonion";
+    let mut map = HashMap::new();
+    for word in text.split_whitespace(){
+        let count = map.entry(word).or_insert(0); // return a mutable reference inserted or the old value
+        *count += 1; // updating the old value by dereferencing it, cause count is a mutable reference of the value 
+    }
+
+    println!("{:?}", map);
 
     // https://stackoverflow.com/questions/41823321/how-to-get-pointer-offset-of-an-enum-member-in-bytes
     // https://fasterthanli.me/articles/peeking-inside-a-rust-enum
@@ -450,6 +577,13 @@ pub async fn unsafer(){
     // to the method calls then by mutating the 
     // pointer the value of that type outside the 
     // method will be mutated too.
+
+    /*  if we pass by reference means that we're borrowing the type 
+        (not moving it) and if we pass a mutable reference means that
+        if we mutate that reference inside other scopes like methods 
+        the actual type which is the owner of the reference will be 
+        mutated too in its initialized scope.
+    */
     /////////////////////////////////////////////
 
     fn s5(mut name: &mut String){

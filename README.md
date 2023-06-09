@@ -6,7 +6,8 @@
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of the each player collected by the history of each event's `phases` field inside the game.
 - [uniXerr](https://github.com/wildonion/uniXerr) coin generation AI model which players get rewarded based on their scores and positions, collected by each event manager inside the game, then update the balance field of the user based on those attributes.
-- order matching engine to suggests players events and other games based on their past experiences, scores (MMR) and earned tokens also players can sell their minted roles based on highest or lowest order setup in conse order book.
+- match making rating (**MMR**) engine to suggests players events and other games based on their past experiences, scores and earned tokens during the game also players can sell their minted roles based on highest or lowest order setup in conse order book.
+- event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
 
 <p align="center">
     <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
@@ -37,7 +38,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * ☢️ better error handling using **match** and **Option** syntax
 
-* 🧑🏻‍💼 game managers can define score based twitter tasks for users, reveal role, collaborate with others and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
+* 🧑🏻‍💼 game managers can define score based twitter tasks for users, reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
 
 * 🍪 **cookie** and **JWT** based authentication strategy
 
@@ -57,7 +58,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers
 
-* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), new task defined by admins, task verification logs and twitter bot responses topics
+* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating), new task defined by admins, task verification logs and twitter bot responses topics
 
 * 💾 **redis** http response caching to avoid high latencies cause I believe reading from RAM is much faster than HardDisk.   
 
@@ -91,7 +92,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 - **NOTE**: all docker container the mounted volumes are inside `infra/data` folder. 
 
-- **NOTE**: if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```. 
+- **NOTE**: if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
 
 - **NOTE**: before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
 
@@ -221,7 +222,7 @@ cd scripts
 
 * conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
 
-* pubsub new task, twitter task verification response, twitter bot response, **ECQ** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `reveal-role-{event_id}` respectively.   
+* pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
 
@@ -235,7 +236,7 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, new task, twitter task verification responses, twitter bot responses and ecq (for registered events) topics  
+* redis pubsub streaming to publish reveal role, new task, twitter task verification responses, twitter bot responses. ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
 * websocket server for streaming over redis subscribed topics + setup it's nginx config file (ws://ws.panel.conse.app)
 

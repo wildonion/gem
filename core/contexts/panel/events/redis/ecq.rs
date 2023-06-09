@@ -23,12 +23,13 @@ pub struct CollaborationQueue{
 }
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Player{
     pub pub_key: String,
     pub rank: u16,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CurrentMatch{
     pub event_id: String,
     pub players: Vec<Player>,
@@ -63,7 +64,10 @@ pub struct NotifData{
 impl UserNotif{
     fn set(&mut self, notif_data: NotifData) -> Self{
         self.notifs.push(notif_data);
-        UserNotif { user_id: self.user_id.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at }
+        let user_notif = UserNotif { user_id: self.user_id.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at };
+        UserNotif{
+            ..user_notif /* filling all the fields with the user_notif ones */
+        }
     }
 }
 

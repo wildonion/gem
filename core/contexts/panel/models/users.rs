@@ -19,12 +19,12 @@ use crate::constants::*;
 #[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct User{
     pub id: i32,
-    pub username: String,
+    pub username: String, /* unique */
     pub activity_code: String,
-    pub twitter_username: Option<String>,
-    pub facebook_username: Option<String>,
-    pub discord_username: Option<String>,
-    pub wallet_address: Option<String>,
+    pub twitter_username: Option<String>, /* unique */
+    pub facebook_username: Option<String>, /* unique */
+    pub discord_username: Option<String>, /* unique */
+    pub wallet_address: Option<String>, /* unique */
     pub user_role: UserRole,
     pub pswd: String,
     pub token_time: Option<i64>,
