@@ -590,7 +590,7 @@ impl User{
         }).collect();
 
         let new_user = NewUser{
-            username: "",
+            username: &wallet, /* first insert the username is the wallet address */
             activity_code: &random_code,
             wallet_address: &wallet,
             user_role: UserRole::User,
@@ -678,8 +678,15 @@ impl User{
     pub async fn insert_new_admin(user: NewAdminInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
+        let u_name = user.username.as_str();
+        let uname = if u_name == ""{
+            chrono::Local::now().timestamp_nanos().to_string()
+        } else{
+            u_name.to_string()
+        };
+
         let user = NewUser{
-            username: user.username.as_str(),
+            username: &uname,
             activity_code: "",
             wallet_address: user.wallet.as_str(),
             user_role: UserRole::Admin,

@@ -570,6 +570,7 @@ macro_rules! verify {
 
             use crate::models::bot::Twitter;
 
+            info!("🤖 sending request to the twitter bot hosted on [{:#?}]", $endpoint);
             let response_value: serde_json::Value = reqwest::Client::new()
                 .post($endpoint)
                 .json(&$body)

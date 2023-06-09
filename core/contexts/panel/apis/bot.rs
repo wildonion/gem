@@ -60,6 +60,11 @@ pub struct BotApiDoc;
     also this API doesn't need JWT in header since it'll be called 
     by the /check-users-tasks API which will be called by the crontab   
 
+    so in general when a user logs in to the site
+        1 - user must update his/her twitter username by calling the `/verify-twitter-account/{account_name}` API
+        2 - an activity code is inside the response data of `/login` API, user must tweet this code using his/her twitter application 
+        3 - then an API will be called automatically inside the server every 24 hours that checks that are there any tasks which is done by any user but we can also call that API manually using `/verify-user/{doer_id}/twitter-task/{job_id}` route
+
 
 */
 #[utoipa::path(
