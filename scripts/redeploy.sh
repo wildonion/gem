@@ -1,47 +1,6 @@
 #!/bin/bash
 
 cd ..
-sudo rm .env && sudo mv .env.prod .env
-echo "[?] Enter OpenAI token: "
-read OPENAI_TOKEN
-echo "[?] Enter Discord token: "
-read DISCORD_TOKEN
-echo OPENAI_KEY=$OPENAI_TOKEN >> .env
-echo DISCORD_TOKEN=$DISCORD_TOKEN >> .env
-echo "[?] Enter Twitter keys: "
-echo "\t>> bearer token: "
-read TWITTER_BEARER_TOKEN
-echo TWITTER_BEARER_TOKEN=$TWITTER_BEARER_TOKEN >> .env
-
-echo "\t>> access token: "
-read TWITTER_ACCESS_TOKEN
-echo TWITTER_ACCESS_TOKEN=$TWITTER_ACCESS_TOKEN >> .env
-
-echo "\t>> access token secret: "
-read TWITTER_ACCESS_TOKEN_SECRET
-echo TWITTER_ACCESS_TOKEN_SECRET=$TWITTER_ACCESS_TOKEN_SECRET >> .env
-
-echo "\t>> consumer key: "
-read TWITTER_CONSUMER_KEY
-echo TWITTER_CONSUMER_KEY=$TWITTER_CONSUMER_KEY >> .env
-
-echo "\t>> consumer secret: "
-read TWITTER_CONSUMER_SECRET
-echo TWITTER_CONSUMER_SECRET=$TWITTER_CONSUMER_SECRET >> .env
-
-echo "\t>> client id: "
-read TWITTER_CLIENT_ID
-echo TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID >> .env
-
-echo "\t>> client secret: "
-read TWITTER_CLIENT_SECRET
-echo TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET >> .env
-
-sudo chmod 666 /var/run/docker.sock && docker system prune --all
-export SERVER_IP=$(hostname -I | awk '{print $1}')
-export PASSEORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
-sudo docker network create -d bridge gem || true
-
 
 echo "[?] Wanna Redelpy Infrastructure? "
 read REDPLOY_INFRASTRUCTURE
@@ -50,6 +9,12 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 
     echo "> Redeploying Infrastructure Only"
     echo "☕ Okay, sit back and drink your coffee :)"
+
+    docker stop mongodb && docker rm -f mongodb
+    docker stop postgres && docker rm -f postgres
+    docker stop adminer && docker rm -f adminer
+    docker stop nginx && docker rm -f nginx
+    docker stop redis && docker rm -f redis
 
     docker run -d \
     -h redis \
@@ -102,18 +67,16 @@ else
     echo "> Redeploying Rust Services Only"
     echo "☕ Okay, sit back and drink your coffee :)"
 
-    sudo docker stop conse-panel
-    sudo docker rm -f conse-panel
+    docker stop conse-panel && docker rm -f conse-panel
+    docker stop conse-catchup-bot && docker rm -f conse-catchup-bot
+    docker stop conse && docker rm -f conse
+
     sudo docker build -t conse-panel -f infra/docker/panel/Dockerfile . --no-cache
     sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
-    sudo docker stop conse-catchup-bot
-    sudo docker rm -f conse-catchup-bot
     sudo docker build -t conse-catchup-bot -f infra/docker/dis-bot/Dockerfile . --no-cache
     sudo docker run -d --link redis --network gem --name conse-catchup-bot -v infra/data/dis-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
 
-    sudo docker stop conse
-    sudo docker rm -f conse
     sudo docker build -t conse -f infra/docker/conse/Dockerfile . --no-cache
     sudo docker run -d --link mongodb --network gem --name conse -p 7439:7438 conse
 fi

@@ -93,6 +93,14 @@ impl Twitter{
             // 🥑 todo - verify user existance logic 
             // ...
 
+
+            // &mut type
+            // box, pin, unpin
+            // 'l, generic, traits (-> impl Trait, Box<dyn Trait>, var: impl Trait, where T: Trait)
+
+
+
+
             todo!()
         }
 

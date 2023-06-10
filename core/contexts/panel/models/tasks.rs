@@ -6,7 +6,7 @@
 
 use crate::*;
 use crate::models::users::User;
-use crate::misc::Response;
+use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
 use crate::schema::{tasks, users, users_tasks};
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -165,8 +165,11 @@ impl Task{
             
         }
 
+        let random_chars = gen_chars(5);
+        let random_task_name = format!("{}-{}", new_task.task_name.as_str(), random_chars);
+
         let task = NewTask{
-            task_name: new_task.task_name.as_str(),
+            task_name: random_task_name.as_str(),
             task_description: Some(new_task.task_description.as_str()),
             task_score: new_task.task_score,
             hashtag: &new_task.hashtag,

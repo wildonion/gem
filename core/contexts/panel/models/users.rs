@@ -744,7 +744,35 @@ impl User{
             user.pswd
 
         };
-        
+
+
+        let _username = if new_user.username != "".to_string(){
+            &new_user.username
+        } else{
+            let resp = Response{
+                data: Some(new_user.user_id.to_owned()),
+                message: USERNAME_CANT_BE_EMPTY,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        let _wallet = if new_user.wallet != "".to_string(){
+            &new_user.wallet
+        } else{
+            let resp = Response{
+                data: Some(new_user.user_id.to_owned()),
+                message: WALLET_CANT_BE_EMPTY,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+
         match diesel::update(users.find(new_user.user_id.to_owned()))
             .set(EditUserByAdmin{
                 user_role: {
@@ -760,8 +788,8 @@ impl User{
                     feilds from new_user instance we can convert them into &str 
                 */
                 pswd: &password,
-                username: &new_user.username,
-                wallet_address: &new_user.wallet
+                username: &_username,
+                wallet_address: &_wallet
             })
             .returning(FetchUser::as_returning())
             .get_result(connection)

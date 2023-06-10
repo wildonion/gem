@@ -208,7 +208,7 @@ cd scripts
 
 ## 🧐 WrapUps 
 
-* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body** of the `/admin/edit-user` API, also the `role` field must be **uppercase**.
+* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body** of the `/admin/edit-user` API, also the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
 
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
 
@@ -230,7 +230,7 @@ cd scripts
 
 * every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 
-* once the user is loggedin, first the `/bot/verify-twitter-task/{job_id}/{twitter_username}` API must be called with **user** token to verify the user tasks then we must compel the user to tweet the activity code which is inside the user data response, after that the `/user/verify-twitter-account/{account_name}` API must be called to update the twitter username of the user inside the db.
+* once the user is loggedin, first the `/user/verify-twitter-account/{account_name}` API must be called with **user** token to update the twitter username of the user inside the db then then we must compel the user to tweet the activity code which is inside the user data response, after that the `/bot/verify-twitter-task/{job_id}/{twitter_username}` API must be called to verify the users' tasks, this can be behind a **check** button in frontend or inside an intreval http call.
 
 ## 🚧 WIPs
 
