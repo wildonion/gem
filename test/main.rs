@@ -61,15 +61,15 @@ use log::{error, info};
 
 
 
-
+/* ltg: lifetimes + traits + generics */
 mod llu;
 mod layering;
-mod gen1;
-mod gen2;
-mod gen3;
-mod gen4;
-mod gen5;
-mod gen6;
+mod ltg1;
+mod ltg2;
+mod ltg3;
+mod ltg4;
+mod ltg5;
+mod ltg6;
 
 
 

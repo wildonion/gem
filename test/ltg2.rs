@@ -94,15 +94,38 @@ async fn test(){
             cmd();
         }
 
-        /*
-            by default rust moves heap data types when we go to new scopes unless we borrow them
-            thus for future objects which are of type traits and traits are heap data types 
+        /*  
+
+            future objects are traits and can be implemented for other types to convert those
+            types into a future objects, also they can return any type as their result of solving
+            process by default rust moves heap data types when we go to new scopes unless we borrow 
+            them thus for future objects which are of type traits and traits are heap data types 
             we must pin their Box into memory since we don't know when they will be solved and 
             where the scope will be hence, we must bound the pointer of the pinned object to the 
             Unpin trait if we want to move it or take a pointer to it 
+
+            we can get the result of impl Future<Output=String> simply by awaiting on the future 
+            object but we can't await on an immutable pointer to a future object or &impl Future<Output=String>
+            because :
+                Unpin can makes type to be moved safely after being pinned for example if we want to 
+                use mem::replace on T which has been pinned into the ram, the T must be bounded to 
+                Unpin, also mem::replace works for any !Unpin data and any &mut T not just when T: Unpin
+                in essence we can't use mem::replace on a pinned object like the pointer of future objects
+                cause we can't get &mut T from it which means we must unpin the future object first then
+                put it behind a mutable reference finally we can use mem::replace over that, remember that 
+                using mem::replace over types requires that both of them be behind a &mut pointer since 
+                this method will replace the location of both types in ram which a mutable process, 
+                based on above notes, awaiting on an immutable pointer to a future object requires some 
+                kinda replacing and moving operations which forces the object to behind a mutable pointer
+                to it's type and be bounded to Unpin trait if we need to access the pinned value outside 
+                of the current scope that we're awaiting on the object 
+
         */
-        async fn create_component(async_block: &(impl futures::Future<Output=String>)){
+        async fn create_component(async_block: &mut (impl futures::Future<Output=String> + std::marker::Unpin)){
             
+            let a = async_block;
+            a.await;
+
             trait HealCheck{
                 fn healtcheck(&self){}
             }
@@ -138,7 +161,7 @@ async fn test(){
                     }
                 }
             };
-            async_block.await;
+
         }
 
         /* ------------------------------------------ 
