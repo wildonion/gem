@@ -52,7 +52,7 @@ impl Twitter{
             endpoint: if api.is_some(){
                 api
             } else{
-                Some("".to_string()) // we're using conse twitter APIs
+                None // we're using conse twitter APIs
             },
             twitter_api,
             bearer_token,
