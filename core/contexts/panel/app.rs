@@ -1,5 +1,11 @@
 
 
+use twitter_v2::User as TwitterUser;
+use twitter_v2::id::NumericId;
+use twitter_v2::TwitterApi;
+use twitter_v2::Tweet;
+use twitter_v2::authorization::{Oauth2Token, BearerToken};
+use twitter_v2::query::{TweetField, UserField};
 use rand::Rng;
 use rand::random;
 use sha2::{Digest, Sha256};

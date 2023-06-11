@@ -29,7 +29,7 @@ use crate::schema::users_tasks;
     paths(
         reveal_role,   
         login,
-        register_new_admin,
+        register_new_user,
         register_new_task, 
         delete_task,
         edit_task,
@@ -44,7 +44,7 @@ use crate::schema::users_tasks;
             UserData,
             TaskData,
             LoginInfoRequest,
-            NewAdminInfoRequest,
+            NewUserInfoRequest,
             EditUserByAdminRequest,
             NewTaskRequest,
             EditTaskRequest
@@ -332,7 +332,7 @@ pub(super) async fn login(
 
 #[utoipa::path(
     context_path = "/admin",
-    request_body = NewAdminInfoRequest,
+    request_body = NewUserInfoRequest,
     responses(
         (status=201, description="Created Successfully", body=[u8]),
         (status=404, description="User Not Found", body=i32), // not found by id
@@ -351,10 +351,10 @@ pub(super) async fn login(
         ("jwt" = [])
     )
 )]
-#[post("/register-new-admin")]
-async fn register_new_admin(
+#[post("/register-new-user")]
+async fn register_new_user(
         req: HttpRequest,  
-        new_admin: web::Json<NewAdminInfoRequest>, 
+        new_user: web::Json<NewUserInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> //// db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -374,8 +374,8 @@ async fn register_new_admin(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* to_owned() will take the NewAdminInfoRequest instance out of the web::Json*/
-                    match User::insert_new_admin(new_admin.to_owned(), connection).await{
+                    /* to_owned() will take the NewUserInfoRequest instance out of the web::Json*/
+                    match User::insert_new_user(new_user.to_owned(), connection).await{
                         Ok(_) => {
                             resp!{
                                 &[u8], //// the data type
@@ -1270,7 +1270,7 @@ async fn get_users_tasks(
 pub mod exports{
     pub use super::reveal_role;   
     pub use super::login;
-    pub use super::register_new_admin;
+    pub use super::register_new_user;
     pub use super::register_new_task; 
     pub use super::delete_task;
     pub use super::edit_task;

@@ -113,9 +113,10 @@ pub struct JWTClaims{
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
-pub struct NewAdminInfoRequest{
+pub struct NewUserInfoRequest{
     pub username: String,
     pub wallet: String,
+    pub role: String,
     pub password: String
 }
 
@@ -192,7 +193,6 @@ impl User{
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
                         .filter(id.eq(_id))
-                        .filter(user_role.eq(role.clone()))
                         .first::<User>(connection);
 
                     if single_user.is_err(){
@@ -675,7 +675,7 @@ impl User{
     }
     
 
-    pub async fn insert_new_admin(user: NewAdminInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn insert_new_user(user: NewUserInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let u_name = user.username.as_str();
@@ -689,7 +689,11 @@ impl User{
             username: &uname,
             activity_code: "",
             wallet_address: user.wallet.as_str(),
-            user_role: UserRole::Admin,
+            user_role: match user.role.as_str(){
+                "Admin" => UserRole::Admin,
+                "Dev" => UserRole::Dev,
+                _ => UserRole::User
+            },
             pswd: hash_pswd.as_str()
         };
 

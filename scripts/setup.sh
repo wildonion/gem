@@ -46,14 +46,16 @@ read TWITTER_CONSUMER_SECRET
 echo TWITTER_CONSUMER_SECRET=$TWITTER_CONSUMER_SECRET >> .env
 
 echo "\t>> client id: "
-read TWITTER_CLIENT_ID
-echo TWITTER_CLIENT_ID=$TWITTER_CLIENT_ID >> .env
+read TWITTER_API_KEY
+echo TWITTER_API_KEY=$TWITTER_API_KEY >> .env
 
 echo "\t>> client secret: "
-read TWITTER_CLIENT_SECRET
-echo TWITTER_CLIENT_SECRET=$TWITTER_CLIENT_SECRET >> .env
+read TWITTER_API_SECRET
+echo TWITTER_API_SECRET=$TWITTER_API_SECRET >> .env
 
-sudo chmod 666 /var/run/docker.sock && docker system prune --all
-export SERVER_IP=$(hostname -I | awk '{print $1}')
-export PASSEORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+echo "\t>> twitter main account: "
+read TWITTER_MAIN_ACCOUNT
+echo TWITTER_MAIN_ACCOUNT=$TWITTER_API_SECRET >> .env
+
+
 sudo docker network create -d bridge gem || true

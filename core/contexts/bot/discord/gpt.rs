@@ -135,8 +135,7 @@ pub mod chat{
             });
             let chat_completion = ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
                                                                         .create()
-                                                                        .await
-                                                                        .unwrap();
+                                                                        .await;
             // rate limi reached probably :(
             // save openai error into a log file 
             if let Err(e) = chat_completion.clone(){

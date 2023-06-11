@@ -323,14 +323,7 @@ macro_rules! server {
                         APP STORAGE SHARED STATE
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
-                    .wrap(
-                        Cors::default()
-                            .allow_any_origin()
-                            .allowed_methods(vec!["GET", "POST"])
-                            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
-                            .allowed_header(header::CONTENT_TYPE)
-                            .max_age(3600)
-                    )
+                    .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
                     /*
@@ -355,21 +348,21 @@ macro_rules! server {
                             .configure(services::init_user)
                     )
                     /*
-                        HEALTH SERIVE
+                        INIT HEALTH SERIVE
                     */
                     .service(
                         actix_web::web::scope("/health")
                             .configure(services::init_health)
                     )
                     /*
-                        BOT SERIVE
+                        INIT BOT SERIVE
                     */
                     .service(
                         actix_web::web::scope("/bot")
                             .configure(services::init_bot)
                     )
                     /*
-                        SWAGGER UI SERIVES
+                        INIT SWAGGER UI SERIVES
                     */
                     .service(SwaggerUi::new("/swagger/{_:.*}").urls(vec![
                         (
@@ -531,8 +524,10 @@ macro_rules! passport {
 
         { //// this is required if we want to import modules and use the let statements
             
-            let host = std::env::var("HOST").expect("⚠️ no host variable set");
-            let port = std::env::var("CONSE_PORT").expect("⚠️ no port variable set");
+            use std::env;
+
+            let host = env::var("HOST").expect("⚠️ no host variable set");
+            let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
             let check_token_api = format!("{}:{}/auth/check-token", host, port);
             
             let mut response_value: serde_json::Value = reqwest::Client::new()

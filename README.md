@@ -121,6 +121,8 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
+- **NOTE**: makre sure that you've installed `openssl` and `pkg-config` on MacOS using `brew install pkg-config && brew install openssl && brew link --force openssl`.
+
 - **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which must be set to an external twitter bot server endpoint to send requests to verify users' tasks.
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
@@ -241,8 +243,6 @@ cd scripts
 * websocket server for streaming over redis subscribed topics + setup it's nginx config file (ws://ws.panel.conse.app)
 
 * redis response caching 
-
-* call twitter APIs using `twitter-v2` crate for task verification
 
 * dev APIs related to the conse hyper server 
 

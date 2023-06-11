@@ -1,6 +1,8 @@
 
 
 
+
+
 use crate::*;
 use super::{users::User, users_tasks::UserTask, tasks::TaskData};
 use crate::constants::*;
@@ -9,9 +11,10 @@ use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
 
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+
 pub struct Twitter{
     pub endpoint: Option<String>,
+    pub twitter_api: TwitterApi<BearerToken>,
     bearer_token: String,
     access_token: String, 
     access_token_secret: String,
@@ -23,12 +26,13 @@ pub struct Twitter{
 
 impl Twitter{
 
+
     /* 
         self in other methods is behind a shared reference means that its fields
         can't be moved into other scopes due to the rule of if a type is behind a 
         pointer it can't be moved because when we call unwrap() on a type it takes 
-        it's ownership, thus we can clone or borrow its fields using clone() or as_ref()
         methods or using &.   
+        it's ownership, thus we can clone or borrow its fields using clone() or as_ref()
     */
 
     pub fn new(api: Option<String>) -> Self{
@@ -41,12 +45,16 @@ impl Twitter{
         let client_id = env::var("TWITTER_CLIENT_ID").unwrap_or("".to_string());
         let client_secret = env::var("TWITTER_CLIENT_SECRET").unwrap_or("".to_string());
         
+        let auth = BearerToken::new(bearer_token.clone());
+        let twitter_api = TwitterApi::new(auth);
+
         Self{
             endpoint: if api.is_some(){
                 api
             } else{
                 Some("".to_string()) // we're using conse twitter APIs
             },
+            twitter_api,
             bearer_token,
             access_token,
             access_token_secret,
@@ -65,13 +73,12 @@ impl Twitter{
         redis_client: &RedisClient,
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+
         if self.endpoint.is_some(){
-
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-
 
             let user_existance_endpoint = format!("{}/user-existance", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
@@ -89,19 +96,70 @@ impl Twitter{
             
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user existance logic 
-            // ...
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
 
+            match self.twitter_api
+                .get_user_followers(twitter_user_data.id)
+                .send()
+                .await
+                {
+                    Ok(res) =>{
 
-            // &mut type
-            // box, pin, unpin
-            // 'l, generic, traits (-> impl Trait, Box<dyn Trait>, var: impl Trait, where T: Trait)
+                        match res.into_data(){
+                            Some(followers) => {
 
+                                if twitter_user_data.created_at.unwrap().date().day() > 7
+                                    && twitter_user_data.verified.unwrap() == true
+                                    && followers.len() > 10{
 
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_VERIFIED_USERNAME, //// response message
+                                        StatusCode::OK, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                } else{
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_USER_IS_NOT_VALID, //// response message
+                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                }
+            
+                            },
+                            None => {
 
+                                resp!{
+                                    String, //// the data type
+                                    tusername, //// response data
+                                    TWITTER_USER_FOLLOWERS_NOT_FOUND, //// response message
+                                    StatusCode::NOT_FOUND, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
 
-            todo!()
+                            }
+                        }
+                    },
+                    Err(e) => {
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &e.to_string(), //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    }
+                }
         }
 
     }
@@ -114,13 +172,12 @@ impl Twitter{
         redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+        
         if self.endpoint.is_some(){
-
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-
 
             let user_existance_endpoint = format!("{}/user-verification", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
@@ -139,11 +196,48 @@ impl Twitter{
 
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user activity code logic 
-            // ...
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            let user_activity_code = user.activity_code;
 
-            todo!()
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
+
+
+            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
+            let Ok(user_tweets) =  get_user_tweets else{
+                return get_user_tweets.unwrap_err();
+            };
+
+            let mut is_verified = false;
+
+            for tweet in user_tweets{
+                if tweet.text.contains(&user_activity_code){
+                    
+                    is_verified = true;
+                    
+                }
+            }
+
+            if is_verified{
+                resp!{
+                    String, //// the data type
+                    tusername, //// response data
+                    TWITTER_VERIFIED_CODE, //// response message
+                    StatusCode::OK, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            } else{
+                resp!{
+                    String, //// the data type
+                    tusername, //// response data
+                    TWITTER_CODE_IS_NOT_VALID, //// response message
+                    StatusCode::NOT_ACCEPTABLE, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            }
+
         }
 
 
@@ -157,13 +251,12 @@ impl Twitter{
         redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+        
         if self.endpoint.is_some(){
-            
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
@@ -184,11 +277,50 @@ impl Twitter{
 
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user tweet logic 
-            // ...
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            let tweet_content = task.tweet_content;
 
-            todo!()
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
+
+
+            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
+            let Ok(user_tweets) =  get_user_tweets else{
+                return get_user_tweets.unwrap_err();
+            };
+
+
+            let mut is_verified = false;
+            let mut link = String::from("");
+
+            for tweet in user_tweets{
+                if tweet.text.contains(&tweet_content) && tweet.text.len() == tweet_content.len(){
+                    let tweet_id = tweet.id;
+                    link = format!("https://twitter.com/{tusername:}/status/{tweet_id:}");
+                    is_verified = true;
+                    
+                }
+            }
+
+            if is_verified{
+                resp!{
+                    String, //// the data type
+                    link, //// response data
+                    TWITTER_VERIFIED_TWEET, //// response message
+                    StatusCode::OK, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            } else{
+                resp!{
+                    String, //// the data type
+                    tusername, //// response data
+                    TWITTER_NOT_VERIFIED_TWEET_CONTENT, //// response message
+                    StatusCode::NOT_ACCEPTABLE, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            }
         
         }
 
@@ -202,13 +334,13 @@ impl Twitter{
         redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+        
         if self.endpoint.is_some(){
 
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-            
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
             map.insert("username", user.twitter_username.unwrap_or("".to_string()));
@@ -228,13 +360,79 @@ impl Twitter{
 
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user like logic
-            // ...
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            let like_tweet_id = task.like_tweet_id;
+
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
+
+            match self.twitter_api
+                .get_user_liked_tweets(twitter_user_data.id)
+                .send()
+                .await
+                {
+                    Ok(res) => {
+
+                        match res.into_data(){
+                            Some(tweets) => {
+
+                                let mut is_verified = false;
+
+                                for tweet in tweets{
+                                    if tweet.id.to_string() == like_tweet_id{
+                                        
+                                        is_verified = true;
+                                        
+                                    }
+                                }
+
+                                if is_verified{
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_VERIFIED_LIKE, //// response message
+                                        StatusCode::OK, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                } else{
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_NOT_VERIFIED_LIKE, //// response message
+                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                }
+
+                            },
+                            None => {
+
+                                resp!{
+                                    String, //// the data type
+                                    tusername, //// response data
+                                    TWITTER_USER_TWEETS_NOT_FOUND, //// response message
+                                    StatusCode::NOT_FOUND, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+                            }
+                        }
+
+                    },
+                    Err(e) => {
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &e.to_string(), //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+                }
+
         }
-
-
-        todo!()
 
     }
     
@@ -247,13 +445,12 @@ impl Twitter{
         redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+        
         if self.endpoint.is_some(){
-
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
@@ -274,14 +471,95 @@ impl Twitter{
 
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user retweet logic
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            let retweet_id = task.retweet_id.parse::<u64>().unwrap();
 
-            // ...
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
+
+
+            let mut is_verified = false;
+            let twitter_main_account = env::var("TWITTER_MAIN_ACCOUNT").unwrap_or("BeGuy".to_string());
+            
+            match self.twitter_api
+                .get_tweet(NumericId::new(retweet_id))
+                .tweet_fields([TweetField::Text])
+                .send()
+                .await
+                
+                {
+                    Ok(res) => {
+
+                        match res.into_data(){
+                            Some(tweet_data) => {
+
+                                let tweet_text = tweet_data.text;
+                                let tweet_text = format!("RT @{twitter_main_account:}: {tweet_text:}");
+
+                                let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
+                                let Ok(user_tweets) =  get_user_tweets else{
+                                    return get_user_tweets.unwrap_err();
+                                };
+
+
+                                for tweet in user_tweets{
+                                    if tweet.text == tweet_text{
+                                        is_verified = true;
+                                    }
+                                }
+
+
+                                if is_verified{
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_VERIFIED_RETWEET, //// response message
+                                        StatusCode::OK, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                } else{
+                                    resp!{
+                                        String, //// the data type
+                                        tusername, //// response data
+                                        TWITTER_NOT_VERIFIED_RETWEET, //// response message
+                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+                                }
+
+                            },
+                            None => {
+
+                                resp!{
+                                    u64, //// the data type
+                                    retweet_id, //// response data
+                                    TWITTER_TWEET_NOT_FOUND, //// response message
+                                    StatusCode::NOT_FOUND, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            }
+                        }
+                    
+                    },
+                    Err(e) => {
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &e.to_string(), //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+                }
+
         }
 
-        todo!()
     }
+
 
     /* VERIFY THAT USER TWEETS HAVE A SPECIFIC HASHTAGS OR NOT */
 
@@ -291,13 +569,12 @@ impl Twitter{
         redis_client: &RedisClient, 
         doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
 
+        let res_user_find = User::find_by_id(doer_id, connection).await;
+        let Ok(user) = res_user_find else{
+            return res_user_find.unwrap_err();
+        };
+        
         if self.endpoint.is_some(){
-
-            let res_user_find = User::find_by_id(doer_id, connection).await;
-            let Ok(user) = res_user_find else{
-                return res_user_find.unwrap_err();
-            };
-
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
@@ -318,13 +595,157 @@ impl Twitter{
 
         } else{
 
-            // https://crates.io/crates/twitter-v2
-            // 🥑 todo - verify user hashtag logic
-            // ...
+            let tusername = user.twitter_username.unwrap_or("".to_string());
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+            let hastag = task.hashtag;
+
+            let Ok(twitter_user_data) = get_user_twitter_data else{
+                return get_user_twitter_data.unwrap_err()
+            };
+
+
+            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
+            let Ok(user_tweets) =  get_user_tweets else{
+                return get_user_tweets.unwrap_err();
+            };
+
+            let mut is_verified = true;
+            for tweet in user_tweets{
+
+                if tweet.text.contains(&hastag){
+                    is_verified = true;
+                }
+                
+            }
+
+            if is_verified{
+                resp!{
+                    String, //// the data type
+                    tusername, //// response data
+                    TWITTER_VERIFIED_HASHTAG, //// response message
+                    StatusCode::OK, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            } else{
+                resp!{
+                    String, //// the data type
+                    tusername, //// response data
+                    TWITTER_NOT_VERIFIED_HASHTAG, //// response message
+                    StatusCode::NOT_ACCEPTABLE, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            }
+
         }
 
 
-        todo!()
+    }
+
+    async fn get_twitter_user_info(&self, tusername: &str) -> Result<TwitterUser, Result<HttpResponse, actix_web::Error>>{
+
+        match self.twitter_api
+            .get_user_by_username(tusername.clone())
+            .user_fields([UserField::Id, UserField::Username, UserField::CreatedAt, UserField::Verified, UserField::Entities])
+            .send()
+            .await
+            {
+                Ok(res) => {
+
+                    match res.into_data(){
+                        Some(user_data) => {
+
+                            Ok(
+                                user_data
+                            )
+                            
+                        },
+                        None => {
+
+                            let resp = Response{
+                                data: Some(tusername.to_string()),
+                                message: TWITTER_USER_DATA_NOT_FOUND,
+                                status: 404
+                            };
+                            return Err(
+                                Ok(HttpResponse::NotFound().json(resp))
+                            );
+
+                        }
+                    }   
+                },
+                Err(e) => {
+
+                    /* 
+                        since the return type is [u8] which is not sized 
+                        thus we must put it behind a pointer or return 
+                        its slice form which is &[u8] which requires a
+                        valid lifetime to be passed in Response struct
+                        signature, also the type of the response data 
+                        must be specified
+                    */
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    async fn get_twitter_user_tweets(&self, twitter_user_id: NumericId, user_twitter_username: String) -> Result<Vec<Tweet>, Result<HttpResponse, actix_web::Error>>{
+
+        match self.twitter_api
+            .get_user_tweets(twitter_user_id)
+            .send()
+            .await
+            {
+                Ok(res) => {
+
+                    match res.into_data(){
+                        Some(tweets) => {
+
+                            Ok(tweets)
+
+                        },
+                        None => {
+
+                            let resp = Response{
+                                data: Some(user_twitter_username),
+                                message: TWITTER_USER_TWEETS_NOT_FOUND,
+                                status: 404
+                            };
+                            return Err(
+                                Ok(HttpResponse::NotFound().json(resp))
+                            );
+                        }
+                    }
+
+                },
+                Err(e) => {
+
+                    /* 
+                        since the return type is [u8] which is not sized 
+                        thus we must put it behind a pointer or return 
+                        its slice form which is &[u8] which requires a
+                        valid lifetime to be passed in Response struct
+                        signature, also the type of the response data 
+                        must be specified
+                    */
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
 
     }
 
@@ -337,7 +758,7 @@ impl Twitter{
                 resp!{
                     &[u8], //// the data type
                     &[], //// response data
-                    CREATED, //// response message
+                    TASK_CREATED, //// response message
                     StatusCode::CREATED, //// status code
                     None::<Cookie<'_>>, //// cookie
                 }

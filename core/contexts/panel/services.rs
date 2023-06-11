@@ -48,7 +48,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     
     config.service(apis::admin::exports::reveal_role);
     config.service(apis::admin::exports::login);
-    config.service(apis::admin::exports::register_new_admin);
+    config.service(apis::admin::exports::register_new_user);
     config.service(apis::admin::exports::register_new_task);
     config.service(apis::admin::exports::delete_task);
     config.service(apis::admin::exports::edit_task);
