@@ -49,7 +49,7 @@ pub struct FetchUserTaskReport{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserTaskData{
     pub user: UserData,
-    pub tasks: Vec<TaskData>
+    pub tasks: Vec<Task>
 }
 
 impl UserTask{
@@ -167,6 +167,7 @@ impl UserTask{
                                     task_name: t.task_name,
                                     task_description: t.task_description,
                                     task_score: t.task_score,
+                                    task_priority: t.task_priority,
                                     hashtag: t.hashtag,
                                     tweet_content: t.tweet_content,
                                     retweet_id: t.retweet_id,
@@ -199,7 +200,7 @@ impl UserTask{
 
     pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, Result<HttpResponse, actix_web::Error>>{
 
-        let all_users = match users::table
+        let all_users: Vec<User> = match users::table
             .select(User::as_select())
             .load(connection)
             {
@@ -218,12 +219,16 @@ impl UserTask{
                 }
             };
 
-        let jobs: Vec<(UserTask, Task)> = match UserTask::belonging_to(&all_users)
+   
+        /* get all users tasks belong to all users by joining on UserTask and Task tables */
+        let users_jobs: Vec<(UserTask, Task)> = match UserTask::belonging_to(&all_users)
             .inner_join(tasks::table)
             .select((UserTask::as_select(), Task::as_select()))
             .load(connection)
             {
-                Ok(fetched_user_tasks) => fetched_user_tasks,
+                Ok(fetched_user_tasks) => {
+                    fetched_user_tasks
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{
@@ -238,13 +243,13 @@ impl UserTask{
                 }
             };
     
-        /* all users including their tasks */
-        let tasks_per_user: Vec<UserTaskData> = jobs
+        /* all users including their tasks (tasks per each user) */
+        let tasks_per_user: Vec<UserTaskData> = users_jobs
             .grouped_by(&all_users)
             .into_iter()
             .zip(all_users)
             .map(|(t, user)| {
-                let mut user_task_data = UserTaskData{
+                UserTaskData{
                     user: UserData { 
                         id: user.id, 
                         username: user.username, 
@@ -271,28 +276,14 @@ impl UserTask{
                         created_at: user.created_at.to_string(),
                         updated_at: user.updated_at.to_string(),
                     },
-                    tasks: vec![]
-                };
-
-                let _ = t
-                .into_iter()
-                .map(|(_, task)| {
-                    user_task_data.tasks.push(TaskData{
-                        id: task.id,
-                        task_name: task.task_name,
-                        task_description: task.task_description,
-                        task_score: task.task_score,
-                        hashtag: task.hashtag,
-                        tweet_content: task.tweet_content,
-                        retweet_id: task.retweet_id,
-                        like_tweet_id: task.like_tweet_id,
-                        admin_id: task.admin_id,
-                        created_at: task.created_at.to_string(),
-                        updated_at: task.updated_at.to_string(),
-                    });
-                });
-                
-                user_task_data
+                    tasks: {
+                        let jobs = t
+                            .into_iter()
+                            .map(|(_, t)| t)
+                            .collect::<Vec<Task>>();
+                        jobs
+                    }
+                }
 
             })
             .collect();

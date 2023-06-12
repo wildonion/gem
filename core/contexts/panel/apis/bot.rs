@@ -112,14 +112,13 @@ async fn verify_twitter_task(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
-            
+            // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
             // let bot = Twitter::new(Some(bot_endpoint));
-            let bot = Twitter::new(None);
 
             let doer_id = path.0;
             let job_id = path.1;
-
+            
+            let bot = Twitter::new(None);
             match Task::find_by_id(job_id.to_owned(), connection).await{
                 Ok(task) => {
                     

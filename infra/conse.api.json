@@ -2193,7 +2193,7 @@
 							"response": []
 						},
 						{
-							"name": "Register New Admin",
+							"name": "Register New User",
 							"request": {
 								"auth": {
 									"type": "bearer"
@@ -2202,7 +2202,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"username\": \"\",\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"raw": "{\n    \"username\": \"\",\n    \"wallet\": \"\",\n    \"role\": \"\",\n    \"password\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2210,12 +2210,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-admin}}/register-new-admin",
+									"raw": "{{panel-admin}}/register-new-user",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
-										"register-new-admin"
+										"register-new-user"
 									]
 								}
 							},
@@ -2278,7 +2278,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"task_name\": \"twitter-\",\n    \"task_description\": \"\",\n    \"task_score\": \"\",\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"admin_id\": \"\"\n\n}",
+									"raw": "{\n    \"task_name\": \"twitter-\",\n    \"task_description\": \"\",\n    \"task_score\": \"\",\n    \"task_priority\": 0,\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"admin_id\": \"\"\n\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2328,7 +2328,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"task_id\": 1,\n    \"task_name\": \"\",\n    \"task_description\": \"\",\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"task_score\": 1 \n}",
+									"raw": "{\n    \"task_id\": 1,\n    \"task_name\": \"\",\n    \"task_description\": \"\",\n    \"task_priority\": 0,\n    \"hashtag\": \"\",\n    \"tweet_content\": \"\",\n    \"retweet_id\": \"\",\n    \"like_tweet_id\": \"\",\n    \"task_score\": 1 \n}",
 									"options": {
 										"raw": {
 											"language": "json"

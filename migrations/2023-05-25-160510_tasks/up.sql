@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   task_name VARCHAR NOT NULL,
   task_description VARCHAR DEFAULT NULL,
   task_score INTEGER DEFAULT 1 NOT NULL,
+  task_priority INTEGER DEFAULT 1 NOT NULL,
   hashtag VARCHAR DEFAULT '' NOT NULL,
   tweet_content VARCHAR DEFAULT '' NOT NULL,
   retweet_id VARCHAR DEFAULT '' NOT NULL,

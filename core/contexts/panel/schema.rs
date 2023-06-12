@@ -12,6 +12,7 @@ diesel::table! {
         task_name -> Varchar,
         task_description -> Nullable<Varchar>,
         task_score -> Int4,
+        task_priority -> Int4,
         hashtag -> Varchar,
         tweet_content -> Varchar,
         retweet_id -> Varchar,

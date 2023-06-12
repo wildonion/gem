@@ -7,7 +7,7 @@ use crate::constants::CHARSET;
 pub fn gen_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
-        char::from_u32(rng.gen_range(65..91)).unwrap() // generating a char from the random output of type u32 using from_u32() method
+        char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
     }).collect()
 }
 
@@ -655,10 +655,10 @@ macro_rules! verify {
                                 let resp = Response::<&[u8]>{
                                     data: Some(&[]),
                                     message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                    status: 200
+                                    status: 302
                                 };
                                 return Ok(
-                                    HttpResponse::Ok().json(resp)
+                                    HttpResponse::Found().json(resp)
                                 );
         
                             }

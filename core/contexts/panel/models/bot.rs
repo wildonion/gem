@@ -97,8 +97,8 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -113,18 +113,44 @@ impl Twitter{
                         match res.into_data(){
                             Some(followers) => {
 
-                                if twitter_user_data.created_at.unwrap().date().day() > 7
-                                    && twitter_user_data.verified.unwrap() == true
+                                let account_creation_day = twitter_user_data.created_at.unwrap().day();
+                                let now_day = OffsetDateTime::now_utc().day();
+
+                                if now_day - account_creation_day > 7
                                     && followers.len() > 10{
 
-                                    resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_VERIFIED_USERNAME, //// response message
-                                        StatusCode::OK, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                    match UserTask::find(doer_id, task.id, connection).await{
+                                        false => {
+            
+                                            /* try to insert into users_tasks since it's done */
+                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            
+                                            resp!{
+                                                String, //// the data type
+                                                tusername, //// response data
+                                                TWITTER_VERIFIED_USERNAME, //// response message
+                                                StatusCode::OK, //// status code
+                                                None::<Cookie<'_>>, //// cookie
+                                            }
+                                        
+                                        },
+                                        _ => {
+                    
+                                            /* user task has already been inserted  */
+                                            let resp = Response::<&[u8]>{
+                                                data: Some(&[]),
+                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                status: 302
+                                            };
+                                            return Ok(
+                                                HttpResponse::Found().json(resp)
+                                            );
+                    
+                                        }
                                     }
+
                                 } else{
+            
                                     resp!{
                                         String, //// the data type
                                         tusername, //// response data
@@ -197,9 +223,9 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let user_activity_code = user.activity_code;
-
+            
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -221,13 +247,38 @@ impl Twitter{
             }
 
             if is_verified{
-                resp!{
-                    String, //// the data type
-                    tusername, //// response data
-                    TWITTER_VERIFIED_CODE, //// response message
-                    StatusCode::OK, //// status code
-                    None::<Cookie<'_>>, //// cookie
+
+                match UserTask::find(doer_id, task.id, connection).await{
+                    false => {
+
+                        /* try to insert into users_tasks since it's done */
+                        let res = Twitter::do_task(doer_id, task.id, connection).await;
+                        
+                        resp!{
+                            String, //// the data type
+                            tusername, //// response data
+                            TWITTER_VERIFIED_CODE, //// response message
+                            StatusCode::OK, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    
+                    },
+                    _ => {
+
+                        /* user task has already been inserted  */
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                            status: 302
+                        };
+                        return Ok(
+                            HttpResponse::Found().json(resp)
+                        );
+
+                    }
                 }
+
+                
             } else{
                 resp!{
                     String, //// the data type
@@ -278,9 +329,9 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let tweet_content = task.tweet_content;
-
+            
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -305,13 +356,38 @@ impl Twitter{
             }
 
             if is_verified{
-                resp!{
-                    String, //// the data type
-                    link, //// response data
-                    TWITTER_VERIFIED_TWEET, //// response message
-                    StatusCode::OK, //// status code
-                    None::<Cookie<'_>>, //// cookie
+
+                match UserTask::find(doer_id, task.id, connection).await{
+                    false => {
+
+                        /* try to insert into users_tasks since it's done */
+                        let res = Twitter::do_task(doer_id, task.id, connection).await;
+                        
+                        resp!{
+                            String, //// the data type
+                            link, //// response data
+                            TWITTER_VERIFIED_TWEET, //// response message
+                            StatusCode::OK, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    
+                    },
+                    _ => {
+
+                        /* user task has already been inserted  */
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                            status: 302
+                        };
+                        return Ok(
+                            HttpResponse::Found().json(resp)
+                        );
+
+                    }
                 }
+
+                
             } else{
                 resp!{
                     String, //// the data type
@@ -361,9 +437,9 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let like_tweet_id = task.like_tweet_id;
-
+            
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -389,13 +465,38 @@ impl Twitter{
                                 }
 
                                 if is_verified{
-                                    resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_VERIFIED_LIKE, //// response message
-                                        StatusCode::OK, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+
+                                    match UserTask::find(doer_id, task.id, connection).await{
+                                        false => {
+                    
+                                            /* try to insert into users_tasks since it's done */
+                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            
+                                            resp!{
+                                                String, //// the data type
+                                                tusername, //// response data
+                                                TWITTER_VERIFIED_LIKE, //// response message
+                                                StatusCode::OK, //// status code
+                                                None::<Cookie<'_>>, //// cookie
+                                            }
+                                        
+                                        },
+                                        _ => {
+                    
+                                            /* user task has already been inserted  */
+                                            let resp = Response::<&[u8]>{
+                                                data: Some(&[]),
+                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                status: 302
+                                            };
+                                            return Ok(
+                                                HttpResponse::Found().json(resp)
+                                            );
+                    
+                                        }
                                     }
+
+                                    
                                 } else{
                                     resp!{
                                         String, //// the data type
@@ -472,9 +573,9 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let retweet_id = task.retweet_id.parse::<u64>().unwrap();
-
+            
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -512,13 +613,38 @@ impl Twitter{
 
 
                                 if is_verified{
-                                    resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_VERIFIED_RETWEET, //// response message
-                                        StatusCode::OK, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+
+                                    match UserTask::find(doer_id, task.id, connection).await{
+                                        false => {
+                    
+                                            /* try to insert into users_tasks since it's done */
+                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            
+                                            resp!{
+                                                String, //// the data type
+                                                tusername, //// response data
+                                                TWITTER_VERIFIED_RETWEET, //// response message
+                                                StatusCode::OK, //// status code
+                                                None::<Cookie<'_>>, //// cookie
+                                            }
+                                        
+                                        },
+                                        _ => {
+                    
+                                            /* user task has already been inserted  */
+                                            let resp = Response::<&[u8]>{
+                                                data: Some(&[]),
+                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                status: 302
+                                            };
+                                            return Ok(
+                                                HttpResponse::Found().json(resp)
+                                            );
+                    
+                                        }
                                     }
+
+                                    
                                 } else{
                                     resp!{
                                         String, //// the data type
@@ -596,9 +722,9 @@ impl Twitter{
         } else{
 
             let tusername = user.twitter_username.unwrap_or("".to_string());
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let hastag = task.hashtag;
-
+            
+            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
             let Ok(twitter_user_data) = get_user_twitter_data else{
                 return get_user_twitter_data.unwrap_err()
             };
@@ -619,13 +745,38 @@ impl Twitter{
             }
 
             if is_verified{
-                resp!{
-                    String, //// the data type
-                    tusername, //// response data
-                    TWITTER_VERIFIED_HASHTAG, //// response message
-                    StatusCode::OK, //// status code
-                    None::<Cookie<'_>>, //// cookie
+
+                match UserTask::find(doer_id, task.id, connection).await{
+                    false => {
+
+                        /* try to insert into users_tasks since it's done */
+                        let res = Twitter::do_task(doer_id, task.id, connection).await;
+                        
+                        resp!{
+                            String, //// the data type
+                            tusername, //// response data
+                            TWITTER_VERIFIED_HASHTAG, //// response message
+                            StatusCode::OK, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    
+                    },
+                    _ => {
+
+                        /* user task has already been inserted  */
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                            status: 302
+                        };
+                        return Ok(
+                            HttpResponse::Found().json(resp)
+                        );
+
+                    }
                 }
+
+                
             } else{
                 resp!{
                     String, //// the data type

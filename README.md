@@ -90,6 +90,17 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Before developing, read the following notes: 
 
+- **NOTE**: makre sure that you've installed the following packages on MacOS M1:
+```bash
+brew install pkg-config
+brew install openssl
+brew install diesel
+brew link --force openssl
+brew install libpq && brew link --force libpq
+brew install graphviz
+cargo clean
+```
+
 - **NOTE**: all docker container the mounted volumes are inside `infra/data` folder. 
 
 - **NOTE**: if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
@@ -121,13 +132,11 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: makre sure that you've installed `openssl` and `pkg-config` on MacOS using `brew install pkg-config && brew install openssl && brew link --force openssl`.
-
 - **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which must be set to an external twitter bot server endpoint to send requests to verify users' tasks.
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
-- **NOTE**: in order to use twitter APIs you must have a paid developer account.
+- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a Project
 
 - **NOTE**: to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 

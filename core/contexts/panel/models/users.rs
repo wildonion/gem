@@ -679,6 +679,7 @@ impl User{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let u_name = user.username.as_str();
+        let wallet = user.wallet.as_str();
         let uname = if u_name == ""{
             chrono::Local::now().timestamp_nanos().to_string()
         } else{
@@ -688,7 +689,13 @@ impl User{
         let user = NewUser{
             username: &uname,
             activity_code: "",
-            wallet_address: user.wallet.as_str(),
+            wallet_address: {
+                if wallet == ""{
+                    &uname
+                } else{
+                    wallet
+                }
+            },
             user_role: match user.role.as_str(){
                 "Admin" => UserRole::Admin,
                 "Dev" => UserRole::Dev,
