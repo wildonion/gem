@@ -196,6 +196,17 @@ async fn verify_twitter_task(
     }
 }
 
+/*
+
+    following API will be called by a crontab to check all user taks 
+    every 24 hours to find out that they've done the task already or 
+    not, since they might have deleted the task from their twitter and
+    which in that case the user task will be deleted from the table, 
+    this API will call the `/verify-user/{doer_id}/twitter-task/{job_id}`
+    API against each user task data fetched from the users_tasks table.
+    
+*/
+
 #[get("/check-users-tasks")]
 async fn check_users_tassk(
         req: HttpRequest,

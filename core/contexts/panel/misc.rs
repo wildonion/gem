@@ -557,7 +557,10 @@ macro_rules! verify {
       $task_id:expr,
       $doer_id:expr,
       $connection:expr,
-      $redis_client:expr
+      $redis_client:expr,
+      $task_type:expr,
+      $tusername:expr,
+      $tweet_link:expr
     ) 
     => {
 
@@ -646,7 +649,7 @@ macro_rules! verify {
                             false => {
 
                                 /* try to insert into users_tasks since it's done */
-                                let res = Twitter::do_task($doer_id, $task_id, $connection).await;
+                                let res = Twitter::do_task($doer_id, $task_id, $task_type, $tusername, $tweet_link, $connection).await;
                                 return res;
                             },
                             _ => {

@@ -90,8 +90,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 > Before developing, read the following notes: 
 
-- **NOTE**: makre sure that you've installed the following packages on MacOS M1:
+- **NOTE**: makre sure that you've installed the following packages on **MacOS M1**:
 ```bash
+brew install openjdk
 brew install pkg-config
 brew install openssl
 brew install diesel

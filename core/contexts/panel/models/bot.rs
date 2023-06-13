@@ -3,6 +3,7 @@
 
 
 
+
 use crate::*;
 use super::{users::User, users_tasks::UserTask, tasks::TaskData};
 use crate::constants::*;
@@ -82,7 +83,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/user-existance", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             
             verify!{
                 user_existance_endpoint.as_str(), 
@@ -90,7 +91,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "username", /* task type */
+                None
             }
                 
             
@@ -123,15 +127,9 @@ impl Twitter{
                                         false => {
             
                                             /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
                                             
-                                            resp!{
-                                                String, //// the data type
-                                                tusername, //// response data
-                                                TWITTER_VERIFIED_USERNAME, //// response message
-                                                StatusCode::OK, //// status code
-                                                None::<Cookie<'_>>, //// cookie
-                                            }
+                                            res
                                         
                                         },
                                         _ => {
@@ -207,7 +205,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/user-verification", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             map.insert("code", user.activity_code); /* activity code used to check that the user is activated or not */
             
             verify!{
@@ -216,7 +214,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "code", /* task type */
+                None
             }
 
 
@@ -252,15 +253,9 @@ impl Twitter{
                     false => {
 
                         /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, connection).await;
-                        
-                        resp!{
-                            String, //// the data type
-                            tusername, //// response data
-                            TWITTER_VERIFIED_CODE, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
+                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                            
+                        res
                     
                     },
                     _ => {
@@ -311,7 +306,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", "".to_string()); /* for like and retweet  */
             map.insert("type", "tweet".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -323,7 +318,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "tweet", /* task type */
+                None
             }
 
         } else{
@@ -361,15 +359,9 @@ impl Twitter{
                     false => {
 
                         /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, connection).await;
-                        
-                        resp!{
-                            String, //// the data type
-                            link, //// response data
-                            TWITTER_VERIFIED_TWEET, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
+                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), Some(link.as_str()), connection).await;
+                                            
+                        res
                     
                     },
                     _ => {
@@ -419,7 +411,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", task.like_tweet_id); /* for like and retweet  */
             map.insert("type", "like".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -431,7 +423,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "like", /* task type */
+                None
             }
 
         } else{
@@ -470,15 +465,9 @@ impl Twitter{
                                         false => {
                     
                                             /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
                                             
-                                            resp!{
-                                                String, //// the data type
-                                                tusername, //// response data
-                                                TWITTER_VERIFIED_LIKE, //// response message
-                                                StatusCode::OK, //// status code
-                                                None::<Cookie<'_>>, //// cookie
-                                            }
+                                            res
                                         
                                         },
                                         _ => {
@@ -555,7 +544,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", task.retweet_id); /* for like and retweet  */
             map.insert("type", "retweet".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -567,7 +556,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "retweet", /* task type */
+                None
             }
 
         } else{
@@ -618,15 +610,9 @@ impl Twitter{
                                         false => {
                     
                                             /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, connection).await;
+                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
                                             
-                                            resp!{
-                                                String, //// the data type
-                                                tusername, //// response data
-                                                TWITTER_VERIFIED_RETWEET, //// response message
-                                                StatusCode::OK, //// status code
-                                                None::<Cookie<'_>>, //// cookie
-                                            }
+                                            res
                                         
                                         },
                                         _ => {
@@ -704,7 +690,7 @@ impl Twitter{
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
             let mut map = HashMap::new();
-            map.insert("username", user.twitter_username.unwrap_or("".to_string()));
+            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
             map.insert("tweet_id", "".to_string()); /* for like and retweet  */
             map.insert("type", "hashtag".to_string()); /* type of verification  */
             map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
@@ -716,7 +702,10 @@ impl Twitter{
                 task.id,
                 doer_id,
                 connection,
-                redis_client
+                redis_client,
+                &user.twitter_username.unwrap_or("".to_string()),
+                "hashtag", /* task type */
+                None
             }
 
         } else{
@@ -750,15 +739,9 @@ impl Twitter{
                     false => {
 
                         /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, connection).await;
-                        
-                        resp!{
-                            String, //// the data type
-                            tusername, //// response data
-                            TWITTER_VERIFIED_HASHTAG, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
+                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                            
+                        res
                     
                     },
                     _ => {
@@ -901,18 +884,89 @@ impl Twitter{
     }
 
     pub async fn do_task(
-        doer_id: i32, job_id: i32, 
+        doer_id: i32, job_id: i32, task_type: &str, tusername: &str, tweet_link: Option<&str>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<HttpResponse, actix_web::Error>{
         
         match UserTask::insert(doer_id, job_id, connection).await{
             Ok(_) => {
-                resp!{
-                    &[u8], //// the data type
-                    &[], //// response data
-                    TASK_CREATED, //// response message
-                    StatusCode::CREATED, //// status code
-                    None::<Cookie<'_>>, //// cookie
+
+                match task_type{
+                    "username" => {
+                        
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_USERNAME);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    },
+                    "code" => {
+
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_CODE);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    },
+                    "hashtag" => {
+                        
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_HASHTAG);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    },
+                    "like" => {
+
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_LIKE);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    },
+                    "tweet" => {
+
+                        let link = tweet_link.unwrap_or("-"); /* the or part means that we're using the third party bot */
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:} With The Link: {link:}", TWITTER_VERIFIED_LIKE);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    },
+                    _ => { // retweet
+
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_RETWEET);
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &resp_content, //// response message
+                            StatusCode::CREATED, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    }
                 }
+
+                
             },
             Err(resp) => {
 
