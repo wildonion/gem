@@ -133,7 +133,7 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which must be set to an external twitter bot server endpoint to send requests to verify users' tasks.
+- **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
@@ -236,9 +236,9 @@ cd scripts
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}` respectively.   
 
-* twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as tweet, like, hashtag and retweet that must be done to reward users by scores of each task.
+* twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `username` which is a task that must be done to verify his/her twitter username, `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
-* admins can define multiple twitter task in the same activity like task 1 be like `twitter-username` and task 2 be like `twitter-username-1`.   
+* admins can define multiple twitter tasks in the same activity, all tasks will be separated by a random chars like `*-<RANDOM_CHARS>` so the final task name will be `twitter-username-iYTC^`.
 
 * every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 

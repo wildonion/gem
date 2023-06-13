@@ -234,7 +234,8 @@ impl User{
                         a logout or did a login again since by logging out 
                         the token time will be set to zero.
                     */
-                    if user.token_time.unwrap() != _token_time{
+                    if user.token_time.is_none() && /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
+                        user.token_time.unwrap() != _token_time{
                         
                         let resp = Response{
                             data: Some(_id.to_owned()),

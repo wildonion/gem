@@ -223,9 +223,10 @@ pub(super) async fn login(
 
                     match user.user_role{
                         UserRole::Admin => {
-        
-                            let Ok(pswd_flag) = user.verify_pswd(password.as_str()) else{
-                                let err_msg = user.verify_pswd(password.as_str()).unwrap_err();
+                            
+                            let pswd_verification = user.verify_pswd(password.as_str()); 
+                            let Ok(pswd_flag) = pswd_verification else{
+                                let err_msg = pswd_verification.unwrap_err();
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
