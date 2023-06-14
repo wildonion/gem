@@ -15,14 +15,8 @@ use crate::schema::users_tasks::dsl::*;
 
 pub struct Twitter{
     pub endpoint: Option<String>,
-    pub twitter_api: TwitterApi<BearerToken>,
-    bearer_token: String,
-    access_token: String, 
-    access_token_secret: String,
-    consumer_key: String,
-    consumer_secret: String,
-    client_id: String,
-    client_secret: String
+    pub keys: Vec<Keys>,
+    pub apis: Vec<TwitterApi<BearerToken>>
 }
 
 impl Twitter{
@@ -37,17 +31,21 @@ impl Twitter{
     */
 
     pub fn new(api: Option<String>) -> Self{
+
+        let file = std::fs::File::open("twitter-accounts.json").unwrap(); //// the file must be inside where we run the `cargo run` command or the root dir
+        let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
+        let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
+        let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
+        let twitter_accounts = twitter.accounts;
         
-        let bearer_token = env::var("TWITTER_BEARER_TOKEN").unwrap_or("".to_string());
-        let access_token = env::var("TWITTER_ACCESS_TOKEN").unwrap_or("".to_string());
-        let access_token_secret = env::var("TWITTER_ACCESS_TOKEN_SECRET").unwrap_or("".to_string());
-        let consumer_key = env::var("TWITTER_CONSUMER_KEY").unwrap_or("".to_string());
-        let consumer_secret = env::var("TWITTER_CONSUMER_SECRET").unwrap_or("".to_string());
-        let client_id = env::var("TWITTER_CLIENT_ID").unwrap_or("".to_string());
-        let client_secret = env::var("TWITTER_CLIENT_SECRET").unwrap_or("".to_string());
-        
-        let auth = BearerToken::new(bearer_token.clone());
-        let twitter_api = TwitterApi::new(auth);
+        let mut apis = vec![];
+        for account in twitter_accounts.clone(){
+            
+            let auth = BearerToken::new(account.twitter_bearer_token.clone());
+            let twitter_api = TwitterApi::new(auth);
+            apis.push(twitter_api);
+
+        }
 
         Self{
             endpoint: if api.is_some(){
@@ -55,14 +53,8 @@ impl Twitter{
             } else{
                 None // we're using conse twitter APIs
             },
-            twitter_api,
-            bearer_token,
-            access_token,
-            access_token_secret,
-            consumer_key,
-            consumer_secret,
-            client_id,
-            client_secret,
+            apis,
+            keys: twitter_accounts
         }
     }
 
@@ -107,83 +99,103 @@ impl Twitter{
                 return get_user_twitter_data.unwrap_err()
             };
 
-            match self.twitter_api
-                .get_user_followers(twitter_user_data.id)
-                .send()
-                .await
-                {
-                    Ok(res) =>{
 
-                        match res.into_data(){
-                            Some(followers) => {
-
-                                let account_creation_day = twitter_user_data.created_at.unwrap().day();
-                                let now_day = OffsetDateTime::now_utc().day();
-
-                                if now_day - account_creation_day > 7
-                                    && followers.len() > 10{
-
-                                    match UserTask::find(doer_id, task.id, connection).await{
-                                        false => {
-            
-                                            /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+            for api in self.apis.clone(){
+                match api
+                    .get_user_followers(twitter_user_data.id)
+                    .send()
+                    .await
+                    {
+                        Ok(res) =>{
+    
+                            match res.into_data(){
+                                Some(followers) => {
+    
+                                    let account_creation_day = twitter_user_data.created_at.unwrap().day();
+                                    let now_day = OffsetDateTime::now_utc().day();
+    
+                                    if now_day - account_creation_day > 7
+                                        && followers.len() > 10{
+    
+                                        match UserTask::find(doer_id, task.id, connection).await{
+                                            false => {
+                
+                                                /* try to insert into users_tasks since it's done */
+                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                                
+                                                return res;
                                             
-                                            res
-                                        
-                                        },
-                                        _ => {
-                    
-                                            /* user task has already been inserted  */
-                                            let resp = Response::<&[u8]>{
-                                                data: Some(&[]),
-                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                status: 302
-                                            };
-                                            return Ok(
-                                                HttpResponse::Found().json(resp)
-                                            );
-                    
+                                            },
+                                            _ => {
+                        
+                                                /* user task has already been inserted  */
+                                                let resp = Response::<&[u8]>{
+                                                    data: Some(&[]),
+                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                    status: 302
+                                                };
+                                                return Ok(
+                                                    HttpResponse::Found().json(resp)
+                                                );
+                        
+                                            }
+                                        }
+    
+                                    } else{
+                
+                                        resp!{
+                                            String, //// the data type
+                                            tusername, //// response data
+                                            TWITTER_USER_IS_NOT_VALID, //// response message
+                                            StatusCode::NOT_ACCEPTABLE, //// status code
+                                            None::<Cookie<'_>>, //// cookie
                                         }
                                     }
-
-                                } else{
-            
+                
+                                },
+                                None => {
+    
                                     resp!{
                                         String, //// the data type
                                         tusername, //// response data
-                                        TWITTER_USER_IS_NOT_VALID, //// response message
-                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        TWITTER_USER_FOLLOWERS_NOT_FOUND, //// response message
+                                        StatusCode::NOT_FOUND, //// status code
                                         None::<Cookie<'_>>, //// cookie
                                     }
+    
                                 }
-            
-                            },
-                            None => {
-
+                            }
+                        },
+                        Err(e) => {
+    
+                            if e.to_string().contains("[403 Forbidden]"){
+                                continue;
+                            } else{
+                                
                                 resp!{
-                                    String, //// the data type
-                                    tusername, //// response data
-                                    TWITTER_USER_FOLLOWERS_NOT_FOUND, //// response message
-                                    StatusCode::NOT_FOUND, //// status code
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    &e.to_string(), //// response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
 
                             }
+    
                         }
-                    },
-                    Err(e) => {
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &e.to_string(), //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
                     }
-                }
+
+            }
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
+
+
         }
 
     }
@@ -439,88 +451,105 @@ impl Twitter{
                 return get_user_twitter_data.unwrap_err()
             };
 
-            match self.twitter_api
-                .get_user_liked_tweets(twitter_user_data.id)
-                .send()
-                .await
-                {
-                    Ok(res) => {
-
-                        match res.into_data(){
-                            Some(tweets) => {
-
-                                let mut is_verified = false;
-
-                                for tweet in tweets{
-                                    if tweet.id.to_string() == like_tweet_id{
-                                        
-                                        is_verified = true;
-                                        
-                                    }
-                                }
-
-                                if is_verified{
-
-                                    match UserTask::find(doer_id, task.id, connection).await{
-                                        false => {
-                    
-                                            /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+            for api in self.apis.clone(){
+                match api
+                    .get_user_liked_tweets(twitter_user_data.id)
+                    .send()
+                    .await
+                    {
+                        Ok(res) => {
+    
+                            match res.into_data(){
+                                Some(tweets) => {
+    
+                                    let mut is_verified = false;
+    
+                                    for tweet in tweets{
+                                        if tweet.id.to_string() == like_tweet_id{
                                             
-                                            res
-                                        
-                                        },
-                                        _ => {
-                    
-                                            /* user task has already been inserted  */
-                                            let resp = Response::<&[u8]>{
-                                                data: Some(&[]),
-                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                status: 302
-                                            };
-                                            return Ok(
-                                                HttpResponse::Found().json(resp)
-                                            );
-                    
+                                            is_verified = true;
+                                            
                                         }
                                     }
-
-                                    
-                                } else{
+    
+                                    if is_verified{
+    
+                                        match UserTask::find(doer_id, task.id, connection).await{
+                                            false => {
+                        
+                                                /* try to insert into users_tasks since it's done */
+                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                                
+                                                return res;
+                                            
+                                            },
+                                            _ => {
+                        
+                                                /* user task has already been inserted  */
+                                                let resp = Response::<&[u8]>{
+                                                    data: Some(&[]),
+                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                    status: 302
+                                                };
+                                                return Ok(
+                                                    HttpResponse::Found().json(resp)
+                                                );
+                        
+                                            }
+                                        }
+    
+                                        
+                                    } else{
+                                        resp!{
+                                            String, //// the data type
+                                            tusername, //// response data
+                                            TWITTER_NOT_VERIFIED_LIKE, //// response message
+                                            StatusCode::NOT_ACCEPTABLE, //// status code
+                                            None::<Cookie<'_>>, //// cookie
+                                        }
+                                    }
+    
+                                },
+                                None => {
+    
                                     resp!{
                                         String, //// the data type
                                         tusername, //// response data
-                                        TWITTER_NOT_VERIFIED_LIKE, //// response message
-                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        TWITTER_USER_TWEETS_NOT_FOUND, //// response message
+                                        StatusCode::NOT_FOUND, //// status code
                                         None::<Cookie<'_>>, //// cookie
                                     }
                                 }
-
-                            },
-                            None => {
-
+                            }
+    
+                        },
+                        Err(e) => {
+    
+                            if e.to_string().contains("[403 Forbidden]"){
+                                continue;
+                            } else{
+                                
                                 resp!{
-                                    String, //// the data type
-                                    tusername, //// response data
-                                    TWITTER_USER_TWEETS_NOT_FOUND, //// response message
-                                    StatusCode::NOT_FOUND, //// status code
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    &e.to_string(), //// response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
+
                             }
                         }
-
-                    },
-                    Err(e) => {
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &e.to_string(), //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
                     }
-                }
+
+            }
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
 
         }
 
@@ -576,100 +605,116 @@ impl Twitter{
             let mut is_verified = false;
             let twitter_main_account = env::var("TWITTER_MAIN_ACCOUNT").unwrap_or("BeGuy".to_string());
             
-            match self.twitter_api
-                .get_tweet(NumericId::new(retweet_id))
-                .tweet_fields([TweetField::Text])
-                .send()
-                .await
-                
-                {
-                    Ok(res) => {
-
-                        match res.into_data(){
-                            Some(tweet_data) => {
-
-                                let tweet_text = tweet_data.text;
-                                let tweet_text = format!("RT @{twitter_main_account:}: {tweet_text:}");
-
-                                let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
-                                let Ok(user_tweets) =  get_user_tweets else{
-                                    return get_user_tweets.unwrap_err();
-                                };
-
-
-                                for tweet in user_tweets{
-                                    if tweet.text == tweet_text{
-                                        is_verified = true;
-                                    }
-                                }
-
-
-                                if is_verified{
-
-                                    match UserTask::find(doer_id, task.id, connection).await{
-                                        false => {
+            for api in self.apis.clone(){
+                match api
+                    .get_tweet(NumericId::new(retweet_id))
+                    .tweet_fields([TweetField::Text])
+                    .send()
+                    .await
                     
-                                            /* try to insert into users_tasks since it's done */
-                                            let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-                                            
-                                            res
-                                        
-                                        },
-                                        _ => {
-                    
-                                            /* user task has already been inserted  */
-                                            let resp = Response::<&[u8]>{
-                                                data: Some(&[]),
-                                                message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                status: 302
-                                            };
-                                            return Ok(
-                                                HttpResponse::Found().json(resp)
-                                            );
-                    
+                    {
+                        Ok(res) => {
+
+                            match res.into_data(){
+                                Some(tweet_data) => {
+
+                                    let tweet_text = tweet_data.text;
+                                    let tweet_text = format!("RT @{twitter_main_account:}: {tweet_text:}");
+
+                                    let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
+                                    let Ok(user_tweets) =  get_user_tweets else{
+                                        return get_user_tweets.unwrap_err();
+                                    };
+
+
+                                    for tweet in user_tweets{
+                                        if tweet.text == tweet_text{
+                                            is_verified = true;
                                         }
                                     }
 
-                                    
-                                } else{
+
+                                    if is_verified{
+
+                                        match UserTask::find(doer_id, task.id, connection).await{
+                                            false => {
+                        
+                                                /* try to insert into users_tasks since it's done */
+                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                                
+                                                return res;
+                                            
+                                            },
+                                            _ => {
+                        
+                                                /* user task has already been inserted  */
+                                                let resp = Response::<&[u8]>{
+                                                    data: Some(&[]),
+                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                                                    status: 302
+                                                };
+                                                return Ok(
+                                                    HttpResponse::Found().json(resp)
+                                                );
+                        
+                                            }
+                                        }
+
+                                        
+                                    } else{
+                                        resp!{
+                                            String, //// the data type
+                                            tusername, //// response data
+                                            TWITTER_NOT_VERIFIED_RETWEET, //// response message
+                                            StatusCode::NOT_ACCEPTABLE, //// status code
+                                            None::<Cookie<'_>>, //// cookie
+                                        }
+                                    }
+
+                                },
+                                None => {
+
                                     resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_NOT_VERIFIED_RETWEET, //// response message
-                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        u64, //// the data type
+                                        retweet_id, //// response data
+                                        TWITTER_TWEET_NOT_FOUND, //// response message
+                                        StatusCode::NOT_FOUND, //// status code
                                         None::<Cookie<'_>>, //// cookie
                                     }
+
                                 }
+                            }
+                        
+                        },
+                        Err(e) => {
 
-                            },
-                            None => {
-
+                            if e.to_string().contains("[403 Forbidden]"){
+                                continue;
+                            } else{
+                                
                                 resp!{
-                                    u64, //// the data type
-                                    retweet_id, //// response data
-                                    TWITTER_TWEET_NOT_FOUND, //// response message
-                                    StatusCode::NOT_FOUND, //// status code
+                                    &[u8], //// the data type
+                                    &[], //// response data
+                                    &e.to_string(), //// response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
 
                             }
                         }
-                    
-                    },
-                    Err(e) => {
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &e.to_string(), //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
                     }
-                }
+
+            }
+        
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
 
         }
-
     }
 
 
@@ -777,109 +822,150 @@ impl Twitter{
 
     async fn get_twitter_user_info(&self, tusername: &str) -> Result<TwitterUser, Result<HttpResponse, actix_web::Error>>{
 
-        match self.twitter_api
-            .get_user_by_username(tusername.clone())
-            .user_fields([UserField::Id, UserField::Username, UserField::CreatedAt, UserField::Verified, UserField::Entities])
-            .send()
-            .await
-            {
-                Ok(res) => {
+        for api in self.apis.clone(){
+            match api
+                .get_user_by_username(tusername.clone())
+                .user_fields([UserField::Id, UserField::Username, UserField::CreatedAt, UserField::Verified, UserField::Entities])
+                .send()
+                .await
+                {
+                    Ok(res) => {
+    
+                        match res.into_data(){
+                            Some(user_data) => {
+    
+                                return Ok(
+                                    user_data
+                                );
+                                
+                            },
+                            None => {
+    
+                                let resp = Response{
+                                    data: Some(tusername.to_string()),
+                                    message: TWITTER_USER_DATA_NOT_FOUND,
+                                    status: 404
+                                };
+                                return Err(
+                                    Ok(HttpResponse::NotFound().json(resp))
+                                );
+    
+                            }
+                        }   
+                    },
+                    Err(e) => {
+    
+                        /* 
+                            since the return type is [u8] which is not sized 
+                            thus we must put it behind a pointer or return 
+                            its slice form which is &[u8] which requires a
+                            valid lifetime to be passed in Response struct
+                            signature, also the type of the response data 
+                            must be specified
+                        */
 
-                    match res.into_data(){
-                        Some(user_data) => {
-
-                            Ok(
-                                user_data
-                            )
+                        if e.to_string().contains("[403 Forbidden]"){
+                            continue;
+                        } else{
                             
-                        },
-                        None => {
-
-                            let resp = Response{
-                                data: Some(tusername.to_string()),
-                                message: TWITTER_USER_DATA_NOT_FOUND,
-                                status: 404
+                            let resp = Response::<'_, &[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500
                             };
                             return Err(
-                                Ok(HttpResponse::NotFound().json(resp))
+                                Ok(HttpResponse::InternalServerError().json(resp))
                             );
-
+    
                         }
-                    }   
-                },
-                Err(e) => {
-
-                    /* 
-                        since the return type is [u8] which is not sized 
-                        thus we must put it behind a pointer or return 
-                        its slice form which is &[u8] which requires a
-                        valid lifetime to be passed in Response struct
-                        signature, also the type of the response data 
-                        must be specified
-                    */
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-
+    
+                    }
                 }
-            }
+        
+        }
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
+            status: 500
+        };
+        return Err(
+            Ok(HttpResponse::InternalServerError().json(resp))
+        );
 
     }
 
     async fn get_twitter_user_tweets(&self, twitter_user_id: NumericId, user_twitter_username: String) -> Result<Vec<Tweet>, Result<HttpResponse, actix_web::Error>>{
 
-        match self.twitter_api
-            .get_user_tweets(twitter_user_id)
-            .send()
-            .await
-            {
-                Ok(res) => {
-
-                    match res.into_data(){
-                        Some(tweets) => {
-
-                            Ok(tweets)
-
-                        },
-                        None => {
-
-                            let resp = Response{
-                                data: Some(user_twitter_username),
-                                message: TWITTER_USER_TWEETS_NOT_FOUND,
-                                status: 404
+        for api in self.apis.clone(){
+            match api
+                .get_user_tweets(twitter_user_id)
+                .send()
+                .await
+                {
+                    Ok(res) => {
+    
+                        match res.into_data(){
+                            Some(tweets) => {
+    
+                                return Ok(tweets);
+    
+                            },
+                            None => {
+    
+                                let resp = Response{
+                                    data: Some(user_twitter_username),
+                                    message: TWITTER_USER_TWEETS_NOT_FOUND,
+                                    status: 404
+                                };
+                                return Err(
+                                    Ok(HttpResponse::NotFound().json(resp))
+                                );
+                            }
+                        }
+    
+                    },
+                    Err(e) => {
+    
+                        /* 
+                            since the return type is [u8] which is not sized 
+                            thus we must put it behind a pointer or return 
+                            its slice form which is &[u8] which requires a
+                            valid lifetime to be passed in Response struct
+                            signature, also the type of the response data 
+                            must be specified
+                        */
+    
+                        if e.to_string().contains("[403 Forbidden]"){
+                            continue;
+                        } else{
+                            
+                            let resp = Response::<'_, &[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500
                             };
                             return Err(
-                                Ok(HttpResponse::NotFound().json(resp))
+                                Ok(HttpResponse::InternalServerError().json(resp))
                             );
+    
                         }
+    
+                        
                     }
-
-                },
-                Err(e) => {
-
-                    /* 
-                        since the return type is [u8] which is not sized 
-                        thus we must put it behind a pointer or return 
-                        its slice form which is &[u8] which requires a
-                        valid lifetime to be passed in Response struct
-                        signature, also the type of the response data 
-                        must be specified
-                    */
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
                 }
-            }
+
+        }
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
+            status: 500
+        };
+        return Err(
+            Ok(HttpResponse::InternalServerError().json(resp))
+        );
+            
 
     }
 

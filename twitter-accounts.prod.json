@@ -1,22 +1,22 @@
 {
     "twitter_accounts": [
         {
-            "TWITTER_BEARER_TOKEN": "",
-            "TWITTER_ACCESS_TOKEN": "",
-            "TWITTER_ACCESS_TOKEN_SECRET": "",
-            "TWITTER_CONSUMER_KEY": "",
-            "TWITTER_CONSUMER_SECRET": "",
-            "TWITTER_API_KEY": "",
-            "TWITTER_API_SECRET": ""
+            "twitter_bearer_token": "",
+            "twitter_access_token": "",
+            "twtiter_acces_token_secret": "",
+            "twitter_consumer_key": "",
+            "twitter_consumer_secret": "",
+            "twitter_api_key": "",
+            "twitter_api_secret": ""
         },
         {
-            "TWITTER_BEARER_TOKEN": "",
-            "TWITTER_ACCESS_TOKEN": "",
-            "TWITTER_ACCESS_TOKEN_SECRET": "",
-            "TWITTER_CONSUMER_KEY": "",
-            "TWITTER_CONSUMER_SECRET": "",
-            "TWITTER_API_KEY": "",
-            "TWITTER_API_SECRET": ""
+            "twitter_bearer_token": "",
+            "twitter_access_token": "",
+            "twtiter_acces_token_secret": "",
+            "twitter_consumer_key": "",
+            "twitter_consumer_secret": "",
+            "twitter_api_key": "",
+            "twitter_api_secret": ""
         }
     ]
 }

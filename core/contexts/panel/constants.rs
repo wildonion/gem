@@ -67,3 +67,4 @@ pub static TWITTER_VERIFIED_RETWEET: &str = "Twitter Retweet Task Is Done";
 pub static TWITTER_NOT_VERIFIED_RETWEET: &str = "Twitter Retweet Task Is Not Done";
 pub static TWITTER_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Done";
 pub static TWITTER_NOT_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Not Done";
+pub static TWITTER_CANT_LOOP_OVER_ACCOUNTS: &str = "Can't Loop Over Twitter Accounts";

@@ -78,6 +78,21 @@ pub fn from_hex_string_to_u16(s: &str) -> Result<Vec<u16>, std::num::ParseIntErr
         .collect()
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Keys{
+    pub twitter_bearer_token: String,
+    pub twitter_access_token: String,
+    pub twitter_access_token_secret: String,
+    pub twitter_consumer_key: String,
+    pub twitter_consumer_secret: String,
+    pub twitter_api_key: String,
+    pub twitter_api_secret: String
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TwitterAccounts{
+    pub accounts: Vec<Keys>
+}
 
 // inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs
 
@@ -649,7 +664,7 @@ macro_rules! verify {
                             false => {
 
                                 /* try to insert into users_tasks since it's done */
-                                let res = Twitter::do_task($doer_id, $task_id, $task_type, $tusername, $tweet_link, $connection).await;
+                                let res = Twitter::do_task($doer_id, $task_id, $tusername, $task_type, $tweet_link, $connection).await;
                                 return res;
                             },
                             _ => {
