@@ -329,8 +329,12 @@ async fn check_users_tassk(
                             let mut conn = redis_client.get_async_connection().await.unwrap();
                             let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone()).await;
 
-                            /* wait 15 seconds asyncly to avoid twitter rate limit issue */
-                            tokio::time::sleep(tokio::time::Duration::from_secs(15)).await; /* sleep asyncly to avoid blocking issues */
+                            /* 
+                                wait 30 seconds asyncly to avoid twitter rate limit issue cause 
+                                the /verify-user/{doer_id}/twitter-task/{job_id} api uses a 30 
+                                seconds rate limiter 
+                            */
+                            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await; /* sleep asyncly to avoid blocking issues */
                             
                         }
 
