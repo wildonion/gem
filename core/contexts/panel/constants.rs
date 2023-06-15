@@ -69,3 +69,4 @@ pub static TWITTER_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Done";
 pub static TWITTER_NOT_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Not Done";
 pub static TWITTER_CANT_LOOP_OVER_ACCOUNTS: &str = "Can't Loop Over Twitter Accounts";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
+pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";

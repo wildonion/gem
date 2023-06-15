@@ -597,8 +597,8 @@ macro_rules! verify {
             /* publishing the twitter bot response to the redis pubsub channel */
             info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
 
-            let mut conn = $redis_client.get_connection().unwrap();   
-            let _: Result<_, RedisError> = conn.publish::<String, String, String>("twitter-bot-response".to_string(), response_value.to_string());
+            let mut conn = $redis_client.get_async_connection().await.unwrap();   
+            let _: Result<_, RedisError> = conn.publish::<String, String, String>("twitter-bot-response".to_string(), response_value.to_string()).await;
 
             /* I believe that the bot code has some shity response structure :) since I didn't designed it*/
 

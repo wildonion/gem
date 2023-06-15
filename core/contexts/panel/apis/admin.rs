@@ -594,7 +594,7 @@ async fn delete_user(
                                 in this case we are sure that we removed at least one record 
                                 of users table and >1 records from the users_tasks table
                             */
-                            if num_deleted >= 2{
+                            if num_deleted > 0{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
@@ -908,7 +908,7 @@ async fn delete_task(
                     match Task::delete(job_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
-                            if num_deleted.0 > 0 && num_deleted.1 == 0{
+                            if num_deleted == 1{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data
@@ -916,7 +916,7 @@ async fn delete_task(
                                     StatusCode::OK, //// status code
                                     None::<Cookie<'_>>, //// cookie
                                 }
-                            } else if num_deleted.0 > 0 && num_deleted.1 > 0{
+                            } else if num_deleted > 1{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data

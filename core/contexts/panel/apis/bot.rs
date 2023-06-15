@@ -105,95 +105,146 @@ async fn verify_twitter_task(
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
-    let redis_conn = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-            
-            let connection = &mut pg_pool.get().unwrap();
-            
-            // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
-            // let bot = Twitter::new(Some(bot_endpoint));
+    let doer_id = path.0;
+    let job_id = path.1;
 
-            let bot = Twitter::new(None); /* using the built in twitter bot */
-            let doer_id = path.0;
-            let job_id = path.1;
-            
-            match Task::find_by_id(job_id.to_owned(), connection).await{
-                Ok(task) => {
-                    
-                    let mut splitted_name = task.task_name.split("-");
-                    let task_starts_with = splitted_name.next().unwrap();
-                    let task_type = splitted_name.next().unwrap(); 
-                    
-                    if task_starts_with.starts_with("twitter"){
-                        
-                        match task_type{
-                            "username" | "username-"=> { /* all task names start with username */
-                                bot.verify_username(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            "code" | "code-" => { /* all task names start with code */
-                                bot.verify_activity_code(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            "tweet" | "tweet-" => { /* all task names start with tweet */
-                                bot.verify_tweet(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            "retweet" | "retweet-" => { /* all task names start with retweet */
-                                bot.verify_retweet(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            "hashtag" | "hashtag-" => { /* all task names start with hashtag */
-                                bot.verify_hashtag(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            "like" | "like-" => { /* all task names start with like */
-                                bot.verify_like(task, connection, redis_conn, doer_id.to_owned()).await
-                            },
-                            _ => {
 
-                                resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    INVALID_TWITTER_TASK_NAME, //// response message
-                                    StatusCode::NOT_ACCEPTABLE, //// status code
-                                    None::<Cookie<'_>>, //// cookie
-                                }
+    /* rate limiter based on doer id */
 
-                            }
-                        }
-
-                    } else{
-
-                        /* maybe discord tasks :) */
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            NOT_A_TWITTER_TASK, //// response message
-                            StatusCode::NOT_ACCEPTABLE, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    }
-
-                },
-                Err(resp) => {
-                    
-                    /* NOT_FOUND_TASK */
-                    resp
-                }
-            }
-
+    let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
+    let now = chrono::Local::now().timestamp_millis() as u64;
+    let mut is_rate_limited = false;
+    
+    let redis_result_rate_limiter: RedisResult<String> = redis_conn.get("rate_limiter").await;
+    let mut redis_rate_limiter = match redis_result_rate_limiter{
+        Ok(data) => {
+            let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+            rl_data
         },
-        None => {
-            
-            resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
-            }
+        Err(e) => {
+            let empty_rate_limiter = HashMap::<u64, u64>::new();
+            let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
+            let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap();
+            HashMap::new()
+        }
+    };
+
+    if let Some(last_used) = redis_rate_limiter.get(&(doer_id as u64)){
+        if now - *last_used < chill_zone_duration{
+            is_rate_limited = true;
         }
     }
+    
+    if is_rate_limited{
+
+        resp!{
+            &[u8], //// the data type
+            &[], //// response data
+            TWITTER_VERIFICATION_RATE_LIMIT, //// response message
+            StatusCode::NOT_ACCEPTABLE, //// status code
+            None::<Cookie<'_>>, //// cookie
+        }
+        
+
+    } else{
+
+        //// this will be used to handle shared state between clusters
+        redis_rate_limiter.insert(doer_id as u64, now); //// updating the redis rate limiter map
+        let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
+        let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+
+        match storage.clone().unwrap().get_pgdb().await{
+            Some(pg_pool) => {
+                
+                let connection = &mut pg_pool.get().unwrap();
+                
+                // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
+                // let bot = Twitter::new(Some(bot_endpoint));
+    
+                let bot = Twitter::new(None); /* using the built in twitter bot */
+                
+                match Task::find_by_id(job_id.to_owned(), connection).await{
+                    Ok(task) => {
+                        
+                        let mut splitted_name = task.task_name.split("-");
+                        let task_starts_with = splitted_name.next().unwrap();
+                        let task_type = splitted_name.next().unwrap(); 
+                        
+                        if task_starts_with.starts_with("twitter"){
+                            
+                            match task_type{
+                                "username" | "username-"=> { /* all task names start with username */
+                                    bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                "code" | "code-" => { /* all task names start with code */
+                                    bot.verify_activity_code(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                "tweet" | "tweet-" => { /* all task names start with tweet */
+                                    bot.verify_tweet(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                "retweet" | "retweet-" => { /* all task names start with retweet */
+                                    bot.verify_retweet(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                "hashtag" | "hashtag-" => { /* all task names start with hashtag */
+                                    bot.verify_hashtag(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                "like" | "like-" => { /* all task names start with like */
+                                    bot.verify_like(task, connection, redis_client, doer_id.to_owned()).await
+                                },
+                                _ => {
+    
+                                    resp!{
+                                        &[u8], //// the data type
+                                        &[], //// response data
+                                        INVALID_TWITTER_TASK_NAME, //// response message
+                                        StatusCode::NOT_ACCEPTABLE, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+    
+                                }
+                            }
+    
+                        } else{
+    
+                            /* maybe discord tasks :) */
+    
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                NOT_A_TWITTER_TASK, //// response message
+                                StatusCode::NOT_ACCEPTABLE, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+    
+                        }
+    
+                    },
+                    Err(resp) => {
+                        
+                        /* NOT_FOUND_TASK */
+                        resp
+                    }
+                }
+    
+            },
+            None => {
+                
+                resp!{
+                    &[u8], //// the data type
+                    &[], //// response data
+                    STORAGE_ISSUE, //// response message
+                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                    None::<Cookie<'_>>, //// cookie
+                }
+            }
+        }
+
+    }
+
+    
 }
 
 /*
@@ -247,8 +298,8 @@ async fn check_users_tassk(
                             /* publishing the task verification response topic to the redis pubsub channel */
                             info!("📢 publishing task verification response to redis pubsub [task-verification-responses] channel");
 
-                            let mut conn = redis_client.get_connection().unwrap();
-                            let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone());
+                            let mut conn = redis_client.get_async_connection().await.unwrap();
+                            let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone()).await;
 
                             /* wait 15 seconds asyncly to avoid twitter rate limit issue */
                             tokio::time::sleep(tokio::time::Duration::from_secs(15)).await; /* sleep asyncly to avoid blocking issues */

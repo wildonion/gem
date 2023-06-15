@@ -323,4 +323,46 @@ impl UserTask{
         return true;
     }
 
+    pub async fn delete_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+
+        match diesel::delete(users_tasks.filter(users_tasks::user_id.eq(doer_id)))
+            .execute(connection)
+            {
+                Ok(users_tasks_num_deleted) => Ok(users_tasks_num_deleted),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
+
+    }
+
+    pub async fn delete_by_task(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+
+        match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(job_id)))
+            .execute(connection)
+            {
+                Ok(users_tasks_num_deleted) => Ok(users_tasks_num_deleted),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
+
+    }
+
 }

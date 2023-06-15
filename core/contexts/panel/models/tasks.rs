@@ -6,11 +6,13 @@
 
 use crate::*;
 use crate::models::users::User;
+use super::users_tasks::UserTask;
 use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
 use crate::schema::{tasks, users, users_tasks};
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks::dsl::*;
 use crate::constants::*;
+
 
 
 
@@ -192,8 +194,8 @@ impl Task{
         info!("📢 publishing new task to redis pubsub [tasks] channel");
 
         let new_task_string = serde_json::to_string_pretty(&new_task).unwrap();
-        let mut conn = redis_client.get_connection().unwrap();   
-        let _: Result<_, RedisError> = conn.publish::<String, String, String>("tasks".to_string(), new_task_string);
+        let mut conn = redis_client.get_async_connection().await.unwrap();   
+        let _: Result<_, RedisError> = conn.publish::<String, String, String>("tasks".to_string(), new_task_string).await;
 
 
         match diesel::insert_into(tasks::table)
@@ -217,22 +219,25 @@ impl Task{
 
     }
 
-    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(usize, usize), Result<HttpResponse, actix_web::Error>>{
-        
-        match diesel::delete(tasks.filter(tasks::id.eq(job_id)))
-            .execute(connection)
-            {
-                Ok(task_deleted_rows) => {
-                
-                    /* 
-                        we must also delete the associated records from the users_tasks table 
-                        since a task is deleted thus all the users who have done this task must
-                        deleted from the users_tasks table too 
-                    */
-                    let users_tasks_deleted_rows = match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(task_id)))
+    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+
+        /* we must first delete from users_tasks */
+
+        match UserTask::delete_by_task(job_id, connection).await {
+            Ok(users_tasks_rows_deleted) => {
+
+                match diesel::delete(tasks.filter(tasks::id.eq(job_id.to_owned())))
                     .execute(connection)
                     {
-                        Ok(num_deleted) => num_deleted,
+                        Ok(mut num_deleted) => {
+                            
+                            /* also delete any tasks record if there was any */
+
+                            num_deleted += users_tasks_rows_deleted;
+
+                            Ok(num_deleted)
+                        
+                        },
                         Err(e) => {
 
                             let resp = Response::<&[u8]>{
@@ -245,24 +250,14 @@ impl Task{
                             );
 
                         }
-                    };
-                    
-                    Ok((task_deleted_rows, users_tasks_deleted_rows))
-                    
-                },
-                Err(e) => {
+                    }
 
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-
-                }
+            },
+            Err(e) => {
+                
+                return Err(e);
             }
+        }
         
     }
 

@@ -859,61 +859,44 @@ impl User{
 
     pub async fn delete_by_admin(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
-        match diesel::delete(users.filter(users::id.eq(doer_id.to_owned())))
-            .execute(connection)
-            {
-                Ok(mut num_deleted) => {
-                    
-                    /* also delete any users_tasks record if there was any */
+        /* we must first delete from users_tasks */
+        
+        match UserTask::delete_by_doer(doer_id, connection).await {
+            Ok(users_tasks_rows_deleted) => {
 
-                    match UserTask::find_by_doer(doer_id, connection).await {
-                        true => {
+                match diesel::delete(users.filter(users::id.eq(doer_id.to_owned())))
+                    .execute(connection)
+                    {
+                        Ok(mut num_deleted) => {
+                            
+                            /* also delete any users record if there was any */
 
-                            match diesel::delete(users_tasks.filter(users_tasks::user_id.eq(user_id)))
-                            .execute(connection)
-                            {
-                                Ok(users_tasks_num_deleted) => {
+                            num_deleted += users_tasks_rows_deleted;
 
-                                    num_deleted += users_tasks_num_deleted;
-
-                                    Ok(num_deleted)
-
-                                },
-                                Err(e) => {
-
-                                    let resp = Response::<&[u8]>{
-                                        data: Some(&[]),
-                                        message: &e.to_string(),
-                                        status: 500
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::InternalServerError().json(resp))
-                                    );
-                                }
-                            }
-
-
-                        },
-                        false => {
                             Ok(num_deleted)
+                        
+                        },
+                        Err(e) => {
+
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+
                         }
                     }
-                    
+
+            },
+            Err(e) => {
                 
-                },
-                Err(e) => {
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-
-                }
+                return Err(e);
             }
+        }
+
     
     }
 
