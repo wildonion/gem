@@ -583,7 +583,11 @@ async fn delete_user(
                     match User::delete_by_admin(doer_id.to_owned(), connection).await{
                         Ok(num_deleted) => {
 
-                            if num_deleted > 0{
+                            /* 
+                                in this case we are sure that we removed at least one record 
+                                of users table and >1 records from the users_tasks table
+                            */
+                            if num_deleted >= 2{
                                 resp!{
                                     &[u8], //// the data type
                                     &[], //// response data

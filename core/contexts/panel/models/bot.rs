@@ -36,7 +36,7 @@ impl Twitter{
         let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
         let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
         let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
-        let twitter_accounts = twitter.accounts;
+        let twitter_accounts = twitter.keys;
         
         let mut apis = vec![];
         for account in twitter_accounts.clone(){
@@ -71,6 +71,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
 
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/user-existance", self.endpoint.as_ref().unwrap());
@@ -168,7 +171,7 @@ impl Twitter{
                         },
                         Err(e) => {
     
-                            if e.to_string().contains("[403 Forbidden]"){
+                            if e.to_string().contains("[429 Too Many Requests]"){
                                 continue;
                             } else{
                                 
@@ -213,6 +216,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
         
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT  */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/user-verification", self.endpoint.as_ref().unwrap());
@@ -314,6 +320,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
         
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT  */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
@@ -419,6 +428,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
         
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT  */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
@@ -525,7 +537,7 @@ impl Twitter{
                         },
                         Err(e) => {
     
-                            if e.to_string().contains("[403 Forbidden]"){
+                            if e.to_string().contains("[429 Too Many Requests]"){
                                 continue;
                             } else{
                                 
@@ -569,6 +581,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
         
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT  */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
@@ -688,7 +703,7 @@ impl Twitter{
                         },
                         Err(e) => {
 
-                            if e.to_string().contains("[403 Forbidden]"){
+                            if e.to_string().contains("[429 Too Many Requests]"){
                                 continue;
                             } else{
                                 
@@ -731,6 +746,9 @@ impl Twitter{
             return res_user_find.unwrap_err();
         };
         
+        /* ------------------------ */
+        /* THIRD PARTY TWITTER BOT  */
+        /* ------------------------ */
         if self.endpoint.is_some(){
 
             let user_existance_endpoint = format!("{}/check", self.endpoint.as_ref().unwrap());
@@ -864,7 +882,7 @@ impl Twitter{
                             must be specified
                         */
 
-                        if e.to_string().contains("[403 Forbidden]"){
+                        if e.to_string().contains("[429 Too Many Requests]"){
                             continue;
                         } else{
                             
@@ -936,7 +954,7 @@ impl Twitter{
                             must be specified
                         */
     
-                        if e.to_string().contains("[403 Forbidden]"){
+                        if e.to_string().contains("[429 Too Many Requests]"){
                             continue;
                         } else{
                             

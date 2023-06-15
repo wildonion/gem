@@ -308,4 +308,19 @@ impl UserTask{
         return true;
     }
 
+    pub async fn find_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> bool{
+
+        let single_user_task = users_tasks
+            .filter(users_tasks::user_id.eq(doer_id))
+            .first::<UserTask>(connection);
+
+        let Ok(_) = single_user_task else{
+
+            return false;
+            
+        };
+
+        return true;
+    }
+
 }

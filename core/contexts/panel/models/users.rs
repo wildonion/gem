@@ -1,11 +1,14 @@
 
 
 
+
 use crate::*;
 use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
-use crate::schema::users;
+use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
+use crate::schema::users_tasks::dsl::*;
 use crate::constants::*;
+use super::users_tasks::UserTask;
 
 
 
@@ -136,6 +139,8 @@ impl User{
         let decoded_token = decode::<JWTClaims>(token, &DecodingKey::from_secret(encoding_key.as_bytes()), &Validation::new(Algorithm::HS512));
         decoded_token
     }
+
+    pub const SCHEMA_NAME: &str = "User";
 
     pub fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
 
@@ -561,15 +566,15 @@ impl User{
 
     }
 
-    pub async fn find_by_id(user_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn find_by_id(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
 
         let single_user = users
-            .filter(users::id.eq(user_id))
+            .filter(users::id.eq(doer_id))
             .first::<User>(connection);
                         
         let Ok(user) = single_user else{
             let resp = Response{
-                data: Some(user_id),
+                data: Some(doer_id),
                 message: USER_NOT_FOUND,
                 status: 404
             };
@@ -852,12 +857,50 @@ impl User{
 
     }
 
-    pub async fn delete_by_admin(user_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete_by_admin(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
-        match diesel::delete(users.filter(users::id.eq(user_id.to_owned())))
+        match diesel::delete(users.filter(users::id.eq(doer_id.to_owned())))
             .execute(connection)
             {
-                Ok(num_deleted) => Ok(num_deleted),
+                Ok(mut num_deleted) => {
+                    
+                    /* also delete any users_tasks record if there was any */
+
+                    match UserTask::find_by_doer(doer_id, connection).await {
+                        true => {
+
+                            match diesel::delete(users_tasks.filter(users_tasks::user_id.eq(user_id)))
+                            .execute(connection)
+                            {
+                                Ok(users_tasks_num_deleted) => {
+
+                                    num_deleted += users_tasks_num_deleted;
+
+                                    Ok(num_deleted)
+
+                                },
+                                Err(e) => {
+
+                                    let resp = Response::<&[u8]>{
+                                        data: Some(&[]),
+                                        message: &e.to_string(),
+                                        status: 500
+                                    };
+                                    return Err(
+                                        Ok(HttpResponse::InternalServerError().json(resp))
+                                    );
+                                }
+                            }
+
+
+                        },
+                        false => {
+                            Ok(num_deleted)
+                        }
+                    }
+                    
+                
+                },
                 Err(e) => {
 
                     let resp = Response::<&[u8]>{

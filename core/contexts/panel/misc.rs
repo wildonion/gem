@@ -89,9 +89,10 @@ pub struct Keys{
     pub twitter_api_secret: String
 }
 
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct TwitterAccounts{
-    pub accounts: Vec<Keys>
+    pub keys: Vec<Keys>
 }
 
 // inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs

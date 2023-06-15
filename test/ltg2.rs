@@ -94,6 +94,10 @@ async fn test(){
             cmd();
         }
 
+        fn another_start_here(cmd: impl Fn(String) -> ()){
+            
+        }
+
         /*  
 
             future objects are traits and can be implemented for other types to convert those
