@@ -2348,6 +2348,35 @@
 							"response": []
 						},
 						{
+							"name": "Add Twitter Account Keys",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"twitter_access_token\": \"\",\n  \"twitter_access_token_secret\": \"\",\n  \"twitter_api_key\": \"\",\n  \"twitter_api_secret\": \"\",\n  \"twitter_bearer_token\": \"\",\n  \"twitter_consumer_key\": \"\",\n  \"twitter_consumer_secret\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/add-twitter-account",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"add-twitter-account"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get Users",
 							"request": {
 								"auth": {

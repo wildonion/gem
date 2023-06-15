@@ -2,6 +2,9 @@
 
 
 
+
+
+
 use crate::*;
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
@@ -13,7 +16,7 @@ use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
 use crate::schema::users_tasks::dsl::*;
 use crate::schema::users_tasks;
-
+use std::io::Write;
 
 
 /*
@@ -38,9 +41,13 @@ use crate::schema::users_tasks;
         get_users,
         get_admin_tasks,
         get_users_tasks,
+        add_twitter_account
     ),
     components(
         schemas(
+            Keys,
+            TwitterAccounts,
+            UserTaskData,
             UserData,
             TaskData,
             LoginInfoRequest,
@@ -1177,7 +1184,7 @@ async fn get_admin_tasks(
 #[utoipa::path(
     context_path = "/admin",
     responses(
-        (status=200, description="Fetched Successfully", body=[(UserData, [TaskData])]),
+        (status=200, description="Fetched Successfully", body=[UserTaskData]),
         (status=404, description="User Not Found", body=i32), // not found by id
         (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
@@ -1272,6 +1279,163 @@ async fn get_users_tasks(
 }
 
 
+#[utoipa::path(
+    context_path = "/admin",
+    request_body = Keys,
+    responses(
+        (status=200, description="Updated Successfully", body=[u8]),
+        (status=404, description="User Not Found", body=i32), // not found by id
+        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
+        (status=403, description="JWT Not Found In Cookie", body=[u8]),
+        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
+        (status=406, description="Invalid Cookie Format", body=[u8]),
+        (status=403, description="Cookie Has Been Expired", body=[u8]),
+        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
+        (status=403, description="Access Denied", body=i32),
+        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[post("/add-twitter-account")]
+async fn add_twitter_account(
+        req: HttpRequest,   
+        new_account: web::Json<Keys>,
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+            /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
+            match User::passport(req, Some(UserRole::Admin), connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    let file_open = std::fs::File::open("twitter-accounts.json");
+                    let Ok(file) = file_open else{
+
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: &file_open.unwrap_err().to_string(),
+                            status: 500
+                        };
+                        return 
+                            Ok(
+                                HttpResponse::InternalServerError().json(resp)
+                            );
+
+                    };
+
+                   
+                    let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
+                    let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
+                    let mut twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
+                    let twitter_accounts = &mut twitter.keys;
+
+                    /* twitter var will be mutated too since twitter_accounts is a mutable reference to twitter */
+                    twitter_accounts.push(new_account.to_owned());
+
+
+                    /* saving the twitter back to the file */
+                    let json_string_twitter = serde_json::to_string_pretty(&twitter).unwrap();
+                    let updated_twitter_accounts_buffer = json_string_twitter.as_bytes();
+
+                    /* overwriting the file */
+                    match std::fs::OpenOptions::new()
+                        .write(true)
+                        .truncate(true)
+                        .open("twitter-accounts.json"){
+                        Ok(mut file) => {
+                            match file.write(updated_twitter_accounts_buffer){
+                                Ok(bytes) => {
+        
+                                    resp!{
+                                        &[u8], //// the data type
+                                        &[], //// response data
+                                        TWITTER_KEYS_ADDED, //// response message
+                                        StatusCode::OK, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+        
+                                },
+                                Err(e) => {
+                                    
+                                    resp!{
+                                        &[u8], //// the data type
+                                        &[], //// response data
+                                        &e.to_string(), //// response message
+                                        StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                                        None::<Cookie<'_>>, //// cookie
+                                    }
+        
+                                }
+                            }
+                        },
+                        Err(e) => {
+
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                &e.to_string(), //// response message
+                                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
+        }
+    }         
+
+
+}
+
+
+
+
+
 pub mod exports{
     pub use super::reveal_role;   
     pub use super::login;
@@ -1284,4 +1448,5 @@ pub mod exports{
     pub use super::get_users;
     pub use super::get_admin_tasks;
     pub use super::get_users_tasks;
+    pub use super::add_twitter_account;
 }

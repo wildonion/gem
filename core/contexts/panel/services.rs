@@ -57,6 +57,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_users);
     config.service(apis::admin::exports::get_admin_tasks);
     config.service(apis::admin::exports::get_users_tasks);
+    config.service(apis::admin::exports::add_twitter_account);
 
     // other routs maybe ?
     // ...

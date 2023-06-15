@@ -1046,7 +1046,7 @@ impl Twitter{
                     "tweet" => {
 
                         let link = tweet_link.unwrap_or("-"); /* the or part means that we're using the third party bot */
-                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:} With The Link: {link:}", TWITTER_VERIFIED_LIKE);
+                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:} With The Link: {link:}", TWITTER_VERIFIED_TWEET);
                         resp!{
                             &[u8], //// the data type
                             &[], //// response data
