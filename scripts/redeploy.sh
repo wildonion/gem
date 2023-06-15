@@ -61,7 +61,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     jobs="jobs/*"
     for f in $jobs
     do
-    crontab $f
+        crontab $f
     done  
     crontab -u root -l 
 

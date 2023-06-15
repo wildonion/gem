@@ -995,7 +995,7 @@ impl User{
             };
 
             match diesel::update(users.find(user.id))
-                .set(twitter_username.eq(account_name))
+                .set(twitter_username.eq(account_name.to_lowercase()))
                 .returning(FetchUser::as_returning())
                 .get_result(connection)
                 {
