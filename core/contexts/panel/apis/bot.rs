@@ -118,21 +118,21 @@ async fn verify_twitter_task(
     let now = chrono::Local::now().timestamp_millis() as u64;
     let mut is_rate_limited = false;
     
-    let redis_result_rate_limiter: RedisResult<String> = redis_conn.get("rate_limiter").await;
-    let mut redis_rate_limiter = match redis_result_rate_limiter{
+    let redis_result_twitter_rate_limiter: RedisResult<String> = redis_conn.get("twitter_rate_limiter").await;
+    let mut redis_twitter_rate_limiter = match redis_result_twitter_rate_limiter{
         Ok(data) => {
             let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
             rl_data
         },
         Err(e) => {
-            let empty_rate_limiter = HashMap::<u64, u64>::new();
-            let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
-            let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap();
+            let empty_twitter_rate_limiter = HashMap::<u64, u64>::new();
+            let rl_data = serde_json::to_string(&empty_twitter_rate_limiter).unwrap();
+            let _: () = redis_conn.set("twitter_rate_limiter", rl_data).await.unwrap();
             HashMap::new()
         }
     };
 
-    if let Some(last_used) = redis_rate_limiter.get(&(doer_id as u64)){
+    if let Some(last_used) = redis_twitter_rate_limiter.get(&(doer_id as u64)){
         if now - *last_used < chill_zone_duration{
             is_rate_limited = true;
         }
@@ -153,9 +153,9 @@ async fn verify_twitter_task(
 
         /* updating the last rquest time */
         //// this will be used to handle shared state between clusters
-        redis_rate_limiter.insert(doer_id as u64, now); //// updating the redis rate limiter map
-        let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
-        let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+        redis_twitter_rate_limiter.insert(doer_id as u64, now); //// updating the redis rate limiter map
+        let rl_data = serde_json::to_string(&redis_twitter_rate_limiter).unwrap();
+        let _: () = redis_conn.set("twitter_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
 
         
