@@ -425,7 +425,7 @@ macro_rules! db {
 
             let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
             let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-            let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
+            let redis_conn_url = format!("redis://:{}@{}", redis_password, redis_host);
             let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             
             let empty_app_storage = Some( //// putting the Arc-ed db inside the Option

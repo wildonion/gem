@@ -112,7 +112,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let (sender, receiver) = oneshot::channel::<u8>(); //// oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
     let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
     let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-    let redis_conn_url = format!("redis://{}@{}", redis_password, redis_host);
+    let redis_conn_url = format!("redis://:{}@{}", redis_password, redis_host);
     let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
     let mut redis_conn = client.get_async_connection().await.unwrap();
     
