@@ -79,7 +79,7 @@ pub fn from_hex_string_to_u16(s: &str) -> Result<Vec<u16>, std::num::ParseIntErr
         .collect()
 }
 
-#[derive(Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Keys{
     pub twitter_bearer_token: String,
     pub twitter_access_token: String,

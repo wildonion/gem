@@ -151,81 +151,109 @@ async fn verify_twitter_task(
 
     } else{
 
+        /* updating the last rquest time */
         //// this will be used to handle shared state between clusters
         redis_rate_limiter.insert(doer_id as u64, now); //// updating the redis rate limiter map
         let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
         let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
+
+        
+
         match storage.clone().unwrap().get_pgdb().await{
             Some(pg_pool) => {
                 
                 let connection = &mut pg_pool.get().unwrap();
-                
-                // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
-                // let bot = Twitter::new(Some(bot_endpoint));
-    
-                let bot = Twitter::new(None); /* using the built in twitter bot */
-                
-                match Task::find_by_id(job_id.to_owned(), connection).await{
-                    Ok(task) => {
+
+                /* if the user task is inside db the no need to call bot APIs since it's already done */
+                match UserTask::find(doer_id, job_id, connection).await{
+                    false => {
                         
-                        let mut splitted_name = task.task_name.split("-");
-                        let task_starts_with = splitted_name.next().unwrap();
-                        let task_type = splitted_name.next().unwrap(); 
+                        // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
+                        // let bot = Twitter::new(Some(bot_endpoint));
+            
+                        let new_twitter = Twitter::new(None);
+                        let Ok(bot) =  new_twitter else{
+                            return new_twitter.unwrap_err();
+                        };
                         
-                        if task_starts_with.starts_with("twitter"){
-                            
-                            match task_type{
-                                "username" | "username-"=> { /* all task names start with username */
-                                    bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                "code" | "code-" => { /* all task names start with code */
-                                    bot.verify_activity_code(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                "tweet" | "tweet-" => { /* all task names start with tweet */
-                                    bot.verify_tweet(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                "retweet" | "retweet-" => { /* all task names start with retweet */
-                                    bot.verify_retweet(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                "hashtag" | "hashtag-" => { /* all task names start with hashtag */
-                                    bot.verify_hashtag(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                "like" | "like-" => { /* all task names start with like */
-                                    bot.verify_like(task, connection, redis_client, doer_id.to_owned()).await
-                                },
-                                _ => {
-    
+                        match Task::find_by_id(job_id.to_owned(), connection).await{
+                            Ok(task) => {
+                                
+                                let mut splitted_name = task.task_name.split("-");
+                                let task_starts_with = splitted_name.next().unwrap();
+                                let task_type = splitted_name.next().unwrap(); 
+                                
+                                if task_starts_with.starts_with("twitter"){
+                                    
+                                    match task_type{
+                                        "username" | "username-"=> { /* all task names start with username */
+                                            bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        "code" | "code-" => { /* all task names start with code */
+                                            bot.verify_activity_code(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        "tweet" | "tweet-" => { /* all task names start with tweet */
+                                            bot.verify_tweet(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        "retweet" | "retweet-" => { /* all task names start with retweet */
+                                            bot.verify_retweet(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        "hashtag" | "hashtag-" => { /* all task names start with hashtag */
+                                            bot.verify_hashtag(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        "like" | "like-" => { /* all task names start with like */
+                                            bot.verify_like(task, connection, redis_client, doer_id.to_owned()).await
+                                        },
+                                        _ => {
+            
+                                            resp!{
+                                                &[u8], //// the data type
+                                                &[], //// response data
+                                                INVALID_TWITTER_TASK_NAME, //// response message
+                                                StatusCode::NOT_ACCEPTABLE, //// status code
+                                                None::<Cookie<'_>>, //// cookie
+                                            }
+            
+                                        }
+                                    }
+            
+                                } else{
+            
+                                    /* maybe discord tasks :) */
+            
                                     resp!{
                                         &[u8], //// the data type
                                         &[], //// response data
-                                        INVALID_TWITTER_TASK_NAME, //// response message
+                                        NOT_A_TWITTER_TASK, //// response message
                                         StatusCode::NOT_ACCEPTABLE, //// status code
                                         None::<Cookie<'_>>, //// cookie
                                     }
-    
+            
                                 }
+            
+                            },
+                            Err(resp) => {
+                                
+                                /* NOT_FOUND_TASK */
+                                resp
                             }
-    
-                        } else{
-    
-                            /* maybe discord tasks :) */
-    
-                            resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                NOT_A_TWITTER_TASK, //// response message
-                                StatusCode::NOT_ACCEPTABLE, //// status code
-                                None::<Cookie<'_>>, //// cookie
-                            }
-    
                         }
-    
+
+
                     },
-                    Err(resp) => {
-                        
-                        /* NOT_FOUND_TASK */
-                        resp
+                    _ => {
+
+                        /* user task has already been inserted  */
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
+                            status: 302
+                        };
+                        return Ok(
+                            HttpResponse::Found().json(resp)
+                        );
+
                     }
                 }
     

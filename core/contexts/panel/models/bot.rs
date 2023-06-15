@@ -13,6 +13,7 @@ use crate::schema::users_tasks::dsl::*;
 
 
 
+#[derive(Debug)]
 pub struct Twitter{
     pub endpoint: Option<String>,
     pub keys: Vec<Keys>,
@@ -30,9 +31,23 @@ impl Twitter{
         it's ownership, thus we can clone or borrow its fields using clone() or as_ref()
     */
 
-    pub fn new(api: Option<String>) -> Self{
+    pub fn new(api: Option<String>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
 
-        let file = std::fs::File::open("twitter-accounts.json").unwrap(); //// the file must be inside where we run the `cargo run` command or the root dir
+        let file_open = std::fs::File::open("twitter-accounts.json");
+        let Ok(file) = file_open else{
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: &file_open.unwrap_err().to_string(),
+                status: 500
+            };
+            return 
+                Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );  
+
+        };
+
         let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
         let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
         let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
@@ -47,15 +62,17 @@ impl Twitter{
 
         }
 
-        Self{
-            endpoint: if api.is_some(){
-                api
-            } else{
-                None // we're using conse twitter APIs
-            },
-            apis,
-            keys: twitter_accounts
-        }
+        Ok(
+            Self{
+                endpoint: if api.is_some(){
+                    api
+                } else{
+                    None // we're using conse twitter APIs
+                },
+                apis,
+                keys: twitter_accounts
+            }
+        )
     }
 
     /* VERIFY THE GIVEN TWITTER USERNAME  */
@@ -120,35 +137,16 @@ impl Twitter{
                                     if now_day - account_creation_day > 7
                                         && followers.len() > 10{
     
-                                        match UserTask::find(doer_id, task.id, connection).await{
-                                            false => {
-                
-                                                /* try to insert into users_tasks since it's done */
-                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                        /* try to insert into users_tasks since it's done */
+                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
 
 
-                                                /* publishing the twitter bot response to the redis pubsub channel */
-                                                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_USERNAME.to_string()).await;
+                                        /* publishing the twitter bot response to the redis pubsub channel */
+                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_USERNAME.to_string()).await;
 
-                                                return res;
-                                            
-                                            },
-                                            _ => {
-                        
-                                                /* user task has already been inserted  */
-                                                let resp = Response::<&[u8]>{
-                                                    data: Some(&[]),
-                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                    status: 302
-                                                };
-                                                return Ok(
-                                                    HttpResponse::Found().json(resp)
-                                                );
-                        
-                                            }
-                                        }
+                                        return res;
     
                                     } else{
                 
@@ -273,34 +271,15 @@ impl Twitter{
 
             if is_verified{
 
-                match UserTask::find(doer_id, task.id, connection).await{
-                    false => {
+                /* try to insert into users_tasks since it's done */
+                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
 
-                        /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                /* publishing the twitter bot response to the redis pubsub channel */
+                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_CODE.to_string()).await;
 
-                        /* publishing the twitter bot response to the redis pubsub channel */
-                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_CODE.to_string()).await;
-
-                        res
-                    
-                    },
-                    _ => {
-
-                        /* user task has already been inserted  */
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                            status: 302
-                        };
-                        return Ok(
-                            HttpResponse::Found().json(resp)
-                        );
-
-                    }
-                }
+                res
 
                 
             } else{
@@ -387,34 +366,15 @@ impl Twitter{
 
             if is_verified{
 
-                match UserTask::find(doer_id, task.id, connection).await{
-                    false => {
-
-                        /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), Some(link.as_str()), connection).await;
+                /* try to insert into users_tasks since it's done */
+                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), Some(link.as_str()), connection).await;
                         
-                        /* publishing the twitter bot response to the redis pubsub channel */
-                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_TWEET.to_string()).await;
+                /* publishing the twitter bot response to the redis pubsub channel */
+                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_TWEET.to_string()).await;
 
-                        res
-                    
-                    },
-                    _ => {
-
-                        /* user task has already been inserted  */
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                            status: 302
-                        };
-                        return Ok(
-                            HttpResponse::Found().json(resp)
-                        );
-
-                    }
-                }
+                res
 
                 
             } else{
@@ -502,34 +462,15 @@ impl Twitter{
     
                                     if is_verified{
     
-                                        match UserTask::find(doer_id, task.id, connection).await{
-                                            false => {
-                        
-                                                /* try to insert into users_tasks since it's done */
-                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                        /* try to insert into users_tasks since it's done */
+                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
                                                 
-                                                /* publishing the twitter bot response to the redis pubsub channel */
-                                                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_LIKE.to_string()).await;
+                                        /* publishing the twitter bot response to the redis pubsub channel */
+                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_LIKE.to_string()).await;
 
-                                                return res;
-                                            
-                                            },
-                                            _ => {
-                        
-                                                /* user task has already been inserted  */
-                                                let resp = Response::<&[u8]>{
-                                                    data: Some(&[]),
-                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                    status: 302
-                                                };
-                                                return Ok(
-                                                    HttpResponse::Found().json(resp)
-                                                );
-                        
-                                            }
-                                        }
+                                        return res;
     
                                         
                                     } else{
@@ -672,34 +613,15 @@ impl Twitter{
 
                                     if is_verified{
 
-                                        match UserTask::find(doer_id, task.id, connection).await{
-                                            false => {
-                        
-                                                /* try to insert into users_tasks since it's done */
-                                                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                                        /* try to insert into users_tasks since it's done */
+                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
 
-                                                /* publishing the twitter bot response to the redis pubsub channel */
-                                                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_RETWEET.to_string()).await;
+                                        /* publishing the twitter bot response to the redis pubsub channel */
+                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_RETWEET.to_string()).await;
 
-                                                return res;
-                                            
-                                            },
-                                            _ => {
-                        
-                                                /* user task has already been inserted  */
-                                                let resp = Response::<&[u8]>{
-                                                    data: Some(&[]),
-                                                    message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                                    status: 302
-                                                };
-                                                return Ok(
-                                                    HttpResponse::Found().json(resp)
-                                                );
-                        
-                                            }
-                                        }
+                                        return res;
 
                                         
                                     } else{
@@ -824,34 +746,15 @@ impl Twitter{
 
             if is_verified{
 
-                match UserTask::find(doer_id, task.id, connection).await{
-                    false => {
-
-                        /* try to insert into users_tasks since it's done */
-                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
+                /* try to insert into users_tasks since it's done */
+                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
                         
-                        /* publishing the twitter bot response to the redis pubsub channel */
-                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_HASHTAG.to_string()).await;
+                /* publishing the twitter bot response to the redis pubsub channel */
+                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
+                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_HASHTAG.to_string()).await;
 
-                        res
-                    
-                    },
-                    _ => {
-
-                        /* user task has already been inserted  */
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                            status: 302
-                        };
-                        return Ok(
-                            HttpResponse::Found().json(resp)
-                        );
-
-                    }
-                }
+                res
 
                 
             } else{
