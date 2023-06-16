@@ -14,12 +14,11 @@
 sudo apt install libssl-dev libudev-dev pkg-config
 ```
 
-## 🚀 Deploy
+* remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
 
-```console
-sudo docker build -t catchup-bot .
-sudo docker run --name catchup-bot -v ./infra/data/logs:/usr/src/app/logs/ -d catchup-bot
-```
+* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025475584&scope=bot%20applications.commands) we can add the conse bot to discord servers.  
+
+> get token from [here](https://discord.com/developers/applications/1092048595605270589/bot)
 
 ## 📱 Features
 
@@ -28,9 +27,3 @@ sudo docker run --name catchup-bot -v ./infra/data/logs:/usr/src/app/logs/ -d ca
 * channel messages summerization using chat GPT
 
 * configured with 10 shards by default also we're using redis to manage the shared state data between clusters.
-
-* remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` variables with your credentials inside the `.env` file.
-
-* with [this link](https://discord.com/api/oauth2/authorize?client_id=1092048595605270589&permissions=277025475584&scope=bot%20applications.commands) we can add the conse bot to discord servers.  
-
-> get token from [here](https://discord.com/developers/applications/1092048595605270589/bot)

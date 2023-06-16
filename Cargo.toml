@@ -72,6 +72,10 @@ name = "dis-bot"
 path = "core/contexts/bot/discord/bot.rs"
 
 [[bin]]
+name = "twiscord"
+path = "core/contexts/bot/twiscord/bot.rs"
+
+[[bin]]
 name = "panel"
 path = "core/contexts/panel/app.rs"
 

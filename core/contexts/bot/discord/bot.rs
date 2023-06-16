@@ -140,14 +140,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     discord_bot_flag_sender.send(true).await.unwrap(); //// set this to false if you don't want to start the bot
     tokio::select!{
         bot_flag = discord_bot_flag_receiver.recv() => {
-            if let Some(_) = bot_flag{
-                info!("🏳️ receiving discord bot true flag");
-                daemon::activate_discord_bot(discord_token.as_str(), 
-                                            serenity_shards.parse::<u64>().unwrap(), 
-                                            GPT.clone(), //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
-                                            USER_RATELIMIT.clone(),
-                                            GUILD_RATELIMIT.clone()
-                                        ).await; 
+            if let Some(flag) = bot_flag{
+                if flag == true{
+                    info!("🏳️ receiving discord bot true flag");
+                    daemon::activate_discord_bot(discord_token.as_str(), 
+                                                serenity_shards.parse::<u64>().unwrap(), 
+                                                GPT.clone(), //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+                                                USER_RATELIMIT.clone(),
+                                                GUILD_RATELIMIT.clone()
+                                            ).await; 
+                }
             }    
         }
     }

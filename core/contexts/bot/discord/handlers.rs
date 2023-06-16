@@ -497,7 +497,7 @@ impl EventHandler for Handler{
         object does not directly contain the message instance. The reason is 
         that slash commands can be used without being tied to a specific message.
 
-        in bot design there must be a ctx type that can be passed to other 
+        in bot design process there must be a ctx type that can be passed to other 
         handlers and used to access whole methods and bot setup functions 
         like each ws shard inside each event handler.
 

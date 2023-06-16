@@ -164,7 +164,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         },
         None => {
             let log_name = format!("[{}]", chrono::Local::now());
-            let filepath = format!("error-kind/{}-inappropriate-date.log", log_name);
+            let filepath = format!("logs/error-kind/{}-inappropriate-date.log", log_name);
             let log_content = format!("year:{}|month:{}|day:{}", start_fetching_year, start_fetching_month, start_fetching_day);
             let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
             error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
@@ -181,7 +181,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         },
         None => {        
             let log_name = format!("[{}]", chrono::Local::now());
-            let filepath = format!("error-kind/{}-inappropriate-time.log", log_name);
+            let filepath = format!("logs/error-kind/{}-inappropriate-time.log", log_name);
             let log_content = format!("hours:{}|mins:{}|secs:{}", start_fetching_hours, start_fetching_mins, start_fetching_secs);
             let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
             error_kind_log.write_all(log_content.as_bytes()).await.unwrap();
@@ -369,7 +369,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
             },
             Err(e) => {
                 let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("error-kind/{}-gpt-reading-log-file.log", log_name);
+                let filepath = format!("logs/error-kind/{}-gpt-reading-log-file.log", log_name);
                 let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                 error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
             }
