@@ -143,8 +143,9 @@ impl Twitter{
 
                                         /* publishing the twitter bot response to the redis pubsub channel */
                                         info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_USERNAME.to_string()).await;
+                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                                        let pubsub_message = format!("{TWITTER_VERIFIED_USERNAME:} == {tusername:}");
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
 
                                         return res;
     
@@ -261,7 +262,7 @@ impl Twitter{
 
             let mut is_verified = false;
 
-            for tweet in user_tweets{
+            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
                 if tweet.text.contains(&user_activity_code){
                     
                     is_verified = true;
@@ -277,8 +278,9 @@ impl Twitter{
                 /* publishing the twitter bot response to the redis pubsub channel */
                 info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
                 let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_CODE.to_string()).await;
-
+                let pubsub_message = format!("{TWITTER_VERIFIED_CODE:} == {tusername:}");
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
+                
                 res
 
                 
@@ -355,7 +357,7 @@ impl Twitter{
             let mut is_verified = false;
             let mut link = String::from("");
 
-            for tweet in user_tweets{
+            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
                 if tweet.text.contains(&tweet_content) && tweet.text.len() == tweet_content.len(){
                     let tweet_id = tweet.id;
                     link = format!("https://twitter.com/{tusername:}/status/{tweet_id:}");
@@ -372,8 +374,9 @@ impl Twitter{
                 /* publishing the twitter bot response to the redis pubsub channel */
                 info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
                 let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_TWEET.to_string()).await;
-
+                let pubsub_message = format!("{TWITTER_VERIFIED_TWEET:} == {tusername:}");
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
+                
                 res
 
                 
@@ -468,7 +471,8 @@ impl Twitter{
                                         /* publishing the twitter bot response to the redis pubsub channel */
                                         info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
                                         let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_LIKE.to_string()).await;
+                                        let pubsub_message = format!("{TWITTER_VERIFIED_LIKE:} == {tusername:}");
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
 
                                         return res;
     
@@ -580,7 +584,7 @@ impl Twitter{
 
 
             let mut is_verified = false;
-            let twitter_main_account = env::var("TWITTER_MAIN_ACCOUNT").unwrap_or("BeGuy".to_string());
+
             
             for api in self.apis.clone(){
                 match api
@@ -596,15 +600,14 @@ impl Twitter{
                                 Some(tweet_data) => {
 
                                     let tweet_text = tweet_data.text;
-                                    let tweet_text = format!("RT @{twitter_main_account:}: {tweet_text:}");
 
                                     let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
                                     let Ok(user_tweets) =  get_user_tweets else{
                                         return get_user_tweets.unwrap_err();
                                     };
 
-
-                                    for tweet in user_tweets{
+                                    /* if the user tweet contains the specified tweet then the task is verified */
+                                    for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
                                         if tweet.text == tweet_text{
                                             is_verified = true;
                                         }
@@ -619,7 +622,9 @@ impl Twitter{
                                         /* publishing the twitter bot response to the redis pubsub channel */
                                         info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
                                         let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_RETWEET.to_string()).await;
+                                        let pubsub_message = format!("{TWITTER_VERIFIED_RETWEET:} == {tusername:}");
+                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
+
 
                                         return res;
 
@@ -736,7 +741,7 @@ impl Twitter{
             };
 
             let mut is_verified = true;
-            for tweet in user_tweets{
+            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
 
                 if tweet.text.contains(&hastag){
                     is_verified = true;
@@ -752,7 +757,9 @@ impl Twitter{
                 /* publishing the twitter bot response to the redis pubsub channel */
                 info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
                 let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), TWITTER_VERIFIED_HASHTAG.to_string()).await;
+
+                let pubsub_message = format!("{TWITTER_VERIFIED_HASHTAG:} == {tusername:}");
+                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
 
                 res
 
