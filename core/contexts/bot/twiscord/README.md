@@ -21,9 +21,13 @@ in discord ws/http client
 
 ## 🚀 Deploy
 
-> Make sure that you've ran the `scripts/setup.sh` already, so the token can be accessible from `.env`, also before running that script please build a new application for the this bot inside the discord developer panel.
+Make sure that
 
-> Make sure that you've setup the [twidis](https://github.com/wildonion/twidis) bot already in order to get this bot works.  
+- you've ran the `scripts/setup.sh` already, so the token can be accessible from `.env`, also before running the  script please build a new application for the this bot inside the discord developer panel to get the token.
+
+- this bot and redis are in a same docker network.
+
+- you've setup the [twidis](https://github.com/wildonion/twidis) bot already in order to get this bot works.  
 
 ```bash
 cd /$USER/gem/infra
