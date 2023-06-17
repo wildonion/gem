@@ -68,7 +68,7 @@ name = "conse"
 path = "core/app.rs"
 
 [[bin]]
-name = "dis-bot"
+name = "catchup-bot"
 path = "core/contexts/bot/discord/bot.rs"
 
 [[bin]]

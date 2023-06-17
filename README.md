@@ -70,7 +70,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * `core`: hyper server which are related to the player app.
     * `contexts`: 
-        * `bot`: serenity discord bot.
+        * `bot`: serenity discord and twiscord bots.
         * `panel`: dev and admin panel actix server and yew app.
         * `blockchain`: ticket reservation and whitelist spots solana anchor smart contracts.
     * `controllers`: in-game async controllers related to hyper server.
@@ -122,7 +122,9 @@ cargo run --bin conse
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
 cargo run --bin panel
 # 🏃🏻‍♀️ Run Conse Discord Bot Server
-cargo run --bin dis-bot
+cargo run --bin catchup-bot
+# 🏃🏻‍♀️ Run Conse Twiscord Bot Server
+cargo run --bin twiscord
 # 🏃🏿 Run Conse Test Codes
 cargo run --bin tests
 # 🏃🏿 Run Conse Argon2 Test Codes

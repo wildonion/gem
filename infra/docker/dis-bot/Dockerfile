@@ -8,7 +8,7 @@ RUN rm src/*.rs
 
 ADD . ./
 
-RUN cargo build --bin dis-bot --release
+RUN cargo build --bin catchup-bot --release
 
 
 FROM debian:buster-slim
@@ -26,7 +26,7 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/dis-bot ${APP}/bot
+COPY --from=builder /gem/target/release/catchup-bot ${APP}/bot
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 

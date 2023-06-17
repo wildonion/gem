@@ -27,3 +27,13 @@ sudo apt install libssl-dev libudev-dev pkg-config
 * channel messages summerization using chat GPT
 
 * configured with 10 shards by default also we're using redis to manage the shared state data between clusters.
+
+## 🚀 Deploy
+
+> Make sure that you've ran the `scripts/setup.sh` already, so the tokens can be accessible from `.env`.
+
+```bash
+cd /$USER/gem/infra
+sudo docker build -t conse-catchup-bot -f $(pwd)/infra/docker/catchup-bot/Dockerfile . --no-cache
+sudo docker run -d --link redis --network gem --name conse-catchup-bot -v $(pwd)/infra/data/catchup-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
+```

@@ -81,7 +81,6 @@ pub async fn activate_discord_bot(
         //// into tokio green threadpool to check all the shards status
         let shard_manager = bot_client.shard_manager.clone(); //// each shard is an Arced Mutexed data that can be shared between other threads safely
         let ctx = bot_client.cache_and_http.clone();
-        let mut payload = String::from("test");
         let target_channel_id = ChannelId(channel_id);
         
         /* ----------------------------------------------------------------------------------------- */
@@ -102,7 +101,7 @@ pub async fn activate_discord_bot(
                         m
                             .allowed_mentions(|mentions| mentions.replied_user(true))
                             .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
-                                e.color(Colour::from_rgb(235, 204, 120));
+                                e.color(Colour::from_rgb(0, 152, 219));
                                 e.description(payload.clone());
                                 e.title("");
                                 e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct

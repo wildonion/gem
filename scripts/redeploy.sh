@@ -2,7 +2,7 @@
 
 cd ..
 
-sudo chmod 666 /var/run/docker.sock && docker system prune --all
+sudo chmod 666 /var/run/docker.sock && sudo docker system prune --all
 export SERVER_IP=$(hostname -I | awk '{print $1}')
 export PASSEORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
 
@@ -28,7 +28,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     --name redis \
     --network gem \
     --restart always \
-    redis:5.0.5-alpine /bin/sh -c 'redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}'
+    redis:latest /bin/sh -c 'redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}'
 
 
     sudo docker run -d --network gem --name mongodb --restart unless-stopped -e PUID=1000 -e PGID=1000 -p 27017:27017 -v $(pwd)/infra/data/mongodb/:/data/db mongo
@@ -79,8 +79,8 @@ else
     sudo docker build -t conse-panel -f $(pwd)/infra/docker/panel/Dockerfile . --no-cache
     sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
-    sudo docker build -t conse-catchup-bot -f $(pwd)/infra/docker/dis-bot/Dockerfile . --no-cache
-    sudo docker run -d --link redis --network gem --name conse-catchup-bot -v $(pwd)/infra/data/dis-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
+    sudo docker build -t conse-catchup-bot -f $(pwd)/infra/docker/catchup-bot/Dockerfile . --no-cache
+    sudo docker run -d --link redis --network gem --name conse-catchup-bot -v $(pwd)/infra/data/catchup-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
 
     sudo docker build -t twiscord -f $(pwd)/infra/docker/twiscord/Dockerfile . --no-cache
     sudo docker run -d --link redis --network gem --name twiscord -v $(pwd)/infra/data/twiscord-logs/:/usr/src/app/logs/ twiscord
