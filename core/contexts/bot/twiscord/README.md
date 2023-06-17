@@ -21,7 +21,7 @@ in discord ws/http client
 
 ## 🚀 Deploy
 
-> Make sure that you've ran the `scripts/setup.sh` already, so the tokens can be accessible from `.env`.
+> Make sure that you've ran the `scripts/setup.sh` already, so the token can be accessible from `.env`, also before running that script please build a new application for the this bot inside the discord developer panel.
 
 > Make sure that you've setup the [twidis](https://github.com/wildonion/twidis) bot already in order to get this bot works.  
 

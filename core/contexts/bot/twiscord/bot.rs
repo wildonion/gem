@@ -101,7 +101,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         /* we should constantly subscribing to the redis channel once we received the topics from channels */
         loop{
 
-            let redis_pubsub_msg_sender = redis_pubsub_msg_sender.clone();
 
             let mut redis_conn = redis_client.get_connection().unwrap();
             let mut pubsub = redis_conn.as_pubsub();
@@ -135,45 +134,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                     mention_text.contains("@wing_sol") && 
                     mention_text.contains("@BeJoeNFT") && 
                     mention_text.contains("My score:") &&
-                    mention_text.contains("GameID:"){      
+                    mention_text.contains("GameID:"){   
 
-                        let removed_back_n = mention_text.replace("\n", "");
-                        let removed_whitespace = removed_back_n.replace("           ", "-");
-                        let mut splitted_by_solanasandman = removed_whitespace.split("@solanasandman");
-                        
-                        let mut split_by_joe_scape = splitted_by_solanasandman.next().unwrap().split("Joe’s Escape.");
-                        let before_match_and_game = split_by_joe_scape.next().unwrap();
-                        let score_and_match = split_by_joe_scape.next().unwrap();
-                        let mut splitted_by_dash = score_and_match.split("-");
-                        let my_score = splitted_by_dash.next().unwrap();
-                        let game_id = splitted_by_dash.next().unwrap();
-
-                        let my_score_index_of_colon = my_score.find(":").unwrap();
-                        let game_id_index_of_colon = game_id.find(":").unwrap();
-
-                        let my_score_int = &my_score[my_score_index_of_colon+1..my_score.len()];
-                        let game_id_int = &game_id[game_id_index_of_colon+1..game_id.len()];
-
-                        let parsed_my_score = my_score_int.parse::<u32>().unwrap_or(0);
-                        let parsed_game_id = game_id_int.parse::<u32>().unwrap_or(0);
-
-
-                        /* cloning the sender to prevent from moving into the tokio spawn scope */
+                        /* cloning the redis pubsub mpsc sender to prevent from moving in each iteration before tokio spawn */
                         let redis_pubsub_msg_sender = redis_pubsub_msg_sender.clone();
+
                         
                         /* 
                                         -------------------------
                                         THIS IS IMPORTANT TO KNOW
                                         -------------------------
 
-                            this tokio spawn will send all the mentions asyncly 
-                            to the downside of the redis pubsub mpsc channel, if
-                            we don't put the sending part intside the tokio spawn 
-                            we'll face a blocking situation and will stuck in inside
-                            the foor each mention loop.
+                            this tokio spawn will parse and send all the mentions asyncly to 
+                            the downside of the redis pubsub mpsc channel, if we don't put 
+                            the sending part intside the tokio spawn we'll face a blocking 
+                            situation and will stuck in inside the foor each mention loop.
 
                         */
                         tokio::spawn(async move{
+
+                            let removed_back_n = mention_text.clone().replace("\n", "");
+                            let removed_whitespace = removed_back_n.replace("           ", "-");
+                            let mut splitted_by_solanasandman = removed_whitespace.split("@solanasandman");
+                            
+                            let mut split_by_joe_scape = splitted_by_solanasandman.next().unwrap().split("Joe’s Escape.");
+                            let before_match_and_game = split_by_joe_scape.next().unwrap();
+                            let score_and_match = split_by_joe_scape.next().unwrap();
+                            let mut splitted_by_dash = score_and_match.split("-");
+                            let my_score = splitted_by_dash.next().unwrap();
+                            let game_id = splitted_by_dash.next().unwrap();
+
+                            let my_score_index_of_colon = my_score.find(":").unwrap();
+                            let game_id_index_of_colon = game_id.find(":").unwrap();
+
+                            let my_score_int = &my_score[my_score_index_of_colon+1..my_score.len()];
+                            let game_id_int = &game_id[game_id_index_of_colon+1..game_id.len()];
+
+                            let parsed_my_score = my_score_int.parse::<u32>().unwrap_or(0);
+                            let parsed_game_id = game_id_int.parse::<u32>().unwrap_or(0);
+
 
                             /* if we have game id and score of the game then send it to the discord */
                             if parsed_game_id != 0 && parsed_my_score != 0{
