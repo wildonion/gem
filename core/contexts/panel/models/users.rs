@@ -7,6 +7,7 @@ use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
 use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
+use crate::models::bot::Twitter;
 use crate::constants::*;
 use super::users_tasks::UserTask;
 
@@ -994,54 +995,79 @@ impl User{
                 );
             };
 
-            match diesel::update(users.find(user.id))
-                .set(twitter_username.eq(account_name.to_lowercase()))
-                .returning(FetchUser::as_returning())
-                .get_result(connection)
-                {
-                    Ok(updated_user) => {
-                        Ok(
-                            UserData { 
-                                id: updated_user.id, 
-                                username: updated_user.username, 
-                                activity_code: updated_user.activity_code, 
-                                twitter_username: updated_user.twitter_username, 
-                                facebook_username: updated_user.facebook_username, 
-                                discord_username: updated_user.discord_username, 
-                                wallet_address: updated_user.wallet_address, 
-                                user_role: {
-                                    match updated_user.user_role.clone(){
-                                        UserRole::Admin => "Admin".to_string(),
-                                        UserRole::User => "User".to_string(),
-                                        _ => "Dev".to_string(),
-                                    }
-                                },
-                                token_time: updated_user.token_time,
-                                last_login: { 
-                                    if updated_user.last_login.is_some(){
-                                        Some(updated_user.last_login.unwrap().to_string())
-                                    } else{
-                                        Some("".to_string())
-                                    }
-                                },
-                                created_at: updated_user.created_at.to_string(),
-                                updated_at: updated_user.updated_at.to_string(),
-                            }
-                        )
-                    },
-                    Err(e) => {
+            let new_twitter = Twitter::new(None);
+            let Ok(bot) =  new_twitter else{
+                return Err(new_twitter.unwrap_err());
+            };
 
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: &e.to_string(),
-                            status: 500
-                        };
-                        return Err(
-                            Ok(HttpResponse::InternalServerError().json(resp))
-                        );
+            let is_user_verified = bot.is_twitter_user_verified(user.id, connection).await;
+            let Ok(is_verified) = is_user_verified else{
+                return Err(is_user_verified.unwrap_err());
+            };
 
+            if is_verified{
+                
+                match diesel::update(users.find(user.id))
+                    .set(twitter_username.eq(account_name.to_lowercase()))
+                    .returning(FetchUser::as_returning())
+                    .get_result(connection)
+                    {
+                        Ok(updated_user) => {
+                            Ok(
+                                UserData { 
+                                    id: updated_user.id, 
+                                    username: updated_user.username, 
+                                    activity_code: updated_user.activity_code, 
+                                    twitter_username: updated_user.twitter_username, 
+                                    facebook_username: updated_user.facebook_username, 
+                                    discord_username: updated_user.discord_username, 
+                                    wallet_address: updated_user.wallet_address, 
+                                    user_role: {
+                                        match updated_user.user_role.clone(){
+                                            UserRole::Admin => "Admin".to_string(),
+                                            UserRole::User => "User".to_string(),
+                                            _ => "Dev".to_string(),
+                                        }
+                                    },
+                                    token_time: updated_user.token_time,
+                                    last_login: { 
+                                        if updated_user.last_login.is_some(){
+                                            Some(updated_user.last_login.unwrap().to_string())
+                                        } else{
+                                            Some("".to_string())
+                                        }
+                                    },
+                                    created_at: updated_user.created_at.to_string(),
+                                    updated_at: updated_user.updated_at.to_string(),
+                                }
+                            )
+                        },
+                        Err(e) => {
+    
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+    
+                        }
                     }
-                }
+            } else{
+
+                let resp = Response{
+                    data: Some(wallet),
+                    message: TWITTER_USER_IS_NOT_VALID,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+
+            }
+
 
     }
 
