@@ -2461,6 +2461,32 @@
 							"response": []
 						},
 						{
+							"name": "Login With Wallet and Password",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/login",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Verify Twitter Username",
 							"request": {
 								"auth": {

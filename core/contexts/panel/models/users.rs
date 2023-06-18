@@ -76,6 +76,12 @@ pub struct LoginInfoRequest{
     pub password: String
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct UserLoginInfoRequest{
+    pub wallet: String,
+    pub password: String
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
 #[derive(diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::Userrole"]
@@ -680,7 +686,100 @@ impl User{
             }
     
     }
+
+    pub async fn insert_by_wallet_password(wallet: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
+
+        let random_chars = gen_chars(gen_random_number(5, 11));
+        let random_code: String = (0..5).map(|_|{
+            let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
+            CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+        }).collect();
+
+        let pass = User::hash_pswd(password.as_str()).unwrap();
+        let new_user = NewUser{
+            username: &wallet, /* first insert the username is the wallet address */
+            activity_code: &random_code,
+            wallet_address: &wallet,
+            user_role: UserRole::User,
+            pswd: &pass
+        };
+        
+        match diesel::insert_into(users::table)
+            .values(&new_user)
+            .returning(User::as_returning())
+            .get_result::<User>(connection)
+            {
+                Ok(fetched_user) => {
+
+                    let user_login_data = UserData{
+                        id: fetched_user.id,
+                        username: fetched_user.username.clone(),
+                        activity_code: fetched_user.activity_code.clone(),
+                        twitter_username: fetched_user.twitter_username.clone(),
+                        facebook_username: fetched_user.facebook_username.clone(),
+                        discord_username: fetched_user.discord_username.clone(),
+                        wallet_address: fetched_user.wallet_address.clone(),
+                        user_role: {
+                            match fetched_user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
+                        token_time: fetched_user.token_time,
+                        last_login: { 
+                            if fetched_user.last_login.is_some(){
+                                Some(fetched_user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: fetched_user.created_at.to_string(),
+                        updated_at: fetched_user.updated_at.to_string(),
+                    };
+
+                    /* generate cookie 🍪 from token time and jwt */
+                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+                    /* generate_cookie_and_jwt() returns a Cookie instance with a 'static lifetime which allows us to return it from here*/
+                    let Some(cookie_info) = fetched_user.clone().generate_cookie_and_jwt() else{
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: CANT_GENERATE_COOKIE,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+                    };
+                    
+                    let cookie = cookie_info.0;
+                    let cookie_token_time = cookie_info.1;
+
+                    /* update the login token time */
+                    let now = chrono::Local::now().naive_local();
+                    let updated_user = diesel::update(users.find(fetched_user.id))
+                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                        .execute(connection)
+                        .unwrap();
+                    
+                    Ok((user_login_data, cookie))
+
+                },
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
     
+    }
 
     pub async fn insert_new_user(user: NewUserInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 

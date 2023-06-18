@@ -250,9 +250,9 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, new task, twitter task verification responses, twitter bot responses. ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
+* redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
-* websocket server for streaming over redis subscribed topics + setup it's nginx config file (ws://ws.panel.conse.app)
+* websocket server for streaming over subscribed redis topics + setup it's nginx config file (ws://ws.panel.conse.app)
 
 * redis response caching 
 

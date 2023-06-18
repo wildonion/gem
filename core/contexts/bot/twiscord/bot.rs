@@ -111,6 +111,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
             let payload: String = msg.get_payload().unwrap();
 
 
+            /* UNCOMMENT THE FOLLOWING IF YOU WANT TO SEND TEST MESSAGES */
+
             // /* cloning the redis pubsub mpsc sender to prevent from moving in each iteration before tokio spawn */
             // let redis_pubsub_msg_sender = redis_pubsub_msg_sender.clone();
             // tokio::spawn(async move{
@@ -153,7 +155,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                         // ...
 
                         /* sending each mention text that satisfy all the above criteria to the mpsc channel asyncly */
-                        redis_pubsub_msg_sender.clone().send(mention_text.clone()).await;
+                        let Ok(_) = redis_pubsub_msg_sender.clone().send(mention_text.clone()).await else{
+                            panic!("couldn't send to redis pubsub mpsc channel");
+                        };
                     
                 });
                 

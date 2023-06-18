@@ -22,7 +22,7 @@ sudo mv twitter-accounts.prod.json twitter-accounts.json
 echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys"
 echo "[?] Enter OpenAI token: "
 read OPENAI_TOKEN
-echo "[?] Enter Discord token: "
+echo "[?] Enter Catchup Discord token: "
 read DISCORD_TOKEN
 echo "[?] Enter Twiscord Discord token: "
 read TWISCORD_DISCORD_TOKEN

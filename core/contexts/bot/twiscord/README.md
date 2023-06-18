@@ -23,7 +23,7 @@ in discord ws/http client
 
 Make sure that
 
-- you've ran the `scripts/setup.sh` already, so the token can be accessible from `.env`, also before running the  script please build a new application for the this bot inside the discord developer panel to get the token.
+- you've ran the `scripts/setup.sh` already, so the token can be accessible from `.env`, also before running the  script please build a new application for this bot inside the discord developer panel to get the token and invitation link.
 
 - this bot and redis are in a same docker network.
 
@@ -34,3 +34,9 @@ cd /$USER/gem/infra
 sudo docker build -t twiscord -f $(pwd)/infra/docker/twiscord/Dockerfile . --no-cache
 sudo docker run -d --link redis --network gem --name twiscord -v $(pwd)/infra/data/twiscord-logs/:/usr/src/app/logs/ twiscord
 ```
+
+## 🖼️ Twiscord Architecture Diagram
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/rediscord.png">
+</p>

@@ -1,4 +1,19 @@
 {
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#1f3646",
+        "titleBar.activeBackground": "#19241b",
+        "titleBar.activeForeground": "#288bb3",
+        "checkbox.background": "#19241b",
+        "checkbox.foreground": "#19241b",
+        "checkbox.border": "#288bb3",
+        "input.background": "#1b2601",
+        "input.border": "#288bb3",
+        "scrollbar.shadow": "#288bb3",
+        "scrollbar.background": "#19241b",
+        "scrollbarSlider.activeBackground": "#288bb3",
+        "scrollbarSlider.background": "#19241b",
+        "scrollbarSlider.hoverBackground": "#288bb3"
+    },
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml"
     ],

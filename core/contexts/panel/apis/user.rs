@@ -25,6 +25,7 @@ use crate::schema::tasks;
 #[openapi(
     paths(
         login,
+        login_with_wallet_and_password,
         verify_twitter_account,
         tasks_report,
     ),
@@ -32,6 +33,7 @@ use crate::schema::tasks;
         schemas(
             UserData,
             FetchUserTaskReport,
+            UserLoginInfoRequest,
             TaskData
         )
     ),
@@ -151,6 +153,160 @@ async fn login(
                     
                     /* gently, we'll insert this user into table */
                     match User::insert(wallet.to_owned(), connection).await{
+                        Ok((user_login_data, cookie)) => {
+
+                            resp!{
+                                UserData, //// the data type
+                                user_login_data, //// response data
+                                REGISTERED, //// response message
+                                StatusCode::CREATED, //// status code,
+                                Some(cookie), //// cookie 
+                            } 
+
+                        },
+                        Err(resp) => {
+                            
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                                - CANT_GENERATE_COOKIE
+                            */
+                            resp
+                        }
+                    }
+
+                }
+            }
+        },
+        None => {
+            
+            resp!{
+                &[u8], //// the data type
+                &[], //// response data
+                STORAGE_ISSUE, //// response message
+                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                None::<Cookie<'_>>, //// cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    request_body = UserLoginInfoRequest,
+    responses(
+        (status=200, description="Loggedin Successfully", body=UserData),
+        (status=201, description="Registered Successfully", body=UserData),
+        (status=500, description="Can't Generate Cookie", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("wallet" = String, Path, description = "wallet address")
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/login")]
+async fn login_with_wallet_and_password(
+        req: HttpRequest, 
+        user_login_info: web::Json<UserLoginInfoRequest>,
+        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+    ) -> Result<HttpResponse, actix_web::Error> {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+
+            let login_info = user_login_info.to_owned();
+
+            /* we can pass usernmae by reference or its slice form instead of cloning it */
+            match User::find_by_wallet(&login_info.wallet.to_owned(), connection).await{
+                Ok(user) => {
+
+                    let pswd_verification = user.verify_pswd(&login_info.password); 
+                    let Ok(pswd_flag) = pswd_verification else{
+                        let err_msg = pswd_verification.unwrap_err();
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            &err_msg.to_string(), //// response message
+                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    };
+
+                    if !pswd_flag{
+                        resp!{
+                            String, //// the data type
+                            login_info.wallet, //// response data
+                            WRONG_PASSWORD, //// response message
+                            StatusCode::FORBIDDEN, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+        
+                    /* generate cookie 🍪 from token time and jwt */
+                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+                    let keys_info = user.clone().generate_cookie_and_jwt().unwrap();
+                    let cookie_token_time = keys_info.1;
+                    let jwt = keys_info.2;
+
+                    let now = chrono::Local::now().naive_local();
+                    let updated_user = diesel::update(users.find(user.id))
+                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                        .returning(FetchUser::as_returning())
+                        .get_result(connection)
+                        .unwrap();
+                    
+                    let user_login_data = UserData{
+                        id: user.id,
+                        username: user.username.clone(),
+                        activity_code: user.activity_code.clone(),
+                        twitter_username: user.twitter_username.clone(),
+                        facebook_username: user.facebook_username.clone(),
+                        discord_username: user.discord_username.clone(),
+                        wallet_address: user.wallet_address.clone(),
+                        user_role: {
+                            match user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
+                        token_time: updated_user.token_time,
+                        last_login: { 
+                            if updated_user.last_login.is_some(){
+                                Some(updated_user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: user.created_at.to_string(),
+                        updated_at: updated_user.updated_at.to_string(),
+                    };
+
+                    resp!{
+                        UserData, //// the data type
+                        user_login_data, //// response data
+                        LOGGEDIN, //// response message
+                        StatusCode::OK, //// status code,
+                        Some(keys_info.0), //// cookie 
+                    } 
+
+                },
+                Err(resp) => {
+
+                    /* USER NOT FOUND response */
+                    // resp
+                    
+                    /* gently, we'll insert this user into table */
+                    match User::insert_by_wallet_password(login_info.wallet, login_info.password, connection).await{
                         Ok((user_login_data, cookie)) => {
 
                             resp!{
@@ -397,6 +553,7 @@ pub async fn tasks_report(
 
 pub mod exports{
     pub use super::login;
+    pub use super::login_with_wallet_and_password;
     pub use super::verify_twitter_account;
     pub use super::tasks_report;
 }
