@@ -220,6 +220,12 @@ cd scripts
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
 
+### 🥧 Twiscord Architecture Diagram
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/rediscord.png">
+</p>
+
 ## 🧐 WrapUps 
 
 * to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body** of the `/admin/edit-user` API, also the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
