@@ -139,7 +139,7 @@ cargo run --bin argon2test
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
-- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a Project also you can add new keys by calling the `/admin/add-twitter-accounts` API.
+- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a Project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
 
 - **NOTE**: to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
@@ -266,7 +266,7 @@ cd scripts
 
 * solana ticket reservation contract 
 
-* macros inside the `misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
+* macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
 
 * god and dev panel app using `yew`
 

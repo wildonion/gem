@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                     this tokio spawn will parse and send all the mentions asyncly to 
                     the downside of the redis pubsub mpsc channel, if we don't put 
                     the sending part intside the tokio spawn we'll face a blocking 
-                    situation and will stuck in inside the foor each mention loop.
+                    situation and will stuck in inside the for each mention loop.
 
                 */
                 tokio::spawn(async move{

@@ -6,6 +6,20 @@ use crate::*;
 
 async fn test(){
 
+
+    pub struct Queue<T> where T: FnMut() -> (){
+        pub task: T
+    }
+
+    let mut queues = vec![];
+    for i in 0..10{
+        queues.push(Queue{
+            task: ||{
+
+            } 
+        });
+    }
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     struct Nft;
     struct Account<'info, GenericData>{
