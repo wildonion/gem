@@ -214,13 +214,13 @@ cd scripts
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-### 🖼️ Conse Panel Architecture Diagram
+### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/contexts/panel) Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
 
-### 🥧 Twiscord Architecture Diagram
+### 🥧 [Twiscord](https://github.com/wildonion/gem/tree/master/core/contexts/bot/twiscord) Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/rediscord.png">
