@@ -100,6 +100,22 @@ async fn test(){
 
         /*  
 
+            if we want to take a mutable pointer to a future object then the future object 
+            must implements the Unpin trait, because pinning will lock the object into the ram
+            and makes its location stable in there and doesn't allow to move or mutate that object
+            also it doesn't allow to obtain Box<T> or &mut T thus we must unpin the object first
+            the following is the general explanation of this:
+
+            By default, all types in Rust are movable. Rust allows passing all types by-value, 
+            and common smart-pointer types such as Box<T> and &mut T allow replacing and moving 
+            the values they contain: you can move out of a Box<T>, or you can use mem::swap. 
+            Pin<P> wraps a pointer type P, so Pin<Box<T>> functions much like a regular Box<T>: 
+            when a Pin<Box<T>> gets dropped, so do its contents, and the memory gets deallocated. 
+            Similarly, Pin<&mut T> is a lot like &mut T. However, Pin<P> does not let clients 
+            actually obtain a Box<T> or &mut T to pinned data, which implies that you cannot use 
+            operations such as mem::swap
+
+
             future objects are traits and can be implemented for other types to convert those
             types into a future objects, also they can return any type as their result of solving
             process by default rust moves heap data types when we go to new scopes unless we borrow 

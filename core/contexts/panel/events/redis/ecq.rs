@@ -34,6 +34,7 @@ pub struct CurrentMatch{
     pub event_id: String,
     pub players: Vec<Player>,
     pub room_id: String,
+    pub is_locked: bool
 }
 
 

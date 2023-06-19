@@ -48,10 +48,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🍅 catchup discord bot for channel messages summarization 
 
-* 🎟️ **Solana** on-chain ticket reservation contract to buy ticket for the event
-
-* 🔥 **Solana** on-chain **B2C** whitelist contract to burn the past event roles for whitelist spots
-
 * 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible server's responses 
 
 * 🎒 supports **postgres**, **mongodb** and **redis** as the app storage  
@@ -72,7 +68,6 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
     * `contexts`: 
         * `bot`: serenity discord and twiscord bots.
         * `panel`: dev and admin panel actix server and yew app.
-        * `blockchain`: ticket reservation and whitelist spots solana anchor smart contracts.
     * `controllers`: in-game async controllers related to hyper server.
     * `routers`: in-game API routers related to hyper server.
     * `schemas`: in-game mongodb schemas related to hyper server.
@@ -264,7 +259,7 @@ cd scripts
 
 * dev APIs related to the conse hyper server 
 
-* solana ticket reservation contract 
+* solana [ticket reservation contract](https://github.com/wildonion/solmarties)
 
 * macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
 

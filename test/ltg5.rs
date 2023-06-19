@@ -1,24 +1,46 @@
 
 
 
+use std::default;
+
 use crate::*;
 
 
 async fn test(){
 
 
-    pub struct Queue<T> where T: FnMut() -> (){
-        pub task: T
+    pub struct NftCon;
+    static mut CONTRACT: Option<NftCon> = Some(NftCon);
+
+    {
+        unsafe {CONTRACT = Some(NftCon);} /* mutating static content is unsafe */
     }
 
-    let mut queues = vec![];
+    pub struct Packet<'lifetime, T> where T: FnMut() -> (){
+        pub task: T,
+        pub data: &'lifetime [u8]
+    }
+
+    let mut queues = Vec::default();
+
     for i in 0..10{
-        queues.push(Queue{
-            task: ||{
+        let mut cb = ||{};
+        /*  
+            can't have mutable reference to the task since:
+            borrowing cb is not possible since cb will be dropped at the end of each iteration 
+            and it doesn't live long enough, because its scope is not valid after the loop gets ended
+            and since there is a pointer of that is exists inside the loop thus we can't execute the loop
+        */
+        let mut_pointer_to_task = &mut cb;
+        let packet = Packet{
+            task: cb, /* mutating task will also mutate c */
+            data: &[1]
 
-            } 
-        });
+        };
+        queues.push(packet);
     }
+
+    let t = (queues[0].task)();
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     struct Nft;
@@ -29,9 +51,9 @@ async fn test(){
 
     impl<'info, GenericData> Account<'info, GenericData>{
 
-    pub fn run(&self) -> &[u8]{
+    pub fn run(&self) -> (&[u8], &str){ /* return pointer to slice types */
         let a: &[u8] = &[1];
-        a
+        (a, "wildonion")
     }
 
     }
