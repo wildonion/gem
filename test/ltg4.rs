@@ -79,6 +79,11 @@ async fn test(){
 
     //----------------------------
     let clsMe = |name: String| { //// we can also put the closure body inside a curly braces
+
+        let mut val = "wildonion".to_string(); /* creating longer lifetime by binding the val into let */
+        let mut boxed = Box::pin(&mut val);
+        let ref_ = &mut boxed;
+       
         Box::pin(async {
             name
         })
@@ -88,6 +93,58 @@ async fn test(){
     });
     //----------------------------
 
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    struct Round{
+        val_idx: u8,
+        values: Vec<u8>
+    }
+    let announced_values: Vec<Round> = vec![];
+    
+    /* 
+        closures can capture env vars so we can access them inside the closure method, with 
+        function we can't do that, since functions have their own scopes, we could either pass 
+        the type by value if we don't need its ownership (specially for heap data) or reference 
+        if we don't want to lose its ownership inside the caller scope of the method also to mutate 
+        the content of the type inside the function without mutating the actual type we 
+        must pass a mutable reference to it like for mutating announced_values we must pass 
+        the mutable reference to announced_values type to the is_duplicate_fn function, 
+        since by mutating the mutable pointer of the main type the actual type will be mutated too, 
+    */
+
+    fn is_duplicate_fn(val: u16, val_idx: u16, announced_values: &mut Vec<Round>) -> bool{
+        for av_idx in 0..announced_values.len(){
+            if (announced_values[av_idx].values[val_idx as usize]) as u16 == val{
+                return true;
+            } else{
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /*
+        the following closure will borrow and capture the result_announced_values var
+        as immutable, thus we can't push into the result_announced_values vector later
+        on if we're going to use this method, since rust doesn't allow to borrow the 
+        type as mutable if it's borrowed as immutable already in a scope, instead we 
+        can use FnMut closure to capture vars mutablyو also announced_values must be 
+        initialized in order the closure to be able to capture it into its env
+    */
+    let is_duplicate = |val: u16, val_idx: u16|{
+        for av_idx in 0..announced_values.len(){
+            if (announced_values[av_idx].values[val_idx as usize]) as u16 == val{
+                return true;
+            } else{
+                return false;
+            }
+        }
+        return false;
+    };
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     
     clsMe("wildonion".to_string());
 	

@@ -79,6 +79,23 @@ pub fn from_hex_string_to_u16(s: &str) -> Result<Vec<u16>, std::num::ParseIntErr
         .collect()
 }
 
+struct Keypair;
+struct Pubkey;
+struct Prvkey;
+impl Keypair{
+    fn new() -> (Pubkey, Prvkey){
+        (Pubkey, Prvkey)
+    }
+}
+// let keypairs: (Pubkey, Prvkey) = Keypair::new();
+// use private key to sign the data 
+// use public key to verify the signature
+// use seed phrase to generate both keys
+
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Keys{
     pub twitter_bearer_token: String,

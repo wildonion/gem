@@ -4,6 +4,7 @@
 
 
 
+use redis::RedisError;
 use tokio::io::AsyncWriteExt;
 use futures_util::StreamExt;
 use futures::future;
@@ -88,6 +89,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
 
 
+    /* 
+        receiving is a mutable process since the underlying 
+        method which is recv() has &mut self as it's first param 
+        which is a mutable pointer to the response_receiver 
+        instance in which mutating the content of the pointer
+        will mutate the content of the instance too.
+    */
+    let (response_sender, mut response_receiver) = tokio::sync::mpsc::channel::<Vec<schemas::Mention>>(io_buffer_size);
+
+    tokio::spawn(async move{
+        
+        let res = reqwest::get("https://some-domain/get-twitter-mentions")
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+
+        response_sender.send(res).await;
+
+    });
+
+
+
+
+
+
+
     // -------------------------------- subscribing to redis pubsub channel
     //
     // ---------------------------------------------------------------------------------------
@@ -98,9 +127,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     */
     tokio::spawn(async move{
 
+        /* once we received the mention response from the sender we'll publish it to the redis pubsub channel */
+        while let Some(res) = response_receiver.recv().await{
+
+            let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
+            info!("📢 publishing twitter user mentions response to redis pubsub [twitter-mentions-response] channel");  
+            let pubsub_message = serde_json::to_string_pretty(&res).unwrap();
+            let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-mentions-response".to_string(), pubsub_message).await;
+            
+        }
+
+
         /* we should constantly subscribing to the redis channel once we received the topics from channels */
         loop{
-
 
             let mut redis_conn = redis_client.get_connection().unwrap();
             let mut pubsub = redis_conn.as_pubsub();

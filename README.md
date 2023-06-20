@@ -259,7 +259,7 @@ cd scripts
 
 * dev APIs related to the conse hyper server 
 
-* solana [ticket reservation contract](https://github.com/wildonion/solmarties)
+* solana [ticket reservation contract](https://github.com/wildonion/solmarties/tree/main/programs/ticket)
 
 * macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
 
