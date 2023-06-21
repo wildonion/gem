@@ -107,7 +107,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
             .await
             .unwrap();
 
-        response_sender.send(res).await;
+        let Ok(_) = response_sender.send(res).await else{
+            panic!("couldn't send to response sender mpsc channel");
+        };
 
     });
 

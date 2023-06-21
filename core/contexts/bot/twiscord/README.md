@@ -1,7 +1,13 @@
 
 # 🤖 Conse Twiscord Bot
 
+> [bot link](https://discord.com/api/oauth2/authorize?client_id=1121128286433595504&permissions=274877908992&scope=bot)
+
 this bot subscribes to redis pubsub channels related to twitter's mentions, tweets and replies topics and send them to the specified channel in discord. 
+
+> with [bot link](https://discord.com/api/oauth2/authorize?client_id=1121128286433595504&permissions=274877908992&scope=bot) we can add the conse bot to discord servers. 
+
+> get token from [here](https://discord.com/developers/applications/1121128286433595504/bot)
 
 **Code Flow:**
 
