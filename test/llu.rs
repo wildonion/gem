@@ -1,4 +1,7 @@
 
+use rand::seq::SliceRandom;
+use rustls::server;
+
 use crate::*;
 
 
@@ -98,6 +101,7 @@ pub async fn unsafer(){
         
     `let` will store on the stack which may get new address later (we can pin it to the ram to avoid of changing its address), 
     `static` and `const` will store on the data segment which will allocate nothing and have fixed address on the stack during execution 
+    `Box` will store data inside the heap with its own valid lifetime and accessing the Boxed content requires dereferencing using *
     also every type has a lifetime inside the stack including the heap data pointers and tha't why we can't return a pointer to 
     the heap data which are owned by the function since once the function gets executed its data will be dropped from the ram
     and the pointer that we've just returned it will be a dangling pointer.
@@ -512,14 +516,24 @@ pub async fn unsafer(){
 
 
     // ----------------
-    //  BORROWING RULE
+    //  BORROWING RULES
     // ---------------
     /*
 
         when a type is going to dropped at the end of a block or scope 
         there it can't be a borrow of that type or basically if the 
         type is behind a pointer there it can'e be moved
-    
+
+
+        - [x] can’t borrow the type as mutable if it’s behind an immutable pointer already like can’t push into a vector is there is a closure that has captured the vector into its scope.
+        - [x] returning struct in place without creating new instance will allocate nothing on the stack and will be placed in caller space directly so we can return &Sruct{} 
+        - [x] pass mutable ref to mutate the main type in other scopes like &mut self  
+        - [x] we can return pointer with a valid lifetime like by using the &self lifetime to slice types from methods 
+        - [x] can't return pointer from the function if the pointer is pointing to a heap data
+        - [x] can't move the type into new scopes if the data is behind a pointer (avoid dangling pointer issue)
+        - [x] functions can’t access the outside-of-their-scope’s types thus we must pass types by reference to their scopes 
+        - [x] types that don’t implement Copy trait will be moved by default in rust so we can either clone or borrow them to prevent from moving 
+
     */
     //// we can borrow in order to prevent from moving but 
     ////        - can't later move the type into new scope since it has a borrow, we can clone it or move its borrow 
@@ -765,6 +779,72 @@ pub async fn unsafer(){
     //     slice::from_raw_parts(deserialized_transaction_borsh as *const Transaction as *const u8, mem::size_of::<Transaction>()) //// it'll form a slice from the pointer to the struct and the total size of the struct which is the number of elements inside the constructed &[u8] array; means number of elements in constructing a &[u8] from a struct is the total size of the struct allocated in the memory
     // };
     
+
+
+
+    /*
+
+        a reference to a type contains the address of the type inside the 
+        ram which can be used to borrow the type in order no to lose the ownership 
+        of the type and we can also access the data inside the type which is either 
+        in stack or stack by its pointer and with mutable pointer we can 
+        mutate the data of the type
+
+        we need to know that how many pointers are borrowing the types at runtime 
+        which can be used to count the references, once its strong counter reached 0 the type
+        can be dropped from the ram, just to wake you up, rust doesn't have gc :) during the 
+        app all those references will be dropped first then the actual type can be dropped
+
+        borrow the ownership of the type using & instead of cloning to prevent its ownership
+        from moving when we go into a new scope, we can also pass by value or the type itself which
+        two things might be happened for the type, if the type implements Copy trait then the type 
+        won't be moved and we can access its ownership in later scopes otherwise the type will be moved 
+        into new scopes and we'll lose its ownership, we can prevent this from happening either by passing 
+        the type by reference or clone it 
+
+        Weak holds a none owning of the managed allocation it doesn't count towards ownership thus its type
+        can be dropped even the weak counter is not reached 0
+
+        Rc hold a pointer represents the ownership of the allocation thus the allocation can't be dropped 
+        unless the string_count of the Rc is reached 0
+
+    */
+    
+    {    
+
+        // reference counting and storing struct itself in its field
+        
+        let pointee_arr = &[0u128; 6];
+
+        let rc_pointee_arr = Rc::new(pointee_arr);
+        let another_rc_pointee_arr = Rc::clone(&rc_pointee_arr);
+        let p = pointee_arr; // pointee_arr is a reference itself thus no need to clone or borrow it from the outside of this scope
+    
+        let third = Rc::clone(&another_rc_pointee_arr);
+        
+        let ref_counter = Rc::strong_count(&rc_pointee_arr);
+
+        println!("counter is {:?}", ref_counter); // counter is 3 right now
+    
+        
+        struct Gadget{
+            me: Weak<Gadget> 
+        }
+
+        impl Gadget{
+
+            fn new() -> Rc<Self>{
+                Rc::new_cyclic(|g|{
+                    Gadget { me: g.clone() }
+                })
+            }
+
+            fn me(&self) -> Rc<Self>{
+                self.me.upgrade().unwrap() /* upgrade weak pointer to rc */
+            }
+        }
+
+    } 
 
 
 }

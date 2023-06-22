@@ -83,12 +83,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     let redis_conn_url = format!("redis://:{}@{}", redis_password, redis_host);
     let redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
     let (redis_pubsub_msg_sender, redis_pubsubs_msg_receiver) = tokio::sync::mpsc::channel::<String>(io_buffer_size);
+    let (response_sender, mut response_receiver) = tokio::sync::mpsc::channel::<Vec<schemas::Mention>>(io_buffer_size);
 
 
 
 
 
 
+    // -------------------------------- sending twitter mentions responses to mpsc channel
+    //
+    // -------------------------------------------------------------------------------------------
     /* 
         receiving is a mutable process since the underlying 
         method which is recv() has &mut self as it's first param 
@@ -96,8 +100,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         instance in which mutating the content of the pointer
         will mutate the content of the instance too.
     */
-    let (response_sender, mut response_receiver) = tokio::sync::mpsc::channel::<Vec<schemas::Mention>>(io_buffer_size);
-
     tokio::spawn(async move{
         
         let res = reqwest::get("https://some-domain/get-twitter-mentions")
@@ -119,6 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
 
 
+
     // -------------------------------- subscribing to redis pubsub channel
     //
     // ---------------------------------------------------------------------------------------
@@ -128,6 +131,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         avoid blocking issues.
     */
     tokio::spawn(async move{
+
+
 
         /* once we received the mention response from the sender we'll publish it to the redis pubsub channel */
         while let Some(res) = response_receiver.recv().await{
@@ -175,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
                 let mention_text = mention.text;
 
-                /* cloning the redis pubsub mpsc sender to prevent from moving in each iteration before tokio spawn */
+                /* cloning the redis pubsub mpsc sender to prevent from moving in each iteration before going into tokio spawn */
                 let redis_pubsub_msg_sender = redis_pubsub_msg_sender.clone();
 
                 

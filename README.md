@@ -257,7 +257,7 @@ cd scripts
 
 * redis response caching 
 
-* dev APIs related to the conse hyper server 
+* conse panel dev APIs related to the conse hyper server 
 
 * solana [ticket reservation contract](https://github.com/wildonion/solmarties/tree/main/programs/ticket)
 
@@ -268,5 +268,3 @@ cd scripts
 * custom error type inside `error.rs`
 
 * conse `errors` handler service and `jobs` crontabs folder
-
-* `ed25519` keypair for server checksum and licensing, updating and verification using its commit (like ssh keys), also time hash based (**`hash(user_id + time + ip + user agent)`**) locking api with rate limit feature to avoid guarded api call spamming (like sleeping in thread or using snowflake id based on client secret keys) using `argon2`, `rust-crypto`, `noise` and `ring` tools, also see the one inside the [payma](https://github.com/wildonion/payma) repo.

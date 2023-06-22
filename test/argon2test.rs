@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     println!("dev password is {:?}", dev_pass.clone().unwrap());
     println!("admin password is {:?}", admin_pass.clone().unwrap());
 
-    let admin_pswd = [Pswds::Admin(admin_pass.unwrap()), Pswds::Dev(dev_pass.unwrap())];
+    let pswds = [Pswds::Admin(admin_pass.unwrap()), Pswds::Dev(dev_pass.unwrap())];
 
 
     Ok(())
