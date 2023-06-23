@@ -251,7 +251,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
-* websocket server for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
+* websocket server and actors for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
 
 * redis response caching 
 

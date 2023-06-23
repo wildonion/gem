@@ -3,7 +3,7 @@
 
 > [bot link](https://discord.com/api/oauth2/authorize?client_id=1121128286433595504&permissions=274877908992&scope=bot)
 
-this bot subscribes to redis pubsub channels related to twitter's mentions, tweets and replies topics and send them to the specified channel in discord. 
+this bot subscribes to redis pubsub channels related to twitter's mentions, tweets and replies topics which have been published inside the twidis bot and send them to the specified channel in discord. 
 
 > with [bot link](https://discord.com/api/oauth2/authorize?client_id=1121128286433595504&permissions=274877908992&scope=bot) we can add the conse bot to discord servers. 
 
