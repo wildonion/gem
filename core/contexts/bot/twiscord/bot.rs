@@ -88,6 +88,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
 
 
+    /* 
+        for each async and heavy tasks we must use 
+        tokio::spawn(async move{}) channel to avoid 
+        blocking issues, stuck and halting situations 
+    */
+
+
+
 
 
     // -------------------------------- sending twitter mentions responses to mpsc channel
@@ -100,22 +108,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         instance in which mutating the content of the pointer
         will mutate the content of the instance too.
     */
-    tokio::spawn(async move{
+    // tokio::spawn(async move{
         
-        let res = reqwest::get("https://some-domain/get-twitter-mentions")
-            .await
-            .unwrap()
-            .json()
-            .await
-            .unwrap();
+    //     let res = reqwest::get("https://some-domain/get-twitter-mentions")
+    //         .await
+    //         .unwrap()
+    //         .json()
+    //         .await
+    //         .unwrap();
 
-        let Ok(_) = response_sender.send(res).await else{
-            panic!("couldn't send to response sender mpsc channel");
-        };
+    //     let Ok(_) = response_sender.send(res).await else{
+    //         panic!("couldn't send to response sender mpsc channel");
+    //     };
 
-    });
-
-
+    // });
 
 
 
@@ -132,18 +138,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     */
     tokio::spawn(async move{
 
+        /* comment the following `while let` if we get stuck in here, to avoid blocking issues */
 
-
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+        /* RECEIVING FROM THE TWITTER MENTIONS MPSC CHANNEL TO SEND TO THE REDIS PUBSUB CHANNEL */
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
         /* once we received the mention response from the sender we'll publish it to the redis pubsub channel */
-        while let Some(res) = response_receiver.recv().await{
+        // while let Some(res) = response_receiver.recv().await{
 
-            let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
-            info!("📢 publishing twitter user mentions response to redis pubsub [twitter-mentions-response] channel");  
-            let pubsub_message = serde_json::to_string_pretty(&res).unwrap();
-            let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-mentions-response".to_string(), pubsub_message).await;
+        //     let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
+        //     info!("📢 publishing twitter user mentions response to redis pubsub [twitter-mentions-response] channel");  
+        //     let pubsub_message = serde_json::to_string_pretty(&res).unwrap();
+        //     let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-mentions-response".to_string(), pubsub_message).await;
             
-        }
-
+        // }
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+        
+        /*
+            loop{} event listener to receive from redis pubsub channel inside tokio spawn then 
+            send through the mpsc channel to receive inside another tokio spawn using while let 
+            syntax inside another part of the app which takes care about hanling bot events
+        */
 
         /* we should constantly subscribing to the redis channel once we received the topics from channels */
         loop{
@@ -192,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                     this tokio spawn will parse and send all the mentions asyncly to 
                     the downside of the redis pubsub mpsc channel, if we don't put 
                     the sending part intside the tokio spawn we'll face a blocking 
-                    situation and will stuck in inside the for each mention loop.
+                    situation and will stuck in inside the `for each mention` loop.
 
                 */
                 tokio::spawn(async move{

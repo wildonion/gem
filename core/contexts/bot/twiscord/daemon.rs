@@ -11,7 +11,7 @@ use crate::{*, handlers::Handler};
 pub async fn activate_discord_bot(
     discord_token: &str, 
     serenity_shards: u64, 
-    mut redis_pubsub_msg_receiver: tokio::sync::mpsc::Receiver<String>
+    mut redis_pubsub_msg_receiver: tokio::sync::mpsc::Receiver<String> /* reading or receiving from channel requires to mutate the data thus we must define the receiver as mutable */
     ){
 
     /* 
