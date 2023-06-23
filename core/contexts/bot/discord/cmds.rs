@@ -11,14 +11,14 @@
 
 use crate::*;
 
-//// --------------------------------------
-//// ----------- SLASH COMMANDS -----------
-//// --------------------------------------
+// --------------------------------------
+// ----------- SLASH COMMANDS -----------
+// --------------------------------------
 pub mod slash{
     
-    use super::*; //// loading all the crates that has loaded outside of this module
+    use super::*; // loading all the crates that has loaded outside of this module
     
-    //// command param will be over written later thus it must be defined mutable
+    // command param will be over written later thus it must be defined mutable
     pub fn catchup_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("catchup")
@@ -34,7 +34,7 @@ pub mod slash{
             })
     }
 
-    //// command will be over written later thus it must be defined mutable
+    // command will be over written later thus it must be defined mutable
     pub fn help_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("help")
@@ -42,7 +42,7 @@ pub mod slash{
 
     }
 
-    //// command will be over written later thus it must be defined mutable
+    // command will be over written later thus it must be defined mutable
     pub fn stats_register(command: &mut builder::CreateApplicationCommand) -> &mut builder::CreateApplicationCommand {
         command
             .name("stats")

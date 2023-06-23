@@ -4,7 +4,7 @@
 
 
 use serde::{Serialize, Deserialize};
-use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
+use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 
 
 
@@ -31,8 +31,8 @@ use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson str
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetPlayerInfoRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub user_id: String, //// this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetPlayerInfoRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub user_id: String, // this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
     pub event_id: String,
 }
 
@@ -45,8 +45,8 @@ pub struct GetPlayerInfoRequest{ //// we don't need _id field in this struct cau
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetGodGroupsRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub _id: String, //// this is the id of the god took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetGodGroupsRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub _id: String, // this is the id of the god took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -58,15 +58,15 @@ pub struct GetGodGroupsRequest{ //// we don't need _id field in this struct caus
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct AddRoleRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub name: String, //// role name
-    pub rate: u8, //// role rate
-    pub desc: String, //// role description
-    pub abilities: u8, //// number of total abilities for a role, the default is 0
-    pub side_id: String, //// this field can be None at initialization which is the moment that a participant reserve an event
-    pub is_disabled: Option<bool>, //// whether this role has disabled or not
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+pub struct AddRoleRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub name: String, // role name
+    pub rate: u8, // role rate
+    pub desc: String, // role description
+    pub abilities: u8, // number of total abilities for a role, the default is 0
+    pub side_id: String, // this field can be None at initialization which is the moment that a participant reserve an event
+    pub is_disabled: Option<bool>, // whether this role has disabled or not
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -78,13 +78,13 @@ pub struct AddRoleRequest{ //// we don't need _id field in this struct cause it'
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct AddLastMoveRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub name: String, //// role name
-    pub rate: u8, //// role rate
-    pub desc: String, //// role description
+pub struct AddLastMoveRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub name: String, // role name
+    pub rate: u8, // role rate
+    pub desc: String, // role description
     pub is_disabled: Option<bool>,
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -97,7 +97,7 @@ pub struct AddLastMoveRequest{ //// we don't need _id field in this struct cause
 */
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct LastMoveInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,
     pub rate: u8,
     pub desc: String,
@@ -135,7 +135,7 @@ pub struct EventLastMoveInfo{
 */
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct RoleInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,
     pub rate: u8,
     pub desc: String,
@@ -156,12 +156,12 @@ pub struct RoleInfo{
 */
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct DeckRoleInfo{
-    pub _id: String, //// the role id itself
+    pub _id: String, // the role id itself
     pub name: String,
     pub rate: u8,
     pub desc: String,
     pub abilities: u8,
-    pub side_id: String, //// side id of the role
+    pub side_id: String, // side id of the role
     pub is_disabled: Option<bool>,
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
@@ -176,13 +176,13 @@ pub struct DeckRoleInfo{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct AddDeckRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+pub struct AddDeckRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
     pub deck_name: String,
     pub roles: Vec<DeckRoleInfo>,
     pub last_move_cards: Vec<EventLastMoveInfo>,
-    pub is_disabled: Option<bool>, //// whether this deck has disabled or not
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub is_disabled: Option<bool>, // whether this deck has disabled or not
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -194,14 +194,14 @@ pub struct AddDeckRequest{ //// we don't need _id field in this struct cause it'
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct UpsertDeckRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub _id: Option<String>, //// this is the stringify object id of the deck; it can be optional to insert a new deck doc
+pub struct UpsertDeckRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub _id: Option<String>, // this is the stringify object id of the deck; it can be optional to insert a new deck doc
     pub deck_name: String,
     pub roles: Vec<DeckRoleInfo>,
     pub last_move_cards: Vec<EventLastMoveInfo>,
-    pub is_disabled: Option<bool>, //// whether this deck has disabled or not
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub is_disabled: Option<bool>, // whether this deck has disabled or not
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -214,7 +214,7 @@ pub struct UpsertDeckRequest{ //// we don't need _id field in this struct cause 
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DeckInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
     pub deck_name: String,
     pub roles: Vec<DeckRoleInfo>,
     pub last_move_cards: Vec<EventLastMoveInfo>,
@@ -232,13 +232,13 @@ pub struct DeckInfo{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct AddGroupRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+pub struct AddGroupRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
     pub name: String,
     pub owner: String,
     pub image_path: Option<String>,
-    pub god_id: Option<String>, //// this is the owner id of this group which is the god id of the created group
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub god_id: Option<String>, // this is the owner id of this group which is the god id of the created group
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -251,10 +251,10 @@ pub struct AddGroupRequest{ //// we don't need _id field in this struct cause it
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct GroupInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,
-    pub owner: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub image_path: Option<String>, //// since there might be no image at all set for the group
+    pub owner: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub image_path: Option<String>, // since there might be no image at all set for the group
     pub god_id: Option<String>,
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
@@ -270,9 +270,9 @@ pub struct GroupInfo{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AddGroupInfoToEvent{
-    pub _id: String, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: String, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,
-    pub owner: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub owner: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
     pub image_path: Option<String>,
     pub god_id: Option<String>,
     pub created_at: Option<i64>,
@@ -289,7 +289,7 @@ pub struct AddGroupInfoToEvent{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct UpdateGroupRequest{
-    pub _id: String, //// this is the id of the group took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub _id: String, // this is the id of the group took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
     pub name: String,
 }
 
@@ -302,8 +302,8 @@ pub struct UpdateGroupRequest{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetGroupRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub _id: String, //// this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetGroupRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub _id: String, // this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -315,8 +315,8 @@ pub struct GetGroupRequest{ //// we don't need _id field in this struct cause it
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetDeckRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub _id: String, //// this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetDeckRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub _id: String, // this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -329,7 +329,7 @@ pub struct GetDeckRequest{ //// we don't need _id field in this struct cause it'
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AvailableGroups{
-    pub groups: Vec<GroupInfo>, //// fetch all groups
+    pub groups: Vec<GroupInfo>, // fetch all groups
 }
 
 
@@ -342,7 +342,7 @@ pub struct AvailableGroups{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AvailableDecks{
-    pub decks: Vec<DeckInfo>, //// fetch all none disabled decks
+    pub decks: Vec<DeckInfo>, // fetch all none disabled decks
 }
 
 
@@ -355,7 +355,7 @@ pub struct AvailableDecks{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AvailableRoles{
-    pub roles: Vec<RoleInfo>, //// fetch all none disabled roles
+    pub roles: Vec<RoleInfo>, // fetch all none disabled roles
 }
 
 
@@ -368,7 +368,7 @@ pub struct AvailableRoles{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AvailableSides{
-    pub sides: Vec<SideInfo>, //// fetch all none disabled sides
+    pub sides: Vec<SideInfo>, // fetch all none disabled sides
 }
 
 
@@ -380,11 +380,11 @@ pub struct AvailableSides{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct AddSideRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+pub struct AddSideRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
     pub name: String,
-    pub is_disabled: Option<bool>, //// whether this side has disabled or not
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub is_disabled: Option<bool>, // whether this side has disabled or not
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -397,7 +397,7 @@ pub struct AddSideRequest{ //// we don't need _id field in this struct cause it'
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SideInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
     pub is_disabled: Option<bool>,
     pub name: String,
 }
@@ -412,7 +412,7 @@ pub struct SideInfo{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DisableRoleRequest{
-    pub _id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub _id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -425,7 +425,7 @@ pub struct DisableRoleRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DisableLastMoveRequest{
-    pub _id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub _id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -438,7 +438,7 @@ pub struct DisableLastMoveRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DisableDeckRequest{
-    pub _id: String, //// this is the id of the deck took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub _id: String, // this is the id of the deck took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -451,7 +451,7 @@ pub struct DisableDeckRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DisableSideRequest{
-    pub _id: String, //// this is the id of the side took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub _id: String, // this is the id of the side took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -483,7 +483,7 @@ pub struct InsertPlayerRoleAbilityRequest{
     pub user_id: String,
     pub role_id: String,
     pub event_id: String,
-    pub current_ability: Option<u8>, //// on inserting a new record this field will be initialized empty and will be updated during the game by the God
+    pub current_ability: Option<u8>, // on inserting a new record this field will be initialized empty and will be updated during the game by the God
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
 }
@@ -498,13 +498,13 @@ pub struct InsertPlayerRoleAbilityRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerRoleAbilityInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
-    pub user_id: String, //// string type of ObjectId for user id 
-    pub role_id: String, //// string type of ObjectId for role id
-    pub event_id: String, //// string type of ObjectId for event id
-    pub current_ability: Option<u8>, //// number of current abilities for this player
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
+    pub user_id: String, // string type of ObjectId for user id 
+    pub role_id: String, // string type of ObjectId for role id
+    pub event_id: String, // string type of ObjectId for event id
+    pub current_ability: Option<u8>, // number of current abilities for this player
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -533,11 +533,11 @@ pub struct InsertGodVoteOnPlayerInfoRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct GodVotesOnPlayerInfo{
-    pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
-    pub user_id: String, //// string type of ObjectId for user id 
-    pub event_id: String, //// string type of ObjectId for role id
+    pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
+    pub user_id: String, // string type of ObjectId for user id 
+    pub event_id: String, // string type of ObjectId for role id
     pub score: u8,
-    pub issued_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub issued_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -549,9 +549,9 @@ pub struct GodVotesOnPlayerInfo{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetGodVotePlayerInfoRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub user_id: String, //// this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub event_id: String, //// this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetGodVotePlayerInfoRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub user_id: String, // this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub event_id: String, // this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -563,8 +563,8 @@ pub struct GetGodVotePlayerInfoRequest{ //// we don't need _id field in this str
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetGodVotesPlayerInfoRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub user_id: String, //// this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetGodVotesPlayerInfoRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub user_id: String, // this is the id of the player took from the mongodb users collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -580,7 +580,7 @@ pub struct InsertPlayerChainToRequest{
     pub from_id: String,
     pub to_id: String,
     pub event_id: String,
-    pub chained_at: Option<i64>, //// this must be filled inside the server
+    pub chained_at: Option<i64>, // this must be filled inside the server
 }
 
 
@@ -594,10 +594,10 @@ pub struct InsertPlayerChainToRequest{
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerChainToInfo{
     pub _id: Option<ObjectId>,
-    pub from_id: String, //// string type of ObjectId for from user id 
-    pub to_id: String, //// string type of ObjectId for to user id
+    pub from_id: String, // string type of ObjectId for from user id 
+    pub to_id: String, // string type of ObjectId for to user id
     pub event_id: String, 
-    pub chained_at: Option<i64>, //// we set this field to Option cause we don't want to pass the chained time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub chained_at: Option<i64>, // we set this field to Option cause we don't want to pass the chained time inside the request body thus it should be None initially, we'll fill it inside the server
 }
 
 
@@ -623,11 +623,11 @@ pub struct AvailableChainInfos{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ReservePlayerInfoResponse{
-  pub _id: Option<ObjectId>, //// ObjectId is the bson type of _id inside the mongodb
+  pub _id: Option<ObjectId>, // ObjectId is the bson type of _id inside the mongodb
   pub username: String,
   pub status: u8,
-  pub role_id: Option<ObjectId>, //// this field can be None at initialization which is the moment that a participant reserve an event
-  pub side_id: Option<ObjectId>, //// this field can be None at initialization which is the moment that a participant reserve an event
+  pub role_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
+  pub side_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
 }
 
 
@@ -640,12 +640,12 @@ pub struct ReservePlayerInfoResponse{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ReservePlayerInfoResponseWithRoleName{
-  pub _id: ObjectId, //// ObjectId is the bson type of _id inside the mongodb
+  pub _id: ObjectId, // ObjectId is the bson type of _id inside the mongodb
   pub username: String,
   pub status: u8,
   pub role_name: Option<String>,
-  pub role_id: Option<ObjectId>, //// this field can be None at initialization which is the moment that a participant reserve an event
-  pub side_id: Option<ObjectId>, //// this field can be None at initialization which is the moment that a participant reserve an event
+  pub role_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
+  pub side_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
 }
 
 
@@ -658,7 +658,7 @@ pub struct ReservePlayerInfoResponseWithRoleName{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct InsertPlayerInfoRequest{
-  pub user_id: String, //// ObjectId is the bson type of _id inside the mongodb
+  pub user_id: String, // ObjectId is the bson type of _id inside the mongodb
   pub username: String,
   pub status: u8,
   pub role_name: String,

@@ -4,7 +4,7 @@
 
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
-use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
+use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use argon2::{self, Config};
 use std::{env, collections::HashMap};
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -36,9 +36,9 @@ use borsh::{BorshDeserialize, BorshSerialize};
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct UserRoleUpdateRequest{
-    pub user_id: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub role_id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub event_id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub user_id: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub role_id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub event_id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -51,9 +51,9 @@ pub struct UserRoleUpdateRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct UserSideUpdateRequest{
-    pub user_id: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub side_id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub event_id: String, //// this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub user_id: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub side_id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub event_id: String, // this is the id of the role took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -66,9 +66,9 @@ pub struct UserSideUpdateRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct UserStatusUpdateRequest{
-    pub user_id: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
-    pub status: u8, //// one of the status constant value defined in constants.rs
-    pub event_id: String, //// this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub user_id: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub status: u8, // one of the status constant value defined in constants.rs
+    pub event_id: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -80,8 +80,8 @@ pub struct UserStatusUpdateRequest{
 |
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct GetUserRequest{ //// we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
-    pub _id: String, //// this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
+pub struct GetUserRequest{ // we don't need _id field in this struct cause it'll be generated when we want to insert role info into the mongodb 
+    pub _id: String, // this is the id of the event took from the mongodb events collection and will be stored as String later we'll serialize it into bson mongodb ObjectId
 }
 
 
@@ -149,10 +149,10 @@ pub struct SMSResponseEntries{
 |
 |
 */
-#[derive(Serialize, Deserialize, Debug, Clone)] //// can't implement the Default trait for extra field cause Default is not implemented for Value enum
+#[derive(Serialize, Deserialize, Debug, Clone)] // can't implement the Default trait for extra field cause Default is not implemented for Value enum
 pub struct OTPCareerResponse{
     #[serde(flatten)] // NOTE - #[serde(flatten)] proc macro attribute can be used for factoring common keys into a shared structure, or for capturing remaining fields into a map with arbitrary string keys
-    pub extra: HashMap<String, Value>, //// the OTP career response after deserializing to this struct will be like so: {"return": {"status": ..., "message": ...}, "entries": [{"messageid": ..., ...}]}
+    pub extra: HashMap<String, Value>, // the OTP career response after deserializing to this struct will be like so: {"return": {"status": ..., "message": ...}, "entries": [{"messageid": ..., ...}]}
 }
 
 
@@ -163,9 +163,9 @@ pub struct OTPCareerResponse{
 |
 |
 */
-#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Debug, Clone)] //// can't implement the Default trait for extra field cause Default is not implemented for Value enum
+#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Debug, Clone)] // can't implement the Default trait for extra field cause Default is not implemented for Value enum
 pub struct SMSResponse{
-    pub r#return: SMSResponseReturn, //// use r# to escape reserved keywords to use them as identifiers 
+    pub r#return: SMSResponseReturn, // use r# to escape reserved keywords to use them as identifiers 
     pub entries: Vec<SMSResponseEntries>,
 }
 
@@ -181,14 +181,14 @@ pub struct SMSResponse{
 pub struct RegisterRequest{ // NOTE - those Option values can be None tho
     pub username: String,
     pub phone: String,
-    pub pwd: String, //// hashed password
-    pub status: u8, //// this is the status of the player - this field is 0 initially and is the last status and info of the player during the game
+    pub pwd: String, // hashed password
+    pub status: u8, // this is the status of the player - this field is 0 initially and is the last status and info of the player during the game
     pub access_level: Option<u8>, // NOTE - 0 means dev, 1 means admin, 2 means user - we set this field to Option cause we don't want to pass the access_level inside the request body thus it should be None initially, we'll fill it inside the server
-    pub role_id: Option<ObjectId>, //// this is the id from the roles collection - this field is None initially and is the last status and info of the player during the game
-    pub side_id: Option<ObjectId>, //// this is the id from the sides collection - this field is None initially and is the last status and info of the player during the game
-    pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
-    pub last_login_time: Option<i64>, //// we set this field to Option cause we don't want to pass the last login time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub role_id: Option<ObjectId>, // this is the id from the roles collection - this field is None initially and is the last status and info of the player during the game
+    pub side_id: Option<ObjectId>, // this is the id from the sides collection - this field is None initially and is the last status and info of the player during the game
+    pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the updated time inside the request body thus it should be None initially, we'll fill it inside the server
+    pub last_login_time: Option<i64>, // we set this field to Option cause we don't want to pass the last login time inside the request body thus it should be None initially, we'll fill it inside the server
     pub wallet_address: Option<String>,
     pub balance: Option<u64>
 }
@@ -217,7 +217,7 @@ pub struct LoginRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct LoginResponse{ // NOTE - those Option values can be None tho
-    pub _id: Option<ObjectId>, //// this is the user id inside the users collection
+    pub _id: Option<ObjectId>, // this is the user id inside the users collection
     pub access_token: String,
     pub username: String,
     pub phone: String,
@@ -242,7 +242,7 @@ pub struct LoginResponse{ // NOTE - those Option values can be None tho
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct RegisterResponse{ // NOTE - those Option values can be None tho
-    pub _id: Option<ObjectId>, //// this is the user id inside the users collection
+    pub _id: Option<ObjectId>, // this is the user id inside the users collection
     pub username: String,
     pub phone: String,
     pub access_level: u8, // NOTE - 0 means dev, 1 means admin, 2 means user
@@ -299,8 +299,8 @@ pub struct SaveOTPInfo{
   pub exp_time: i64,
   pub code: String,
   pub phone: String,
-  pub created_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
-  pub updated_at: Option<i64>, //// we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+  pub created_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
+  pub updated_at: Option<i64>, // we set this field to Option cause we don't want to pass the created time inside the request body thus it should be None initially, we'll fill it inside the server
 
 }
 
@@ -316,7 +316,7 @@ pub struct SaveOTPInfo{
 pub struct CheckOTPRequest{
     pub code: String,
     pub phone: String,
-    pub time: i64, //// this is the current time coming from the client to check with the exp_time field inside the otp_info collection
+    pub time: i64, // this is the current time coming from the client to check with the exp_time field inside the otp_info collection
 }
 
 
@@ -329,11 +329,11 @@ pub struct CheckOTPRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct CheckOTPResponse{
-    pub user_id: Option<ObjectId>, //// this is the user id inside the users collection
-    pub otp_info_id: Option<ObjectId>, //// this is the otp info id inside the otp_info collection
+    pub user_id: Option<ObjectId>, // this is the user id inside the users collection
+    pub otp_info_id: Option<ObjectId>, // this is the otp info id inside the otp_info collection
     pub code: String,
     pub phone: String,
-    pub last_otp_login_update: Option<i64>, //// this is the updated_at field inside the otp_info collection
+    pub last_otp_login_update: Option<i64>, // this is the updated_at field inside the otp_info collection
 }
 
 
@@ -346,7 +346,7 @@ pub struct CheckOTPResponse{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct OTPInfo{
-    pub _id: Option<ObjectId>, //// this is the otp info id inside the otp_info collection
+    pub _id: Option<ObjectId>, // this is the otp info id inside the otp_info collection
     pub exp_time: i64,
     pub code: String,
     pub phone: String,
@@ -364,7 +364,7 @@ pub struct OTPInfo{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct UserInfo{ // NOTE - those Option values can be None tho
-    pub _id: Option<ObjectId>, //// this is the user id inside the users collection
+    pub _id: Option<ObjectId>, // this is the user id inside the users collection
     pub username: String,
     pub pwd: String,
     pub phone: String,
@@ -428,13 +428,13 @@ pub struct CheckTokenRequest{
 */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct CheckTokenResponse{ // NOTE - those Option values can be None tho
-    pub _id: Option<ObjectId>, //// this is the user id inside the users collection
+    pub _id: Option<ObjectId>, // this is the user id inside the users collection
     pub username: String,
     pub phone: String,
     pub access_level: u8, // NOTE - 0 means dev, 1 means admin, 2 means user
-    pub status: u8, //// last status in an event game that this user has participated in
-    pub role_id: Option<ObjectId>, //// last role in an event game that this user has participated in
-    pub side_id: Option<ObjectId>, //// last side in an event game that this user has participated in
+    pub status: u8, // last status in an event game that this user has participated in
+    pub role_id: Option<ObjectId>, // last role in an event game that this user has participated in
+    pub side_id: Option<ObjectId>, // last side in an event game that this user has participated in
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,

@@ -45,7 +45,7 @@ pub struct TwitterAccounts{
 
 // inspire complex macro syntax => inside https://github.com/wildonion/uniXerr/blob/master/infra/valhalla/coiniXerr/src/utils.rs
 
-#[derive(Clone)] //// can't bound Copy trait cause engine and url are String which are heap data structure 
+#[derive(Clone)] // can't bound Copy trait cause engine and url are String which are heap data structure 
 pub struct Db{
     pub mode: Mode,
     pub engine: Option<String>,
@@ -72,8 +72,8 @@ impl Db{
     
     pub async fn new() -> Result<Db, Box<dyn std::error::Error>>{
         Ok(
-            Db{ //// building an instance with generic type C which is the type of the db client instance
-                mode: Mode::On, //// 1 means is on 
+            Db{ // building an instance with generic type C which is the type of the db client instance
+                mode: Mode::On, // 1 means is on 
                 engine: None, 
                 url: None,
                 instance: None,
@@ -83,18 +83,18 @@ impl Db{
         )
     }
     
-    //// don't call a method which has self (not &self) as it's first 
-    //// param since by call it on the instance the instance will be 
-    //// dropped from the ram move borrowed form of the type in most 
-    //// cases unless its pointer is a shared pointer in which we 
-    //// must deref it using * or clone
+    // don't call a method which has self (not &self) as it's first 
+    // param since by call it on the instance the instance will be 
+    // dropped from the ram move borrowed form of the type in most 
+    // cases unless its pointer is a shared pointer in which we 
+    // must deref it using * or clone
     //
-    //// Client object uses std::sync::Arc internally, so it can safely be 
-    //// shared across threads or async tasks like tokio::spawn(async move{}) 
-    //// green threads also it is highly recommended to create a single 
-    //// Client and persist it for the lifetime of your application.
-    pub async fn GetMongoDbInstance(&self) -> Client{ //// it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
-        Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() //// building mongodb client instance
+    // Client object uses std::sync::Arc internally, so it can safely be 
+    // shared across threads or async tasks like tokio::spawn(async move{}) 
+    // green threads also it is highly recommended to create a single 
+    // Client and persist it for the lifetime of your application.
+    pub async fn GetMongoDbInstance(&self) -> Client{ // it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
+        Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() // building mongodb client instance
     }
 
     pub async fn GetPostgresPool(&self) -> Pool<ConnectionManager<PgConnection>>{
@@ -109,34 +109,34 @@ impl Db{
 #[derive(Clone)]
 pub struct Storage{
     pub id: Uuid,
-    pub db: Option<Db>, //// we could have no db at all
+    pub db: Option<Db>, // we could have no db at all
 }
 
 impl Storage{
     pub async fn get_mongodb(&self) -> Option<&Client>{
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().instance.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
-            Mode::Off => None, //// no db is available cause it's off
+            Mode::On => self.db.as_ref().unwrap().instance.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
+            Mode::Off => None, // no db is available cause it's off
         }
     }
     pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
-            Mode::Off => None, //// no db is available cause it's off
+            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
+            Mode::Off => None, // no db is available cause it's off
         }
     }
     pub async fn get_redis(&self) -> Option<&RedisClient>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), //// return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, //// no db is available cause it's off
+            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, // no db is available cause it's off
         }
     }
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
-    On, //// zero byte size
-    Off, //// zero byte size
+pub enum Mode{ // enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
+    On, // zero byte size
+    Off, // zero byte size
 }
 
 
@@ -159,7 +159,7 @@ pub enum Mode{ //// enum uses 8 bytes (usize which is 64 bits on 64 bits arch) t
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Response<'m, T>{
     pub data: Option<T>,
-    pub message: &'m str, //// &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
+    pub message: &'m str, // &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
     pub status: u16,
 }
 
@@ -243,7 +243,7 @@ macro_rules! server {
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
 
-            let app_storage = db!{ //// this publicly has exported inside the misc so we can access it here 
+            let app_storage = db!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
                 db_engine,
                 db_host,
@@ -350,7 +350,7 @@ macro_rules! server {
                             apis::bot::BotApiDoc::openapi(),
                         )
                     ]))
-                }) //// each thread of the HttpServer instance needs its own app factory 
+                }) // each thread of the HttpServer instance needs its own app factory 
                 .bind((host.as_str(), port))
                 .unwrap()
                 .workers(10)
@@ -366,18 +366,28 @@ macro_rules! db {
 
     ($name:expr, $engine:expr, $host:expr, $port:expr, $username:expr, $password:expr) => {
                 
-        async { //// this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
+        async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use crate::misc::*;
 
-            let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
+            let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+            let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
             let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-            let redis_conn_url = format!("redis://:{}@{}", redis_password, redis_host);
+            let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+
+            let redis_conn_url = if !redis_password.is_empty(){
+                format!("redis://:{}@{}:{}", redis_password, redis_host, redis_port)
+            } else if !redis_password.is_empty() && !redis_username.is_empty(){
+                format!("redis://{}:{}@{}:{}", redis_username, redis_password, redis_host, redis_port)
+            } else{
+                format!("redis://{}:{}", redis_host, redis_port)
+            };
+
             let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             
-            let empty_app_storage = Some( //// putting the Arc-ed db inside the Option
-                Arc::new( //// cloning app_storage to move it between threads
-                    Storage{ //// defining db context 
+            let empty_app_storage = Some( // putting the Arc-ed db inside the Option
+                Arc::new( // cloning app_storage to move it between threads
+                    Storage{ // defining db context 
                         id: Uuid::new_v4(),
                         db: Some(
                             Db{
@@ -403,13 +413,13 @@ macro_rules! db {
                     "".to_string()
                 };
                 match Db::new().await{
-                    Ok(mut init_db) => { //// init_db instance must be mutable since we want to mutate its fields
+                    Ok(mut init_db) => { // init_db instance must be mutable since we want to mutate its fields
                         init_db.engine = Some($engine);
                         init_db.url = Some(db_addr);
-                        let mongodb_instance = init_db.GetMongoDbInstance().await; //// the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
-                        Some( //// putting the Arc-ed db inside the Option
-                            Arc::new( //// cloning app_storage to move it between threads
-                                Storage{ //// defining db context 
+                        let mongodb_instance = init_db.GetMongoDbInstance().await; // the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
+                        Some( // putting the Arc-ed db inside the Option
+                            Arc::new( // cloning app_storage to move it between threads
+                                Storage{ // defining db context 
                                     id: Uuid::new_v4(),
                                     db: Some(
                                         Db{
@@ -427,7 +437,7 @@ macro_rules! db {
                     },
                     Err(e) => {
                         error!("😕 init db error - {}", e);
-                        empty_app_storage //// whatever the error is we have to return and empty app storage instance 
+                        empty_app_storage // whatever the error is we have to return and empty app storage instance 
                     }
                 }
             } else if $engine.as_str() == "postgres"{
@@ -441,13 +451,13 @@ macro_rules! db {
                     "".to_string()
                 };
                 match Db::new().await{
-                    Ok(mut init_db) => { //// init_db instance must be mutable since we want to mutate its fields
+                    Ok(mut init_db) => { // init_db instance must be mutable since we want to mutate its fields
                         init_db.engine = Some($engine);
                         init_db.url = Some(db_addr);
-                        let pg_pool = init_db.GetPostgresPool().await; //// the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
-                        Some( //// putting the Arc-ed db inside the Option
-                            Arc::new( //// cloning app_storage to move it between threads
-                                Storage{ //// defining db context 
+                        let pg_pool = init_db.GetPostgresPool().await; // the first argument of this method must be &self in order to have the init_db instance after calling this method, cause self as the first argument will move the instance after calling the related method and we don't have access to any field like init_db.url any more due to moved value error - we must always use & (like &self and &mut self) to borrotw the ownership instead of moving
+                        Some( // putting the Arc-ed db inside the Option
+                            Arc::new( // cloning app_storage to move it between threads
+                                Storage{ // defining db context 
                                     id: Uuid::new_v4(),
                                     db: Some(
                                         Db{
@@ -465,14 +475,14 @@ macro_rules! db {
                     },
                     Err(e) => {
                         error!("😕 init db error - {}", e);
-                        empty_app_storage //// whatever the error is we have to return and empty app storage instance 
+                        empty_app_storage // whatever the error is we have to return and empty app storage instance 
                     }
                 }
             } else{
                 empty_app_storage
             };
 
-            app_storage //// returning the created app_storage
+            app_storage // returning the created app_storage
 
         }
     };
@@ -486,7 +496,7 @@ macro_rules! passport {
     ) 
     => {
 
-        { //// this is required if we want to import modules and use the let statements
+        { // this is required if we want to import modules and use the let statements
             
             use std::env;
 
@@ -528,7 +538,7 @@ macro_rules! verify {
     ) 
     => {
 
-        { //// this is required if we want to import modules and use the let statements
+        { // this is required if we want to import modules and use the let statements
 
             use crate::models::bot::Twitter;
 

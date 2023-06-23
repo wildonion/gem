@@ -12,11 +12,11 @@ use tokio::{io::AsyncWriteExt, fs::{OpenOptions, self}};
 
 use crate::*;
 
-//// --------------------------------------------------------------------------------------
-//// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
-//// --------------------------------------------------------------------------------------
-//// inside the Value type we'll use a Mutex to mutate 
-//// the underlying data inside the Arc<RwLock<TypeKeyMap>> 
+// --------------------------------------------------------------------------------------
+// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
+// --------------------------------------------------------------------------------------
+// inside the Value type we'll use a Mutex to mutate 
+// the underlying data inside the Arc<RwLock<TypeKeyMap>> 
 pub struct ShardManagerContainer;
 impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<tokio::sync::Mutex<ShardManager>>;
@@ -28,16 +28,16 @@ impl TypeMapKey for UserTweet {
     type Value = Arc<tokio::sync::Mutex<String>>;
 }
 
-//// the discord bot commands and events listener/handler 
-//// for emitted events and webhooks over ws and http 
+// the discord bot commands and events listener/handler 
+// for emitted events and webhooks over ws and http 
 pub struct Handler;
 
 
 
-//// following we're implementing the EventHandler trait
-//// for the Handler struct to handle all the bot events
-//// which will be fired or emitted through the discrod ws
-//// server thus in here we're subscribing to those events. 
+// following we're implementing the EventHandler trait
+// for the Handler struct to handle all the bot events
+// which will be fired or emitted through the discrod ws
+// server thus in here we're subscribing to those events. 
 #[async_trait]
 impl EventHandler for Handler{
     /*
@@ -72,8 +72,8 @@ impl EventHandler for Handler{
 
     */
 
-    async fn ready(&self, ctx: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
-        if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
+    async fn ready(&self, ctx: Context, ready: Ready){ // handling ready events, once the bot shards gets ready 
+        if let Some(shard) = ready.shard{ // shard is an slice array of 2 elements, 8 bytes length each as the shard id
             info!("🔗 {} bot is connected on shard id {}/{}", ready.user.name, shard[0], shard[1]);
             
         }
@@ -90,7 +90,7 @@ impl EventHandler for Handler{
 
     */
 
-    async fn message(&self, ctx: Context, msg: Message){ //// handling the message event
+    async fn message(&self, ctx: Context, msg: Message){ // handling the message event
         
         
         

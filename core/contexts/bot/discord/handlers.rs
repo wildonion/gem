@@ -13,11 +13,11 @@ use tokio::{io::AsyncWriteExt, fs::{OpenOptions, self}};
 
 use crate::*;
 
-//// --------------------------------------------------------------------------------------
-//// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
-//// --------------------------------------------------------------------------------------
-//// inside the Value type we'll use a Mutex to mutate 
-//// the underlying data inside the Arc<RwLock<TypeKeyMap>> 
+// --------------------------------------------------------------------------------------
+// ---------------- Arc<Mutex<Data>> FOR SHARING BETWEEN SHARDS' THREADS ----------------
+// --------------------------------------------------------------------------------------
+// inside the Value type we'll use a Mutex to mutate 
+// the underlying data inside the Arc<RwLock<TypeKeyMap>> 
 pub struct ShardManagerContainer;
 impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<tokio::sync::Mutex<ShardManager>>;
@@ -30,22 +30,22 @@ impl TypeMapKey for GptBot{
 
 pub struct GuildRateLimit;
 impl TypeMapKey for GuildRateLimit{
-    type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; //// guild_id and total usage
+    type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; // guild_id and total usage
 }
 
 
-#[derive(Serialize, Deserialize)] //// serde traits are required to get data from redis
+#[derive(Serialize, Deserialize)] // serde traits are required to get data from redis
 pub struct RateLimit;
 impl TypeMapKey for RateLimit{
-    type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; //// use async_std::sync::Mutex since it's faster that tokio::sync::Mutex
+    type Value = Arc<async_std::sync::Mutex<HashMap<u64, u64>>>; // use async_std::sync::Mutex since it's faster that tokio::sync::Mutex
 }
 
 
 type CommandQueueSender = tokio::sync::mpsc::Sender<(Context, ApplicationCommandInteraction)>;
 type CommandQueueReceiver = tokio::sync::mpsc::Receiver<(Context, ApplicationCommandInteraction)>;
 
-//// the discord bot commands and events listener/handler 
-//// for emitted events and webhooks over ws and http 
+// the discord bot commands and events listener/handler 
+// for emitted events and webhooks over ws and http 
 pub struct Handler{
     pub command_queue_sender: CommandQueueSender,
 }
@@ -71,7 +71,7 @@ impl Handler{
                         message
                             .content("")
                             .flags(MessageFlags::EPHEMERAL)
-                    }) //// bot is thinking
+                    }) // bot is thinking
             })
             .await;
     }
@@ -96,18 +96,18 @@ impl Handler{
         Ok(())
     }
 
-    //// reading from the channel is a mutable process since we're mutating the 
-    //// state of the mpsc channel structure by receiving the data from the 
-    //// upside of the channel to store in the queue of the structure.
+    // reading from the channel is a mutable process since we're mutating the 
+    // state of the mpsc channel structure by receiving the data from the 
+    // upside of the channel to store in the queue of the structure.
     pub async fn handle_interaction_command(mut command_queue_receiver: CommandQueueReceiver){
-        //// receiving each command from the upside of the channel 
-        //// to handle them asyncly inside the tokio green threadpool
-        //// to avoid discord rate limit and getting The application 
-        //// did not respond message when handling multiple command 
-        //// at the same time.
+        // receiving each command from the upside of the channel 
+        // to handle them asyncly inside the tokio green threadpool
+        // to avoid discord rate limit and getting The application 
+        // did not respond message when handling multiple command 
+        // at the same time.
         tokio::spawn(async move{
-            //// waiting to receive every command asyncly to handle them 
-            //// asyncly and concurrently inside tokio green threadpool
+            // waiting to receive every command asyncly to handle them 
+            // asyncly and concurrently inside tokio green threadpool
             while let Some(command_data) = command_queue_receiver.recv().await{
                 /*
                     to share data from the main function between threads and other methods we must 
@@ -134,7 +134,7 @@ impl Handler{
                     respond error from discord, thus these two if and else block logic must 
                     be handled asyncly.  
                 */
-                tokio::spawn(async move{ //// spawning the rate limit checker async task to be solved in tokio green threadpool
+                tokio::spawn(async move{ // spawning the rate limit checker async task to be solved in tokio green threadpool
                     if let Err(_) = Handler::check_rate_limit(&ctx, &command).await {
                         command
                             .create_interaction_response(&ctx.http, |response| {
@@ -143,11 +143,11 @@ impl Handler{
                                     .interaction_response_data(|message| {
                                         message
                                         .flags(MessageFlags::EPHEMERAL)
-                                        .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                        .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                             e.color(Colour::from_rgb(204, 0, 0));
-                                            e.description("🥶 cooldown"); //// cooldown for 15 seconds to bypass discord rate limit
+                                            e.description("🥶 cooldown"); // cooldown for 15 seconds to bypass discord rate limit
                                             e.title("");
-                                            e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                            e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                 f
                                                 .text("")
                                             });
@@ -174,12 +174,12 @@ impl Handler{
                                     .get(0)
                                     .and_then(|opt| opt.value.as_ref())
                                     .and_then(|val| val.as_i64())
-                                    .unwrap_or(1); //// default: fetch 1 hour ago
-                                //// --------------------------------------------------------
-                                //// -------------------- CATCHUP TASK ----------------------
-                                //// -------------------------------------------------------- 
-                                //// the following timestamp is approximate and may not exactly 
-                                //// match the time when the command was executed.
+                                    .unwrap_or(1); // default: fetch 1 hour ago
+                                // --------------------------------------------------------
+                                // -------------------- CATCHUP TASK ----------------------
+                                // -------------------------------------------------------- 
+                                // the following timestamp is approximate and may not exactly 
+                                // match the time when the command was executed.
                                 let channel_id = command.channel_id;
                                 let interaction_response_message = channel_id
                                                                                 .messages(&ctx.http, |retriever| retriever.limit(1))
@@ -189,28 +189,28 @@ impl Handler{
                                                                                 .next()
                                                                                 .unwrap();
                                 let interaction_response_message_id = interaction_response_message.id.0;
-                                let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
+                                let init_cmd_time = command.id.created_at(); // id of the channel is a snowflake type that we can use it as the timestamp
                                 let user_id = command.user.id;
                                 let guild_id = command.guild_id.unwrap().0;
-                                //// spwaning the catchup task inside tokio green threadpool
-                                //// to be able to handle multiple commands at a same time 
-                                //// to avoid discord rate limit issue
+                                // spwaning the catchup task inside tokio green threadpool
+                                // to be able to handle multiple commands at a same time 
+                                // to avoid discord rate limit issue
                                 tokio::spawn(async move{
                                     let response = tasks::catchup(&ctx, value as u32, channel_id, init_cmd_time, interaction_response_message_id, user_id.0, guild_id).await;
                                     // ----------------------------------------------------------------------------------------
                                     // --------------- editing interaction response since our task is done --------------------
                                     // ----------------------------------------------------------------------------------------
-                                    //// if the above task gets halted in a logic that doesn't have proper 
-                                    //// error handling we'll face the discord timeout which is the message 
-                                    //// inside the interaction response frame: The application did not respond
+                                    // if the above task gets halted in a logic that doesn't have proper 
+                                    // error handling we'll face the discord timeout which is the message 
+                                    // inside the interaction response frame: The application did not respond
                                     let edited_interaction_response = command
                                         .edit_original_interaction_response(&ctx.http, |edit| {
                                             edit
-                                                .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                                .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                     e.color(Colour::from_rgb(235, 204, 120));
                                                     e.description(response.0);
                                                     e.title(response.2);
-                                                    e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                                    e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                         f
                                                         .text(response.1.as_str())
                                                     });
@@ -220,7 +220,7 @@ impl Handler{
                                                     return c;
                                                 });
                                                 edit
-                                        }) //// edit the thinking message with the command response
+                                        }) // edit the thinking message with the command response
                                         .await;    
                                 });
                             },            
@@ -231,26 +231,26 @@ impl Handler{
                                 let edited_interaction_response = command
                                     .edit_original_interaction_response(&ctx.http, |edit| {
                                         edit
-                                            .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                            .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                 e.color(Colour::from_rgb(235, 204, 120));
                                                 e.description(content);
                                                 e.title(title);
-                                                e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                                e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                     f
                                                     .text(footer)
                                                 });
                                                 return e;
                                             });
                                             edit
-                                    }) //// edit the thinking message with the command response
+                                    }) // edit the thinking message with the command response
                                     .await;
                             },
                             "stats" => {
-                                //// ------------------------------------------------------
-                                //// -------------------- STATS TASK ----------------------
-                                //// ------------------------------------------------------ 
-                                //// the following timestamp is approximate and may not exactly 
-                                //// match the time when the command was executed.
+                                // ------------------------------------------------------
+                                // -------------------- STATS TASK ----------------------
+                                // ------------------------------------------------------ 
+                                // the following timestamp is approximate and may not exactly 
+                                // match the time when the command was executed.
                                 let channel_id = command.channel_id;
                                 let interaction_response_message = channel_id
                                                                                 .messages(&ctx.http, |retriever| retriever.limit(1))
@@ -260,10 +260,10 @@ impl Handler{
                                                                                 .next()
                                                                                 .unwrap();
                                 let interaction_response_message_id = interaction_response_message.id.0;
-                                let init_cmd_time = command.id.created_at(); //// id of the channel is a snowflake type that we can use it as the timestamp
-                                //// spwaning the stats task inside tokio green threadpool
-                                //// to be able to handle multiple commands at a same time 
-                                //// to avoid discord rate limit issue
+                                let init_cmd_time = command.id.created_at(); // id of the channel is a snowflake type that we can use it as the timestamp
+                                // spwaning the stats task inside tokio green threadpool
+                                // to be able to handle multiple commands at a same time 
+                                // to avoid discord rate limit issue
                                 tokio::spawn(async move{
                                     let guild_ids = ctx.cache.guilds();
                                     let mut pretty_names = String::from("");
@@ -282,18 +282,18 @@ impl Handler{
                                     let edited_interaction_response = command
                                         .edit_original_interaction_response(&ctx.http, |edit| {
                                             edit
-                                                .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                                .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                     e.color(Colour::from_rgb(235, 204, 120));
                                                     e.description(description);
                                                     e.title(response.2);
-                                                    e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                                    e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                         f
                                                         .text(response.1.as_str())
                                                     });
                                                     return e;
                                                 });
                                                 edit
-                                        }) //// edit the thinking message with the command response
+                                        }) // edit the thinking message with the command response
                                         .await; 
                                 }); 
                             },
@@ -305,18 +305,18 @@ impl Handler{
                                     .edit_original_interaction_response(&ctx.http, |edit| {
                                         edit
                                             .allowed_mentions(|mentions| mentions.replied_user(true))
-                                            .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                            .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                                 e.color(Colour::from_rgb(204, 0, 0));
                                                 e.description(content);
                                                 e.title(title);
-                                                e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                                e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                                     f
                                                     .text(footer)
                                                 });
                                                 return e;
                                             });
                                             edit
-                                    }) //// edit the thinking message with the command response
+                                    }) // edit the thinking message with the command response
                                     .await
                                 {
                                     error!("error editing original interaction response since {:#?}", why);
@@ -331,13 +331,25 @@ impl Handler{
 
     async fn check_rate_limit(ctx: &Context, command: &ApplicationCommandInteraction) -> Result<(), ()>{
 
-        let redis_node_addr = std::env::var("REDIS_HOST").unwrap();
-        let client = redis::Client::open(redis_node_addr.as_str()).unwrap();
+        let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+        let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
+        let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+        let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+
+        let redis_conn_url = if !redis_password.is_empty(){
+            format!("redis://:{}@{}:{}", redis_password, redis_host, redis_port)
+        } else if !redis_password.is_empty() && !redis_username.is_empty(){
+            format!("redis://{}:{}@{}:{}", redis_username, redis_password, redis_host, redis_port)
+        } else{
+            format!("redis://{}:{}", redis_host, redis_port)
+        };
+
+        let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
         let mut connection = client.get_async_connection().await.unwrap();
 
-        ///// --------------------------------------------------------------------------
-        ///// ---------------------------- RATE LIMIT LOGIC ----------------------------
-        ///// --------------------------------------------------------------------------
+        // --------------------------------------------------------------------------
+        // ---------------------------- RATE LIMIT LOGIC ----------------------------
+        // --------------------------------------------------------------------------
         /*
         
             data inside the bot client must be safe to be shared between event and 
@@ -370,24 +382,24 @@ impl Handler{
             message or publish the topic contains the data.
 
         */
-        let chill_zone_duration = 15_000u64; //// 15 seconds rate limit
+        let chill_zone_duration = 15_000u64; // 15 seconds rate limit
         let user_id = command.user.id.0;
         let now = chrono::Local::now().timestamp_millis() as u64;
         let mut is_rate_limited = false;
         
 
         {
-            //// ------------------------------------------------------------------------
-            //// -------------------- reading from ctx.data to redis --------------------
-            //// ------------------------------------------------------------------------
+            // ------------------------------------------------------------------------
+            // -------------------- reading from ctx.data to redis --------------------
+            // ------------------------------------------------------------------------
             // reading the mutexed data to acquire the lock on the ctx.data
-            let data = ctx.data.read().await; //// writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
+            let data = ctx.data.read().await; // writing safely to the RateLimit instance also write lock returns a mutable reference to the underlying map instance also data is of type Arc<RwLock<TypeMapKey>>
             let rate_limit_data = data.get::<handlers::RateLimit>().unwrap();
             let mut rate_limiter_mutexed = rate_limit_data.lock().await;
 
-            //// ------------------------------------------------------------
-            //// -------------------- reading from redis --------------------
-            //// ------------------------------------------------------------
+            // ------------------------------------------------------------
+            // -------------------- reading from redis --------------------
+            // ------------------------------------------------------------
             let redis_result_rate_limiter: RedisResult<String> = connection.get("rate_limiter").await;
             let mut redis_rate_limiter = match redis_result_rate_limiter{
                 Ok(data) => {
@@ -414,29 +426,29 @@ impl Handler{
 
             if !is_rate_limited{
                 
-                //// -------------------------------------------------------------
-                //// -------------------- writing to ctx.data  --------------------
-                //// -------------------------------------------------------------
-                //// this will be used to handle shared state between shards
+                // -------------------------------------------------------------
+                // -------------------- writing to ctx.data  --------------------
+                // -------------------------------------------------------------
+                // this will be used to handle shared state between shards
                 rate_limiter_mutexed.insert(user_id, now);
                 
-                //// ----------------------------------------------------------
-                //// -------------------- writing to redis --------------------
-                //// ----------------------------------------------------------
-                //// this will be used to handle shared state between clusters
-                redis_rate_limiter.insert(user_id, now); //// updating the redis rate limiter map
+                // ----------------------------------------------------------
+                // -------------------- writing to redis --------------------
+                // ----------------------------------------------------------
+                // this will be used to handle shared state between clusters
+                redis_rate_limiter.insert(user_id, now); // updating the redis rate limiter map
                 let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
-                let _: () = connection.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+                let _: () = connection.set("rate_limiter", rl_data).await.unwrap(); // writing to redis ram
 
-                //// -------------------------------------------------
-                //// -------------------- logging --------------------
-                //// -------------------------------------------------
+                // -------------------------------------------------
+                // -------------------- logging --------------------
+                // -------------------------------------------------
                 let filepath = format!("logs/rate-limiter/usage.log");
                 let log_content = format!("userId:{}|lastUsage:{}\n", user_id, now);
                 let mut ratelimit_log; 
 
                 match fs::metadata("logs/rate-limiter/usage.log").await {
-                    Ok(_) => { //// if the file was there then append to it
+                    Ok(_) => { // if the file was there then append to it
                         let mut file = OpenOptions::new()
                             .append(true)
                             .create(true)
@@ -444,7 +456,7 @@ impl Handler{
                             .await.unwrap();
                         file.write_all(log_content.as_bytes()).await.unwrap(); // Write the data to the file
                     },
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => { //// if the file wasn't there then create a new one
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => { // if the file wasn't there then create a new one
                         ratelimit_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                         ratelimit_log.write_all(log_content.as_bytes()).await.unwrap();
                     },
@@ -465,18 +477,18 @@ impl Handler{
             Ok(())
         }
         
-        ///// -----------------------------------------------------------------------------
-        ///// -----------------------------------------------------------------------------
-        ///// -----------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------
     }
 
 }
 
 
-//// following we're implementing the EventHandler trait
-//// for the Handler struct to handle all the bot events
-//// which will be fired or emitted through the discrod ws
-//// server thus in here we're subscribing to those events. 
+// following we're implementing the EventHandler trait
+// for the Handler struct to handle all the bot events
+// which will be fired or emitted through the discrod ws
+// server thus in here we're subscribing to those events. 
 #[async_trait]
 impl EventHandler for Handler{
     /*
@@ -518,7 +530,7 @@ impl EventHandler for Handler{
                 deadlocking and rate limiting by calling the 
                 command_queue_sender field of the event handler struct
             */
-            self.command_queue_sender.send((ctx, command)).await; //// don't unwrap() since Context doesn't implement Debug trait
+            self.command_queue_sender.send((ctx, command)).await; // don't unwrap() since Context doesn't implement Debug trait
         }
     }
 
@@ -530,11 +542,11 @@ impl EventHandler for Handler{
 
     */
 
-    async fn ready(&self, ctx: Context, ready: Ready){ //// handling ready events, once the bot shards gets ready 
-        if let Some(shard) = ready.shard{ //// shard is an slice array of 2 elements, 8 bytes length each as the shard id
+    async fn ready(&self, ctx: Context, ready: Ready){ // handling ready events, once the bot shards gets ready 
+        if let Some(shard) = ready.shard{ // shard is an slice array of 2 elements, 8 bytes length each as the shard id
             info!("🔗 {} bot is connected on shard id {}/{}", ready.user.name, shard[0], shard[1]);
             
-            let guilds = ctx.cache.guilds(); //// getting all the guild that the bot is inside of them
+            let guilds = ctx.cache.guilds(); // getting all the guild that the bot is inside of them
             for guild_id in guilds{
                 let channels_result = guild_id.channels(&ctx.http).await;
                 if let Ok(channels) = channels_result{
@@ -545,18 +557,18 @@ impl EventHandler for Handler{
                         channel_id.send_message(&ctx.http, |m|{
                             m
                                 .allowed_mentions(|mentions| mentions.replied_user(true))
-                                .embed(|e|{ //// param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
+                                .embed(|e|{ // param type of embed() mehtod is FnOne closure : FnOnce(&mut CreateEmbed) -> &mut CreateEmbed
                                     e.color(Colour::from_rgb(235, 204, 120));
                                     e.description(initial_message);
                                     e.title("");
-                                    e.footer(|f|{ //// since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
+                                    e.footer(|f|{ // since method takes a param of type FnOnce closure which has a param instance of type CreateEmbedFooter struct
                                         f
                                         .text("")
                                     });
                                     return e;
                                 });
                                 m
-                            }) //// edit the thinking message with the command response
+                            }) // edit the thinking message with the command response
                             .await
                             .unwrap();
                     } 
@@ -564,11 +576,11 @@ impl EventHandler for Handler{
             }
         }
 
-        //// -------------------------------------------------
-        //// --------- REGISTERING GLOBAL COMMANDS -----------
-        //// -------------------------------------------------
-        //// registering global commands for each 
-        //// guild that this bot is added to
+        // -------------------------------------------------
+        // --------- REGISTERING GLOBAL COMMANDS -----------
+        // -------------------------------------------------
+        // registering global commands for each 
+        // guild that this bot is added to
         let _ = Command::create_global_application_command(&ctx.http, |command| {
             cmds::slash::catchup_register(command)
         })
@@ -595,10 +607,10 @@ impl EventHandler for Handler{
 
     */
 
-    async fn message(&self, ctx: Context, msg: Message){ //// handling the message event
-        //// ctx is the instance that contains 
-        //// the methods and types of the whole
-        //// setup bot. 
+    async fn message(&self, ctx: Context, msg: Message){ // handling the message event
+        // ctx is the instance that contains 
+        // the methods and types of the whole
+        // setup bot. 
     }
 
 

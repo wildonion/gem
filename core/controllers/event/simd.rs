@@ -11,8 +11,8 @@ use std::thread;
 use crate::misc;
 use crate::schemas;
 use crate::constants::*;
-use futures::{executor::block_on, TryFutureExt, TryStreamExt}; //// futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next IO stream of future chunk and returns an Option in which the chunk might be either some value or none
-use bytes::Buf; //// it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
+use futures::{executor::block_on, TryFutureExt, TryStreamExt}; // futures is used for reading and writing streams asyncly from and into buffer using its traits and based on orphan rule TryStreamExt trait is required to use try_next() method on the future object which is solved by .await - try_next() is used on futures stream or chunks to get the next IO stream of future chunk and returns an Option in which the chunk might be either some value or none
+use bytes::Buf; // it'll be needed to call the reader() method on the whole_body buffer and is used for manipulating coming network bytes from the socket
 use hyper::{header, StatusCode, Body, Response, Request};
 use log::info;
 use std::time::Instant;
@@ -120,51 +120,51 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //                      SIMD OPS OVER STREAM OF CHUNKS
     // ----------------------------------------------------------------------
     // let mut buffer = Vec::new();
-    // let io_chunk_stream = req.into_body().map_ok(|chunk| { //// collecting all incoming IO stream of future chunk of chunks from the request body into a vector of u8 bytes
+    // let io_chunk_stream = req.into_body().map_ok(|chunk| { // collecting all incoming IO stream of future chunk of chunks from the request body into a vector of u8 bytes
     //     chunk
     //         .iter()
     //         .map(|byte| {
-    //             buffer.push(*byte); //// dereferencing the byte to push into the buffer vector cause buffer is of type Vec<u8> not Vec<&u8>
+    //             buffer.push(*byte); // dereferencing the byte to push into the buffer vector cause buffer is of type Vec<u8> not Vec<&u8>
     //             byte.to_ascii_uppercase()
     //         })
     //         .collect::<Vec<u8>>()
     // });
-    // let bytes_slice = misc::into_box_slice(&buffer).await.unwrap(); //// converting io_chunk_stream into a Box of 4 u8 slice
+    // let bytes_slice = misc::into_box_slice(&buffer).await.unwrap(); // converting io_chunk_stream into a Box of 4 u8 slice
     // let start = Instant::now();
-    // match misc::simd(u32::from_be_bytes(*bytes_slice), heavy_func).await{ //// passing a u32 bits integer by dereferencing the Box which has the bytes_slice value itself
+    // match misc::simd(u32::from_be_bytes(*bytes_slice), heavy_func).await{ // passing a u32 bits integer by dereferencing the Box which has the bytes_slice value itself
     //     Ok(result) => {
     //         let end = Instant::now();
     //         let delta = end.duration_since(start);
     //         let delta_ms = delta.as_secs() as f32 * 1000_f32 + (delta.subsec_nanos() as f32)/1000000 as f32; 
-    //         // assert_eq!(3985935_u32, result); //// it'll panic on not equal condition
+    //         // assert_eq!(3985935_u32, result); // it'll panic on not equal condition
     //         info!("::::: the result is {:?} - [it might be different from the input] - | cost : {:?}\n\n", result, delta_ms);
     //         let response_body = misc::app::Response::<u32>{
     //             message: SIMD_RESULT,
     //             data: Some(result),
     //             status: 200,
     //         };
-    //         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+    //         let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
     //         Ok(
     //             res
     //                 .status(StatusCode::OK)
     //                 .header(header::CONTENT_TYPE, "application/json")
-    //                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket
+    //                 .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket
     //                 .unwrap()
     //         )
     //     },
     //     Err(e) => {
     //         info!("::::: error in reading chunk caused by {:?}", e);
     //         let response_body = misc::app::Response::<misc::app::Nill>{
-    //             data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
-    //             message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+    //             data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+    //             message: &e.to_string(), // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
     //             status: 406,
     //         };
-    //         let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+    //         let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
     //         Ok(
     //             res
     //                 .status(StatusCode::NOT_ACCEPTABLE)
     //                 .header(header::CONTENT_TYPE, "application/json")
-    //                 .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+    //                 .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
     //                 .unwrap() 
     //         )
     //     },
@@ -173,16 +173,16 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     //                   SIMD OPS OVER DESERIALIZED OF CHUNKS
     // ----------------------------------------------------------------------
     // let reversed_body_bytes = whole_body_bytes.iter().rev().cloned().collect::<Vec<u8>>();
-    let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; //// to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
-    match serde_json::from_reader(whole_body_bytes.reader()){ //// read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
-        Ok(value) => { //// making a serde value from the buffer which is a IO stream of future chunk coming from the client
+    let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
+    match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
+        Ok(value) => { // making a serde value from the buffer which is a IO stream of future chunk coming from the client
             let data: serde_json::Value = value;
-            let json = serde_json::to_string(&data).unwrap(); //// converting data into a json string
-            match serde_json::from_str::<schemas::event::Simd>(&json){ //// the generic type of from_str() method is Simd struct - mapping (deserializing) the json string into the Simd struct
-                Ok(simd) => { //// we got the 32 bits number
+            let json = serde_json::to_string(&data).unwrap(); // converting data into a json string
+            match serde_json::from_str::<schemas::event::Simd>(&json){ // the generic type of from_str() method is Simd struct - mapping (deserializing) the json string into the Simd struct
+                Ok(simd) => { // we got the 32 bits number
                 
                     
-                    ////////////////////////////////// SIMD OPS
+                    ////////////////// SIMD OPS
                     
                     let start = Instant::now();
                     match misc::simd(simd.input, heavy_func).await{
@@ -190,56 +190,56 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             let end = Instant::now();
                             let delta = end.duration_since(start);
                             let delta_ms = delta.as_secs() as f32 * 1000_f32 + (delta.subsec_nanos() as f32)/1000000 as f32; 
-                            // assert_eq!(3985935_u32, result); //// it'll panic on not equal condition
+                            // assert_eq!(3985935_u32, result); // it'll panic on not equal condition
                             info!("::::: the result is {:?} - [it might be different from the input] - | cost : {:?}\n\n", result, delta_ms);
                             let response_body = misc::app::Response::<u32>{
                                 message: SIMD_RESULT,
                                 data: Some(result),
                                 status: 200,
                             };
-                            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                             Ok(
                                 res
                                     .status(StatusCode::OK)
                                     .header(header::CONTENT_TYPE, "application/json")
-                                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket
+                                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket
                                     .unwrap()
                             )
                         },
                         Err(e) => {
                             info!("::::: error in reading chunk caused by {:?}", e);
                             let response_body = misc::app::Response::<misc::app::Nill>{
-                                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
-                                message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                                data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                                message: &e.to_string(), // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                                 status: 406,
                             };
-                            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                             Ok(
                                 res
                                     .status(StatusCode::NOT_ACCEPTABLE)
                                     .header(header::CONTENT_TYPE, "application/json")
-                                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                                     .unwrap() 
                             )
                         },
                     }
                     
-                    //////////////////////////////////
+                    //////////////////
 
 
                 },
                 Err(e) => {
                     let response_body = misc::app::Response::<misc::app::Nill>{
-                        data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
-                        message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                        data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                        message: &e.to_string(), // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                         status: 406,
                     };
-                    let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+                    let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                     Ok(
                         res
                             .status(StatusCode::NOT_ACCEPTABLE)
                             .header(header::CONTENT_TYPE, "application/json")
-                            .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                            .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                             .unwrap() 
                     )
                 },
@@ -247,16 +247,16 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
         },
         Err(e) => {
             let response_body = misc::app::Response::<misc::app::Nill>{
-                data: Some(misc::app::Nill(&[])), //// data is an empty &[u8] array
-                message: &e.to_string(), //// e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                message: &e.to_string(), // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
                 status: 400,
             };
-            let response_body_json = serde_json::to_string(&response_body).unwrap(); //// converting the response body object into json stringify to send using hyper body
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
             Ok(
                 res
                     .status(StatusCode::BAD_REQUEST)
                     .header(header::CONTENT_TYPE, "application/json")
-                    .body(Body::from(response_body_json)) //// the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
                     .unwrap() 
             )
         },

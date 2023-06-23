@@ -105,8 +105,8 @@ impl Modify for SecurityAddon {
 #[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
         req: HttpRequest, 
-        event_id: web::Path<String>, //// mongodb objectid
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        event_id: web::Path<String>, // mongodb objectid
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     
@@ -123,9 +123,9 @@ async fn reveal_role(
         match passport!{ token }{
             true => {
 
-                //// -------------------------------------------------------------------------------------
-                //// ------------------------------- ACCESS GRANTED REGION -------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // ------------------------------- ACCESS GRANTED REGION -------------------------------
+                // -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -143,39 +143,39 @@ async fn reveal_role(
                         let role = events::redis::role::Reveal;
             
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            CREATED, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            CREATED, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         } 
             
             
                     },
                     None => {
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            STORAGE_ISSUE, //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            STORAGE_ISSUE, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
                     }
                 }
 
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
 
             },
             false => {
                 
                 resp!{
-                    &[u8], //// the date type
-                    &[], //// the data itself
-                    INVALID_TOKEN, //// response message
-                    StatusCode::FORBIDDEN, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    &[u8], // the date type
+                    &[], // the data itself
+                    INVALID_TOKEN, // response message
+                    StatusCode::FORBIDDEN, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
         }
@@ -183,11 +183,11 @@ async fn reveal_role(
     } else{
         
         resp!{
-            &[u8], //// the date type
-            &[], //// the data itself
-            NOT_AUTH_HEADER, //// response message
-            StatusCode::FORBIDDEN, //// status code
-            None::<Cookie<'_>>, //// cookie
+            &[u8], // the date type
+            &[], // the data itself
+            NOT_AUTH_HEADER, // response message
+            StatusCode::FORBIDDEN, // status code
+            None::<Cookie<'_>>, // cookie
         }
     }
 
@@ -209,7 +209,7 @@ async fn reveal_role(
 pub(super) async fn login(
         req: HttpRequest, 
         login_info: web::Json<LoginInfoRequest>, 
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
    
     let storage = storage.as_ref().to_owned();
@@ -235,21 +235,21 @@ pub(super) async fn login(
                             let Ok(pswd_flag) = pswd_verification else{
                                 let err_msg = pswd_verification.unwrap_err();
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    &err_msg.to_string(), //// response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &err_msg.to_string(), // response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             };
 
                             if !pswd_flag{
                                 resp!{
-                                    String, //// the data type
-                                    user_name.to_owned(), //// response data
-                                    WRONG_PASSWORD, //// response message
-                                    StatusCode::FORBIDDEN, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    String, // the data type
+                                    user_name.to_owned(), // response data
+                                    WRONG_PASSWORD, // response message
+                                    StatusCode::FORBIDDEN, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             }
         
@@ -296,22 +296,22 @@ pub(super) async fn login(
                             };
 
                             resp!{
-                                UserData, //// the data type
-                                user_login_data, //// response data
-                                LOGGEDIN, //// response message
-                                StatusCode::OK, //// status code,
-                                Some(keys_info.0), //// cookie 
+                                UserData, // the data type
+                                user_login_data, // response data
+                                LOGGEDIN, // response message
+                                StatusCode::OK, // status code,
+                                Some(keys_info.0), // cookie 
                             } 
         
                         },
                         _ => {
         
                             resp!{
-                                String, //// the data type
-                                user_name.to_owned(), //// response data
-                                ACCESS_DENIED, //// response message
-                                StatusCode::FORBIDDEN, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                String, // the data type
+                                user_name.to_owned(), // response data
+                                ACCESS_DENIED, // response message
+                                StatusCode::FORBIDDEN, // status code
+                                None::<Cookie<'_>>, // cookie
                             } 
                         }
                     }
@@ -327,11 +327,11 @@ pub(super) async fn login(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -363,7 +363,7 @@ pub(super) async fn login(
 async fn register_new_user(
         req: HttpRequest,  
         new_user: web::Json<NewUserInfoRequest>, 
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -386,11 +386,11 @@ async fn register_new_user(
                     match User::insert_new_user(new_user.to_owned(), connection).await{
                         Ok(_) => {
                             resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                CREATED, //// response message
-                                StatusCode::CREATED, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                &[u8], // the data type
+                                &[], // response data
+                                CREATED, // response message
+                                StatusCode::CREATED, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
                         }, 
                         Err(resp) => {
@@ -427,11 +427,11 @@ async fn register_new_user(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }        
@@ -463,7 +463,7 @@ async fn register_new_user(
 async fn edit_user(
         req: HttpRequest, 
         new_user: web::Json<EditUserByAdminRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -486,11 +486,11 @@ async fn edit_user(
                         Ok(updated_user) => {
 
                             resp!{
-                                UserData, //// the data type
-                                updated_user, //// response data
-                                UPDATED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -531,11 +531,11 @@ async fn edit_user(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -567,8 +567,8 @@ async fn edit_user(
 #[post("/delete-user/{user_id}")]
 async fn delete_user(
         req: HttpRequest, 
-        doer_id: web::Path<i32>,  //// doer is the user who do task
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        doer_id: web::Path<i32>,  // doer is the user who do task
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -596,20 +596,20 @@ async fn delete_user(
                             */
                             if num_deleted > 0{
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    DELETED, //// response message
-                                    StatusCode::OK, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    DELETED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             } else{
                                 
                                 resp!{
-                                    i32, //// the data type
-                                    doer_id.to_owned(), //// response data
-                                    USER_NOT_FOUND, //// response message
-                                    StatusCode::NOT_FOUND, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    i32, // the data type
+                                    doer_id.to_owned(), // response data
+                                    USER_NOT_FOUND, // response message
+                                    StatusCode::NOT_FOUND, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             }
 
@@ -646,11 +646,11 @@ async fn delete_user(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -681,7 +681,7 @@ async fn delete_user(
 #[get("/get-users")]
 async fn get_users(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -702,11 +702,11 @@ async fn get_users(
                     match User::get_all(connection).await{
                         Ok(all_users) => {
                             resp!{
-                                Vec<UserData>, //// the data type
-                                all_users, //// response data
-                                FETCHED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                Vec<UserData>, // the data type
+                                all_users, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
                         },
                         Err(resp) => {
@@ -741,11 +741,11 @@ async fn get_users(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -777,7 +777,7 @@ async fn get_users(
 async fn register_new_task(
         req: HttpRequest, 
         new_task: web::Json<NewTaskRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -800,11 +800,11 @@ async fn register_new_task(
                         Ok(_) => {
 
                             resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                CREATED, //// response message
-                                StatusCode::CREATED, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                &[u8], // the data type
+                                &[], // response data
+                                CREATED, // response message
+                                StatusCode::CREATED, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -846,11 +846,11 @@ async fn register_new_task(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -886,7 +886,7 @@ async fn register_new_task(
 async fn delete_task(
         req: HttpRequest, 
         job_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -910,29 +910,29 @@ async fn delete_task(
 
                             if num_deleted == 1{
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    TASK_DELETED_WITH_NO_DOER, //// response message
-                                    StatusCode::OK, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    TASK_DELETED_WITH_NO_DOER, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             } else if num_deleted > 1{
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    TASK_DELETED_WITH_DOER, //// response message
-                                    StatusCode::OK, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    TASK_DELETED_WITH_DOER, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             } else{
                                 
                                 /* task didn't found thus no users_tasks record related to the task is exists */
                                 resp!{
-                                    i32, //// the data type
-                                    job_id.to_owned(), //// response data
-                                    TASK_NOT_FOUND, //// response message
-                                    StatusCode::NOT_FOUND, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    i32, // the data type
+                                    job_id.to_owned(), // response data
+                                    TASK_NOT_FOUND, // response message
+                                    StatusCode::NOT_FOUND, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
                             }
 
@@ -969,11 +969,11 @@ async fn delete_task(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -1007,7 +1007,7 @@ async fn delete_task(
 async fn edit_task(
         req: HttpRequest, 
         new_task: web::Json<EditTaskRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1031,11 +1031,11 @@ async fn edit_task(
                         Ok(updated_task) => {
 
                             resp!{
-                                TaskData, //// the data type
-                                updated_task, //// response data
-                                UPDATED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                TaskData, // the data type
+                                updated_task, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -1070,11 +1070,11 @@ async fn edit_task(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -1107,7 +1107,7 @@ async fn edit_task(
 async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1130,11 +1130,11 @@ async fn get_admin_tasks(
                         Ok(admin_tasks) => {
 
                             resp!{
-                                Vec<TaskData>, //// the data type
-                                admin_tasks, //// response data
-                                FETCHED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                Vec<TaskData>, // the data type
+                                admin_tasks, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -1169,11 +1169,11 @@ async fn get_admin_tasks(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -1204,7 +1204,7 @@ async fn get_admin_tasks(
 #[get("/get-users-tasks")]
 async fn get_users_tasks(
         req: HttpRequest,   
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1227,11 +1227,11 @@ async fn get_users_tasks(
                         Ok(all_users_tasks) => {
 
                             resp!{
-                                Vec<UserTaskData>, //// the data type
-                                all_users_tasks, //// response data
-                                FETCHED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                Vec<UserTaskData>, // the data type
+                                all_users_tasks, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -1266,11 +1266,11 @@ async fn get_users_tasks(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         
@@ -1304,7 +1304,7 @@ async fn get_users_tasks(
 async fn add_twitter_account(
         req: HttpRequest,   
         new_account: web::Json<Keys>,
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1340,7 +1340,7 @@ async fn add_twitter_account(
 
                    
                     let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
-                    let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
+                    let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
                     let mut twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
                     let twitter_accounts = &mut twitter.keys;
 
@@ -1362,22 +1362,22 @@ async fn add_twitter_account(
                                 Ok(bytes) => {
         
                                     resp!{
-                                        &[u8], //// the data type
-                                        &[], //// response data
-                                        TWITTER_KEYS_ADDED, //// response message
-                                        StatusCode::OK, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        TWITTER_KEYS_ADDED, // response message
+                                        StatusCode::OK, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
         
                                 },
                                 Err(e) => {
                                     
                                     resp!{
-                                        &[u8], //// the data type
-                                        &[], //// response data
-                                        &e.to_string(), //// response message
-                                        StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        &e.to_string(), // response message
+                                        StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
         
                                 }
@@ -1386,11 +1386,11 @@ async fn add_twitter_account(
                         Err(e) => {
 
                             resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                &e.to_string(), //// response message
-                                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                &[u8], // the data type
+                                &[], // response data
+                                &e.to_string(), // response message
+                                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
                         }
                     }
@@ -1420,11 +1420,11 @@ async fn add_twitter_account(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         

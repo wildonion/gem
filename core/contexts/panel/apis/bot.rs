@@ -101,7 +101,7 @@ pub struct BotApiDoc;
 async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -114,7 +114,7 @@ async fn verify_twitter_task(
 
     /* rate limiter based on doer id */
 
-    let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
+    let chill_zone_duration = 30_000u64; // 30 seconds chillzone
     let now = chrono::Local::now().timestamp_millis() as u64;
     let mut is_rate_limited = false;
     
@@ -141,21 +141,21 @@ async fn verify_twitter_task(
     if is_rate_limited{
 
         resp!{
-            &[u8], //// the data type
-            &[], //// response data
-            TWITTER_VERIFICATION_RATE_LIMIT, //// response message
-            StatusCode::NOT_ACCEPTABLE, //// status code
-            None::<Cookie<'_>>, //// cookie
+            &[u8], // the data type
+            &[], // response data
+            TWITTER_VERIFICATION_RATE_LIMIT, // response message
+            StatusCode::NOT_ACCEPTABLE, // status code
+            None::<Cookie<'_>>, // cookie
         }
         
 
     } else{
 
         /* updating the last rquest time */
-        //// this will be used to handle shared state between clusters
-        redis_twitter_rate_limiter.insert(doer_id as u64, now); //// updating the redis rate limiter map
+        /* also this logic can be used to handle shared state between clusters */
+        redis_twitter_rate_limiter.insert(doer_id as u64, now); // updating the redis rate limiter map
         let rl_data = serde_json::to_string(&redis_twitter_rate_limiter).unwrap();
-        let _: () = redis_conn.set("twitter_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+        let _: () = redis_conn.set("twitter_rate_limiter", rl_data).await.unwrap(); // writing to redis ram
 
 
         
@@ -208,11 +208,11 @@ async fn verify_twitter_task(
                                         _ => {
             
                                             resp!{
-                                                &[u8], //// the data type
-                                                &[], //// response data
-                                                INVALID_TWITTER_TASK_NAME, //// response message
-                                                StatusCode::NOT_ACCEPTABLE, //// status code
-                                                None::<Cookie<'_>>, //// cookie
+                                                &[u8], // the data type
+                                                &[], // response data
+                                                INVALID_TWITTER_TASK_NAME, // response message
+                                                StatusCode::NOT_ACCEPTABLE, // status code
+                                                None::<Cookie<'_>>, // cookie
                                             }
             
                                         }
@@ -223,11 +223,11 @@ async fn verify_twitter_task(
                                     /* maybe discord tasks :) */
             
                                     resp!{
-                                        &[u8], //// the data type
-                                        &[], //// response data
-                                        NOT_A_TWITTER_TASK, //// response message
-                                        StatusCode::NOT_ACCEPTABLE, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        NOT_A_TWITTER_TASK, // response message
+                                        StatusCode::NOT_ACCEPTABLE, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
             
                                 }
@@ -261,11 +261,11 @@ async fn verify_twitter_task(
             None => {
                 
                 resp!{
-                    &[u8], //// the data type
-                    &[], //// response data
-                    STORAGE_ISSUE, //// response message
-                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    &[u8], // the data type
+                    &[], // response data
+                    STORAGE_ISSUE, // response message
+                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
         }
@@ -289,7 +289,7 @@ async fn verify_twitter_task(
 #[get("/check-users-tasks")]
 async fn check_users_tassk(
         req: HttpRequest,
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -339,21 +339,21 @@ async fn check_users_tassk(
                         }
 
                         resp!{
-                            Vec<String>, //// the data type
-                            responses, //// response data
-                            COMPLETE_VERIFICATION_PROCESS, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            Vec<String>, // the data type
+                            responses, // response data
+                            COMPLETE_VERIFICATION_PROCESS, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     } else{
 
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            EMPTY_USERS_TASKS, //// response message
-                            StatusCode::NOT_FOUND, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            EMPTY_USERS_TASKS, // response message
+                            StatusCode::NOT_FOUND, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     }
@@ -368,11 +368,11 @@ async fn check_users_tassk(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }

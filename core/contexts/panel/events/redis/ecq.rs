@@ -8,7 +8,7 @@
 
 
 use serde::{Serialize, Deserialize};
-use mongodb::bson::{self, oid::ObjectId, doc}; //// self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
+use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use borsh::{BorshDeserialize, BorshSerialize};
 use uuid::Uuid;
 
@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CollaborationQueue{
-    pub players: Vec<Player>, //// user pool that can be used to start a match between them
+    pub players: Vec<Player>, // user pool that can be used to start a match between them
     pub event_id: String, 
 }
 
@@ -59,7 +59,7 @@ pub struct UserNotif{
 pub struct NotifData{
     fired_at: Option<i64>,
     seen: bool,
-    topic: String, //// json string contains the actual data like fireing the player status (role and state changing) during the game 
+    topic: String, // json string contains the actual data like fireing the player status (role and state changing) during the game 
 }
 
 impl UserNotif{
@@ -73,11 +73,11 @@ impl UserNotif{
 }
 
 
-//// in order to call the NotifExt methods on the
-//// UserNotif struct the trait must be implemented 
-//// for the UserNotif struct and imported inside
-//// where we want to call the methods on the struct
-//// instance.
+// in order to call the NotifExt methods on the
+// UserNotif struct the trait must be implemented 
+// for the UserNotif struct and imported inside
+// where we want to call the methods on the struct
+// instance.
 pub trait NotifExt{
     type Data;
     fn set_user_notif(&mut self, notif_data: NotifData) -> Self;
@@ -91,7 +91,7 @@ impl NotifExt for UserNotif{
         self.notifs.clone()
     }
 
-    fn set_user_notif(&mut self, new_notif: NotifData) -> Self { //// since the set() method of the UserNotif instance is mutable this method must be mutable too
+    fn set_user_notif(&mut self, new_notif: NotifData) -> Self { // since the set() method of the UserNotif instance is mutable this method must be mutable too
         self.set(new_notif)
     }
 
@@ -108,6 +108,6 @@ pub struct Royalty{
 
 pub struct Nft{
     pub owner: String,
-    pub royalties: Vec<Royalty>, //// Royalty struct must be public if this field is public since we want to access this field later which contains the Royalty instances
+    pub royalties: Vec<Royalty>, // Royalty struct must be public if this field is public since we want to access this field later which contains the Royalty instances
     pub events: Vec<UserNotif>
 }

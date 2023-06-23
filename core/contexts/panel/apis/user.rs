@@ -82,7 +82,7 @@ impl Modify for SecurityAddon {
 async fn login(
         req: HttpRequest, 
         wallet: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -138,11 +138,11 @@ async fn login(
                     };
 
                     resp!{
-                        UserData, //// the data type
-                        user_login_data, //// response data
-                        LOGGEDIN, //// response message
-                        StatusCode::OK, //// status code,
-                        Some(keys_info.0), //// cookie 
+                        UserData, // the data type
+                        user_login_data, // response data
+                        LOGGEDIN, // response message
+                        StatusCode::OK, // status code,
+                        Some(keys_info.0), // cookie 
                     } 
 
                 },
@@ -156,11 +156,11 @@ async fn login(
                         Ok((user_login_data, cookie)) => {
 
                             resp!{
-                                UserData, //// the data type
-                                user_login_data, //// response data
-                                REGISTERED, //// response message
-                                StatusCode::CREATED, //// status code,
-                                Some(cookie), //// cookie 
+                                UserData, // the data type
+                                user_login_data, // response data
+                                REGISTERED, // response message
+                                StatusCode::CREATED, // status code,
+                                Some(cookie), // cookie 
                             } 
 
                         },
@@ -182,11 +182,11 @@ async fn login(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -212,7 +212,7 @@ async fn login(
 async fn login_with_wallet_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -233,21 +233,21 @@ async fn login_with_wallet_and_password(
                     let Ok(pswd_flag) = pswd_verification else{
                         let err_msg = pswd_verification.unwrap_err();
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &err_msg.to_string(), //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &err_msg.to_string(), // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
                     };
 
                     if !pswd_flag{
                         resp!{
-                            String, //// the data type
-                            login_info.wallet, //// response data
-                            WRONG_PASSWORD, //// response message
-                            StatusCode::FORBIDDEN, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            String, // the data type
+                            login_info.wallet, // response data
+                            WRONG_PASSWORD, // response message
+                            StatusCode::FORBIDDEN, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
                     }
         
@@ -292,11 +292,11 @@ async fn login_with_wallet_and_password(
                     };
 
                     resp!{
-                        UserData, //// the data type
-                        user_login_data, //// response data
-                        LOGGEDIN, //// response message
-                        StatusCode::OK, //// status code,
-                        Some(keys_info.0), //// cookie 
+                        UserData, // the data type
+                        user_login_data, // response data
+                        LOGGEDIN, // response message
+                        StatusCode::OK, // status code,
+                        Some(keys_info.0), // cookie 
                     } 
 
                 },
@@ -310,11 +310,11 @@ async fn login_with_wallet_and_password(
                         Ok((user_login_data, cookie)) => {
 
                             resp!{
-                                UserData, //// the data type
-                                user_login_data, //// response data
-                                REGISTERED, //// response message
-                                StatusCode::CREATED, //// status code,
-                                Some(cookie), //// cookie 
+                                UserData, // the data type
+                                user_login_data, // response data
+                                REGISTERED, // response message
+                                StatusCode::CREATED, // status code,
+                                Some(cookie), // cookie 
                             } 
 
                         },
@@ -336,11 +336,11 @@ async fn login_with_wallet_and_password(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -376,7 +376,7 @@ async fn login_with_wallet_and_password(
 async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -400,11 +400,11 @@ async fn verify_twitter_account(
                         Ok(updated_user) => {
                 
                             resp!{
-                                UserData, //// the data type
-                                updated_user, //// response data
-                                UPDATED, //// response message
-                                StatusCode::OK, //// status code,
-                                None::<Cookie<'_>>, //// cookie 
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code,
+                                None::<Cookie<'_>>, // cookie 
                             } 
                         },
                         Err(resp) => {
@@ -438,11 +438,11 @@ async fn verify_twitter_account(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }
@@ -476,7 +476,7 @@ async fn verify_twitter_account(
 pub async fn tasks_report(
         req: HttpRequest,
         user_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -500,11 +500,11 @@ pub async fn tasks_report(
                         Ok(user_stask_reports) => {
 
                             resp!{
-                                FetchUserTaskReport, //// the data type
-                                user_stask_reports, //// response data
-                                FETCHED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                FetchUserTaskReport, // the data type
+                                user_stask_reports, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -540,11 +540,11 @@ pub async fn tasks_report(
         None => {
             
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }

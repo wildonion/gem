@@ -84,8 +84,8 @@ impl Modify for SecurityAddon {
 #[get("/get/admin/{admin_id}/data")]
 async fn get_admin_data(
         req: HttpRequest, 
-        admin_id: web::Path<String>, //// mongodb object id of admin or god  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        admin_id: web::Path<String>, // mongodb object id of admin or god  
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     
@@ -102,9 +102,9 @@ async fn get_admin_data(
         match passport!{ token }{
             true => {
 
-                //// -------------------------------------------------------------------------------------
-                //// ------------------------------- ACCESS GRANTED REGION -------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // ------------------------------- ACCESS GRANTED REGION -------------------------------
+                // -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -119,39 +119,39 @@ async fn get_admin_data(
                         // ...
             
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            FETCHED, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
                         } 
             
             
                     },
                     None => {
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            STORAGE_ISSUE, //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            STORAGE_ISSUE, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
                     }
                 }
 
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
 
             },
             false => {
                 
                 resp!{
-                    &[u8], //// the date type
-                    &[], //// the data itself
-                    INVALID_TOKEN, //// response message
-                    StatusCode::FORBIDDEN, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    &[u8], // the date type
+                    &[], // the data itself
+                    INVALID_TOKEN, // response message
+                    StatusCode::FORBIDDEN, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
         }
@@ -159,11 +159,11 @@ async fn get_admin_data(
     } else{
         
         resp!{
-            &[u8], //// the date type
-            &[], //// the data itself
-            NOT_AUTH_HEADER, //// response message
-            StatusCode::FORBIDDEN, //// status code
-            None::<Cookie<'_>>, //// cookie
+            &[u8], // the date type
+            &[], // the data itself
+            NOT_AUTH_HEADER, // response message
+            StatusCode::FORBIDDEN, // status code
+            None::<Cookie<'_>>, // cookie
         }
     }
 
@@ -188,8 +188,8 @@ async fn get_admin_data(
 #[get("/get/user/{user_id}/data")]
 async fn get_user_data(
         req: HttpRequest, 
-        user_id: web::Path<String>, //// mongodb object id of user or player  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        user_id: web::Path<String>, // mongodb object id of user or player  
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     
@@ -206,9 +206,9 @@ async fn get_user_data(
         match passport!{ token }{
             true => {
 
-                //// -------------------------------------------------------------------------------------
-                //// ------------------------------- ACCESS GRANTED REGION -------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // ------------------------------- ACCESS GRANTED REGION -------------------------------
+                // -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -223,39 +223,39 @@ async fn get_user_data(
                         // ...
             
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            FETCHED, //// response message
-                            StatusCode::OK, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
                         } 
             
             
                     },
                     None => {
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            STORAGE_ISSUE, //// response message
-                            StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            STORAGE_ISSUE, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
                     }
                 }
 
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
-                //// -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
+                // -------------------------------------------------------------------------------------
 
             },
             false => {
                 
                 resp!{
-                    &[u8], //// the date type
-                    &[], //// the data itself
-                    INVALID_TOKEN, //// response message
-                    StatusCode::FORBIDDEN, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    &[u8], // the date type
+                    &[], // the data itself
+                    INVALID_TOKEN, // response message
+                    StatusCode::FORBIDDEN, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
         }
@@ -263,11 +263,11 @@ async fn get_user_data(
     } else{
         
         resp!{
-            &[u8], //// the date type
-            &[], //// the data itself
-            NOT_AUTH_HEADER, //// response message
-            StatusCode::FORBIDDEN, //// status code
-            None::<Cookie<'_>>, //// cookie
+            &[u8], // the date type
+            &[], // the data itself
+            NOT_AUTH_HEADER, // response message
+            StatusCode::FORBIDDEN, // status code
+            None::<Cookie<'_>>, // cookie
         }
     }
 

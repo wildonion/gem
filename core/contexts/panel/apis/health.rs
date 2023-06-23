@@ -87,7 +87,7 @@ pub struct Health{
 #[get("/check-server")]
 async fn index(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
         let iam_healthy = Health{
@@ -95,10 +95,10 @@ async fn index(
         };
     
         resp!{
-            Health, //// the data type
-            iam_healthy, //// response data
-            IAM_HEALTHY, //// response message
-            StatusCode::OK, //// status code
+            Health, // the data type
+            iam_healthy, // response data
+            IAM_HEALTHY, // response message
+            StatusCode::OK, // status code
             None::<Cookie<'_>>,
         }
 
@@ -127,7 +127,7 @@ async fn index(
 #[get("/check-token")]
 async fn check_token(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -156,10 +156,10 @@ async fn check_token(
 
                     let Ok(user) = single_user else{
                         resp!{
-                            i32, //// the data type
-                            _id, //// response data
-                            USER_NOT_FOUND, //// response message
-                            StatusCode::NOT_FOUND, //// status code
+                            i32, // the data type
+                            _id, // response data
+                            USER_NOT_FOUND, // response message
+                            StatusCode::NOT_FOUND, // status code
                             None::<Cookie<'_>>,
                         } 
                     };
@@ -192,10 +192,10 @@ async fn check_token(
                     };
 
                     resp!{
-                        UserData, //// the data type
-                        user_data, //// response data
-                        FETCHED, //// response message
-                        StatusCode::OK, //// status code
+                        UserData, // the data type
+                        user_data, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
                         None::<Cookie<'_>>,
                     }
 
@@ -223,10 +223,10 @@ async fn check_token(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
                 None::<Cookie<'_>>,
             }
         }
@@ -257,7 +257,7 @@ async fn check_token(
 #[post("/logout")]
 async fn logout(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
 
@@ -286,10 +286,10 @@ async fn logout(
                         Ok(_) => {
                             
                             resp!{
-                                &[u8], //// the data type
-                                &[], //// response data
-                                LOGOUT, //// response message
-                                StatusCode::OK, //// status code
+                                &[u8], // the data type
+                                &[], // response data
+                                LOGOUT, // response message
+                                StatusCode::OK, // status code
                                 None::<Cookie<'_>>,
                             }
         
@@ -327,11 +327,11 @@ async fn logout(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
         }
@@ -363,7 +363,7 @@ async fn logout(
 #[get("/get-tasks")]
 async fn get_tasks(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> //// db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // db shared state data
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -385,11 +385,11 @@ async fn get_tasks(
                         Ok(all_tasks) => {
 
                             resp!{
-                                Vec<TaskData>, //// the data type
-                                all_tasks, //// response data
-                                FETCHED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
+                                Vec<TaskData>, // the data type
+                                all_tasks, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
 
                         },
@@ -424,11 +424,11 @@ async fn get_tasks(
         None => {
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                STORAGE_ISSUE, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
     }         

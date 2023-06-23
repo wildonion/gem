@@ -37,7 +37,7 @@ discord client app ----------------------------------------------------------- s
 use redis::FromRedisValue;
 use redis::JsonAsyncCommands;
 use redis::cluster::ClusterClient;
-use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
+use redis::AsyncCommands; // this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use serde::{Serialize, Deserialize};
 use std::{rc::Rc, cell::RefCell};
@@ -52,11 +52,11 @@ use log::{info, error};
 use once_cell::sync::Lazy;
 use futures::executor::block_on;
 use tokio::sync::oneshot;
-use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
+use tokio::sync::Mutex; // async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri, Body};
-use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
-use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; //// methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
-use openai::{ //// openai crate is using the reqwest lib under the hood
+use chrono::{TimeZone, Timelike, Datelike, Utc}; // this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
+use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; // methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
+use openai::{ // openai crate is using the reqwest lib under the hood
     chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole}
 };
 use openai::set_key;
@@ -99,7 +99,7 @@ pub mod tasks;
 
 
 pub static GPT: Lazy<gpt::chat::Gpt> = Lazy::new(|| {
-    block_on(gpt::chat::Gpt::new(None)) //// this gets triggered once so it's ok to use block_on instead of asyn
+    block_on(gpt::chat::Gpt::new(None)) // this gets triggered once so it's ok to use block_on instead of asyn
 });
 
 
@@ -125,8 +125,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     let openai_key = env::var("OPENAI_KEY").expect("⚠️ no openai key variable set");
     let discord_token = env::var("DISCORD_TOKEN").expect("⚠️ no discord token variable set");
     let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
-    let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
-    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
+    let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
+    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); // reading or receiving from the mpsc channel is a mutable process
     set_key(openai_key);
 
 
@@ -134,10 +134,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     // -------------------------------- setting up discord bot
     //
     // ---------------------------------------------------------------------------------------
-    //// we're using tokio event loop handler to activate the discord bot in such
-    //// a way that once we received the flag from the mpsc channel inside the event
-    //// loop, other branches will be canceled
-    discord_bot_flag_sender.send(true).await.unwrap(); //// set this to false if you don't want to start the bot
+    // we're using tokio event loop handler to activate the discord bot in such
+    //  a way that once we received the flag from the mpsc channel inside the event
+    // loop, other branches will be canceled
+    discord_bot_flag_sender.send(true).await.unwrap(); // set this to false if you don't want to start the bot
     tokio::select!{
         bot_flag = discord_bot_flag_receiver.recv() => {
             if let Some(flag) = bot_flag{
@@ -145,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                     info!("🏳️ receiving discord bot true flag");
                     daemon::activate_discord_bot(discord_token.as_str(), 
                                                 serenity_shards.parse::<u64>().unwrap(), 
-                                                GPT.clone(), //// GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
+                                                GPT.clone(), // GPT is of type Lazy<ctx::gpt::chat::Gpt> thus to get the Gpt instance we can clone the static type since clone returns the Self
                                                 USER_RATELIMIT.clone(),
                                                 GUILD_RATELIMIT.clone()
                                             ).await; 

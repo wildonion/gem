@@ -49,7 +49,7 @@ impl Twitter{
         };
 
         let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
-        let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); //// reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
+        let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
         let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
         let twitter_accounts = twitter.keys;
         
@@ -250,11 +250,11 @@ impl Twitter{
                                     } else{
                 
                                         resp!{
-                                            String, //// the data type
-                                            tusername, //// response data
-                                            TWITTER_USER_IS_NOT_VALID, //// response message
-                                            StatusCode::NOT_ACCEPTABLE, //// status code
-                                            None::<Cookie<'_>>, //// cookie
+                                            String, // the data type
+                                            tusername, // response data
+                                            TWITTER_USER_IS_NOT_VALID, // response message
+                                            StatusCode::NOT_ACCEPTABLE, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
                                     }
                 
@@ -262,11 +262,11 @@ impl Twitter{
                                 None => {
     
                                     resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_USER_FOLLOWERS_NOT_FOUND, //// response message
-                                        StatusCode::NOT_FOUND, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        String, // the data type
+                                        tusername, // response data
+                                        TWITTER_USER_FOLLOWERS_NOT_FOUND, // response message
+                                        StatusCode::NOT_FOUND, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
     
                                 }
@@ -279,11 +279,11 @@ impl Twitter{
                             } else{
                                 
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    &e.to_string(), //// response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &e.to_string(), // response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
 
                             }
@@ -294,11 +294,11 @@ impl Twitter{
             }
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
 
@@ -384,11 +384,11 @@ impl Twitter{
                 
             } else{
                 resp!{
-                    String, //// the data type
-                    tusername, //// response data
-                    TWITTER_CODE_IS_NOT_VALID, //// response message
-                    StatusCode::NOT_ACCEPTABLE, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    String, // the data type
+                    tusername, // response data
+                    TWITTER_CODE_IS_NOT_VALID, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
 
@@ -480,11 +480,11 @@ impl Twitter{
                 
             } else{
                 resp!{
-                    String, //// the data type
-                    tusername, //// response data
-                    TWITTER_NOT_VERIFIED_TWEET_CONTENT, //// response message
-                    StatusCode::NOT_ACCEPTABLE, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    String, // the data type
+                    tusername, // response data
+                    TWITTER_NOT_VERIFIED_TWEET_CONTENT, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
         
@@ -577,11 +577,11 @@ impl Twitter{
                                         
                                     } else{
                                         resp!{
-                                            String, //// the data type
-                                            tusername, //// response data
-                                            TWITTER_NOT_VERIFIED_LIKE, //// response message
-                                            StatusCode::NOT_ACCEPTABLE, //// status code
-                                            None::<Cookie<'_>>, //// cookie
+                                            String, // the data type
+                                            tusername, // response data
+                                            TWITTER_NOT_VERIFIED_LIKE, // response message
+                                            StatusCode::NOT_ACCEPTABLE, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
                                     }
     
@@ -589,11 +589,11 @@ impl Twitter{
                                 None => {
     
                                     resp!{
-                                        String, //// the data type
-                                        tusername, //// response data
-                                        TWITTER_USER_TWEETS_NOT_FOUND, //// response message
-                                        StatusCode::NOT_FOUND, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        String, // the data type
+                                        tusername, // response data
+                                        TWITTER_USER_TWEETS_NOT_FOUND, // response message
+                                        StatusCode::NOT_FOUND, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
                                 }
                             }
@@ -606,11 +606,11 @@ impl Twitter{
                             } else{
                                 
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    &e.to_string(), //// response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &e.to_string(), // response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
 
                             }
@@ -620,11 +620,11 @@ impl Twitter{
             }
 
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
         }
@@ -729,11 +729,11 @@ impl Twitter{
                                         
                                     } else{
                                         resp!{
-                                            String, //// the data type
-                                            tusername, //// response data
-                                            TWITTER_NOT_VERIFIED_RETWEET, //// response message
-                                            StatusCode::NOT_ACCEPTABLE, //// status code
-                                            None::<Cookie<'_>>, //// cookie
+                                            String, // the data type
+                                            tusername, // response data
+                                            TWITTER_NOT_VERIFIED_RETWEET, // response message
+                                            StatusCode::NOT_ACCEPTABLE, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
                                     }
 
@@ -741,11 +741,11 @@ impl Twitter{
                                 None => {
 
                                     resp!{
-                                        u64, //// the data type
-                                        retweet_id, //// response data
-                                        TWITTER_TWEET_NOT_FOUND, //// response message
-                                        StatusCode::NOT_FOUND, //// status code
-                                        None::<Cookie<'_>>, //// cookie
+                                        u64, // the data type
+                                        retweet_id, // response data
+                                        TWITTER_TWEET_NOT_FOUND, // response message
+                                        StatusCode::NOT_FOUND, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
 
                                 }
@@ -759,11 +759,11 @@ impl Twitter{
                             } else{
                                 
                                 resp!{
-                                    &[u8], //// the data type
-                                    &[], //// response data
-                                    &e.to_string(), //// response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                                    None::<Cookie<'_>>, //// cookie
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &e.to_string(), // response message
+                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
 
                             }
@@ -773,11 +773,11 @@ impl Twitter{
             }
         
             resp!{
-                &[u8], //// the data type
-                &[], //// response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, //// response message
-                StatusCode::INTERNAL_SERVER_ERROR, //// status code
-                None::<Cookie<'_>>, //// cookie
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
         }
@@ -864,11 +864,11 @@ impl Twitter{
                 
             } else{
                 resp!{
-                    String, //// the data type
-                    tusername, //// response data
-                    TWITTER_NOT_VERIFIED_HASHTAG, //// response message
-                    StatusCode::NOT_ACCEPTABLE, //// status code
-                    None::<Cookie<'_>>, //// cookie
+                    String, // the data type
+                    tusername, // response data
+                    TWITTER_NOT_VERIFIED_HASHTAG, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
                 }
             }
 
@@ -1038,11 +1038,11 @@ impl Twitter{
                         
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_USERNAME);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     },
@@ -1050,11 +1050,11 @@ impl Twitter{
 
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_CODE);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     },
@@ -1062,11 +1062,11 @@ impl Twitter{
                         
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_HASHTAG);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     },
@@ -1074,11 +1074,11 @@ impl Twitter{
 
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_LIKE);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     },
@@ -1087,11 +1087,11 @@ impl Twitter{
                         let link = tweet_link.unwrap_or("-"); /* the or part means that we're using the third party bot */
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:} With The Link: {link:}", TWITTER_VERIFIED_TWEET);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     },
@@ -1099,11 +1099,11 @@ impl Twitter{
 
                         let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_RETWEET);
                         resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
+                            &[u8], // the data type
+                            &[], // response data
+                            &resp_content, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
                     }

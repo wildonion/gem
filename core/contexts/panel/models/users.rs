@@ -113,13 +113,13 @@ pub struct EditUserByAdmin<'p>{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWTClaims{
-    pub _id: i32, //// mongodb object id
+    pub _id: i32, // mongodb object id
     pub username: Option<String>,
     pub wallet: Option<String>,
     pub user_role: UserRole,
     pub token_time: i64,
-    pub exp: i64, //// expiration timestamp
-    pub iat: i64, //// issued timestamp
+    pub exp: i64, // expiration timestamp
+    pub iat: i64, // issued timestamp
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
@@ -598,8 +598,8 @@ impl User{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
-            let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
-            CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+            let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
+            CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
         let new_user = NewUser{
@@ -691,8 +691,8 @@ impl User{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
-            let idx = gen_random_idx(random::<u8>() as usize); //// idx is one byte cause it's of type u8
-            CHARSET[idx] as char //// CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+            let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
+            CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
         let pass = User::hash_pswd(password.as_str()).unwrap();
@@ -850,7 +850,7 @@ impl User{
         };
         
         /* if the passed in password was some then we must updated the password */
-        let password = if let Some(password) = &new_user.password{ //// borrowing the user to prevent from moving
+        let password = if let Some(password) = &new_user.password{ // borrowing the user to prevent from moving
 
             /* we can pass &str to the method by borrowing the String since String will be coerced into &str at compile time */
             User::hash_pswd(password).unwrap()

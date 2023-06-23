@@ -11,7 +11,7 @@ use futures::future;
 use redis::FromRedisValue;
 use redis::JsonAsyncCommands;
 use redis::cluster::ClusterClient;
-use redis::AsyncCommands; //// this trait is required to be imported in here to call set() methods on the cluster connection
+use redis::AsyncCommands; // this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use serde::{Serialize, Deserialize};
 use std::{rc::Rc, cell::RefCell};
@@ -26,10 +26,10 @@ use log::{info, error};
 use once_cell::sync::Lazy;
 use futures::executor::block_on;
 use tokio::sync::oneshot;
-use tokio::sync::Mutex; //// async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
+use tokio::sync::Mutex; // async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use hyper::{Client, Uri, Body};
-use chrono::{TimeZone, Timelike, Datelike, Utc}; //// this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
-use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; //// methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
+use chrono::{TimeZone, Timelike, Datelike, Utc}; // this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
+use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; // methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
 use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
                 interaction::application_command::{CommandDataOption, CommandDataOptionValue}, command::CommandOption}, 
                 framework::standard::{macros::{help, hook}, 
@@ -76,15 +76,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     dotenv().expect("⚠️ .env file not found");
     let discord_token = env::var("TWISCORD_DISCORD_TOKEN").expect("⚠️ no discord token variable set");
     let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
-    let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; //// usize is the minimum size in os which is 32 bits
-    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); //// reading or receiving from the mpsc channel is a mutable process
-    let redis_password = env::var("REDIS_PASSWORD").expect("⚠️ no redis password variable set");
+    let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
+    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); // reading or receiving from the mpsc channel is a mutable process
+    
+    let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+    let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
     let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
-    let redis_conn_url = format!("redis://:{}@{}", redis_password, redis_host);
+    let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+
+    let redis_conn_url = if !redis_password.is_empty(){
+        format!("redis://:{}@{}:{}", redis_password, redis_host, redis_port)
+    } else if !redis_password.is_empty() && !redis_username.is_empty(){
+        format!("redis://{}:{}@{}:{}", redis_username, redis_password, redis_host, redis_port)
+    } else{
+        format!("redis://{}:{}", redis_host, redis_port)
+    };
+
     let redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
     let (redis_pubsub_msg_sender, redis_pubsubs_msg_receiver) = tokio::sync::mpsc::channel::<String>(io_buffer_size);
-    let (response_sender, mut response_receiver) = tokio::sync::mpsc::channel::<Vec<schemas::Mention>>(io_buffer_size);
-
 
 
 
@@ -108,6 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         instance in which mutating the content of the pointer
         will mutate the content of the instance too.
     */
+    // let (response_sender, mut response_receiver) = tokio::sync::mpsc::channel::<Vec<schemas::Mention>>(io_buffer_size);
     // tokio::spawn(async move{
         
     //     let res = reqwest::get("https://some-domain/get-twitter-mentions")
@@ -203,7 +213,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                 
                 /* 
                                 -------------------------
-                                THIS IS IMPORTANT TO KNOW
+                                    IMPORTANT NOTE
                                 -------------------------
 
                     this tokio spawn will parse and send all the mentions asyncly to 

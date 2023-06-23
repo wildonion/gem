@@ -42,12 +42,12 @@ use crate::*;
 
 pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64, user_id: u64, guild_id: u64) -> (String, String, String){
     
-    //// -------------------------------------------------------------------------------
-    //// fetching all channel messages before the initialized /catchup command timestamp
-    //// -------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------
+    // fetching all channel messages before the initialized /catchup command timestamp
+    // -------------------------------------------------------------------------------
     
     let command_time_offset = init_cmd.offset();
-    let command_time_naive_local = init_cmd.naive_local(); //// initial command message datetime
+    let command_time_naive_local = init_cmd.naive_local(); // initial command message datetime
     let date = command_time_naive_local.date();
     let time = command_time_naive_local.time();
 
@@ -57,9 +57,9 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     let start_fetching_mins = time.minute();
     let start_fetching_secs = time.second();
 
-    //// ----------------------------------------------
-    //// ----------- TIME CALCULATION LOGIC -----------
-    //// ----------------------------------------------
+    // ----------------------------------------------
+    // ----------- TIME CALCULATION LOGIC -----------
+    // ----------------------------------------------
     /*  
         -------------
         Logic Example
@@ -105,19 +105,19 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         .num_days() as u32
     }
     
-    //// if the requested time was smaller than the passed 
-    //// in hours ago means we must fetch all the 
-    //// messages from a day ago at the calculated 
-    //// correct time (see the time calculation logic).
+    // if the requested time was smaller than the passed 
+    // in hours ago means we must fetch all the 
+    // messages from a day ago at the calculated 
+    // correct time (see the time calculation logic).
     let ago = time.hour() as i32 - hours_ago as i32; 
     start_fetching_day = if ago < 0{ // a day ago 
         start_fetching_day = if date.day() - 1 == 0{
             let prev_month_num = start_fetching_month - 1;
             let current_day;
-            if prev_month_num == 0{ //// means it's first month of the year and we have to fetch the last year 
+            if prev_month_num == 0{ // means it's first month of the year and we have to fetch the last year 
                 start_fetching_year -= 1;
-                start_fetching_month = 12; //// last month is december 
-                current_day = 31; //// december has 31 days
+                start_fetching_month = 12; // last month is december 
+                current_day = 31; // december has 31 days
             } else{
                 start_fetching_month = prev_month_num;
                 let day = get_days_from_month(start_fetching_year, prev_month_num);
@@ -132,31 +132,31 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         start_fetching_day as u32 
     };
 
-    //// if the requested time was greater than the 
-    //// passed in hours ago time simply the start time
-    //// will be the hours ago of the requested time.
+    // if the requested time was greater than the 
+    // passed in hours ago time simply the start time
+    // will be the hours ago of the requested time.
     let start_fetching_hours = if time.hour() > hours_ago{
         time.hour() - hours_ago
     } 
-    //// if the requested time was smaller than the 
-    //// passed in hours ago time simply the start time
-    //// will be the hours ago of the requested time + 24
-    //// since the hours ago is greater than the requested time
-    //// we have to add 24 hours to the requested time.
+    // if the requested time was smaller than the 
+    // passed in hours ago time simply the start time
+    // will be the hours ago of the requested time + 24
+    // since the hours ago is greater than the requested time
+    // we have to add 24 hours to the requested time.
     else if time.hour() < hours_ago{
         (time.hour() + 24) - hours_ago
     } 
-    //// if the requested time was equal to the 
-    //// passed in hours ago time simply the start time
-    //// will be the hours ago of the requested time 
-    //// which will be 00 time or 12 late night.
+    // if the requested time was equal to the 
+    // passed in hours ago time simply the start time
+    // will be the hours ago of the requested time 
+    // which will be 00 time or 12 late night.
     else{
-        //// this can be 00
+        // this can be 00
         time.hour() - hours_ago 
     };
-    //// ----------------------------------------------
-    //// ----------------------------------------------
-    //// ----------------------------------------------
+    // ----------------------------------------------
+    // ----------------------------------------------
+    // ----------------------------------------------
 
     let d = match chrono::NaiveDate::from_ymd_opt(start_fetching_year, start_fetching_month, start_fetching_day){
         Some(d) => {
@@ -223,22 +223,22 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     let messages = channel_id    
         .messages(&ctx.http, |gm| {
             gm
-                //// we can convert the message id of the interaction response message to timestamp 
-                //// using https://snowsta.mp/?l=en-us&z=g&f=axciv6sznf-9zc for example for 1096776315631312936 
-                //// its timestamp would be 1681562250 or 2023-04-15T12:37:30.765Z
-                .before(command_message_id) //// fetch all messages before the initialized command timestamp
+                // we can convert the message id of the interaction response message to timestamp 
+                // using https://snowsta.mp/?l=en-us&z=g&f=axciv6sznf-9zc for example for 1096776315631312936 
+                // its timestamp would be 1681562250 or 2023-04-15T12:37:30.765Z
+                .before(command_message_id) // fetch all messages before the initialized command timestamp
     }).await;
 
-    //// -----------------------------------------------------------
-    //// concatenating all the channel messages into a single string
-    //// -----------------------------------------------------------
+    // -----------------------------------------------------------
+    // concatenating all the channel messages into a single string
+    // -----------------------------------------------------------
     let bot_username = env::var("BOT_USERNAME").expect("⚠️ no bot username variable set");
     let channel_messages = messages.unwrap_or_else(|_| vec![]);
     let messages = if channel_messages.len() > 1{
         let mut hours_ago_messages = vec![]; 
         let mut messages_iterator = channel_messages.into_iter();
         while let Some(m) = messages_iterator.next(){
-            if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ //// only those messages that their timestamp is greater than the calculated starting timestamp are the ones that are n hours ago
+            if (m.timestamp.timestamp() as u64) > start_fetching_from_timestamp{ // only those messages that their timestamp is greater than the calculated starting timestamp are the ones that are n hours ago
                 /*
                     in fetching messages from the discord server all type of messages will be fetched including 
                     the embeddings and since bot is sending response back in an embedding format they have no 
@@ -256,7 +256,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
                 continue;
             }
         }
-        hours_ago_messages.reverse(); //// reverse the fetched messages so GPT can summarize from the recent one to the latest one
+        hours_ago_messages.reverse(); // reverse the fetched messages so GPT can summarize from the recent one to the latest one
         hours_ago_messages.concat()
     } else{
         "".to_string()
@@ -269,9 +269,9 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         return response;
     }
 
-    //// --------------------------------------------------------------------
-    //// feed the messages to the chat GPT to do a long summarization process
-    //// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
+    // feed the messages to the chat GPT to do a long summarization process
+    // --------------------------------------------------------------------
     let mut gpt_request_command = "".to_string();
     gpt_request_command = format!("{}:{}", gpt::chat::GPT_PROMPT, messages);
 
@@ -299,8 +299,8 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
         acquiring a write lock will block other event and command handlers which don't allow 
         them to use the data until the lock is released.
     */
-    // let mut data = ctx.data.write().await; //// write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
-    // let gpt_data = match data.get_mut::<handlers::GptBot>(){ //// getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
+    // let mut data = ctx.data.write().await; // write lock returns a mutable reference to the underlying Gpt instance also data is of type Arc<RwLock<TypeMapKey>>
+    // let gpt_data = match data.get_mut::<handlers::GptBot>(){ // getting a mutable reference to the underlying data of the Arc<RwLock<TypeMapKey>> which is GptBot
     //     Some(gpt) => gpt,
     //     None => {
     //         let response = (format!("ChatGPT is not online"), format!("📨 CatchUp requested at: {}", chrono::Local::now()), "".to_string());
@@ -309,7 +309,7 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
     // };
     // let mut gpt_bot = gpt_data.lock().await;
     
-    let mut gpt_bot = gpt::chat::Gpt::new(None).await; //// passing none since we want to start a new catchup chat history per each request
+    let mut gpt_bot = gpt::chat::Gpt::new(None).await; // passing none since we want to start a new catchup chat history per each request
     let mut gpt_response = "".to_string();
     let req_cmd = gpt_request_command.clone();
     let feed_result = gpt_bot.feed(req_cmd.as_str()).await;
@@ -339,10 +339,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
           
     */
 
-    //// since we're doing IO we must put the task inside the
-    //// tokio green threadpool to avoid rate limit and halting 
-    //// issues since tokio::spawn(async move{}) handle async 
-    //// tasks concurrently
+    // since we're doing IO we must put the task inside the
+    // tokio green threadpool to avoid rate limit and halting 
+    // issues since tokio::spawn(async move{}) handle async 
+    // tasks concurrently
     tokio::spawn(async move{
         
         let mut gpt_ok = false;
@@ -377,10 +377,10 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
 
     });
     
-    //// no need to update the ctx.data with the updated gpt_bot field 
-    //// since we're already modifying it directly through the 
-    //// write lock on the RwLock
-    //// ...
+    // no need to update the ctx.data with the updated gpt_bot field 
+    // since we're already modifying it directly through the 
+    // write lock on the RwLock
+    // ...
     
     return response;
 

@@ -27,7 +27,7 @@
 pub mod chat{
 
 
-    use tokio::io::AsyncWriteExt; //// this is required to call the write_all() method of the Write trait on the created file 
+    use tokio::io::AsyncWriteExt; // this is required to call the write_all() method of the Write trait on the created file 
 
     use crate::*;
 
@@ -35,9 +35,9 @@ pub mod chat{
     pub const GPT_PROMPT: &str = "Summarise the discussion from the discord server but remove any greetings. Include only the items that created the most engagement. Use a sarcastically whimsical tone";
 
 
-    //// ----------------------------------------------
-    //// -------------- GPT STRUCTURE -----------------
-    //// ----------------------------------------------
+    // ----------------------------------------------
+    // -------------- GPT STRUCTURE -----------------
+    // ----------------------------------------------
     // at the time of this writing
     // rate limits for the ChatGPT API?
     // Free trial users: 20 RPM 40000 TPM
@@ -51,7 +51,7 @@ pub mod chat{
     #[derive(Clone, Debug)]
     pub struct Gpt{
         pub messages: Vec<ChatCompletionMessage>,
-        pub last_content: String, //// utf8 bytes is easier to handle tokenization process later
+        pub last_content: String, // utf8 bytes is easier to handle tokenization process later
         pub current_response: String,
         pub is_rate_limit: bool,
     }
@@ -67,7 +67,7 @@ pub mod chat{
                     is_rate_limit: false,
                 }
             } else{
-                let content = "Hello,"; //// starting conversation to feed later tokens to the GPT model for prediction
+                let content = "Hello,"; // starting conversation to feed later tokens to the GPT model for prediction
                 Self{
                     messages: vec![
                         ChatCompletionMessage{
@@ -95,25 +95,25 @@ pub mod chat{
         //→ also if the self wasn't behind a reference by calling the first method on 
         //  the Gpt instance the instance will be moved and we can't call other methods.
         //
-        //// we can't return a pointer to the String from the function since Strings or Vecs
-        //// are heap data types and once the function gets executed their lifetime will be dropped
-        //// from the ram to free the allocations and because of this returning a pointer to them 
-        //// might be a dangling pointer which rust doesn't allow us to do this in the first place.
+        // we can't return a pointer to the String from the function since Strings or Vecs
+        // are heap data types and once the function gets executed their lifetime will be dropped
+        // from the ram to free the allocations and because of this returning a pointer to them 
+        // might be a dangling pointer which rust doesn't allow us to do this in the first place.
         //
-        //// since heap data doesn't implement Copy thus by moving them we'll lose the 
-        //// ownership of them also can't move if the heap type is behind a shared reference
-        //// since by moving it'll be dropped from the ram and its pointer will be a dangled.
+        // since heap data doesn't implement Copy thus by moving them we'll lose the 
+        // ownership of them also can't move if the heap type is behind a shared reference
+        // since by moving it'll be dropped from the ram and its pointer will be a dangled.
         //
-        //// → if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable
-        //// → we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
-        //// → dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait
+        // → if we want to mutate the pointer it must be defined as mutable also its underlying data must be mutable
+        // → we borrow since copy trait doesn't implement for the type also we can clone it too to pass to other scopes 
+        // → dereferencing and clone method will return the Self and can't deref if the underlying data doesn't implement Copy trait
         //
-        //// it's ok to return slices types like str and [] behind a pointer by using the lifetime of the self or a passed 
-        //// in one since they are on the stack but we can't return dynamic types behind a pointer since copy trait is not 
-        //// implemented for them and once the scope gets executed their lifetime will be dropped from the ram since they're 
-        //// expensive and rust doesn't store them forever thus it moves them to the newly scope but since there is a pointer of them 
-        //// exists in function we can't return the pointer and in other scopes we can't move them to the new scope
-        //// we could clone them or borrow them using using Rc, & or as_ref() 
+        // it's ok to return slices types like str and [] behind a pointer by using the lifetime of the self or a passed 
+        // in one since they are on the stack but we can't return dynamic types behind a pointer since copy trait is not 
+        // implemented for them and once the scope gets executed their lifetime will be dropped from the ram since they're 
+        // expensive and rust doesn't store them forever thus it moves them to the newly scope but since there is a pointer of them 
+        // exists in function we can't return the pointer and in other scopes we can't move them to the new scope
+        // we could clone them or borrow them using using Rc, & or as_ref() 
         pub async fn feed(&mut self, content: &str) -> Gpt{
             
             //→ based on borrowing and ownership rules in rust we can't move a type into new scope when there
@@ -127,8 +127,8 @@ pub mod chat{
             //  of that field and since it's behin a pointer rust won't let us do that in the first place which 
             //  forces us to pass either its borrow or clone to other scopes.   
             
-            let mut messages = self.messages.clone(); //// clone messages vector since we can't move a type if it's behind a pointer 
-            messages.push(ChatCompletionMessage{ //// pushing the current token to the vector so the GPT can be able to predict the next tokens based on the previous ones 
+            let mut messages = self.messages.clone(); // clone messages vector since we can't move a type if it's behind a pointer 
+            messages.push(ChatCompletionMessage{ // pushing the current token to the vector so the GPT can be able to predict the next tokens based on the previous ones 
                 role: ChatCompletionMessageRole::User,
                 content: content.to_string(),
                 name: None,
@@ -147,27 +147,27 @@ pub mod chat{
                 return Self{
                     messages: self.messages.clone(),
                     last_content: self.last_content.clone(),
-                    current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
+                    current_response : self.current_response.clone(), // cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
                     is_rate_limit: true,
                 };
             }
             let returned_message = chat_completion.unwrap().choices.first().unwrap().message.clone();
             self.current_response = returned_message.content.to_string();
-            messages.push(ChatCompletionMessage{ //// we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
+            messages.push(ChatCompletionMessage{ // we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
                 role: ChatCompletionMessageRole::Assistant,
                 content: self.current_response.clone(),
                 name: None
             });
-            //// since self.messages is behind a mutable reference we can't 
-            //// move it around since rust doesn't allow use to move the 
-            //// heap type if it's behind a muable pointer the soultion 
-            //// can be either cloning which will return the type itself 
-            //// or Self, borrowing (use their slice form) or dereferencing.
-            self.messages = messages.clone(); //// finally update the message field inside the Gpt instance 
+            // since self.messages is behind a mutable reference we can't 
+            // move it around since rust doesn't allow use to move the 
+            // heap type if it's behind a muable pointer the soultion 
+            // can be either cloning which will return the type itself 
+            // or Self, borrowing (use their slice form) or dereferencing.
+            self.messages = messages.clone(); // finally update the message field inside the Gpt instance 
             Self{
                 messages,
                 last_content: content.to_string(),
-                current_response : self.current_response.clone(), //// cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
+                current_response : self.current_response.clone(), // cloning sicne rust doesn't allow to move the current_response into new scopes (where it has been called) since self is behind a pointer
                 is_rate_limit: self.is_rate_limit,
             }
         }

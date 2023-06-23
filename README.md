@@ -266,3 +266,5 @@ cd scripts
 * custom error type inside `error.rs`
 
 * conse `errors` handler service and `jobs` crontabs folder
+
+* publish docker containers to docker hub
