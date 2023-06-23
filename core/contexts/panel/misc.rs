@@ -372,7 +372,7 @@ macro_rules! db {
 
             let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
             let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
-            let redis_host = std::env::var("REDIS_HOST").expect("⚠️ no redis host variable set");
+            let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
             let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
 
             let redis_conn_url = if !redis_password.is_empty(){
