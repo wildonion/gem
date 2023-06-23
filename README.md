@@ -120,8 +120,6 @@ cargo run --bin panel
 cargo run --bin catchup-bot
 # 🏃🏻‍♀️ Run Conse Twiscord Bot Server
 cargo run --bin twiscord
-# 🏃🏿 Run Conse Test Codes
-cargo run --bin tests
 # 🏃🏿 Run Conse Argon2 Test Codes
 cargo run --bin argon2test
 ```
@@ -253,7 +251,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
-* websocket server for streaming over subscribed redis topics + setup it's nginx config file (ws://ws.panel.conse.app)
+* websocket server for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
 
 * redis response caching 
 
