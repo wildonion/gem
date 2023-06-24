@@ -111,6 +111,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); // oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
     
+    /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
+
     let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
     let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
     let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
@@ -125,6 +127,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     };
 
     let redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
+    
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     
 
     

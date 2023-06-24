@@ -370,6 +370,8 @@ macro_rules! db {
             
             use crate::misc::*;
 
+            /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
+
             let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
             let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
             let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
@@ -384,6 +386,9 @@ macro_rules! db {
             };
 
             let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
+            
+            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
             
             let empty_app_storage = Some( // putting the Arc-ed db inside the Option
                 Arc::new( // cloning app_storage to move it between threads

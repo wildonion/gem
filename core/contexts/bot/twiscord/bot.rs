@@ -79,6 +79,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
     let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); // reading or receiving from the mpsc channel is a mutable process
     
+    /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
+
     let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
     let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
     let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
@@ -94,7 +96,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
     let redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
     let (redis_pubsub_msg_sender, redis_pubsubs_msg_receiver) = tokio::sync::mpsc::channel::<String>(io_buffer_size);
-
+    
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
 
     /* 

@@ -114,7 +114,7 @@ async fn verify_twitter_task(
 
     /* rate limiter based on doer id */
 
-    let chill_zone_duration = 30_000u64; // 30 seconds chillzone
+    let chill_zone_duration = 30_000u64; // 30 miliaseconds chillzone
     let now = chrono::Local::now().timestamp_millis() as u64;
     let mut is_rate_limited = false;
     

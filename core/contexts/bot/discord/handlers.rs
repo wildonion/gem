@@ -330,7 +330,10 @@ impl Handler{
     }
 
     async fn check_rate_limit(ctx: &Context, command: &ApplicationCommandInteraction) -> Result<(), ()>{
-
+        
+        /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
+        /* making a new connection once the `check_rate_limit` method gets called */
+        
         let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
         let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
         let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
@@ -346,6 +349,9 @@ impl Handler{
 
         let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
         let mut connection = client.get_async_connection().await.unwrap();
+
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
 
         // --------------------------------------------------------------------------
         // ---------------------------- RATE LIMIT LOGIC ----------------------------
