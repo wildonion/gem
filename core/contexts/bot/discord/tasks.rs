@@ -394,9 +394,6 @@ pub async fn catchup(ctx: &Context, hours_ago: u32, channel_id: ChannelId, init_
 
 pub async fn stats(ctx: &Context, channel_id: ChannelId, init_cmd: Timestamp, command_message_id: u64) -> (String, String, String){
 
-
-    // TODO - https://crates.io/crates/sysinfo
-
     let mut sys = System::new_all();
     sys.refresh_all();
     

@@ -1,5 +1,0 @@
-
-
-
-
-## gem possible errors handler

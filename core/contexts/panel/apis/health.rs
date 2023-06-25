@@ -144,8 +144,39 @@ async fn check_token(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    
-                    let single_user = users
+
+                    /* REDIS RESPONSE CACHING */
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let check_token_key = format!("check_token_{_id:}");
+                    let redis_result_check_token: RedisResult<String> = redis_conn.get(check_token_key.as_str()).await;
+                    let mut redis_check_token = match redis_result_check_token{
+                        Ok(data) => {
+                            let rc_data = serde_json::from_str::<HashMap<i32, UserData>>(data.as_str()).unwrap();
+                            rc_data
+                        },
+                        Err(e) => {
+                            let empty_check_token = HashMap::<i32, UserData>::new();
+                            let rc_data = serde_json::to_string(&empty_check_token).unwrap();
+                            let _: () = redis_conn.set("twitter_rate_limiter", rc_data).await.unwrap();
+                            HashMap::new()
+                        }
+                    };
+    
+                    if let Some(user_data) = redis_check_token.get(&_id){
+
+                        /* sending response from redis */
+                        resp!{
+                            UserData, // the data type
+                            user_data.clone(), // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>,
+                        }
+
+
+                    } else{
+
+                        let single_user = users
                             .filter(id.eq(_id))
                             .select((id, username, activity_code, twitter_username, 
                                     facebook_username, discord_username,
@@ -154,49 +185,59 @@ async fn check_token(
                             .first::<FetchUser>(connection);
 
 
-                    let Ok(user) = single_user else{
+                        let Ok(user) = single_user else{
+                            resp!{
+                                i32, // the data type
+                                _id, // response data
+                                USER_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>,
+                            } 
+                        };
+
+                        let user_data = UserData { 
+                            id: user.id, 
+                            username: user.username, 
+                            activity_code: user.activity_code,
+                            twitter_username: user.twitter_username, 
+                            facebook_username: user.facebook_username, 
+                            discord_username: user.discord_username, 
+                            wallet_address: user.wallet_address, 
+                            user_role: {
+                                match user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: user.token_time,
+                            last_login: { 
+                                if user.last_login.is_some(){
+                                    Some(user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: user.created_at.to_string(),
+                            updated_at: user.updated_at.to_string(),
+                        };
+
+
+                        /* chache the response */
+                        let check_token_key = format!("check_token_{_id:}");
+                        redis_check_token.insert(_id, user_data.clone());
+                        let rc_data = serde_json::to_string(&redis_check_token).unwrap();
+                        let _: () = redis_conn.set(check_token_key.as_str(), rc_data).await.unwrap();
+
+                        /* sending pg response */
                         resp!{
-                            i32, // the data type
-                            _id, // response data
-                            USER_NOT_FOUND, // response message
-                            StatusCode::NOT_FOUND, // status code
+                            UserData, // the data type
+                            user_data, // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
                             None::<Cookie<'_>>,
-                        } 
-                    };
+                        }
 
-                    let user_data = UserData { 
-                        id: user.id, 
-                        username: user.username, 
-                        activity_code: user.activity_code,
-                        twitter_username: user.twitter_username, 
-                        facebook_username: user.facebook_username, 
-                        discord_username: user.discord_username, 
-                        wallet_address: user.wallet_address, 
-                        user_role: {
-                            match user.user_role.clone(){
-                                UserRole::Admin => "Admin".to_string(),
-                                UserRole::User => "User".to_string(),
-                                _ => "Dev".to_string(),
-                            }
-                        },
-                        token_time: user.token_time,
-                        last_login: { 
-                            if user.last_login.is_some(){
-                                Some(user.last_login.unwrap().to_string())
-                            } else{
-                                Some("".to_string())
-                            }
-                        },
-                        created_at: user.created_at.to_string(),
-                        updated_at: user.updated_at.to_string(),
-                    };
-
-                    resp!{
-                        UserData, // the data type
-                        user_data, // response data
-                        FETCHED, // response message
-                        StatusCode::OK, // status code
-                        None::<Cookie<'_>>,
                     }
 
                 },

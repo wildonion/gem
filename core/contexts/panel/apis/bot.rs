@@ -114,7 +114,7 @@ async fn verify_twitter_task(
 
     /* rate limiter based on doer id */
 
-    let chill_zone_duration = 30_000u64; // 30 miliaseconds chillzone
+    let chill_zone_duration = 30_000u64; // 30 milliaseconds chillzone
     let now = chrono::Local::now().timestamp_millis() as u64;
     let mut is_rate_limited = false;
     
@@ -308,10 +308,19 @@ async fn check_users_tassk(
 
                     if users_tasks_data.len() > 0{
 
+                        let three_days_grace = 259_200_000 as u64; /* 72 hours is 259_200_000 milliseconds */
                         let mut responses = vec![];
                         
                         for user_task in users_tasks_data{
-                    
+
+                            let now = chrono::Local::now().timestamp_millis() as u64;
+                            let done_when = user_task.done_at.timestamp_millis() as u64;
+
+                            /* if user is done the task like 72 hours ago then there is no need to check it again */
+                            if now - done_when >= three_days_grace{
+                                continue;
+                            }
+
                             let api_path = format!("{}/bot/verify-user/{}/twitter-task/{}", api, user_task.user_id, user_task.task_id);
                             let client = reqwest::Client::new();
                             let res = client
@@ -334,7 +343,7 @@ async fn check_users_tassk(
                                 the /verify-user/{doer_id}/twitter-task/{job_id} api uses a 30 
                                 seconds rate limiter 
                             */
-                            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await; /* sleep asyncly to avoid blocking issues */
+                            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await; /* sleep asyncly to avoid blocking issues by twitter */
                             
                         }
 

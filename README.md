@@ -253,8 +253,6 @@ cd scripts
 
 * websocket server and actors for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
 
-* redis response caching 
-
 * conse panel dev APIs related to the conse hyper server 
 
 * solana [ticket reservation contract](https://github.com/wildonion/solmarties/tree/main/programs/ticket)
@@ -264,7 +262,5 @@ cd scripts
 * god and dev panel app using `yew`
 
 * custom error type inside `error.rs`
-
-* conse `errors` handler service and `jobs` crontabs folder
 
 * publish docker containers to docker hub

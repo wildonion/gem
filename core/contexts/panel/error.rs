@@ -5,18 +5,30 @@
 use crate::*;
 
 
-// every instance of PanelError must have to_string() method
-// custom error struct (lifetime, slice types, generic, return pointer (Box<dyn Trait> or &dyn Trait and -> impl Trait from its methods) 
+
+// todo - impl From for PanelError
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PanelError<'m>{
     pub code: i32,
-    pub msg: &'m str,
-    pub kind: ErrorKind
+    pub msg: &'m str, // reason 
+    pub kind: ErrorKind // service
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ErrorKind{
     Server, // actix
-    Storage, // diesel
+    Storage, // diesel, redis
+}
+
+unsafe impl Send for PanelError<'_>{}
+unsafe impl Sync for PanelError<'_>{}
+
+
+impl<'m> PanelError<'m>{
+
+    fn new(code: i32, msg: &'m str, kind: ErrorKind) -> Self{
+        
+        Self { code, msg, kind }
+    }
 }

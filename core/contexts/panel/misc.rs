@@ -218,7 +218,7 @@ macro_rules! resp {
 macro_rules! server {
     (
         
-        /* ... setup args here ... */
+        /* ... setup args goes here ... */
 
     ) => {
         
