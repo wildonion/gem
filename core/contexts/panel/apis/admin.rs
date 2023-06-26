@@ -368,6 +368,7 @@ async fn register_new_user(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -383,8 +384,21 @@ async fn register_new_user(
                     let role = token_data.user_role;
 
                     /* to_owned() will take the NewUserInfoRequest instance out of the web::Json*/
-                    match User::insert_new_user(new_user.to_owned(), connection).await{
+                    match User::insert_new_user(new_user.to_owned(), connection, redis_client).await{
                         Ok(_) => {
+
+                            /* fetch all users again to get the newly one */
+                            let get_all_users = User::get_all(connection).await;
+                            let Ok(all_users) = get_all_users else{
+                                let resp = get_all_users.unwrap_err();
+                                return resp;
+                            };
+
+                            /* update redis cacher with the new user */
+                            let rc_data = serde_json::to_string(&all_users).unwrap();
+                            let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
+
+
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
@@ -698,23 +712,64 @@ async fn get_users(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    
-                    match User::get_all(connection).await{
-                        Ok(all_users) => {
-                            resp!{
-                                Vec<UserData>, // the data type
-                                all_users, // response data
-                                FETCHED, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        },
-                        Err(resp) => {
 
-                            /* DIESEL FETCH ERROR RESPONSE */
-                            resp
+                    /* create a response cacher using redis */
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let get_all_users_key = format!("get_all_users");
+                    let redis_result_check_token: RedisResult<String> = redis_conn.get(get_all_users_key.as_str()).await;
+                    let mut redis_get_users = match redis_result_check_token{
+                        Ok(data) => {
+                            let rc_data = serde_json::from_str::<Vec<UserData>>(data.as_str()).unwrap();
+                            Some(rc_data)
+                        },
+                        Err(e) => {
+                            let empty_get_users: Option<Vec<UserData>> = None;
+                            let rc_data = serde_json::to_string(&empty_get_users).unwrap();
+                            let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
+                            None
                         }
+                    };
+                    
+                    /* no caching is in redis we must fetch from pg */
+                    if redis_get_users.is_none(){
+
+                        match User::get_all(connection).await{
+                            Ok(all_users) => {
+
+                                /* chache the response for the next request */
+                                let rc_data = serde_json::to_string(&all_users).unwrap();
+                                let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
+
+                                resp!{
+                                    Vec<UserData>, // the data type
+                                    all_users, // response data
+                                    FETCHED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            },
+                            Err(resp) => {
+    
+                                /* DIESEL FETCH ERROR RESPONSE */
+                                resp
+                            }
+                        
+                        }
+
+                    /* return redis cache */
+                    } else{
+
+                        resp!{
+                            Vec<UserData>, // the data type
+                            redis_get_users.unwrap(), // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                        
                     }
+                    
+                    
 
                 },
                 Err(resp) => {
@@ -782,7 +837,7 @@ async fn register_new_task(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -798,6 +853,19 @@ async fn register_new_task(
                     
                     match Task::insert(new_task.to_owned(), redis_client, connection).await{
                         Ok(_) => {
+
+                            /* fetch all admin tasks again to get the newly one */
+                            let get_all_admin_tasks = Task::get_all_admin(new_task.admin_id, connection).await;
+                            let Ok(all_admin_tasks) = get_all_admin_tasks else{
+                                let resp = get_all_admin_tasks.unwrap_err();
+                                return resp;
+                            };
+
+                            /* update redis cacher with the new task */
+                            let rc_data = serde_json::to_string(&all_admin_tasks).unwrap();
+                            let get_admin_tasks_key = format!("get_admin_tasks_{:?}", new_task.admin_id);
+                            let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
+
 
                             resp!{
                                 &[u8], // the data type
@@ -1125,25 +1193,64 @@ async fn get_admin_tasks(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    
-                    match Task::get_all_admin(owner_id.to_owned(), connection).await{
-                        Ok(admin_tasks) => {
 
-                            resp!{
-                                Vec<TaskData>, // the data type
-                                admin_tasks, // response data
-                                FETCHED, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
 
+                    /* create a response cacher using redis */
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
+                    let redis_result_admin_tasks: RedisResult<String> = redis_conn.get(get_admin_tasks_key.as_str()).await;
+                    let mut redis_get_admin_tasks = match redis_result_admin_tasks{
+                        Ok(data) => {
+                            let rc_data = serde_json::from_str::<Vec<TaskData>>(data.as_str()).unwrap();
+                            Some(rc_data)
                         },
-                        Err(resp) => {
-
-                            /* DIESEL FETCH ERROR RESPONSE */
-                            resp
+                        Err(e) => {
+                            let empty_admin_tasks: Option<Vec<TaskData>> = None;
+                            let rc_data = serde_json::to_string(&empty_admin_tasks).unwrap();
+                            let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
+                            let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
+                            None
                         }
+                    };
+
+                    if redis_get_admin_tasks.is_none(){
+
+                        match Task::get_all_admin(owner_id.to_owned(), connection).await{
+                            Ok(admin_tasks) => {
+    
+                                /* chache the response for the next request */
+                                let rc_data = serde_json::to_string(&admin_tasks).unwrap();
+                                let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
+                                let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
+    
+                                resp!{
+                                    Vec<TaskData>, // the data type
+                                    admin_tasks, // response data
+                                    FETCHED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+    
+                            },
+                            Err(resp) => {
+    
+                                /* DIESEL FETCH ERROR RESPONSE */
+                                resp
+                            }
+                        }
+
+                    } else{
+
+                        resp!{
+                            Vec<TaskData>, // the data type
+                            redis_get_admin_tasks.unwrap(), // response data
+                            FETCHED, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
                     }
+                    
                 },
                 Err(resp) => {
                     
@@ -1241,6 +1348,7 @@ async fn get_users_tasks(
                             resp
                         }
                     }
+ 
                 },
                 Err(resp) => {
                     
@@ -1359,7 +1467,7 @@ async fn add_twitter_account(
                         .open("twitter-accounts.json"){
                         Ok(mut file) => {
                             match file.write(updated_twitter_accounts_buffer){
-                                Ok(bytes) => {
+                                Ok(bytes) => { /* written bytes */
         
                                     resp!{
                                         &[u8], // the data type

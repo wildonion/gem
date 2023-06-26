@@ -781,7 +781,10 @@ impl User{
     
     }
 
-    pub async fn insert_new_user(user: NewUserInfoRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn insert_new_user(user: NewUserInfoRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient
+        ) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let u_name = user.username.as_str();

@@ -145,7 +145,7 @@ async fn check_token(
                     let role = token_data.user_role;
 
 
-                    /* REDIS RESPONSE CACHING */
+                    /* create a response cacher using redis */
                     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
                     let check_token_key = format!("check_token_{_id:}");
                     let redis_result_check_token: RedisResult<String> = redis_conn.get(check_token_key.as_str()).await;
@@ -157,7 +157,8 @@ async fn check_token(
                         Err(e) => {
                             let empty_check_token = HashMap::<i32, UserData>::new();
                             let rc_data = serde_json::to_string(&empty_check_token).unwrap();
-                            let _: () = redis_conn.set("twitter_rate_limiter", rc_data).await.unwrap();
+                            let check_token_key = format!("check_token_{_id:}");
+                            let _: () = redis_conn.set(check_token_key.as_str(), rc_data).await.unwrap();
                             HashMap::new()
                         }
                     };
@@ -173,7 +174,7 @@ async fn check_token(
                             None::<Cookie<'_>>,
                         }
 
-
+                    /* if there was no cache simply we'll build a new one */
                     } else{
 
                         let single_user = users
@@ -223,7 +224,7 @@ async fn check_token(
                         };
 
 
-                        /* chache the response */
+                        /* chache the response for the next request for this user */
                         let check_token_key = format!("check_token_{_id:}");
                         redis_check_token.insert(_id, user_data.clone());
                         let rc_data = serde_json::to_string(&redis_check_token).unwrap();
