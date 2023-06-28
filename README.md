@@ -261,6 +261,4 @@ cd scripts
 
 * god and dev panel app using `yew`
 
-* custom error type inside `error.rs`
-
-* publish docker containers to docker hub
+* publish docker containers to docker hub also add CI/CD setup

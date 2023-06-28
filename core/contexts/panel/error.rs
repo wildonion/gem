@@ -6,42 +6,67 @@ use crate::*;
 use std::io::Write;
 
 
-// todo - impl From for PanelError
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PanelError<'m>{
+#[derive(Debug)]
+pub struct PanelError{
     pub code: i32,
-    pub msg: &'m str, // reason 
+    pub msg: [u8; 32], // reason 
     pub kind: ErrorKind // service
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum ErrorKind{
     Server, // actix
-    Storage, // diesel, redis
+    Storage(std::io::Error), // diesel, redis
 }
 
-unsafe impl Send for PanelError<'_>{}
-unsafe impl Sync for PanelError<'_>{}
+unsafe impl Send for PanelError{}
+unsafe impl Sync for PanelError{}
+
+impl From<std::io::Error> for ErrorKind{
+    fn from(error: std::io::Error) -> Self {
+        ErrorKind::Storage(error)
+    }
+}
 
 
-impl<'m> PanelError<'m>{
+impl From<([u8; 32], i32, ErrorKind)> for PanelError{
+    fn from(msg_code_kind: ([u8; 32], i32, ErrorKind)) -> PanelError{
+        /* 
+            can't return a borrow from the function since it's a borrow 
+            to a type that by executing the function the type will be dropped 
+            out of the function scope and from the ram 
+        */
+        // let msg = msg_code_kind.0.as_str();
+        PanelError { code: msg_code_kind.1, msg: msg_code_kind.0, kind: msg_code_kind.2 }
+    }
+}
 
-    fn new(code: i32, msg: &'m str, kind: ErrorKind) -> Self{
+
+impl PanelError{
+
+    fn new(code: i32, msg: [u8; 32], kind: ErrorKind) -> Self{
         
-        Self { code, msg, kind }
+        let err = PanelError::from((msg, code, kind));
+
+        err
     }
 
-    fn write(&self) -> impl Write{  
+    fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that satisfied the Write trait */
 
-        let mut buffer = Vec::new();
+        let Self { code, msg, kind } = self;
+
         /* 
             passing a mutable reference to buffer to write! macro so  
             the buffer can be mutated outside of the write! scope
+            also Vec types implemented the Write trait already 
+            we just need to use it in here
         */
-        let message = format!("error occurred at {} due to {} of kind {:?}", chrono::Local::now(), self.msg, self.kind);
-        let mut writer = write!(&mut buffer, "{}", message); 
+        let mut buffer = Vec::new(); 
+        let msg_content = borsh::try_from_slice_with_schema::<String>(msg.as_slice());
+        let message = format!("error occurred at {} due to {} of kind {:?}", chrono::Local::now(), msg_content.unwrap(), kind);
+        let mut writer = write!(&mut buffer, "{}", message); /* writing to buffer */
         buffer
     
     }
+
 }

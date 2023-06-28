@@ -82,3 +82,10 @@ path = "core/contexts/panel/app.rs"
 [[bin]]
 name = "argon2test"
 path = "test/argon2test.rs"
+
+[profile.release]
+panic = "abort"
+opt-level = "z"
+lto = true
+codegen-units = 1
+overflow-checks = true # panic on any overflow
