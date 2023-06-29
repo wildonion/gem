@@ -70,3 +70,7 @@ pub static TWITTER_NOT_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Not Don
 pub static TWITTER_CANT_LOOP_OVER_ACCOUNTS: &str = "Can't Loop Over Twitter Accounts";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
+
+/* u16 bits is 2 bytes long which is 4 chars in hex */
+pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFF; // 1
+pub static STORAGE_IO_ERROR_CODE_2: &u16 = &0xFFFE; // 2

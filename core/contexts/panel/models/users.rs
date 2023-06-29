@@ -673,9 +673,20 @@ impl User{
                 },
                 Err(e) => {
 
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let msg_content = [0u8; 32];
+                    let error_content = &e.to_string().as_bytes();
+                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
-                        message: &e.to_string(),
+                        message: resp_err,
                         status: 500
                     };
                     return Err(
@@ -767,9 +778,20 @@ impl User{
                 },
                 Err(e) => {
 
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let msg_content = [0u8; 32];
+                    let error_content = &e.to_string().as_bytes();
+                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
-                        message: &e.to_string(),
+                        message: resp_err,
                         status: 500
                     };
                     return Err(
@@ -820,9 +842,20 @@ impl User{
                 Ok(affected_row) => Ok(affected_row),
                 Err(e) => {
 
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let msg_content = [0u8; 32];
+                    let error_content = &e.to_string().as_bytes();
+                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
-                        message: &e.to_string(),
+                        message: resp_err,
                         status: 500
                     };
                     return Err(
@@ -946,9 +979,20 @@ impl User{
                 },
                 Err(e) => {
 
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let msg_content = [0u8; 32];
+                    let error_content = &e.to_string().as_bytes();
+                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
-                        message: &e.to_string(),
+                        message: resp_err,
                         status: 500
                     };
                     return Err(
@@ -981,9 +1025,20 @@ impl User{
                         },
                         Err(e) => {
 
+                            let resp_err = &e.to_string();
+
+
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            let msg_content = [0u8; 32];
+                            let error_content = &e.to_string().as_bytes();
+                            msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                            let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
-                                message: &e.to_string(),
+                                message: resp_err,
                                 status: 500
                             };
                             return Err(
@@ -1042,9 +1097,20 @@ impl User{
             },
             Err(e) => {
 
+                let resp_err = &e.to_string();
+
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                let msg_content = [0u8; 32];
+                let error_content = &e.to_string().as_bytes();
+                msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
-                    message: &e.to_string(),
+                    message: resp_err,
                     status: 500
                 };
                 return Err(
@@ -1066,9 +1132,20 @@ impl User{
                 Ok(updated_user) => Ok(()),
                 Err(e) => {
 
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let msg_content = [0u8; 32];
+                    let error_content = &e.to_string().as_bytes();
+                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
-                        message: &e.to_string(),
+                        message: resp_err,
                         status: 500
                     };
                     return Err(
@@ -1145,10 +1222,21 @@ impl User{
                             )
                         },
                         Err(e) => {
-    
+                            
+                            let resp_err = &e.to_string();
+
+
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            let msg_content = [0u8; 32];
+                            let error_content = &e.to_string().as_bytes();
+                            msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                            let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
-                                message: &e.to_string(),
+                                message: resp_err,
                                 status: 500
                             };
                             return Err(
