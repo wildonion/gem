@@ -231,6 +231,7 @@ macro_rules! server {
             use actix_web::{web, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
+            use crate::constants::*;
             
             env::set_var("RUST_LOG", "trace");
             // env::set_var("RUST_LOG", "actix_web=debug");
@@ -284,7 +285,7 @@ macro_rules! server {
                 to share them between threads since we don't want to mutate them 
                 in actix routers' threads. 
             */
-            HttpServer::new(move ||{
+            let s = match HttpServer::new(move ||{
                 App::new()
                     /* 
                         APP STORAGE SHARED STATE
@@ -354,11 +355,31 @@ macro_rules! server {
                         )
                     ]))
                 }) // each thread of the HttpServer instance needs its own app factory 
-                .bind((host.as_str(), port))
-                .unwrap()
-                .workers(10)
-                .run()
-                .await
+                .bind((host.as_str(), port)){
+                    Ok(server) => {
+                        server
+                            .workers(10)
+                            .run()
+                            .await
+                    },
+                    Err(e) =>{
+        
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        let msg_content = [0u8; 32];
+                        let error_content = &e.to_string().as_bytes();
+                        msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+        
+                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(e));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+        
+                        panic!("paniced at redis get async connection at {}", chrono::Local::now());
+                        
+        
+                    }
+                };
+
+            s /* returning the server */
 
         }
     };

@@ -138,7 +138,7 @@ async fn check_token(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            match User::passport(req, None, connection){
+            match User::passport(req, None, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -311,7 +311,7 @@ async fn logout(
             
             let connection = &mut pg_pool.get().unwrap();
 
-            match User::passport(req, None, connection){
+            match User::passport(req, None, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -417,7 +417,7 @@ async fn get_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, None, connection){
+            match User::passport(req, None, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

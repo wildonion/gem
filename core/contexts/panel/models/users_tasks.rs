@@ -69,7 +69,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -124,7 +124,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -159,7 +159,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -226,7 +226,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -260,7 +260,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -295,7 +295,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -406,7 +406,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -438,7 +438,7 @@ impl UserTask{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{

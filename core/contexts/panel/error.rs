@@ -52,9 +52,12 @@ impl From<([u8; 32], u16, ErrorKind)> for PanelError{
         /* 
             can't return a borrow from the function since it's a borrow 
             to a type that by executing the function the type will be dropped 
-            out of the function scope and from the ram 
+            out of the function scope and from the ram, thus i decided to 
+            have a fixed size of message in a form of array slices contains
+            32 bytes of utf8 elements
+            
+            let msg = msg_code_kind.0.as_str();
         */
-        // let msg = msg_code_kind.0.as_str();
         PanelError { code: msg_code_kind.1, msg: msg_code_kind.0, kind: msg_code_kind.2 }
     }
 }
@@ -85,7 +88,7 @@ impl PanelError{
 
         /* writing to buffer */
         let mut buffer = Vec::new(); 
-        let writer = write!(&mut buffer, "{}", error_log_content); /* writing to buffer */
+        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
 
         /* writing to file */
         let filepath = format!("logs/error-kind/panel-error.log");

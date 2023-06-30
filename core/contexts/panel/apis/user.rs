@@ -388,7 +388,7 @@ async fn verify_twitter_account(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, Some(UserRole::User), connection){
+            match User::passport(req, Some(UserRole::User), connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -488,7 +488,7 @@ pub async fn tasks_report(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, Some(UserRole::User), connection){
+            match User::passport(req, Some(UserRole::User), connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

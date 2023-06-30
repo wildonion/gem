@@ -149,7 +149,7 @@ impl User{
 
     pub const SCHEMA_NAME: &str = "User";
 
-    pub fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
+    pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
 
         let mut jwt_flag = false;
         let mut cookie_flag = false;
@@ -681,7 +681,7 @@ impl User{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -786,7 +786,7 @@ impl User{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -850,7 +850,7 @@ impl User{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -987,7 +987,7 @@ impl User{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -1033,7 +1033,7 @@ impl User{
                             let msg_content = [0u8; 32];
                             let error_content = &e.to_string().as_bytes();
                             msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                            let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                             let resp = Response::<&[u8]>{
@@ -1105,7 +1105,7 @@ impl User{
                 let msg_content = [0u8; 32];
                 let error_content = &e.to_string().as_bytes();
                 msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                 let resp = Response::<&[u8]>{
@@ -1140,7 +1140,7 @@ impl User{
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string().as_bytes();
                     msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                    let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                     let resp = Response::<&[u8]>{
@@ -1231,7 +1231,7 @@ impl User{
                             let msg_content = [0u8; 32];
                             let error_content = &e.to_string().as_bytes();
                             msg_content.to_vec().extend_from_slice(msg_content.as_slice());
-                            let error_instance = PanelError::new(0xFFFF, msg_content, ErrorKind::Storage(Diesel(e)));
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
                             let resp = Response::<&[u8]>{
