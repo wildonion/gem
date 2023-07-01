@@ -11,7 +11,7 @@ use tokio::fs::OpenOptions;
 pub struct PanelError{
     pub code: u16,
     pub msg: [u8; 32], // reason 
-    pub kind: ErrorKind // service
+    pub kind: ErrorKind // due to what service 
 }
 
 
@@ -22,13 +22,15 @@ pub enum StorageError{
 }
 #[derive(Debug)]
 pub enum ErrorKind{
-    Server(std::io::Error), // actix io 
+    Server(std::io::Error), // actix server io 
     Storage(StorageError), // diesel, redis
 }
 
+/* make it senable to be shared between threads */
 unsafe impl Send for PanelError{}
 unsafe impl Sync for PanelError{}
 
+/* can be made using from() method */
 impl From<std::io::Error> for ErrorKind{
     fn from(error: std::io::Error) -> Self {
         ErrorKind::Server(error)
@@ -83,8 +85,8 @@ impl PanelError{
             also Vec types implemented the Write trait already 
             we just need to use it in here
         */
-        let msg_content = borsh::try_from_slice_with_schema::<String>(msg.as_slice());
-        let error_log_content = format!("code: {} | message: {} | caused by: {:?} | time: {}", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
+        let msg_content = serde_json::from_slice::<String>(msg.as_slice());
+        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
 
         /* writing to buffer */
         let mut buffer = Vec::new(); 
@@ -112,7 +114,7 @@ impl PanelError{
             Err(e) => {
                 /* ------- can't create a new file or append to it ------- */
                 let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("logs/error-kind/{}-panel-error-creating-log-file.log", log_name);
+                let filepath = format!("logs/error-kind/{}-panel-error-custom-error-handler-log-file.log", log_name);
                 let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                 error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
             }

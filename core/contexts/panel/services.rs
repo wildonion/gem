@@ -19,6 +19,24 @@ use crate::*;
 
 /*
      --------------------------------
+    |        REGISTER WS ROUTES
+    | -------------------------------
+    |
+    |
+
+*/
+pub fn init_ws_notif(config: &mut web::ServiceConfig){
+
+    config.service(apis::notifs::exports::reveal_role);
+    
+    // other routs maybe ?
+    // ...
+
+
+}
+
+/*
+     --------------------------------
     |        REGISTER DEV ROUTES
     | -------------------------------
     |

@@ -1,6 +1,6 @@
 
 
 
-mod notifs;
+pub mod notifs;
 
 

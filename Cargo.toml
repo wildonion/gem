@@ -16,9 +16,11 @@ hyper = { version = "0.14", features = ["full"] }
 reqwest = { version = "0.11", features = ["json", "blocking"] }
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = "0.24.0"
+actix = "0.13.0"
 actix-cors = "0.6.4"
 actix-web = { version = "4", features = ["openssl"] }
 actix-multipart = "0.6.0"
+actix-web-actors = "4.2.0"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
 diesel = { version = "2.0.4", features = ["postgres", "r2d2", "uuid", "chrono"] }

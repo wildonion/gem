@@ -134,11 +134,16 @@ async fn reveal_role(
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
             
+
                         
-                        // 🥑 todo - publish or fire the reveal role topic or event using redis pubsub
-                        // 🥑 todo - also call the /reveal/roles api of the conse hyper server                 
+                        // 🥑 todo - client can listens to the ws events which are the broadcasted redis topics subscribed by the panel server itself  
+                        // 🥑 todo - trigger or publish or fire the reveal role topic or event using redis pubsub
+                        // 🥑 todo - also call the /reveal/roles api of the conse hyper server
+                        // 🥑 todo - use bpf tech  
                         // ...
 
+
+                        let cq_instance: events::redis::ecq::CollaborationQueue = Default::default();
                         let cq = events::redis::ecq::CollaborationQueue{..Default::default()}; // filling all the fields with default values 
                         let role = events::redis::role::Reveal;
             
@@ -206,7 +211,7 @@ async fn reveal_role(
     tag = "crate::apis::admin",
 )]
 #[post("/login")]
-pub(super) async fn login(
+async fn login(
         req: HttpRequest, 
         login_info: web::Json<LoginInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> // db shared state data

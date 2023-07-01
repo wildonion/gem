@@ -285,6 +285,7 @@ macro_rules! server {
                 to share them between threads since we don't want to mutate them 
                 in actix routers' threads. 
             */
+            info!("➔ 🎛️  starting conse panel on address: [{}:{}]", host, port);
             let s = match HttpServer::new(move ||{
                 App::new()
                     /* 
@@ -294,6 +295,13 @@ macro_rules! server {
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
+                    /*
+                        INIT WS SERVICE
+                    */
+                    .service(
+                        actix_web::web::scope("/notifs")
+                            .configure(services::init_ws_notif)
+                    )
                     /*
                         INIT DEV SERIVE APIs 
                     */
@@ -379,6 +387,19 @@ macro_rules! server {
                     }
                 };
 
+
+            /* 
+                this can't be reachable unless we hit the ctrl + c since the 
+                http server will be built inside multiple threads in which all 
+                server instances will be ran constanly in the background, and 
+                must be the last thing that can be reachable before sending Ok(())
+                from the main function, it's like the app will be halted in this
+                section of the code cause anything after those threads rquires 
+                that all the threads to be stopped and joined in order to execute 
+                the logic after running the http server.
+            */
+            // info!("➔ 🎛️ starting conse panel on address: [{}:{}]", host, port);
+            
             s /* returning the server */
 
         }

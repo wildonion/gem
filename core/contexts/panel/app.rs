@@ -35,9 +35,11 @@ use hyper::StatusCode;
 use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
+use actix::{Actor, StreamHandler};
+use actix_web_actors::ws;
 use actix_cors::Cors;
-use actix_web::{web, cookie::{self, Cookie, time::Duration, time::OffsetDateTime}, 
-                web::Data, http::header, App, HttpRequest, 
+use actix_web::{App, Error, web, cookie::{self, Cookie, time::Duration, time::OffsetDateTime}, 
+                web::Data, http::header, HttpRequest, 
                 HttpServer, Responder, HttpResponse, get, post, ResponseError};
 use actix_web::middleware::Logger;
 use actix_multipart::Multipart;

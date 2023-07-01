@@ -251,15 +251,13 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
-
-* websocket server and actors for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
-
-* conse panel dev APIs related to the conse hyper server 
-
 * solana [ticket reservation contract](https://github.com/wildonion/solmarties/tree/main/programs/ticket)
 
-* macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport]` to put on top of the admin and dev APIs, struct and their fields
+* redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
+
+* websocket server and actors for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
+
+* macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport(access=2)]` to put on top of the admin, user and dev APIs, struct and their fields
 
 * god and dev panel app using `yew`
 
