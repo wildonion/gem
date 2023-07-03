@@ -232,6 +232,8 @@ macro_rules! server {
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
             use crate::constants::*;
+            use crate::events::ws::notifs::role::RoleNotifServer;
+
             
             env::set_var("RUST_LOG", "trace");
             // env::set_var("RUST_LOG", "actix_web=debug");
@@ -257,6 +259,7 @@ macro_rules! server {
             }.await;
 
             let shared_storage = Data::new(app_storage.clone());
+            let shared_ws_role_notif_server = Data::new(RoleNotifServer::new(app_storage.clone()));
     
             /*
                 the HttpServer::new function takes a factory function that 
@@ -292,6 +295,7 @@ macro_rules! server {
                         APP STORAGE SHARED STATE
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
+                    .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
@@ -370,15 +374,15 @@ macro_rules! server {
                             .run()
                             .await
                     },
-                    Err(e) =>{
+                    Err(e) => {
         
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                         let msg_content = [0u8; 32];
-                        let error_content = &e.to_string().as_bytes();
-                        msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                        let error_content = &e.to_string();
+                        msg_content.to_vec().extend_from_slice(error_content.as_bytes());
         
-                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(e));
+                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(ActixWeb(e)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
         
                         panic!("paniced at redis get async connection at {}", chrono::Local::now());
@@ -453,7 +457,7 @@ macro_rules! db {
                 )
             );
             let app_storage = if $engine.as_str() == "mongodb"{
-                info!("➔ 🛢️ switching to mongodb on address: [{}:{}]", $host, $port);
+                info!("➔ 🛢️  switching to mongodb on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
                 let db_addr = if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)
@@ -591,6 +595,7 @@ macro_rules! verify {
         { // this is required if we want to import modules and use the let statements
 
             use crate::models::bot::Twitter;
+            use crate::misc::Response;
 
             info!("🤖 sending request to the twitter bot hosted on [{:#?}]", $endpoint);
             let response_value: serde_json::Value = reqwest::Client::new()

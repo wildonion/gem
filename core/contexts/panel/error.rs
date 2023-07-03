@@ -21,8 +21,13 @@ pub enum StorageError{
     Diesel(diesel::result::Error)
 }
 #[derive(Debug)]
+pub enum ServerError{
+    ActixWeb(std::io::Error),
+    Ws(ws::ProtocolError),
+}
+#[derive(Debug)]
 pub enum ErrorKind{
-    Server(std::io::Error), // actix server io 
+    Server(ServerError), // actix server io 
     Storage(StorageError), // diesel, redis
 }
 
@@ -33,7 +38,13 @@ unsafe impl Sync for PanelError{}
 /* can be made using from() method */
 impl From<std::io::Error> for ErrorKind{
     fn from(error: std::io::Error) -> Self {
-        ErrorKind::Server(error)
+        ErrorKind::Server(ServerError::ActixWeb(error))
+    }
+}
+
+impl From<ws::ProtocolError> for ErrorKind{
+    fn from(error: ws::ProtocolError) -> Self {
+        ErrorKind::Server(ServerError::Ws(error))
     }
 }
 
@@ -117,6 +128,56 @@ impl PanelError{
                 let filepath = format!("logs/error-kind/{}-panel-error-custom-error-handler-log-file.log", log_name);
                 let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                 error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
+            }
+        }
+
+        buffer /* returns the full filled buffer */
+    
+    }
+
+    pub fn write_sync(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that satisfied the Write trait */
+        
+        let this = self;
+        let Self { code, msg, kind } = this;
+
+        /* 
+            passing a mutable reference to buffer to write! macro so  
+            the buffer can be mutated outside of the write! scope
+            also Vec types implemented the Write trait already 
+            we just need to use it in here
+        */
+        let msg_content = serde_json::from_slice::<String>(msg.as_slice());
+        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
+
+        /* writing to buffer */
+        let mut buffer = Vec::new(); 
+        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
+
+        /* writing to file */
+        let filepath = format!("logs/error-kind/panel-error.log");
+        let mut panel_error_log;
+
+        match std::fs::metadata("logs/error-kind/panel-error.log"){
+            Ok(_) => {
+                /* ------- we found the file, append to it ------- */
+                let mut file = std::fs::OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(filepath.as_str())
+                    .unwrap();
+                file.write_all(error_log_content.as_bytes()).unwrap(); // Write the data to the file
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                /* ------- we didn't found the file, create a new one ------- */
+                panel_error_log = std::fs::File::create(filepath.as_str()).unwrap();
+                panel_error_log.write_all(error_log_content.as_bytes()).unwrap();
+            },
+            Err(e) => {
+                /* ------- can't create a new file or append to it ------- */
+                let log_name = format!("[{}]", chrono::Local::now());
+                let filepath = format!("logs/error-kind/{}-panel-error-custom-error-handler-log-file.log", log_name);
+                let mut error_kind_log = std::fs::File::create(filepath.as_str()).unwrap();
+                error_kind_log.write_all(e.to_string().as_bytes()).unwrap();
             }
         }
 

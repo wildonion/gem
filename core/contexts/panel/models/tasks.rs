@@ -201,8 +201,8 @@ impl Task{
             use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
             let conn_err = get_conn.err().unwrap();
             let msg_content = [0u8; 32];
-            let error_content = &conn_err.to_string().as_bytes();
-            msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+            let error_content = &conn_err.to_string();
+            msg_content.to_vec().extend_from_slice(error_content.as_bytes());
 
             let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
             let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
@@ -230,8 +230,8 @@ impl Task{
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
-                    let error_content = &e.to_string().as_bytes();
-                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_content = &e.to_string();
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
                     
@@ -277,8 +277,8 @@ impl Task{
                             /* custom error handler */
                             use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             let msg_content = [0u8; 32];
-                            let error_content = &e.to_string().as_bytes();
-                            msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                            let error_content = &e.to_string();
+                            msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                             let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -350,8 +350,8 @@ impl Task{
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
-                    let error_content = &e.to_string().as_bytes();
-                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_content = &e.to_string();
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -386,8 +386,8 @@ impl Task{
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
-                    let error_content = &e.to_string().as_bytes();
-                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_content = &e.to_string();
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -438,8 +438,8 @@ impl Task{
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
-                    let error_content = &e.to_string().as_bytes();
-                    msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                    let error_content = &e.to_string();
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -490,8 +490,8 @@ impl Task{
                 /* custom error handler */
                 use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                 let msg_content = [0u8; 32];
-                let error_content = &e.to_string().as_bytes();
-                msg_content.to_vec().extend_from_slice(msg_content.as_slice());
+                let error_content = &e.to_string();
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
                 

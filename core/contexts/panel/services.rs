@@ -27,7 +27,7 @@ use crate::*;
 */
 pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
-    config.service(apis::notifs::exports::reveal_role);
+    config.service(apis::notifs::exports::notif_subs);
     
     // other routs maybe ?
     // ...

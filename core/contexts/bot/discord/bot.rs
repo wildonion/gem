@@ -31,6 +31,11 @@ discord client app ----------------------------------------------------------- s
                                                                                                                                                 |                                                       |
                                                                                                                                                 ------------ send response back to the discord ws server 
 
+
+since the underlying infrastructure in discord is based on ws
+thus the event handler for parsing and handling the commands 
+is a websocket handler
+
 */
 
 
