@@ -134,6 +134,12 @@ impl Storage{
             Mode::Off => None, // no db is available cause it's off
         }
     }
+    pub fn get_redis_sync(&self) -> Option<&RedisClient>{ /* an in memory data storage */
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, // no db is available cause it's off
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -259,7 +265,8 @@ macro_rules! server {
             }.await;
 
             let shared_storage = Data::new(app_storage.clone());
-            let shared_ws_role_notif_server = Data::new(RoleNotifServer::new(app_storage.clone()));
+            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone());
+            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
     
             /*
                 the HttpServer::new function takes a factory function that 

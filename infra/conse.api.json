@@ -2704,6 +2704,10 @@
 							"response": []
 						}
 					]
+				},
+				{
+					"name": "Notif APIs",
+					"item": []
 				}
 			],
 			"description": "**NOTE** that dev APIs require conse hyper server **JWT** to be passed to request Authorization header.\n\n**NOTE** that you can get the **JWT** from the response cookie of the admin and user `login` API which is the first part of `::` sign.\n\n**NOTE** that to define twitter tasks we must prefix the `task_name` field inside the register new task API with `twitter-\\\\*` which `\\\\*` can be one of the following task names:\n\n- username\n- code\n- tweet\n- retweet\n- hashtag\n- like"

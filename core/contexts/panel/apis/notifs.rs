@@ -38,7 +38,7 @@ async fn notif_subs(
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // db shared state data
-    ws_role_notif_actor_address: web::Data<Addr<RoleNotifServer>>,
+    ws_role_notif_server: web::Data<RoleNotifServer>,
 ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -48,8 +48,10 @@ async fn notif_subs(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
+
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
+            let ws_role_notif_actor_address = ws_role_notif_server.get_ref().clone().start();
 
 
             let resp = if notif_room.starts_with("reveal-role-"){
@@ -59,8 +61,10 @@ async fn notif_subs(
                         id: 0,
                         hb: Instant::now(),
                         peer_name: Some(user_id),
+                        subscribed_at: 0,
                         notif_room,
-                        ws_role_notif_actor_address: ws_role_notif_actor_address.get_ref().clone()
+                        app_storage: storage.clone(),
+                        ws_role_notif_actor_address
                     }, 
                     &req, 
                     stream
@@ -81,12 +85,19 @@ async fn notif_subs(
 
                 todo!()
 
-            } else{
-
-                // tasks ws connection 
-                // ...
+            } else if notif_room.starts_with("tasks"){
 
                 todo!();
+
+            } else{
+
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    WS_INVALID_PATH, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
 
             };
 
