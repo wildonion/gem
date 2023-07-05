@@ -7,7 +7,7 @@ use crate::*;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::events::ws::notifs::role::RoleNotifServer;
+use crate::events::ws::notifs::role::{RoleNotifServer, UpdateNotifRoom};
 use crate::events::ws::session::WsNotifSession;
 use actix::prelude::*;
 
@@ -38,7 +38,7 @@ async fn notif_subs(
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // db shared state data
-    ws_role_notif_server: web::Data<RoleNotifServer>,
+    ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
 ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -51,11 +51,32 @@ async fn notif_subs(
 
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
-            let ws_role_notif_actor_address = ws_role_notif_server.get_ref().clone().start();
+            let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
+           
+            /* 
+                sending the update message to mutate the notif room before starting the session actor
+                
+                ----- make sure that the RoleNotifServer actor is already started when we're here
+                ----- otherwise by calling this route every time a new actor will be started and 
+                ----- the previous setups will be lost.
+            */
+            let update_notif_room_result = ws_role_notif_actor_address
+                .send(UpdateNotifRoom(notif_room.clone()))
+                .await;
 
+            let Ok(_) = update_notif_room_result else{
+                
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
+                    StatusCode::REQUEST_TIMEOUT, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            };
 
             let resp = if notif_room.starts_with("reveal-role-"){
-                /* starting reveal role ws connection for the passed in peer and the notif room */
+                /* starting ws connection for the passed in peer and the notif room */
                 ws::start(
                     WsNotifSession{
                         id: 0,

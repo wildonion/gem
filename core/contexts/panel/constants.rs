@@ -78,4 +78,5 @@ pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 1
 pub const WS_HEARTBEAT_INTERVAL: StdDuration = StdDuration::from_secs(5);
 pub const WS_CLIENT_TIMEOUT: StdDuration = StdDuration::from_secs(3600);
 pub static WS_INVALID_PATH: &str = "Invalid Path Params";
+pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";
 pub const WS_REDIS_SUBSCIPTION_INTERVAL: StdDuration = StdDuration::from_secs(5);

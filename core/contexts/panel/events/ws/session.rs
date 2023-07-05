@@ -57,20 +57,38 @@ impl WsNotifSession{
         ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, |actor, ctx|{
 
             let redis_client = actor.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
-            let mut redis_conn = redis_client.get_connection().unwrap();
-            let mut pubsub = redis_conn.as_pubsub();
+            let get_conn = redis_client.get_connection();
+            let Ok(mut conn) = get_conn else{
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                let conn_err = get_conn.err().unwrap();
+                let msg_content = [0u8; 32];
+                let error_content = &conn_err.to_string();
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+
+                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
+                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
+                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
+                
+                panic!("paniced at redis get sync connection at {}", chrono::Local::now());
+
+            };
+
+            let mut pubsub = conn.as_pubsub();
             pubsub.subscribe(actor.notif_room.to_owned()).unwrap();
 
             let msg = pubsub.get_message().unwrap();
             let payload: String = msg.get_payload().unwrap();
 
+            actor.subscribed_at = chrono::Local::now().timestamp_nanos(); /* actor is a mutable reference to the WsNotifSession actor */
+
             ctx.text(payload);
 
-            actor.subscribed_at = chrono::Local::now().timestamp_nanos();
 
         });
 
-        // ctx.pong(b""); /* sending empty bytes back to the peer */
+        ctx.pong(b""); /* sending empty bytes back to the peer, in handling Pong message we'll generate a new heartbeat */
 
     }
 }
@@ -86,8 +104,9 @@ impl Actor for WsNotifSession{
         
         /* check the heartbeat of the this session */
         self.hb(ctx); 
+
         /* subscribe to the redis topic for this notif room */
-        self.subscribe(ctx); 
+        self.subscribe(ctx);
 
         let session_actor_address = ctx.address();
         let event_name_room = self.notif_room.to_owned();
@@ -110,7 +129,7 @@ impl Actor for WsNotifSession{
                     Ok(res) => actor.id = res, 
                     _ => ctx.stop(),
                 }
-                fut::ready(())
+                fut::ready(()) /* custom future and stream implementation in Actix */
             })
             .wait(ctx);
 
@@ -176,12 +195,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                     let v: Vec<&str> = m.splitn(2, ' ').collect();
                     match v[0]{
 
-                        /* join the event notif room to subscribe to reveal role topic */
+                        /* join the event notif room to subscribe to redis topics */
                         "/join" => {
 
                             let event_room_name = self.notif_room.to_owned();
                             self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: event_room_name.clone()});
-                            let joined_msg = format!("joined event room: [{}] for push notif subscription", event_room_name);
+                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions", event_room_name);
                             ctx.text(joined_msg);
 
                         },

@@ -265,8 +265,13 @@ macro_rules! server {
             }.await;
 
             let shared_storage = Data::new(app_storage.clone());
-            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone());
-            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
+
+            /*  
+                make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
+                otherwise the actor will be started each time by calling the related websocket route
+            */
+            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
+            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance);
     
             /*
                 the HttpServer::new function takes a factory function that 

@@ -17,6 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 # panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
+🥛 PUSH NOTIFICATION ROUTE ==> ws://ws.panel.conse.app/notifs/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
@@ -38,7 +39,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * ☢️ better error handling using **match** and **Option** syntax
 
-* ❌ custom error type (`PanelError`) to handle all possible server and storage (redis and diesel) IO errors in conse panel.
+* ❌ custom error type (`PanelError`) to handle all possible server (actixweb and websocket) and storage (redis and diesel) IO errors in conse panel.
  
 * 🧑🏻‍💼 game managers can define score based twitter tasks for users, reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
 
@@ -239,6 +240,8 @@ cd scripts
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}` respectively.   
 
+* push notification routes for new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ws://ws.panel.conse.app/notifs/tasks`, `ws://ws.panel.conse.app/notifs/task-verification-responses`, `ws://ws.panel.conse.app/notifs/twitter-bot-response`, `ws://ws.panel.conse.app/notifs/ecq-{event_id}`, `ws://ws.panel.conse.app/notifs/mmr-{event_id}`, `ws://ws.panel.conse.app/notifs/{user_objectid}/reveal-role-{event_id}` respectively.   
+
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `username` which is a task that must be done to verify his/her twitter username, `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
 * admins can define multiple twitter tasks in the same activity, all tasks will be separated by a random chars like `*-<RANDOM_CHARS>` so the final task name will be `twitter-username-iYTC^`.
@@ -255,7 +258,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
-* websocket server and actors for streaming over subscribed redis topics (`tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`), also setup it's nginx config file (ws://ws.panel.conse.app)
+* setup websocket nginx config file (ws://ws.panel.conse.app/notifs/)
 
 * macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport(access=2)]` to put on top of the admin, user and dev APIs, struct and their fields
 

@@ -39,13 +39,18 @@ pub struct Join {
 pub struct Message(pub String);
 
 
+/// update notif room
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct UpdateNotifRoom(pub String);
+
+
 
 /* RoleNotifServer contains all the event rooms and sessions or peers that are connected to ws connection */
 #[derive(Clone)]
 pub(crate) struct RoleNotifServer{
-    pub event: String, // `reveal-role-{event_id}`
     pub rooms: HashMap<String, HashSet<usize>>, // event rooms which is based on the event id or every event is a room
-    pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room
+    pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room, a mapping between session id and their actor address
     pub app_storage: Option<Arc<Storage>>,
 }
 
@@ -53,12 +58,9 @@ impl RoleNotifServer{
 
     pub fn new(app_storage: Option<Arc<Storage>>) -> Self{
 
-        let mut rooms = HashMap::new();
-        rooms.insert("notif".to_owned(), HashSet::new());
         RoleNotifServer{
             sessions: HashMap::new(),
-            rooms,
-            event: String::from(""),
+            rooms: HashMap::new(),
             app_storage,
         }
     }
@@ -71,7 +73,7 @@ impl RoleNotifServer{
     fn send_message(&self, room: &str, message: &str, skip_id: usize){
         if let Some(sessions) = self.rooms.get(room){
             for id in sessions{
-                if *id.to_string() == skip_id.to_string(){
+                if *id.to_string() != skip_id.to_string(){
                     if let Some(addr) = self.sessions.get(id){
                         /* 
                             a handler with generic Message must be implemented for each session 
@@ -94,14 +96,28 @@ impl Actor for RoleNotifServer{
 
 /* handlers for all type of messages for RoleNotifServer actor */
 
+impl Handler<UpdateNotifRoom> for RoleNotifServer{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: UpdateNotifRoom, ctx: &mut Self::Context) -> Self::Result{
+        
+        self.rooms
+            .entry(msg.0.to_owned())
+            .or_insert_with(HashSet::new);
+
+    }
+
+
+}
+
 impl Handler<Disconnect> for RoleNotifServer{
 
     type Result = ();
 
     fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) -> Self::Result{
         
-        info!("user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
-
+        info!("--- user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
         let disconn_message = format!("user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
         let mut rooms = Vec::<String>::new();
         
@@ -131,17 +147,6 @@ impl Handler<Connect> for RoleNotifServer{
 
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result{
         
-        /* 
-            at the time of connecting to the ws server a peer has name 
-            and don't have id since the id will be generated once the user
-            gets slided into a room
-        */
-        let conn_message = format!("peer with name: [{}] came into the event room: [{}]", msg.peer_name, msg.event_name);
-
-        info!("peer with name: [{}] came into the event room: [{}]", msg.peer_name, msg.event_name);
-
-        self.send_message(&msg.event_name, conn_message.as_str(), 0);
-        
         /* insert new session */
         let mut r = rand::thread_rng();
         let unique_id = r.gen::<usize>();
@@ -149,9 +154,21 @@ impl Handler<Connect> for RoleNotifServer{
 
         /* add this session to the event room name */
         self.rooms
-            .entry(msg.event_name)
-            .or_insert_with(HashSet::new) // we must pass a Fn type to this method not by calling it like HashSet::new()
-            .insert(unique_id);
+            .entry(msg.event_name.clone())
+            .and_modify(|session_ids|{ /* and_modify() will return a mutable reference to the type */
+                /* 
+                    since session_ids is a mutable reference to the value of self.rooms 
+                    thus by mutating it the value of self.rooms will be mutated too
+                */
+                session_ids.insert(unique_id);
+            })
+            .or_insert(HashSet::new());
+        
+        info!("--- current rooms of role notif server actor are: {:?}", self.rooms);
+
+        let conn_message = format!("user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
+        info!("--- user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
+        self.send_message(&msg.event_name, conn_message.as_str(), 0);
 
         unique_id /* session id */
 
@@ -166,20 +183,20 @@ impl Handler<Join> for RoleNotifServer{ /* disconnect and connect again */
     fn handle(&mut self, msg: Join, ctx: &mut Self::Context) -> Self::Result{
         
         let disconn_message = format!("user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
-        let conn_message = format!("user with id: {:?} came into the event room: [{}]", msg.id, msg.event_name);
+        let conn_message = format!("user with id: [{}] connected to event room: [{}]", msg.id, msg.event_name);
 
        
         let Join { id, event_name } = msg; // unpacking msg instance
         let mut rooms = Vec::<String>::new();
 
-        /* removing session from all rooms */
+        /* removing session from all rooms of RoleNotifServer actor */
         for (event_room_name, sessions) in &mut self.rooms{
             if sessions.remove(&id){
                 rooms.push(event_room_name.to_owned());
             }
         }
 
-        /* send disconnect message to all rooms and other user */
+        /* send disconnect message to all rooms of RoleNotifServer actor and other user */
         for room in rooms{
             self.send_message(&room, &disconn_message, 0);
         }
