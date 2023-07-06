@@ -102,6 +102,7 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
 
     fn handle(&mut self, msg: UpdateNotifRoom, ctx: &mut Self::Context) -> Self::Result{
         
+        /* insert the passed in room to the message object to the rooms of this actor */
         self.rooms
             .entry(msg.0.to_owned())
             .or_insert_with(HashSet::new);

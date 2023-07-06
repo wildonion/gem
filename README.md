@@ -264,4 +264,4 @@ cd scripts
 
 * god and dev panel app using `yew`
 
-* publish docker containers to docker hub also add CI/CD setup
+* publish docker containers to docker hub also add CI/CD setup like digitalocean platform

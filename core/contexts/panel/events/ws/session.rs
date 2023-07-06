@@ -71,10 +71,11 @@ impl WsNotifSession{
                 let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
                 let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
                 
-                panic!("paniced at redis get sync connection at {}", chrono::Local::now());
+                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
 
             };
 
+            /* subscribing to redis topic */
             let mut pubsub = conn.as_pubsub();
             pubsub.subscribe(actor.notif_room.to_owned()).unwrap();
 
@@ -83,6 +84,7 @@ impl WsNotifSession{
 
             actor.subscribed_at = chrono::Local::now().timestamp_nanos(); /* actor is a mutable reference to the WsNotifSession actor */
 
+            /* sending reveal role topic data */
             ctx.text(payload);
 
 

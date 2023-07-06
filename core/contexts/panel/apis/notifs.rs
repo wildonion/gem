@@ -48,17 +48,16 @@ async fn notif_subs(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
             let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
-           
+
             /* 
                 sending the update message to mutate the notif room before starting the session actor
                 
                 ----- make sure that the RoleNotifServer actor is already started when we're here
                 ----- otherwise by calling this route every time a new actor will be started and 
-                ----- the previous setups will be lost.
+                ----- the previous state will be lost.
             */
             let update_notif_room_result = ws_role_notif_actor_address
                 .send(UpdateNotifRoom(notif_room.clone()))

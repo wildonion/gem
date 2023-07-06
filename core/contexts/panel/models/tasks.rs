@@ -208,7 +208,7 @@ impl Task{
             let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
             
-            panic!("paniced at redis get async connection at {}", chrono::Local::now());
+            panic!("panicked at redis get async connection at {}", chrono::Local::now());
 
         };
 

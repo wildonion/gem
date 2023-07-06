@@ -397,7 +397,7 @@ macro_rules! server {
                         let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(ActixWeb(e)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
         
-                        panic!("paniced at redis get async connection at {}", chrono::Local::now());
+                        panic!("panicked at redis get async connection at {}", chrono::Local::now());
                         
         
                     }

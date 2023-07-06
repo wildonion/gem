@@ -58,6 +58,7 @@ pub async fn activate_discord_bot(
                                                         .owners(owners.unwrap())
                                                 );
         // gateway intents are predefined ws event gateways
+        /* ---later on we must apply for each of intents--- */
         let intents = GatewayIntents::all(); // all the gateway intents must be on inside the https://discord.com/developers/applications/1092048595605270589/bot the privileged gateway intents section
         let mut bot_client = BotClient::builder(discord_token, intents)
                                                         .framework(framework)

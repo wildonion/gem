@@ -1,8 +1,8 @@
 {
     "workbench.colorCustomizations": {
-        "activityBar.background": "#1f3646",
-        "titleBar.activeBackground": "#19241b",
-        "titleBar.activeForeground": "#288bb3",
+        "activityBar.background": "#30153c",
+        "titleBar.activeBackground": "#30153c",
+        "titleBar.activeForeground": "#106e7d",
         "checkbox.background": "#19241b",
         "checkbox.foreground": "#19241b",
         "checkbox.border": "#288bb3",

@@ -62,7 +62,7 @@ pub mod chat{
             if let Some(gpt_messages) = messages{
                 Self{
                     messages: gpt_messages.clone(),
-                    last_content: gpt_messages[gpt_messages.len() - 1].content.to_string(),
+                    last_content: gpt_messages[gpt_messages.len() - 1].content.clone().unwrap().to_string(),
                     current_response: "".to_string(),
                     is_rate_limit: false,
                 }
@@ -72,8 +72,9 @@ pub mod chat{
                     messages: vec![
                         ChatCompletionMessage{
                             role: ChatCompletionMessageRole::System,
-                            content: content.to_string(),
+                            content: Some(content.to_string()),
                             name: None,
+                            function_call: None
                         }
                     ],
                     last_content: content.to_string(),
@@ -130,8 +131,9 @@ pub mod chat{
             let mut messages = self.messages.clone(); // clone messages vector since we can't move a type if it's behind a pointer 
             messages.push(ChatCompletionMessage{ // pushing the current token to the vector so the GPT can be able to predict the next tokens based on the previous ones 
                 role: ChatCompletionMessageRole::User,
-                content: content.to_string(),
+                content: Some(content.to_string()),
                 name: None,
+                function_call: None
             });
             let chat_completion = ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
                                                                         .create()
@@ -152,11 +154,12 @@ pub mod chat{
                 };
             }
             let returned_message = chat_completion.unwrap().choices.first().unwrap().message.clone();
-            self.current_response = returned_message.content.to_string();
+            self.current_response = returned_message.content.unwrap().to_string();
             messages.push(ChatCompletionMessage{ // we must also push the response of the chat GPT to the messages in order he's able to predict the next tokens based on what he just saied :)  
                 role: ChatCompletionMessageRole::Assistant,
-                content: self.current_response.clone(),
-                name: None
+                content: Some(self.current_response.clone()),
+                name: None,
+                function_call: None
             });
             // since self.messages is behind a mutable reference we can't 
             // move it around since rust doesn't allow use to move the 
