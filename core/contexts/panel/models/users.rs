@@ -1174,12 +1174,12 @@ impl User{
                 );
             };
 
-            let new_twitter = Twitter::new(None);
+            let new_twitter = Twitter::new(None).await;
             let Ok(bot) =  new_twitter else{
                 return Err(new_twitter.unwrap_err());
             };
 
-            let is_user_verified = bot.is_twitter_user_verified(user.id, connection).await;
+            let is_user_verified = bot.is_twitter_user_verified(account_name, connection).await;
             let Ok(is_verified) = is_user_verified else{
                 return Err(is_user_verified.unwrap_err());
             };

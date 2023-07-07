@@ -51,7 +51,7 @@ impl WsNotifSession{
         ctx.pong(b""); /* sending empty bytes back to the peer */
     }
 
-    fn subscribe(&self, ctx: &mut ws::WebsocketContext<Self>){
+    async fn subscribe(&self, ctx: &mut ws::WebsocketContext<Self>){
 
         /* running the subscription task in the background every 5 seconds */
         ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, |actor, ctx|{
@@ -107,9 +107,6 @@ impl Actor for WsNotifSession{
         /* check the heartbeat of the this session */
         self.hb(ctx); 
 
-        /* subscribe to the redis topic for this notif room */
-        self.subscribe(ctx);
-
         let session_actor_address = ctx.address();
         let event_name_room = self.notif_room.to_owned();
         let peer_name = self.peer_name.as_ref().unwrap();
@@ -134,6 +131,14 @@ impl Actor for WsNotifSession{
                 fut::ready(()) /* custom future and stream implementation in Actix */
             })
             .wait(ctx);
+
+        /* subscribe to the redis topic for this notif room */
+        let fut = Box::pin(async{
+            self.subscribe(ctx).await;
+        });
+
+        let actor_future = fut.into_actor(self);
+        ctx.wait(actor_future); /* calling wait on a mutable pointer of ctx to await on the actor future to be solved later */
 
     }
 
