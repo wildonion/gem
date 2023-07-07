@@ -203,9 +203,6 @@ async fn login(
         (status=500, description="Can't Generate Cookie", body=[u8]),
         (status=500, description="Storage Issue", body=[u8])
     ),
-    params(
-        ("wallet" = String, Path, description = "wallet address")
-    ),
     tag = "crate::apis::user",
 )]
 #[post("/login")]
@@ -381,6 +378,7 @@ async fn verify_twitter_account(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -395,23 +393,61 @@ async fn verify_twitter_account(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
-                    /* we can pass usernmae by reference or its slice form instead of cloning it */
-                    match User::update_social_account(&wallet, &account_name.to_owned(), connection).await{
-                        Ok(updated_user) => {
-                
-                            resp!{
-                                UserData, // the data type
-                                updated_user, // response data
-                                UPDATED, // response message
-                                StatusCode::OK, // status code,
-                                None::<Cookie<'_>>, // cookie 
-                            } 
+                    /* rate limiter based on doer id */
+                    let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
+                    let now = chrono::Local::now().timestamp_millis() as u64;
+                    let mut is_rate_limited = false;
+                    
+                    let redis_result_rate_limiter: RedisResult<String> = redis_conn.get("rate_limiter").await;
+                    let mut redis_rate_limiter = match redis_result_rate_limiter{
+                        Ok(data) => {
+                            let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+                            rl_data
                         },
-                        Err(resp) => {
-
-                            /* USER NOT FOUND response */
-                            resp
+                        Err(e) => {
+                            let empty_rate_limiter = HashMap::<u64, u64>::new();
+                            let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
+                            let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap();
+                            HashMap::new()
                         }
+                    };
+
+                    if let Some(last_used) = redis_rate_limiter.get(&(_id as u64)){
+                        if now - *last_used < chill_zone_duration{
+                            is_rate_limited = true;
+                        }
+                    }
+                    
+                    if is_rate_limited{
+                    
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            TWITTER_VERIFICATION_RATE_LIMIT, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else{
+                        /* we can pass usernmae by reference or its slice form instead of cloning it */
+                        match User::update_social_account(&wallet, &account_name.to_owned(), connection).await{
+                            Ok(updated_user) => {
+                    
+                                resp!{
+                                    UserData, // the data type
+                                    updated_user, // response data
+                                    UPDATED, // response message
+                                    StatusCode::OK, // status code,
+                                    None::<Cookie<'_>>, // cookie 
+                                } 
+                            },
+                            Err(resp) => {
+    
+                                /* USER NOT FOUND response */
+                                resp
+                            }
+                        }
+
                     }
 
                 },
