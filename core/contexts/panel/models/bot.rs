@@ -31,7 +31,7 @@ impl Twitter{
         it's ownership, thus we can clone or borrow its fields using clone() or as_ref()
     */
 
-    pub fn new(api: Option<String>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn new(api: Option<String>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
 
         let file_open = std::fs::File::open("twitter-accounts.json");
         let Ok(file) = file_open else{
@@ -55,7 +55,6 @@ impl Twitter{
         
         let mut apis = vec![];
         for account in twitter_accounts.clone(){
-            
             let auth = BearerToken::new(account.twitter_bearer_token.clone());
             let twitter_api = TwitterApi::new(auth);
             apis.push(twitter_api);
@@ -75,101 +74,100 @@ impl Twitter{
         )
     }
 
-    pub async fn is_twitter_user_verified(&self, doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, Result<HttpResponse, actix_web::Error>>{
+    pub async fn is_twitter_user_verified(&self, account_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, Result<HttpResponse, actix_web::Error>>{
 
-        let res_user_find = User::find_by_id(doer_id, connection).await;
-        let Ok(user) = res_user_find else{
-            return Err(res_user_find.unwrap_err());
+        let tusername = if account_name.is_empty(){
+            "".to_string()
+        } else{
+            account_name.to_string()
+        };
+            
+        let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
+        let Ok(twitter_user_data) = get_user_twitter_data else{
+            return Err(get_user_twitter_data.unwrap_err());
         };
 
-        let tusername = user.twitter_username.unwrap_or("".to_string());
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return Err(get_user_twitter_data.unwrap_err());
-            };
 
+        for api in self.apis.clone(){
+            match api
+                .get_user_followers(twitter_user_data.id)
+                .send()
+                .await
+                {
+                    Ok(res) =>{
 
-            for api in self.apis.clone(){
-                match api
-                    .get_user_followers(twitter_user_data.id)
-                    .send()
-                    .await
-                    {
-                        Ok(res) =>{
-    
-                            match res.into_data(){
-                                Some(followers) => {
-    
-                                    let account_creation_day = twitter_user_data.created_at.unwrap().day();
-                                    let now_day = OffsetDateTime::now_utc().day();
-    
-                                    if now_day - account_creation_day > 7
-                                        && followers.len() > 10{
-    
-                                        return Ok(true);
-    
-                                    } else{
+                        match res.into_data(){
+                            Some(followers) => {
 
-                                        let resp = Response{
-                                            data: Some(tusername),
-                                            message: TWITTER_USER_IS_NOT_VALID,
-                                            status: 406
-                                        };
-                                        return Err(
-                                            Ok(HttpResponse::NotAcceptable().json(resp))
-                                        );
-                                    }
-                
-                                },
-                                None => {
+                                let account_creation_day = twitter_user_data.created_at.unwrap().day();
+                                let now_day = OffsetDateTime::now_utc().day();
+
+                                if now_day - account_creation_day > 7
+                                    && followers.len() > 10{
+
+                                    return Ok(true);
+
+                                } else{
 
                                     let resp = Response{
                                         data: Some(tusername),
-                                        message: TWITTER_USER_FOLLOWERS_NOT_FOUND,
-                                        status: 404
+                                        message: TWITTER_USER_IS_NOT_VALID,
+                                        status: 406
                                     };
                                     return Err(
-                                        Ok(HttpResponse::NotFound().json(resp))
+                                        Ok(HttpResponse::NotAcceptable().json(resp))
                                     );
-    
                                 }
-                            }
-                        },
-                        Err(e) => {
-    
-                            if e.to_string().contains("[429 Too Many Requests]"){
-                                continue;
-                            } else{
+            
+                            },
+                            None => {
 
                                 let resp = Response{
                                     data: Some(tusername),
-                                    message: &e.to_string(),
-                                    status: 500
+                                    message: TWITTER_USER_FOLLOWERS_NOT_FOUND,
+                                    status: 404
                                 };
                                 return Err(
-                                    Ok(HttpResponse::InternalServerError().json(resp))
+                                    Ok(HttpResponse::NotFound().json(resp))
                                 );
-                                
 
                             }
-    
                         }
+                    },
+                    Err(e) => {
+
+                        if e.to_string().contains("[429 Too Many Requests]"){
+                            continue;
+                        } else{
+
+                            let resp = Response{
+                                data: Some(tusername),
+                                message: &e.to_string(),
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+                            
+
+                        }
+
                     }
-
-            }
-
-            let resp = Response{
-                data: Some(tusername),
-                message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
-                status: 500
-            };
-            return Err(
-                Ok(HttpResponse::InternalServerError().json(resp))
-            );
-
+                }
 
         }
+
+        let resp = Response{
+            data: Some(tusername),
+            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
+            status: 500
+        };
+        return Err(
+            Ok(HttpResponse::InternalServerError().json(resp))
+        );
+
+
+    }
 
 
 

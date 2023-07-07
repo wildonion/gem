@@ -172,7 +172,7 @@ async fn verify_twitter_task(
                         // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
                         // let bot = Twitter::new(Some(bot_endpoint));
             
-                        let new_twitter = Twitter::new(None);
+                        let new_twitter = Twitter::new(None).await;
                         let Ok(bot) =  new_twitter else{
                             return new_twitter.unwrap_err();
                         };
