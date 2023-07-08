@@ -4,11 +4,13 @@
 
 
 use crate::*;
+use crate::events::redis::Subscribe;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::events::ws::notifs::role::{RoleNotifServer, UpdateNotifRoom};
+use crate::events::ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, NotifySessionsWithRedisSubscription};
 use crate::events::ws::session::WsNotifSession;
+use crate::events::redis::RedisSubscription;
 use actix::prelude::*;
 
 
@@ -35,9 +37,11 @@ use actix::prelude::*;
 #[get("/{user_id}/{notif_room}")]
 async fn notif_subs(
     req: HttpRequest, 
+    session: Session,
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // db shared state data
+    redis_actor: web::Data<Addr<RedisSubscription>>,
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
 ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -64,7 +68,7 @@ async fn notif_subs(
                 .await;
 
             let Ok(_) = update_notif_room_result else{
-                
+            
                 resp!{
                     &[u8], // the data type
                     &[], // response data
@@ -74,16 +78,53 @@ async fn notif_subs(
                 }
             };
 
-            let resp = if notif_room.starts_with("reveal-role-"){
+
+            /* sending subscribe message to redis actor to run the subscription interval for the passed in notif room */
+            let redis_subscribe_result = redis_actor
+                .send(Subscribe{notif_room: notif_room.clone()})
+                .await;
+
+            let Ok(_) = redis_subscribe_result else{
+        
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    WS_SUBSCRIPTION_INTERVAL_ISSUE, // response message
+                    StatusCode::REQUEST_TIMEOUT, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            };
+
+
+            let get_conn = redis_client.get_connection();
+            let Ok(mut conn) = get_conn else{
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                let conn_err = get_conn.err().unwrap();
+                let msg_content = [0u8; 32];
+                let error_content = &conn_err.to_string();
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+
+                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
+                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
+                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
+                
+                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
+
+            };
+
+
+            let resp = if notif_room.clone().starts_with("reveal-role-"){
                 /* starting ws connection for the passed in peer and the notif room */
                 ws::start(
                     WsNotifSession{
                         id: 0,
                         hb: Instant::now(),
                         peer_name: Some(user_id),
-                        subscribed_at: 0,
                         notif_room,
                         app_storage: storage.clone(),
+                        redis_actor: redis_actor.get_ref().clone(),
                         ws_role_notif_actor_address
                     }, 
                     &req, 

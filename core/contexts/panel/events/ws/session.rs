@@ -2,6 +2,7 @@
 
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL};
+use crate::events::redis::{RedisSubscription, Subscribe};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::prelude::*;
@@ -21,10 +22,10 @@ pub(crate) struct WsNotifSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
     pub notif_room: String, // user has joined in to this room 
-    pub subscribed_at: i64, // time of redis subscription 
     pub peer_name: Option<String>, // user mongodb id
     pub app_storage: Option<Arc<Storage>>,
-    pub ws_role_notif_actor_address: Addr<RoleNotifServer> // the role notif actor server address
+    pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address
+    pub redis_actor: Addr<RedisSubscription> // the redis acotr address
 }
 
 
@@ -39,6 +40,7 @@ impl WsNotifSession{
             message to all session in all rooms
         */
         ctx.run_interval(WS_HEARTBEAT_INTERVAL, |actor, ctx|{
+                        
             if Instant::now().duration_since(actor.hb) > WS_CLIENT_TIMEOUT{
                 
                 info!("websocket client heartbeat failed, disconnecting!");
@@ -47,63 +49,26 @@ impl WsNotifSession{
 
                 return;
             }
+
         });
         ctx.pong(b""); /* sending empty bytes back to the peer */
     }
 
-    async fn subscribe(&self, ctx: &mut ws::WebsocketContext<Self>){
-
-        /* running the subscription task in the background every 5 seconds */
-        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, |actor, ctx|{
-
-            let redis_client = actor.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
-            let get_conn = redis_client.get_connection();
-            let Ok(mut conn) = get_conn else{
-
-                /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                let conn_err = get_conn.err().unwrap();
-                let msg_content = [0u8; 32];
-                let error_content = &conn_err.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
-
-                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
-                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
-                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
-                
-                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
-
-            };
-
-            /* subscribing to redis topic */
-            let mut pubsub = conn.as_pubsub();
-            pubsub.subscribe(actor.notif_room.to_owned()).unwrap();
-
-            let msg = pubsub.get_message().unwrap();
-            let payload: String = msg.get_payload().unwrap();
-
-            actor.subscribed_at = chrono::Local::now().timestamp_nanos(); /* actor is a mutable reference to the WsNotifSession actor */
-
-            /* sending reveal role topic data */
-            ctx.text(payload);
-
-
-        });
-
-        ctx.pong(b""); /* sending empty bytes back to the peer, in handling Pong message we'll generate a new heartbeat */
-
-    }
 }
 
 
 /* since this is an actor it can communicates with other ws actor as well, by sending pre defined messages to them */
 impl Actor for WsNotifSession{
 
-    type Context = ws::WebsocketContext<WsNotifSession>; /* creating a context object from the WsNotifSession actor */
+    /* 
+        this must be ws::WebsocketContext<WsNotifSession> since 
+        ws method accepts an actor with ws::WebsocketContext object 
+    */
+    type Context = ws::WebsocketContext<WsNotifSession>; /* creating a context object of ws::WebsocketContext struct from the WsNotifSession actor */
 
     /* once the session actor is started we'll do the following logics */
     fn started(&mut self, ctx: &mut Self::Context){ /* ctx is a mutable reference to the Self::Context */
-        
+
         /* check the heartbeat of the this session */
         self.hb(ctx); 
 
@@ -132,14 +97,6 @@ impl Actor for WsNotifSession{
             })
             .wait(ctx);
 
-        /* subscribe to the redis topic for this notif room */
-        let fut = Box::pin(async{
-            self.subscribe(ctx).await;
-        });
-
-        let actor_future = fut.into_actor(self);
-        ctx.wait(actor_future); /* calling wait on a mutable pointer of ctx to await on the actor future to be solved later */
-
     }
 
 
@@ -159,7 +116,7 @@ impl Handler<RoleMessage> for WsNotifSession {
    
     type Result = ();
 
-    fn handle(&mut self, msg: RoleMessage, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: RoleMessage, ctx: &mut Self::Context){
         ctx.text(msg.0);
     }
 }

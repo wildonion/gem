@@ -2,9 +2,13 @@
 
 /* role notif actor to communicate (send/receive messages) with session or peer actor */
 
+use crate::constants::WS_HEARTBEAT_INTERVAL;
+use crate::events::redis::RedisSubscription;
+use crate::events::redis::Subscribe;
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
+use crate::constants::WS_REDIS_SUBSCIPTION_INTERVAL;
 
 
 /* implementing Message traits for all type of messages that can be used by RoleNotifServer actor */
@@ -44,6 +48,15 @@ pub struct Message(pub String);
 #[rtype(result = "()")]
 pub struct UpdateNotifRoom(pub String);
 
+/// redis subscription
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct NotifySessionsWithRedisSubscription{
+    pub notif_room: String,
+    pub payload: String,
+    pub subscribed_at: u64,
+}
+
 
 
 /* RoleNotifServer contains all the event rooms and sessions or peers that are connected to ws connection */
@@ -51,6 +64,7 @@ pub struct UpdateNotifRoom(pub String);
 pub(crate) struct RoleNotifServer{
     pub rooms: HashMap<String, HashSet<usize>>, // event rooms which is based on the event id or every event is a room
     pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room, a mapping between session id and their actor address
+    pub subscribed_at: u64,
     pub app_storage: Option<Arc<Storage>>,
 }
 
@@ -61,6 +75,7 @@ impl RoleNotifServer{
         RoleNotifServer{
             sessions: HashMap::new(),
             rooms: HashMap::new(),
+            subscribed_at: 0,
             app_storage,
         }
     }
@@ -86,6 +101,7 @@ impl RoleNotifServer{
             }
         }
     }
+
 }
 
 /* since this is an actor it can communicates with other ws actor as well, by sending pre defined messages to them */
@@ -106,9 +122,22 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
         self.rooms
             .entry(msg.0.to_owned())
             .or_insert_with(HashSet::new);
-
+        
     }
 
+}
+
+impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: NotifySessionsWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
+        
+        /* insert the passed in room to the message object to the rooms of this actor */
+        self.subscribed_at = msg.subscribed_at;
+        info!("--- sending revealed roles to room: [{}]", msg.notif_room);
+        self.send_message(&msg.notif_room, &msg.payload, 0);
+    }
 
 }
 

@@ -239,6 +239,7 @@ macro_rules! server {
             use dotenv::dotenv;
             use crate::constants::*;
             use crate::events::ws::notifs::role::RoleNotifServer;
+            use crate::events::redis::RedisSubscription;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -265,14 +266,37 @@ macro_rules! server {
             }.await;
 
             let shared_storage = Data::new(app_storage.clone());
+            let redis_client = app_storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+            let get_conn = redis_client.get_connection();
+            let Ok(mut conn) = get_conn else{
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                let conn_err = get_conn.err().unwrap();
+                let msg_content = [0u8; 32];
+                let error_content = &conn_err.to_string();
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+
+                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
+                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
+                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
+                
+                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
+
+            };
 
             /*  
                 make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
                 otherwise the actor will be started each time by calling the related websocket route
             */
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
+            let redis_actor = RedisSubscription::new(conn, role_ntif_server_instance.clone()).start();
+            
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance);
-    
+            let shared_redis_actor = Data::new(redis_actor);
+
+
+
             /*
                 the HttpServer::new function takes a factory function that 
                 produces an instance of the App, not the App instance itself. 
@@ -308,6 +332,7 @@ macro_rules! server {
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
+                    .app_data(Data::clone(&shared_redis_actor.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
