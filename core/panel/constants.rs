@@ -3,7 +3,7 @@
 
 use crate::*;
 
-
+pub const APP_NAME: &str = "Conse";
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
 pub static BUSY_BOT: &str = "Bot Is Busy";

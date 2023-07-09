@@ -324,7 +324,7 @@ macro_rules! server {
                 to share them between threads since we don't want to mutate them 
                 in actix routers' threads. 
             */
-            info!("➔ 🎛️  starting conse panel on address: [{}:{}]", host, port);
+            info!("➔ 🚀 {} panel server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
             let s = match HttpServer::new(move ||{
                 App::new()
                     /* 
@@ -494,7 +494,7 @@ macro_rules! db {
                 )
             );
             let app_storage = if $engine.as_str() == "mongodb"{
-                info!("➔ 🛢️  switching to mongodb on address: [{}:{}]", $host, $port);
+                info!("➔ 🛢️ switching to mongodb on address: [{}:{}]", $host, $port);
                 let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
                 let db_addr = if environment == "dev"{
                     format!("{}://{}:{}", $engine, $host, $port)

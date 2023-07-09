@@ -117,13 +117,13 @@ cargo clean
 # 🧪 Test Conse Hyper Server
 cargo test --bin mafia
 # 🏃 Run Conse Hyper Server
-cargo run --bin mafia
+cargo run --bin mafia #---> cargo build --bin mafia --release
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
-cargo run --bin panel
+cargo run --bin panel #---> cargo build --bin panel --release
 # 🏃🏻‍♀️ Run Conse Discord Bot Server
-cargo run --bin catchup-bot
+cargo run --bin catchup-bot #---> cargo build --bin catchup-bot --release
 # 🏃🏻‍♀️ Run Conse Twiscord Bot Server
-cargo run --bin twiscord
+cargo run --bin twiscord #---> cargo build --bin twiscord --release
 # 🏃🏿 Run Conse Argon2 Test Codes
 cargo run --bin argon2test
 ```
@@ -142,7 +142,7 @@ cargo run --bin argon2test
 
 - **NOTE**: to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
-- **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
+- **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./redeploy.sh``` script again.
 
 - **NOTE**: to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 

@@ -97,11 +97,11 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     env::set_var("RUST_LOG", "trace");
     pretty_env_logger::init();
     dotenv().expect("⚠️ .env file not found");
-    let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
-    let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
-    let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
-    let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
-    let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
+    let db_host = env::var("MONGODB_HOST").expect("⚠️ no db host variable set");
+    let db_port = env::var("MONGODB_PORT").expect("⚠️ no db port variable set");
+    let db_username = env::var("MONGODB_USERNAME").expect("⚠️ no db username variable set");
+    let db_password = env::var("MONGODB_PASSWORD").expect("⚠️ no db password variable set");
+    let db_engine = env::var("MONGODB_ENGINE").expect("⚠️ no db engine variable set");
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
@@ -260,7 +260,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     // -------------------------------- building conse server from the apis
     //
     // --------------------------------------------------------------------------------------------------------
-    info!("🚀 {} has launched from {} - {}", misc::app::APP_NAME, port, chrono::Local::now().naive_local());
+    info!("🚀 {} mafia server has launched from [{}:{}] at {}", misc::app::APP_NAME, host, port, chrono::Local::now().naive_local());
     let conse_server = misc::build_server(api).await; // build the server from the series of api routers
     let conse_graceful = conse_server.with_graceful_shutdown(misc::app::shutdown_signal(receiver)); // in shutdown_signal() function we're listening to the data coming from the sender   
     if let Err(e) = conse_graceful.await{ // awaiting on the server to start and handle the shutdown signal if there was any error
