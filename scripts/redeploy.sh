@@ -73,7 +73,7 @@ else
 
     docker stop conse-panel && docker rm -f conse-panel
     docker stop conse-catchup-bot && docker rm -f conse-catchup-bot
-    docker stop conse && docker rm -f conse
+    docker stop conse-mafia && docker rm -f conse-mafia
     docker stop twiscord && docker rm -f twiscord
 
     sudo docker build -t conse-panel -f $(pwd)/infra/docker/panel/Dockerfile . --no-cache
@@ -85,6 +85,6 @@ else
     sudo docker build -t twiscord -f $(pwd)/infra/docker/twiscord/Dockerfile . --no-cache
     sudo docker run -d --link redis --network gem --name twiscord -v $(pwd)/infra/data/twiscord-logs/:/usr/src/app/logs/ twiscord
 
-    sudo docker build -t conse -f $(pwd)/infra/docker/conse/Dockerfile . --no-cache
-    sudo docker run -d --link mongodb --network gem --name conse -p 7439:7438 conse
+    sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
+    sudo docker run -d --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
 fi

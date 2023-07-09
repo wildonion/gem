@@ -19,7 +19,7 @@ cargo install sqlant && sudo apt install openjdk-11-jdk && sudo apt install grap
 
 sudo rm .env && sudo mv .env.prod .env
 sudo mv twitter-accounts.prod.json twitter-accounts.json
-echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys"
+echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the panel API with admin access"
 echo "[?] Enter OpenAI token: "
 read OPENAI_TOKEN
 echo "[?] Enter Catchup Discord token: "

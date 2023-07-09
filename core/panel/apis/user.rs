@@ -429,6 +429,14 @@ async fn verify_twitter_account(
                         }
 
                     } else{
+
+                        /* updating the last rquest time */
+                        //// this will be used to handle shared state between clusters
+                        redis_rate_limiter.insert(_id as u64, now); //// updating the redis rate limiter map
+                        let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
+                        let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+
+
                         /* we can pass usernmae by reference or its slice form instead of cloning it */
                         match User::update_social_account(&wallet, &account_name.to_owned(), connection).await{
                             Ok(updated_user) => {

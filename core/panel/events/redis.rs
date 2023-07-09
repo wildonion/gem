@@ -53,26 +53,20 @@ impl RedisSubscription{
 
         let mut pubsub = self.redis_conn.as_pubsub();
         
-        // ctx.run_interval(WS_HEARTBEAT_INTERVAL, move |actor, ctx|{
-        
-            /* subscribing to redis topic */
-            pubsub.subscribe(notif_room.to_owned()).unwrap();
-    
-            let msg = pubsub.get_message().unwrap();
-            let payload: String = msg.get_payload().unwrap();
+        /* subscribing to redis topic */
+        pubsub.subscribe(notif_room.to_owned()).unwrap();
+
+        let msg = pubsub.get_message().unwrap();
+        let payload: String = msg.get_payload().unwrap();
 
 
-            /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
-            self.role_notif_server_actor
-                .do_send(NotifySessionsWithRedisSubscription{
-                    notif_room: notif_room.to_string().clone(),
-                    payload,
-                    subscribed_at: chrono::Local::now().timestamp_nanos() as u64
-                });
-
-
-        
-        // });
+        /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
+        self.role_notif_server_actor
+            .do_send(NotifySessionsWithRedisSubscription{
+                notif_room: notif_room.to_string().clone(),
+                payload,
+                subscribed_at: chrono::Local::now().timestamp_nanos() as u64
+            });
 
     }
 
@@ -100,7 +94,8 @@ impl Handler<Subscribe> for RedisSubscription{
 
         /* 
             since ctx.run_interval() accepts a closure that its captured vars must last 
-            static thus we must clone necessary data from self to prevent ownership losing   
+            staticly thus we must clone necessary data from self to prevent ownership losing 
+            then use those cloned vars inside the closure by passing them into the closure 
         */
         let notif_room = msg.notif_room.clone();
         ctx.run_interval(WS_HEARTBEAT_INTERVAL, move |actor, ctx|{

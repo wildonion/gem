@@ -114,6 +114,24 @@ async fn notif_subs(
 
             };
 
+            /* 
+
+                async and concurrent push notif handler using:
+                
+                    tokio::spawn
+                    tokio::sync::mpsc
+                    redis subscription
+                    actix actor
+
+                we can spawn a task inside tokio spawn like subscribing to redis 
+                once we subscribed then we can send it to an mpsc jobq channel 
+                and in another tokio spawn we can listen to the incoming data
+                from the sender of the channel and do whatever we want with that 
+                like sending the received data to the actor
+                
+            */
+
+            // ...
 
             let resp = if notif_room.clone().starts_with("reveal-role-"){
                 /* starting ws connection for the passed in peer and the notif room */

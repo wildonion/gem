@@ -9,7 +9,7 @@ RUN rm src/*.rs
 
 ADD . ./
 
-RUN cargo build --bin conse --release
+RUN cargo build --bin mafia --release
 
 
 FROM debian:buster-slim
@@ -35,7 +35,7 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /gem/target/release/conse ${APP}/conse
+COPY --from=builder /gem/target/release/mafia ${APP}/mafia
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
@@ -47,4 +47,4 @@ RUN USER=root mkdir ${APP}/assets
 USER $APP_USER
 WORKDIR ${APP}
 
-CMD ["./conse"]
+CMD ["./mafia"]

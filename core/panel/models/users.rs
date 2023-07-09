@@ -1174,6 +1174,8 @@ impl User{
                 );
             };
 
+            // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+            // let new_twitter = Twitter::new(Some(bot_endpoint)).await;
             let new_twitter = Twitter::new(None).await;
             let Ok(bot) =  new_twitter else{
                 return Err(new_twitter.unwrap_err());

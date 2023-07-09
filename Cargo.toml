@@ -68,20 +68,20 @@ twitter-v2 = "0.1.8"
 
 
 [[bin]]
-name = "conse"
-path = "core/app.rs"
+name = "mafia"
+path = "core/mafia/app.rs"
 
 [[bin]]
 name = "catchup-bot"
-path = "core/contexts/bot/discord/bot.rs"
+path = "core/bots/discord/bot.rs"
 
 [[bin]]
 name = "twiscord"
-path = "core/contexts/bot/twiscord/bot.rs"
+path = "core/bots/twiscord/bot.rs"
 
 [[bin]]
 name = "panel"
-path = "core/contexts/panel/app.rs"
+path = "core/panel/app.rs"
 
 [[bin]]
 name = "argon2test"

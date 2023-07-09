@@ -4,7 +4,7 @@
 # 🤏 Conse Backend Rust Services
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
-- a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of the each player collected by the history of each event's `phases` field inside the game.
+- a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of each player collected by the history of each event's `phases` field inside the game.
 - [uniXerr](https://github.com/wildonion/uniXerr) coin generation AI model which players get rewarded based on their scores and positions, collected by each event manager inside the game, then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game also players can sell their minted roles based on highest or lowest order setup in conse order book.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
@@ -55,7 +55,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🎒 supports **postgres**, **mongodb** and **redis** as the app storage  
 
-* 🛎️ **actix web** and **hyper** based HTTP servers
+* 🛎️ **actix web** and **hyper** based HTTP servers and handling push notif subscriptions
 
 * 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating), new task defined by admins, task verification logs and twitter bot responses topics
 
@@ -65,15 +65,16 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 ### 🗃️ Directory and Structure Explained
 
-> Note that to use dev panel APIs Remember to run conse hyper server first.
+> Note that to use dev and admin panel APIs Remember to run conse mafia hyper server first.
 
-* `core`: hyper server which are related to the player app.
-    * `contexts`: 
-        * `bot`: serenity discord and twiscord bots.
-        * `panel`: dev and admin panel actix server and yew app.
-    * `controllers`: in-game async controllers related to hyper server.
-    * `routers`: in-game API routers related to hyper server.
-    * `schemas`: in-game mongodb schemas related to hyper server.
+* `core`: hyper, actix web HTTP and actix WS servers.
+    * `bots`: serenity catchup discord and twiscord bots.
+    * `panel`: dev and admin panel actix web and actix WS server.
+    * `www`: dev and admin panel app written in yew.
+    * `mafia`: mafia game APIs
+        * `controllers`: in-game async controllers related to hyper server.
+        * `routers`: in-game API routers related to hyper server.
+        * `schemas`: in-game mongodb schemas related to hyper server.
 * `infra`: all infrastructure and devops configs.
 * `errors`: gem possible errors handler
 * `jobs`: gem crontab jobs
@@ -82,7 +83,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 * `scripts`: deployment scripts
 * `test`: gem test codes
 
-**NOTE**: All `conse`, `panel` and `bot` services are just different binaries which are sharing a same `Cargo.toml` setup.
+**NOTE**: All `mafia`, `panel` and `bots` services inside `core` are just different binaries which are sharing a same `Cargo.toml` setup.
 
 ## 🛠️ Development Setup
 
@@ -108,15 +109,15 @@ cargo clean
 
 - **NOTE**: use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
-- **NOTE**: to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the conse binary server like so: `./cosne wildonion 0` or `cargo run --bin conse wildonion 0` finally login with that user to register a new god for the game.
+- **NOTE**: to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia wildonion 0` or `cargo run --bin mafia wildonion 0` finally login with that user to register a new god for the game.
 
-- **NOTE**: in development environment remember to fill the `OPENAI_KEY`, `DISCORD_TOKEN`, `TWITTER_BEARER_TOKEN`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`, `TWITTER_CONSUMER_KEY`, `TWITTER_CONSUMER_SECRET`, `TWITTER_CLIENT_ID` and `TWITTER_CLIENT_SECRET` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
+- **NOTE**: in development environment remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
 
 ```bash
 # 🧪 Test Conse Hyper Server
-cargo test --bin conse
+cargo test --bin mafia
 # 🏃 Run Conse Hyper Server
-cargo run --bin conse
+cargo run --bin mafia
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
 cargo run --bin panel
 # 🏃🏻‍♀️ Run Conse Discord Bot Server
@@ -135,7 +136,7 @@ cargo run --bin argon2test
 
 - **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
-- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a Project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
+- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
 
 - **NOTE**: to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
@@ -143,7 +144,7 @@ cargo run --bin argon2test
 
 - **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./deploy.sh``` script again.
 
-- **NOTE**: to update a user access level of the conse hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+- **NOTE**: to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
 - **NOTE**: in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the panel container they must be in the same network called `gem`. 
 
@@ -153,7 +154,7 @@ cargo run --bin argon2test
 
 - **NOTE**: For every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
 
-- **NOTE**: There must be three registered (sub)domains in DNS panel of `conse.app`: `api.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse hyper APIs, Actix APIs and the panel UI respectively.
+- **NOTE**: There must be three registered (sub)domains in DNS panel of `conse.app`: `api.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse mafia hyper APIs, Actix APIs and the panel UI respectively.
 
 - **NOTE**: To serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 
@@ -232,7 +233,7 @@ cd scripts
 
 * all conse panel APIs except admin and user login, health check and logout APIs need a **JWT** inside the Authorization header or the cookie variable in the their request objects also the **JWT** can be set in their swagger UI page using the `Authorize 🔒` button. 
 
-* in order to reveal the roles of an event, admin **JWT** token generated by the conse hyper server inside the response of the login API, must be passed to the `/admin/notif/register/reveal-role/{event_id}` API of the panel server.   
+* in order to reveal the roles of an event, admin **JWT** token generated by the conse mafia hyper server inside the response of the login API, must be passed to the `/admin/notif/register/reveal-role/{event_id}` API of the panel server.   
 
 * **admins** are game managers and **users** are players. 
 
@@ -254,9 +255,9 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* solana [ticket reservation contract](https://github.com/wildonion/solmarties/tree/main/programs/ticket)
-
 * redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
+
+* handle other actor notifs inside `core/contexts/panel/events/ws` folder.
 
 * setup websocket nginx config file (ws://ws.panel.conse.app/notifs/)
 
@@ -265,3 +266,5 @@ cd scripts
 * god and dev panel app using `yew`
 
 * publish docker containers to docker hub also add CI/CD setup like digitalocean platform
+
+* behavioural graph of each player collected by the history of each event's phases to build mmr engine.
