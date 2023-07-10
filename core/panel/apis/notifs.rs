@@ -8,9 +8,11 @@ use crate::events::redis::Subscribe;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::events::ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, NotifySessionsWithRedisSubscription};
-use crate::events::ws::session::WsNotifSession;
-use crate::events::redis::RedisSubscription;
+use crate::events::{
+    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, NotifySessionsWithRedisSubscription},
+    ws::session::WsNotifSession,
+    redis::RedisSubscription
+};
 use actix::prelude::*;
 
 
@@ -40,7 +42,7 @@ async fn notif_subs(
     session: Session,
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
-    storage: web::Data<Option<Arc<Storage>>>, // db shared state data
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (redis, postgres and mongodb)
     redis_actor: web::Data<Addr<RedisSubscription>>,
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -180,7 +182,10 @@ async fn notif_subs(
 
             };
 
-            /* sending the ws connection response, we'll have either a successful full duplex connection or response error */
+            /* 
+                sending the ws connection response, we'll have either a successful 
+                full duplex connection or response error 
+            */
             resp
 
         },

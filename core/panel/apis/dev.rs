@@ -85,7 +85,7 @@ impl Modify for SecurityAddon {
 async fn get_admin_data(
         req: HttpRequest, 
         admin_id: web::Path<String>, // mongodb object id of admin or god  
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     
@@ -189,7 +189,7 @@ async fn get_admin_data(
 async fn get_user_data(
         req: HttpRequest, 
         user_id: web::Path<String>, // mongodb object id of user or player  
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     

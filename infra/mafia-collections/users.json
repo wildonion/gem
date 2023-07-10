@@ -1,0 +1,34 @@
+[{
+  "_id": {
+    "$oid": "646474801b3418b805a74254"
+  },
+  "username": "conse",
+  "phone": "00000000000",
+  "pwd": "$argon2i$v=19$m=4096,t=3,p=1$Y29uc2UtaW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$Ha6pxhChmjcKPZX1O4cKxUS/w9G9ejLY88hiOW240R4",
+  "status": 0,
+  "access_level": 2,
+  "role_id": null,
+  "side_id": null,
+  "created_at": 1684305023,
+  "updated_at": 1684305023,
+  "last_login_time": 1688978049,
+  "wallet_address": "0x0000000000000000000000000000000000000000",
+  "balance": 0
+},
+{
+  "_id": {
+    "$oid": "64abc05c8da619da323a3b57"
+  },
+  "username": "dev",
+  "phone": "00000000000",
+  "pwd": "$argon2i$v=19$m=4096,t=3,p=1$aW5zZWN1cmUtOTgwbzM3XiEzZnUpa3pibzV6KGtybTJzXl5ibzFuKi1udnkoNis4MiklNjB5cGRtLXU$Hc9HOhxcnYVkJVAQACtHnTDip7AYwTaL9/bh3pEhWmU",
+  "status": 0,
+  "access_level": 0,
+  "role_id": null,
+  "side_id": null,
+  "created_at": 1688977500,
+  "updated_at": 1688977500,
+  "last_login_time": 1688978326,
+  "wallet_address": "0x0000000000000000000000000000000000000000",
+  "balance": 0
+}]

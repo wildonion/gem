@@ -30,6 +30,11 @@ pub struct Disconnect {
     pub event_name: String // event room name: `reveal-role-{event_id}` to send message to and also user disconnected from this room
 }
 
+/// redis is disconnected
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct RedisDisconnect;
+
 /// join room
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -135,7 +140,7 @@ impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
         
         /* insert the passed in room to the message object to the rooms of this actor */
         self.subscribed_at = msg.subscribed_at;
-        info!("--- sending revealed roles to room: [{}]", msg.notif_room);
+        info!("--- sending subscribed revealed roles to room: [{}]", msg.notif_room);
         self.send_message(&msg.notif_room, &msg.payload, 0);
     }
 
@@ -156,7 +161,9 @@ impl Handler<Disconnect> for RoleNotifServer{
                 borrowing self.rooms mutably so we can mutate the self.sessions 
                 when we mutate it's pointer, hence if we remove a session from 
                 the session inside the self.rooms then the whole self.rooms 
-                will be mutated
+                will be mutated, also since we're iteration over it, it's ownership
+                will be moved in each iteration thus we must borrow it or take 
+                a reference to it to prevent its ownership from moving
             */
             for (event_name_room, sessions) in &mut self.rooms{
                 if sessions.remove(&msg.id){
@@ -167,6 +174,28 @@ impl Handler<Disconnect> for RoleNotifServer{
             for event_name_room in rooms{
                 self.send_message(&event_name_room, disconn_message.as_str(), 0);
             }
+        }
+    }
+}
+
+impl Handler<RedisDisconnect> for RoleNotifServer{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: RedisDisconnect, ctx: &mut Self::Context) -> Self::Result {
+        
+        info!("--- redis actor is disconnected");
+        let disconn_message = format!("push notif subscription actor is not available");
+        
+        /* 
+            since self.rooms is behind a mutable reference and is 
+            moving in each iteration of the loop, thus we must 
+            borrow it in each iteration to prevent its ownership 
+            from moving 
+        */
+        let rooms = &self.rooms;
+        for room in rooms{
+            self.send_message(&room.0, &disconn_message, 0);
         }
     }
 }

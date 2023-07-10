@@ -15,8 +15,7 @@ use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
 use crate::constants::{WS_REDIS_SUBSCIPTION_INTERVAL, WS_HEARTBEAT_INTERVAL};
-
-use super::ws::notifs::role::{RoleNotifServer, NotifySessionsWithRedisSubscription};
+use super::ws::notifs::role::{RoleNotifServer, NotifySessionsWithRedisSubscription, RedisDisconnect};
 
 
 /* implementing Message traits for all type of messages that can be used by RedisSubscription actor */
@@ -80,6 +79,12 @@ impl Actor for RedisSubscription{
         
         // ...
 
+    }
+
+    fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
+        
+        self.role_notif_server_actor.do_send(RedisDisconnect);
+        Running::Stop
     }
 }
 

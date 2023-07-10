@@ -18,9 +18,9 @@ COPY key-panel.conse.app.pem /etc/nginx/key-panel.conse.app.pem
 #api.panel.conse.app:
 COPY cert-api.panel.conse.app.pem /etc/nginx/cert-api.panel.conse.app.pem
 COPY key-api.panel.conse.app.pem /etc/nginx/key-api.panel.conse.app.pem
-#api.conse.app:
-COPY cert-api.conse.app.pem /etc/nginx/cert-api.conse.app.pem
-COPY key-api.conse.app.pem /etc/nginx/key-api.conse.app.pem
+#api.mafia.conse.app:
+COPY cert-api.mafia.conse.app.pem /etc/nginx/cert-api.mafia.conse.app.pem
+COPY key-api.mafia.conse.app.pem /etc/nginx/key-api.mafia.conse.app.pem
 #adminer.conse.app:
 COPY cert-adminer.conse.app.pem /etc/nginx/cert-adminer.conse.app.pem
 COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
@@ -42,7 +42,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY conse.app.conf /etc/nginx/conse.conf
 COPY panel.conse.app.conf /etc/nginx/conse.conf
 COPY api.panel.conse.app.conf /etc/nginx/conse.conf
-COPY api.conse.app.conf /etc/nginx/conse.conf
+COPY api.mafia.conse.app.conf /etc/nginx/conse.conf
 COPY adminer.conse.app.conf /etc/nginx/conse.conf
 COPY checkpswd.conse.app.conf /etc/nginx/conse.conf
 

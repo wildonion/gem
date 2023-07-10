@@ -61,7 +61,9 @@ pub struct BotApiDoc;
     by the /check-users-tasks API which will be called by the crontab   
 
     so in general when a user logs in to the site
-        1 - user must update his/her twitter username by calling the `/verify-twitter-account/{account_name}` API
+        1 - user must update his/her twitter username by calling the `/verify-twitter-account/{account_name}` 
+            API which sends a request to the twitter to verify the passed in username and if the username gets 
+            verified by twitter then we'll update the user record.
         2 - an activity code is inside the response data of `/login` API, user must tweet this code using his/her twitter application 
         3 - then an API will be called automatically inside the server every 24 hours that checks that are there any tasks which is done by any user but 
             we can also call that API manually using `/verify-user/{doer_id}/twitter-task/{job_id}` route behind a `check` button or inside an interval http call
@@ -101,7 +103,7 @@ pub struct BotApiDoc;
 async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -289,7 +291,7 @@ async fn verify_twitter_task(
 #[get("/check-users-tasks")]
 async fn check_users_tassk(
         req: HttpRequest,
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -339,11 +341,9 @@ async fn check_users_tassk(
                             let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone()).await;
 
                             /* 
-                                wait 30 seconds asyncly to avoid twitter rate limit issue cause 
-                                the /verify-user/{doer_id}/twitter-task/{job_id} api uses a 30 
-                                seconds rate limiter 
+                                wait 60 seconds asyncly to avoid twitter rate limit issue
                             */
-                            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await; /* sleep asyncly to avoid blocking issues by twitter */
+                            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await; /* sleep asyncly to avoid blocking issues by twitter */
                             
                         }
 

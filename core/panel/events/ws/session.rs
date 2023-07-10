@@ -102,8 +102,12 @@ impl Actor for WsNotifSession{
 
     /* the session is about to be stopped */
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
-        self.ws_role_notif_actor_address.do_send(RoleNotifServerDisconnectMessage{id: self.id, event_name: self.notif_room.to_owned()}); /* sending disconnect message to the RoleNotifServer actor with the passed in session id and the event name room */
-    
+        
+        /* 
+            sending disconnect message to the RoleNotifServer actor with the passed in 
+            session id and the event name room 
+        */
+        self.ws_role_notif_actor_address.do_send(RoleNotifServerDisconnectMessage{id: self.id, event_name: self.notif_room.to_owned()}); 
         Running::Stop /* return the Stop variant */
 
     }

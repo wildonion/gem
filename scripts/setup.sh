@@ -17,6 +17,7 @@ sudo apt install snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
 cargo install sqlant && sudo apt install openjdk-11-jdk && sudo apt install graphviz
 
+# --- for docker setup ---
 sudo rm .env && sudo mv .env.prod .env
 sudo mv twitter-accounts.prod.json twitter-accounts.json
 echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the panel API with admin access"

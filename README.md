@@ -1,7 +1,7 @@
 
 
 
-# 🤏 Conse Backend Rust Services
+# 🤏 Conse Backend Rust Micro Services
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of each player collected by the history of each event's `phases` field inside the game.
@@ -21,7 +21,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
-🗺️ MAIN API ROUTE ==> https://api.conse.app/
+🗺️ MAIN API ROUTE ==> https://api.mafia.conse.app/
 📡 SWAGGER DOC ==> https://api.panel.conse.app/swagger/
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🎙️ HOSTED ON ==> Digitalocean
@@ -41,7 +41,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * ❌ custom error type (`PanelError`) to handle all possible server (actixweb and websocket) and storage (redis and diesel) IO errors in conse panel.
  
-* 🧑🏻‍💼 game managers can define score based twitter tasks for users, reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
+* 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
 
 * 🍪 **cookie** and **JWT** based authentication strategy
 
@@ -101,17 +101,15 @@ brew install graphviz
 cargo clean
 ```
 
-- **NOTE**: all docker container the mounted volumes are inside `infra/data` folder. 
+- **NOTE**: **Regard to conse panel actix APIs**, if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
 
-- **NOTE**: if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
+- **NOTE**: **Regard to conse panel actix APIs**, before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
 
-- **NOTE**: before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
+- **NOTE**: **Regard to conse panel actix APIs**, use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
-- **NOTE**: use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
+- **NOTE**: **Regard to conse mafia hyper APIs**, to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia dev 0` or `cargo run --bin mafia dev 0` finally login with that user to register a new god for the game.
 
-- **NOTE**: to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia wildonion 0` or `cargo run --bin mafia wildonion 0` finally login with that user to register a new god for the game.
-
-- **NOTE**: in development environment remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
+- **NOTE**: **Regard to conse panel actix APIs**, in development environment remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
 
 ```bash
 # 🧪 Test Conse Hyper Server
@@ -132,40 +130,44 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
+- **NOTE**: **Regard to conse panel actix APIs**, there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
 
-- **NOTE**: currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
+- **NOTE**: **Regard to conse panel actix APIs**, currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
-- **NOTE**: in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
+- **NOTE**: **Regard to conse panel actix APIs**, in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
 
-- **NOTE**: to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
+- **NOTE**: **Regard to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
+
+- **NOTE**: **Regard to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+
+- **NOTE**: **Regard to conse mafia hyper APIs**, the default `dev` and `conse` user passwords are `dev@1234%` and `conse@1234` respectively which will be imported to the mongodb automatically by running the `./redeploy.sh` script, also we can run the `./mafia dev 0` binary inside the VPS to update the access level of a user to dev, finally we can register a new god or admin for the mafia game APIs using the dev user token.
 
 - **NOTE**: to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
 - **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./redeploy.sh``` script again.
 
-- **NOTE**: to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+- **NOTE**: all docker container the mounted volumes are inside `infra/data` folder.
 
 - **NOTE**: in order to use docker containers inside another one by its DNS name, all of them must be inside the same network bridge like if we want to use the mongodb container inside the panel container they must be in the same network called `gem`. 
 
-- **NOTE**: Make sure that you have the `conse.app` domain enabled and is pointing to the machine where the `gem` codes is hosted on.
+- **NOTE**: make sure that you have the `conse.app` domain enabled and is pointing to the machine where the `gem` codes is hosted on.
 
-- **NOTE**: Rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
+- **NOTE**: rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
-- **NOTE**: For every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
+- **NOTE**: for every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
 
-- **NOTE**: There must be three registered (sub)domains in DNS panel of `conse.app`: `api.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse mafia hyper APIs, Actix APIs and the panel UI respectively.
+- **NOTE**: there must be three registered (sub)domains in DNS panel of `conse.app`: `api.mafia.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse mafia hyper APIs, Actix APIs and the panel UI respectively.
 
-- **NOTE**: To serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
+- **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 
-- **NOTE**: Multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
+- **NOTE**: multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
 
 **DNS records of conse.app domain**
 
 ```
 Type	    Hostname	               Value	          TTL (seconds)	
 A	    conse.app              directs to 64.226.71.201	     3600
-A	    api.conse.app   	   directs to 68.183.137.151     3600 
+A	    api.mafia.conse.app   	   directs to 68.183.137.151     3600 
 A	    panel.conse.app    	   directs to 68.183.201.134     3600 
 ```
 **DNS records of wildonion.io domain**
@@ -225,7 +227,11 @@ cd scripts
 
 ## 🧐 WrapUps 
 
-* to all gorgeous admins, **if you don't want to set a new password for a user then don't pass that field to the request body** of the `/admin/edit-user` API, also the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
+* to see a full list of conse mafia hyper server APIs, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
+
+> **Regard to conse panel actix APIs**:
+
+* to all gorgeous admins, the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
 
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
 
@@ -233,23 +239,21 @@ cd scripts
 
 * all conse panel APIs except admin and user login, health check and logout APIs need a **JWT** inside the Authorization header or the cookie variable in the their request objects also the **JWT** can be set in their swagger UI page using the `Authorize 🔒` button. 
 
-* in order to reveal the roles of an event, admin **JWT** token generated by the conse mafia hyper server inside the response of the login API, must be passed to the `/admin/notif/register/reveal-role/{event_id}` API of the panel server.   
+* in order to reveal the roles of an event, admin **JWT** token generated by the conse mafia hyper server inside the response of the login API, must be passed to the `/admin/notif/register/reveal-role/{event_id}` API of the panel server. 
 
-* **admins** are game managers and **users** are players. 
-
-* conse client can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by sending websocket packets to the actix websocket server.
+* conse clients can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by listening to websocket packets comming from actix websocket server.
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_id}`, `mmr-{event_id}`, `reveal-role-{event_id}` respectively.   
 
 * push notification routes for new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ws://ws.panel.conse.app/notifs/tasks`, `ws://ws.panel.conse.app/notifs/task-verification-responses`, `ws://ws.panel.conse.app/notifs/twitter-bot-response`, `ws://ws.panel.conse.app/notifs/ecq-{event_id}`, `ws://ws.panel.conse.app/notifs/mmr-{event_id}`, `ws://ws.panel.conse.app/notifs/{user_objectid}/reveal-role-{event_id}` respectively.   
 
-* twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `username` which is a task that must be done to verify his/her twitter username, `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
+* twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
 * admins can define multiple twitter tasks in the same activity, all tasks will be separated by a random chars like `*-<RANDOM_CHARS>` so the final task name will be `twitter-username-iYTC^`.
 
 * every day at **7 AM** all the users tasks will be checked automatically using a cronjob to see that the user is still verified or not, this will be done by checking all the records of the `users_tasks` table inside the `/check-users-tasks` API. 
 
-* once the user is loggedin, first the `/user/verify-twitter-account/{account_name}` API must be called with **user** token to update the twitter username of the user inside the db then then we must compel the user to tweet the activity code which is inside the user data response, after that the `/bot/verify-twitter-task/{job_id}/{twitter_username}` API must be called to verify the users' tasks, this can be behind a **check** button in frontend or inside an intreval http call.
+* once the user gets loggedin, first the `/user/verify-twitter-account/{account_name}` API must be called to verify and update the twitter username inside the db then then we must compel the user to tweet the activity code which is inside the user data response.
 
 ## 🚧 WIPs
 
@@ -257,7 +261,7 @@ cd scripts
 
 * redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
 
-* handle other actor notifs inside `core/contexts/panel/events/ws` folder.
+* complete actor notifs structure inside `core/contexts/panel/events/ws` folder along with their postman collection endpoints.
 
 * setup websocket nginx config file (ws://ws.panel.conse.app/notifs/)
 

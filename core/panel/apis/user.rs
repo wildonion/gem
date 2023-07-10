@@ -82,7 +82,7 @@ impl Modify for SecurityAddon {
 async fn login(
         req: HttpRequest, 
         wallet: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -209,7 +209,7 @@ async fn login(
 async fn login_with_wallet_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -373,7 +373,7 @@ async fn login_with_wallet_and_password(
 async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -520,7 +520,7 @@ async fn verify_twitter_account(
 pub async fn tasks_report(
         req: HttpRequest,
         user_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> // db shared state data
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
