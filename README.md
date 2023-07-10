@@ -101,15 +101,15 @@ brew install graphviz
 cargo clean
 ```
 
-- **NOTE**: **Regard to conse panel actix APIs**, if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
+- **NOTE**: **Regards to conse panel actix APIs**, if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
 
-- **NOTE**: **Regard to conse panel actix APIs**, before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
+- **NOTE**: **Regards to conse panel actix APIs**, before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
 
-- **NOTE**: **Regard to conse panel actix APIs**, use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
+- **NOTE**: **Regards to conse panel actix APIs**, use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
-- **NOTE**: **Regard to conse mafia hyper APIs**, to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia dev 0` or `cargo run --bin mafia dev 0` finally login with that user to register a new god for the game.
+- **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia dev 0` or `cargo run --bin mafia dev 0` finally login with that user to register a new god for the game.
 
-- **NOTE**: **Regard to conse panel actix APIs**, in development environment remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
+- **NOTE**: **Regards to conse panel actix APIs**, in development environment remember to fill the `OPENAI_KEY` and `DISCORD_TOKEN` vars inside the `.env` with appropriate values, but for production deployment remove these fields from `.env`
 
 ```bash
 # 🧪 Test Conse Hyper Server
@@ -130,17 +130,17 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: **Regard to conse panel actix APIs**, there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
+- **NOTE**: **Regards to conse panel actix APIs**, there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
 
-- **NOTE**: **Regard to conse panel actix APIs**, currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
+- **NOTE**: **Regards to conse panel actix APIs**, currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 
-- **NOTE**: **Regard to conse panel actix APIs**, in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
+- **NOTE**: **Regards to conse panel actix APIs**, in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
 
-- **NOTE**: **Regard to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
+- **NOTE**: **Regards to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
-- **NOTE**: **Regard to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+- **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
 
-- **NOTE**: **Regard to conse mafia hyper APIs**, the default `dev` and `conse` user passwords are `dev@1234%` and `conse@1234` respectively which will be imported to the mongodb automatically by running the `./redeploy.sh` script, also we can run the `./mafia dev 0` binary inside the VPS to update the access level of a user to dev, finally we can register a new god or admin for the mafia game APIs using the dev user token.
+- **NOTE**: **Regards to conse mafia hyper APIs**, the default `dev` and `conse` user passwords are `dev@1234%` and `conse@1234` respectively which will be imported to the mongodb automatically by running the `./redeploy.sh` script, also we can run the `./mafia dev 0` binary inside the VPS to update the access level of a user to dev, finally we can register a new god or admin for the mafia game APIs using the dev user token.
 
 - **NOTE**: to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
@@ -229,7 +229,7 @@ cd scripts
 
 * to see a full list of conse mafia hyper server APIs, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
 
-> **Regard to conse panel actix APIs**:
+> **Regards to conse panel actix APIs**:
 
 * to all gorgeous admins, the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
 
@@ -271,4 +271,6 @@ cd scripts
 
 * publish docker containers to docker hub also add CI/CD setup like digitalocean platform
 
-* behavioural graph of each player collected by the history of each event's phases to build mmr engine.
+* behavioural graph of each player collected by the history of each event's phases to build mmr engine
+
+* complete ecq, the event collaboration queue engine for the conse panel actix server
