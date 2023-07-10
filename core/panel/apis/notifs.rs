@@ -81,13 +81,29 @@ async fn notif_subs(
             };
 
 
-            /* sending subscribe message to redis actor to run the subscription interval for the passed in notif room */
-            let redis_subscribe_result = redis_actor
-                .send(Subscribe{notif_room: notif_room.clone()})
-                .await;
 
-            let Ok(_) = redis_subscribe_result else{
-        
+            /* 
+                since tokio::spawn accepts a closure which captures the env vars into its scope 
+                hence we must clone those vars that we need them into the tokio::spawn closure
+                in order not to lose their ownership in later scopes,
+            */
+            let notif_room_cloned = notif_room.clone();
+            let redis_actor_cloned = redis_actor.clone();
+            // tokio::spawn(async move{
+                
+                /* 
+                    sending subscribe message to redis actor to run the subscription interval for the passed 
+                    in notif room, by sending this message the actor will run an interval which sends a new 
+                    NotifySessionsWithRedisSubscription every 5 seconds to send the result payload of the
+                    subscription process to the role notif server actor and from there to all sessions inside
+                    the related event room, so with this pattern we only have one subscriber which is the redis
+                    actor itself subscribing constantly to the passed in event room.
+                */
+                   
+                let redis_subscribe_result = redis_actor_cloned
+                    .send(Subscribe{notif_room: notif_room_cloned.clone()})
+                    .await;
+
                 resp!{
                     &[u8], // the data type
                     &[], // response data
@@ -95,7 +111,9 @@ async fn notif_subs(
                     StatusCode::REQUEST_TIMEOUT, // status code
                     None::<Cookie<'_>>, // cookie
                 }
-            };
+                    
+                
+            // });
 
 
             let get_conn = redis_client.get_connection();

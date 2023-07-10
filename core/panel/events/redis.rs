@@ -106,7 +106,6 @@ impl Handler<Subscribe> for RedisSubscription{
         ctx.run_interval(WS_HEARTBEAT_INTERVAL, move |actor, ctx|{
             actor.subscribe(ctx, &notif_room);
         });
-        
             
     }
 

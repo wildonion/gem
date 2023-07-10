@@ -138,7 +138,10 @@ impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
 
     fn handle(&mut self, msg: NotifySessionsWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
         
-        /* insert the passed in room to the message object to the rooms of this actor */
+        /*
+            once we get the message from the redis actor we'll send the payload
+            to all sessions inside this actor server, 
+        */
         self.subscribed_at = msg.subscribed_at;
         info!("--- sending subscribed revealed roles to room: [{}]", msg.notif_room);
         self.send_message(&msg.notif_room, &msg.payload, 0);
