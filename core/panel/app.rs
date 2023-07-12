@@ -37,7 +37,7 @@ use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
 use actix_session::{Session, SessionMiddleware, storage::RedisActorSessionStore};
-use actix_redis::{Command, RedisActor};
+use actix_redis::{Command, RedisActor, RespValue, RespValue::SimpleString};
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 use actix_cors::Cors;

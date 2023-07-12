@@ -89,6 +89,15 @@ impl Actor for RedisSubscription{
 }
 
 
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for RedisSubscription{
+
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+
+        
+    }
+}
+
+
 /* handlers for all type of messages for RedisSubscription actor */
 
 impl Handler<Subscribe> for RedisSubscription{

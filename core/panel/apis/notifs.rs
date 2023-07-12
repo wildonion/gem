@@ -4,12 +4,11 @@
 
 
 use crate::*;
-use crate::events::redis::Subscribe;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use crate::events::{
-    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, NotifySessionsWithRedisSubscription},
+    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, Subscribe},
     ws::session::WsNotifSession,
     redis::RedisSubscription
 };
@@ -43,7 +42,7 @@ async fn notif_subs(
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (redis, postgres and mongodb)
-    redis_actor: web::Data<Addr<RedisSubscription>>,
+    redis_actor: web::Data<Addr<RedisActor>>,
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
 ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -80,61 +79,27 @@ async fn notif_subs(
                 }
             };
 
+            // let start_redis_subscription = ws_role_notif_actor_address
+            //     .send(Subscribe(notif_room.clone()))
+            //     .await;
+
+            // let Ok(_) = start_redis_subscription else{
+            
+            //     resp!{
+            //         &[u8], // the data type
+            //         &[], // response data
+            //         WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
+            //         StatusCode::REQUEST_TIMEOUT, // status code
+            //         None::<Cookie<'_>>, // cookie
+            //     }
+            // };
 
 
             /* 
+
                 since tokio::spawn accepts a closure which captures the env vars into its scope 
                 hence we must clone those vars that we need them into the tokio::spawn closure
                 in order not to lose their ownership in later scopes,
-            */
-            let notif_room_cloned = notif_room.clone();
-            let redis_actor_cloned = redis_actor.clone();
-            // tokio::spawn(async move{
-                
-                /* 
-                    sending subscribe message to redis actor to run the subscription interval for the passed 
-                    in notif room, by sending this message the actor will run an interval which sends a new 
-                    NotifySessionsWithRedisSubscription every 5 seconds to send the result payload of the
-                    subscription process to the role notif server actor and from there to all sessions inside
-                    the related event room, so with this pattern we only have one subscriber which is the redis
-                    actor itself subscribing constantly to the passed in event room.
-                */
-                   
-                let redis_subscribe_result = redis_actor_cloned
-                    .send(Subscribe{notif_room: notif_room_cloned.clone()})
-                    .await;
-
-                resp!{
-                    &[u8], // the data type
-                    &[], // response data
-                    WS_SUBSCRIPTION_INTERVAL_ISSUE, // response message
-                    StatusCode::REQUEST_TIMEOUT, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
-                    
-                
-            // });
-
-
-            let get_conn = redis_client.get_connection();
-            let Ok(mut conn) = get_conn else{
-
-                /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                let conn_err = get_conn.err().unwrap();
-                let msg_content = [0u8; 32];
-                let error_content = &conn_err.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
-
-                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
-                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
-                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
-                
-                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
-
-            };
-
-            /* 
 
                 async and concurrent push notif handler using:
                 
@@ -148,10 +113,37 @@ async fn notif_subs(
                 and in another tokio spawn we can listen to the incoming data
                 from the sender of the channel and do whatever we want with that 
                 like sending the received data to the actor
+
+                let notif_room_cloned = notif_room.clone();
+                let redis_actor_cloned = redis_actor.clone();
+                tokio::spawn(async move{
+                    
+                    /* 
+                        sending subscribe message to redis actor to run the subscription interval for the passed 
+                        in notif room, by sending this message the actor will run an interval which sends a new 
+                        NotifySessionsWithRedisSubscription every 5 seconds to send the result payload of the
+                        subscription process to the role notif server actor and from there to all sessions inside
+                        the related event room, so with this pattern we only have one subscriber which is the redis
+                        actor itself subscribing constantly to the passed in event room.
+                    */
+                       
+                    let redis_subscribe_result = redis_actor_cloned
+                        .send(Subscribe{notif_room: notif_room_cloned.clone()})
+                        .await;
+    
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        WS_SUBSCRIPTION_INTERVAL_ISSUE, // response message
+                        StatusCode::REQUEST_TIMEOUT, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                        
+                    
+                });
                 
             */
 
-            // ...
 
             let resp = if notif_room.clone().starts_with("reveal-role-"){
                 /* starting ws connection for the passed in peer and the notif room */
@@ -161,7 +153,6 @@ async fn notif_subs(
                         hb: Instant::now(),
                         peer_name: Some(user_id),
                         notif_room,
-                        app_storage: storage.clone(),
                         redis_actor: redis_actor.get_ref().clone(),
                         ws_role_notif_actor_address
                     }, 

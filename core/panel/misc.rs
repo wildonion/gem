@@ -255,6 +255,9 @@ macro_rules! server {
             let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+            let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
+            let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+            let redis_conn_url = format!("{redis_host}:{redis_port}");
 
             let app_storage = db!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
@@ -265,35 +268,18 @@ macro_rules! server {
                 db_password
             }.await;
 
+            
             let shared_storage = Data::new(app_storage.clone());
-            let redis_client = app_storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-            let get_conn = redis_client.get_connection();
-            let Ok(mut conn) = get_conn else{
-
-                /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                let conn_err = get_conn.err().unwrap();
-                let msg_content = [0u8; 32];
-                let error_content = &conn_err.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
-
-                let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
-                let error_instance = PanelError::new(redis_error_code, msg_content, ErrorKind::Storage(Redis(conn_err)));
-                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
-                
-                panic!("panicked at redis get sync connection at {}", chrono::Local::now());
-
-            };
+            let private_key = actix_web::cookie::Key::generate();
 
             /*  
                 make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
                 otherwise the actor will be started each time by calling the related websocket route
             */
-            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
-            let redis_actor = RedisSubscription::new(conn, role_ntif_server_instance.clone()).start();
-            
+            let redis_actor = RedisActor::start(redis_conn_url.as_str());
+            let shared_redis_actor = Data::new(redis_actor.clone());
+            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone(), redis_actor).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance);
-            let shared_redis_actor = Data::new(redis_actor);
 
 
 
@@ -417,7 +403,7 @@ macro_rules! server {
                         use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                         let msg_content = [0u8; 32];
                         let error_content = &e.to_string();
-                        msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                        msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
         
                         let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(ActixWeb(e)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */

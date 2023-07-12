@@ -680,7 +680,7 @@ impl User{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string();
-                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -785,7 +785,7 @@ impl User{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string();
-                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -849,7 +849,7 @@ impl User{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string();
-                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -986,7 +986,7 @@ impl User{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string();
-                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -1032,7 +1032,7 @@ impl User{
                             use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             let msg_content = [0u8; 32];
                             let error_content = &e.to_string();
-                            msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                            msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                             let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -1104,7 +1104,7 @@ impl User{
                 use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                 let msg_content = [0u8; 32];
                 let error_content = &e.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -1139,7 +1139,7 @@ impl User{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let msg_content = [0u8; 32];
                     let error_content = &e.to_string();
-                    msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                    msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 
@@ -1232,7 +1232,7 @@ impl User{
                             use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             let msg_content = [0u8; 32];
                             let error_content = &e.to_string();
-                            msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                            msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
                             let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, msg_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
 

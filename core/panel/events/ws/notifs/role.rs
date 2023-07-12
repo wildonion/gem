@@ -3,8 +3,6 @@
 /* role notif actor to communicate (send/receive messages) with session or peer actor */
 
 use crate::constants::WS_HEARTBEAT_INTERVAL;
-use crate::events::redis::RedisSubscription;
-use crate::events::redis::Subscribe;
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
@@ -34,6 +32,11 @@ pub struct Disconnect {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct RedisDisconnect;
+
+/// redis subscription message
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Subscribe(pub String);
 
 /// join room
 #[derive(Message)]
@@ -70,18 +73,20 @@ pub(crate) struct RoleNotifServer{
     pub rooms: HashMap<String, HashSet<usize>>, // event rooms which is based on the event id or every event is a room
     pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room, a mapping between session id and their actor address
     pub subscribed_at: u64,
-    pub app_storage: Option<Arc<Storage>>,
+    pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
+    pub redis_actor: Addr<RedisActor>,
 }
 
 impl RoleNotifServer{
 
-    pub fn new(app_storage: Option<Arc<Storage>>) -> Self{
+    pub fn new(app_storage: Option<Arc<Storage>>, redis_actor: Addr<RedisActor>) -> Self{
 
         RoleNotifServer{
             sessions: HashMap::new(),
             rooms: HashMap::new(),
             subscribed_at: 0,
             app_storage,
+            redis_actor
         }
     }
     
@@ -107,6 +112,40 @@ impl RoleNotifServer{
         }
     }
 
+    fn subscribe(&mut self, ctx: &mut Context<RoleNotifServer>, notif_room: String){
+
+        self.subscribed_at = chrono::Local::now().timestamp_nanos() as u64;
+
+        self.redis_actor
+            .send(Command(RespValue::Array(vec![RespValue::SimpleString("SUBSCRIBE".to_string()), RespValue::SimpleString(notif_room.clone())])))
+            .into_actor(self)
+            .then(move |res, act, ctx| {
+                match res {
+                    Ok(resp) => {
+                        match resp.unwrap(){
+                            RespValue::BulkString(res_bytes) => {
+                                let message = serde_json::from_slice::<String>(&res_bytes).unwrap();
+                                info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
+                                act.send_message(&notif_room.clone(), &message, 0);
+                                ()
+                            },
+                            RespValue::SimpleString(message) => {
+                                info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
+                                act.send_message(&notif_room.clone(), &message, 0);
+                                ()
+                            }
+                            _ => ctx.stop(), /* not interested to other variants :) */
+                        }
+                        
+                    },
+                    _ => ctx.stop(),
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+
+    }
+
 }
 
 /* since this is an actor it can communicates with other ws actor as well, by sending pre defined messages to them */
@@ -116,6 +155,21 @@ impl Actor for RoleNotifServer{
 
 
 /* handlers for all type of messages for RoleNotifServer actor */
+
+/* --------- UNUSED CODE --------- */
+impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: NotifySessionsWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
+        
+        self.subscribed_at = msg.subscribed_at;
+        info!("--- sending subscribed revealed roles to room: [{}]", msg.notif_room);
+        self.send_message(&msg.notif_room, &msg.payload, 0);
+    }
+
+}
+/* ------------------------------- */
 
 impl Handler<UpdateNotifRoom> for RoleNotifServer{
 
@@ -132,22 +186,28 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
 
 }
 
-impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
+
+impl Handler<Subscribe> for RoleNotifServer{
 
     type Result = ();
 
-    fn handle(&mut self, msg: NotifySessionsWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
-        
+    fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) -> Self::Result{
+
+        info!("--- start subscribing to redis with topic: [{}]", msg.0.to_owned());
         /*
-            once we get the message from the redis actor we'll send the payload
-            to all sessions inside this actor server, 
+            since the second param of the run_interval() method is a closure which 
+            captures the env vars into its scope thus the closure params must return
+            the self or the actor instance and the ctx types to use them inside the 
+            closure scope. 
         */
-        self.subscribed_at = msg.subscribed_at;
-        info!("--- sending subscribed revealed roles to room: [{}]", msg.notif_room);
-        self.send_message(&msg.notif_room, &msg.payload, 0);
+        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
+            actor.subscribe(ctx, msg.0.to_owned());
+        });
+        
     }
 
 }
+
 
 impl Handler<Disconnect> for RoleNotifServer{
 
@@ -231,7 +291,7 @@ impl Handler<Connect> for RoleNotifServer{
         let conn_message = format!("user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
         info!("--- user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
         self.send_message(&msg.event_name, conn_message.as_str(), 0);
-
+        
         unique_id /* session id */
 
     }
@@ -247,7 +307,6 @@ impl Handler<Join> for RoleNotifServer{ /* disconnect and connect again */
         let disconn_message = format!("user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
         let conn_message = format!("user with id: [{}] connected to event room: [{}]", msg.id, msg.event_name);
 
-       
         let Join { id, event_name } = msg; // unpacking msg instance
         let mut rooms = Vec::<String>::new();
 

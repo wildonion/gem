@@ -17,15 +17,13 @@ use super::notifs::{
 
 
 /* a session or peer data, RoleNotifServer actor contains all session instances from the following struct */
-#[derive(Clone)]
 pub(crate) struct WsNotifSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
     pub notif_room: String, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
-    pub app_storage: Option<Arc<Storage>>,
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address
-    pub redis_actor: Addr<RedisSubscription> // the redis acotr address
+    pub redis_actor: Addr<RedisActor> // the redis acotr address
 }
 
 
@@ -49,9 +47,46 @@ impl WsNotifSession{
 
                 return;
             }
-
+            
         });
         ctx.pong(b""); /* sending empty bytes back to the peer */
+    }
+
+    fn subscribe(&mut self, ctx: &mut ws::WebsocketContext<WsNotifSession>, notif_room: String){
+
+        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
+            
+            let notif_room = notif_room.clone();
+
+            actor.redis_actor
+                .send(Command(RespValue::Array(vec![RespValue::SimpleString("SUBSCRIBE".to_string()), RespValue::SimpleString(notif_room.clone())])))
+                .into_actor(actor)
+                .then(move |res, act, ctx| {
+                    match res {
+                        Ok(resp) => {
+                            match resp.unwrap(){
+                                RespValue::BulkString(res_bytes) => {
+                                    let message = serde_json::from_slice::<String>(&res_bytes).unwrap();
+                                    info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
+                                    ctx.text(message);
+                                    ()
+                                },
+                                RespValue::SimpleString(message) => {
+                                    info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
+                                    ctx.text(message);
+                                    ()
+                                }
+                                _ => ctx.stop(), /* not interested to other variants :) */
+                            }
+                            
+                        },
+                        _ => ctx.stop(),
+                    }
+                    fut::ready(())
+                })
+                .wait(ctx);
+        });
+
     }
 
 }
@@ -70,7 +105,7 @@ impl Actor for WsNotifSession{
     fn started(&mut self, ctx: &mut Self::Context){ /* ctx is a mutable reference to the Self::Context */
 
         /* check the heartbeat of the this session */
-        self.hb(ctx); 
+        self.hb(ctx);
 
         let session_actor_address = ctx.address();
         let event_name_room = self.notif_room.to_owned();
@@ -138,7 +173,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                 use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                 let msg_content = [0u8; 32];
                 let error_content = &e.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes());
+                msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
 
                 let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(Ws(e)));
                 let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
