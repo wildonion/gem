@@ -85,7 +85,7 @@ pub async fn mock_reservation(req: Request<Body>) -> ConseResult<hyper::Response
                                     let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                     let event_id = ObjectId::parse_str(mock_reservation_info.event_id.as_str()).unwrap(); // generating mongodb object id from the id string - mock_reservation_info.event_id is the mongodb object id of the event that the caller of this method is trying to reserve it
                                     let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct which contains the whole fields
-                                    match events.find_one(doc! { "_id": event_id }, None).await.unwrap(){
+                                    match events.find_one(doc! { "_id": event_id, "is_locked": false }, None).await.unwrap(){
                                         Some(event_doc) => {
                                             let init_player_info = schemas::game::ReservePlayerInfoResponseWithRoleName{
                                                 _id: _id.unwrap(),

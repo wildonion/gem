@@ -326,6 +326,22 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                                     is_expired: Some(false), // a event is not expired yet or at initialization
                                                     is_locked: Some(false), // a event is not locked yet or at initialization
                                                     started_at: event_info.started_at,
+                                                    /*
+                                                        event will be expired after EVENT_EXPIRATION env var time
+                                                        also god can expire an event by calling its API but we have to 
+                                                        check in front like this:
+
+                                                        if (event.started_at >= event.expires_at || event.is_expired == true) && event.is_locked == true {
+                                                            // enable voting system
+                                                            // palyers can't participate in event 
+                                                            // ... 
+                                                        }
+
+                                                        if event.is_locked == true{
+                                                            // players can't reserve event 
+                                                            // ...
+                                                        }
+                                                    */
                                                     expire_at: Some(exp_time), // a event will be expired at
                                                     created_at: Some(now),
                                                     updated_at: Some(now),
