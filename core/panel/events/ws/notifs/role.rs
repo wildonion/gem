@@ -36,7 +36,11 @@ pub struct RedisDisconnect;
 /// redis subscription message
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Subscribe(pub String);
+pub struct SendNotif{
+    pub event_room: String,
+    pub notif: String,
+    pub subscribed_at: u64
+}
 
 /// join room
 #[derive(Message)]
@@ -112,40 +116,6 @@ impl RoleNotifServer{
         }
     }
 
-    fn subscribe(&mut self, ctx: &mut Context<RoleNotifServer>, notif_room: String){
-
-        self.subscribed_at = chrono::Local::now().timestamp_nanos() as u64;
-
-        self.redis_actor
-            .send(Command(RespValue::Array(vec![RespValue::SimpleString("SUBSCRIBE".to_string()), RespValue::SimpleString(notif_room.clone())])))
-            .into_actor(self)
-            .then(move |res, act, ctx| {
-                match res {
-                    Ok(resp) => {
-                        match resp.unwrap(){
-                            RespValue::BulkString(res_bytes) => {
-                                let message = serde_json::from_slice::<String>(&res_bytes).unwrap();
-                                info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
-                                act.send_message(&notif_room.clone(), &message, 0);
-                                ()
-                            },
-                            RespValue::SimpleString(message) => {
-                                info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
-                                act.send_message(&notif_room.clone(), &message, 0);
-                                ()
-                            }
-                            _ => ctx.stop(), /* not interested to other variants :) */
-                        }
-                        
-                    },
-                    _ => ctx.stop(),
-                }
-                fut::ready(())
-            })
-            .wait(ctx);
-
-    }
-
 }
 
 /* since this is an actor it can communicates with other ws actor as well, by sending pre defined messages to them */
@@ -156,7 +126,6 @@ impl Actor for RoleNotifServer{
 
 /* handlers for all type of messages for RoleNotifServer actor */
 
-/* --------- UNUSED CODE --------- */
 impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
 
     type Result = ();
@@ -169,7 +138,6 @@ impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
     }
 
 }
-/* ------------------------------- */
 
 impl Handler<UpdateNotifRoom> for RoleNotifServer{
 
@@ -181,33 +149,23 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
         self.rooms
             .entry(msg.0.to_owned())
             .or_insert_with(HashSet::new);
-        
+
     }
 
 }
 
-
-impl Handler<Subscribe> for RoleNotifServer{
+impl Handler<SendNotif> for RoleNotifServer{
 
     type Result = ();
 
-    fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) -> Self::Result{
-
-        info!("--- start subscribing to redis with topic: [{}]", msg.0.to_owned());
-        /*
-            since the second param of the run_interval() method is a closure which 
-            captures the env vars into its scope thus the closure params must return
-            the self or the actor instance and the ctx types to use them inside the 
-            closure scope. 
-        */
-        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
-            actor.subscribe(ctx, msg.0.to_owned());
-        });
+    fn handle(&mut self, msg: SendNotif, ctx: &mut Self::Context) -> Self::Result{
+        
+        info!("--- sending reveal role notif with topic: [{}] to all sessions", msg.event_room.to_owned());
+        self.send_message(&msg.event_room, &msg.notif, 0);
         
     }
 
 }
-
 
 impl Handler<Disconnect> for RoleNotifServer{
 

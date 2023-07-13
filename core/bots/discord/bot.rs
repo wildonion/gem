@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     let discord_token = env::var("DISCORD_TOKEN").expect("⚠️ no discord token variable set");
     let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
-    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); // reading or receiving from the mpsc channel is a mutable process
+    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = tokio::sync::mpsc::channel::<bool>(io_buffer_size); // reading or receiving from the mpsc channel is a mutable process cause we're receiving from the channel that must be written to the type
     set_key(openai_key);
 
 

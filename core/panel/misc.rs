@@ -270,7 +270,7 @@ macro_rules! server {
 
             
             let shared_storage = Data::new(app_storage.clone());
-            let private_key = actix_web::cookie::Key::generate();
+            let redis_pubsub_con = client::pubsub_connect(redis_host, redis_port as u16).await.unwrap();
 
             /*  
                 make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
@@ -280,6 +280,7 @@ macro_rules! server {
             let shared_redis_actor = Data::new(redis_actor.clone());
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone(), redis_actor).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance);
+            let shared_redis_pubsub_con = Data::new(redis_pubsub_con);
 
 
 
@@ -319,6 +320,7 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
                     .app_data(Data::clone(&shared_redis_actor.clone()))
+                    .app_data(Data::clone(&shared_redis_pubsub_con.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))

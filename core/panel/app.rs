@@ -31,13 +31,15 @@ use redis::Client as RedisClient;
 use redis::AsyncCommands; // this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use redis::Commands;
+use redis_async::{client::{self, PubsubConnection}, resp::FromResp};
 use redis::RedisError;
 use hyper::StatusCode;
 use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
 use actix_session::{Session, SessionMiddleware, storage::RedisActorSessionStore};
-use actix_redis::{Command, RedisActor, RespValue, RespValue::SimpleString};
+use redis_async::resp::RespValue;
+use actix_redis::{Command, RedisActor, resp_array};
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 use actix_cors::Cors;
@@ -60,6 +62,7 @@ use tokio_cron_scheduler::{JobScheduler, Job};
 use std::time::Instant;
 use std::collections::HashSet;
 use rand::rngs::ThreadRng;
+use futures::StreamExt; /* is required to call the next() method on the streams */
 
 
 

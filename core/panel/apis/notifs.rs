@@ -8,7 +8,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use crate::events::{
-    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, Subscribe},
+    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, SendNotif},
     ws::session::WsNotifSession,
     redis::RedisSubscription
 };
@@ -38,11 +38,11 @@ use actix::prelude::*;
 #[get("/{user_id}/{notif_room}")]
 async fn notif_subs(
     req: HttpRequest, 
-    session: Session,
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (redis, postgres and mongodb)
     redis_actor: web::Data<Addr<RedisActor>>,
+    async_redis: web::Data<PubsubConnection>,
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
 ) -> Result<HttpResponse, actix_web::Error> {
 
@@ -56,13 +56,13 @@ async fn notif_subs(
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
             let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
+            let redis_actor = redis_actor.get_ref().clone();
 
             /* 
                 sending the update message to mutate the notif room before starting the session actor
-                
-                ----- make sure that the RoleNotifServer actor is already started when we're here
-                ----- otherwise by calling this route every time a new actor will be started and 
-                ----- the previous state will be lost.
+                also make sure that the RoleNotifServer actor is already started when we're here
+                otherwise by calling this route every time a new actor will be started and the previous 
+                state will be lost.
             */
             let update_notif_room_result = ws_role_notif_actor_address
                 .send(UpdateNotifRoom(notif_room.clone()))
@@ -79,21 +79,72 @@ async fn notif_subs(
                 }
             };
 
-            // let start_redis_subscription = ws_role_notif_actor_address
-            //     .send(Subscribe(notif_room.clone()))
-            //     .await;
-
-            // let Ok(_) = start_redis_subscription else{
             
-            //     resp!{
-            //         &[u8], // the data type
-            //         &[], // response data
-            //         WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
-            //         StatusCode::REQUEST_TIMEOUT, // status code
-            //         None::<Cookie<'_>>, // cookie
-            //     }
-            // };
+            let get_msg = async_redis.psubscribe(&notif_room).await;
+            let Ok(mut subscribed_msgs) = get_msg else{
+                
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    WS_INVALID_SUBSCRIPTION_TYPE, // response message
+                    StatusCode::REQUEST_TIMEOUT, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            };
 
+            /* iterating through the msg streams as they're coming to the stream channel */
+            while let Some(message) = subscribed_msgs.next().await{
+                match message{
+                    Ok(message) => {
+
+                        match message{
+                            RespValue::SimpleString(message) => {
+                                
+                                info!("--- sending subscribed revealed roles message to role notif server actor: [{}]", notif_room.clone());
+                                let sent_notif = ws_role_notif_actor_address
+                                    .send(SendNotif{
+                                        event_room: notif_room.clone(), 
+                                        notif: message, 
+                                        subscribed_at: chrono::Local::now().timestamp_nanos() as u64
+                                    }).await;
+    
+                            }
+                            _ => { /* not interested to other variants :) */
+                                
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    WS_INVALID_SUBSCRIPTION_TYPE, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+    
+                            }, 
+                        }
+
+                    },
+                    Err(e) => {
+
+                    }
+                }
+            }
+
+
+            /* sending command to redis actor to authorize the this ws client */
+            let redis_auth_resp = redis_actor
+                .send(Command(resp_array!["AUTH", "geDteDd0Ltg2135FJYQ6rjNYHYkGQa70"])).await;
+        
+            let Ok(_) = redis_auth_resp else{
+                
+                let mailbox_err = redis_auth_resp.unwrap_err();
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    &mailbox_err.to_string(), // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            };
 
             /* 
 
@@ -153,7 +204,6 @@ async fn notif_subs(
                         hb: Instant::now(),
                         peer_name: Some(user_id),
                         notif_room,
-                        redis_actor: redis_actor.get_ref().clone(),
                         ws_role_notif_actor_address
                     }, 
                     &req, 

@@ -23,7 +23,6 @@ pub(crate) struct WsNotifSession{
     pub notif_room: String, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address
-    pub redis_actor: Addr<RedisActor> // the redis acotr address
 }
 
 
@@ -32,10 +31,18 @@ impl WsNotifSession{
     /* client heartbeat */
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>){ /* ctx also contains the instance of the WsNotifSession struct */
         /* 
+        
             actor is the WsNotifSession which can be accessible inside the closure 
             also we're checking every 5 seconds that if the last hearbeat of the client
             was greater than WS_CLIENT_TIMEOUT seconds then we simply send disconnect 
             message to all session in all rooms
+
+        
+            since the second param of the run_interval() method is a closure which 
+            captures the env vars into its scope thus the closure params must return
+            the self or the actor instance and the ctx types to use them inside the 
+            closure scope. 
+        
         */
         ctx.run_interval(WS_HEARTBEAT_INTERVAL, |actor, ctx|{
                         
@@ -50,43 +57,6 @@ impl WsNotifSession{
             
         });
         ctx.pong(b""); /* sending empty bytes back to the peer */
-    }
-
-    fn subscribe(&mut self, ctx: &mut ws::WebsocketContext<WsNotifSession>, notif_room: String){
-
-        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
-            
-            let notif_room = notif_room.clone();
-
-            actor.redis_actor
-                .send(Command(RespValue::Array(vec![RespValue::SimpleString("SUBSCRIBE".to_string()), RespValue::SimpleString(notif_room.clone())])))
-                .into_actor(actor)
-                .then(move |res, act, ctx| {
-                    match res {
-                        Ok(resp) => {
-                            match resp.unwrap(){
-                                RespValue::BulkString(res_bytes) => {
-                                    let message = serde_json::from_slice::<String>(&res_bytes).unwrap();
-                                    info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
-                                    ctx.text(message);
-                                    ()
-                                },
-                                RespValue::SimpleString(message) => {
-                                    info!("--- sending subscribed revealed roles to room: [{}]", notif_room.clone());
-                                    ctx.text(message);
-                                    ()
-                                }
-                                _ => ctx.stop(), /* not interested to other variants :) */
-                            }
-                            
-                        },
-                        _ => ctx.stop(),
-                    }
-                    fut::ready(())
-                })
-                .wait(ctx);
-        });
-
     }
 
 }
