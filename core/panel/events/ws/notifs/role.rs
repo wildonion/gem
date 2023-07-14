@@ -78,19 +78,17 @@ pub(crate) struct RoleNotifServer{
     pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room, a mapping between session id and their actor address
     pub subscribed_at: u64,
     pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
-    pub redis_actor: Addr<RedisActor>,
 }
 
 impl RoleNotifServer{
 
-    pub fn new(app_storage: Option<Arc<Storage>>, redis_actor: Addr<RedisActor>) -> Self{
+    pub fn new(app_storage: Option<Arc<Storage>>) -> Self{
 
         RoleNotifServer{
             sessions: HashMap::new(),
             rooms: HashMap::new(),
             subscribed_at: 0,
             app_storage,
-            redis_actor
         }
     }
     
@@ -133,7 +131,7 @@ impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
     fn handle(&mut self, msg: NotifySessionsWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
         
         self.subscribed_at = msg.subscribed_at;
-        info!("--- sending subscribed revealed roles to room: [{}]", msg.notif_room);
+        info!("💡 --- sending subscribed revealed roles to room: [{}]", msg.notif_room);
         self.send_message(&msg.notif_room, &msg.payload, 0);
     }
 
@@ -160,7 +158,7 @@ impl Handler<SendNotif> for RoleNotifServer{
 
     fn handle(&mut self, msg: SendNotif, ctx: &mut Self::Context) -> Self::Result{
         
-        info!("--- sending reveal role notif with topic: [{}] to all sessions", msg.event_room.to_owned());
+        info!("💡 --- sending reveal role notif with topic: [{}] to all sessions", msg.event_room.to_owned());
         self.send_message(&msg.event_room, &msg.notif, 0);
         
     }
@@ -173,7 +171,7 @@ impl Handler<Disconnect> for RoleNotifServer{
 
     fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) -> Self::Result{
         
-        info!("--- user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
+        info!("💡 --- user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
         let disconn_message = format!("user with id: [{}] disconnected from the event room: [{}]", msg.id, msg.event_name);
         let mut rooms = Vec::<String>::new();
         
@@ -205,7 +203,7 @@ impl Handler<RedisDisconnect> for RoleNotifServer{
 
     fn handle(&mut self, msg: RedisDisconnect, ctx: &mut Self::Context) -> Self::Result {
         
-        info!("--- redis actor is disconnected");
+        info!("💡 --- redis actor is disconnected");
         let disconn_message = format!("push notif subscription actor is not available");
         
         /* 
@@ -244,10 +242,10 @@ impl Handler<Connect> for RoleNotifServer{
             })
             .or_insert(HashSet::new());
         
-        info!("--- current rooms of role notif server actor are: {:?}", self.rooms);
+        info!("💡 --- current rooms of role notif server actor are: {:?}", self.rooms);
 
         let conn_message = format!("user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
-        info!("--- user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
+        info!("💡 --- user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
         self.send_message(&msg.event_name, conn_message.as_str(), 0);
         
         unique_id /* session id */

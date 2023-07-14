@@ -38,8 +38,7 @@ use uuid::Uuid;
 use log::{info, error};
 use mongodb::Client;
 use actix_session::{Session, SessionMiddleware, storage::RedisActorSessionStore};
-use redis_async::resp::RespValue;
-use actix_redis::{Command, RedisActor, resp_array};
+use actix_redis::{Command, RedisActor, resp_array, RespValue};
 use actix::{Actor, StreamHandler};
 use actix_web_actors::ws;
 use actix_cors::Cors;
@@ -63,7 +62,6 @@ use std::time::Instant;
 use std::collections::HashSet;
 use rand::rngs::ThreadRng;
 use futures::StreamExt; /* is required to call the next() method on the streams */
-
 
 
 mod apis;

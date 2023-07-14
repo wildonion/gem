@@ -77,7 +77,10 @@ impl Actor for RedisSubscription{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
-        // ...
+        let notif_room = "reveal-role-objectidevent".to_string();
+        ctx.run_interval(WS_HEARTBEAT_INTERVAL, move |actor, ctx|{
+            actor.subscribe(ctx, &notif_room);
+        });
 
     }
 

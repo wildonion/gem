@@ -106,7 +106,7 @@ impl Modify for SecurityAddon {
 async fn reveal_role(
         req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     
@@ -130,31 +130,116 @@ async fn reveal_role(
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
+                let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+                let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
-            
+                    
 
                         
+                        // 🥑 todo - update revealed.roles with the encoded format of the fetched roles of the passed in event_id to the /reveal/roles api
                         // 🥑 todo - client can listens to the ws events which are the broadcasted redis topics subscribed by the panel server itself  
                         // 🥑 todo - trigger or publish or fire the reveal role topic or event using redis pubsub
                         // 🥑 todo - also call the /reveal/roles api of the conse hyper server
                         // 🥑 todo - use bpf tech  
                         // ...
 
-
                         let cq_instance: events::redis::ecq::CollaborationQueue = Default::default();
                         let cq = events::redis::ecq::CollaborationQueue{..Default::default()}; // filling all the fields with default values 
-                        let role = events::redis::role::Reveal;
-            
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            CREATED, // response message
-                            StatusCode::CREATED, // status code
-                            None::<Cookie<'_>>, // cookie
-                        } 
-            
+                        let revealed = events::redis::role::Reveal::default();
+
+
+
+                        /* 
+                                    
+                            --------------------------------
+                              AUTHORIZING WITH REDIS ACTOR
+                            --------------------------------
+
+                        */
+
+                        /* sending command to redis actor to authorize the this ws client */
+                        let redis_auth_resp = redis_actor
+                            .send(Command(resp_array!["AUTH", redis_password.as_str()])).await;
+
+                        let Ok(_) = redis_auth_resp else{
+                            
+                            let mailbox_err = redis_auth_resp.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &mailbox_err.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        /* 
+
+                            ----------------------------------------------------------------------
+                              PUBLISHING REVEALED ROLE TO THE PASSED IN CHANNEL WITH REDIS ACTOR
+                            ----------------------------------------------------------------------
+
+                        */
+
+                        let redis_pub_resp = redis_actor
+                            .send(Command(resp_array!["PUBLISH", &revealed.event_id, revealed.roles])).await;
+
+                        let Ok(_) = redis_pub_resp else{
+                            
+                            let mailbox_err = redis_pub_resp.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &mailbox_err.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        match redis_pub_resp{
+                            Ok(resp_val) => {
+
+                                match resp_val.unwrap(){
+                                    RespValue::Integer(subs) => {
+
+                                        let notif_room = revealed.event_id;
+                                        info!("💡 --- [{subs:}] users subscribed to event: [{notif_room:}]");
+
+                                        resp!{
+                                            &[u8], // the data type
+                                            &[], // response data
+                                            CREATED, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        } 
+
+                                    },
+                                    _ => {
+                                        
+                                        resp!{
+                                            &[u8], // the data type
+                                            &[], // response data
+                                            WS_INVALID_SUBSCRIPTION_TYPE, // response message
+                                            StatusCode::NOT_ACCEPTABLE, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        }
+                                    }
+                                }
+
+                            },
+                            Err(e) => {
+
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &e.to_string(), // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }   
+                            }
+                        }
             
                     },
                     None => {
@@ -214,7 +299,7 @@ async fn reveal_role(
 async fn login(
         req: HttpRequest, 
         login_info: web::Json<LoginInfoRequest>, 
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
    
     let storage = storage.as_ref().to_owned();
@@ -368,7 +453,7 @@ async fn login(
 async fn register_new_user(
         req: HttpRequest,  
         new_user: web::Json<NewUserInfoRequest>, 
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -482,7 +567,7 @@ async fn register_new_user(
 async fn edit_user(
         req: HttpRequest, 
         new_user: web::Json<EditUserByAdminRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -587,7 +672,7 @@ async fn edit_user(
 async fn delete_user(
         req: HttpRequest, 
         doer_id: web::Path<i32>,  // doer is the user who do task
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -700,7 +785,7 @@ async fn delete_user(
 #[get("/get-users")]
 async fn get_users(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -837,7 +922,7 @@ async fn get_users(
 async fn register_new_task(
         req: HttpRequest, 
         new_task: web::Json<NewTaskRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -959,7 +1044,7 @@ async fn register_new_task(
 async fn delete_task(
         req: HttpRequest, 
         job_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1080,7 +1165,7 @@ async fn delete_task(
 async fn edit_task(
         req: HttpRequest, 
         new_task: web::Json<EditTaskRequest>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1180,7 +1265,7 @@ async fn edit_task(
 async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1316,7 +1401,7 @@ async fn get_admin_tasks(
 #[get("/get-users-tasks")]
 async fn get_users_tasks(
         req: HttpRequest,   
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -1417,7 +1502,7 @@ async fn get_users_tasks(
 async fn add_twitter_account(
         req: HttpRequest,   
         new_account: web::Json<Keys>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();

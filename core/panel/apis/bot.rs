@@ -103,7 +103,7 @@ pub struct BotApiDoc;
 async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -291,7 +291,7 @@ async fn verify_twitter_task(
 #[get("/check-users-tasks")]
 async fn check_users_tassk(
         req: HttpRequest,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();

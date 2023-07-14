@@ -87,7 +87,7 @@ pub struct Health{
 #[get("/check-server")]
 async fn index(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
         let iam_healthy = Health{
@@ -127,7 +127,7 @@ async fn index(
 #[get("/check-token")]
 async fn check_token(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();
@@ -299,7 +299,7 @@ async fn check_token(
 #[post("/logout")]
 async fn logout(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
 
@@ -405,7 +405,7 @@ async fn logout(
 #[get("/get-tasks")]
 async fn get_tasks(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (redis, postgres and mongodb)
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> Result<HttpResponse, actix_web::Error> {
 
     let storage = storage.as_ref().to_owned();

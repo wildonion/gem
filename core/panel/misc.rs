@@ -1,8 +1,10 @@
 
 
 
+use redis_async::client::PubsubConnection;
 use crate::*;
 use crate::constants::CHARSET;
+use actix::Addr;
 
 
 pub fn gen_chars(size: u32) -> String{
@@ -53,6 +55,8 @@ pub struct Db{
     pub instance: Option<Client>,
     pub pool: Option<Pool<ConnectionManager<PgConnection>>>,
     pub redis: Option<RedisClient>,
+    pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
+    pub redis_actor: Option<Addr<RedisActor>>,
 }
 
 impl Default for Db{
@@ -63,7 +67,9 @@ impl Default for Db{
             url: None,
             instance: None,
             pool: None,
-            redis: None
+            redis: None,
+            redis_async_pubsub_conn: None,
+            redis_actor: None,
         }
     }
 }
@@ -79,6 +85,8 @@ impl Db{
                 instance: None,
                 pool: None,
                 redis: None,
+                redis_async_pubsub_conn: None,
+                redis_actor: None,
             }
         )
     }
@@ -134,12 +142,20 @@ impl Storage{
             Mode::Off => None, // no db is available cause it's off
         }
     }
-    pub fn get_redis_sync(&self) -> Option<&RedisClient>{ /* an in memory data storage */
+    pub async fn get_async_redis_pubsub_conn(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
             Mode::Off => None, // no db is available cause it's off
         }
     }
+
+    pub async fn get_redis_actor(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().redis_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, // no db is available cause it's off
+        }
+    }
+
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -239,7 +255,7 @@ macro_rules! server {
             use dotenv::dotenv;
             use crate::constants::*;
             use crate::events::ws::notifs::role::RoleNotifServer;
-            use crate::events::redis::RedisSubscription;
+            use events::redis::RedisSubscription;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -257,7 +273,6 @@ macro_rules! server {
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
             let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
-            let redis_conn_url = format!("{redis_host}:{redis_port}");
 
             let app_storage = db!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
@@ -269,19 +284,22 @@ macro_rules! server {
             }.await;
 
             
-            let shared_storage = Data::new(app_storage.clone());
-            let redis_pubsub_con = client::pubsub_connect(redis_host, redis_port as u16).await.unwrap();
+            
+            
 
             /*  
+                                        SETTING UP SHARED STATE DATA
+                
                 make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
                 otherwise the actor will be started each time by calling the related websocket route
             */
-            let redis_actor = RedisActor::start(redis_conn_url.as_str());
-            let shared_redis_actor = Data::new(redis_actor.clone());
-            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone(), redis_actor).start();
-            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance);
-            let shared_redis_pubsub_con = Data::new(redis_pubsub_con);
+            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
+            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
+            let shared_storage = Data::new(app_storage.clone());
 
+            let redis_client = app_storage.as_ref().clone().unwrap().get_redis().await.unwrap().get_connection().unwrap();
+            let builtin_redis_actor = RedisSubscription::new(redis_client, role_ntif_server_instance).start();
+            let shared_builtin_redis_actor = Data::new(builtin_redis_actor.clone());
 
 
             /*
@@ -315,12 +333,11 @@ macro_rules! server {
             let s = match HttpServer::new(move ||{
                 App::new()
                     /* 
-                        APP STORAGE SHARED STATE
+                        SHARED STATE DATA
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
-                    .app_data(Data::clone(&shared_redis_actor.clone()))
-                    .app_data(Data::clone(&shared_redis_pubsub_con.clone()))
+                    .app_data(Data::clone(&shared_builtin_redis_actor.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
@@ -450,6 +467,7 @@ macro_rules! db {
             let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
             let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
             let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+            let redis_actor_conn_url = format!("{redis_host}:{redis_port}");
 
             let redis_conn_url = if !redis_password.is_empty(){
                 format!("redis://:{}@{}:{}", redis_password, redis_host, redis_port)
@@ -459,7 +477,9 @@ macro_rules! db {
                 format!("redis://{}:{}", redis_host, redis_port)
             };
 
-            let client = redis::Client::open(redis_conn_url.as_str()).unwrap();
+            let none_async_redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
+            let redis_actor = RedisActor::start(redis_actor_conn_url.as_str());
+            let async_redis_pubsub_conn = Arc::new(client::pubsub_connect(redis_host, redis_port as u16).await.unwrap());
             
             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
@@ -475,7 +495,9 @@ macro_rules! db {
                                 engine: None,
                                 url: None,
                                 pool: None,
-                                redis: None
+                                redis: None,
+                                redis_async_pubsub_conn: None,
+                                redis_actor: None
                             }
                         ),
                     }
@@ -507,7 +529,9 @@ macro_rules! db {
                                             engine: init_db.engine,
                                             url: init_db.url,
                                             pool: None,
-                                            redis: Some(client.clone())
+                                            redis: Some(none_async_redis_client.clone()),
+                                            redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
+                                            redis_actor: Some(redis_actor.clone())
                                         }
                                     ),
                                 }
@@ -545,7 +569,9 @@ macro_rules! db {
                                             engine: init_db.engine,
                                             url: init_db.url,
                                             pool: Some(pg_pool),
-                                            redis: Some(client.clone())
+                                            redis: Some(none_async_redis_client.clone()),
+                                            redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
+                                            redis_actor: Some(redis_actor.clone())
                                         }
                                     ),
                                 }
