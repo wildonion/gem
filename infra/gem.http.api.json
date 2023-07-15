@@ -69,7 +69,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjkxNTk0NzAyLCJpYXQiOjE2ODkwMDI3MDJ9.yNNy3SOsM3wCXiaBqqAdBn3lDU03xrQCII3KWjikRJnrwI3X4-I7GpaYJCHdvzedCYbm38jD_--qsSMrlyPgXQ",
 											"type": "string"
 										}
 									]
@@ -78,7 +78,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"_id\": \"64621a2cfaa14bfd1469f226\"\r\n}",
+									"raw": "{\r\n    \"_id\": \"646474801b3418b805a74254\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -107,7 +107,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234\"\r\n}\r\n",
+									"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234%\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -217,7 +217,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2NjkxLCJpYXQiOjE2ODQxNTA2OTF9.pgnLHpY-jCfTnJCnnIobu9-yCF8o0vPUiwQllfngygSNg6kcV7L0gUp47RlAbbLkBc3qKanCAP1oNoK5ogqjlw",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjkxNTk0NzAyLCJpYXQiOjE2ODkwMDI3MDJ9.yNNy3SOsM3wCXiaBqqAdBn3lDU03xrQCII3KWjikRJnrwI3X4-I7GpaYJCHdvzedCYbm38jD_--qsSMrlyPgXQ",
 											"type": "string"
 										}
 									]
@@ -694,7 +694,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"_id\": \"mongo-db-object-id\",\r\n    \"voter\": {\r\n        \"nft_owner_wallet_address\": \"\",\r\n        \"is_upvote\": true,\r\n        \"score\": 0\r\n    }\r\n}",
+									"raw": "{\r\n    \"_id\": \"mongo-db-object-id\",\r\n    \"voter\": {\r\n        \"nft_owner_wallet_address\": \"\",\r\n        \"is_upvote\": true,\r\n        \"score\": 0,\r\n        \"user_id\": \"objecid\",\r\n        \"username\": \"like wildonion\"\r\n    }\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1341,7 +1341,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjkxNTcwMzI2LCJpYXQiOjE2ODg5NzgzMjZ9.ZSIqSuht0qlAVWdyZIGiLNjrlbuF88KJiwKCkQ3uAtqpI__3xPHSC03lvBkPHg1WtHFl6PIjFYkRHHHqBOkfEw",
 											"type": "string"
 										}
 									]

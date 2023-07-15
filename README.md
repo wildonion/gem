@@ -1,7 +1,7 @@
 
 
 
-# 🤏 Conse Backend Rust Micro Services
+# 🤏 Conse Backend Rust Services
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of each player collected by the history of each event's `phases` field inside the game.
