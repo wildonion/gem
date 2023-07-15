@@ -45,7 +45,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username.clone(), access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == DEFAULT_USER_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and user can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -53,7 +53,7 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                             let data: serde_json::Value = value;
                             let json = serde_json::to_string(&data).unwrap(); // converting data into a json string
                             match serde_json::from_str::<schemas::event::CastVoteRequest>(&json){ // the generic type of from_str() method is CastVoteRequest struct - mapping (deserializing) the json string into the CastVoteRequest struct
-                                Ok(vote_info) => { // we got the username and password inside the login route
+                                Ok(mut vote_info) => { // we got the username and password inside the login route
 
                                     
                                     ////////////////// DB Ops
@@ -70,6 +70,8 @@ pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hype
                                             if !vote_info.voter.is_upvote{
                                                 downvotes+=1;
                                             }
+                                            vote_info.voter.user_id = _id.unwrap().to_string(); /* just to make sure that the voter id is the id inside the token */
+                                            vote_info.voter.username = username; /* just to make sure that the voter username is the one inside the token */
                                             let updated_voters = event_doc.clone().add_voter(vote_info.voter).await;
                                             let serialized_voters = bson::to_bson(&updated_voters).unwrap(); // we have to serialize the updated_voters to BSON Document object in order to update voters field inside the collection
                                             let serialized_upvotes = bson::to_bson(&upvotes).unwrap(); // we have to serialize the upvotes to BSON Document object in order to update voters field inside the collection

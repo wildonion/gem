@@ -32,6 +32,8 @@ pub struct Simd{
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct Voter{
+    pub user_id: String,
+    pub username: String,
     pub nft_owner_wallet_address: String,
     pub is_upvote: bool,
     pub score: u32, // NOTE - this is the number of event NFTs that this owner owns
