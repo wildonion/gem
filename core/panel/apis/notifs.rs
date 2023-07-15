@@ -9,7 +9,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use crate::events::{
-    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom, SendNotif},
+    ws::notifs::role::{RoleNotifServer, UpdateNotifRoom},
     ws::session::WsNotifSession,
 };
 use actix::prelude::*;
@@ -49,7 +49,6 @@ async fn notif_subs(
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize;
     let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
 
-
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
@@ -62,19 +61,6 @@ async fn notif_subs(
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
             let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
-            
-            let get_messeses = redis_async_pubsubconn.subscribe(&notif_room).await;
-            let Ok(mut messages) = get_messeses else{
-                
-                let e = get_messeses.unwrap_err();
-                resp!{
-                    &[u8], // the data type
-                    &[], // response data
-                    &e.to_string(), // response message
-                    StatusCode::REQUEST_TIMEOUT, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
-            };
 
             /* 
                 sending the update message to mutate the notif room before starting the session actor
@@ -121,20 +107,32 @@ async fn notif_subs(
                     
                 });
 
+                let get_messeses = redis_async_pubsubconn.subscribe(&notif_room).await;
+                let Ok(mut messages) = get_messeses else{
+                    
+                    let e = get_messeses.unwrap_err();
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        &e.to_string(), // response message
+                        StatusCode::REQUEST_TIMEOUT, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+        
+                tokio::spawn(async move{
+
+                    while let Some(message) = messages.next().await{ /* iterating through the msg streams as they're coming to the stream channel and are not None */
+                        
+                        let resp_val = message.unwrap();
+                        let message = String::from_resp(resp_val).unwrap();
+                        notif_sender.send(message).await;
+
+                    }
+                    
+                });
 
             */
-    
-            // tokio::spawn(async move{
-
-            //     while let Some(message) = messages.next().await{ /* iterating through the msg streams as they're coming to the stream channel and are not None */
-                    
-            //         let resp_val = message.unwrap();
-            //         let message = String::from_resp(resp_val).unwrap();
-            //         notif_sender.send(message).await;
-
-            //     }
-                
-            // });
 
 
             /* 

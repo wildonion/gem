@@ -1,6 +1,13 @@
 
 
 
+/*   -----------------------------------------------------------------------------------
+    | websocket session actor to receive push notif subscription from redis subscriber 
+    | ----------------------------------------------------------------------------------
+    |
+    |
+*/
+
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL};
 use crate::events::redis::{RedisSubscription, Subscribe};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};

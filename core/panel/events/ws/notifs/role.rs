@@ -1,12 +1,16 @@
 
 
-/* role notif actor to communicate (send/receive messages) with session or peer actor */
+/*   -----------------------------------------------------------------------------------
+    | role notif actor to communicate (send/receive messages) with session or peer actor 
+    | ----------------------------------------------------------------------------------
+    |
+    |
+*/
 
-use crate::constants::WS_HEARTBEAT_INTERVAL;
+
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
-use crate::constants::WS_REDIS_SUBSCIPTION_INTERVAL;
 
 
 /* implementing Message traits for all type of messages that can be used by RoleNotifServer actor */
@@ -32,15 +36,6 @@ pub struct Disconnect {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct RedisDisconnect;
-
-/// redis subscription message
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct SendNotif{
-    pub event_room: String,
-    pub notif: String,
-    pub subscribed_at: u64
-}
 
 /// join room
 #[derive(Message)]
@@ -98,16 +93,18 @@ impl RoleNotifServer{
 
     /* send the passed in message to all session actors in a specific event room */
     fn send_message(&self, room: &str, message: &str, skip_id: usize){
-        if let Some(sessions) = self.rooms.get(room){
-            for id in sessions{
-                if *id.to_string() != skip_id.to_string(){
-                    if let Some(addr) = self.sessions.get(id){
-                        /* 
-                            a handler with generic Message must be implemented for each session 
-                            or WsNotifSession actor do_send() will send the message to the session 
-                            or WsNotifSession actor later we can handle it using the implemented handler 
-                        */
-                        addr.do_send(Message(message.to_owned())) 
+        if self.rooms.contains_key(room){
+            if let Some(sessions) = self.rooms.get(room){
+                for id in sessions{
+                    if *id.to_string() != skip_id.to_string(){
+                        if let Some(addr) = self.sessions.get(id){
+                            /* 
+                                a handler with generic Message must be implemented for each session 
+                                or WsNotifSession actor do_send() will send the message to the session 
+                                or WsNotifSession actor later we can handle it using the implemented handler 
+                            */
+                            addr.do_send(Message(message.to_owned())) 
+                        }
                     }
                 }
             }
@@ -148,19 +145,6 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
             .entry(msg.0.to_owned())
             .or_insert_with(HashSet::new);
 
-    }
-
-}
-
-impl Handler<SendNotif> for RoleNotifServer{
-
-    type Result = ();
-
-    fn handle(&mut self, msg: SendNotif, ctx: &mut Self::Context) -> Self::Result{
-        
-        info!("💡 --- sending reveal role notif with topic: [{}] to all sessions", msg.event_room.to_owned());
-        self.send_message(&msg.event_room, &msg.notif, 0);
-        
     }
 
 }

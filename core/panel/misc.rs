@@ -270,7 +270,6 @@ macro_rules! server {
             let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
             let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
             let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
 
@@ -298,7 +297,9 @@ macro_rules! server {
             let shared_storage = Data::new(app_storage.clone());
 
             let redis_client = app_storage.as_ref().clone().unwrap().get_redis().await.unwrap().get_connection().unwrap();
-            let builtin_redis_actor = RedisSubscription::new(redis_client, role_ntif_server_instance).start();
+            let redis_actor = app_storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
+            
+            let builtin_redis_actor = RedisSubscription::new(redis_client, role_ntif_server_instance, redis_actor).start();
             let shared_builtin_redis_actor = Data::new(builtin_redis_actor.clone());
 
 

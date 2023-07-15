@@ -30,7 +30,7 @@ pub struct Simd{
     pub input: u32,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)] /* PartialEq is required to compare two Voter instances */
 pub struct Voter{
     pub user_id: String,
     pub username: String,
@@ -451,7 +451,9 @@ impl EventInfo{ // methods without &self takes the ownership of their instances 
         let mut voters = self.voters.unwrap();
         let index = voters.iter().position(|v| v.nft_owner_wallet_address == voter.nft_owner_wallet_address); // this owner has alreay voted to this event
         if index == None{
-            voters.push(voter);
+            if !voters.contains(&voter){ /* if we didn't already have a voter with this info just push into the voters */
+                voters.push(voter);
+            }
         }
         voters
     }
