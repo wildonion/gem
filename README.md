@@ -271,6 +271,6 @@ cd scripts
 
 * publish docker containers to docker hub also add CI/CD setup like digitalocean platform
 
-* behavioural graph using `Rc` and `RefCell` of each player collected by the history of each event's phases to build mmr engine
+* behavioural GVM (graph virtual machine) using `Rc` and `RefCell` of each player collected by the history of each event's phases to build mmr engine
 
 * complete ecq, the event collaboration queue engine for the conse panel actix server

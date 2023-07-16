@@ -5,6 +5,7 @@
 
 use crate::*;
 use crate::events::redis::RedisSubscription;
+use crate::events::redis::Subscribe;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -60,6 +61,7 @@ async fn notif_subs(
             let connection = &mut pg_pool.get().unwrap();
             let user_id = route_paths.0.to_owned();
             let notif_room = route_paths.1.to_owned();
+            let notif_room_str = string_to_static_str(notif_room.clone());
             let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
 
             /* 
@@ -149,8 +151,9 @@ async fn notif_subs(
                         id: 0,
                         hb: Instant::now(),
                         peer_name: Some(user_id),
-                        notif_room,
-                        ws_role_notif_actor_address
+                        notif_room: notif_room_str,
+                        ws_role_notif_actor_address,
+                        redis_client: redis_client.clone()
                     }, 
                     &req, 
                     stream

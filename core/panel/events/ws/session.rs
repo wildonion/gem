@@ -10,6 +10,7 @@
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL};
 use crate::events::redis::{RedisSubscription, Subscribe};
+use crate::events::ws::notifs::role::NotifySessionsWithRedisSubscription;
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::prelude::*;
@@ -27,13 +28,42 @@ use super::notifs::{
 pub(crate) struct WsNotifSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
-    pub notif_room: String, // user has joined in to this room 
+    pub notif_room: &'static str, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
-    pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address
+    pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
+    pub redis_client: redis::Client,
 }
 
 
 impl WsNotifSession{
+
+    fn subscribe(&mut self, ctx: &mut ws::WebsocketContext<Self>, notif_room: &'static str){
+
+        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
+
+            info!("💡 --- [{}] is subscribing to event room: [{}]", actor.peer_name.as_ref().unwrap(), notif_room); /* using as_ref() to prevent from moving since unwrap() will take the ownership cause it has self in its first param */
+
+            let notif_room = notif_room.clone();
+            let mut redis_conn = actor.redis_client.get_connection().unwrap();
+    
+    
+            let mut pubsub = redis_conn.as_pubsub();
+            pubsub.subscribe(notif_room).unwrap();
+            let msg = pubsub.get_message().unwrap();
+            let payload: String = msg.get_payload().unwrap();
+    
+    
+            /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
+            actor.ws_role_notif_actor_address
+                .do_send(NotifySessionsWithRedisSubscription{
+                    notif_room: notif_room.to_string(),
+                    payload,
+                    subscribed_at: chrono::Local::now().timestamp_nanos() as u64
+                });
+        });
+
+
+    }
 
     /* client heartbeat */
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>){ /* ctx also contains the instance of the WsNotifSession struct */
@@ -61,7 +91,7 @@ impl WsNotifSession{
 
                 return;
             }
-            
+                        
         });
         ctx.pong(b""); /* sending empty bytes back to the peer */
     }
@@ -84,13 +114,16 @@ impl Actor for WsNotifSession{
         /* check the heartbeat of the this session */
         self.hb(ctx);
 
+        /* start */
+        self.subscribe(ctx, self.notif_room);
+
         let session_actor_address = ctx.address();
-        let event_name_room = self.notif_room.to_owned();
+        let event_name_room = self.notif_room;
         let peer_name = self.peer_name.as_ref().unwrap();
 
         /* tell the RoleNotifServer actor asyncly that this session wants to connect to you */
         self.ws_role_notif_actor_address
-            .send(RoleNotifServerConnectMessage{addr: session_actor_address.recipient(), event_name: event_name_room.to_owned(), peer_name: peer_name.clone()}) 
+            .send(RoleNotifServerConnectMessage{addr: session_actor_address.recipient(), event_name: &event_name_room, peer_name: peer_name.clone()}) 
             .into_actor(self) /* convert the future object of send() method into an actor future */
             .then(|res, actor, ctx|{
                 /* 
@@ -178,9 +211,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         /* join the event notif room to subscribe to redis topics */
                         "/join" => {
 
-                            let event_room_name = self.notif_room.to_owned();
-                            self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: event_room_name.clone()});
-                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions", event_room_name);
+                            self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
+                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions", self.notif_room);
                             ctx.text(joined_msg);
 
                         },

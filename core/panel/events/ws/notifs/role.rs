@@ -8,6 +8,7 @@
 */
 
 
+use crate::constants::{WS_CLIENT_TIMEOUT, WS_REDIS_SUBSCIPTION_INTERVAL};
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
@@ -20,7 +21,7 @@ use actix::prelude::*;
 #[rtype(usize)]
 pub struct Connect {
     pub addr: Recipient<Message>, /* user or session actor address */
-    pub event_name: String, // event room name: `reveal-role-{event_id}` to send message to and also user came to the room
+    pub event_name: &'static str, // event room name: `reveal-role-{event_id}` to send message to and also user came to the room
     pub peer_name: String 
 }
 
@@ -42,7 +43,7 @@ pub struct RedisDisconnect;
 #[rtype(result = "()")]
 pub struct Join {
     pub id: usize, // client id or session id
-    pub event_name: String, // event room name: `reveal-role-{event_id}`
+    pub event_name: &'static str, // event room name: `reveal-role-{event_id}`
 }
 
 #[derive(Message)]
@@ -90,6 +91,92 @@ impl RoleNotifServer{
 }
 
 impl RoleNotifServer{
+
+    fn subscribe(&mut self, ctx: &mut Context<Self>, notif_room: &'static str){
+
+        info!("💡 --- starting subscribing to event room: [{}]", notif_room);
+        let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
+        let redis_actor = self.app_storage.as_ref().clone().unwrap().get_redis_actor_sync().unwrap();
+        let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+
+        let notif_room = notif_room.clone();
+        let mut redis_conn = redis_client.get_connection().unwrap();
+
+
+        let mut pubsub = redis_conn.as_pubsub();
+        pubsub.subscribe(notif_room).unwrap();
+        let msg = pubsub.get_message().unwrap();
+        let payload: String = msg.get_payload().unwrap();
+
+
+        self.subscribed_at = chrono::Local::now().timestamp_nanos() as u64;
+        self.send_message(notif_room, payload.as_str(), 0);
+
+
+        /* 
+        
+        let redis_auth_resp = redis_actor
+            .send(Command(RespValue::Array(vec![
+                RespValue::SimpleString("AUTH".to_string()), 
+                RespValue::SimpleString(redis_password.to_string())
+            ])));
+
+        /* subscribing using redis actor which has async pubsub connection */
+        redis_actor
+            .send(Command(RespValue::Array(vec![
+                RespValue::SimpleString("SUBSCRIBE".to_string()), 
+                RespValue::SimpleString(notif_room.to_string())
+            ])))
+            .into_actor(self)
+            .then(|res, actor, ctx|{
+
+                match res{
+                    Ok(resp_val_result) => {
+
+                        match resp_val_result.unwrap(){
+
+                            /* SUBSCRIBE command returns a vector of 3 types which are message, topic and message-type */
+                            RespValue::Array(mut resp_val_vec) => {
+
+                                /*‌ first pop() is the message that we're interested in */
+                                let msg = resp_val_vec.pop();
+                                if let Some(resp_val) = msg{
+                                    match resp_val{
+
+                                        /* getting the utf8 bytes slice of the message */
+                                        RespValue::BulkString(bytes) => {
+
+                                            /* decoding the message to get the payload */
+                                            let payload = serde_json::from_slice(&bytes).unwrap();
+
+                                            /* notify sessions with the subscribed topic related the to event room */
+                                            actor.subscribed_at = chrono::Local::now().timestamp_nanos() as u64;
+                                            actor.send_message(notif_room, payload, 0);
+                                            
+                                        },
+                                        _ => ctx.stop()
+                                    }
+                                } else{
+                                    ctx.stop()
+                                }
+                            
+                            },
+                            _ => ctx.stop()
+                        }
+
+                    },
+                    Err(e) => {
+                        ctx.stop()
+                    }
+                }
+
+                fut::ready(())
+
+            })
+            .wait(ctx);
+        */
+
+    }
 
     /* send the passed in message to all session actors in a specific event room */
     fn send_message(&self, room: &str, message: &str, skip_id: usize){
@@ -216,7 +303,7 @@ impl Handler<Connect> for RoleNotifServer{
 
         /* add this session to the event room name */
         self.rooms
-            .entry(msg.event_name.clone())
+            .entry(msg.event_name.to_string().clone())
             .and_modify(|session_ids|{ /* and_modify() will return a mutable reference to the type */
                 /* 
                     since session_ids is a mutable reference to the value of self.rooms 
@@ -264,12 +351,13 @@ impl Handler<Join> for RoleNotifServer{ /* disconnect and connect again */
 
         /* insert the user into the event room */
         self.rooms  
-            .entry(event_name.clone())
+            .entry(event_name.to_string().clone())
             .or_insert_with(HashSet::new)
             .insert(id);
 
         /* notify other session in that room that a user has connected */
         self.send_message(&event_name, conn_message.as_str(), 0);
+
 
     }
 }
