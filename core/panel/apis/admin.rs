@@ -145,6 +145,7 @@ async fn reveal_role(
                         // 🥑 todo - use bpf tech  
                         // ...
 
+                        
                         let cq_instance: events::redis::ecq::CollaborationQueue = Default::default();
                         let cq = events::redis::ecq::CollaborationQueue{..Default::default()}; // filling all the fields with default values 
                         let revealed = events::redis::role::Reveal::default();
@@ -205,12 +206,13 @@ async fn reveal_role(
                                     RespValue::Integer(subs) => {
 
                                         let notif_room = revealed.event_id;
-                                        info!("💡 --- [{subs:}] users subscribed to event: [{notif_room:}]");
+                                        info!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
+                                        let message = format!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
 
                                         resp!{
                                             &[u8], // the data type
                                             &[], // response data
-                                            CREATED, // response message
+                                            &message, // response message
                                             StatusCode::CREATED, // status code
                                             None::<Cookie<'_>>, // cookie
                                         } 

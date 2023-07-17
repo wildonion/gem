@@ -10,7 +10,7 @@ use tokio::fs::OpenOptions;
 #[derive(Debug)]
 pub struct PanelError{
     pub code: u16,
-    pub msg: [u8; 32], // reason 
+    pub msg: Vec<u8>, // reason 
     pub kind: ErrorKind // due to what service 
 }
 
@@ -18,6 +18,7 @@ pub struct PanelError{
 #[derive(Debug)]
 pub enum StorageError{
     Redis(redis::RedisError),
+    RedisAsync(redis_async::error::Error),
     Diesel(diesel::result::Error)
 }
 #[derive(Debug)]
@@ -54,23 +55,20 @@ impl From<redis::RedisError> for ErrorKind{
     }
 }
 
+impl From<redis_async::error::Error> for ErrorKind{
+    fn from(error: redis_async::error::Error) -> Self{
+        ErrorKind::Storage(StorageError::RedisAsync(error))
+    }
+}
+
 impl From<diesel::result::Error> for ErrorKind{
     fn from(error: diesel::result::Error) -> Self{
         ErrorKind::Storage(StorageError::Diesel(error))
     }
 }
 
-impl From<([u8; 32], u16, ErrorKind)> for PanelError{
-    fn from(msg_code_kind: ([u8; 32], u16, ErrorKind)) -> PanelError{
-        /* 
-            can't return a borrow from the function since it's a borrow 
-            to a type that by executing the function the type will be dropped 
-            out of the function scope and from the ram, thus i decided to 
-            have a fixed size of message in a form of array slices contains
-            32 bytes of utf8 elements
-            
-            let msg = msg_code_kind.0.as_str();
-        */
+impl From<(Vec<u8>, u16, ErrorKind)> for PanelError{
+    fn from(msg_code_kind: (Vec<u8>, u16, ErrorKind)) -> PanelError{
         PanelError { code: msg_code_kind.1, msg: msg_code_kind.0, kind: msg_code_kind.2 }
     }
 }
@@ -78,7 +76,7 @@ impl From<([u8; 32], u16, ErrorKind)> for PanelError{
 
 impl PanelError{
 
-    pub fn new(code: u16, msg: [u8; 32], kind: ErrorKind) -> Self{
+    pub fn new(code: u16, msg: Vec<u8>, kind: ErrorKind) -> Self{
         
         let err = PanelError::from((msg, code, kind));
 
@@ -90,14 +88,8 @@ impl PanelError{
         let this = self;
         let Self { code, msg, kind } = this;
 
-        /* 
-            passing a mutable reference to buffer to write! macro so  
-            the buffer can be mutated outside of the write! scope
-            also Vec types implemented the Write trait already 
-            we just need to use it in here
-        */
-        let msg_content = serde_json::from_slice::<String>(msg.as_slice());
-        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
+        let msg_content = String::from_utf8(msg.to_owned());
+        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
 
         /* writing to buffer */
         let mut buffer = Vec::new(); 
@@ -131,7 +123,7 @@ impl PanelError{
             }
         }
 
-        buffer /* returns the full filled buffer */
+        buffer /* returns the full filled buffer from the error  */
     
     }
 
@@ -140,14 +132,8 @@ impl PanelError{
         let this = self;
         let Self { code, msg, kind } = this;
 
-        /* 
-            passing a mutable reference to buffer to write! macro so  
-            the buffer can be mutated outside of the write! scope
-            also Vec types implemented the Write trait already 
-            we just need to use it in here
-        */
         let msg_content = serde_json::from_slice::<String>(msg.as_slice());
-        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
+        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
 
         /* writing to buffer */
         let mut buffer = Vec::new(); 
@@ -181,7 +167,7 @@ impl PanelError{
             }
         }
 
-        buffer /* returns the full filled buffer */
+        buffer /* returns the full filled buffer from the error  */
     
     }
 

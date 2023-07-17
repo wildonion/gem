@@ -8,19 +8,33 @@
     |
 */
 
-use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL};
-use crate::events::redis::{RedisSubscription, Subscribe};
+use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::events::ws::notifs::role::NotifySessionsWithRedisSubscription;
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
+use actix::dev::channel;
 use actix::prelude::*;
+use diesel::sql_types::ops::Add;
+use redis_async::resp::FromResp;
 use super::notifs::{
     role::{
         Message as RoleMessage, 
         RoleNotifServer, Disconnect as RoleNotifServerDisconnectMessage,
-        Connect as RoleNotifServerConnectMessage, Join as RoleNotifServerJoinMessage
+        Connect as RoleNotifServerConnectMessage, JoinForPushNotif as RoleNotifServerJoinMessage
     }
 };
+
+
+
+
+/// redis subscription
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct NotifySession{
+    pub notif_room: String,
+    pub payload: String,
+    pub peer_name: String,
+}
 
 
 
@@ -31,37 +45,65 @@ pub(crate) struct WsNotifSession{
     pub notif_room: &'static str, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
-    pub redis_client: redis::Client,
+    pub redis_async_pubsubconn: Arc<PubsubConnection>,
 }
 
 
 impl WsNotifSession{
 
-    fn subscribe(&mut self, ctx: &mut ws::WebsocketContext<Self>, notif_room: &'static str){
+    pub async fn subscribe(notif_room: &'static str, 
+        peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
+        ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
-        ctx.run_interval(WS_REDIS_SUBSCIPTION_INTERVAL, move |actor, ctx|{
+        /* cloning vars that are going to be captured by tokio::spawn(async move{}) cause we need their owned types */
+        let cloned_notif_room = notif_room.clone();
+        let redis_async_pubsubconn = redis_async_pubsubconn.clone();
+        let ws_role_notif_actor_address = ws_role_notif_actor_address.clone();
+        let peer_name = peer_name.clone();
 
-            info!("💡 --- [{}] is subscribing to event room: [{}]", actor.peer_name.as_ref().unwrap(), notif_room); /* using as_ref() to prevent from moving since unwrap() will take the ownership cause it has self in its first param */
+        tokio::spawn(async move{
 
-            let notif_room = notif_room.clone();
-            let mut redis_conn = actor.redis_client.get_connection().unwrap();
-    
-    
-            let mut pubsub = redis_conn.as_pubsub();
-            pubsub.subscribe(notif_room).unwrap();
-            let msg = pubsub.get_message().unwrap();
-            let payload: String = msg.get_payload().unwrap();
-    
-    
-            /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
-            actor.ws_role_notif_actor_address
-                .do_send(NotifySessionsWithRedisSubscription{
-                    notif_room: notif_room.to_string(),
-                    payload,
-                    subscribed_at: chrono::Local::now().timestamp_nanos() as u64
-                });
+            info!("💡 --- peer [{}] is subscribing to event room: [{}]", peer_name, notif_room);
+
+            /* 🚨 !!! 
+                we must receive asyncly from the redis subscription streaming 
+                channel otherwise actor gets halted in here since 
+            !!! 🚨 */
+            let mut get_stream_messages = redis_async_pubsubconn
+                .subscribe(&cloned_notif_room)
+                .await;
+            
+            let Ok(mut get_stream_messages) = get_stream_messages else{
+
+                use error::{ErrorKind, StorageError::{RedisAsync}, PanelError};
+                let e = get_stream_messages.unwrap_err();
+                let error_content = e.to_string().as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)));
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                return ();
+
+            };
+        
+            /* iterating through the msg streams as they're coming to the stream channel while are not None */
+            while let Some(message) = get_stream_messages.next().await{ 
+                        
+                let resp_val = message.unwrap();
+                let message = String::from_resp(resp_val).unwrap();
+
+                info!("💡 --- received revealed roles notif from admin");
+
+                /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
+                ws_role_notif_actor_address
+                    .send(NotifySessionsWithRedisSubscription{
+                        notif_room: cloned_notif_room.to_string(),
+                        payload: message,
+                        last_subscription_at: chrono::Local::now().timestamp_nanos() as u64
+                    }).await;
+
+            }
+
         });
-
 
     }
 
@@ -85,7 +127,7 @@ impl WsNotifSession{
                         
             if Instant::now().duration_since(actor.hb) > WS_CLIENT_TIMEOUT{
                 
-                info!("websocket client heartbeat failed, disconnecting!");
+                error!("🚨 --- websocket client heartbeat failed, disconnecting!");
                 actor.ws_role_notif_actor_address.do_send(RoleNotifServerDisconnectMessage{id: actor.id, event_name: actor.notif_room.to_owned()}); /* sending disconnect message to the RoleNotifServer actor with the passed in session id and the event name room */
                 ctx.stop(); /* stop the ws service */
 
@@ -113,9 +155,6 @@ impl Actor for WsNotifSession{
 
         /* check the heartbeat of the this session */
         self.hb(ctx);
-
-        /* start */
-        self.subscribe(ctx, self.notif_room);
 
         let session_actor_address = ctx.address();
         let event_name_room = self.notif_room;
@@ -170,6 +209,18 @@ impl Handler<RoleMessage> for WsNotifSession {
     }
 }
 
+impl Handler<NotifySession> for WsNotifSession{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: NotifySession, ctx: &mut Self::Context) -> Self::Result{
+        
+        info!("💡 --- sending revealed roles notif to peer [{}] in room: [{}]", msg.peer_name, msg.notif_room);
+        ctx.text(msg.payload);
+    }
+
+}
+
 /* event listener or streamer to receive ws message */
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
@@ -181,12 +232,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
                 /* custom error handler */
                 use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
-                let msg_content = [0u8; 32];
+                 
                 let error_content = &e.to_string();
-                msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
+                let error_content = error_content.as_bytes().to_vec();
 
-                let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(Ws(e)));
-                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer */
+                let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(Ws(e)));
+                let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer from the error  */
 
                 ctx.stop();
                 return;
@@ -212,8 +263,24 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         "/join" => {
 
                             self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
-                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions", self.notif_room);
+                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions from admin", self.notif_room);
                             ctx.text(joined_msg);
+
+                            ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+                                let notif_room = actor.notif_room;
+                                let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
+                                let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
+                                let peer_name = actor.peer_name.clone();
+                                tokio::spawn(async move{
+                                    /* starting subscription loop in the background asyncly */
+                                    WsNotifSession::subscribe(
+                                        notif_room, 
+                                        peer_name.unwrap(), 
+                                        redis_async_pubsubconn, 
+                                        ws_role_notif_actor_address
+                                    ).await;
+                                });
+                            });
 
                         },
                         _ => ctx.text(format!("unknown command")),

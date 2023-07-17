@@ -5,7 +5,6 @@
 
 use crate::*;
 use crate::events::redis::RedisSubscription;
-use crate::events::redis::Subscribe;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -43,17 +42,12 @@ async fn notif_subs(
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
-    builtin_redis_actor: web::Data<Addr<RedisSubscription>>,
+    builtin_redis_actor: web::Data<Addr<RedisSubscription>>
 ) -> Result<HttpResponse, actix_web::Error> {
 
-
-    let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize;
-    let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
-
     let storage = storage.as_ref().to_owned();
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
-    let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
+    let builtin_redis_actor = builtin_redis_actor.get_ref().clone();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -71,7 +65,11 @@ async fn notif_subs(
                 state will be lost.
             */
             let update_notif_room_result = ws_role_notif_actor_address
-                .send(UpdateNotifRoom(notif_room.clone()))
+                .send(UpdateNotifRoom{
+                    notif_room: notif_room_str, 
+                    builtin_redis_actor, 
+                    peer_name: user_id.clone()
+                })
                 .await;
 
             let Ok(_) = update_notif_room_result else{
@@ -84,58 +82,6 @@ async fn notif_subs(
                     None::<Cookie<'_>>, // cookie
                 }
             };
-
-
-            /* 
-            
-                ---------------------------------------------------------------------------------
-                   SUBSCRIBING TO THE PASSED IN EVENT TOPIC USING ASYNC REDIS PUBSUB CONNECTION
-                ---------------------------------------------------------------------------------
-                get_messeses must be mutable so we can read from it thus the we have to borrow it mutably in each 
-                iteration which can be done by calling as_mut() on the get_messeses, also since we're using the 
-                get_messeses in a while loop thus in each iteration we must borrow the get_messeses using as_mut() method 
-                in order to prevent its ownership from moving in each iteration,
-
-                let get_messeses = redis_async_pubsubconn.subscribe(&notif_room).await;
-                tokio::spawn(async move{
-
-                    while let Some(message) = get_messeses.as_mut().unwrap().next().await{ /* iterating through the msg streams as they're coming to the stream channel and are not None */
-                        
-                        let resp_val = message.unwrap();
-                        let message = String::from_resp(resp_val).unwrap();
-                        notif_sender.send(message).await;
-
-                    }
-                    
-                });
-
-                let get_messeses = redis_async_pubsubconn.subscribe(&notif_room).await;
-                let Ok(mut messages) = get_messeses else{
-                    
-                    let e = get_messeses.unwrap_err();
-                    resp!{
-                        &[u8], // the data type
-                        &[], // response data
-                        &e.to_string(), // response message
-                        StatusCode::REQUEST_TIMEOUT, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
-                };
-        
-                tokio::spawn(async move{
-
-                    while let Some(message) = messages.next().await{ /* iterating through the msg streams as they're coming to the stream channel and are not None */
-                        
-                        let resp_val = message.unwrap();
-                        let message = String::from_resp(resp_val).unwrap();
-                        notif_sender.send(message).await;
-
-                    }
-                    
-                });
-
-            */
-
 
             /* 
                 --------------------------------
@@ -153,7 +99,7 @@ async fn notif_subs(
                         peer_name: Some(user_id),
                         notif_room: notif_room_str,
                         ws_role_notif_actor_address,
-                        redis_client: redis_client.clone()
+                        redis_async_pubsubconn,
                     }, 
                     &req, 
                     stream

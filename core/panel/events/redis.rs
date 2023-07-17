@@ -18,6 +18,7 @@ pub mod mmr;
 use crate::{misc::*, apis::notifs::notif_subs};
 use crate::*;
 use actix::prelude::*;
+use redis_async::resp::FromResp;
 use crate::constants::{WS_REDIS_SUBSCIPTION_INTERVAL, WS_HEARTBEAT_INTERVAL};
 use super::ws::notifs::role::{RoleNotifServer, NotifySessionsWithRedisSubscription, RedisDisconnect};
 
@@ -28,27 +29,29 @@ use super::ws::notifs::role::{RoleNotifServer, NotifySessionsWithRedisSubscripti
 #[rtype(result = "()")]
 pub struct Subscribe {
     pub notif_room: &'static str,
+    pub peer_name: String,
 }
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Unsubscribe;
 
 
 /* RedisSubscription contains all the event rooms and sessions or peers that are connected to ws connection */
-pub(crate) struct RedisSubscription{
-    pub redis_conn: redis::Connection,
+pub struct RedisSubscription{
+    pub redis_async_pubsubconn: Arc<PubsubConnection>,
     pub role_notif_server_actor: Addr<RoleNotifServer>,
-    pub redis_actor: Addr<RedisActor>
 }
 
 impl RedisSubscription{
 
-    pub fn new(redis_conn: redis::Connection, 
+    pub fn new(redis_async_pubsubconn: Arc<PubsubConnection>, 
         role_notif_server_actor: Addr<RoleNotifServer>,
-        redis_actor: Addr<RedisActor>
     ) -> Self{
 
         RedisSubscription{
-            redis_conn,
+            redis_async_pubsubconn,
             role_notif_server_actor,
-            redis_actor
         }
     }
     
@@ -56,68 +59,48 @@ impl RedisSubscription{
 
 impl RedisSubscription{
 
-    /* send the passed in message to all session actors in a specific event room */
-    fn subscribe(&self, ctx: &mut Context<Self>, notif_room: &'static str){
- 
-        /* subscribing using redis actor which has async pubsub connection */
-        self.redis_actor
-            .send(Command(RespValue::Array(vec![
-                RespValue::SimpleString("SUBSCRIBE".to_string()), 
-                RespValue::SimpleString(notif_room.to_string())
-            ])))
-            .into_actor(self)
-            .then(|res, actor, ctx|{
+    fn subscribe(&self, ctx: &mut Context<Self>, msg: Subscribe){
 
-                match res{
-                    Ok(resp_val_result) => {
+        /* cloning vars that are going to be captured by tokio::spawn(async move{}) */
+        let cloned_notif_room = msg.notif_room.clone();
+        let redis_async_pubsubconn = self.redis_async_pubsubconn.clone();
+        let role_notif_server_actor = self.role_notif_server_actor.clone();
+        let peer_name = msg.peer_name.clone();
 
-                        match resp_val_result.unwrap(){
+        tokio::spawn(async move{
+            
+            info!("💡 --- peer [{}] is subscribing to event room: [{}]", peer_name, cloned_notif_room); /* using as_ref() to prevent from moving since unwrap() will take the ownership cause it has self in its first param */
 
-                            /* SUBSCRIBE command returns a vector of 3 types which are message, topic and message-type */
-                            RespValue::Array(mut resp_val_vec) => {
-
-                                /*‌ first pop() is the message that we're interested in */
-                                let msg = resp_val_vec.pop();
-                                if let Some(resp_val) = msg{
-                                    match resp_val{
-
-                                        /* getting the utf8 bytes slice of the message */
-                                        RespValue::BulkString(bytes) => {
-
-                                            /* decoding the message to get the payload */
-                                            let payload = serde_json::from_slice(&bytes).unwrap();
-
-                                            /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
-                                            actor.role_notif_server_actor
-                                            .do_send(NotifySessionsWithRedisSubscription{
-                                                notif_room: notif_room.to_string(),
-                                                payload,
-                                                subscribed_at: chrono::Local::now().timestamp_nanos() as u64
-                                            });
-                                        },
-                                        _ => ctx.stop()
-                                    }
-                                } else{
-                                    ctx.stop()
-                                }
-                            
-                            },
-                            _ => ctx.stop()
-                        }
-
-                    },
-                    Err(e) => {
-                        ctx.stop()
-                    }
-                }
-
-                fut::ready(())
-
-            })
-            .wait(ctx);
-
-
+            /* 🚨 !!! 
+                we must receive asyncly from the redis subscription streaming 
+                channel otherwise actor gets halted in here since 
+            !!! 🚨 */
+            let mut get_stream_messages = redis_async_pubsubconn
+                .subscribe(&cloned_notif_room)
+                .await
+                .unwrap();
         
+            /* iterating through the msg streams as they're coming to the stream channel while are not None */
+            while let Some(message) = get_stream_messages.next().await{ 
+                        
+                let resp_val = message.unwrap();
+                let message = String::from_resp(resp_val).unwrap();
+
+                info!("💡 --- received revealed roles notif from admin");
+
+                /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
+                role_notif_server_actor
+                    .send(NotifySessionsWithRedisSubscription{
+                        notif_room: cloned_notif_room.to_string(),
+                        payload: message,
+                        last_subscription_at: chrono::Local::now().timestamp_nanos() as u64
+                    }).await;
+
+            }
+
+            
+
+        });
 
     }
 
@@ -129,7 +112,7 @@ impl Actor for RedisSubscription{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
-        info!("💡 --- builtin redis actor started at [{}]", chrono::Local::now().timestamp_nanos());
+        info!("💡 --- panel redis actor started at [{}]", chrono::Local::now().timestamp_nanos());
 
     }
 
@@ -137,15 +120,6 @@ impl Actor for RedisSubscription{
         
         self.role_notif_server_actor.do_send(RedisDisconnect);
         Running::Stop
-    }
-}
-
-
-impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for RedisSubscription{
-
-    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-
-        
     }
 }
 
@@ -158,18 +132,19 @@ impl Handler<Subscribe> for RedisSubscription{
 
     fn handle(&mut self, msg: Subscribe, ctx: &mut Self::Context) -> Self::Result{
 
-        /* 
-            since ctx.run_interval() accepts a closure that its captured vars must last 
-            staticly thus we must clone necessary data from self to prevent ownership losing 
-            then use those cloned vars inside the closure by passing them into the closure,
-            also the actor itself will be returned from the closure so we can use it for 
-            other method call since the actor will be captured by the closure in run_interval()
-            method.
-        */
+        self.subscribe(ctx, msg);
+            
+    }
 
-        ctx.run_interval(WS_HEARTBEAT_INTERVAL, move |actor, ctx|{
-            actor.subscribe(ctx, &msg.notif_room);
-        });
+}
+
+impl Handler<Unsubscribe> for RedisSubscription{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: Unsubscribe, ctx: &mut Self::Context) -> Self::Result{
+
+        self.redis_async_pubsubconn.unsubscribe("reveal-role-*");
             
     }
 

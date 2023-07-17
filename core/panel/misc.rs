@@ -293,7 +293,7 @@ macro_rules! server {
             use dotenv::dotenv;
             use crate::constants::*;
             use crate::events::ws::notifs::role::RoleNotifServer;
-            use events::redis::RedisSubscription;
+            use crate::events::redis::RedisSubscription;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -321,8 +321,6 @@ macro_rules! server {
             }.await;
 
             
-            
-            
 
             /*  
                                         SETTING UP SHARED STATE DATA
@@ -334,12 +332,9 @@ macro_rules! server {
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
             let shared_storage = Data::new(app_storage.clone());
 
-            let redis_client = app_storage.as_ref().clone().unwrap().get_redis().await.unwrap().get_connection().unwrap();
-            let redis_actor = app_storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
-            
-            let builtin_redis_actor = RedisSubscription::new(redis_client, role_ntif_server_instance, redis_actor).start();
+            let redis_async_pubsubconn = app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+            let builtin_redis_actor = RedisSubscription::new(redis_async_pubsubconn, role_ntif_server_instance).start();
             let shared_builtin_redis_actor = Data::new(builtin_redis_actor.clone());
-
 
             /*
                 the HttpServer::new function takes a factory function that 
@@ -459,12 +454,12 @@ macro_rules! server {
         
                         /* custom error handler */
                         use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
-                        let msg_content = [0u8; 32];
+                         
                         let error_content = &e.to_string();
-                        msg_content.to_vec().extend_from_slice(error_content.as_bytes()); /* extend the empty msg_content from the error utf8 slice */
+                        let error_content = error_content.as_bytes().to_vec();
         
-                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, msg_content, ErrorKind::Server(ActixWeb(e)));
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer */
+                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(ActixWeb(e)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
                         panic!("panicked at redis get async connection at {}", chrono::Local::now());
                         
@@ -518,7 +513,9 @@ macro_rules! db {
 
             let none_async_redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             let redis_actor = RedisActor::start(redis_actor_conn_url.as_str());
-            let async_redis_pubsub_conn = Arc::new(client::pubsub_connect(redis_host, redis_port as u16).await.unwrap());
+            let mut redis_conn_builder = ConnectionBuilder::new(redis_host, redis_port as u16).unwrap();
+            redis_conn_builder.password(redis_password);
+            let async_redis_pubsub_conn = Arc::new(redis_conn_builder.pubsub_connect().await.unwrap());
             
             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
