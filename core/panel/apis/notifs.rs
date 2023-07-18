@@ -100,6 +100,7 @@ async fn notif_subs(
                         notif_room: notif_room_str,
                         ws_role_notif_actor_address,
                         redis_async_pubsubconn,
+                        is_subscription_interval_started: false
                     }, 
                     &req, 
                     stream

@@ -16,6 +16,7 @@ pub static DELETED: &str = "Deleted Successfully";
 pub static UPDATED: &str = "Updated Successfully";
 pub static FOUND_TASK: &str = "Task Has Already Been Registered";
 pub static STORAGE_ISSUE: &str = "Storage Is Not Available";
+pub static PUSH_NOTIF_ACTIVATED: &str = "Push Notif Has Been Activated";
 pub static IAM_HEALTHY: &str = "Ok";
 pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";

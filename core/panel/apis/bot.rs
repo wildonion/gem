@@ -334,12 +334,6 @@ async fn check_users_tassk(
                             let r = res.text().await.unwrap();
                             responses.push(r.clone());
 
-                            /* publishing the task verification response topic to the redis pubsub channel */
-                            info!("📢 publishing task verification response to redis pubsub [task-verification-responses] channel");
-
-                            let mut conn = redis_client.get_async_connection().await.unwrap();
-                            let _: Result<_, RedisError> = conn.publish::<String, String, String>("task-verification-responses".to_string(), r.clone()).await;
-
                             /* 
                                 wait 60 seconds asyncly to avoid twitter rate limit issue
                             */

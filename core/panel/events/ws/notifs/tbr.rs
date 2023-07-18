@@ -1,9 +1,0 @@
-
-
-
-
-/* 
-
-    `twitter-bot-response`
-    
-*/

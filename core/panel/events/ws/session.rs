@@ -46,6 +46,7 @@ pub(crate) struct WsNotifSession{
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
     pub redis_async_pubsubconn: Arc<PubsubConnection>,
+    pub is_subscription_interval_started: bool
 }
 
 
@@ -69,13 +70,13 @@ impl WsNotifSession{
                 we must receive asyncly from the redis subscription streaming 
                 channel otherwise actor gets halted in here since 
             !!! 🚨 */
-            let mut get_stream_messages = redis_async_pubsubconn
+            let get_stream_messages = redis_async_pubsubconn
                 .subscribe(&cloned_notif_room)
                 .await;
             
             let Ok(mut get_stream_messages) = get_stream_messages else{
 
-                use error::{ErrorKind, StorageError::{RedisAsync}, PanelError};
+                use error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
                 let error_content = e.to_string().as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)));
@@ -92,6 +93,12 @@ impl WsNotifSession{
                 let message = String::from_resp(resp_val).unwrap();
 
                 info!("💡 --- received revealed roles notif from admin");
+
+                
+                // todo - parse received roles and send the user role 
+                //       to this session related to peer name or user id
+                // ...
+
 
                 /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
                 ws_role_notif_actor_address
@@ -266,21 +273,33 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions from admin", self.notif_room);
                             ctx.text(joined_msg);
 
-                            ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
-                                let notif_room = actor.notif_room;
-                                let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
-                                let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
-                                let peer_name = actor.peer_name.clone();
-                                tokio::spawn(async move{
-                                    /* starting subscription loop in the background asyncly */
-                                    WsNotifSession::subscribe(
-                                        notif_room, 
-                                        peer_name.unwrap(), 
-                                        redis_async_pubsubconn, 
-                                        ws_role_notif_actor_address
-                                    ).await;
+                            /* if the interval is not already  started we'll start it and set flag to true */
+                            if !self.is_subscription_interval_started{
+                                /* 
+                                    start subscription interval for this joined session, since ctx is not Send 
+                                    we couldn't put the interval part inside the tokio::spawn()
+                                */
+                                ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+                                    
+                                    actor.is_subscription_interval_started = true;
+                                    
+                                    let notif_room = actor.notif_room;
+                                    let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
+                                    let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
+                                    let peer_name = actor.peer_name.clone();
+                                    
+                                    tokio::spawn(async move{
+                                        /* starting subscription loop in the background asyncly */
+                                        WsNotifSession::subscribe(
+                                            notif_room, 
+                                            peer_name.unwrap(), 
+                                            redis_async_pubsubconn, 
+                                            ws_role_notif_actor_address
+                                        ).await;
+                                    });
+                                
                                 });
-                            });
+                            }
 
                         },
                         _ => ctx.text(format!("unknown command")),

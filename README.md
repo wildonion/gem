@@ -243,9 +243,9 @@ cd scripts
 
 * conse clients can subscribes to the fired or emitted events and topics like role reveal, ecq, new tasks and task verification logs and see notifications coming from redis docker server by listening to websocket packets comming from actix websocket server.
 
-* pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `tasks`, `task-verification-responses`, `twitter-bot-response`, `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
+* pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
 
-* push notification routes for new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ws://ws.panel.conse.app/notifs/tasks`, `ws://ws.panel.conse.app/notifs/task-verification-responses`, `ws://ws.panel.conse.app/notifs/twitter-bot-response`, `ws://ws.panel.conse.app/notifs/ecq-{event_objectid}`, `ws://ws.panel.conse.app/notifs/mmr-{event_objectid}`, `ws://ws.panel.conse.app/notifs/{user_objectid}/reveal-role-{event_objectid}` respectively.   
+* push notification routes for **ECQ**, **MMR** and reveal role topics are `ws://ws.panel.conse.app/notifs/ecq-{event_objectid}`, `ws://ws.panel.conse.app/notifs/mmr-{event_objectid}`, `ws://ws.panel.conse.app/notifs/{user_objectid}/reveal-role-{event_objectid}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
@@ -273,4 +273,4 @@ cd scripts
 
 * behavioural GVM (graph virtual machine) using `Rc` and `RefCell` of each player collected by the history of each event's phases to build mmr engine
 
-* complete ecq, the event collaboration queue engine for the conse panel actix server
+* complete ecq, the event collaboration queue engine for the conse panel actix server using BPF tech

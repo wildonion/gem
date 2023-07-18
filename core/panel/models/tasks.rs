@@ -212,10 +212,6 @@ impl Task{
 
         };
 
-        let new_task_string = serde_json::to_string_pretty(&new_task).unwrap();
-        let mut conn = redis_client.get_async_connection().await.unwrap();   
-        let _: Result<_, RedisError> = conn.publish::<String, String, String>("tasks".to_string(), new_task_string).await;
-
 
         match diesel::insert_into(tasks::table)
             .values(&task)

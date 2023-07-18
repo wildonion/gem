@@ -236,13 +236,6 @@ impl Twitter{
                                         /* try to insert into users_tasks since it's done */
                                         let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
 
-
-                                        /* publishing the twitter bot response to the redis pubsub channel */
-                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-                                        let pubsub_message = format!("{TWITTER_VERIFIED_USERNAME:} == {tusername:}");
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
-
                                         return res;
     
                                     } else{
@@ -370,12 +363,6 @@ impl Twitter{
 
                 /* try to insert into users_tasks since it's done */
                 let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-
-                /* publishing the twitter bot response to the redis pubsub channel */
-                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                let pubsub_message = format!("{TWITTER_VERIFIED_CODE:} == {tusername:}");
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
                 
                 res
 
@@ -466,12 +453,6 @@ impl Twitter{
 
                 /* try to insert into users_tasks since it's done */
                 let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), Some(link.as_str()), connection).await;
-                        
-                /* publishing the twitter bot response to the redis pubsub channel */
-                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                let pubsub_message = format!("{TWITTER_VERIFIED_TWEET:} == {tusername:}");
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
                 
                 res
 
@@ -563,12 +544,6 @@ impl Twitter{
     
                                         /* try to insert into users_tasks since it's done */
                                         let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-                                                
-                                        /* publishing the twitter bot response to the redis pubsub channel */
-                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                        let pubsub_message = format!("{TWITTER_VERIFIED_LIKE:} == {tusername:}");
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
 
                                         return res;
     
@@ -715,13 +690,6 @@ impl Twitter{
                                         /* try to insert into users_tasks since it's done */
                                         let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
 
-                                        /* publishing the twitter bot response to the redis pubsub channel */
-                                        info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-                                        let pubsub_message = format!("{TWITTER_VERIFIED_RETWEET:} == {tusername:}");
-                                        let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
-
-
                                         return res;
 
                                         
@@ -849,13 +817,6 @@ impl Twitter{
 
                 /* try to insert into users_tasks since it's done */
                 let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-                        
-                /* publishing the twitter bot response to the redis pubsub channel */
-                info!("📢 publishing twitter bot response to redis pubsub [twitter-bot-response] channel");
-                let mut redis_conn = redis_client.get_async_connection().await.unwrap();   
-
-                let pubsub_message = format!("{TWITTER_VERIFIED_HASHTAG:} == {tusername:}");
-                let _: Result<_, RedisError> = redis_conn.publish::<String, String, String>("twitter-bot-response".to_string(), pubsub_message).await;
 
                 res
 
