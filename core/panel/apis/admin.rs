@@ -135,21 +135,14 @@ async fn reveal_role(
 
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
-                    
+                
 
-                        
-                        // 🥑 todo - update revealed.roles with the encoded format of the fetched roles of the passed in event_id to the /reveal/roles api
-                        // 🥑 todo - client can listens to the ws events which are the broadcasted redis topics subscribed by the panel server itself  
-                        // 🥑 todo - trigger or publish or fire the reveal role topic or event using redis pubsub
-                        // 🥑 todo - also call the /reveal/roles api of the conse hyper server
-                        // 🥑 todo - use bpf tech  
-                        // ...
 
-                        
-                        let cq_instance: events::redis::ecq::CollaborationQueue = Default::default();
-                        let cq = events::redis::ecq::CollaborationQueue{..Default::default()}; // filling all the fields with default values 
+                        // todo - fetch from mafia hyper server
+
+
+
                         let revealed = events::redis::role::Reveal::default();
-
 
 
                         /* 
@@ -181,68 +174,62 @@ async fn reveal_role(
                             ----------------------------------------------------------------------
                               PUBLISHING REVEALED ROLE TO THE PASSED IN CHANNEL WITH REDIS ACTOR
                             ----------------------------------------------------------------------
+                            since the websocket session has a 1 second interval for push notif 
+                            subscription, we must publish roles contantly to the related channel 
+                            to make sure that the subscribers will receive the message at their 
+                            own time.
 
                         */
 
-                        let redis_pub_resp = redis_actor
-                            .send(Command(resp_array!["PUBLISH", &revealed.event_id, revealed.roles])).await;
+                        let notif_room = revealed.event_id.clone();
+                        let revealed_roels = revealed.roles.clone();
+                        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
-                        let Ok(_) = redis_pub_resp else{
-                            
-                            let mailbox_err = redis_pub_resp.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &mailbox_err.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
+                        tokio::spawn(async move{
 
-                        match redis_pub_resp{
-                            Ok(resp_val) => {
+                            /* publish until at least one sub subscribe to the topic */
+                            loop{
 
-                                match resp_val.unwrap(){
-                                    RespValue::Integer(subs) => {
+                                interval.tick().await;
 
-                                        let notif_room = revealed.event_id;
-                                        info!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
-                                        let message = format!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
-
-                                        resp!{
-                                            &[u8], // the data type
-                                            &[], // response data
-                                            &message, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        } 
-
-                                    },
-                                    _ => {
-                                        
-                                        resp!{
-                                            &[u8], // the data type
-                                            &[], // response data
-                                            WS_INVALID_SUBSCRIPTION_TYPE, // response message
-                                            StatusCode::NOT_ACCEPTABLE, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        }
-                                    }
-                                }
-
-                            },
-                            Err(e) => {
-
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &e.to_string(), // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }   
-                            }
-                        }
+                                let redis_pub_resp = redis_actor
+                                    .send(Command(resp_array!["PUBLISH", &notif_room.clone(), revealed_roels.clone()]))
+                                    .await
+                                    .unwrap();
+    
+                                    match redis_pub_resp{
+                                        Ok(resp_val) => {
             
+                                            match resp_val{
+                                                RespValue::Integer(subs) => {
+                                                    
+                                                    if subs >= 1{
+                                                        
+                                                        /* if we're here means that ws session received the notif */
+                                                        info!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
+                                                        break;
+        
+                                                    }
+            
+                                                },
+                                                _ => {}
+                                            }
+            
+                                        },
+                                        Err(e) => {}
+                                    }
+                            }
+
+                        });
+                    
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        PUSH_NOTIF_ACTIVATED, // response message
+                        StatusCode::CREATED, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }  
+                        
                     },
                     None => {
                         resp!{
