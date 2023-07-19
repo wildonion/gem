@@ -17,7 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 # panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
-🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> ws://notif.panel.conse.app/subscribe/
+🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> wss://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
@@ -203,6 +203,12 @@ cd scripts
 # ---------------
 # ---- renew nginx 
 ./renew.sh
+
+# OR use make
+
+make setup 
+make redeploy
+make renew
 ```
     
 ## 🪟 Schemas and ERDs
@@ -253,7 +259,7 @@ cd scripts
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
 
-* push notification routes for **ECQ**, **MMR** and reveal role topics are `ws://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `ws://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `ws://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively.   
+* push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
