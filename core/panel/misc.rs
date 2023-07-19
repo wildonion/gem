@@ -1,11 +1,113 @@
 
 
 
+use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use crate::*;
 use crate::constants::CHARSET;
+use crate::events::redis::role::PlayerRoleInfo;
 use actix::Addr;
 
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct AddGroupInfoToEvent{
+    pub _id: String, // ObjectId is the bson type of _id inside the mongodb
+    pub name: String,
+    pub owner: String, // this is the id of the user took from the mongodb and will be stored as String later we'll serialize it into bson mongodb ObjectId
+    pub image_path: Option<String>,
+    pub god_id: Option<String>,
+    pub created_at: Option<i64>,
+    pub updated_at: Option<i64>,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct Voter{
+    pub user_id: String,
+    pub username: String,
+    pub nft_owner_wallet_address: String,
+    pub is_upvote: bool,
+    pub score: u32, // NOTE - this is the number of event NFTs that this owner owns
+}
+
+#[derive(Default, Debug, Serialize, Deserialize, Clone)]
+pub struct Phase{
+    pub day: Vec<InsertPlayerInfoRequest>, // vector of all user infos at the end of the day that their status has changed
+    pub mid_day: Vec<InsertPlayerInfoRequest>, // vector of all user infos at the end of the mid day that their status has changed
+    pub night: Vec<InsertPlayerInfoRequest>, // vector of all user infos at the end of the night that their status has changed
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct InsertPlayerInfoRequest{
+  pub user_id: String, // ObjectId is the bson type of _id inside the mongodb
+  pub username: String,
+  pub status: u8,
+  pub role_name: String,
+  pub role_id: String,
+  pub side_id: String,
+  pub chain_history: Vec<ChainInfo>,
+  pub role_ability_history: Vec<RoleAbilityInfo>,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct ChainInfo{
+  pub to_id: String,
+  pub chained_at: i64,
+}
+
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct RoleAbilityInfo{
+  pub role_id: String,
+  pub current_ability: Option<u8>,
+  pub updated_at: Option<i64>,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct EventInfo{
+    pub _id: Option<ObjectId>,
+    pub title: String,
+    pub content: String,
+    pub deck_id: String,
+    pub entry_price: String,
+    pub group_info: Option<AddGroupInfoToEvent>,
+    pub image_path: Option<String>,
+    pub creator_wallet_address: Option<String>,
+    pub upvotes: Option<u16>,
+    pub downvotes: Option<u16>,
+    pub voters: Option<Vec<Voter>>,
+    pub phases: Option<Vec<Phase>>,
+    pub max_players: Option<u8>,
+    pub players: Option<Vec<PlayerRoleInfo>>,
+    pub is_expired: Option<bool>,
+    pub is_locked: Option<bool>,
+    pub started_at: Option<i64>,
+    pub expire_at: Option<i64>,
+    pub created_at: Option<i64>,
+    pub updated_at: Option<i64>,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct PlayerEventInfo{
+    pub _id: Option<ObjectId>,
+    pub title: String,
+    pub content: String,
+    pub deck_id: String,
+    pub entry_price: String,
+    pub group_info: Option<AddGroupInfoToEvent>,
+    pub image_path: Option<String>,
+    pub creator_wallet_address: Option<String>,
+    pub upvotes: Option<u16>,
+    pub downvotes: Option<u16>,
+    pub voters: Option<Vec<Voter>>,
+    pub phases: Option<Vec<Phase>>,
+    pub max_players: Option<u8>,
+    pub is_expired: Option<bool>,
+    pub is_locked: Option<bool>,
+    pub started_at: Option<i64>,
+    pub expire_at: Option<i64>,
+    pub created_at: Option<i64>,
+    pub updated_at: Option<i64>,
+}
 
 pub fn gen_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
@@ -116,9 +218,7 @@ impl Db{
         dropped from the ram move borrowed form of the type in most 
         cases unless its pointer is a shared pointer in which we 
         must deref it using * or clone
-    */
-    //
-    /* 
+     
         Client object uses std::sync::Arc internally, so it can safely be 
         shared across threads or async tasks like tokio::spawn(async move{}) 
         green threads also it is highly recommended to create a single 
@@ -144,6 +244,14 @@ pub struct Storage{
 }
 
 impl Storage{
+
+    /* 
+        since unwrap() takes the ownership of the instance, because 
+        it doesn't have &self in its first param, it has self, thus
+        we must call as_ref() on the instance before using it to return 
+        a reference to the instance to take the ownership of the referenced
+        instance by using the unwrap()
+    */
     
     pub async fn get_mongodb(&self) -> Option<&Client>{
         match self.db.as_ref().unwrap().mode{
@@ -379,7 +487,7 @@ macro_rules! server {
                         INIT WS SERVICE
                     */
                     .service(
-                        actix_web::web::scope("/notifs")
+                        actix_web::web::scope("/subscribe")
                             .configure(services::init_ws_notif)
                     )
                     /*
@@ -642,7 +750,7 @@ macro_rules! passport {
             use std::env;
 
             let host = env::var("HOST").expect("⚠️ no host variable set");
-            let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
+            let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
             let check_token_api = format!("{}:{}/auth/check-token", host, port);
             
             let mut response_value: serde_json::Value = reqwest::Client::new()

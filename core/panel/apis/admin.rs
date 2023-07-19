@@ -5,7 +5,10 @@
 
 
 
+use mongodb::bson::oid::ObjectId;
+
 use crate::*;
+use crate::events::redis::role::PlayerRoleInfo;
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
@@ -116,9 +119,7 @@ async fn reveal_role(
         
         /*
             @params: 
-                - @request       → actix request object
-                - @storage       → instance inside the request object
-                - @access levels → vector of access levels
+                - @toke          → JWT
         */
         match passport!{ token }{
             true => {
@@ -132,18 +133,44 @@ async fn reveal_role(
                 let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
                 let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
                 let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
-
+                let host = env::var("HOST").expect("⚠️ no host variable set");
+                let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
+                let check_token_api = format!("{}:{}/event/reveal/roles", host, port);
+                let mut revealed = events::redis::role::Reveal::default();
+                
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
-                
+                        
+                        info!("🤖 sending request to the conse mafia hyper server at {}", chrono::Local::now().timestamp_nanos());
 
+                        /* calling rveal role API of the mafia hyper server to get the players' roles */
+                        let response_value: serde_json::Value = reqwest::Client::new()
+                            .post(check_token_api.as_str())
+                            .header("Authorization", token)
+                            .send()
+                            .await.unwrap()
+                            .json()
+                            .await.unwrap();
 
-                        // todo - fetch from mafia hyper server
+                        let data = response_value.get("data");
+                        if data.is_some(){
+                            
+                            let players_field = data.unwrap().get("players");
+                            let event_id_field = data.unwrap().get("_id");
+                            
+                            if players_field.is_some() && event_id_field.is_some(){
 
+                                let players_rvealed_roles = players_field.unwrap().to_owned();
+                                let event_id = event_id_field.unwrap().to_owned();
 
-
-                        let revealed = events::redis::role::Reveal::default();
-
+                                let decoded_event_id = serde_json::from_value::<ObjectId>(event_id).unwrap();
+                                let decoded_players = serde_json::from_value::<Vec<PlayerRoleInfo>>(players_rvealed_roles).unwrap();
+                                
+                                revealed.players = decoded_players;
+                                revealed.event_id = decoded_event_id.to_string();
+                            
+                            }
+                        }
 
                         /* 
                                     
@@ -182,7 +209,8 @@ async fn reveal_role(
                         */
 
                         let notif_room = revealed.event_id.clone();
-                        let revealed_roels = revealed.roles.clone();
+                        let player_roles = revealed.players.clone();
+                        let stringified_player_roles = serde_json::to_string(&player_roles).unwrap();
                         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
                         tokio::spawn(async move{
@@ -193,7 +221,7 @@ async fn reveal_role(
                                 interval.tick().await;
 
                                 let redis_pub_resp = redis_actor
-                                    .send(Command(resp_array!["PUBLISH", &notif_room.clone(), revealed_roels.clone()]))
+                                    .send(Command(resp_array!["PUBLISH", &notif_room.clone(), stringified_player_roles.clone()]))
                                     .await
                                     .unwrap();
     
@@ -225,7 +253,7 @@ async fn reveal_role(
                     resp!{
                         &[u8], // the data type
                         &[], // response data
-                        PUSH_NOTIF_ACTIVATED, // response message
+                        PUSH_NOTIF_SENT, // response message
                         StatusCode::CREATED, // status code
                         None::<Cookie<'_>>, // cookie
                     }  

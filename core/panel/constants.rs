@@ -16,7 +16,7 @@ pub static DELETED: &str = "Deleted Successfully";
 pub static UPDATED: &str = "Updated Successfully";
 pub static FOUND_TASK: &str = "Task Has Already Been Registered";
 pub static STORAGE_ISSUE: &str = "Storage Is Not Available";
-pub static PUSH_NOTIF_ACTIVATED: &str = "Push Notif Has Been Activated";
+pub static PUSH_NOTIF_SENT: &str = "Push Notif Has Been Sent";
 pub static IAM_HEALTHY: &str = "Ok";
 pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
@@ -73,8 +73,8 @@ pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
 
 /* u16 bits is 2 bytes long which is 4 chars in hex */
-pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE; // 2
-pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 1
+pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE; // is 2 in decimal
+pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // is 1 in decimal
 
 pub const WS_HEARTBEAT_INTERVAL: StdDuration = StdDuration::from_secs(5);
 pub const WS_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(1);
