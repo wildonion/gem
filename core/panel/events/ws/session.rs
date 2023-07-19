@@ -52,7 +52,7 @@ pub(crate) struct WsNotifSession{
 
 impl WsNotifSession{
 
-    pub async fn subscribe(notif_room: &'static str, 
+    pub async fn role_subscription(notif_room: &'static str, 
         peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
         ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
@@ -90,7 +90,7 @@ impl WsNotifSession{
             while let Some(message) = get_stream_messages.next().await{ 
                         
                 let resp_val = message.unwrap();
-                let message = String::from_resp(resp_val).unwrap();
+                let player_roles = String::from_resp(resp_val).unwrap();
 
                 info!("💡 --- received revealed roles notif from admin");
 
@@ -104,7 +104,7 @@ impl WsNotifSession{
                 ws_role_notif_actor_address
                     .send(NotifySessionsWithRedisSubscription{
                         notif_room: cloned_notif_room.to_string(),
-                        payload: message,
+                        payload: player_roles,
                         last_subscription_at: chrono::Local::now().timestamp_nanos() as u64
                     }).await;
 
@@ -290,7 +290,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                     
                                     tokio::spawn(async move{
                                         /* starting subscription loop in the background asyncly */
-                                        WsNotifSession::subscribe(
+                                        WsNotifSession::role_subscription(
                                             notif_room, 
                                             peer_name.unwrap(), 
                                             redis_async_pubsubconn, 
