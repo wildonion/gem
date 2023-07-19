@@ -78,7 +78,14 @@ pub struct NotifySessionsWithRedisSubscription{
     pub last_subscription_at: u64,
 }
 
-
+/// redis subscription for a single session
+ #[derive(Message)]
+#[rtype(result = "()")]
+pub struct NotifySessionWithRedisSubscription{
+    pub notif_room: String,
+    pub role_name: String,
+    pub session_id: usize,
+}
 
 /* RoleNotifServer contains all the event rooms and sessions or peers that are connected to ws connection */
 #[derive(Clone)]
@@ -183,6 +190,36 @@ impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
         self.last_subscription_at = msg.last_subscription_at;
         info!("💡 --- sending revealed roles notif to all sessions in room: [{}]", msg.notif_room);
         self.send_push_notif_message(&msg.notif_room, &msg.payload, 0);
+    }
+
+}
+
+
+impl Handler<NotifySessionWithRedisSubscription> for RoleNotifServer{
+
+    type Result = ();
+
+    fn handle(&mut self, msg: NotifySessionWithRedisSubscription, ctx: &mut Self::Context) -> Self::Result{
+        
+        let session_id = msg.session_id;
+        let room = msg.notif_room;
+        let role = msg.role_name;
+
+        info!("💡 --- sending the assigned role to session with [{session_id:}]");
+        
+        if self.push_notif_rooms.contains_key(&room){
+            if let Some(sessions) = self.push_notif_rooms.get(&room){
+                for id in sessions{
+                    /* sending the assigned role to the passed in session in msg instance */
+                    if *id.to_string() != 0.to_string() && *id.to_string() == session_id.to_string(){
+                        if let Some(addr) = self.sessions.get(id){
+                            addr.do_send(Message(role.to_owned())) 
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 }
@@ -335,8 +372,8 @@ impl Handler<Connect> for RoleNotifServer{
         
         info!("💡 --- current rooms of role notif server actor are: {:?}", self.rooms);
 
-        let conn_message = format!("user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
-        info!("💡 --- user with id: [{}] connected to event room: [{}]", unique_id, msg.event_name);
+        let conn_message = format!("user with id: [{}] and peer name: [{}] connected to event room: [{}]", unique_id, msg.peer_name, msg.event_name);
+        info!("💡 --- user with id: [{}] and peer name: [{}] connected to event room: [{}]", unique_id, msg.peer_name, msg.event_name);
         self.send_message(&msg.event_name, conn_message.as_str(), 0);
 
         unique_id /* session id */

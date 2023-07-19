@@ -9,7 +9,8 @@
 */
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
-use crate::events::ws::notifs::role::NotifySessionsWithRedisSubscription;
+use crate::events::redis::role::PlayerRoleInfo;
+use crate::events::ws::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::dev::channel;
@@ -52,7 +53,7 @@ pub(crate) struct WsNotifSession{
 
 impl WsNotifSession{
 
-    pub async fn role_subscription(notif_room: &'static str, 
+    pub async fn role_subscription(notif_room: &'static str, session_id: usize,
         peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
         ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
@@ -88,25 +89,24 @@ impl WsNotifSession{
         
             /* iterating through the msg streams as they're coming to the stream channel while are not None */
             while let Some(message) = get_stream_messages.next().await{ 
-                        
-                let resp_val = message.unwrap();
-                let player_roles = String::from_resp(resp_val).unwrap();
 
                 info!("💡 --- received revealed roles notif from admin");
-
                 
-                // todo - parse received roles and send the user role 
-                //       to this session related to peer name or user id
-                // ...
+                let resp_val = message.unwrap();
+                let stringified_player_roles = String::from_resp(resp_val).unwrap();
+                let decoded_player_roles = serde_json::from_str::<Vec<PlayerRoleInfo>>(&stringified_player_roles).unwrap();
 
-
-                /* send payload to the role notif server actor using NotifySessionsWithRedisSubscription message */
-                ws_role_notif_actor_address
-                    .send(NotifySessionsWithRedisSubscription{
-                        notif_room: cloned_notif_room.to_string(),
-                        payload: player_roles,
-                        last_subscription_at: chrono::Local::now().timestamp_nanos() as u64
-                    }).await;
+                /* sending the received roles to each session separately as a notification */
+                for player_info in decoded_player_roles{
+                    if player_info._id.to_string() == peer_name{
+                        ws_role_notif_actor_address
+                            .send(NotifySessionWithRedisSubscription{
+                                notif_room: cloned_notif_room.to_string(), /* the event object id  */
+                                role_name: player_info.role_name.unwrap(),
+                                session_id,
+                            }).await;
+                    }
+                }
 
             }
 
@@ -287,11 +287,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                     let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
                                     let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
                                     let peer_name = actor.peer_name.clone();
+                                    let session_id = actor.id;
                                     
                                     tokio::spawn(async move{
                                         /* starting subscription loop in the background asyncly */
                                         WsNotifSession::role_subscription(
                                             notif_room, 
+                                            session_id,
                                             peer_name.unwrap(), 
                                             redis_async_pubsubconn, 
                                             ws_role_notif_actor_address

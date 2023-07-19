@@ -130,22 +130,26 @@ async fn reveal_role(
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
+                // let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
                 let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
                 let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
                 let host = env::var("HOST").expect("⚠️ no host variable set");
                 let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
-                let check_token_api = format!("{}:{}/event/reveal/roles", host, port);
-                let mut revealed = events::redis::role::Reveal::default();
+                let reveal_api = format!("http://{}:{}/event/reveal/roles", host, port);
                 
+                let mut revealed = events::redis::role::Reveal::default();
+                let mut map = HashMap::new();
+                map.insert("_id", event_id.to_owned());
+
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
                         
-                        info!("🤖 sending request to the conse mafia hyper server at {}", chrono::Local::now().timestamp_nanos());
+                        info!("📥 sending request to the conse mafia hyper server at {}", chrono::Local::now().timestamp_nanos());
 
                         /* calling rveal role API of the mafia hyper server to get the players' roles */
                         let response_value: serde_json::Value = reqwest::Client::new()
-                            .post(check_token_api.as_str())
+                            .post(reveal_api.as_str())
+                            .json(&map)
                             .header("Authorization", token)
                             .send()
                             .await.unwrap()
@@ -154,7 +158,7 @@ async fn reveal_role(
 
                         let data = response_value.get("data");
                         if data.is_some(){
-                            
+
                             let players_field = data.unwrap().get("players");
                             let event_id_field = data.unwrap().get("_id");
                             
@@ -162,10 +166,10 @@ async fn reveal_role(
 
                                 let players_rvealed_roles = players_field.unwrap().to_owned();
                                 let event_id = event_id_field.unwrap().to_owned();
-
+                                
                                 let decoded_event_id = serde_json::from_value::<ObjectId>(event_id).unwrap();
                                 let decoded_players = serde_json::from_value::<Vec<PlayerRoleInfo>>(players_rvealed_roles).unwrap();
-                                
+
                                 revealed.players = decoded_players;
                                 revealed.event_id = decoded_event_id.to_string();
                             
@@ -201,27 +205,30 @@ async fn reveal_role(
                             ----------------------------------------------------------------------
                               PUBLISHING REVEALED ROLE TO THE PASSED IN CHANNEL WITH REDIS ACTOR
                             ----------------------------------------------------------------------
-                            since the websocket session has a 1 second interval for push notif 
-                            subscription, we must publish roles contantly to the related channel 
+                            since each websocket session has a 1 second interval for push notif 
+                            subscription, we must publish roles constantly to the related channel 
                             to make sure that the subscribers will receive the message at their 
-                            own time.
+                            own time and once 1 subscriber receives the message we'll break the 
+                            background loop.
 
                         */
 
                         let notif_room = revealed.event_id.clone();
                         let player_roles = revealed.players.clone();
                         let stringified_player_roles = serde_json::to_string(&player_roles).unwrap();
+
+                        let channel = format!("reveal-role-{notif_room:}");
                         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
                         tokio::spawn(async move{
 
-                            /* publish until at least one sub subscribe to the topic */
+                            /* publish until at least one sub subscribes to the topic */
                             loop{
 
                                 interval.tick().await;
 
                                 let redis_pub_resp = redis_actor
-                                    .send(Command(resp_array!["PUBLISH", &notif_room.clone(), stringified_player_roles.clone()]))
+                                    .send(Command(resp_array!["PUBLISH", &channel.clone(), stringified_player_roles.clone()]))
                                     .await
                                     .unwrap();
     
@@ -236,8 +243,10 @@ async fn reveal_role(
                                                         /* if we're here means that ws session received the notif */
                                                         info!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
                                                         break;
-        
+                                                        
                                                     }
+                                                    
+                                                    info!("💡 --- no one has subscribed yet ");
             
                                                 },
                                                 _ => {}

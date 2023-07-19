@@ -751,7 +751,7 @@ macro_rules! passport {
 
             let host = env::var("HOST").expect("⚠️ no host variable set");
             let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
-            let check_token_api = format!("{}:{}/auth/check-token", host, port);
+            let check_token_api = format!("http://{}:{}/auth/check-token", host, port);
             
             let mut response_value: serde_json::Value = reqwest::Client::new()
                         .post(check_token_api.as_str())
