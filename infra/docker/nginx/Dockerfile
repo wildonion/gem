@@ -27,6 +27,9 @@ COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
 #checkpswd.conse.app:
 COPY cert-checkpswd.conse.app.pem /etc/nginx/cert-checkpswd.conse.app.pem
 COPY key-checkpswd.conse.app.pem /etc/nginx/key-checkpswd.conse.app.pem
+#notif.panel.conse.app:
+COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
+COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
 
 # COPY /etc/letsencrypt/live/deadcat.ir/fullchain.pem /etc/nginx/cert.pem
 # COPY /etc/letsencrypt/live/deadcat.ir/privkey.pem /etc/nginx/key.pem
@@ -37,14 +40,14 @@ COPY ssl-dhparams.pem /etc/nginx/ssl-dhparams.pem
 EXPOSE 80
 EXPOSE 443
 
-# Configure Nginx to serve the React application over HTTPS
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY conse.app.conf /etc/nginx/conse.conf
-COPY panel.conse.app.conf /etc/nginx/conse.conf
-COPY api.panel.conse.app.conf /etc/nginx/conse.conf
-COPY api.mafia.conse.app.conf /etc/nginx/conse.conf
-COPY adminer.conse.app.conf /etc/nginx/conse.conf
-COPY checkpswd.conse.app.conf /etc/nginx/conse.conf
+COPY conse.app.conf /etc/nginx/conse.app.conf
+COPY panel.conse.app.conf /etc/nginx/panel.conse.app.conf
+COPY api.panel.conse.app.conf /etc/nginx/api.panel.conse.app.conf
+COPY api.mafia.conse.app.conf /etc/nginx/api.mafia.conse.app.conf
+COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
+COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
+COPY checkpswd.conse.app.conf /etc/nginx/checkpswd.conse.app.conf
 
 
 # Start Nginx in the foreground when the Docker container starts

@@ -4,7 +4,7 @@
 # 🤏 Conse Backend Rust Services
 
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
-- a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph of each player collected by the history of each event's `phases` field inside the game.
+- a based [STEM](https://github.com/wildonion/stem) like AI model which will suggests players the tips and tricks for a new game based on behavioural graph virtual machine (GVM) of each player collected by the history of each event's `phases` field inside the game.
 - [uniXerr](https://github.com/wildonion/uniXerr) coin generation AI model which players get rewarded based on their scores and positions, collected by each event manager inside the game, then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game also players can sell their minted roles based on highest or lowest order setup in conse order book.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
@@ -17,7 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 # panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
-🥛 PUSH NOTIFICATION ROUTE ==> ws://ws.panel.conse.app/notifs/
+🥛 PUSH NOTIFICATION ROUTE ==> ws://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
@@ -49,7 +49,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🥝 server health-check APIs (check-token, health and logout)
 
-* 🍅 catchup discord bot for channel messages summarization 
+* 🍅 catchup discord ChatGPT bot for channel messages summarization 
 
 * 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible server's responses 
 
@@ -57,7 +57,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers and handling push notif subscriptions
 
-* 📣 **redis** based pubsub streaming channel to publish and subscribe to the reveal role, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating), new task defined by admins, task verification logs and twitter bot responses topics
+* 📣 **redis** based pubsub streaming channel to publish and subscribe to the revealed roles, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating) topics
 
 * 💾 **redis** http response caching to avoid high latencies cause I believe reading from RAM is much faster than HardDisk.   
 
@@ -156,8 +156,16 @@ cargo run --bin argon2test
 
 - **NOTE**: for every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
 
-- **NOTE**: there must be three registered (sub)domains in DNS panel of `conse.app`: `api.mafia.conse.app`, `api.panel.conse.app`, `panel.conse.app` which points to the conse mafia hyper APIs, Actix APIs and the panel UI respectively.
-
+- **NOTE**: registered (sub)domain records in DNS panel must be:
+```bash
+conse.app #---> this main domain is related to the home of the app
+api.mafia.conse.app #---> points to the conse mafia hyper APIs
+api.panel.conse.app #----> points to the conse actix APIs
+panel.conse.app #---> points to the panel UI
+notif.panel.conse.app #---> points to the websocket push notification server
+adminer.conse.app #---> points to the adminer UI
+checkpswd.conse.app #---> points to a very simple password checker fastapi server
+```
 - **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 
 - **NOTE**: multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
@@ -213,13 +221,13 @@ cd scripts
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/contexts/panel) Architecture Diagram
+### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/panel) Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
 
-### 🥧 [Twiscord](https://github.com/wildonion/gem/tree/master/core/contexts/bot/twiscord) Architecture Diagram
+### 🥧 [Twiscord](https://github.com/wildonion/gem/tree/master/core/bot/twiscord) Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/rediscord.png">
@@ -245,7 +253,7 @@ cd scripts
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
 
-* push notification routes for **ECQ**, **MMR** and reveal role topics are `ws://ws.panel.conse.app/notifs/ecq-{event_objectid}`, `ws://ws.panel.conse.app/notifs/mmr-{event_objectid}`, `ws://ws.panel.conse.app/notifs/{user_objectid}/reveal-role-{event_objectid}` respectively.   
+* push notification routes for **ECQ**, **MMR** and reveal role topics are `ws://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `ws://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `ws://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively.   
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
@@ -259,18 +267,12 @@ cd scripts
 
 * admin SMS panel to advertise the event
 
-* redis pubsub streaming to publish reveal role, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/contexts/panel/events/redis` folder.
-
-* complete actor notifs structure inside `core/contexts/panel/events/ws` folder along with their postman collection endpoints.
-
-* setup websocket nginx config file (ws://ws.panel.conse.app/notifs/)
-
-* macros inside the `core/contextss/panel/misc.rs` and a proc macro attribute like `#[passport(access=2)]` to put on top of the admin, user and dev APIs, struct and their fields
-
 * god and dev panel app using `yew`
 
+* macros inside the `core/panel/misc.rs` and a proc macro attribute like `#[passport(access=2)]` to put on top of the admin, user and dev APIs, struct and their fields
+
+* behavioural graph virtual machine (gvm) using `Rc` and `RefCell` of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines  
+
+* redis pubsub streaming to publish ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder then complete their actor notifs structure inside `core/panel/events/ws` folder along with their postman collection endpoints.
+
 * publish docker containers to docker hub also add CI/CD setup in digitalocean
-
-* behavioural GVM (graph virtual machine) using `Rc` and `RefCell` of each player collected by the history of each event's phases to build mmr engine
-
-* complete ecq, the event collaboration queue engine for the conse panel actix server using BPF tech
