@@ -130,7 +130,7 @@ async fn reveal_role(
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-                // let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
+                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
                 let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
                 let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
                 let host = env::var("HOST").expect("⚠️ no host variable set");
