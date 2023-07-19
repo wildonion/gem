@@ -17,7 +17,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 # panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
-🥛 PUSH NOTIFICATION ROUTE ==> ws://notif.panel.conse.app/subscribe/
+🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> ws://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE ==> https://api.panel.conse.app/
@@ -162,7 +162,7 @@ conse.app #---> this main domain is related to the home of the app
 api.mafia.conse.app #---> points to the conse mafia hyper APIs
 api.panel.conse.app #----> points to the conse actix APIs
 panel.conse.app #---> points to the panel UI
-notif.panel.conse.app #---> points to the websocket push notification server
+notif.panel.conse.app #---> points to the websocket push notification server APIs
 adminer.conse.app #---> points to the adminer UI
 checkpswd.conse.app #---> points to a very simple password checker fastapi server
 ```
@@ -235,7 +235,7 @@ cd scripts
 
 ## 🧐 WrapUps 
 
-* to see a full list of conse mafia hyper server APIs, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
+* to see a full list of conse mafia hyper server and websocket push notifications APIs, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
 
 > **Regards to conse panel actix APIs**:
 
@@ -273,6 +273,6 @@ cd scripts
 
 * behavioural graph virtual machine (gvm) using `Rc` and `RefCell` of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines  
 
-* redis pubsub streaming to publish ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder then complete their actor notifs structure inside `core/panel/events/ws` folder along with their postman collection endpoints.
+* redis pubsub streaming to publish ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder then complete their actor notifs structure inside `core/panel/events/ws` folder
 
 * publish docker containers to docker hub also add CI/CD setup in digitalocean
