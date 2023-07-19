@@ -49,7 +49,7 @@ use std::env;
 // -------------------------------- mock reservation controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn mock_reservation(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn mock_reservation(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
     
      
@@ -264,7 +264,7 @@ pub async fn mock_reservation(req: Request<Body>) -> ConseResult<hyper::Response
 // -------------------------------- process payment controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn process_payment_request(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn process_payment_request(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
     
      

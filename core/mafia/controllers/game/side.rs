@@ -34,7 +34,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -231,7 +231,7 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 // -------------------------------- get all sides controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -373,7 +373,7 @@ pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 // -------------------------------- disable side controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn disable(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn disable(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 

@@ -50,7 +50,7 @@ pub mod app{
     // future objects must be Send and static and types that must be shared between threads must be send sync and static 
     // Box<dyn Future<Output=Result<u8, 8u>> + Send + Sync + 'static> means this future can be shared acorss threads and .awaits safely
     type Callback = Box<dyn 'static + FnMut(hyper::Request<Body>, hyper::http::response::Builder) -> CallbackResponse>; // capturing by mut T - the closure inside the Box is valid as long as the Callback is valid due to the 'static lifetime and will never become invalid until the variable that has the Callback type drop
-    type CallbackResponse = Box<dyn Future<Output=ConseResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static>; // CallbackResponse is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits - the future inside the Box is valid as long as the CallbackResponse is valid due to the 'static lifetime and will never become invalid until the variable that has the CallbackResponse type drop
+    type CallbackResponse = Box<dyn Future<Output=MafiaResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static>; // CallbackResponse is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits - the future inside the Box is valid as long as the CallbackResponse is valid due to the 'static lifetime and will never become invalid until the variable that has the CallbackResponse type drop
     type SafeShareAsync = Arc<Mutex<Pin<Box<dyn Future<Output=u8> + Send + Sync + 'static>>>>; // this type is a future object which has pinned to the ram inside a Box pointer and can be shared between thread safely also it can be mutated by threads - pinning the Boxed future object into the ram to prevent from being moved (cause rust don't have gc and each type will be dropped once it goes out of its scope) since that future object must be valid across scopes and in the entire lifetime of the app until we await on it 
     type SafeShareClosure = Arc<Mutex<Box<dyn FnOnce(hyper::Request<Body>) -> hyper::Response<Body> + Send + Sync + 'static>>>; // this type is safe and sendable to share between threads also it can be mutated by a thread using a mutex guard; we have to use the &dyn keyword or put them inside the Box<dyn> for traits if we want to treat them as a type since they have no sepecific size at compile time thus they must be referenced by the &dyn or the Box<dyn> 
 
@@ -113,9 +113,9 @@ pub mod app{
             }
         } 
         
-        pub async fn post<F, C>(mut self, endpoint: &str, mut cb: F) -> ConseResult<hyper::Response<Body>, hyper::Error> // defining self (an instance of the object) as mutable cause we want to assign the name of the api; since we didn't borrow the self (the instance itself) using & we can't call this method for the second call cause the ownership of the instance will be moved in first call  
+        pub async fn post<F, C>(mut self, endpoint: &str, mut cb: F) -> MafiaResult<hyper::Response<Body>, hyper::Error> // defining self (an instance of the object) as mutable cause we want to assign the name of the api; since we didn't borrow the self (the instance itself) using & we can't call this method for the second call cause the ownership of the instance will be moved in first call  
                             where F: FnMut(hyper::Request<Body>, hyper::http::response::Builder) -> C + Send + Sync + 'static, // capturing by mut T - generic type C can be bounded to Send + Sync + 'static traits and lifetime to be shreable, safe to send and valid across threads and .awaits
-                            C: Future<Output=ConseResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static, // C is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits
+                            C: Future<Output=MafiaResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static, // C is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits
         {
             self.name = endpoint.to_string(); // setting the api name to the current endpoint
             let req = self.req.unwrap();
@@ -125,9 +125,9 @@ pub mod app{
         }
 
 
-        pub async fn get<F, C>(mut self, endpoint: &str, mut cb: F) -> ConseResult<hyper::Response<Body>, hyper::Error> // defining self (an instance of the object) as mutable cause we want to assign the name of the api; since we didn't borrow the self (the instance itself) using & we can't call this method for the second call cause the ownership of the instance will be moved in first call  
+        pub async fn get<F, C>(mut self, endpoint: &str, mut cb: F) -> MafiaResult<hyper::Response<Body>, hyper::Error> // defining self (an instance of the object) as mutable cause we want to assign the name of the api; since we didn't borrow the self (the instance itself) using & we can't call this method for the second call cause the ownership of the instance will be moved in first call  
                             where F: FnMut(hyper::Request<Body>, hyper::http::response::Builder) -> C + Send + Sync + 'static, // capturing by mut T - generic type C can be bounded to Send + Sync + 'static traits and lifetime to be shreable, safe to send and valid across threads and .awaits
-                            C: Future<Output=ConseResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static, // C is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits
+                            C: Future<Output=MafiaResult<hyper::Response<Body>, hyper::Error>> + Send + Sync + 'static, // C is a future object which will be returned by the closure and has bounded to Send to move across threads and .awaits
         {
             self.name = endpoint.to_string(); // setting the api name to the current endpoint
             let req = self.req.unwrap();
@@ -610,7 +610,7 @@ pub async fn get_random_doc(storage: Option<&Client>) -> Option<schemas::game::R
 pub async fn build_server(router: Router<Body, hyper::Error>) -> Server<AddrIncoming, RouterService<Body, hyper::Error>>{ // it'll create the server from the passed router apis
 
     let host = env::var("HOST").expect("⚠️ no host variable set");
-    let port = env::var("CONSE_PORT").expect("⚠️ no port variable set");
+    let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
     let server_addr = format!("{}:{}", host, port).as_str().parse::<SocketAddr>().unwrap();
     let conse_service = RouterService::new(router).unwrap();
     let conse_server = Server::bind(&server_addr).serve(conse_service);

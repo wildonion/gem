@@ -18,7 +18,7 @@ use hyper::{header, StatusCode, Body, Response};
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
     let res = Response::builder(); // creating a new response cause we didn't find any available route
     let response_body = misc::app::Response::<misc::app::Nill>{

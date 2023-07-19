@@ -38,7 +38,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------------------
 
-pub async fn insert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // inserting a new passed event for the current event during the game
+pub async fn insert(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // inserting a new passed event for the current event during the game
 
      
 

@@ -40,7 +40,7 @@ use std::env;
 // -------------------------------- process payment controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn role(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
     
      

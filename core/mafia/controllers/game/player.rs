@@ -53,7 +53,7 @@ use std::str::FromStr;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn update_role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -254,7 +254,7 @@ pub async fn update_role(req: Request<Body>) -> ConseResult<hyper::Response<Body
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn update_side(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -454,7 +454,7 @@ pub async fn update_side(req: Request<Body>) -> ConseResult<hyper::Response<Body
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn update_status(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -657,7 +657,7 @@ pub async fn update_status(req: Request<Body>) -> ConseResult<hyper::Response<Bo
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn update_role_ability(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -855,7 +855,7 @@ pub async fn update_role_ability(req: Request<Body>) -> ConseResult<hyper::Respo
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn cast_vote_on_player(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -1121,7 +1121,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> ConseResult<hyper::Respo
 // ➝ Return : Hyper Response Body or Hyper Error
 // ----------------------------------------------------------------------------------
 
-pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn chain_to_another_player(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
     
      
@@ -1314,7 +1314,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> ConseResult<hyper::R
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------------------------------
 
-pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current status and infos of a player during the game and can be called by the God and the player
+pub async fn get_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current status and infos of a player during the game and can be called by the God and the player
 
      
 
@@ -1536,7 +1536,7 @@ pub async fn get_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------------------------------
 
-pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current status and infos of a player during the game and can be called by the God and the player
+pub async fn get_single_god_vote(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current status and infos of a player during the game and can be called by the God and the player
 
      
 
@@ -1708,7 +1708,7 @@ pub async fn get_single_god_vote(req: Request<Body>) -> ConseResult<hyper::Respo
 // -------------------------------- get all god votes controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn get_all_god_votes(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -1891,7 +1891,7 @@ pub async fn get_all_god_votes(req: Request<Body>) -> ConseResult<hyper::Respons
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------------------------------
 
-pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current role ability of a specific player during the game and can be called by the God and the player
+pub async fn get_player_role_ability(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current role ability of a specific player during the game and can be called by the God and the player
 
      
 
@@ -2058,7 +2058,7 @@ pub async fn get_player_role_ability(req: Request<Body>) -> ConseResult<hyper::R
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------------------------------
 
-pub async fn get_player_chain_infos(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current chain infos of a specific player during the game and can be called by the God and the player
+pub async fn get_player_chain_infos(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // this api will return the current chain infos of a specific player during the game and can be called by the God and the player
 
      
 

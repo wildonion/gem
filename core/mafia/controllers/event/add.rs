@@ -43,7 +43,7 @@ use std::time::UNIX_EPOCH;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn upload_img(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn upload_img(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -238,7 +238,7 @@ pub async fn upload_img(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 // -------------------------------- add event controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn main(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 

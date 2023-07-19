@@ -15,7 +15,7 @@ pub mod cors{
     // config we're allowing the client 
     // to access all resources of that router 
 
-    pub async fn allow(mut res: Response<Body>) -> ConseResult<Response<Body>, hyper::Error> { // res must be mutable to borrow its headers mutably
+    pub async fn allow(mut res: Response<Body>) -> MafiaResult<Response<Body>, hyper::Error> { // res must be mutable to borrow its headers mutably
         let headers = res.headers_mut();
         headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
         headers.insert(header::ACCESS_CONTROL_ALLOW_METHODS, HeaderValue::from_static("*"));

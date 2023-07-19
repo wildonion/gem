@@ -31,7 +31,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // ----------------------------------------------------------------------------------
 
-pub async fn upsert(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn upsert(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
     use routerify::prelude::*; // to build the response object
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");

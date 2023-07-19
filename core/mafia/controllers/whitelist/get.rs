@@ -38,7 +38,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn mint_addrs(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
+pub async fn mint_addrs(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
 
 
     // ==============================================================================
@@ -80,7 +80,7 @@ pub async fn mint_addrs(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // get all whitelist infos
+pub async fn all_whitelists(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // get all whitelist infos
 
 
     use routerify::prelude::*;
@@ -137,7 +137,7 @@ pub async fn all_whitelists(req: Request<Body>) -> ConseResult<hyper::Response<B
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
+pub async fn whitelist(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
 
 
     use routerify::prelude::*;
@@ -206,7 +206,7 @@ pub async fn whitelist(req: Request<Body>) -> ConseResult<hyper::Response<Body>,
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn whitelist_owner_score(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
+pub async fn whitelist_owner_score(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{ // get a whitelist infos
 
 
     use routerify::prelude::*;

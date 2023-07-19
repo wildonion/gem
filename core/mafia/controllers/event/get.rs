@@ -36,7 +36,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
 
-pub async fn explore_none_expired_events(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
 
     use routerify::prelude::*;
@@ -116,7 +116,7 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> ConseResult<hype
 // -------------------------------- get all events for a specific palyer controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
-pub async fn player_all_expired(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -274,7 +274,7 @@ pub async fn player_all_expired(req: Request<Body>) -> ConseResult<hyper::Respon
 // -------------------------------- get all events for a specific palyer controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // --------------------------------------------------------------------------------------
-pub async fn player_all_none_expired(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -430,7 +430,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> ConseResult<hyper::R
 // -------------------------------- get all events controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all_none_expired(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -497,7 +497,7 @@ pub async fn all_none_expired(req: Request<Body>) -> ConseResult<hyper::Response
 // -------------------------------- get all events controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all_expired(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -565,7 +565,7 @@ pub async fn all_expired(req: Request<Body>) -> ConseResult<hyper::Response<Body
 // -------------------------------- get all events controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -632,7 +632,7 @@ pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 // -------------------------------- get a single event controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -745,7 +745,7 @@ pub async fn single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
 // -------------------------------- get god single event controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn god_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -892,7 +892,7 @@ pub async fn god_single(req: Request<Body>) -> ConseResult<hyper::Response<Body>
 // -------------------------------- get god single event controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn god_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -1027,7 +1027,7 @@ pub async fn god_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, h
 // -------------------------------- get all events for a specific group controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // ----------------------------------------------------------------------------------------------
-pub async fn group_all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 

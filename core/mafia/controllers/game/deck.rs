@@ -33,7 +33,7 @@ use std::env;
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 
-pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
@@ -223,7 +223,7 @@ pub async fn add(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 // -------------------------------- get all decks controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -355,7 +355,7 @@ pub async fn all(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper
 // -------------------------------- get a single deck controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
     
      
 
@@ -522,7 +522,7 @@ pub async fn single(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hy
 // -------------------------------- disable deck controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
-pub async fn disable(req: Request<Body>) -> ConseResult<hyper::Response<Body>, hyper::Error>{
+pub async fn disable(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
 
      
 
