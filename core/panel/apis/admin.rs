@@ -120,6 +120,8 @@ async fn reveal_role(
         /*
             @params: 
                 - @toke          → JWT
+
+            note that this token must be taken from the conse mafia hyper server
         */
         match passport!{ token }{
             true => {
@@ -130,9 +132,9 @@ async fn reveal_role(
 
                 let storage = storage.as_ref().to_owned();
                 let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-                let mongo_db = storage.clone().unwrap().get_mongodb().await.unwrap();
                 let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
                 let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
+                
                 let host = env::var("HOST").expect("⚠️ no host variable set");
                 let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
                 let reveal_api = format!("http://{}:{}/event/reveal/roles", host, port);
@@ -176,6 +178,19 @@ async fn reveal_role(
                             }
                         }
 
+                        if revealed.players.is_empty(){
+                            let resp_message_value = response_value.get("message").unwrap().to_owned();
+                            let resp_message = serde_json::from_value::<String>(resp_message_value).unwrap();
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &resp_message, // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
                         /* 
                                     
                             --------------------------------
@@ -215,11 +230,13 @@ async fn reveal_role(
 
                         let notif_room = revealed.event_id.clone();
                         let player_roles = revealed.players.clone();
-                        let stringified_player_roles = serde_json::to_string(&player_roles).unwrap();
+                        let stringified_player_roles = serde_json::to_string(&player_roles).unwrap(); /* topic that is going to be published */
 
+                        /* reveal roles notif channels start with reveal-role */
                         let channel = format!("reveal-role-{notif_room:}");
                         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
+                        /* running an async task every 1 second in the background */
                         tokio::spawn(async move{
 
                             /* publish until at least one sub subscribes to the topic */
