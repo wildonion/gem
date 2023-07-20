@@ -267,6 +267,159 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
 
 
 
+// -------------------------------- get all events for a specific palyer controller
+// ➝ Return : Hyper Response Body or Hyper Error
+// --------------------------------------------------------------------------------------
+pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
+    
+     
+
+    use routerify::prelude::*;
+    let res = Response::builder();
+    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let db = &req.data::<Client>().unwrap().to_owned();
+
+    match middlewares::auth::pass(req).await{
+        Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
+                            
+            let _id = token_data.claims._id;
+            let username = token_data.claims.username;
+            let access_level = token_data.claims.access_level;
+    
+            
+            let db_to_pass = db.clone();
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+                if access_level == DEV_ACCESS { // NOTE - only dev can handle this route
+
+
+                    let player_id = format!("{}", req.param("playerId").unwrap()); 
+                    let player_object_id = ObjectId::parse_str(player_id.as_str()).unwrap();
+
+                    ////////////////// DB Ops
+                    
+                    let filter = doc! { "players._id": player_object_id }; // filtering all expired events
+                    let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the ExploreEventInfo struct
+                    let mut all_expired_events = schemas::event::AvailableEvents{
+                        events: vec![],
+                    };
+                    match events.find(filter, None).await{
+                        Ok(mut cursor) => {
+                            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                                all_expired_events.events.push(event);
+                            }
+                            let player_events = all_expired_events.events
+                                                    .into_iter()
+                                                    .map(|event| {
+                                                        schemas::event::PlayerEventInfo{
+                                                            _id: event._id,
+                                                            title: event.title,
+                                                            content: event.content,
+                                                            deck_id: event.deck_id,
+                                                            entry_price: event.entry_price,
+                                                            group_info: event.group_info,
+                                                            image_path: event.image_path,
+                                                            creator_wallet_address: event.creator_wallet_address,
+                                                            upvotes: event.upvotes,
+                                                            downvotes: event.downvotes,
+                                                            voters: event.voters,
+                                                            phases: event.phases,
+                                                            max_players: event.max_players,
+                                                            is_expired: event.is_expired,
+                                                            is_locked: event.is_locked,
+                                                            started_at: event.started_at,
+                                                            expire_at: event.expire_at,
+                                                            created_at: event.created_at,
+                                                            updated_at: event.updated_at,
+                                                        }
+                                                    })
+                                                    .collect::<Vec<_>>();
+                            let response_body = misc::app::Response::<Vec<schemas::event::PlayerEventInfo>>{
+                                message: FETCHED,
+                                data: Some(player_events), // returning all player events without exposing other player infos
+                                status: 200,
+                            };
+                            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                            Ok(
+                                res
+                                    .status(StatusCode::OK) // not found route or method not allowed
+                                    .header(header::CONTENT_TYPE, "application/json")
+                                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket
+                                    .unwrap()
+                            )
+                        },
+                        Err(e) => {
+                            let response_body = misc::app::Response::<misc::app::Nill>{
+                                data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                                message: &e.to_string(), // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                                status: 500,
+                            };
+                            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                            Ok(
+                                res
+                                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                                    .header(header::CONTENT_TYPE, "application/json")
+                                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                    .unwrap() 
+                            )
+                        },
+                    }
+
+                    //////////////////
+
+                        
+                } else{ // access denied for this user with none admin and dev access level
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                        message: ACCESS_DENIED,
+                        status: 403,
+                    };
+                    let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                    Ok(
+                        res
+                            .status(StatusCode::FORBIDDEN)
+                            .header(header::CONTENT_TYPE, "application/json")
+                            .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                            .unwrap() 
+                    )
+                }
+            } else{ // user doesn't exist :(
+                let response_body = misc::app::Response::<misc::app::Nill>{ // we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                    message: DO_SIGNUP, // document not found in database and the user must do a signup
+                    status: 404,
+                };
+                let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                Ok(
+                    res
+                        .status(StatusCode::NOT_FOUND)
+                        .header(header::CONTENT_TYPE, "application/json")
+                        .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                        .unwrap() 
+                )
+            }
+        },
+        Err(e) => {
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                message: &e, // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                status: 500,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+            Ok(
+                res
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .unwrap() 
+            )
+        },
+    }
+
+}
+
+
+
+
 
 
 
@@ -889,7 +1042,7 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
 
 
 
-// -------------------------------- get god single event controller
+// -------------------------------- get god events controller
 // ➝ Return : Hyper Response Body or Hyper Error
 // -------------------------------------------------------------------------
 pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
@@ -1016,6 +1169,124 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
 
 
 
+
+// -------------------------------- get god events controller
+// ➝ Return : Hyper Response Body or Hyper Error
+// -------------------------------------------------------------------------
+pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper::Error>{
+    
+     
+
+    use routerify::prelude::*;
+    let res = Response::builder();
+    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+    let db = &req.data::<Client>().unwrap().to_owned();
+    
+    match middlewares::auth::pass(req).await{
+        Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
+                            
+            let _id = token_data.claims._id;
+            let username = token_data.claims.username;
+            let access_level = token_data.claims.access_level;
+    
+            
+            let db_to_pass = db.clone();
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+                if access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
+                
+
+                    let god_id = format!("{}", req.param("godId").unwrap());
+
+                    ////////////////// DB Ops
+                    
+                    
+                    let mut all_god_events = vec![];
+                    let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
+                    let mut events_cursor = events.find(doc!{"group_info.god_id": god_id}, None).await.unwrap(); // we must define the cursor as mutable since fetching all events is a mutable operation
+                    while let Some(event_info) = events_cursor.try_next().await.unwrap(){
+                        all_god_events.push(event_info)
+                    }
+                    if all_god_events.is_empty(){
+                        let response_body = misc::app::Response::<misc::app::Nill>{ // we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                            data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                            message: NOT_FOUND_DOCUMENT, // document not found in database and the user must do a signup
+                            status: 404,
+                        };
+                        let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                        Ok(
+                            res
+                                .status(StatusCode::NOT_FOUND)
+                                .header(header::CONTENT_TYPE, "application/json")
+                                .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                                .unwrap() 
+                        )
+                    } else{
+                        let response_body = misc::app::Response::<Vec<schemas::event::EventInfo>>{
+                            message: FETCHED,
+                            data: Some(all_god_events),
+                            status: 200,
+                        };
+                        let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                        Ok(
+                            res
+                                .status(StatusCode::OK)
+                                .header(header::CONTENT_TYPE, "application/json")
+                                .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket
+                                .unwrap()
+                        )
+                    }
+
+                    //////////////////
+
+                        
+                } else{ // access denied for this user with none admin and dev access level
+                    let response_body = misc::app::Response::<misc::app::Nill>{
+                        data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                        message: ACCESS_DENIED,
+                        status: 403,
+                    };
+                    let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                    Ok(
+                        res
+                            .status(StatusCode::FORBIDDEN)
+                            .header(header::CONTENT_TYPE, "application/json")
+                            .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                            .unwrap() 
+                    )
+                }
+            } else{ // user doesn't exist :(
+                let response_body = misc::app::Response::<misc::app::Nill>{ // we have to specify a generic type for data field in Response struct which in our case is Nill struct
+                    data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                    message: DO_SIGNUP, // document not found in database and the user must do a signup
+                    status: 404,
+                };
+                let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+                Ok(
+                    res
+                        .status(StatusCode::NOT_FOUND)
+                        .header(header::CONTENT_TYPE, "application/json")
+                        .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                        .unwrap() 
+                )
+            }
+        },
+        Err(e) => {
+            let response_body = misc::app::Response::<misc::app::Nill>{
+                data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
+                message: &e, // e is of type String and message must be of type &str thus by taking a reference to the String we can convert or coerce it to &str
+                status: 500,
+            };
+            let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
+            Ok(
+                res
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(response_body_json)) // the body of the response must be serialized into the utf8 bytes to pass through the socket here is serialized from the json
+                    .unwrap() 
+            )
+        },
+    }
+}
 
 
 

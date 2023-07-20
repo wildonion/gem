@@ -38,7 +38,9 @@ use crate::controllers::event::{
                                       all_none_expired as get_all_none_expired_events,
                                       all_expired as get_all_expired_events,
                                       player_all_expired as get_all_player_expired_events, 
+                                      player_all_for_dev as get_all_player_events_for_dev,
                                       player_all_none_expired as get_all_player_none_expired_events, 
+                                      god_all_for_dev as get_all_god_events_for_dev,
                                       single as get_single_event, 
                                       group_all as get_all_group_events,
                                       explore_none_expired_events,
@@ -101,8 +103,10 @@ pub async fn register() -> Router<Body, hyper::Error>{
         .get("/get/all/in-going", get_all_none_expired_events)
         .get("/get/all/done", get_all_expired_events)
         .get("/get/all/god", get_all_god_events)
+        .get("/get/all/god-with-id/:godId", get_all_god_events_for_dev)
         .post("/get/all/player/in-going",get_all_player_none_expired_events)
         .post("/get/all/player/done",get_all_player_expired_events)
+        .get("/get/all/player/:playerId",get_all_player_events_for_dev)
         .post("/get/all/group", get_all_group_events)
         .get("/get/all", all_events)
         .post("/get/single/:eventId/god", get_god_single_event)
