@@ -188,7 +188,7 @@ impl Default for Db{
             engine: None,
             url: None,
             instance: None,
-            pool: None,
+            pool: None, // pg pool
             redis: None,
             redis_async_pubsub_conn: None,
             redis_actor: None,
@@ -205,7 +205,7 @@ impl Db{
                 engine: None, 
                 url: None,
                 instance: None,
-                pool: None,
+                pool: None, // pg pool
                 redis: None,
                 redis_async_pubsub_conn: None,
                 redis_actor: None,
@@ -638,7 +638,7 @@ macro_rules! db {
                                 instance: None,
                                 engine: None,
                                 url: None,
-                                pool: None,
+                                pool: None, // pg pool
                                 redis: None,
                                 redis_async_pubsub_conn: None,
                                 redis_actor: None
@@ -672,7 +672,7 @@ macro_rules! db {
                                             instance: Some(mongodb_instance),
                                             engine: init_db.engine,
                                             url: init_db.url,
-                                            pool: None,
+                                            pool: None, // pg pool
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
                                             redis_actor: Some(redis_actor.clone())
