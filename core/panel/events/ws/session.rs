@@ -197,7 +197,9 @@ impl Actor for WsNotifSession{
         
         /* 
             sending disconnect message to the RoleNotifServer actor with the passed in 
-            session id and the event name room 
+            session id and the event name room, once an actor is stopped its state will
+            be cleaned thus we basically we must don't have access to its internal states
+            like the actor fields.
         */
         self.ws_role_notif_actor_address.do_send(RoleNotifServerDisconnectMessage{id: self.id, event_name: self.notif_room.to_owned()}); 
         Running::Stop /* return the Stop variant */
@@ -276,6 +278,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
                             /* if the interval is not already  started we'll start it and set flag to true */
                             if !self.is_subscription_interval_started{
+                                
+                                info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
+                                
                                 /* 
                                     start subscription interval for this joined session, since ctx is not Send 
                                     we couldn't put the interval part inside the tokio::spawn()
