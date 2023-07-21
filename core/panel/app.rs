@@ -62,6 +62,7 @@ use std::time::Instant;
 use std::collections::HashSet;
 use rand::rngs::ThreadRng;
 use futures::StreamExt; /* is required to call the next() method on the streams */
+use once_cell::sync::Lazy;
 
 
 mod apis;

@@ -124,13 +124,27 @@ async fn get_admin_data(
                         let get_event_api = format!("http://{}:{}/event/get/all/god-with-id/{}", host, port, god_id);
                         let mut all_god_events = Vec::<EventInfo>::new();
 
-                        let response_value: serde_json::Value = reqwest::Client::new()
+                        let get_response_value = reqwest::Client::new()
                             .get(get_event_api.as_str())
                             .header("Authorization", token)
                             .send()
-                            .await.unwrap()
-                            .json()
-                            .await.unwrap();
+                            .await;
+
+                        let Ok(response_value) = get_response_value else{
+
+                            let err = get_response_value.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &err.to_string(), // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");
                         if data.is_some(){
@@ -258,13 +272,27 @@ async fn get_user_data(
                         let mut player_events = Vec::<PlayerEventInfo>::new();
                         
 
-                        let response_value: serde_json::Value = reqwest::Client::new()
+                        let get_response_value = reqwest::Client::new()
                             .get(get_event_api.as_str())
                             .header("Authorization", token)
                             .send()
-                            .await.unwrap()
-                            .json()
-                            .await.unwrap();
+                            .await;
+
+                        let Ok(response_value) = get_response_value else{
+
+                            let err = get_response_value.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &err.to_string(), // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");
                         if data.is_some(){

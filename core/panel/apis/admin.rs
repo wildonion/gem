@@ -114,7 +114,7 @@ async fn reveal_role(
 
     
     if let Some(header_value) = req.headers().get("Authorization"){
-    
+
         let token = header_value.to_str().unwrap();
         
         /*
@@ -149,14 +149,28 @@ async fn reveal_role(
                         info!("📥 sending request to the conse mafia hyper server at {}", chrono::Local::now().timestamp_nanos());
 
                         /* calling rveal role API of the mafia hyper server to get the players' roles */
-                        let response_value: serde_json::Value = reqwest::Client::new()
+                        let get_response_value = reqwest::Client::new()
                             .post(reveal_api.as_str())
                             .json(&map)
                             .header("Authorization", token)
                             .send()
-                            .await.unwrap()
-                            .json()
-                            .await.unwrap();
+                            .await;
+
+                        let Ok(response_value) = get_response_value else{
+
+                            let err = get_response_value.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &err.to_string(), // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");
                         if data.is_some(){
@@ -236,12 +250,18 @@ async fn reveal_role(
                         let channel = format!("reveal-role-{notif_room:}");
                         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
 
-                        /* running an async task every 1 second in the background */
+                        /* 
+                            running an async task every 1 second in the background, 
+                            so we might have a successfull return from this api but 
+                            still waiting for a subscriber to subscribe to the published
+                            event room 
+                        */
                         tokio::spawn(async move{
 
                             /* publish until at least one sub subscribes to the topic */
                             loop{
 
+                                /* tick every 1 second */
                                 interval.tick().await;
 
                                 let redis_pub_resp = redis_actor
@@ -258,7 +278,7 @@ async fn reveal_role(
                                                     if subs >= 1{
                                                         
                                                         /* if we're here means that ws session received the notif */
-                                                        info!("💡 --- [{subs:}] online users subscribed to event: [{notif_room:}] to receive roles notif");
+                                                        info!("💡 --- [{subs:}] subscriber has subscribed to event: [{notif_room:}] to receive roles notif");
                                                         break;
                                                         
                                                     }

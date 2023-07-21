@@ -98,6 +98,7 @@ impl WsNotifSession{
 
                 /* sending the received roles to each session separately as a notification */
                 for player_info in decoded_player_roles{
+                    /* making sure that we're sending the role of this peer to the session */
                     if player_info._id.to_string() == peer_name{
                         ws_role_notif_actor_address
                             .send(NotifySessionWithRedisSubscription{

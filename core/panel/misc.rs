@@ -753,20 +753,30 @@ macro_rules! passport {
             let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
             let check_token_api = format!("http://{}:{}/auth/check-token", host, port);
             
-            let mut response_value: serde_json::Value = reqwest::Client::new()
-                        .post(check_token_api.as_str())
-                        .header("Authorization", $token)
-                        .send()
-                        .await.unwrap()
-                        .json()
-                        .await.unwrap();
+            let get_response_value = reqwest::Client::new()
+                .post(check_token_api.as_str())
+                .header("Authorization", $token)
+                .send()
+                .await;
 
-            let msg = response_value["message"].take();
-            if msg == serde_json::json!("Access Granted"){
-                true
-            } else{
-                false
+            match get_response_value{
+
+                Ok(response_value) => {
+
+                    let mut response_value = response_value.json::<serde_json::Value>().await.unwrap();
+
+                    let msg = response_value["message"].take();
+                    if msg == serde_json::json!("Access Granted"){
+                        true
+                    } else{
+                        false
+                    }
+                },
+                Err(_) => false
+
             }
+
+            
             
         }
     }
