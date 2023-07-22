@@ -69,7 +69,9 @@ impl WsNotifSession{
 
             /* 🚨 !!! 
                 we must receive asyncly from the redis subscription streaming 
-                channel otherwise actor gets halted in here since 
+                channel otherwise actor gets halted in here since using sync 
+                redis and actor redis cause the current thread gets halted
+                because they're all blocking operations.
             !!! 🚨 */
             let get_stream_messages = redis_async_pubsubconn
                 .subscribe(&cloned_notif_room)
@@ -98,7 +100,7 @@ impl WsNotifSession{
 
                 /* sending the received roles to each session separately as a notification */
                 for player_info in decoded_player_roles{
-                    /* making sure that we're sending the role of this peer to the session */
+                    /* making sure that we're sending the role of this peer to the current session */
                     if player_info._id.to_string() == peer_name{
                         ws_role_notif_actor_address
                             .send(NotifySessionWithRedisSubscription{
@@ -273,10 +275,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         "/join" => {
 
                             self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
-                            let joined_msg = format!("joined event room: [{}] to receive push notif subscriptions from admin", self.notif_room);
+                            let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
                             ctx.text(joined_msg);
 
-                            /* if the interval is not already  started we'll start it and set flag to true */
+                            /* 
+                                if the interval is not already started we'll start it and set the flag to true 
+                                otherwise we won't do this on second /join command, which prevents from adding 
+                                more interval to the actor state.
+                            */
                             if !self.is_subscription_interval_started{
                                 
                                 info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
