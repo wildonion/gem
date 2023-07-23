@@ -6,7 +6,7 @@
 Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr) and Solana blockchain which uses: 
 - behavioural graph virtual machine (GVM) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
-- order book in which players can sell their minted roles based on highest or lowest order setup.
+- p2p order book in which players can sell their minted roles based on highest or lowest order setup.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
 
 <p align="center">
@@ -57,7 +57,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of [coiniXerr](ht
 
 * 🛎️ **actix web** and **hyper** based HTTP servers and handling push notif subscriptions
 
-* 📣 **redis** based pubsub streaming channel to publish and subscribe to the revealed roles, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating) topics
+* 📣 **redis** based pubsub streaming channel to publish and subscribe to the revealed roles, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating) and new minted role order for trading topics
 
 * 💾 **redis** http response caching to avoid high latencies cause I believe reading from RAM is much faster than HardDisk.   
 
@@ -279,6 +279,6 @@ make renew
 
 * behavioural graph virtual machine (gvm) using `Rc` and `RefCell` of each player collected by the history of each event's `phases` field, event collaboration queue (ecq), order book and match making rating (mmr) engines  
 
-* redis pubsub streaming structure for publishing new minted role order, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder along with their actor notifs structure inside `core/panel/events/ws` folder
+* redis pubsub streaming structure for publishing new minted role order for trading, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder along with their actor notifs structure inside `core/panel/events/ws` folder
 
 * publish docker containers to docker hub also add CI/CD setup in digitalocean
