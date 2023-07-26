@@ -1,9 +1,9 @@
 
 
 
-/*   -----------------------------------------------------------------------------------
-    | websocket session actor to receive push notif subscription from redis subscriber 
-    | ----------------------------------------------------------------------------------
+/*   ------------------------------------------------------------------------------------------------------
+    | websocket session actor to receive push notif subscription from redis subscriber of mmr, ecq engines 
+    | -----------------------------------------------------------------------------------------------------
     |
     |
 */
@@ -65,7 +65,7 @@ impl WsNotifSession{
 
         tokio::spawn(async move{
 
-            info!("💡 --- peer [{}] is subscribing to event room: [{}]", peer_name, notif_room);
+            info!("💡 --- peer [{}] is subscribing to event room: [{}] at time [{}]", peer_name, notif_room, chrono::Local::now().timestamp_nanos());
 
             /* 🚨 !!! 
                 we must receive asyncly from the redis subscription streaming 
@@ -89,10 +89,13 @@ impl WsNotifSession{
 
             };
         
-            /* iterating through the msg streams as they're coming to the stream channel while are not None */
+            /* 
+                iterating through the msg streams as they're coming to 
+                the stream channel, we select the some ones
+            */
             while let Some(message) = get_stream_messages.next().await{ 
 
-                info!("💡 --- received revealed roles notif from admin");
+                info!("💡 --- received revealed roles notif from admin at time: [{}]", chrono::Local::now().timestamp_nanos());
                 
                 let resp_val = message.unwrap();
                 let stringified_player_roles = String::from_resp(resp_val).unwrap();
@@ -102,12 +105,15 @@ impl WsNotifSession{
                 for player_info in decoded_player_roles{
                     /* making sure that we're sending the role of this peer to the current session */
                     if player_info._id.to_string() == peer_name{
-                        ws_role_notif_actor_address
+                        if let Err(why) = ws_role_notif_actor_address
                             .send(NotifySessionWithRedisSubscription{
                                 notif_room: cloned_notif_room.to_string(), /* the event object id  */
                                 role_name: player_info.role_name.unwrap(),
                                 session_id,
-                            }).await;
+                            }).await
+                            {
+                                error!("🚨 --- can't notify the peer cause by this mailbox error: [{}]", why);
+                            }
                     }
                 }
 
@@ -272,7 +278,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                     match v[0]{
 
                         /* join the event notif room to subscribe to redis topics */
-                        "/join" => {
+                        "/join-roles" => {
 
                             self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
                             let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
@@ -294,7 +300,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
                                     
                                     actor.is_subscription_interval_started = true;
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
                                     
+                                    /* cloning the types that they need to be captured inside tokio::spawn() */
                                     let notif_room = actor.notif_room;
                                     let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
                                     let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
@@ -314,6 +322,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 
                                 });
                             }
+
+                            info!("💡 --- role subscription interval is already started");
+
+                        },
+                        "join-ecq" => {
+                            
+                            todo!()
+                        
+                        },
+                        "join-mmr" => {
+
+                            todo!()
 
                         },
                         _ => ctx.text(format!("unknown command")),
