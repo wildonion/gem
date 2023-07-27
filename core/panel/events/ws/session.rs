@@ -26,11 +26,17 @@ use super::notifs::{
 };
 
 
-
-
 /// redis subscription
+/* 
+    since it's macro it must be complied before any main codes 
+    so we can use it on top of the structures, 
+*/
 #[derive(Message)]
-#[rtype(result = "()")]
+/*
+    the following macro will implement the message Handler trait for the 
+    NotifySession struct with the result of type () at compile time
+*/
+#[rtype(result = "()")] 
 pub struct NotifySession{
     pub notif_room: String,
     pub payload: String,
@@ -71,7 +77,7 @@ impl WsNotifSession{
                 we must receive asyncly from the redis subscription streaming 
                 channel otherwise actor gets halted in here since using sync 
                 redis and actor redis cause the current thread gets halted
-                because they're all blocking operations.
+                because they'll receive in a blocking manner.
             !!! 🚨 */
             let get_stream_messages = redis_async_pubsubconn
                 .subscribe(&cloned_notif_room)
@@ -90,8 +96,8 @@ impl WsNotifSession{
             };
         
             /* 
-                iterating through the msg streams as they're coming to 
-                the stream channel, we select the some ones
+                iterating through the msg future object streams as they're 
+                coming to the stream channel, we select the some ones
             */
             while let Some(message) = get_stream_messages.next().await{ 
 

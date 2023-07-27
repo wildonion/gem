@@ -116,7 +116,7 @@ pub struct NewTask<'t>{
 impl Task{
 
 
-    pub async fn find_by_id(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, Result<HttpResponse, actix_web::Error>>{
+    pub async fn find_by_id(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, PanelHttpResponse>{
 
         let single_task = tasks
             .filter(id.eq(job_id))
@@ -155,7 +155,7 @@ impl Task{
     pub async fn insert(
         new_task: NewTaskRequest, 
         redis_client: &RedisClient, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
         
         let single_task = tasks
             .filter(task_name.eq(new_task.task_name.clone()))
@@ -246,7 +246,7 @@ impl Task{
 
     }
 
-    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         /* we must first delete from users_tasks */
 
@@ -299,7 +299,7 @@ impl Task{
         
     }
 
-    pub async fn edit(new_task: EditTaskRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, Result<HttpResponse, actix_web::Error>>{
+    pub async fn edit(new_task: EditTaskRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<TaskData, PanelHttpResponse>{
 
         match diesel::update(tasks.find(new_task.task_id.to_owned()))
             .set(EditTask{
@@ -365,7 +365,7 @@ impl Task{
                     
     }
 
-    pub async fn get_all_admin(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all_admin(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
 
         /* get the passed in admin info by its id */
         let user = match users::table
@@ -453,7 +453,7 @@ impl Task{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
 
         match tasks.load::<Task>(connection)
         {

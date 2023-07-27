@@ -31,7 +31,7 @@ impl Twitter{
         it's ownership, thus we can clone or borrow its fields using clone() or as_ref()
     */
 
-    pub async fn new(api: Option<String>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn new(api: Option<String>) -> Result<Self, PanelHttpResponse>{
 
         let file_open = std::fs::File::open("twitter-accounts.json");
         let Ok(file) = file_open else{
@@ -74,7 +74,7 @@ impl Twitter{
         )
     }
 
-    pub async fn is_twitter_user_verified(&self, account_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, Result<HttpResponse, actix_web::Error>>{
+    pub async fn is_twitter_user_verified(&self, account_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, PanelHttpResponse>{
 
         let tusername = if account_name.is_empty(){
             "".to_string()
@@ -177,7 +177,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient,
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -303,7 +303,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient, 
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -388,7 +388,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient, 
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -477,7 +477,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient, 
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -611,7 +611,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient, 
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -756,7 +756,7 @@ impl Twitter{
         task: TaskData, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient, 
-        doer_id: i32) -> Result<HttpResponse, actix_web::Error>{
+        doer_id: i32) -> PanelHttpResponse{
 
         let res_user_find = User::find_by_id(doer_id, connection).await;
         let Ok(user) = res_user_find else{
@@ -836,7 +836,7 @@ impl Twitter{
 
     }
 
-    async fn get_twitter_user_info(&self, tusername: &str) -> Result<TwitterUser, Result<HttpResponse, actix_web::Error>>{
+    async fn get_twitter_user_info(&self, tusername: &str) -> Result<TwitterUser, PanelHttpResponse>{
 
         for api in self.apis.clone(){
             match api
@@ -911,7 +911,7 @@ impl Twitter{
 
     }
 
-    async fn get_twitter_user_tweets(&self, twitter_user_id: NumericId, user_twitter_username: String) -> Result<Vec<Tweet>, Result<HttpResponse, actix_web::Error>>{
+    async fn get_twitter_user_tweets(&self, twitter_user_id: NumericId, user_twitter_username: String) -> Result<Vec<Tweet>, PanelHttpResponse>{
 
         for api in self.apis.clone(){
             match api
@@ -987,7 +987,7 @@ impl Twitter{
 
     pub async fn do_task(
         doer_id: i32, job_id: i32, task_type: &str, tusername: &str, tweet_link: Option<&str>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<HttpResponse, actix_web::Error>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> PanelHttpResponse{
         
         match UserTask::insert(doer_id, job_id, connection).await{
             Ok(_) => {

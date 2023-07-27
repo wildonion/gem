@@ -110,7 +110,7 @@ async fn reveal_role(
         req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     
     if let Some(header_value) = req.headers().get("Authorization"){
@@ -123,7 +123,7 @@ async fn reveal_role(
 
             note that this token must be taken from the conse mafia hyper server
         */
-        match passport!{ token }{
+        match mafia_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------
@@ -363,7 +363,7 @@ async fn login(
         req: HttpRequest, 
         login_info: web::Json<LoginInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
    
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -517,7 +517,7 @@ async fn register_new_user(
         req: HttpRequest,  
         new_user: web::Json<NewUserInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -631,7 +631,7 @@ async fn edit_user(
         req: HttpRequest, 
         new_user: web::Json<EditUserByAdminRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -736,7 +736,7 @@ async fn delete_user(
         req: HttpRequest, 
         doer_id: web::Path<i32>,  // doer is the user who do task
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -849,7 +849,7 @@ async fn delete_user(
 async fn get_users(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -986,7 +986,7 @@ async fn register_new_task(
         req: HttpRequest, 
         new_task: web::Json<NewTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1108,7 +1108,7 @@ async fn delete_task(
         req: HttpRequest, 
         job_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1229,7 +1229,7 @@ async fn edit_task(
         req: HttpRequest, 
         new_task: web::Json<EditTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1329,7 +1329,7 @@ async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1465,7 +1465,7 @@ async fn get_admin_tasks(
 async fn get_users_tasks(
         req: HttpRequest,   
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1566,7 +1566,7 @@ async fn add_twitter_account(
         req: HttpRequest,   
         new_account: web::Json<Keys>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();

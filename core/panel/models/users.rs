@@ -149,7 +149,7 @@ impl User{
 
     pub const SCHEMA_NAME: &str = "User";
 
-    pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, Result<HttpResponse, actix_web::Error>>{
+    pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
 
         let mut jwt_flag = false;
         let mut cookie_flag = false;
@@ -531,7 +531,7 @@ impl User{
         Ok(argon2::verify_encoded(&self.pswd, password_bytes).unwrap())
     }
 
-    pub async fn find_by_username(user_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn find_by_username(user_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(username.eq(user_name.to_string()))
@@ -552,7 +552,7 @@ impl User{
 
     }
 
-    pub async fn find_by_wallet(wallet: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn find_by_wallet(wallet: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(wallet_address.eq(wallet.to_string()))
@@ -573,7 +573,7 @@ impl User{
 
     }
 
-    pub async fn find_by_id(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, Result<HttpResponse, actix_web::Error>>{
+    pub async fn find_by_id(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::id.eq(doer_id))
@@ -594,7 +594,7 @@ impl User{
 
     }
 
-    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
+    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -698,7 +698,7 @@ impl User{
     
     }
 
-    pub async fn insert_by_wallet_password(wallet: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), Result<HttpResponse, actix_web::Error>>{
+    pub async fn insert_by_wallet_password(wallet: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -806,7 +806,7 @@ impl User{
     pub async fn insert_new_user(user: NewUserInfoRequest, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
         redis_client: &RedisClient
-        ) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+        ) -> Result<usize, PanelHttpResponse>{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let u_name = user.username.as_str();
@@ -867,7 +867,7 @@ impl User{
 
     }
 
-    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, Result<HttpResponse, actix_web::Error>>{
+    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         /* fetch user info based on the data inside jwt */ 
         let single_user = users
@@ -1004,7 +1004,7 @@ impl User{
 
     }
 
-    pub async fn delete_by_admin(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete_by_admin(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         /* we must first delete from users_tasks */
         
@@ -1058,7 +1058,7 @@ impl User{
     
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, PanelHttpResponse>{
 
         match users.load::<User>(connection)
         {
@@ -1122,7 +1122,7 @@ impl User{
 
     }
 
-    pub async fn logout(who: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), Result<HttpResponse, actix_web::Error>>{
+    pub async fn logout(who: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), PanelHttpResponse>{
 
         match diesel::update(users.find(who))
             .set(token_time.eq(0))
@@ -1160,7 +1160,7 @@ impl User{
     pub async fn update_social_account(
         wallet: &str, 
         account_name: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, Result<HttpResponse, actix_web::Error>>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_wallet(wallet, connection).await else{

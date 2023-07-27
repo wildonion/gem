@@ -43,7 +43,7 @@ async fn notif_subs(
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
     builtin_redis_actor: web::Data<Addr<RedisSubscription>>
-) -> Result<HttpResponse, actix_web::Error> {
+) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();

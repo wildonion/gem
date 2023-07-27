@@ -88,7 +88,7 @@ pub struct Health{
 async fn index(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
         let iam_healthy = Health{
             status: "🥞 Alive".to_string()
@@ -128,7 +128,7 @@ async fn index(
 async fn check_token(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -300,7 +300,7 @@ async fn check_token(
 async fn logout(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
 
     let storage = storage.as_ref().to_owned();
@@ -406,7 +406,7 @@ async fn logout(
 async fn get_tasks(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();

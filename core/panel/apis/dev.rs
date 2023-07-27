@@ -89,7 +89,7 @@ async fn get_admin_data(
         req: HttpRequest, 
         admin_id: web::Path<String>, // mongodb object id of admin or god  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     
     if let Some(header_value) = req.headers().get("Authorization"){
@@ -102,7 +102,7 @@ async fn get_admin_data(
 
             note that this token must be taken from the conse mafia hyper server
         */
-        match passport!{ token }{
+        match mafia_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ async fn get_user_data(
         req: HttpRequest, 
         user_id: web::Path<String>, // mongodb object id of user or player  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     
     if let Some(header_value) = req.headers().get("Authorization"){
@@ -251,7 +251,7 @@ async fn get_user_data(
 
             note that this token must be taken from the conse mafia hyper server
         */
-        match passport!{ token }{
+        match mafia_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------

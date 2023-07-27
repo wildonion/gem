@@ -83,7 +83,7 @@ async fn login(
         req: HttpRequest, 
         wallet: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -210,7 +210,7 @@ async fn login_with_wallet_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -374,7 +374,7 @@ async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -521,7 +521,7 @@ pub async fn tasks_report(
         req: HttpRequest,
         user_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();

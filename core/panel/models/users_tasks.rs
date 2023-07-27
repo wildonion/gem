@@ -54,7 +54,7 @@ pub struct UserTaskData{
 
 impl UserTask{
 
-    pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, PanelHttpResponse>{
 
         match users_tasks.load::<UserTask>(connection)
             {
@@ -87,7 +87,7 @@ impl UserTask{
 
     pub async fn insert(
         doer_id: i32, job_id: i32, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         let single_task = tasks
             .filter(tasks::id.eq(job_id))
@@ -141,7 +141,7 @@ impl UserTask{
 
     }
 
-    pub async fn reports(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, Result<HttpResponse, actix_web::Error>>{
+    pub async fn reports(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
 
         let user = match users::table
             .filter(users::id.eq(doer_id))
@@ -243,7 +243,7 @@ impl UserTask{
 
     }
 
-    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, Result<HttpResponse, actix_web::Error>>{
+    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, PanelHttpResponse>{
 
         let all_users: Vec<User> = match users::table
             .select(User::as_select())
@@ -390,7 +390,7 @@ impl UserTask{
         return true;
     }
 
-    pub async fn delete_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(users_tasks.filter(users_tasks::user_id.eq(doer_id)))
             .execute(connection)
@@ -422,7 +422,7 @@ impl UserTask{
 
     }
 
-    pub async fn delete_by_task(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, Result<HttpResponse, actix_web::Error>>{
+    pub async fn delete_by_task(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(job_id)))
             .execute(connection)

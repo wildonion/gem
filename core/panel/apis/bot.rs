@@ -104,7 +104,7 @@ async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -292,7 +292,7 @@ async fn verify_twitter_task(
 async fn check_users_tassk(
         req: HttpRequest,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> Result<HttpResponse, actix_web::Error> {
+    ) -> PanelHttpResponse {
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
