@@ -65,7 +65,16 @@ sysinfo = "0.29.4"
 tokio-cron-scheduler = "0.9.4"
 openssl = { version = "0.10", features = ["v110"] }
 twitter-v2 = "0.1.8"
+syn = { version = "*", features = ["full"] }
+quote = "*"
+proc-macro2 = "*"
 
+
+
+[lib]
+proc-macro = true
+path = "core/panel/lib.rs"
+name = "panel_macros"
 
 
 [[bin]]

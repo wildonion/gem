@@ -270,14 +270,10 @@ make renew
 
 ## 🚧 WIPs
 
-* admin SMS panel to advertise the event
-
 * god and dev panel app using `yew`
 
-* macros inside the `core/panel/misc.rs` and a proc macro attribute like `#[passport(access=2)]` to put on top of the admin, user and dev APIs, struct and their fields
-
-* behavioural graph virtual machine (gvm) using `Rc` and `RefCell` of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines  
-
 * redis pubsub streaming structure for publishing new minted role order for trading, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder along with their actor notifs structure inside `core/panel/events/ws` folder
+
+* behavioural graph virtual machine (gvm) using `Rc` and `RefCell` of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines 
 
 * publish docker containers to docker hub also add CI/CD setup in digitalocean
