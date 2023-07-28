@@ -1,23 +1,39 @@
 
+/*   -------------------------------------------
+    |           proc macro functions 
+    | ------------------------------------------
+    |
+    |   RUST CODES ---> TOKEN STREAM ---> AST
+    |
+    | 1 - parse (a new parser perhaps!) TokenStreams (Rust codes) to generate AST using syn
+    | 2 - write Rust codes using the patterns inside the generated AST like ident
+    | 3 - convert generated either pure Rust codes or #variable into a new AST using quote
+    | 4 - return the new AST as a new TokenStream to the compiler to update the method or struct field at compile time
+    |
 
 
-/*
-
-    ------------- IMPORTANT NOTE ON MACROS -------------
     since macro processing in Rust happens after the construction of 
     the AST, as such, the syntax used to invoke a macro must be a proper 
     part of the language's syntax tree thus by adding a new code in this 
     crate the compiler needs to compile the whole things again, which 
-    forces us to reload the workspace everytime.
+    forces us to reload the workspace everytime, means by that any logging
+    codes don't work in here at runtime and we must check them in console 
+    once the code gets compiled.
 
-    a TokenStream is simply the Rust codes which can be used to built the AST 
-    like: RUST CODES ---> TOKEN STREAM ---> AST also the following are matters:
+    a TokenStream is simply built from the Rust codes which can be used to built the
+    AST like: RUST CODES ---> TOKEN STREAM ---> AST also the following are matters:
     sync generates : the AST from the passed in TokenStream (sequence of token trees)
-    quote generates: Rust codes that can be used to generate TokenStream (sequence of token trees) and a new AST
+    quote generates: Rust codes that can be used to generate TokenStream and a new AST
 
+    proc macro can be on top of methods, union, enum and struct and can be used to add method to them before 
+    they get compiled since compiler will extend the struct AST by doing this once we get the token stream of 
+    the struct Rust code. it can be used to parse it into Rust pattern (ident, ty, tt and ...) that will
+    be used to add a new or edit a logic on them finally we must use the extended token stream of the Rust
+    codes that we've added to convert them into a new token stream to return from the macro to tell the 
+    compiler that extend the old AST with this new one
 
     kinds: 
-        decl_macro
+        decl_macro (inside misc.rs)
         proc_macro
         proc_macro_derive
         proc_macro_attribute
@@ -26,19 +42,42 @@
         add a method to struct or check a condition against its fields
         convert trait into module to extend the trait methods
         extend the interface of a struct by changing the behaviour of its fields and methods
-        create a DSL like jsx or a new keyword or a new lang
-        build a new AST from the input TokenStream and return the generated TokenStream from a new Rust codes
-
+        create a DSL like jsx, css or a new keyword or a new lang
+        build a new AST from the input TokenStream by parsing incoming tokens and return the generated TokenStream from a new Rust codes
+        write parser using decl_macro
+        changing and analysing the AST logics of methods at compile time before getting into their body
+    
 
 */
 
 
 
 use proc_macro::TokenStream;
-use syn::{parse, parse_macro_input, Attribute};
-use quote::{format_ident, quote}; // alows us to generate and write rust codes
+use quote::{quote, ToTokens};
+use std::collections::HashSet as Set;
+use syn::fold::{self, Fold};
+use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
+use syn::{parse_macro_input, parse_quote, Expr, Ident, Local, Pat, Stmt, Token, FnArg};
 
 
+
+struct Args{
+    vars: Set<Ident>
+}
+
+/*
+    we need to create our own parser to parse the 
+    args token stream into a new AST
+*/
+impl Parse for Args {
+    fn parse(input: ParseStream) -> syn::parse::Result<Self> {
+        let vars = Punctuated::<Ident, Token![,]>::parse_terminated(input)?;
+        Ok(Args {
+            vars: vars.into_iter().collect(),
+        })
+    }
+}
 
 /*
     with the following proc macro we can do inspect and operate on the 
@@ -50,27 +89,51 @@ use quote::{format_ident, quote}; // alows us to generate and write rust codes
 #[proc_macro_attribute]
 pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
 
-    /*
-        1. we have to build the new AST from the `input` TokenStream to extend 
-            the one that we already have by using syn to parse the args & input 
-            tokens into a syntax tree, note that the type of TokenStream that 
-            we want to parse it with syn to generate AST, must be specified, 
-            like parsing a function TokenStream into ItemFn AST.
+    /*  
+                                once we here we must:
+        build the new AST from the `input` TokenStream to extend the one that we 
+        already have by using syn to parse the args & input tokens into a syntax 
+        tree, note that the type of TokenStream that we want to parse it with syn 
+        to generate AST, must be specified, like parsing a function TokenStream 
+        into ItemFn AST, then we need to generate a new TokenStream from generated 
+        Rust types parsed from the input TokenStream, using quote to do so, generate 
+        a new TokenStream from the passed in Rust codes (either pure or using #variable) 
+        to it that can be used to build a new AST, this will replace whatever `input` 
+        is annotated with this attribute proc macro, finally we'll return the token 
+        stream either generated by the quote or the passed in input.
 
-        2. generate a new TokenStream or tokens from step 1 using quote to generate 
-            Rust codes which will generate a new TokenStream that can be used to build 
-            a new AST, this will replace whatever `input` is annotated with this attribute 
-            proc macro.
-        
-        3. return the token stream either generated by the quote or the passed in input.
+        we can't access the token inside the request object 
+        in this proc macro since procedural macros work at compile time, 
+        they don't have access to runtime data. In your case, the token 
+        in the HTTP request header is available at runtime, so it's 
+        impossible to directly inspect the header's content inside 
+        a procedural macro.
     */
+    let mut api_ast = syn::parse::<syn::ItemFn>(input.clone()).unwrap(); /* parsing the input token stream or the method into the ItemFn AST */
+    let roles_set = parse_macro_input!(args as Args).vars;
+    let mut granted_roles = vec![];
+    for role in roles_set{
+        granted_roles.push(role.to_string());
+    }
 
-    let api_ast = syn::parse::<syn::ItemFn>(input.clone()).unwrap();
-    let params = api_ast.attrs;
+    /* 
+        generating new token stream of granted_roles variable, 
+        we call it granted_roles, quote generates new AST or 
+        token stream from Rust codes
+    */
+    let new_stmt = syn::parse2(quote!{
+        let granted_roles = vec![#(#granted_roles),*];
+    }).unwrap();
 
-    /* return the generated token stream using quote */
-    TokenStream::from(quote!(fn dummy(){}))
-    // input 
+    /* inject the granted_roles into the function body at compile time */
+    api_ast.block.stmts.insert(0, new_stmt);
+    
+    /* 
+        return the AST of the function generated by the quote 
+        which contains the updated codes and compiled the function body
+    */
+    TokenStream::from(quote!(#api_ast))
+
 
 }
 
@@ -78,13 +141,15 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn my_fn_like_proc_macro(input: TokenStream) -> TokenStream {
 
-  input
+    input
 
 }
 
 #[proc_macro_derive(PassportDrive)]
 pub fn my_derive_proc_macro(input: TokenStream) -> TokenStream {
 
-  input
+    // https://blog.logrocket.com/procedural-macros-in-rust/
+
+    input
 
 }

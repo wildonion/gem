@@ -513,6 +513,7 @@ async fn login(
     )
 )]
 #[post("/register-new-user")]
+#[passport(admin)]
 async fn register_new_user(
         req: HttpRequest,  
         new_user: web::Json<NewUserInfoRequest>, 

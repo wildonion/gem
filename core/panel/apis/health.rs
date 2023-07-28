@@ -85,6 +85,7 @@ pub struct Health{
     tag = "crate::apis::health",
 )]
 #[get("/check-server")]
+#[passport(admin, user, dev)]
 async fn index(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -125,6 +126,7 @@ async fn index(
     )
 )]
 #[get("/check-token")]
+#[passport(admin, user, dev)]
 async fn check_token(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -297,6 +299,7 @@ async fn check_token(
     )
 )]
 #[post("/logout")]
+#[passport(admin, user, dev)]
 async fn logout(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -403,6 +406,7 @@ async fn logout(
     )
 )]
 #[get("/get-tasks")]
+#[passport(admin, user, dev)]
 async fn get_tasks(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
