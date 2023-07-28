@@ -99,7 +99,7 @@ async fn notif_subs(
                         peer_name: Some(user_id),
                         notif_room: notif_room_str,
                         ws_role_notif_actor_address,
-                        redis_async_pubsubconn,
+                        app_storage: storage.clone(),
                         is_subscription_interval_started: false
                     }, 
                     &req, 
@@ -112,18 +112,6 @@ async fn notif_subs(
             } else if notif_room.starts_with("mmr-"){
 
                 todo!()
-
-            } else if notif_room.starts_with("twitter-bot-response"){
-
-                todo!()
-
-            } else if notif_room.starts_with("task-verification-responses"){
-
-                todo!()
-
-            } else if notif_room.starts_with("tasks"){
-
-                todo!();
 
             } else{
 

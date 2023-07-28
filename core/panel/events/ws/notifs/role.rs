@@ -230,7 +230,13 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
 
     fn handle(&mut self, msg: UpdateNotifRoom, ctx: &mut Self::Context) -> Self::Result{
 
-        self.redis_builtin_actor = Some(msg.builtin_redis_actor);
+        /* 
+            if the redis_builtin_actor is not set already means we're 
+            here for the first time thus we'll update it
+        */
+        if self.redis_builtin_actor.is_none(){
+            self.redis_builtin_actor = Some(msg.builtin_redis_actor);
+        } 
 
         /* 
             insert the passed in room to the message object to current rooms of this actor,
@@ -244,7 +250,6 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
         let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
         let mut conn = redis_client.get_connection().unwrap();
         
-        /* update rooms in redis storage */
         let redis_result_rooms: RedisResult<String> = conn.get("role_notif_server_actor_rooms");
         let redis_rooms = match redis_result_rooms{
             Ok(data) => {

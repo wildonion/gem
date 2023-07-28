@@ -52,7 +52,7 @@ pub(crate) struct WsNotifSession{
     pub notif_room: &'static str, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
-    pub redis_async_pubsubconn: Arc<PubsubConnection>,
+    pub app_storage: Option<Arc<Storage>>,
     pub is_subscription_interval_started: bool
 }
 
@@ -283,6 +283,22 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                     let v: Vec<&str> = m.splitn(2, ' ').collect();
                     match v[0]{
 
+                        /* --------------------- */
+                        /*   GET ONLINE ROOMS    */
+                        /* --------------------- */
+                        "/events" => {
+
+                            /* get all room from redis storage */
+                            let mut redis_conn = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap().to_owned();
+                            let redis_result_rooms_string: String = redis_conn.get("role_notif_server_actor_rooms").unwrap();
+                            let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(redis_result_rooms_string.as_str()).unwrap();
+                            
+                            ctx.text(format!("online events: {}", rooms_in_redis.len()));
+
+                        },
+                        /* ------------------------------- */
+                        /*    JOIN TO RECEIVE PUSH NOTIF   */
+                        /* ------------------------------- */
                         /* join the event notif room to subscribe to redis topics */
                         "/join-roles" => {
 
@@ -310,7 +326,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                     
                                     /* cloning the types that they need to be captured inside tokio::spawn() */
                                     let notif_room = actor.notif_room;
-                                    let redis_async_pubsubconn = actor.redis_async_pubsubconn.clone();
+                                    let redis_async_pubsubconn = actor.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
                                     let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
                                     let peer_name = actor.peer_name.clone();
                                     let session_id = actor.id;
@@ -332,12 +348,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             info!("💡 --- role subscription interval is already started");
 
                         },
-                        "join-ecq" => {
+                        /* ------------------------------------*/
+                        /*    JOIN TO RECEIVE ECQ PUSH NOTIF   */
+                        /* ------------------------------------*/
+                        "/join-ecq" => {
                             
                             todo!()
                         
                         },
-                        "join-mmr" => {
+                        /* ------------------------------------*/
+                        /*    JOIN TO RECEIVE MMR PUSH NOTIF   */
+                        /* ------------------------------------*/
+                        "/join-mmr" => {
 
                             todo!()
 
