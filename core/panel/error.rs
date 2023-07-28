@@ -36,6 +36,19 @@ pub enum ErrorKind{
 unsafe impl Send for PanelError{}
 unsafe impl Sync for PanelError{}
 
+impl std::fmt::Display for ErrorKind{
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result{
+        f.write_fmt(
+            format_args!(
+                "ERROR: {:#?} at {}",
+                self.to_string(),
+                chrono::Local::now().to_string()
+            )
+        )
+    }
+}
+
 /* can be made using from() method */
 impl From<std::io::Error> for ErrorKind{
     fn from(error: std::io::Error) -> Self {
@@ -83,7 +96,7 @@ impl PanelError{
         err
     }
 
-    pub async fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that satisfied the Write trait */
+    pub async fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that is satisfied the Write trait */
         
         let this = self;
         let Self { code, msg, kind } = this;
@@ -127,7 +140,7 @@ impl PanelError{
     
     }
 
-    pub fn write_sync(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that satisfied the Write trait */
+    pub fn write_sync(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that is satisfied the Write trait */
         
         let this = self;
         let Self { code, msg, kind } = this;
