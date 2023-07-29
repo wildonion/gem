@@ -6,7 +6,6 @@
 
 
 use mongodb::bson::oid::ObjectId;
-
 use crate::*;
 use crate::events::redis::role::PlayerRoleInfo;
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -525,13 +524,48 @@ async fn register_new_user(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
 
+    /* ------------------------------------- */
+    /* --------- PASSPORT CHECKING --------- */
+    /* ------------------------------------- */
+    /* 
+        granted_role has been injected into this 
+        api body using #[passport()] proc macro 
+        at compile time thus we're checking it
+        at runtime
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an open route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+    /* ------------------------------------- */
+
+    
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            /*
+                we have to pass the cloned request object since it's borrowed to get its extensions 
+                and if a type is behind a pointer we can't move it into a new scope we must either
+                clone it or borrow it
+            */
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
