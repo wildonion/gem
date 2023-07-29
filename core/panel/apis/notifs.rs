@@ -18,6 +18,9 @@ use actix::prelude::*;
 
 /* 
 
+    NOTE: we just have to make sure that the user is already inside the event 
+          and did the reservation process for the event. 
+
     client must be connect to this route then we have a full duplex communication channel 
     also there is a path in this route which is the event room that must be connected to 
     and is the name of the notification room which can be one of the following:
