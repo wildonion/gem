@@ -84,7 +84,9 @@ impl Parse for Args {
     api methods before generating the output or executing any extra
     logics before getting into the api body like actix #[get()] which
     checks the request path in the first place before sliding into 
-    the request body, 
+    the request body, also to get the Rust code from TokenStream we must
+    use syn::parse and to get the TokenStream from Rust codes we msut 
+    use quote
 */
 #[proc_macro_attribute]
 pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -117,8 +119,13 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
         granted_roles.push(role.to_string()); /* converting the Ident into String */
     }
 
-    /* trying to inject the roles into the request object in api param */
-    let req_ident;
+    /* 
+        trying to inject the roles into the request object in api param,
+        also note that every variable can be shown as ident thus if we 
+        wanna a new variable we must create new ident instance like the 
+        following for the request object
+    */
+    let mut req_ident = syn::Ident::new("req", proc_macro2::Span::call_site());
     for input in api_ast.clone().sig.inputs{
         if let FnArg::Typed(pat_type) = input{
             if let Pat::Ident(pat_ident) = *pat_type.pat{
@@ -138,22 +145,22 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
     let new_stmt = syn::parse2(
         quote!{
             
-            /* granted_roles can be accessible inside the api body at runtime */
+            /* 
+                granted_roles can be accessible inside the api body at runtime, 
+                vec![#(#granted_roles),*] means that we're pushing all the roles
+                inside a vec![] and since there are multiple roles we used * to 
+                push them all into the vec![] which means repetition pattern
+            */
             let granted_roles = vec![#(#granted_roles),*];
-            
-            // let req = #req_ident;
-            // req.extensions_mut().insert(granted_roles);
 
         }
     ).unwrap();
-
-    
 
     /* inject the granted_roles into the api body at compile time */
     api_ast.block.stmts.insert(0, new_stmt);
     
     /* 
-        return the generated AST by the quote of the api Rust code  
+        return the newly generated AST by the quote of the input api Rust code  
         which contains the updated and compiled codes of the function body
     */
     TokenStream::from(quote!(#api_ast))

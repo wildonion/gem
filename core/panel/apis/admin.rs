@@ -5,6 +5,7 @@
 
 
 
+use actix_web::HttpMessage;
 use mongodb::bson::oid::ObjectId;
 use crate::*;
 use crate::events::redis::role::PlayerRoleInfo;
@@ -519,6 +520,7 @@ async fn register_new_user(
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
+        
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
