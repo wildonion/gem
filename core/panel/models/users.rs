@@ -223,7 +223,7 @@ impl User{
                     /* 
                         check that the user is authorized with the 
                         passed in role and the one inside the jwt
-                        since some the routes require role guard 
+                        since some of the routes require role guard 
                     */
                     if pass_role.is_some(){
                         if user.user_role != pass_role.unwrap() &&
@@ -244,14 +244,15 @@ impl User{
                         wasn't equal to the one inside the passed in JWT
                         into the request header means that the user did
                         a logout or did a login again since by logging out 
-                        the token time will be set to zero.
+                        the token time will be set to zero and by logging 
+                        in again a new token time will be initialized.
                     */
                     if user.token_time.is_none() && /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
                         user.token_time.unwrap() != _token_time{
                         
                         let resp = Response{
                             data: Some(_id.to_owned()),
-                            message: DO_LOGIN,
+                            message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
                             status: 403
                         };
                         return Err(
@@ -276,7 +277,7 @@ impl User{
                 }
             };
  
-        } else{ /* perhaps we have cookie since the jwt flag is not true */
+        } else{ /* surely we have cookie since the jwt flag is not true */
 
             let cookie = req.cookie("jwt").unwrap();
 

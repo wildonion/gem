@@ -120,10 +120,15 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     /* 
-        trying to inject the roles into the request object in api param,
-        also note that every variable can be shown as ident thus if we 
-        wanna a new variable we must create new ident instance like the 
-        following for the request object
+        trying to inject the roles into the request object in api param, also note that every 
+        variable can be shown as ident in Rust thus if we wanna have a new variable we must 
+        create new ident instance, like the following for the request object, also every token 
+        in a TokenStream has an associated Span holding some additional info, a span, is a region 
+        of source code, along with macro expansion information, it points into a region of the 
+        original source code(important for displaying diagnostics at the correct places) as well 
+        as holding the kind of hygiene for this location. The hygiene is relevant mainly for 
+        identifiers, as it allows or forbids the identifier from referencing things or being 
+        referenced by things defined outside of the invocation.
     */
     let mut req_ident = syn::Ident::new("req", proc_macro2::Span::call_site());
     for input in api_ast.clone().sig.inputs{

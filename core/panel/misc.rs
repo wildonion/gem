@@ -483,6 +483,12 @@ macro_rules! server {
             let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
             let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
 
+
+            /* 
+                app_sotrage contains the mongodb, postgres and actix_redis, redis 
+                and redis_async which can be used to authorize then publish topics,
+                response caching and subscribing to topics respectively
+            */
             let app_storage = db!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
                 db_engine,
@@ -618,7 +624,7 @@ macro_rules! server {
                 .bind((host.as_str(), port)){
                     Ok(server) => {
                         server
-                            .workers(10)
+                            .workers(10) /* running it on a threadpool with 10 spawned threads to handle incoming connections asyncly and concurrently */
                             .run()
                             .await
                     },
@@ -633,7 +639,7 @@ macro_rules! server {
                         let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(ActixWeb(e)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
-                        panic!("panicked at redis get async connection at {}", chrono::Local::now());
+                        panic!("panicked at running actix web server at {}", chrono::Local::now());
                         
         
                     }
@@ -805,7 +811,7 @@ macro_rules! db {
 #[macro_export]
 macro_rules! mafia_passport {
     (
-      $token:expr
+      $token:expr /* this is the generated token from the conse mafia hyper server */
     ) 
     => {
 

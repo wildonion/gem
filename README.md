@@ -38,7 +38,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockch
 
 * ☢️ better error handling using **match** and **Option** syntax
 
-* ❌ custom error type (`PanelError`) to handle all possible server (actixweb and websocket) and storage (redis, redis async and diesel) IO errors in conse panel.
+* ❌ custom error handler (`PanelError`) to logs all possible server (actixweb and websocket) and storage (redis, redis async and diesel) IO errors into file in conse panel service.
  
 * 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
 

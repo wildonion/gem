@@ -2,6 +2,14 @@
 
 
 
+/*
+     ---------------------------------------------
+    |         NOTIF SUBSCRIPTIONS WS APIS
+    | --------------------------------------------
+    |
+    |
+
+*/
 
 use crate::*;
 use crate::events::redis::RedisSubscription;
@@ -25,9 +33,6 @@ use actix::prelude::*;
     also there is a path in this route which is the event room that must be connected to 
     and is the name of the notification room which can be one of the following:
     
-        `tasks`, 
-        `task-verification-responses`, 
-        `twitter-bot-response`, 
         `ecq-{event_id}`, 
         `mmr-{event_id}`,
         `reveal-role-{event_id}`

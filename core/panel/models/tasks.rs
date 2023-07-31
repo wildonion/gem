@@ -190,29 +190,6 @@ impl Task{
             admin_id: new_task.admin_id,
         };
 
-        /* publishing the new task topic to the redis pubsub channel */
-
-        info!("📢 publishing new task to redis pubsub [tasks] channel");
-
-        let get_conn = redis_client.get_async_connection().await;
-        let Ok(mut conn) = get_conn else{
-
-            /* custom error handler */
-            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-            let conn_err = get_conn.err().unwrap();
-             
-            let error_content = &conn_err.to_string();
-            let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
-
-            let redis_error_code = conn_err.code().unwrap().parse::<u16>().unwrap();
-            let error_instance = PanelError::new(redis_error_code, error_content, ErrorKind::Storage(Redis(conn_err)));
-            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-            
-            panic!("panicked at redis get async connection at {}", chrono::Local::now());
-
-        };
-
-
         match diesel::insert_into(tasks::table)
             .values(&task)
             .execute(connection)

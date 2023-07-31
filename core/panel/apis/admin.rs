@@ -526,14 +526,15 @@ async fn register_new_user(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
 
-    /* ------------------------------------- */
-    /* --------- PASSPORT CHECKING --------- */
-    /* ------------------------------------- */
     /* 
-        granted_role has been injected into this 
-        api body using #[passport()] proc macro 
-        at compile time thus we're checking it
-        at runtime
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
     */
     let granted_role = 
         if granted_roles.len() == 3{ /* everyone can pass */
@@ -544,7 +545,7 @@ async fn register_new_user(
                 "user" => Some(UserRole::User),
                 _ => Some(UserRole::Dev)
             }
-        } else{ /* there is no route with eiter admin|user, admin|dev or dev|user accesses */
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
             resp!{
                 &[u8], // the data type
                 &[], // response data
@@ -553,8 +554,7 @@ async fn register_new_user(
                 None::<Cookie<'_>>, // cookie
             }
         };
-    /* ------------------------------------- */
-
+ 
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
