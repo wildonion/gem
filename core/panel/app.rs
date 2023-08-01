@@ -64,7 +64,7 @@ use rand::rngs::ThreadRng;
 use futures::StreamExt; /* is required to call the next() method on the streams */
 use once_cell::sync::Lazy;
 use constants::PanelHttpResponse;
-use panel_macros::passport;
+use panel_macros::passport; /* loading from lib.rs which contains proc macros */
 
 
 mod apis;

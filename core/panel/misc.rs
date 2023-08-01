@@ -212,7 +212,7 @@ pub struct Db{
     pub pool: Option<Pool<ConnectionManager<PgConnection>>>,
     pub redis: Option<RedisClient>,
     pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
-    pub redis_actor: Option<Addr<RedisActor>>,
+    pub redis_actix_actor: Option<Addr<RedisActor>>,
 }
 
 impl Default for Db{
@@ -225,7 +225,7 @@ impl Default for Db{
             pool: None, // pg pool
             redis: None,
             redis_async_pubsub_conn: None,
-            redis_actor: None,
+            redis_actix_actor: None,
         }
     }
 }
@@ -242,7 +242,7 @@ impl Db{
                 pool: None, // pg pool
                 redis: None,
                 redis_async_pubsub_conn: None,
-                redis_actor: None,
+                redis_actix_actor: None,
             }
         )
     }
@@ -290,56 +290,56 @@ impl Storage{
     pub async fn get_mongodb(&self) -> Option<&Client>{
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().instance.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
     pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
     pub async fn get_redis(&self) -> Option<&RedisClient>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
     pub fn get_redis_sync(&self) -> Option<&RedisClient>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
     pub async fn get_async_redis_pubsub_conn(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
     pub fn get_async_redis_pubsub_conn_sync(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
-    pub async fn get_redis_actor(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
+    pub async fn get_redis_actix_actor(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
-    pub fn get_redis_actor_sync(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
+    pub fn get_redis_actix_actor_sync(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
         match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no db is available cause it's off
+            Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+            Mode::Off => None, // no storage is available cause it's off
         }
     }
 
@@ -489,7 +489,7 @@ macro_rules! server {
                 and redis_async which can be used to authorize then publish topics,
                 response caching and subscribing to topics respectively
             */
-            let app_storage = db!{ // this publicly has exported inside the misc so we can access it here 
+            let app_storage = storage!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
                 db_engine,
                 db_host,
@@ -665,7 +665,7 @@ macro_rules! server {
 }
 
 #[macro_export]
-macro_rules! db {
+macro_rules! storage {
 
     ($name:expr, $engine:expr, $host:expr, $port:expr, $username:expr, $password:expr) => {
                 
@@ -711,7 +711,7 @@ macro_rules! db {
                                 pool: None, // pg pool
                                 redis: None,
                                 redis_async_pubsub_conn: None,
-                                redis_actor: None
+                                redis_actix_actor: None
                             }
                         ),
                     }
@@ -745,7 +745,7 @@ macro_rules! db {
                                             pool: None, // pg pool
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone())
                                         }
                                     ),
                                 }
@@ -785,7 +785,7 @@ macro_rules! db {
                                             pool: Some(pg_pool),
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone())
                                         }
                                     ),
                                 }

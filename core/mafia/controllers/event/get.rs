@@ -43,6 +43,7 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hype
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
                     
     let query = format!("{}", req.param("query").unwrap()); // we must create the url param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
@@ -124,6 +125,7 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -278,6 +280,7 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -435,6 +438,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -591,6 +595,7 @@ pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     ////////////////// DB Ops
                     
@@ -658,6 +663,7 @@ pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     ////////////////// DB Ops
                     
@@ -726,6 +732,7 @@ pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
 
     ////////////////// DB Ops
                     
@@ -793,6 +800,7 @@ pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
     
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
@@ -906,6 +914,7 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1053,6 +1062,7 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1181,6 +1191,7 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1306,6 +1317,7 @@ pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>,
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
     
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously

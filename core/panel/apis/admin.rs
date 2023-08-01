@@ -6,6 +6,7 @@
 
 
 use actix_web::HttpMessage;
+use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
 use mongodb::bson::oid::ObjectId;
 use crate::*;
 use crate::events::redis::role::PlayerRoleInfo;
@@ -20,6 +21,7 @@ use crate::schema::tasks;
 use crate::schema::users_tasks::dsl::*;
 use crate::schema::users_tasks;
 use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 
 /*
@@ -34,6 +36,7 @@ use std::io::Write;
 #[openapi(
     paths(
         reveal_role,   
+        update_event_img,
         login,
         register_new_user,
         register_new_task, 
@@ -131,9 +134,8 @@ async fn reveal_role(
                 // -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                 let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
-                let redis_actor = storage.as_ref().clone().unwrap().get_redis_actor().await.unwrap();
+                let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
                 
                 let host = env::var("HOST").expect("⚠️ no host variable set");
                 let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
@@ -214,7 +216,7 @@ async fn reveal_role(
                         */
 
                         /* sending command to redis actor to authorize the this ws client */
-                        let redis_auth_resp = redis_actor
+                        let redis_auth_resp = redis_actix_actor
                             .send(Command(resp_array!["AUTH", redis_password.as_str()])).await;
 
                         let Ok(_) = redis_auth_resp else{
@@ -264,7 +266,7 @@ async fn reveal_role(
                                 /* tick every 1 second */
                                 interval.tick().await;
 
-                                let redis_pub_resp = redis_actor
+                                let redis_pub_resp = redis_actix_actor
                                     .send(Command(resp_array!["PUBLISH", &channel.clone(), stringified_player_roles.clone()]))
                                     .await
                                     .unwrap();
@@ -345,6 +347,154 @@ async fn reveal_role(
     }
 
 }
+
+#[utoipa::path(
+    context_path = "/admin",
+    responses(
+        (status=201, description="Updated Successfully", body=[u8]),
+        (status=403, description="Invalid Token", body=[u8]),
+        (status=403, description="No Authorization Header Is Provided", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("event_id" = String, Path, description = "event id")
+    ),
+    tag = "crate::apis::admin",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[post("/event/{event_id}/upload/img")]
+async fn update_event_img(
+    req: HttpRequest, 
+        event_id: web::Path<String>, // mongodb objectid
+        storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        mut img: Multipart, /* form-data implementation to receive stream of field bytes */
+    ) -> PanelHttpResponse{
+
+
+        if let Some(header_value) = req.headers().get("Authorization"){
+
+            let token = header_value.to_str().unwrap();
+            
+            /*
+                @params: 
+                    - @toke          → JWT
+    
+                note that this token must be taken from the conse mafia hyper server
+            */
+            match mafia_passport!{ token }{
+                true => {
+    
+                    // -------------------------------------------------------------------------------------
+                    // ------------------------------- ACCESS GRANTED REGION -------------------------------
+                    // -------------------------------------------------------------------------------------
+    
+                    let storage = storage.as_ref().to_owned();
+                    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+                    let event_id_img_key = format!("{event_id:}-img");
+
+                    let get_redis_conn = redis_client.get_async_connection().await;
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+
+                    /* creating the asset folder if it doesn't exist */
+                    tokio::fs::create_dir_all(EVENT_UPLOAD_PATH).await.unwrap();
+                    let mut event_img_filename = "".to_string();
+                    
+                    while let Ok(Some(mut field)) = img.try_next().await{
+
+                        /* getting the content_disposition header which contains the filename */
+                        let content_type = field.content_disposition();
+
+                        /* creating the filename and the filepath */
+                        event_img_filename = format!("{}-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), content_type.get_filename().unwrap());
+                        let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&event_img_filename));
+                        
+                        /* 
+                            web::block() executes a blocking function on a actix threadpool
+                            using spawn_blocking method of actix runtime so in here we're 
+                            creating a file inside a threadpool to fill it with the incoming 
+                            bytes inside the field object
+                        */
+                        let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+                        
+                        /* 
+                            receiving asyncly from the streaming of the field future io object,
+                            getting the some part of the next field future object to extract 
+                            the bytes from it
+                        */
+                        while let Some(chunk) = field.next().await{
+                            
+                            let data = chunk.unwrap();
+                            
+                            /* writing bytes into the created file with the extracted filepath */
+                            f = web::block(move || f.write_all(&data).map(|_| f))
+                                    .await
+                                    .unwrap()
+                                    .unwrap();
+                        }
+
+                    }
+
+                    /* writing the event image filename to redis ram */
+                    let _: RedisResult<String> = redis_conn.set(event_id_img_key.as_str(), event_img_filename.as_str()).await;
+                
+                    resp!{
+                        &[u8], // the date type
+                        &[], // the data itself
+                        EVENT_IMG_UPDATED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                    
+    
+                    // -------------------------------------------------------------------------------------
+                    // -------------------------------------------------------------------------------------
+                    // -------------------------------------------------------------------------------------
+    
+                },
+                false => {
+                    
+                    resp!{
+                        &[u8], // the date type
+                        &[], // the data itself
+                        INVALID_TOKEN, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                }
+            }
+    
+        } else{
+            
+            resp!{
+                &[u8], // the date type
+                &[], // the data itself
+                NOT_AUTH_HEADER, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+
+} 
 
 #[utoipa::path(
     context_path = "/admin",
@@ -1747,4 +1897,5 @@ pub mod exports{
     pub use super::get_admin_tasks;
     pub use super::get_users_tasks;
     pub use super::add_twitter_account;
+    pub use super::update_event_img;
 }

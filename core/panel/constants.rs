@@ -24,6 +24,7 @@ pub static IAM_HEALTHY: &str = "Ok";
 pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static INVALID_TOKEN: &str = "Invalid Token Or Mafia Server Is Down";
+pub static EVENT_IMG_UPDATED: &str = "Event Image Updated Successfully";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
@@ -53,6 +54,7 @@ pub static NOT_FOUND_COOKIE_TIME_HASH: &str = "No Time Hash Found In Cookie";
 pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
 pub const CHARSET: &[u8] = b"0123456789";
+pub const EVENT_UPLOAD_PATH: &str = "assets/images/event";
 
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
 pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";
