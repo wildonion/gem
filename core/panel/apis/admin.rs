@@ -423,7 +423,7 @@ async fn update_event_img(
 
                     /* creating the asset folder if it doesn't exist */
                     tokio::fs::create_dir_all(EVENT_UPLOAD_PATH).await.unwrap();
-                    let mut event_img_filename = "".to_string();
+                    let mut event_img_filepath = "".to_string();
                     
                     /*  
                         streaming over incoming img multipart form data to extract the
@@ -437,9 +437,10 @@ async fn update_event_img(
                         /* creating the filename and the filepath */
                         let filename = content_type.get_filename().unwrap();
                         let ext_position = filename.find("png").unwrap();
-                        event_img_filename = format!("event:{}-img:{}.{}", event_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+                        let event_img_filename = format!("event:{}-img:{}.{}", event_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
                         let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&event_img_filename));
-                        
+                        event_img_filepath = filepath.clone();
+
                         /* 
                             web::block() executes a blocking function on a actix threadpool
                             using spawn_blocking method of actix runtime so in here we're 
@@ -467,7 +468,7 @@ async fn update_event_img(
                     }
 
                     /* writing the event image filename to redis ram */
-                    let _: RedisResult<String> = redis_conn.set(event_id_img_key.as_str(), event_img_filename.as_str()).await;
+                    let _: () = redis_conn.set(event_id_img_key.as_str(), event_img_filepath.as_str()).await.unwrap();
                 
                     resp!{
                         &[u8], // the date type

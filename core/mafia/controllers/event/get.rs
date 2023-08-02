@@ -20,6 +20,7 @@ use mongodb::options::FindOptions;
 use redis::AsyncCommands;
 use redis::RedisResult;
 use std::env;
+use std::sync::Arc;
 
 
 
@@ -45,7 +46,7 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hype
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
 
@@ -72,8 +73,7 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hype
                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                 let mut redis_event_filename = match redis_result_event_filename{
                     Ok(data) => {
-                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                        rc_data
+                        data
                     },
                     Err(e) => {
                         String::from("")
@@ -144,7 +144,7 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
@@ -177,8 +177,7 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
                                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                                 let mut redis_event_filename = match redis_result_event_filename{
                                     Ok(data) => {
-                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                        rc_data
+                                        data
                                     },
                                     Err(e) => {
                                         String::from("")
@@ -316,7 +315,7 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
@@ -352,8 +351,7 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
                                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                                 let mut redis_event_filename = match redis_result_event_filename{
                                     Ok(data) => {
-                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                        rc_data
+                                        data
                                     },
                                     Err(e) => {
                                         String::from("")
@@ -491,7 +489,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
@@ -523,8 +521,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
                                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                                 let mut redis_event_filename = match redis_result_event_filename{
                                     Ok(data) => {
-                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                        rc_data
+                                        data
                                     },
                                     Err(e) => {
                                         String::from("")
@@ -666,7 +663,7 @@ pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
@@ -683,10 +680,10 @@ pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response
                 let event_id = event._id.clone().unwrap().to_string();
                 let event_filename_key = format!("{event_id:}-img");
                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                
                 let mut redis_event_filename = match redis_result_event_filename{
                     Ok(data) => {
-                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                        rc_data
+                        data
                     },
                     Err(e) => {
                         String::from("")
@@ -752,7 +749,7 @@ pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
@@ -771,8 +768,7 @@ pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body
                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                 let mut redis_event_filename = match redis_result_event_filename{
                     Ok(data) => {
-                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                        rc_data
+                        data
                     },
                     Err(e) => {
                         String::from("")
@@ -839,7 +835,7 @@ pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
@@ -857,8 +853,7 @@ pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                 let mut redis_event_filename = match redis_result_event_filename{
                     Ok(data) => {
-                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                        rc_data
+                        data
                     },
                     Err(e) => {
                         String::from("")
@@ -925,7 +920,7 @@ pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
 
@@ -951,8 +946,7 @@ pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
                             let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                             let mut redis_event_filename = match redis_result_event_filename{
                                 Ok(data) => {
-                                    let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                    rc_data
+                                    data
                                 },
                                 Err(e) => {
                                     String::from("")
@@ -1058,7 +1052,7 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
@@ -1091,8 +1085,7 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
                                 let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                                 let mut redis_event_filename = match redis_result_event_filename{
                                     Ok(data) => {
-                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                        rc_data
+                                        data
                                     },
                                     Err(e) => {
                                         String::from("")
@@ -1225,7 +1218,7 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
@@ -1255,8 +1248,7 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
                         let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                         let mut redis_event_filename = match redis_result_event_filename{
                             Ok(data) => {
-                                let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                rc_data
+                                data
                             },
                             Err(e) => {
                                 String::from("")
@@ -1372,7 +1364,7 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
@@ -1404,8 +1396,7 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
                         let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                         let mut redis_event_filename = match redis_result_event_filename{
                             Ok(data) => {
-                                let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                                rc_data
+                                data
                             },
                             Err(e) => {
                                 String::from("")
@@ -1516,7 +1507,7 @@ pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>,
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
-    let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let redis_client = &req.data::<Arc<redis::Client>>().unwrap().to_owned();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
 
@@ -1542,8 +1533,7 @@ pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>,
                        let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
                        let mut redis_event_filename = match redis_result_event_filename{
                            Ok(data) => {
-                               let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
-                               rc_data
+                               data
                            },
                            Err(e) => {
                                String::from("")
