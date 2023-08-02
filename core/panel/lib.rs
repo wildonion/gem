@@ -13,6 +13,11 @@
     |
 
 
+    https://veykril.github.io/tlborm/introduction.html
+    https://blog.logrocket.com/procedural-macros-in-rust/
+    https://danielkeep.github.io/tlborm/book/README.html
+
+
     since macro processing in Rust happens after the construction of the AST, as such, 
     the syntax used to invoke a macro must be a proper part of the language's syntax 
     tree thus by adding a new code in this crate the compiler needs to compile the whole 
@@ -56,7 +61,6 @@
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use std::collections::HashSet as Set;
-use syn::fold::{self, Fold};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, parse_quote, Expr, Ident, Local, Pat, Stmt, Token, FnArg};
@@ -182,8 +186,6 @@ pub fn my_fn_like_proc_macro(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(PassportDrive)]
 pub fn my_derive_proc_macro(input: TokenStream) -> TokenStream {
-
-    // https://blog.logrocket.com/procedural-macros-in-rust/
 
     input
 
