@@ -435,8 +435,28 @@ async fn update_event_img(
                         let content_type = field.content_disposition();
 
                         /* creating the filename and the filepath */
-                        let filename = content_type.get_filename().unwrap();
-                        let ext_position = filename.find("png").unwrap();
+                        let filename = content_type.get_filename().unwrap().to_lowercase();
+                        let ext_position_png = filename.find("png").unwrap();
+                        let ext_position_jpg = filename.find("jpg").unwrap();
+                        let ext_position_jpeg = filename.find("jpeg").unwrap();
+
+                        let ext_position = if filename.find("png").is_some(){
+                            ext_position_png
+                        } else if filename.find("jpg").is_some(){
+                            ext_position_jpg
+                        } else if filename.find("jpeg").is_some(){
+                            ext_position_jpeg
+                        } else{
+
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                UNSUPPORTED_IMAGE_TYPE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            } 
+                        };
+
                         let event_img_filename = format!("event:{}-img:{}.{}", event_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
                         let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&event_img_filename));
                         event_img_filepath = filepath.clone();
@@ -444,8 +464,8 @@ async fn update_event_img(
                         /* 
                             web::block() executes a blocking function on a actix threadpool
                             using spawn_blocking method of actix runtime so in here we're 
-                            creating a file inside a threadpool to fill it with the incoming 
-                            bytes inside the field object
+                            creating a file inside a actix runtime threadpool to fill it with 
+                            the incoming bytes inside the field object
                         */
                         let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
                         

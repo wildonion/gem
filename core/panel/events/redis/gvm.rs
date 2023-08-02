@@ -11,7 +11,8 @@
 // jobq channels, actors, and select event loop
 
 
-// write more proc macros for this vm inside the lib.rs
+// write more proc macros for this vm inside the lib.rs 
+// and function like in misc.rs
 
 /* 
     

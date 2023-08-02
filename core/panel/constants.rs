@@ -25,6 +25,7 @@ pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static INVALID_TOKEN: &str = "Invalid Token Or Mafia Server Is Down";
 pub static EVENT_IMG_UPDATED: &str = "Event Image Updated Successfully";
+pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg or .jpeg]";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
