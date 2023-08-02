@@ -17,6 +17,8 @@ use mongodb::bson::Regex;
 use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use hyper::http::Uri;
 use mongodb::options::FindOptions;
+use redis::AsyncCommands;
+use redis::RedisResult;
 use std::env;
 
 
@@ -44,6 +46,8 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hype
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    
 
                     
     let query = format!("{}", req.param("query").unwrap()); // we must create the url param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
@@ -61,7 +65,22 @@ pub async fn explore_none_expired_events(req: Request<Body>) -> MafiaResult<hype
 
     match events.find(filter, None).await{
         Ok(mut cursor) => {
-            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                
+                let event_id = event._id.clone().unwrap().to_string();
+                let event_filename_key = format!("{event_id:}-img");
+                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                let mut redis_event_filename = match redis_result_event_filename{
+                    Ok(data) => {
+                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                        rc_data
+                    },
+                    Err(e) => {
+                        String::from("")
+                    }
+                };
+                
+                event.image_path = Some(redis_event_filename);
                 available_events.push(event);
             }
             let res = Response::builder(); // creating a new response cause we didn't find any available route
@@ -126,6 +145,7 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -149,7 +169,23 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
                     };
                     match events.find(filter, None).await{
                         Ok(mut cursor) => {
-                            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                                
+                                /* getting the image name of the current event from the redis */
+                                let event_id = event._id.clone().unwrap().to_string();
+                                let event_filename_key = format!("{event_id:}-img");
+                                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                                let mut redis_event_filename = match redis_result_event_filename{
+                                    Ok(data) => {
+                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                        rc_data
+                                    },
+                                    Err(e) => {
+                                        String::from("")
+                                    }
+                                };
+                                
+                                event.image_path = Some(redis_event_filename);
                                 all_expired_events.events.push(event);
                             }
                             let player_events = all_expired_events.events
@@ -281,6 +317,7 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -307,7 +344,23 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
                     };
                     match events.find(filter, None).await{
                         Ok(mut cursor) => {
-                            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                                
+                                /* getting the image name of the current event from the redis */
+                                let event_id = event._id.clone().unwrap().to_string();
+                                let event_filename_key = format!("{event_id:}-img");
+                                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                                let mut redis_event_filename = match redis_result_event_filename{
+                                    Ok(data) => {
+                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                        rc_data
+                                    },
+                                    Err(e) => {
+                                        String::from("")
+                                    }
+                                };
+                                
+                                event.image_path = Some(redis_event_filename);
                                 all_expired_events.events.push(event);
                             }
                             let player_events = all_expired_events.events
@@ -439,6 +492,7 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -461,7 +515,24 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
                     };
                     match events.find(filter, None).await{
                         Ok(mut cursor) => {
-                            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+
+                                /* getting the image name of the current event from the redis */
+                                let event_id = event._id.clone().unwrap().to_string();
+                                let event_filename_key = format!("{event_id:}-img");
+                                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                                let mut redis_event_filename = match redis_result_event_filename{
+                                    Ok(data) => {
+                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                        rc_data
+                                    },
+                                    Err(e) => {
+                                        String::from("")
+                                    }
+                                };
+                                
+                                event.image_path = Some(redis_event_filename);
+                               
                                 all_none_expired_events.events.push(event);
                             }
                             let player_events = all_none_expired_events.events
@@ -596,6 +667,7 @@ pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
                     
@@ -605,7 +677,24 @@ pub async fn all_none_expired(req: Request<Body>) -> MafiaResult<hyper::Response
 
     match events.find(filter, None).await{
         Ok(mut cursor) => {
-            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                
+                /* getting the image name of the current event from the redis */
+                let event_id = event._id.clone().unwrap().to_string();
+                let event_filename_key = format!("{event_id:}-img");
+                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                let mut redis_event_filename = match redis_result_event_filename{
+                    Ok(data) => {
+                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                        rc_data
+                    },
+                    Err(e) => {
+                        String::from("")
+                    }
+                };
+                
+                event.image_path = Some(redis_event_filename);
+                
                 available_events.push(event);
             }
             let res = Response::builder(); // creating a new response cause we didn't find any available route
@@ -664,6 +753,7 @@ pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
                     
@@ -673,7 +763,24 @@ pub async fn all_expired(req: Request<Body>) -> MafiaResult<hyper::Response<Body
 
     match events.find(filter, None).await{
         Ok(mut cursor) => {
-            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                
+                /* getting the image name of the current event from the redis */
+                let event_id = event._id.clone().unwrap().to_string();
+                let event_filename_key = format!("{event_id:}-img");
+                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                let mut redis_event_filename = match redis_result_event_filename{
+                    Ok(data) => {
+                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                        rc_data
+                    },
+                    Err(e) => {
+                        String::from("")
+                    }
+                };
+                
+                event.image_path = Some(redis_event_filename);
+                
                 available_events.push(event);
             }
             let res = Response::builder(); // creating a new response cause we didn't find any available route
@@ -733,6 +840,7 @@ pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     ////////////////// DB Ops
                     
@@ -741,7 +849,24 @@ pub async fn all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
 
     match events.find(None, None).await{
         Ok(mut cursor) => {
-            while let Some(event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+            while let Some(mut event) = cursor.try_next().await.unwrap(){ // calling try_next() method on cursor needs the cursor to be mutable - reading while awaiting on try_next() method doesn't return None
+                
+                /* getting the image name of the current event from the redis */
+                let event_id = event._id.clone().unwrap().to_string();
+                let event_filename_key = format!("{event_id:}-img");
+                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                let mut redis_event_filename = match redis_result_event_filename{
+                    Ok(data) => {
+                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                        rc_data
+                    },
+                    Err(e) => {
+                        String::from("")
+                    }
+                };
+                
+                event.image_path = Some(redis_event_filename);
+                
                 available_events.push(event);
             }
             let res = Response::builder(); // creating a new response cause we didn't find any available route
@@ -801,6 +926,7 @@ pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
@@ -817,7 +943,25 @@ pub async fn single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
                     let event_id = ObjectId::parse_str(event_info._id.as_str()).unwrap(); // generating mongodb object id from the id string
                     let events = db.database(&db_name).collection::<schemas::event::PlayerEventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the ExplorePlayerEventInfo struct
                     match events.find_one(doc! { "_id": event_id }, None).await.unwrap(){
-                        Some(event_doc) => {
+                        Some(mut event_doc) => {
+                            
+                            /* getting the image name of the current event from the redis */
+                            let event_id = event_doc._id.clone().unwrap().to_string();
+                            let event_filename_key = format!("{event_id:}-img");
+                            let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                            let mut redis_event_filename = match redis_result_event_filename{
+                                Ok(data) => {
+                                    let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                    rc_data
+                                },
+                                Err(e) => {
+                                    String::from("")
+                                }
+                            };
+                            
+                            event_doc.image_path = Some(redis_event_filename);
+                            
+                            
                             let response_body = misc::app::Response::<schemas::event::PlayerEventInfo>{
                                 message: FETCHED,
                                 data: Some(event_doc),
@@ -915,6 +1059,7 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -937,7 +1082,25 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
                         ////////////////// DB Ops
                         
                         match events.find_one(doc! { "_id": event_id }, None).await.unwrap(){
-                            Some(event_doc) => {
+                            Some(mut event_doc) => {
+                                
+
+                                /* getting the image name of the current event from the redis */
+                                let event_id = event_doc._id.clone().unwrap().to_string();
+                                let event_filename_key = format!("{event_id:}-img");
+                                let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                                let mut redis_event_filename = match redis_result_event_filename{
+                                    Ok(data) => {
+                                        let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                        rc_data
+                                    },
+                                    Err(e) => {
+                                        String::from("")
+                                    }
+                                };
+                                
+                                event_doc.image_path = Some(redis_event_filename);
+                                
                                 let response_body = misc::app::Response::<schemas::event::EventInfo>{
                                     message: FETCHED,
                                     data: Some(event_doc),
@@ -1063,6 +1226,7 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1083,7 +1247,24 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
                     let mut all_god_events = vec![];
                     let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
                     let mut events_cursor = events.find(doc!{"group_info.god_id": _id.unwrap().to_string()}, None).await.unwrap(); // we must define the cursor as mutable since fetching all events is a mutable operation
-                    while let Some(event_info) = events_cursor.try_next().await.unwrap(){
+                    while let Some(mut event_info) = events_cursor.try_next().await.unwrap(){
+                        
+                        /* getting the image name of the current event from the redis */
+                        let event_id = event_info._id.clone().unwrap().to_string();
+                        let event_filename_key = format!("{event_id:}-img");
+                        let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                        let mut redis_event_filename = match redis_result_event_filename{
+                            Ok(data) => {
+                                let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                rc_data
+                            },
+                            Err(e) => {
+                                String::from("")
+                            }
+                        };
+                        
+                        event_info.image_path = Some(redis_event_filename);
+                        
                         all_god_events.push(event_info)
                     }
                     if all_god_events.is_empty(){
@@ -1192,6 +1373,7 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1214,7 +1396,24 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
                     let mut all_god_events = vec![];
                     let events = db.database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the EventInfo struct
                     let mut events_cursor = events.find(doc!{"group_info.god_id": god_id}, None).await.unwrap(); // we must define the cursor as mutable since fetching all events is a mutable operation
-                    while let Some(event_info) = events_cursor.try_next().await.unwrap(){
+                    while let Some(mut event_info) = events_cursor.try_next().await.unwrap(){
+                        
+                        /* getting the image name of the current event from the redis */
+                        let event_id = event_info._id.clone().unwrap().to_string();
+                        let event_filename_key = format!("{event_id:}-img");
+                        let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                        let mut redis_event_filename = match redis_result_event_filename{
+                            Ok(data) => {
+                                let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                                rc_data
+                            },
+                            Err(e) => {
+                                String::from("")
+                            }
+                        };
+                        
+                        event_info.image_path = Some(redis_event_filename);
+                        
                         all_god_events.push(event_info)
                     }
                     if all_god_events.is_empty(){
@@ -1318,6 +1517,7 @@ pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>,
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
     let redis_client = &req.data::<redis::Client>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
@@ -1334,7 +1534,24 @@ pub async fn group_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>,
                     let mut all_group_events = vec![];
                     let events = db.database(&db_name).collection::<schemas::event::PlayerEventInfo>("events"); // selecting events collection to fetch and deserialize all event infos or documents from BSON into the ExplorePlayerEventInfo struct
                     let mut events_cursor = events.find(doc!{"group_info._id": group_info._id}, None).await.unwrap(); // we must define the cursor as mutable since fetching all events is a mutable operation
-                    while let Some(event_info) = events_cursor.try_next().await.unwrap(){
+                    while let Some(mut event_info) = events_cursor.try_next().await.unwrap(){
+                       
+                       /* getting the image name of the current event from the redis */
+                       let event_id = event_info._id.clone().unwrap().to_string();
+                       let event_filename_key = format!("{event_id:}-img");
+                       let redis_result_event_filename: RedisResult<String> = redis_conn.get(event_filename_key.as_str()).await;
+                       let mut redis_event_filename = match redis_result_event_filename{
+                           Ok(data) => {
+                               let rc_data = serde_json::from_str::<String>(data.as_str()).unwrap();
+                               rc_data
+                           },
+                           Err(e) => {
+                               String::from("")
+                           }
+                       };
+                       
+                       event_info.image_path = Some(redis_event_filename);
+                       
                         all_group_events.push(event_info)
                     }
                     if all_group_events.is_empty(){
