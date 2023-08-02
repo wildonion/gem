@@ -389,6 +389,12 @@ async fn update_event_img(
                     // -------------------------------------------------------------------------------------
                     // ------------------------------- ACCESS GRANTED REGION -------------------------------
                     // -------------------------------------------------------------------------------------
+                    /*  
+                        this route requires the admin or god access token from the conse 
+                        mafia hyper server to update an event image, we'll send a request
+                        to the conse mafia hyper server to verify the passed in JWT of the
+                        admin and it was verified we'll allow the user to update the image
+                    */
     
                     let storage = storage.as_ref().to_owned();
                     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -419,13 +425,19 @@ async fn update_event_img(
                     tokio::fs::create_dir_all(EVENT_UPLOAD_PATH).await.unwrap();
                     let mut event_img_filename = "".to_string();
                     
+                    /*  
+                        streaming over incoming img multipart form data to extract the
+                        field object for writing the bytes into the file
+                    */
                     while let Ok(Some(mut field)) = img.try_next().await{
 
                         /* getting the content_disposition header which contains the filename */
                         let content_type = field.content_disposition();
 
                         /* creating the filename and the filepath */
-                        event_img_filename = format!("{}-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), content_type.get_filename().unwrap());
+                        let filename = content_type.get_filename().unwrap();
+                        let ext_position = filename.find("png").unwrap();
+                        event_img_filename = format!("event:{}-img:{}.{}", event_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
                         let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&event_img_filename));
                         
                         /* 
@@ -439,7 +451,7 @@ async fn update_event_img(
                         /* 
                             receiving asyncly from the streaming of the field future io object,
                             getting the some part of the next field future object to extract 
-                            the bytes from it
+                            the image bytes from it
                         */
                         while let Some(chunk) = field.next().await{
                             
@@ -688,7 +700,7 @@ async fn register_new_user(
     */
     let granted_role = 
         if granted_roles.len() == 3{ /* everyone can pass */
-            None /* no access is required perhaps it's an open route! */
+            None /* no access is required perhaps it's an public route! */
         } else if granted_roles.len() == 1{
             match granted_roles[0]{ /* the first one is the right access */
                 "admin" => Some(UserRole::Admin),
@@ -814,6 +826,7 @@ async fn register_new_user(
     )
 )]
 #[post("/edit-user")]
+#[passport(admin)]
 async fn edit_user(
         req: HttpRequest, 
         new_user: web::Json<EditUserByAdminRequest>,  
@@ -824,13 +837,42 @@ async fn edit_user(
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -919,6 +961,7 @@ async fn edit_user(
     )
 )]
 #[post("/delete-user/{user_id}")]
+#[passport(admin)]
 async fn delete_user(
         req: HttpRequest, 
         doer_id: web::Path<i32>,  // doer is the user who do task
@@ -928,6 +971,34 @@ async fn delete_user(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -935,7 +1006,7 @@ async fn delete_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1033,6 +1104,7 @@ async fn delete_user(
     )
 )]
 #[get("/get-users")]
+#[passport(admin)]
 async fn get_users(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1045,9 +1117,38 @@ async fn get_users(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
+
+            /* 
+                ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1169,6 +1270,7 @@ async fn get_users(
     )
 )]
 #[post("/register-new-task")]
+#[passport(admin)]
 async fn register_new_task(
         req: HttpRequest, 
         new_task: web::Json<NewTaskRequest>,  
@@ -1184,8 +1286,39 @@ async fn register_new_task(
             
             let connection = &mut pg_pool.get().unwrap();
             
+
+            /* 
+                ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1291,6 +1424,7 @@ async fn register_new_task(
     )
 )]
 #[post("/delete-task/{job_id}")]
+#[passport(admin)]
 async fn delete_task(
         req: HttpRequest, 
         job_id: web::Path<i32>,  
@@ -1306,8 +1440,39 @@ async fn delete_task(
             
             let connection = &mut pg_pool.get().unwrap();
             
+
+            /* 
+                ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1412,6 +1577,7 @@ async fn delete_task(
     )
 )]
 #[post("/edit-task")]
+#[passport(admin)]
 async fn edit_task(
         req: HttpRequest, 
         new_task: web::Json<EditTaskRequest>,  
@@ -1427,8 +1593,39 @@ async fn edit_task(
 
             let connection = &mut pg_pool.get().unwrap();
             
+
+            /* 
+                ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1512,6 +1709,7 @@ async fn edit_task(
     )
 )]
 #[get("/get-admin-tasks/{owner_id}")]
+#[passport(admin)]
 async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
@@ -1522,13 +1720,42 @@ async fn get_admin_tasks(
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1649,6 +1876,7 @@ async fn get_admin_tasks(
     )
 )]
 #[get("/get-users-tasks")]
+#[passport(admin)]
 async fn get_users_tasks(
         req: HttpRequest,   
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1656,7 +1884,36 @@ async fn get_users_tasks(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -1664,7 +1921,7 @@ async fn get_users_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1749,6 +2006,7 @@ async fn get_users_tasks(
     )
 )]
 #[post("/add-twitter-account")]
+#[passport(admin)]
 async fn add_twitter_account(
         req: HttpRequest,   
         new_account: web::Json<Keys>,
@@ -1758,6 +2016,36 @@ async fn add_twitter_account(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
+    
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -1765,7 +2053,7 @@ async fn add_twitter_account(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, Some(UserRole::Admin), connection).await{
+            match User::passport(req, granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

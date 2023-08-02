@@ -2205,10 +2205,56 @@
 							"response": []
 						},
 						{
+							"name": "Update Event Picture",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MSwiZXhwIjoxNjkzNTYzNDEyLCJpYXQiOjE2OTA5NzE0MTJ9.LAEZUt_11MDFbZGgiFj7y-V32hwgrJFZfXSLowm3-u7DxWI5p3z3-e0wDgxkLNZjcgyBPDf5VuUeGsrQnHFZmg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "img",
+											"type": "file",
+											"src": "/Users/wildonion/Desktop/Screenshot 2023-07-30 at 12.03.09 PM.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-admin}}event/64b82757d916781c6d689488/upload/img",
+									"host": [
+										"{{panel-admin}}event"
+									],
+									"path": [
+										"64b82757d916781c6d689488",
+										"upload",
+										"img"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Register New User",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"type": "string"
+										}
+									]
 								},
 								"method": "POST",
 								"header": [],
@@ -2392,7 +2438,14 @@
 							"name": "Get Users",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"type": "string"
+										}
+									]
 								},
 								"method": "GET",
 								"header": [],
