@@ -487,7 +487,11 @@ async fn update_event_img(
 
                     }
 
-                    /* writing the event image filename to redis ram */
+                    /* 
+                        writing the event image filename to redis ram, by doing this we can 
+                        retrive the value from redis in conse hyper mafia server by calling 
+                        get() method
+                    */
                     let _: () = redis_conn.set(event_id_img_key.as_str(), event_img_filepath.as_str()).await.unwrap();
                 
                     resp!{

@@ -8,3 +8,4 @@ pub mod user;
 pub mod health;
 pub mod bot;
 pub mod notifs;
+pub mod public;

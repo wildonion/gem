@@ -1,18 +1,22 @@
 
 
 
-// followers weighted tree to understand the relationship between 
-// peers to suggests events using graph virtual machine
+/*
+ 
+    followers weighted tree to understand the relationship between 
+    peers to suggests events using graph virtual machine
 
-// game and stem like vm engine uisng graph and actor concepts (tokio) 
-// which are in cs-concepts repo, also parallel graph and tree walking 
-// (shared ref and mutably) using rc and arc weak and strong ref counting, 
-// shared ownership and interior mutability, refcell, mutex, tokio spawn, 
-// jobq channels, actors, and select event loop
+    game and stem like vm engine uisng graph and actor concepts (tokio) 
+    which are in cs-concepts repo, also parallel graph and tree walking 
+    (shared ref and mutably) using rc and arc weak and strong ref counting, 
+    shared ownership and interior mutability, refcell, mutex, tokio spawn, 
+    jobq channels, actors, and select event loop
 
 
-// write more proc macros for this vm inside the lib.rs 
-// and function like in misc.rs
+    write more proc macros for this vm inside the lib.rs 
+    and function like in misc.rs
+
+*/
 
 /* 
     

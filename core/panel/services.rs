@@ -37,6 +37,24 @@ pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
 /*
      --------------------------------
+    |     REGISTER PUBLIC ROUTES
+    | -------------------------------
+    |
+    |
+
+*/
+pub fn init_public(config: &mut web::ServiceConfig){
+    
+    config.service(apis::public::exports::mint_mock);
+
+    // other routs maybe ?
+    // ...
+
+
+}
+
+/*
+     --------------------------------
     |        REGISTER DEV ROUTES
     | -------------------------------
     |

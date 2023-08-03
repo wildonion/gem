@@ -561,6 +561,13 @@ macro_rules! server {
                             .configure(services::init_ws_notif)
                     )
                     /*
+                        INIT PUBLIC SERIVE APIs 
+                    */
+                    .service(
+                        actix_web::web::scope("/public")
+                            .configure(services::init_public)   
+                    )
+                    /*
                         INIT DEV SERIVE APIs 
                     */
                     .service(
