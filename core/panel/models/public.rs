@@ -20,7 +20,7 @@ pub struct WithdrawMetadata{
 }
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Id{
     pub paypal_id: String,
     pub account_number: String,

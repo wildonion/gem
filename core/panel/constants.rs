@@ -9,7 +9,7 @@ pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 pub static DEPOSITED_SUCCESSFULLY: &str = "Deposit Successfully";
 pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
-pub static ID_BUILT: &str = "Unique Id Built Successfully";
+pub static ID_BUILT: &str = "Unique Id Built Successfully, Save Your `singer` Field Value Which Will Be Used To Sign Data";
 pub static ALPHABET: &str = "+/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 pub const DEV_ACCESS: u8 = 0;

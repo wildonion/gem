@@ -66,18 +66,8 @@ async fn make_id(
     let (private, public) = key_pair.clone().split();
     let ec_signer = SecureSign::new(private.clone());
     let ec_verifier = SecureVerify::new(public.clone());
-    // id_.0.unique_id = Some(hex::encode(public.as_ref()));
-    // id_.0.signer = Some(hex::encode(private.as_ref()));
-
-
-    /* ED25519 keypair */
-    let rng = ring_rand::SystemRandom::new();
-    let pkcs8_bytes = ring_signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
-    let ed25519_keys = ring_signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref()).unwrap();
-    let pubkey = ed25519_keys.public_key().as_ref();
-    let prvkey = pkcs8_bytes.as_ref();
-    id_.0.unique_id = Some(hex::encode(pubkey));
-    id_.0.signer = Some(hex::encode(prvkey));
+    id_.0.unique_id = Some(hex::encode(public.as_ref()));
+    id_.0.signer = Some(hex::encode(private.as_ref()));
 
 
     /* generating snowflake id */
@@ -87,6 +77,7 @@ async fn make_id(
     let snowflake_id = id_generator_generator.real_time_generate();
     id_.snowflake_id = Some(snowflake_id);
 
+
     /* stringifying the id_ instance to generate the signature */
     let json_input = serde_json::json!({
         "paypal_id": id_.paypal_id,
@@ -95,23 +86,17 @@ async fn make_id(
         "username": id_.username,
         "snowflake_id": snowflake_id,
         "unique_id": id_.0.unique_id,
-        "signer": id_.0.signer
     });
     let inputs_to_sign = serde_json::to_string(&json_input).unwrap(); /* json stringifying the json_input value */
 
 
-    // let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
-    // id_.0.signature = Some(hex::encode(&ec_sig));
+    /* generating signature from the input data */
+    let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
+    id_.0.signature = Some(hex::encode(&ec_sig));
+    let encoded_id = ec_verifier.verify(ec_sig).unwrap();
+    let decoded_id = serde_json::from_slice::<IdGenerator>(&encoded_id).unwrap();
     
-    let ed25519_sig = ed25519_keys.sign(inputs_to_sign.as_bytes());
-    id_.0.signature = Some(hex::encode(ed25519_sig.as_ref()));
 
-
-    /* constructing keypair from the private key */
-    let private_key = hex::decode(&id_.0.clone().signer.unwrap()).unwrap();
-    let generated_ed25519_keys = Ed25519KeyPair::from_pkcs8(private_key.as_ref()).unwrap();
-
-    
     /* storing the generated unique id inside the redis ram */
     let redis_stringified_inputs = serde_json::to_string(&id_).unwrap();
     let _: () = redis_conn.set(id_.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
