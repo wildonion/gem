@@ -68,6 +68,9 @@ twitter-v2 = "0.1.8"
 syn = { version = "*", features = ["full"] }
 quote = "*"
 proc-macro2 = "*"
+rs-snowflake = "*"
+base64 = "0.21.2"
+themis = "0.14.0"
 
 
 

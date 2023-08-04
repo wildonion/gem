@@ -2230,11 +2230,12 @@
 									]
 								},
 								"url": {
-									"raw": "{{panel-admin}}event/64b82757d916781c6d689488/upload/img",
+									"raw": "{{panel-admin}}/event/64b82757d916781c6d689488/upload/img",
 									"host": [
-										"{{panel-admin}}event"
+										"{{panel-admin}}"
 									],
 									"path": [
+										"event",
 										"64b82757d916781c6d689488",
 										"upload",
 										"img"
@@ -2787,6 +2788,38 @@
 				{
 					"name": "Notif APIs",
 					"item": []
+				},
+				{
+					"name": "Public",
+					"item": [
+						{
+							"name": "Build Id",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"social_id\": \"0019888041\",\n    \"username\": \"wildonion\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-public}}/id/build",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"id",
+										"build"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			],
 			"description": "**NOTE** that dev APIs require conse hyper server **JWT** to be passed to request Authorization header.\n\n**NOTE** that you can get the **JWT** from the response cookie of the admin and user `login` API which is the first part of `::` sign.\n\n**NOTE** that to define twitter tasks we must prefix the `task_name` field inside the register new task API with `twitter-\\\\*` which `\\\\*` can be one of the following task names:\n\n- username\n- code\n- tweet\n- retweet\n- hashtag\n- like"
@@ -2861,6 +2894,11 @@
 		{
 			"key": "panel-bot",
 			"value": "https://api.panel.conse.app/bot",
+			"type": "string"
+		},
+		{
+			"key": "panel-public",
+			"value": "https://api.panel.conse.app/public",
 			"type": "string"
 		}
 	]

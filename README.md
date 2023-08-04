@@ -90,6 +90,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockch
 
 - **NOTE**: makre sure that you've installed the following packages on **MacOS M1**:
 ```bash
+brew tap cossacklabs/tap
+brew install libthemis
 brew install openjdk
 brew install pkg-config
 brew install openssl
@@ -276,4 +278,4 @@ make renew
 
 * behavioural graph virtual machine (gvm) of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines 
 
-* publish docker containers to docker hub also add CI/CD setup in digitalocean
+* publish docker containers to docker hub also add CI/CD setup in digitalocean for automation building

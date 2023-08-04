@@ -8,6 +8,7 @@
 
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
 use mongodb::bson::oid::ObjectId;
+use ring::signature::KeyPair;
 use crate::*;
 use crate::events::redis::role::PlayerRoleInfo;
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -22,29 +23,114 @@ use crate::schema::users_tasks::dsl::*;
 use crate::schema::users_tasks;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
+use models::public::Id as IdGenerator;
+use models::public::{WithdrawMetadata, DepositMetadata};
 
 
 
 
 
+#[post("/id/build")]
+async fn make_id(
+    req: HttpRequest,
+    mut id_: web::Json<IdGenerator>,
+    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
 
-#[derive(Serialize, Deserialize)]
-struct YouWhoId;
+    
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    let Ok(mut redis_conn) = get_redis_conn else{
+
+        let redis_get_conn_error = get_redis_conn.err().unwrap();
+        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+        use error::{ErrorKind, StorageError::Redis, PanelError};
+        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+        resp!{
+            &[u8], // the date type
+            &[], // the data itself
+            &redis_get_conn_error_string, // response message
+            StatusCode::INTERNAL_SERVER_ERROR, // status code
+            None::<Cookie<'_>>, // cookie
+        }
+
+    };
 
 
-#[derive(Serialize, Deserialize)]
-struct Metadata{
-    pub from: YouWhoId,
-    pub recipient: YouWhoId,
-    pub amount: u64,
-    pub iat: i64,
+    /* ECDSA keypair */
+    let key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
+    let (private, public) = key_pair.clone().split();
+    let ec_signer = SecureSign::new(private.clone());
+    let ec_verifier = SecureVerify::new(public.clone());
+    // id_.0.unique_id = Some(hex::encode(public.as_ref()));
+    // id_.0.signer = Some(hex::encode(private.as_ref()));
+
+
+    /* ED25519 keypair */
+    let rng = ring_rand::SystemRandom::new();
+    let pkcs8_bytes = ring_signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
+    let ed25519_keys = ring_signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref()).unwrap();
+    let pubkey = ed25519_keys.public_key().as_ref();
+    let prvkey = pkcs8_bytes.as_ref();
+    id_.0.unique_id = Some(hex::encode(pubkey));
+    id_.0.signer = Some(hex::encode(prvkey));
+
+
+    /* generating snowflake id */
+    let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
+    let node_id = std::env::var("NODE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
+    let mut id_generator_generator = SnowflakeIdGenerator::new(machine_id, node_id);
+    let snowflake_id = id_generator_generator.real_time_generate();
+    id_.snowflake_id = Some(snowflake_id);
+
+    /* stringifying the id_ instance to generate the signature */
+    let json_input = serde_json::json!({
+        "paypal_id": id_.paypal_id,
+        "account_number": id_.account_number,
+        "social_id": id_.social_id,
+        "username": id_.username,
+        "snowflake_id": snowflake_id,
+        "unique_id": id_.0.unique_id,
+        "signer": id_.0.signer
+    });
+    let inputs_to_sign = serde_json::to_string(&json_input).unwrap(); /* json stringifying the json_input value */
+
+
+    // let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
+    // id_.0.signature = Some(hex::encode(&ec_sig));
+    
+    let ed25519_sig = ed25519_keys.sign(inputs_to_sign.as_bytes());
+    id_.0.signature = Some(hex::encode(ed25519_sig.as_ref()));
+
+
+    /* constructing keypair from the private key */
+    let private_key = hex::decode(&id_.0.clone().signer.unwrap()).unwrap();
+    let generated_ed25519_keys = Ed25519KeyPair::from_pkcs8(private_key.as_ref()).unwrap();
+
+    
+    /* storing the generated unique id inside the redis ram */
+    let redis_stringified_inputs = serde_json::to_string(&id_).unwrap();
+    let _: () = redis_conn.set(id_.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
+;
+    resp!{
+        IdGenerator, // the data type
+        id_.0, // response data
+        ID_BUILT, // response message
+        StatusCode::CREATED, // status code
+        None::<Cookie<'_>>, // cookie
+    }
+
+
 }
 
-#[post("/mint")]
-#[passport(admin, dev, user)]
-async fn mint_mock(
+#[post("/deposit")]
+async fn deposit(
     req: HttpRequest,
-    metadata: web::Json<Metadata>,
+    metadata: web::Json<DepositMetadata>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -52,42 +138,12 @@ async fn mint_mock(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
-    /* 
-          ------------------------------------- 
-        | --------- PASSPORT CHECKING --------- 
-        | ------------------------------------- 
-        | granted_role has been injected into this 
-        | api body using #[passport()] proc macro 
-        | at compile time thus we're checking it
-        | at runtime
-        |
-    */
-    let granted_role = 
-        if granted_roles.len() == 3{ /* everyone can pass */
-            None /* no access is required perhaps it's an public route! */
-        } else if granted_roles.len() == 1{
-            match granted_roles[0]{ /* the first one is the right access */
-                "admin" => Some(UserRole::Admin),
-                "user" => Some(UserRole::User),
-                _ => Some(UserRole::Dev)
-            }
-        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                ACCESS_DENIED, // response message
-                StatusCode::FORBIDDEN, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        };
-
 
     match storage.clone().unwrap().as_ref().get_pgdb().await{
 
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
-            let metadata_amount = metadata.amount;
             let mut interval = tokio::time::interval(TokioDuration::from_secs(10));
             
             /* 
@@ -95,8 +151,8 @@ async fn mint_mock(
                 thus we have to use tokio jobq channel to fill it inside the tokio green
                 threadpool then use it outside of it by receiving from the channel
             */
-            let (mint_tx_hash_sender, 
-                mut mint_tx_hash_receiver) = 
+            let (deposit_tx_hash_sender, 
+                mut deposit_tx_hash_receiver) = 
                 tokio::sync::oneshot::channel::<String>();
 
             /* spawning an async task in the background to do the payment and minting logics */
@@ -108,13 +164,19 @@ async fn mint_mock(
                     
                     interval.tick().await;
 
-                    // 1 - save metdata into db 
-                    // 2 - call coinbase api to buy metadata_amount 
-                    // 3 - mint card on chain by depositting 
-                    // 4 - send tx hash to sender and receiver 
+                    /* 
+                        ------------------------------------
+                           THE DEPOSIT API (Sender Only)
+                        ------------------------------------
+                        
+                        0 => sender pay the exchange with the amounts 
+                        1 => exchange sends the paid amount to the coinbase usdc/usdt server wallet 
+                        2 => send successful response to the sender contains tx hash of depositting into the coinbase
+                        
+                    */ 
 
                     if contract_mint_call == true{
-                        let mint_tx_hash = String::from("card minted this is tx hash");
+                        let deposit_tx_hash = String::from("card minted this is tx hash");
                         /* 
                             since the send method is not async, it can be used anywhere
                             which means we can call it once in each scope cause it has 
@@ -122,7 +184,7 @@ async fn mint_mock(
                             future objects because we dont't know when they gets solved 
                             and we might move them between other scopes to await on them.
                         */
-                        mint_tx_hash_sender.send(mint_tx_hash);
+                        deposit_tx_hash_sender.send(deposit_tx_hash);
                         break;
                     }
 
@@ -130,12 +192,69 @@ async fn mint_mock(
 
             });
 
-            let mint_tx_hash = mint_tx_hash_receiver.try_recv().unwrap();
+            let deposit_tx_hash = deposit_tx_hash_receiver.try_recv().unwrap();
 
             resp!{
                 String, // the data type
-                mint_tx_hash, // response data
-                MINTED_SUCCESSFULLY, // response message
+                deposit_tx_hash, // response data
+                DEPOSITED_SUCCESSFULLY, // response message
+                StatusCode::CREATED, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+
+#[post("/withdraw")]
+async fn withdraw(
+    req: HttpRequest,
+    metadata: web::Json<WithdrawMetadata>,
+    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* 
+
+                -----------------------------------------
+                    THE WITHDRAW API (Receiver Only)
+                -----------------------------------------
+                        
+                0 => call coinbase trade api to exchange usdt/usdc to the passed in currency type 
+                1 => send the traded to paypal wallet of the server  
+                2 => send the amount from the server paypal to the receiver paypal
+                
+            */ 
+
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                CLAIMED_SUCCESSFULLY, // response message
                 StatusCode::CREATED, // status code
                 None::<Cookie<'_>>, // cookie
             }
@@ -160,5 +279,7 @@ async fn mint_mock(
 
 
 pub mod exports{
-    pub use super::mint_mock;
+    pub use super::deposit;
+    pub use super::withdraw;
+    pub use super::make_id;
 }

@@ -7,8 +7,10 @@ pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 
-pub static MINTED_SUCCESSFULLY: &str = "Minted Successfully";
-
+pub static DEPOSITED_SUCCESSFULLY: &str = "Deposit Successfully";
+pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
+pub static ID_BUILT: &str = "Unique Id Built Successfully";
+pub static ALPHABET: &str = "+/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access

@@ -66,7 +66,14 @@ use futures::StreamExt; /* is required to call the next() method on the streams 
 use once_cell::sync::Lazy;
 use constants::PanelHttpResponse;
 use panel_macros::passport; /* loading from lib.rs which contains proc macros */
-
+use snowflake::SnowflakeIdGenerator;
+use ring::signature as ring_signature;
+use ring::rand as ring_rand;
+use base64::{engine, alphabet, Engine as _};
+use ring::signature::Ed25519KeyPair;
+use themis::keys as themis_keys;
+use themis::secure_message::{SecureSign, SecureVerify};
+use themis::keygen::gen_ec_key_pair;
 
 mod apis;
 mod misc;

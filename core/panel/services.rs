@@ -45,7 +45,9 @@ pub fn init_ws_notif(config: &mut web::ServiceConfig){
 */
 pub fn init_public(config: &mut web::ServiceConfig){
     
-    config.service(apis::public::exports::mint_mock);
+    config.service(apis::public::exports::deposit);
+    config.service(apis::public::exports::withdraw);
+    config.service(apis::public::exports::make_id);
 
     // other routs maybe ?
     // ...
