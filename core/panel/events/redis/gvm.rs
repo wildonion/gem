@@ -6,6 +6,7 @@
     followers weighted tree to understand the relationship between 
     peers to suggests events using graph virtual machine
 
+    
     game and stem like vm engine uisng graph and actor concepts (tokio) 
     which are in cs-concepts repo, also parallel graph and tree walking 
     (shared ref and mutably) using rc and arc weak and strong ref counting, 
@@ -16,9 +17,6 @@
     write more proc macros for this vm inside the lib.rs 
     and function like in misc.rs
 
-*/
-
-/* 
     
     share ownership between threads using Arc by borrowing the ownership using pointers like & clone 
     share ownership between scopes using Rc by  borrwoing the ownership using pointers like & and clone
