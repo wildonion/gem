@@ -2799,7 +2799,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"social_id\": \"0019888041\",\n    \"username\": \"wildonion\"\n}",
+									"raw": "{\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"device_id_here\",\n    \"social_id\": \"0019888041\",\n    \"username\": \"wildonion\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2807,12 +2807,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-public}}/id/build",
+									"raw": "{{panel-fin}}/cid/build",
 									"host": [
-										"{{panel-public}}"
+										"{{panel-fin}}"
 									],
 									"path": [
-										"id",
+										"cid",
 										"build"
 									]
 								}
@@ -2897,8 +2897,8 @@
 			"type": "string"
 		},
 		{
-			"key": "panel-public",
-			"value": "https://api.panel.conse.app/public",
+			"key": "panel-fin",
+			"value": "https://api.panel.conse.app/fin",
 			"type": "string"
 		}
 	]

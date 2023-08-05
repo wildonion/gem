@@ -13,8 +13,8 @@ use crate::constants::*;
 use crate::misc::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
-use models::cid::{Id, NewIdRequest, UserId};
-use models::cid::{WithdrawMetadata, DepositMetadata};
+use models::fin::{Id, NewIdRequest, UserId};
+use models::fin::{WithdrawMetadata, DepositMetadata};
 
 
 
