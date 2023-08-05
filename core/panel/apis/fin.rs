@@ -8,6 +8,7 @@
 
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
 use crate::*;
+use crate::models::users::UserRole;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -21,6 +22,7 @@ use models::fin::{WithdrawMetadata, DepositMetadata};
 
 
 #[post("/cid/build")]
+#[passport(dev, admin, user)]
 async fn make_id(
     req: HttpRequest,
     id_: web::Json<NewIdRequest>,
@@ -28,6 +30,35 @@ async fn make_id(
 ) -> PanelHttpResponse{
 
     let new_object_id_request = id_.0;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
 
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -57,7 +88,7 @@ async fn make_id(
         redis_conn,
         identifier, /* identifier */
         String, /* the type of identifier */
-        "id_rate_limiter" /* redis key */
+        "cid_rate_limiter" /* redis key */
     }{
 
         resp!{
@@ -111,6 +142,7 @@ async fn make_id(
 }
 
 #[post("/deposit")]
+#[passport(dev, admin, user)]
 async fn deposit(
     req: HttpRequest,
     metadata: web::Json<DepositMetadata>,
@@ -121,6 +153,34 @@ async fn deposit(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
 
     match storage.clone().unwrap().as_ref().get_pgdb().await{
 
@@ -202,6 +262,7 @@ async fn deposit(
 
 
 #[post("/withdraw")]
+#[passport(dev, admin, user)]
 async fn withdraw(
     req: HttpRequest,
     metadata: web::Json<WithdrawMetadata>,
@@ -212,6 +273,34 @@ async fn withdraw(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
 
     match storage.clone().unwrap().as_ref().get_pgdb().await{
 
