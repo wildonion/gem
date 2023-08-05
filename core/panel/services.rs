@@ -37,26 +37,6 @@ pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
 /*
      --------------------------------
-    |     REGISTER PUBLIC ROUTES
-    | -------------------------------
-    |
-    |
-
-*/
-pub fn init_fin(config: &mut web::ServiceConfig){
-    
-    config.service(apis::fin::exports::deposit);
-    config.service(apis::fin::exports::withdraw);
-    config.service(apis::fin::exports::make_id);
-
-    // other routs maybe ?
-    // ...
-
-
-}
-
-/*
-     --------------------------------
     |        REGISTER DEV ROUTES
     | -------------------------------
     |
