@@ -9,8 +9,11 @@ pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 pub static DEPOSITED_SUCCESSFULLY: &str = "Deposit Successfully";
 pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
-pub static ID_BUILT: &str = "Unique Id Built Successfully, Save Your `singer` Field Value Which Will Be Used To Sign Data";
+pub static ID_BUILT: &str = "Unique Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Data";
 pub static ALPHABET: &str = "+/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+pub static ID_RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
+pub static INVALID_SIGNATURE: &str = "Invalid Signature";
+
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
@@ -92,9 +95,3 @@ pub const WS_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(1);
 pub const WS_CLIENT_TIMEOUT: StdDuration = StdDuration::from_secs(3600);
 pub static WS_INVALID_PATH: &str = "Invalid Path Params";
 pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";
-pub static WS_SUBSCRIPTION_ISSUE: &str = "Can't Send Subscribe Message To Redis Actor";
-pub static WS_SUBSCRIPTION_TIMEOUT: &str = "Subscription Timeout";
-pub static WS_SUBSCRIPTION_INTERVAL_ISSUE: &str = "Can't Start Subscription Interval";
-pub static WS_INVALID_SUBSCRIPTION_TYPE: &str = "Invalid Subscription Type";
-pub const WS_REDIS_SUBSCIPTION_INTERVAL: StdDuration = StdDuration::from_secs(5);
-pub const WS_REDIS_SUBSCIPTION_INTERVAL_NUMBER: u64 = 5;

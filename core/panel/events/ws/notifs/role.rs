@@ -8,8 +8,8 @@
 */
 
 
-use crate::constants::{WS_CLIENT_TIMEOUT, WS_REDIS_SUBSCIPTION_INTERVAL};
-use crate::events::redis::{RedisSubscription, Subscribe, Unsubscribe};
+use crate::constants::WS_CLIENT_TIMEOUT;
+use crate::events::redis::{RedisSubscription, Unsubscribe};
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
@@ -275,22 +275,6 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
         /* updating the rooms in redis */
         let serialized_rooms = serde_json::to_string(&redis_rooms).unwrap();
         let _: () = conn.set("role_notif_server_actor_rooms", serialized_rooms).unwrap(); // writing to redis ram
-
-
-        /* starting subscription loop for the connected session in the background asyncly */
-        // let cloned_redis_builtin_actor = self.redis_builtin_actor.clone();
-        // tokio::spawn(async move{
-        //     /* means that we have builtin redis actor */
-        //     if cloned_redis_builtin_actor.is_some(){
-        //         let redis_actor = cloned_redis_builtin_actor.unwrap();
-        //         redis_actor
-        //             .send(Subscribe{
-        //                 notif_room: msg.notif_room,
-        //                 peer_name: msg.peer_name
-        //             })
-        //             .await;
-        //     }
-        // });
 
 
     }

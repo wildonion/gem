@@ -8,7 +8,7 @@
     |
 */
 
-use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, WS_REDIS_SUBSCIPTION_INTERVAL, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
+use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::events::redis::role::PlayerRoleInfo;
 use crate::events::ws::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};

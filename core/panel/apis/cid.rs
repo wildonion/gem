@@ -7,24 +7,14 @@
 
 
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
-use mongodb::bson::oid::ObjectId;
-use ring::signature::KeyPair;
 use crate::*;
-use crate::events::redis::role::PlayerRoleInfo;
-use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::schema::users::dsl::*;
-use crate::schema::users;
-use crate::schema::tasks::dsl::*;
-use crate::schema::tasks;
-use crate::schema::users_tasks::dsl::*;
-use crate::schema::users_tasks;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
-use models::public::Id as IdGenerator;
-use models::public::{WithdrawMetadata, DepositMetadata};
+use models::cid::{Id, NewIdRequest, UserId};
+use models::cid::{WithdrawMetadata, DepositMetadata};
 
 
 
@@ -33,11 +23,11 @@ use models::public::{WithdrawMetadata, DepositMetadata};
 #[post("/id/build")]
 async fn make_id(
     req: HttpRequest,
-    mut id_: web::Json<IdGenerator>,
+    id_: web::Json<NewIdRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let mut object_id = id_.0;
+    let new_object_id_request = id_.0;
 
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -61,63 +51,62 @@ async fn make_id(
 
     };
 
+    /* checking that the incoming request is already rate limited or not */
+    let identifier = format!("{}.{}", new_object_id_request.username.clone(), new_object_id_request.device_id.clone());
+    if is_rate_limited!{
+        redis_conn,
+        identifier, /* identifier */
+        String, /* the type of identifier */
+        "id_rate_limiter" /* redis key */
+    }{
 
-    /* ECDSA keypair */
-    let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-    let (private, public) = ec_key_pair.clone().split();
-    let ec_signer = SecureSign::new(private.clone());
-    let ec_verifier = SecureVerify::new(public.clone());
-    object_id.unique_id = Some(hex::encode(public.as_ref()));
-    object_id.signer = Some(hex::encode(private.as_ref()));
+        resp!{
+            &[u8], //// the data type
+            &[], //// response data
+            ID_RATE_LIMITED, //// response message
+            StatusCode::TOO_MANY_REQUESTS, //// status code
+            None::<Cookie<'_>>, //// cookie
+        }
 
+    } else {
+        
+        /* building new id contains the public and private key and the snowflake id */
+        let mut new_id = Id::new(new_object_id_request.clone());
 
-    /* building ECDSA keypair from pubkey and prvkey slices */
-    let pubkey_bytes = hex::decode(object_id.unique_id.as_ref().unwrap()).unwrap();
-    let prvkye_bytes = hex::decode(object_id.signer.as_ref().unwrap()).unwrap();
-    let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
-    let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkye_bytes).unwrap();
-    let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
+        /* building the keypair from the public and private keys */
+        let retrieve_keypair = new_id.retrieve_keypair();
 
+        /* signing the data using the private key */
+        let signed_id = new_id.sign();
 
-    /* generating snowflake id */
-    let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
-    let node_id = std::env::var("NODE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
-    let mut id_generator_generator = SnowflakeIdGenerator::new(machine_id, node_id);
-    let snowflake_id = id_generator_generator.real_time_generate();
-    object_id.snowflake_id = Some(snowflake_id);
-
-
-    /* stringifying the object_id instance to generate the signature */
-    let json_input = serde_json::json!({
-        "paypal_id": object_id.paypal_id,
-        "account_number": object_id.account_number,
-        "social_id": object_id.social_id,
-        "username": object_id.username,
-        "snowflake_id": snowflake_id,
-        "unique_id": object_id.unique_id.as_ref().unwrap(),
-    });
-    let inputs_to_sign = serde_json::to_string(&json_input).unwrap(); /* json stringifying the json_input value */
-
-
-    /* generating signature from the input data */
-    let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
-    object_id.signature = Some(hex::encode(&ec_sig));
-    let encoded_id = ec_verifier.verify(ec_sig).unwrap();
-    let decoded_id = serde_json::from_slice::<IdGenerator>(&encoded_id).unwrap();
+        /* verifying the data against the generated signature */
+        let is_valid_data = new_id.verify();
+        if !is_valid_data{
+            
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                INVALID_SIGNATURE, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
     
+        /* retrieving a new UserId object to be stored in redis */
+        let get_id_for_redis: UserId = new_id.get_id_for_redis();
 
-    /* storing the generated unique id inside the redis ram */
-    let redis_stringified_inputs = serde_json::to_string(&object_id).unwrap();
-    let _: () = redis_conn.set(object_id.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
-;
-    resp!{
-        IdGenerator, // the data type
-        object_id, // response data
-        ID_BUILT, // response message
-        StatusCode::CREATED, // status code
-        None::<Cookie<'_>>, // cookie
+        /* storing the generated unique id inside the redis ram */
+        let redis_stringified_inputs = serde_json::to_string(&get_id_for_redis).unwrap();
+        let _: () = redis_conn.set(new_object_id_request.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
+    
+        resp!{
+            Id, // the data type
+            signed_id, // response data
+            ID_BUILT, // response message
+            StatusCode::CREATED, // status code
+            None::<Cookie<'_>>, // cookie
+        }
     }
-
 
 }
 
@@ -166,9 +155,8 @@ async fn deposit(
                         0 => sender pay the exchange with the amounts 
                         1 => exchange sends the paid amount to the coinbase usdc/usdt server wallet 
                         2 => send successful response to the sender contains tx hash of depositting into the coinbase
-                        
-                    */ 
 
+                    */ 
                     if contract_mint_call == true{
                         let deposit_tx_hash = String::from("card minted this is tx hash");
                         /* 

@@ -7,6 +7,10 @@ use crate::*;
  
     followers weighted tree to understand the relationship between 
     peers to suggests events using graph virtual machine
+    
+    
+    an state management app using actors and graph concepts, traits, 
+    macros (ast, token stream) and pointers(Arc, Rc, Mutex, RefCell)
 
     
     game and stem like vm engine uisng graph and actor concepts (tokio) 
@@ -35,10 +39,25 @@ use crate::*;
     https://github.com/wildonion/uniXerr/blob/a30a9f02b02ec7980e03eb8e31049890930d9238/infra/valhalla/coiniXerr/src/schemas.rs#L1213
     https://developerlife.com/2022/02/24/rust-non-binary-tree/#naive-approach-using-weak-and-strong-references
     https://developerlife.com/2022/03/12/rust-redux/
-    https://github.com/wildonion/uniXerr/tree/master/infra/valhalla/coiniXerr/src/engine
     https://bevyengine.org/learn/book/introduction/  
     https://godotengine.org/
     https://fyrox-book.github.io/introduction.html
+    https://www.youtube.com/watch?v=yq-msJOQ4nU
+    https://github.com/wildonion/cs-concepts#%EF%B8%8F-system
+    https://doc.rust-lang.org/nomicon/index.html
+    https://stackoverflow.com/questions/26271151/precise-memory-layout-control-in-rust
+    https://docs.rust-embedded.org/book/
+    https://crates.io/crates/hotham
+    https://developers.google.com/protocol-buffers/docs/encoding
+    https://capnproto.org/encoding.html
+    https://ethereum.org/nl/developers/docs/evm/
+    https://blog.subnetzero.io/post/building-language-vm-part-01/
+    https://rust-hosted-langs.github.io/book/
+    https://benkonz.github.io/building-a-brainfuck-compiler-with-rust-and-llvm/
+    https://opensource.com/article/19/3/rust-virtual-machine
+    https://medium.com/iridium-vm/so-you-want-to-build-a-language-vm-in-rust-part-09-15d90084002
+    https://medium.com/clevyio/using-rust-and-nom-to-create-an-open-source-programming-language-for-chatbots-12fe67582af5
+    https://cheats.rs/#behind-the-scenes
 
 */
 

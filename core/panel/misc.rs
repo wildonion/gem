@@ -860,6 +860,59 @@ macro_rules! mafia_passport {
 }
 
 #[macro_export]
+macro_rules! is_rate_limited {
+    (
+        $redis_conn:expr,
+        $identifier:expr,
+        $identifier_type:ty,
+        $redis_key:expr
+    ) => {
+        
+        {
+            /* rate limiter based on username */
+            let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
+            let now = chrono::Local::now().timestamp_millis() as u64;
+            let mut is_rate_limited = false;
+            
+            let redis_result_id_rate_limiter: RedisResult<String> = $redis_conn.get($redis_key).await;
+            let mut redis_id_rate_limiter = match redis_result_id_rate_limiter{
+                Ok(data) => {
+                    let rl_data = serde_json::from_str::<HashMap<$identifier_type, u64>>(data.as_str()).unwrap();
+                    rl_data
+                },
+                Err(e) => {
+                    let empty_id_rate_limiter = HashMap::<$identifier_type, u64>::new();
+                    let rl_data = serde_json::to_string(&empty_id_rate_limiter).unwrap();
+                    let _: () = $redis_conn.set($redis_key, rl_data).await.unwrap();
+                    HashMap::new()
+                }
+            };
+
+            if let Some(last_used) = redis_id_rate_limiter.get(&($identifier)){
+                if now - *last_used < chill_zone_duration{
+                    is_rate_limited = true;
+                }
+            }
+            
+            if is_rate_limited{
+            
+                true
+
+            } else{
+
+                /* updating the last rquest time */
+                redis_id_rate_limiter.insert($identifier, now); //// updating the redis rate limiter map
+                let rl_data = serde_json::to_string(&redis_id_rate_limiter).unwrap();
+                let _: () = $redis_conn.set($redis_key, rl_data).await.unwrap(); //// writing to redis ram
+
+                false
+            }
+
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! verify {
     (
       $endpoint:expr,
@@ -1080,7 +1133,7 @@ macro_rules! exam {
 
 
 #[macro_export]
-macro_rules! gendeh {
+macro_rules! cmd {
     ($iden:ident, $ty: tt) => {
         pub struct $iden(pub $ty);
         impl Default for $iden{
@@ -1097,7 +1150,7 @@ macro_rules! gendeh {
     }
 }
 //////
-/// gendeh!{bindgen, id} //// bindgen is the name of the struct and id is the name of the field
+/// cmd!{bindgen, id} //// bindgen is the name of the struct and id is the name of the field
 //////
 
 
