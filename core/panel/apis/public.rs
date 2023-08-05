@@ -37,7 +37,8 @@ async fn make_id(
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    
+    let mut object_id = id_.0;
+
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
@@ -62,12 +63,20 @@ async fn make_id(
 
 
     /* ECDSA keypair */
-    let key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-    let (private, public) = key_pair.clone().split();
+    let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
+    let (private, public) = ec_key_pair.clone().split();
     let ec_signer = SecureSign::new(private.clone());
     let ec_verifier = SecureVerify::new(public.clone());
-    id_.0.unique_id = Some(hex::encode(public.as_ref()));
-    id_.0.signer = Some(hex::encode(private.as_ref()));
+    object_id.unique_id = Some(hex::encode(public.as_ref()));
+    object_id.signer = Some(hex::encode(private.as_ref()));
+
+
+    /* building ECDSA keypair from pubkey and prvkey slices */
+    let pubkey_bytes = hex::decode(object_id.unique_id.as_ref().unwrap()).unwrap();
+    let prvkye_bytes = hex::decode(object_id.signer.as_ref().unwrap()).unwrap();
+    let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
+    let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkye_bytes).unwrap();
+    let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
 
 
     /* generating snowflake id */
@@ -75,35 +84,35 @@ async fn make_id(
     let node_id = std::env::var("NODE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
     let mut id_generator_generator = SnowflakeIdGenerator::new(machine_id, node_id);
     let snowflake_id = id_generator_generator.real_time_generate();
-    id_.snowflake_id = Some(snowflake_id);
+    object_id.snowflake_id = Some(snowflake_id);
 
 
-    /* stringifying the id_ instance to generate the signature */
+    /* stringifying the object_id instance to generate the signature */
     let json_input = serde_json::json!({
-        "paypal_id": id_.paypal_id,
-        "account_number": id_.account_number,
-        "social_id": id_.social_id,
-        "username": id_.username,
+        "paypal_id": object_id.paypal_id,
+        "account_number": object_id.account_number,
+        "social_id": object_id.social_id,
+        "username": object_id.username,
         "snowflake_id": snowflake_id,
-        "unique_id": id_.0.unique_id,
+        "unique_id": object_id.unique_id.as_ref().unwrap(),
     });
     let inputs_to_sign = serde_json::to_string(&json_input).unwrap(); /* json stringifying the json_input value */
 
 
     /* generating signature from the input data */
     let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
-    id_.0.signature = Some(hex::encode(&ec_sig));
+    object_id.signature = Some(hex::encode(&ec_sig));
     let encoded_id = ec_verifier.verify(ec_sig).unwrap();
     let decoded_id = serde_json::from_slice::<IdGenerator>(&encoded_id).unwrap();
     
 
     /* storing the generated unique id inside the redis ram */
-    let redis_stringified_inputs = serde_json::to_string(&id_).unwrap();
-    let _: () = redis_conn.set(id_.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
+    let redis_stringified_inputs = serde_json::to_string(&object_id).unwrap();
+    let _: () = redis_conn.set(object_id.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
 ;
     resp!{
         IdGenerator, // the data type
-        id_.0, // response data
+        object_id, // response data
         ID_BUILT, // response message
         StatusCode::CREATED, // status code
         None::<Cookie<'_>>, // cookie

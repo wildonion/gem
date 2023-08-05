@@ -4,7 +4,7 @@
 use crate::*;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DepositMetadata{
     pub from: Id,
     pub recipient: Id,
@@ -13,7 +13,7 @@ pub struct DepositMetadata{
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct WithdrawMetadata{
     pub deposit_metadata: DepositMetadata,
     pub cat: i64, // claimed at
