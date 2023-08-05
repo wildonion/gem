@@ -564,8 +564,8 @@ macro_rules! server {
                         INIT PUBLIC SERIVE APIs 
                     */
                     .service(
-                        actix_web::web::scope("/public")
-                            .configure(services::init_public)   
+                        actix_web::web::scope("/fin")
+                            .configure(services::init_fin)   
                     )
                     /*
                         INIT DEV SERIVE APIs 

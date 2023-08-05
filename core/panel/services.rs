@@ -43,7 +43,7 @@ pub fn init_ws_notif(config: &mut web::ServiceConfig){
     |
 
 */
-pub fn init_public(config: &mut web::ServiceConfig){
+pub fn init_fin(config: &mut web::ServiceConfig){
     
     config.service(apis::cid::exports::deposit);
     config.service(apis::cid::exports::withdraw);

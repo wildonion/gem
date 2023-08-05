@@ -20,7 +20,7 @@ use models::cid::{WithdrawMetadata, DepositMetadata};
 
 
 
-#[post("/id/build")]
+#[post("/cid/build")]
 async fn make_id(
     req: HttpRequest,
     id_: web::Json<NewIdRequest>,
