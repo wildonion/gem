@@ -2574,6 +2574,77 @@
 							"response": []
 						},
 						{
+							"name": "Build Conse Id",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"sjkhGDGLS-232\",\n    \"social_id\": \"0019888041\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/cid/build",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"cid",
+										"build"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deposit",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/deposit",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"deposit"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Withdraw",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/withdraw",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"withdraw"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Report User Tasks",
 							"request": {
 								"auth": {
@@ -2788,38 +2859,6 @@
 				{
 					"name": "Notif APIs",
 					"item": []
-				},
-				{
-					"name": "Public",
-					"item": [
-						{
-							"name": "Build Id",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"device_id_here\",\n    \"social_id\": \"0019888041\",\n    \"username\": \"wildonion\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-fin}}/cid/build",
-									"host": [
-										"{{panel-fin}}"
-									],
-									"path": [
-										"cid",
-										"build"
-									]
-								}
-							},
-							"response": []
-						}
-					]
 				}
 			],
 			"description": "**NOTE** that dev APIs require conse hyper server **JWT** to be passed to request Authorization header.\n\n**NOTE** that you can get the **JWT** from the response cookie of the admin and user `login` API which is the first part of `::` sign.\n\n**NOTE** that to define twitter tasks we must prefix the `task_name` field inside the register new task API with `twitter-\\\\*` which `\\\\*` can be one of the following task names:\n\n- username\n- code\n- tweet\n- retweet\n- hashtag\n- like"

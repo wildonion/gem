@@ -1414,8 +1414,8 @@ impl Id{
         };
 
         match user.cid{
-            Some(old_cid) => {
-
+            Some(old_cid) if !old_cid.is_empty() => {
+                
                 /* updating other fields except cid and snowflake id */
                 match diesel::update(users.find(id_owner))
                     .set(
@@ -1502,7 +1502,7 @@ impl Id{
                     }
 
             },
-            None => {
+            _ => {
 
                 /* ECDSA keypair */
                 let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
