@@ -29,6 +29,14 @@ pub struct User{
     pub facebook_username: Option<String>, /* unique */
     pub discord_username: Option<String>, /* unique */
     pub wallet_address: Option<String>, /* unique */
+    pub gmail: Option<String>, /* unique */
+    pub phone_number: Option<String>, /* unique */
+    pub paypal_id: Option<String>, /* unique */
+    pub account_number: Option<String>, /* unique */
+    pub device_id: Option<String>, /* unique */
+    pub social_id: Option<String>, /* unique */
+    pub cid: Option<String>, /* unique */
+    pub snowflake_id: Option<i64>, /* unique */
     pub user_role: UserRole,
     pub pswd: String,
     pub token_time: Option<i64>,
@@ -47,6 +55,14 @@ pub struct FetchUser{
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub wallet_address: Option<String>,
+    pub gmail: Option<String>, /* unique */
+    pub phone_number: Option<String>, /* unique */
+    pub paypal_id: Option<String>, /* unique */
+    pub account_number: Option<String>, /* unique */
+    pub device_id: Option<String>, /* unique */
+    pub social_id: Option<String>, /* unique */
+    pub cid: Option<String>, /* unique */
+    pub snowflake_id: Option<i64>, /* unique */
     pub user_role: UserRole,
     pub token_time: Option<i64>,
     pub last_login: Option<chrono::NaiveDateTime>,
@@ -63,6 +79,14 @@ pub struct UserData{
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub wallet_address: Option<String>,
+    pub gmail: Option<String>, /* unique */
+    pub phone_number: Option<String>, /* unique */
+    pub paypal_id: Option<String>, /* unique */
+    pub account_number: Option<String>, /* unique */
+    pub device_id: Option<String>, /* unique */
+    pub social_id: Option<String>, /* unique */
+    pub cid: Option<String>, /* unique */
+    pub snowflake_id: Option<i64>, /* unique */
     pub user_role: String,
     pub token_time: Option<i64>,
     pub last_login: Option<String>,
@@ -72,8 +96,8 @@ pub struct UserData{
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DepositRequest{
-    pub from: UserId,
-    pub recipient: UserId,
+    pub from: String,
+    pub recipient: String,
     pub amount: u64,
     pub signature: String, /* this must be generated inside the client by signing the operation using the client private key */
     pub iat: i64, // deposited at
@@ -86,39 +110,54 @@ pub struct WithdrawRequest{
     pub cat: i64, // claimed at
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct UserId{
-    pub user_id: i32,
-    pub paypal_id: String,
-    pub account_number: String,
-    pub device_id: String,
-    pub social_id: String,
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+pub struct UserIdResponse{
+    pub id: i32,
     pub username: String,
-    pub snowflake_id: Option<i64>,
-    pub cid: Option<String>, /* pubkey */
+    pub activity_code: String,
+    pub twitter_username: Option<String>,
+    pub facebook_username: Option<String>,
+    pub discord_username: Option<String>,
+    pub wallet_address: Option<String>,
+    pub gmail: Option<String>, /* unique */
+    pub phone_number: Option<String>, /* unique */
+    pub paypal_id: Option<String>, /* unique */
+    pub account_number: Option<String>, /* unique */
+    pub device_id: Option<String>, /* unique */
+    pub social_id: Option<String>, /* unique */
+    pub cid: Option<String>, /* unique */
+    pub snowflake_id: Option<i64>, /* unique */
+    pub signer: Option<String>,
+    pub user_role: String,
+    pub token_time: Option<i64>,
+    pub last_login: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewIdRequest{
+    pub gmail: String,
+    pub phone_number: String,
     pub paypal_id: String,
     pub account_number: String,
     pub device_id: String,
     pub social_id: String,
-    pub username: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Id{
+    pub user_gmail: String,
+    pub user_phone_number: String,
     pub user_id: i32,
     pub paypal_id: String,
     pub account_number: String,
     pub device_id: String,
     pub social_id: String,
     pub username: String,
-    pub snowflake_id: Option<i64>,
-    pub cid: Option<String>, /* pubkey */
+    pub new_snowflake_id: Option<i64>,
+    pub new_cid: Option<String>, /* pubkey */
     pub signer: Option<String>, /* prvkey */
-    pub signature: Option<String>, /* this is the proof of a valid data signed by the generated private key, will be returned to the user */
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
@@ -694,6 +733,14 @@ impl User{
                         },
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
+                        gmail: fetched_user.clone().gmail,
+                        phone_number: fetched_user.clone().phone_number,
+                        paypal_id: fetched_user.clone().paypal_id,
+                        account_number: fetched_user.clone().account_number,
+                        device_id: fetched_user.clone().device_id,
+                        social_id: fetched_user.clone().social_id,
+                        cid: fetched_user.clone().cid,
+                        snowflake_id: fetched_user.snowflake_id,
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -799,6 +846,14 @@ impl User{
                         },
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
+                        gmail: fetched_user.clone().gmail,
+                        phone_number: fetched_user.clone().phone_number,
+                        paypal_id: fetched_user.clone().paypal_id,
+                        account_number: fetched_user.clone().account_number,
+                        device_id: fetched_user.clone().device_id,
+                        social_id: fetched_user.clone().social_id,
+                        cid: fetched_user.clone().cid,
+                        snowflake_id: fetched_user.snowflake_id,
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -1026,6 +1081,14 @@ impl User{
                             },
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
+                            gmail: updated_user.gmail,
+                            phone_number: updated_user.phone_number,
+                            paypal_id: updated_user.paypal_id,
+                            account_number: updated_user.account_number,
+                            device_id: updated_user.device_id,
+                            social_id: updated_user.social_id,
+                            cid: updated_user.cid,
+                            snowflake_id: updated_user.snowflake_id,
                         }
                     )
                 },
@@ -1143,6 +1206,14 @@ impl User{
                             },
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
+                            gmail: u.gmail,
+                            phone_number: u.phone_number,
+                            paypal_id: u.paypal_id,
+                            account_number: u.account_number,
+                            device_id: u.device_id,
+                            social_id: u.social_id,
+                            cid: u.cid,
+                            snowflake_id: u.snowflake_id,
                         })
                         .collect::<Vec<UserData>>()
                 )
@@ -1272,6 +1343,14 @@ impl User{
                                     },
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
+                                    gmail: updated_user.gmail,
+                                    phone_number: updated_user.phone_number,
+                                    paypal_id: updated_user.paypal_id,
+                                    account_number: updated_user.account_number,
+                                    device_id: updated_user.device_id,
+                                    social_id: updated_user.social_id,
+                                    cid: updated_user.cid,
+                                    snowflake_id: updated_user.snowflake_id,
                                 }
                             )
                         },
@@ -1320,41 +1399,149 @@ impl User{
 
 impl Id{
 
+    pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Id, PanelHttpResponse>{
 
-    pub fn new_for(mut id_: NewIdRequest, id_owner: i32) -> Id{
+        let Ok(user) = User::find_by_id(id_owner, connection).await else{
+            let resp = Response{
+                data: Some(id_owner),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            ); 
+        };
 
-        /* ECDSA keypair */
-        let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-        let (private, public) = ec_key_pair.clone().split();
-        let cid = Some(hex::encode(public.as_ref()));
-        let signer = Some(hex::encode(private.as_ref()));
+        match user.cid{
+            Some(old_cid) => {
 
-        /* generating snowflake id */
-        let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
-        let node_id = std::env::var("NODE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
-        let mut id_generator_generator = SnowflakeIdGenerator::new(machine_id, node_id);
-        let snowflake_id = id_generator_generator.real_time_generate();
-        let snowflake_id = Some(snowflake_id);
+                /* updating other fields except cid and snowflake id */
+                match diesel::update(users.find(id_owner))
+                    .set(
+                (
+                            gmail.eq(id_.gmail.clone()),
+                            phone_number.eq(id_.phone_number.clone()),
+                            paypal_id.eq(id_.paypal_id.clone()),
+                            account_number.eq(id_.account_number.clone()),
+                            device_id.eq(id_.device_id.clone()),
+                            social_id.eq(id_.social_id.clone()),
+                        )
+                    )
+                    .returning(FetchUser::as_returning())
+                    .get_result(connection)
+                    {
+                        Ok(updated_user) => {
 
-        Id { 
-            user_id: id_owner,
-            paypal_id: id_.paypal_id, 
-            account_number: id_.account_number, 
-            device_id: id_.device_id, 
-            social_id: id_.social_id, 
-            username: id_.username, 
-            snowflake_id,
-            cid,
-            signer,
-            signature: None,
-        }
+                            let user_data = UserData { 
+                                id: updated_user.id, 
+                                username: updated_user.username, 
+                                activity_code: updated_user.activity_code, 
+                                twitter_username: updated_user.twitter_username, 
+                                facebook_username: updated_user.facebook_username, 
+                                discord_username: updated_user.discord_username, 
+                                wallet_address: updated_user.wallet_address, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                gmail: updated_user.gmail,
+                                phone_number: updated_user.phone_number,
+                                paypal_id: updated_user.paypal_id,
+                                account_number: updated_user.account_number,
+                                device_id: updated_user.device_id,
+                                social_id: updated_user.social_id,
+                                cid: updated_user.cid,
+                                snowflake_id: updated_user.snowflake_id,
+                            };
+
+                            let resp = Response{
+                                data: Some(user_data),
+                                message: CID_RECORD_UPDATED,
+                                status: 200
+                            };
+                            return Err(
+                                Ok(HttpResponse::Found().json(resp))
+                            ); 
+                        },
+                        Err(e) => {
+                            
+                            let resp_err = &e.to_string();
+
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                
+                            let error_content = &e.to_string();
+                            let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: resp_err,
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+
+                        }
+                    }
+
+            },
+            None => {
+
+                /* ECDSA keypair */
+                let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
+                let (private, public) = ec_key_pair.clone().split();
+                let new_cid = Some(hex::encode(public.as_ref()));
+                let signer = Some(hex::encode(private.as_ref()));
+
+                /* generating snowflake id */
+                let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
+                let node_id = std::env::var("NODE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
+                let mut id_generator_generator = SnowflakeIdGenerator::new(machine_id, node_id);
+                let new_snowflake_id = id_generator_generator.real_time_generate();
+                let new_snowflake_id = Some(new_snowflake_id);
+
+                Ok(
+                    Id { 
+                        user_gmail: id_.gmail,
+                        user_phone_number: id_.phone_number,
+                        user_id: id_owner,
+                        username: id_username, 
+                        paypal_id: id_.paypal_id, 
+                        account_number: id_.account_number, 
+                        device_id: id_.device_id, 
+                        social_id: id_.social_id, 
+                        new_snowflake_id,
+                        new_cid,
+                        signer,
+                    }
+                )
+
+            }
+        } 
 
     }
 
     pub fn retrieve_keypair(&self) -> themis::keys::KeyPair{
 
         /* building ECDSA keypair from pubkey and prvkey slices */
-        let pubkey_bytes = hex::decode(self.cid.as_ref().unwrap()).unwrap();
+        let pubkey_bytes = hex::decode(self.new_cid.as_ref().unwrap()).unwrap();
         let prvkey_bytes = hex::decode(self.signer.as_ref().unwrap()).unwrap();
         let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
         let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
@@ -1363,7 +1550,7 @@ impl Id{
 
     }
 
-    pub fn sign(&mut self) -> Self{
+    pub fn test_sign(&mut self) -> Option<String>{
 
         /* building the signer from the private key */
         let prvkey_bytes = hex::decode(self.signer.as_ref().unwrap()).unwrap();
@@ -1372,13 +1559,16 @@ impl Id{
 
         /* stringifying the object_id instance to generate the signature */
         let json_input = serde_json::json!({
+            "gmail": self.user_gmail,
+            "phone_number": self.user_phone_number,
+            "user_id": self.user_id,
             "paypal_id": self.paypal_id,
             "account_number": self.account_number,
             "social_id": self.social_id,
             "username": self.username,
-            "snowflake_id": self.snowflake_id,
+            "new_snowflake_id": self.new_snowflake_id,
             "device_id": self.device_id.clone(),
-            "unique_id": self.cid.as_ref().unwrap(), /* unwrap() takes the ownership of self thus we've used as_ref() to prevent from moving */
+            "new_cid": self.new_cid.as_ref().unwrap(), /* unwrap() takes the ownership of self thus we've used as_ref() to prevent from moving */
         });
         
         /* json stringifying the json_input value */
@@ -1388,64 +1578,125 @@ impl Id{
         let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
         
         /* converting the signature byte into hex string */
-        self.signature = Some(hex::encode(&ec_sig)); 
-
-        /* returning the cloned instance of the self to prevent the self from moving */
-        self.clone()
+        Some(hex::encode(&ec_sig))
 
     }
 
-    pub fn verify(&self) -> bool{
+    pub fn verify(signature: &str, pubkey: &str) -> Vec<u8>{
 
         /* building the verifier from the public key */
-        let pubkey_bytes = hex::decode(self.cid.as_ref().unwrap()).unwrap();
+        let pubkey_bytes = hex::decode(pubkey).unwrap();
         let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
         /* converting the signature hex string into bytes */
-        let signature_bytes = hex::decode(self.signature.as_ref().unwrap()).unwrap();
+        let signature_bytes = hex::decode(signature).unwrap();
 
         /* verifying the signature byte which returns the data itself in form of utf8 bytes */
-        let encoded_id_instance = ec_verifier.verify(&signature_bytes).unwrap();
-        
-        /* decoding the utf8 into an Id instance */
-        let decoded_id_instance = serde_json::from_slice::<Id>(&encoded_id_instance).unwrap();
+        let encoded_data = ec_verifier.verify(&signature_bytes).unwrap();
 
-        let this_without_sig = Id{
-            user_id: self.user_id,
-            paypal_id: self.paypal_id.clone(),
-            account_number: self.account_number.clone(),
-            device_id: self.device_id.clone(),
-            social_id: self.social_id.clone(),
-            username: self.username.clone(),
-            snowflake_id: self.snowflake_id.clone(),
-            cid: self.cid.clone(),
-            /* since the signer and signature fields were None while we were signing the data */
-            signature: None,
-            signer: None,
-        };
-
-        if this_without_sig == decoded_id_instance{
-            true
-        } else{
-            false
-        }
+        encoded_data
 
     }
 
-    pub fn get_id_for_redis(&self) -> UserId{
+    pub async fn save(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserIdResponse, PanelHttpResponse>{
+        
+        let Ok(user) = User::find_by_id(self.user_id, connection).await else{
+            let resp = Response{
+                data: Some(self.user_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );  
+        };
 
-        UserId { 
-            user_id: self.user_id,
-            paypal_id: self.paypal_id.clone(), 
-            account_number: self.account_number.clone(), 
-            device_id: self.device_id.clone(), 
-            social_id: self.social_id.clone(), 
-            username: self.username.clone(), 
-            snowflake_id: self.snowflake_id.clone(), 
-            cid: self.cid.clone()
-        }
+        match diesel::update(users.find(self.user_id))
+            .set(
+        (   
+                /* 
+                    can't return heap data like self.user_gmail which is of type String 
+                    we must clone them or use their borrowed form or return the static 
+                    version of their slice like &'static str
+                */
+                    gmail.eq(self.user_gmail.clone()),
+                    phone_number.eq(self.user_phone_number.clone()),
+                    paypal_id.eq(self.paypal_id.clone()),
+                    account_number.eq(self.account_number.clone()),
+                    device_id.eq(self.device_id.clone()),
+                    social_id.eq(self.social_id.clone()),
+                    cid.eq(self.new_cid.clone()),
+                    snowflake_id.eq(self.new_snowflake_id),
+                )
+            )
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserIdResponse { 
+                            id: updated_user.id, 
+                            username: updated_user.username, 
+                            activity_code: updated_user.activity_code, 
+                            twitter_username: updated_user.twitter_username, 
+                            facebook_username: updated_user.facebook_username, 
+                            discord_username: updated_user.discord_username, 
+                            wallet_address: updated_user.wallet_address, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            gmail: updated_user.gmail,
+                            phone_number: updated_user.phone_number,
+                            paypal_id: updated_user.paypal_id,
+                            account_number: updated_user.account_number,
+                            device_id: updated_user.device_id,
+                            social_id: updated_user.social_id,
+                            cid: updated_user.cid,
+                            signer: self.signer.clone(),
+                            snowflake_id: updated_user.snowflake_id,
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
 
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+    
     }
 
 }

@@ -633,6 +633,14 @@ async fn login(
                                 },
                                 created_at: user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
+                                gmail: user.gmail,
+                                phone_number: user.phone_number,
+                                paypal_id: user.paypal_id,
+                                account_number: user.account_number,
+                                device_id: user.device_id,
+                                social_id: user.social_id,
+                                cid: user.cid,
+                                snowflake_id: user.snowflake_id,
                             };
 
                             resp!{

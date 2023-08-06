@@ -17,7 +17,7 @@ use crate::constants::*;
 use crate::misc::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
-use models::users::{Id, NewIdRequest, UserId};
+use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users::{WithdrawRequest, DepositRequest};
 
 
@@ -146,6 +146,14 @@ async fn login(
                         },
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
+                        gmail: user.gmail,
+                        phone_number: user.phone_number,
+                        paypal_id: user.paypal_id,
+                        account_number: user.account_number,
+                        device_id: user.device_id,
+                        social_id: user.social_id,
+                        cid: user.cid,
+                        snowflake_id: user.snowflake_id,
                     };
 
                     resp!{
@@ -297,6 +305,14 @@ async fn login_with_wallet_and_password(
                         },
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
+                        gmail: user.gmail,
+                        phone_number: user.phone_number,
+                        paypal_id: user.paypal_id,
+                        account_number: user.account_number,
+                        device_id: user.device_id,
+                        social_id: user.social_id,
+                        cid: user.cid,
+                        snowflake_id: user.snowflake_id,
                     };
 
                     resp!{
@@ -669,12 +685,7 @@ pub async fn tasks_report(
     }
 }
 
-
-/* -------------------------------------------------------------- */
-/* ------------------------ FINANCE APIs ------------------------ */
-/* -------------------------------------------------------------- */
-
-#[post("/fin/cid/build")]
+#[post("/cid/build")]
 #[passport(user)]
 async fn make_id(
     req: HttpRequest,
@@ -691,7 +702,7 @@ async fn make_id(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-
+                    
 
             /* 
                  ------------------------------------- 
@@ -729,6 +740,9 @@ async fn make_id(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
+                    let token_username = token_data.username.unwrap();
+
+                    let identifier = format!("{}.{}.{}", _id, token_username, new_object_id_request.device_id.clone());
 
                     let Ok(mut redis_conn) = get_redis_conn else{
 
@@ -750,10 +764,9 @@ async fn make_id(
                     };
 
                     /* checking that the incoming request is already rate limited or not */
-                    let identifier = format!("{}.{}", new_object_id_request.username.clone(), new_object_id_request.device_id.clone());
                     if is_rate_limited!{
                         redis_conn,
-                        identifier, /* identifier */
+                        identifier.clone(), /* identifier */
                         String, /* the type of identifier */
                         "cid_rate_limiter" /* redis key */
                     }{
@@ -769,37 +782,50 @@ async fn make_id(
                     } else {
                         
                         /* building new id contains the public and private key and the snowflake id */
-                        let mut new_id = Id::new_for(new_object_id_request.clone(), _id);
+                        let get_new_id = Id::new_or_update(
+                            new_object_id_request.clone(), 
+                            _id, 
+                            token_username,
+                            connection
+                        ).await;
+
+                        /* 
+                            if we found a user simply we'll update all the its fields with 
+                            new one inside the NewIdRequest object except cid and the snowflake 
+                            id then return the updated data as the response of this api call
+                        */
+                        let Ok(mut new_id) = get_new_id else{
+                            let resp = get_new_id.unwrap_err();
+                            return resp;
+                        };
 
                         /* building the keypair from the public and private keys */
                         let retrieve_keypair = new_id.retrieve_keypair();
 
                         /* signing the data using the private key */
-                        let signed_id = new_id.sign();
+                        let signed_id_hex_string = new_id.test_sign();
 
                         /* verifying the data against the generated signature */
-                        let is_valid_data = new_id.verify();
-                        if !is_valid_data{
-                            
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
+                        let encoded_data = Id::verify(
+                            signed_id_hex_string.unwrap().as_str(), 
+                            new_id.clone().new_cid.unwrap().as_str()
+                        );
 
-                        /* retrieving a new UserId object to be stored in redis */
-                        let get_id_for_redis: UserId = new_id.get_id_for_redis();
 
-                        /* storing the generated unique id inside the redis ram */
-                        let redis_stringified_inputs = serde_json::to_string(&get_id_for_redis).unwrap();
-                        let _: () = redis_conn.set(new_object_id_request.username.as_str(), redis_stringified_inputs.as_str()).await.unwrap();
-
+                        /* 
+                            saveing the new Id into db, also if we're here means 
+                            that we're creating a new Id for the user since on the 
+                            second request it'll return the founded user info
+                        */
+                        let save_user_data = new_id.save(connection).await;
+                        let Ok(user_data) = save_user_data else{
+                            let resp = save_user_data.unwrap_err();
+                            return resp;
+                        };
+                        
                         resp!{
                             Id, // the data type
-                            signed_id, // response data
+                            new_id, // response data
                             ID_BUILT, // response message
                             StatusCode::CREATED, // status code
                             None::<Cookie<'_>>, // cookie
@@ -844,7 +870,7 @@ async fn make_id(
 }
 
 
-#[post("/fin/deposit")]
+#[post("/deposit")]
 #[passport(user)]
 async fn deposit(
     req: HttpRequest,
@@ -995,7 +1021,7 @@ async fn deposit(
 }
 
 
-#[post("/fin/withdraw")]
+#[post("/withdraw")]
 #[passport(user)]
 async fn withdraw(
     req: HttpRequest,

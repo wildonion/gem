@@ -213,9 +213,10 @@ async fn check_token(
                         let single_user = users
                             .filter(id.eq(_id))
                             .select((id, username, activity_code, twitter_username, 
-                                    facebook_username, discord_username,
-                                    wallet_address, user_role, token_time,
-                                    last_login, created_at, updated_at))
+                                    facebook_username, discord_username, account_number,
+                                    wallet_address, gmail, phone_number, paypal_id,
+                                    device_id, social_id, cid, snowflake_id, user_role, 
+                                    token_time, last_login, created_at, updated_at))
                             .first::<FetchUser>(connection);
 
 
@@ -254,6 +255,14 @@ async fn check_token(
                             },
                             created_at: user.created_at.to_string(),
                             updated_at: user.updated_at.to_string(),
+                            gmail: user.gmail,
+                            phone_number: user.phone_number,
+                            paypal_id: user.paypal_id,
+                            account_number: user.account_number,
+                            device_id: user.device_id,
+                            social_id: user.social_id,
+                            cid: user.cid,
+                            snowflake_id: user.snowflake_id,
                         };
 
 

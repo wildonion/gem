@@ -9,11 +9,9 @@ pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 pub static DEPOSITED_SUCCESSFULLY: &str = "Deposit Successfully";
 pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
-pub static ID_BUILT: &str = "Unique Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Data";
-pub static ALPHABET: &str = "+/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+pub static ID_BUILT: &str = "New Conse Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Future Data";
 pub static ID_RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
-pub static INVALID_SIGNATURE: &str = "Invalid Signature";
-
+pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
