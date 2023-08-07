@@ -43,7 +43,7 @@ use crate::*;
     https://godotengine.org/
     https://fyrox-book.github.io/introduction.html
     https://www.youtube.com/watch?v=yq-msJOQ4nU
-    https://github.com/wildonion/cs-concepts#%EF%B8%8F-system
+    https://github.com/wildonion/cs-concepts
     https://doc.rust-lang.org/nomicon/index.html
     https://stackoverflow.com/questions/26271151/precise-memory-layout-control-in-rust
     https://docs.rust-embedded.org/book/

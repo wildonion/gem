@@ -62,6 +62,8 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockch
 
 * 🎯 **actix ws** server for streaming over redis subscribed topics  
 
+* 🪙 **ECDSA** based cryptoghrapy algorithm used to generate a unique cosne Id for each user to allow them to sign in game operations with their own private keys, also see the `infra/themis-wasm` folder to get the idea of how using **themis** inside the `js` libs to sign any data using a user private key.
+
 ### 🗃️ Directory and Structure Explained
 
 > Note that to use dev and admin panel APIs Remember to run conse mafia hyper server first.

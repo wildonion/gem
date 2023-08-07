@@ -105,7 +105,8 @@ pub struct DepositRequest{
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct WithdrawRequest{
-    pub deposit_metadata: DepositRequest,
+    pub deposited_id: i32,
+    pub cid: String,
     pub signature: String, /* this must be generated inside the client by signing the operation using the client private key */
     pub cat: i64, // claimed at
 }
@@ -1414,7 +1415,8 @@ impl Id{
         };
 
         match user.cid{
-            Some(old_cid) if !old_cid.is_empty() => {
+            /* we'll be here only if the old_cid is not an empty string */
+            Some(old_cid) if !old_cid.is_empty() => { 
                 
                 /* updating other fields except cid and snowflake id */
                 match diesel::update(users.find(id_owner))
@@ -1538,11 +1540,11 @@ impl Id{
 
     }
 
-    pub fn retrieve_keypair(&self) -> themis::keys::KeyPair{
+    pub fn retrieve_keypair(hex_pubkey: &str, hex_prvkey: &str) -> themis::keys::KeyPair{
 
         /* building ECDSA keypair from pubkey and prvkey slices */
-        let pubkey_bytes = hex::decode(self.new_cid.as_ref().unwrap()).unwrap();
-        let prvkey_bytes = hex::decode(self.signer.as_ref().unwrap()).unwrap();
+        let pubkey_bytes = hex::decode(hex_pubkey).unwrap();
+        let prvkey_bytes = hex::decode(hex_prvkey).unwrap();
         let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
         let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
         let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
@@ -1582,18 +1584,14 @@ impl Id{
 
     }
 
-    pub fn verify(signature: &str, pubkey: &str) -> Vec<u8>{
+    pub fn verify(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
 
         /* building the verifier from the public key */
-        let pubkey_bytes = hex::decode(pubkey).unwrap();
-        let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
+        let ec_pubkey = EcdsaPublicKey::try_from_slice(pubkey).unwrap();
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
-        /* converting the signature hex string into bytes */
-        let signature_bytes = hex::decode(signature).unwrap();
-
         /* verifying the signature byte which returns the data itself in form of utf8 bytes */
-        let encoded_data = ec_verifier.verify(&signature_bytes).unwrap();
+        let encoded_data = ec_verifier.verify(signature);
 
         encoded_data
 

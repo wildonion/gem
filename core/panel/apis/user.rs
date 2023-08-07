@@ -799,17 +799,16 @@ async fn make_id(
                             return resp;
                         };
 
+
                         /* building the keypair from the public and private keys */
-                        let retrieve_keypair = new_id.retrieve_keypair();
+                        let retrieve_keypair = Id::retrieve_keypair(
+                            &new_id.new_cid.as_ref().unwrap(),
+                            &new_id.signer.as_ref().unwrap()
+                        );
+
 
                         /* signing the data using the private key */
                         let signed_id_hex_string = new_id.test_sign();
-
-                        /* verifying the data against the generated signature */
-                        let encoded_data = Id::verify(
-                            signed_id_hex_string.unwrap().as_str(), 
-                            new_id.clone().new_cid.unwrap().as_str()
-                        );
 
 
                         /* 
@@ -874,7 +873,7 @@ async fn make_id(
 #[passport(user)]
 async fn deposit(
     req: HttpRequest,
-    metadata: web::Json<DepositRequest>,
+    deposit: web::Json<DepositRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -1025,7 +1024,7 @@ async fn deposit(
 #[passport(user)]
 async fn withdraw(
     req: HttpRequest,
-    metadata: web::Json<WithdrawRequest>,
+    withdraw: web::Json<WithdrawRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -1077,7 +1076,6 @@ async fn withdraw(
                     let role = token_data.user_role;
                     let wallet = token_data.wallet.unwrap();
 
-
                     /* 
 
                         -----------------------------------------
@@ -1090,12 +1088,81 @@ async fn withdraw(
                         
                     */ 
 
-                    resp!{
-                        &[u8], // the data type
-                        &[], // response data
-                        CLAIMED_SUCCESSFULLY, // response message
-                        StatusCode::CREATED, // status code
-                        None::<Cookie<'_>>, // cookie
+                    let withdraw_object = withdraw.0;
+
+                    /* 
+                        here is the process of verifying the signature of signed data 
+                        using the private key inside js using themis wasm 
+                    */
+                    let tx_signature = withdraw_object.signature;
+                    let hex_pubkey = withdraw_object.cid;
+                    
+                    let decode_pubkey = hex::decode(hex_pubkey);
+                    let decode_signature = hex::decode(tx_signature);
+
+                    let Ok(pubkey_bytes) = decode_pubkey else{
+
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            INVALID_CID, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+
+                    let Ok(signature) = decode_signature else{
+
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            SIGNATURE_DECODE_ISSUE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* verifying the data against the generated signature */
+                    let get_encoded_data = Id::verify(
+                        &signature, 
+                        &pubkey_bytes
+                    );
+
+                    let Ok(encoded_data) = get_encoded_data else{
+                        
+                        let error = get_encoded_data.unwrap_err();
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            INVALID_SIGNATUE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    };
+
+                    /* decoding the signed message */
+                    let pure_message = std::str::from_utf8(&encoded_data).unwrap();
+
+                    /* claimed at must be equals to the decoded one inside the signature */
+                    if pure_message.parse::<i64>().unwrap() == withdraw_object.cat{
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            CLAIMED_SUCCESSFULLY, // response message
+                            StatusCode::OK, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    } else{
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            INVALID_DATA, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
                     }
 
                 },

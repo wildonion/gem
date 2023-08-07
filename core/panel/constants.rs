@@ -12,6 +12,11 @@ pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
 pub static ID_BUILT: &str = "New Conse Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Future Data";
 pub static ID_RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
+pub static SIGNATURE_DECODE_ISSUE: &str = "Can't Decode Signature Hex String";
+pub static INVALID_CID: &str = "Can't Decode Conse Id Hex String";
+pub static INVALID_SIGNATUE: &str = "Invalid Signature";
+pub static INVALID_DATA: &str = "Invalid Data";
+
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
