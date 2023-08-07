@@ -615,7 +615,7 @@ async fn login(
                                 twitter_username: user.twitter_username.clone(),
                                 facebook_username: user.facebook_username.clone(),
                                 discord_username: user.discord_username.clone(),
-                                wallet_address: user.wallet_address.clone(),
+                                identifier: user.identifier.clone(),
                                 user_role: {
                                     match user.user_role.clone(){
                                         UserRole::Admin => "Admin".to_string(),
@@ -641,6 +641,7 @@ async fn login(
                                 social_id: user.social_id,
                                 cid: user.cid,
                                 snowflake_id: user.snowflake_id,
+                                stars: user.stars
                             };
 
                             resp!{

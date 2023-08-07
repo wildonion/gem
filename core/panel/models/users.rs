@@ -28,7 +28,7 @@ pub struct User{
     pub twitter_username: Option<String>, /* unique */
     pub facebook_username: Option<String>, /* unique */
     pub discord_username: Option<String>, /* unique */
-    pub wallet_address: Option<String>, /* unique */
+    pub identifier: Option<String>, /* unique */
     pub gmail: Option<String>, /* unique */
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
@@ -37,6 +37,7 @@ pub struct User{
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
+    pub stars: Option<i64>,
     pub user_role: UserRole,
     pub pswd: String,
     pub token_time: Option<i64>,
@@ -54,7 +55,7 @@ pub struct FetchUser{
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
-    pub wallet_address: Option<String>,
+    pub identifier: Option<String>,
     pub gmail: Option<String>, /* unique */
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
@@ -63,6 +64,7 @@ pub struct FetchUser{
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
+    pub stars: Option<i64>,
     pub user_role: UserRole,
     pub token_time: Option<i64>,
     pub last_login: Option<chrono::NaiveDateTime>,
@@ -78,7 +80,7 @@ pub struct UserData{
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
-    pub wallet_address: Option<String>,
+    pub identifier: Option<String>,
     pub gmail: Option<String>, /* unique */
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
@@ -87,6 +89,7 @@ pub struct UserData{
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
+    pub stars: Option<i64>,
     pub user_role: String,
     pub token_time: Option<i64>,
     pub last_login: Option<String>,
@@ -119,7 +122,7 @@ pub struct UserIdResponse{
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
-    pub wallet_address: Option<String>,
+    pub identifier: Option<String>,
     pub gmail: Option<String>, /* unique */
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
@@ -128,6 +131,7 @@ pub struct UserIdResponse{
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
+    pub stars: Option<i64>,
     pub signer: Option<String>,
     pub user_role: String,
     pub token_time: Option<i64>,
@@ -139,6 +143,7 @@ pub struct UserIdResponse{
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewIdRequest{
     pub gmail: String,
+    pub username: String,
     pub phone_number: String,
     pub paypal_id: String,
     pub account_number: String,
@@ -169,7 +174,7 @@ pub struct LoginInfoRequest{
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct UserLoginInfoRequest{
-    pub wallet: String,
+    pub identifier: String,
     pub password: String
 }
 
@@ -187,7 +192,7 @@ pub enum UserRole{
 pub struct NewUser<'l> {
     pub username: &'l str,
     pub activity_code: &'l str,
-    pub wallet_address: &'l str,
+    pub identifier: &'l str,
     pub user_role: UserRole,
     pub pswd: &'l str,
 }
@@ -198,7 +203,7 @@ pub struct NewUser<'l> {
 pub struct EditUserByAdmin<'p>{
     pub user_role: UserRole,
     pub username: &'p str,
-    pub wallet_address: &'p str,
+    pub identifier: &'p str,
     pub pswd: &'p str
 }
 
@@ -206,7 +211,7 @@ pub struct EditUserByAdmin<'p>{
 pub struct JWTClaims{
     pub _id: i32, // mongodb object id
     pub username: Option<String>,
-    pub wallet: Option<String>,
+    pub identifier: Option<String>,
     pub user_role: UserRole,
     pub token_time: i64,
     pub exp: i64, // expiration timestamp
@@ -216,7 +221,7 @@ pub struct JWTClaims{
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct NewUserInfoRequest{
     pub username: String,
-    pub wallet: String,
+    pub identifier: String,
     pub role: String,
     pub password: String
 }
@@ -226,7 +231,7 @@ pub struct EditUserByAdminRequest{
     pub user_id: i32,
     pub role: String,
     pub username: String,
-    pub wallet: String,
+    pub identifier: String,
     pub password: Option<String>
 }
 
@@ -528,7 +533,7 @@ impl User{
         let payload = JWTClaims{
             _id: self.id,
             username: Some(self.username.clone()), /* here username and user_role are behind a reference which can't be moved thus we must clone them */
-            wallet: self.wallet_address.clone(),
+            identifier: self.identifier.clone(),
             user_role: self.user_role.clone(),
             token_time: _token_time,
             exp: exp_time,
@@ -644,15 +649,15 @@ impl User{
 
     }
 
-    pub async fn find_by_wallet(wallet: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_identifier(identifier_login: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
-            .filter(wallet_address.eq(wallet.to_string()))
+            .filter(identifier.eq(identifier_login.to_string()))
             .first::<User>(connection);
                         
         let Ok(user) = single_user else{
             let resp = Response{
-                data: Some(wallet),
+                data: Some(identifier_login),
                 message: USER_NOT_FOUND,
                 status: 404
             };
@@ -686,7 +691,7 @@ impl User{
 
     }
 
-    pub async fn insert(wallet: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert(identifier_login: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -695,9 +700,9 @@ impl User{
         }).collect();
 
         let new_user = NewUser{
-            username: &wallet, /* first insert the username is the wallet address */
+            username: &identifier_login, /* first insert the username is the identifier address */
             activity_code: &random_code,
-            wallet_address: &wallet,
+            identifier: &identifier_login,
             user_role: UserRole::User,
             pswd: "",
         };
@@ -716,7 +721,7 @@ impl User{
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
                         discord_username: fetched_user.discord_username.clone(),
-                        wallet_address: fetched_user.wallet_address.clone(),
+                        identifier: fetched_user.identifier.clone(),
                         user_role: {
                             match fetched_user.user_role.clone(){
                                 UserRole::Admin => "Admin".to_string(),
@@ -742,6 +747,7 @@ impl User{
                         social_id: fetched_user.clone().social_id,
                         cid: fetched_user.clone().cid,
                         snowflake_id: fetched_user.snowflake_id,
+                        stars: fetched_user.stars
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -798,7 +804,7 @@ impl User{
     
     }
 
-    pub async fn insert_by_wallet_password(wallet: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -808,9 +814,9 @@ impl User{
 
         let pass = User::hash_pswd(password.as_str()).unwrap();
         let new_user = NewUser{
-            username: &wallet, /* first insert the username is the wallet address */
+            username: &identifier_login, /* first insert the username is the identifier address */
             activity_code: &random_code,
-            wallet_address: &wallet,
+            identifier: &identifier_login,
             user_role: UserRole::User,
             pswd: &pass
         };
@@ -829,7 +835,7 @@ impl User{
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
                         discord_username: fetched_user.discord_username.clone(),
-                        wallet_address: fetched_user.wallet_address.clone(),
+                        identifier: fetched_user.identifier.clone(),
                         user_role: {
                             match fetched_user.user_role.clone(){
                                 UserRole::Admin => "Admin".to_string(),
@@ -855,6 +861,7 @@ impl User{
                         social_id: fetched_user.clone().social_id,
                         cid: fetched_user.clone().cid,
                         snowflake_id: fetched_user.snowflake_id,
+                        stars: fetched_user.stars
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -918,7 +925,7 @@ impl User{
 
         let hash_pswd = User::hash_pswd(user.password.as_str()).unwrap();
         let u_name = user.username.as_str();
-        let wallet = user.wallet.as_str();
+        let identifier_login = user.identifier.as_str();
         let uname = if u_name == ""{
             chrono::Local::now().timestamp_nanos().to_string()
         } else{
@@ -928,11 +935,11 @@ impl User{
         let user = NewUser{
             username: &uname,
             activity_code: "",
-            wallet_address: {
-                if wallet == ""{
+            identifier: {
+                if identifier_login == ""{
                     &uname
                 } else{
-                    wallet
+                    identifier_login
                 }
             },
             user_role: match user.role.as_str(){
@@ -1020,8 +1027,8 @@ impl User{
             );
         };
 
-        let _wallet = if new_user.wallet != "".to_string(){
-            &new_user.wallet
+        let _identifier = if new_user.identifier != "".to_string(){
+            &new_user.identifier
         } else{
             let resp = Response{
                 data: Some(new_user.user_id.to_owned()),
@@ -1045,12 +1052,12 @@ impl User{
                     }
                 },
                 /* 
-                    pswd, username and wallet is of type &str thus by borrowing these 
+                    pswd, username and identifier is of type &str thus by borrowing these 
                     feilds from new_user instance we can convert them into &str 
                 */
                 pswd: &password,
                 username: &_username,
-                wallet_address: &_wallet
+                identifier: &_identifier
             })
             .returning(FetchUser::as_returning())
             .get_result(connection)
@@ -1064,7 +1071,7 @@ impl User{
                             twitter_username: updated_user.twitter_username, 
                             facebook_username: updated_user.facebook_username, 
                             discord_username: updated_user.discord_username, 
-                            wallet_address: updated_user.wallet_address, 
+                            identifier: updated_user.identifier, 
                             user_role: {
                                 match updated_user.user_role.clone(){
                                     UserRole::Admin => "Admin".to_string(),
@@ -1090,6 +1097,7 @@ impl User{
                             social_id: updated_user.social_id,
                             cid: updated_user.cid,
                             snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
                         }
                     )
                 },
@@ -1189,7 +1197,7 @@ impl User{
                             twitter_username: u.twitter_username, 
                             facebook_username: u.facebook_username, 
                             discord_username: u.discord_username, 
-                            wallet_address: u.wallet_address, 
+                            identifier: u.identifier, 
                             user_role: {
                                 match u.user_role.clone(){
                                     UserRole::Admin => "Admin".to_string(),
@@ -1215,6 +1223,7 @@ impl User{
                             social_id: u.social_id,
                             cid: u.cid,
                             snowflake_id: u.snowflake_id,
+                            stars: u.stars
                         })
                         .collect::<Vec<UserData>>()
                 )
@@ -1282,14 +1291,14 @@ impl User{
     }
 
     pub async fn update_social_account(
-        wallet: &str, 
+        identifier_login: &str, 
         account_name: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
-            let Ok(user) = User::find_by_wallet(wallet, connection).await else{
+            let Ok(user) = User::find_by_identifier(identifier_login, connection).await else{
                 let resp = Response{
-                    data: Some(wallet),
+                    data: Some(identifier_login),
                     message: USER_NOT_FOUND,
                     status: 404
                 };
@@ -1326,7 +1335,7 @@ impl User{
                                     twitter_username: updated_user.twitter_username, 
                                     facebook_username: updated_user.facebook_username, 
                                     discord_username: updated_user.discord_username, 
-                                    wallet_address: updated_user.wallet_address, 
+                                    identifier: updated_user.identifier, 
                                     user_role: {
                                         match updated_user.user_role.clone(){
                                             UserRole::Admin => "Admin".to_string(),
@@ -1352,6 +1361,7 @@ impl User{
                                     social_id: updated_user.social_id,
                                     cid: updated_user.cid,
                                     snowflake_id: updated_user.snowflake_id,
+                                    stars: updated_user.stars
                                 }
                             )
                         },
@@ -1382,7 +1392,7 @@ impl User{
             } else{
 
                 let resp = Response{
-                    data: Some(wallet),
+                    data: Some(identifier_login),
                     message: TWITTER_USER_IS_NOT_VALID,
                     status: 406
                 };
@@ -1424,6 +1434,7 @@ impl Id{
                 (
                             gmail.eq(id_.gmail.clone()),
                             phone_number.eq(id_.phone_number.clone()),
+                            username.eq(id_.username.clone()),
                             paypal_id.eq(id_.paypal_id.clone()),
                             account_number.eq(id_.account_number.clone()),
                             device_id.eq(id_.device_id.clone()),
@@ -1442,7 +1453,7 @@ impl Id{
                                 twitter_username: updated_user.twitter_username, 
                                 facebook_username: updated_user.facebook_username, 
                                 discord_username: updated_user.discord_username, 
-                                wallet_address: updated_user.wallet_address, 
+                                identifier: updated_user.identifier, 
                                 user_role: {
                                     match updated_user.user_role.clone(){
                                         UserRole::Admin => "Admin".to_string(),
@@ -1468,6 +1479,7 @@ impl Id{
                                 social_id: updated_user.social_id,
                                 cid: updated_user.cid,
                                 snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
                             };
 
                             let resp = Response{
@@ -1587,7 +1599,11 @@ impl Id{
     pub fn verify(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
 
         /* building the verifier from the public key */
-        let ec_pubkey = EcdsaPublicKey::try_from_slice(pubkey).unwrap();
+        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
+            let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
+            return Err(err);
+        };
+        
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
         /* verifying the signature byte which returns the data itself in form of utf8 bytes */
@@ -1620,6 +1636,7 @@ impl Id{
                 */
                     gmail.eq(self.user_gmail.clone()),
                     phone_number.eq(self.user_phone_number.clone()),
+                    username.eq(self.username.clone()),
                     paypal_id.eq(self.paypal_id.clone()),
                     account_number.eq(self.account_number.clone()),
                     device_id.eq(self.device_id.clone()),
@@ -1640,7 +1657,7 @@ impl Id{
                             twitter_username: updated_user.twitter_username, 
                             facebook_username: updated_user.facebook_username, 
                             discord_username: updated_user.discord_username, 
-                            wallet_address: updated_user.wallet_address, 
+                            identifier: updated_user.identifier, 
                             user_role: {
                                 match updated_user.user_role.clone(){
                                     UserRole::Admin => "Admin".to_string(),
@@ -1667,6 +1684,7 @@ impl Id{
                             cid: updated_user.cid,
                             signer: self.signer.clone(),
                             snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
                         }
                     )
                 },

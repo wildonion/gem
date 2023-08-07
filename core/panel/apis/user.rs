@@ -36,7 +36,7 @@ use models::users::{WithdrawRequest, DepositRequest};
 #[openapi(
     paths(
         login,
-        login_with_wallet_and_password,
+        login_with_identifier_and_password,
         verify_twitter_account,
         tasks_report,
     ),
@@ -85,14 +85,14 @@ impl Modify for SecurityAddon {
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("wallet" = String, Path, description = "wallet address")
+        ("identifier" = String, Path, description = "identifier login")
     ),
     tag = "crate::apis::user",
 )]
-#[post("/login/{wallet}")]
+#[post("/login/{identifier}")]
 async fn login(
         req: HttpRequest, 
-        wallet: web::Path<String>,  
+        login_identifier: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -105,7 +105,7 @@ async fn login(
             let connection = &mut pg_pool.get().unwrap();
 
             /* we can pass usernmae by reference or its slice form instead of cloning it */
-            match User::find_by_wallet(&wallet.to_owned(), connection).await{
+            match User::find_by_identifier(&login_identifier.to_owned(), connection).await{
                 Ok(user) => {
         
                     /* generate cookie 🍪 from token time and jwt */
@@ -128,7 +128,7 @@ async fn login(
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
                         discord_username: user.discord_username.clone(),
-                        wallet_address: user.wallet_address.clone(),
+                        identifier: user.identifier.clone(),
                         user_role: {
                             match user.user_role.clone(){
                                 UserRole::Admin => "Admin".to_string(),
@@ -154,6 +154,7 @@ async fn login(
                         social_id: user.social_id,
                         cid: user.cid,
                         snowflake_id: user.snowflake_id,
+                        stars: user.stars
                     };
 
                     resp!{
@@ -171,7 +172,7 @@ async fn login(
                     // resp
                     
                     /* gently, we'll insert this user into table */
-                    match User::insert(wallet.to_owned(), connection).await{
+                    match User::insert(login_identifier.to_owned(), connection).await{
                         Ok((user_login_data, cookie)) => {
 
                             resp!{
@@ -225,7 +226,7 @@ async fn login(
     tag = "crate::apis::user",
 )]
 #[post("/login")]
-async fn login_with_wallet_and_password(
+async fn login_with_identifier_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -242,7 +243,7 @@ async fn login_with_wallet_and_password(
             let login_info = user_login_info.to_owned();
 
             /* we can pass usernmae by reference or its slice form instead of cloning it */
-            match User::find_by_wallet(&login_info.wallet.to_owned(), connection).await{
+            match User::find_by_identifier(&login_info.identifier.to_owned(), connection).await{
                 Ok(user) => {
 
                     let pswd_verification = user.verify_pswd(&login_info.password); 
@@ -260,7 +261,7 @@ async fn login_with_wallet_and_password(
                     if !pswd_flag{
                         resp!{
                             String, // the data type
-                            login_info.wallet, // response data
+                            login_info.identifier, // response data
                             WRONG_PASSWORD, // response message
                             StatusCode::FORBIDDEN, // status code
                             None::<Cookie<'_>>, // cookie
@@ -287,7 +288,7 @@ async fn login_with_wallet_and_password(
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
                         discord_username: user.discord_username.clone(),
-                        wallet_address: user.wallet_address.clone(),
+                        identifier: user.identifier.clone(),
                         user_role: {
                             match user.user_role.clone(){
                                 UserRole::Admin => "Admin".to_string(),
@@ -313,6 +314,7 @@ async fn login_with_wallet_and_password(
                         social_id: user.social_id,
                         cid: user.cid,
                         snowflake_id: user.snowflake_id,
+                        stars: user.stars
                     };
 
                     resp!{
@@ -330,7 +332,7 @@ async fn login_with_wallet_and_password(
                     // resp
                     
                     /* gently, we'll insert this user into table */
-                    match User::insert_by_wallet_password(login_info.wallet, login_info.password, connection).await{
+                    match User::insert_by_identifier_password(login_info.identifier, login_info.password, connection).await{
                         Ok((user_login_data, cookie)) => {
 
                             resp!{
@@ -377,7 +379,7 @@ async fn login_with_wallet_and_password(
     responses(
         (status=200, description="Updated Successfully", body=UserData),
         (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="User Not Found", body=String), // not found by wallet
+        (status=404, description="User Not Found", body=String), // not found by identifier
         (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
         (status=403, description="JWT Not Found In Cookie", body=[u8]),
         (status=406, description="No Time Hash Found In Cookie", body=[u8]),
@@ -451,7 +453,7 @@ async fn verify_twitter_account(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let login_identifier = token_data.identifier.unwrap();
 
                     /* rate limiter based on doer id */
                     let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
@@ -498,7 +500,7 @@ async fn verify_twitter_account(
 
 
                         /* we can pass usernmae by reference or its slice form instead of cloning it */
-                        match User::update_social_account(&wallet, &account_name.to_owned(), connection).await{
+                        match User::update_social_account(&login_identifier, &account_name.to_owned(), connection).await{
                             Ok(updated_user) => {
                     
                                 resp!{
@@ -628,7 +630,7 @@ pub async fn tasks_report(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let login_identifier = token_data.identifier.unwrap();
 
 
                     match UserTask::reports(user_id.to_owned(), connection).await{
@@ -739,10 +741,10 @@ async fn make_id(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let login_identifier = token_data.identifier.unwrap();
                     let token_username = token_data.username.unwrap();
 
-                    let identifier = format!("{}.{}.{}", _id, token_username, new_object_id_request.device_id.clone());
+                    let identifier_key = format!("{}.{}.{}", _id, token_username, new_object_id_request.device_id.clone());
 
                     let Ok(mut redis_conn) = get_redis_conn else{
 
@@ -766,7 +768,7 @@ async fn make_id(
                     /* checking that the incoming request is already rate limited or not */
                     if is_rate_limited!{
                         redis_conn,
-                        identifier.clone(), /* identifier */
+                        identifier_key.clone(), /* identifier */
                         String, /* the type of identifier */
                         "cid_rate_limiter" /* redis key */
                     }{
@@ -785,7 +787,7 @@ async fn make_id(
                         let get_new_id = Id::new_or_update(
                             new_object_id_request.clone(), 
                             _id, 
-                            token_username,
+                            new_object_id_request.username.clone(),
                             connection
                         ).await;
 
@@ -823,8 +825,8 @@ async fn make_id(
                         };
                         
                         resp!{
-                            Id, // the data type
-                            new_id, // response data
+                            UserIdResponse, // the data type
+                            user_data, // response data
                             ID_BUILT, // response message
                             StatusCode::CREATED, // status code
                             None::<Cookie<'_>>, // cookie
@@ -922,7 +924,7 @@ async fn deposit(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let login_identifier = token_data.identifier.unwrap();
                     
                     let mut interval = tokio::time::interval(TokioDuration::from_secs(10));
 
@@ -951,7 +953,7 @@ async fn deposit(
                                 ------------------------------------
                                 
                                 0 => sender pay the exchange with the amounts 
-                                1 => exchange sends the paid amount to the coinbase usdc/usdt server wallet 
+                                1 => exchange sends the paid amount to the coinbase usdc/usdt server identifier 
                                 2 => send successful response to the sender contains tx hash of depositting into the coinbase
 
                             */ 
@@ -1074,7 +1076,7 @@ async fn withdraw(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let login_identifier = token_data.identifier.unwrap();
 
                     /* 
 
@@ -1083,7 +1085,7 @@ async fn withdraw(
                         -----------------------------------------
                                 
                         0 => call coinbase trade api to exchange usdt/usdc to the passed in currency type 
-                        1 => send the traded to paypal wallet of the server  
+                        1 => send the traded to paypal identifier of the server  
                         2 => send the amount from the server paypal to the receiver paypal
                         
                     */ 
@@ -1101,7 +1103,6 @@ async fn withdraw(
                     let decode_signature = hex::decode(tx_signature);
 
                     let Ok(pubkey_bytes) = decode_pubkey else{
-
                         resp!{
                             &[u8], // the data type
                             &[], // response data
@@ -1137,7 +1138,7 @@ async fn withdraw(
                         resp!{
                             &[u8], // the data type
                             &[], // response data
-                            INVALID_SIGNATUE, // response message
+                            INVALID_SIGNATUE_OR_CID, // response message
                             StatusCode::NOT_ACCEPTABLE, // status code
                             None::<Cookie<'_>>, // cookie
                         }
@@ -1207,7 +1208,7 @@ async fn withdraw(
 
 pub mod exports{
     pub use super::login;
-    pub use super::login_with_wallet_and_password;
+    pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
     pub use super::tasks_report;
     pub use super::make_id;

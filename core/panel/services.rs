@@ -95,7 +95,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 pub fn init_user(config: &mut web::ServiceConfig){
     
     config.service(apis::user::exports::login);
-    config.service(apis::user::login_with_wallet_and_password);
+    config.service(apis::user::login_with_identifier_and_password);
     config.service(apis::user::verify_twitter_account);
     config.service(apis::user::tasks_report);
     config.service(apis::user::make_id);

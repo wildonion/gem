@@ -324,7 +324,7 @@ impl UserTask{
                         twitter_username: user.twitter_username, 
                         facebook_username: user.facebook_username, 
                         discord_username: user.discord_username, 
-                        wallet_address: user.wallet_address, 
+                        identifier: user.identifier, 
                         user_role: {
                             match user.user_role.clone(){
                                 UserRole::Admin => "Admin".to_string(),
@@ -350,6 +350,7 @@ impl UserTask{
                         social_id: user.social_id,
                         cid: user.cid,
                         snowflake_id: user.snowflake_id,
+                        stars: user.stars
                     },
                     tasks: {
                         let jobs = t

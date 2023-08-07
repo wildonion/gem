@@ -856,7 +856,7 @@ macro_rules! mafia_passport {
 macro_rules! is_rate_limited {
     (
         $redis_conn:expr,
-        $identifier:expr,
+        $identifier_key:expr,
         $identifier_type:ty,
         $redis_key:expr
     ) => {
@@ -881,7 +881,7 @@ macro_rules! is_rate_limited {
                 }
             };
 
-            if let Some(last_used) = redis_id_rate_limiter.get(&($identifier)){
+            if let Some(last_used) = redis_id_rate_limiter.get(&($identifier_key)){
                 if now - *last_used < chill_zone_duration{
                     is_rate_limited = true;
                 }
@@ -894,7 +894,7 @@ macro_rules! is_rate_limited {
             } else{
 
                 /* updating the last rquest time */
-                redis_id_rate_limiter.insert($identifier, now); //// updating the redis rate limiter map
+                redis_id_rate_limiter.insert($identifier_key, now); //// updating the redis rate limiter map
                 let rl_data = serde_json::to_string(&redis_id_rate_limiter).unwrap();
                 let _: () = $redis_conn.set($redis_key, rl_data).await.unwrap(); //// writing to redis ram
 

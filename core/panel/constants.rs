@@ -14,7 +14,7 @@ pub static ID_RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
 pub static SIGNATURE_DECODE_ISSUE: &str = "Can't Decode Signature Hex String";
 pub static INVALID_CID: &str = "Can't Decode Conse Id Hex String";
-pub static INVALID_SIGNATUE: &str = "Invalid Signature";
+pub static INVALID_SIGNATUE_OR_CID: &str = "Invalid Signature Or Conse Id";
 pub static INVALID_DATA: &str = "Invalid Data";
 
 

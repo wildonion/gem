@@ -2598,11 +2598,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/cid/build",
+									"raw": "{{panel-user}}/user/cid/build",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
+										"user",
 										"cid",
 										"build"
 									]
@@ -2630,14 +2631,34 @@
 						{
 							"name": "Withdraw",
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"deposited_id\": 1,\n    \"cid\": \"554543320000002dc8fd45d503e60c33e2fe24ddafbe5a05108571d696c093d2c4ca3fdb2190693becc28e136d\",\n    \"signature\": \"202604260a00000048000000313639313337373637353046022100fc4aa17a82c0ed1631c13816256a69c8d99858d8744ebe5497df6d51c242bbe5022100a74607247f79d4b5af4089862f49e68bc81d4beb23188997d02eb6c1d28c6a10\",\n    \"cat\": 1691377675\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
-									"raw": "{{panel-user}}/withdraw",
+									"raw": "{{panel-user}}/user/withdraw",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
+										"user",
 										"withdraw"
 									]
 								}

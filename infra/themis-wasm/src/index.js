@@ -9,7 +9,9 @@ window.onload = function() {
 
         /* ----------------------------------- */
         /* ----------------------------------- */
-        const private_key_hex = "524543320000002dec0be77c00f525f94908910f32df7b2f1cafd8888b968c787b5e0a3fe96fcc42e98641127e";
+        // public key is: 554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16
+        // the verifying process will be done in Rust inside the /user/withdraw api 
+        const private_key_hex = "524543320000002d4fe6311900b579ca7abb58fc8328e2673d1b938681ce696f6a7231a3d87cd5a0a6a08aa997";
         function hexToBytes(hex) {
             const bytes = new Uint8Array(hex.length / 2);
             for (let i = 0; i < hex.length; i += 2) {

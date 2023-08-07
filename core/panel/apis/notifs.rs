@@ -100,7 +100,7 @@ async fn notif_subs(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let wallet = token_data.wallet.unwrap();
+                    let identifier_login = token_data.identifier.unwrap();
 
                     let user_id = route_paths.0.to_owned();
                     let notif_room = route_paths.1.to_owned();
