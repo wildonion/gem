@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   social_id VARCHAR DEFAULT NULL UNIQUE,
   cid VARCHAR DEFAULT NULL UNIQUE,
   snowflake_id BigInt DEFAULT NULL UNIQUE,
+  stars BigInt DEFAULT 0,
   user_role UserRole NOT NULL DEFAULT 'user',
   pswd VARCHAR NOT NULL,
   token_time BigInt DEFAULT NULL,
