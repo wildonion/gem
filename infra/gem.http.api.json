@@ -2581,7 +2581,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
 											"type": "string"
 										}
 									]
@@ -2590,7 +2590,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"sjkhGDGLS-232\",\n    \"social_id\": \"0019888041\"\n}",
+									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"sjkhGDGLS-231\",\n    \"social_id\": \"0019888041\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2598,12 +2598,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/user/cid/build",
+									"raw": "{{panel-user}}/cid/build",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"user",
 										"cid",
 										"build"
 									]
@@ -2636,7 +2635,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
 											"type": "string"
 										}
 									]
@@ -2645,7 +2644,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"deposited_id\": 1,\n    \"cid\": \"554543320000002dc8fd45d503e60c33e2fe24ddafbe5a05108571d696c093d2c4ca3fdb2190693becc28e136d\",\n    \"signature\": \"202604260a00000048000000313639313337373637353046022100fc4aa17a82c0ed1631c13816256a69c8d99858d8744ebe5497df6d51c242bbe5022100a74607247f79d4b5af4089862f49e68bc81d4beb23188997d02eb6c1d28c6a10\",\n    \"cat\": 1691377675\n}",
+									"raw": "{\n    \"deposited_id\": 1,\n    \"cid\": \"554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"signature\": \"202604260a00000047000000313639313337373637353045022100b3d98fe940a1246b5373db2d8ea22b78744cb02ba645e2b16af45bedef9e478f02207503a4682e2a61bfb1f1f920c9ed151fc39b2221122bda0cd193c761c4d78dff\",\n    \"cat\": 1691377675\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2653,12 +2652,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/user/withdraw",
+									"raw": "{{panel-user}}/withdraw",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"user",
 										"withdraw"
 									]
 								}
@@ -2780,7 +2778,14 @@
 							"name": "Check Token",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"type": "string"
+										}
+									]
 								},
 								"method": "GET",
 								"header": [],
