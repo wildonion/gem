@@ -107,7 +107,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234%\"\r\n}\r\n",
+									"raw": "{\r\n    \"username\": \"wildonion\",\r\n    \"pwd\": \"wildoinon@1234%\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2182,7 +2182,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MSwiZXhwIjoxNjkyNDM3NDU2LCJpYXQiOjE2ODk4NDU0NTZ9.qJ5g_O5yPvkL7knJdu02CG0ptRnGEkMg4uhwob-Gclshh8hiJnbtd8pJgBReydCuVDtr-WRsPxOo2gu6giuBdg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MSwiZXhwIjoxNjk0MDc4NTM2LCJpYXQiOjE2OTE0ODY1MzZ9.tvzM8jMFBWVZBueLQlqJfXovmR9zLuiO18t3qPBZ-9g3yOQqPtf9OBCGqyLpxb_mNTdG-K_Rj23ixHg6lJwwjA",
 											"type": "string"
 										}
 									]
@@ -2598,11 +2598,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/cid/build",
+									"raw": "{{panel-user}}/user/cid/build",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
+										"user",
 										"cid",
 										"build"
 									]
@@ -2652,11 +2653,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/withdraw",
+									"raw": "{{panel-user}}/user/withdraw",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
+										"user",
 										"withdraw"
 									]
 								}
