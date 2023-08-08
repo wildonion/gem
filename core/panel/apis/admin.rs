@@ -9,7 +9,7 @@ use actix_web::HttpMessage;
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
 use mongodb::bson::oid::ObjectId;
 use crate::*;
-use crate::events::redis::role::PlayerRoleInfo;
+use crate::events::publishers::role::{PlayerRoleInfo, Reveal};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
@@ -134,14 +134,13 @@ async fn reveal_role(
                 // -------------------------------------------------------------------------------------
 
                 let storage = storage.as_ref().to_owned();
-                let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
                 let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
                 
                 let host = env::var("HOST").expect("⚠️ no host variable set");
                 let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
                 let reveal_api = format!("http://{}:{}/event/reveal/roles", host, port);
                 
-                let mut revealed = events::redis::role::Reveal::default();
+                let mut revealed = events::publishers::role::Reveal::default();
                 let mut map = HashMap::new();
                 map.insert("_id", event_id.to_owned());
 
@@ -207,104 +206,28 @@ async fn reveal_role(
                             }
                         }
 
-                        /* 
-                                    
-                            --------------------------------
-                              AUTHORIZING WITH REDIS ACTOR
-                            --------------------------------
-
-                        */
-
-                        /* sending command to redis actor to authorize the this ws client */
-                        let redis_auth_resp = redis_actix_actor
-                            .send(Command(resp_array!["AUTH", redis_password.as_str()])).await;
-
-                        let Ok(_) = redis_auth_resp else{
-                            
-                            let mailbox_err = redis_auth_resp.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &mailbox_err.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-
-                        /* 
-
-                            ----------------------------------------------------------------------
-                              PUBLISHING REVEALED ROLE TO THE PASSED IN CHANNEL WITH REDIS ACTOR
-                            ----------------------------------------------------------------------
-                            since each websocket session has a 1 second interval for push notif 
-                            subscription, we must publish roles constantly to the related channel 
-                            to make sure that the subscribers will receive the message at their 
-                            own time and once 1 subscriber receives the message we'll break the 
-                            background loop.
-
-                        */
-
                         let notif_room = revealed.event_id.clone();
                         let player_roles = revealed.players.clone();
                         let stringified_player_roles = serde_json::to_string(&player_roles).unwrap(); /* topic that is going to be published */
+                        let channel = format!("reveal-role-{notif_room:}"); /* reveal roles notif channels start with reveal-role */
+                        
 
-                        /* reveal roles notif channels start with reveal-role */
-                        let channel = format!("reveal-role-{notif_room:}");
-                        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+                        /* publishing the revealed roles in the background asyncly until 1 subscriber gets subscribed to the channel */
+                        Reveal::publish(
+                            redis_actix_actor, 
+                            &channel, 
+                            &stringified_player_roles,
+                            &notif_room
+                        ).await;
 
-                        /* 
-                            running an async task every 1 second in the background, 
-                            so we might have a successfull return from this api but 
-                            still waiting for a subscriber to subscribe to the published
-                            event room 
-                        */
-                        tokio::spawn(async move{
-
-                            /* publish until at least one sub subscribes to the topic */
-                            loop{
-
-                                /* tick every 1 second */
-                                interval.tick().await;
-
-                                let redis_pub_resp = redis_actix_actor
-                                    .send(Command(resp_array!["PUBLISH", &channel.clone(), stringified_player_roles.clone()]))
-                                    .await
-                                    .unwrap();
-    
-                                    match redis_pub_resp{
-                                        Ok(resp_val) => {
-            
-                                            match resp_val{
-                                                RespValue::Integer(subs) => {
-                                                    
-                                                    if subs >= 1{
-                                                        
-                                                        /* if we're here means that ws session received the notif */
-                                                        info!("💡 --- [{subs:}] subscriber has subscribed to event: [{notif_room:}] to receive roles notif");
-                                                        break;
-                                                        
-                                                    }
-                                                    
-                                                    info!("💡 --- no one has subscribed yet ");
-            
-                                                },
-                                                _ => {}
-                                            }
-            
-                                        },
-                                        Err(e) => {}
-                                    }
-                            }
-
-                        });
                     
-                    resp!{
-                        &[u8], // the data type
-                        &[], // response data
-                        PUSH_NOTIF_SENT, // response message
-                        StatusCode::CREATED, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }  
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            PUSH_NOTIF_SENT, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }  
                         
                     },
                     None => {

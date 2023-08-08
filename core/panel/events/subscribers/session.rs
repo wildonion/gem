@@ -1,16 +1,16 @@
 
 
 
-/*   ------------------------------------------------------------------------------------------------------
-    | websocket session actor to receive push notif subscription from redis subscriber of mmr, ecq engines 
-    | -----------------------------------------------------------------------------------------------------
+/*   ------------------------------------------------------------------------------------------------------------------
+    | websocket session actor to receive push notif subscription from redis subscriber of role, mmr and ecq publishers 
+    | -----------------------------------------------------------------------------------------------------------------
     |
     |
 */
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
-use crate::events::redis::role::PlayerRoleInfo;
-use crate::events::ws::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
+use crate::events::publishers::role::PlayerRoleInfo;
+use crate::events::subscribers::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::dev::channel;
@@ -26,7 +26,6 @@ use super::notifs::{
 };
 
 
-/// redis subscription
 /* 
     since it's macro it must be complied before any main codes 
     so we can use it on top of the structures, 
@@ -59,6 +58,11 @@ pub(crate) struct WsNotifSession{
 
 impl WsNotifSession{
 
+    /* 
+        role subscription process is done using the redis async subscriber 
+        which subscribes asyncly to the incoming future io object streams 
+        from the passed in channel 
+    */
     pub async fn role_subscription(notif_room: &'static str, session_id: usize,
         peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
         ws_role_notif_actor_address: Addr<RoleNotifServer>){

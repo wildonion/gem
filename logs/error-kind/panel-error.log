@@ -823,3 +823,6 @@ code: 65535 | message: Connection in progress | due to: Storage(RedisAsync(Conne
 code: 65535 | message: Subscription failed, try again later... | due to: Storage(RedisAsync(Internal("Subscription failed, try again later..."))) | time: 1689801501482
 code: 65535 | message: Connection in progress | due to: Storage(RedisAsync(Connection(Connecting))) | time: 1689801504152
 code: 65535 | message: Connection in progress | due to: Storage(RedisAsync(Connection(Connecting))) | time: 1689801504153
+code: 65534 | message: Address already in use (os error 48) | due to: Server(ActixWeb(Os { code: 48, kind: AddrInUse, message: "Address already in use" })) | time: 1691485869622
+code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1691486033676
+code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1691486049598

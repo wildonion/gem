@@ -1,6 +1,9 @@
 
 
 
+/* ------------------------------- */
+/* publisher and subscriber actors */
+/* ------------------------------- */
 
-pub mod redis; /* ecq and mmr engines */
-pub mod ws;
+pub mod publishers; /* ecq and mmr engines */
+pub mod subscribers;

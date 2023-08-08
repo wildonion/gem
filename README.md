@@ -262,7 +262,7 @@ make renew
 
 * pubsub new task, twitter task verification response, twitter bot response, **ECQ**, **MMR** and reveal role topics are `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
 
-* push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively and in order to receive realtime role, ecq and mmr notifs data users must use `/join-roles`, `/join-ecq` and `/join-mmr` commands respectively which are used to join the ws channel to create a session after they gets connected for listening on incoming events, note that these routes **are guarded with JWT**.
+* push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively and in order to receive realtime role, ecq and mmr notifs data users must use `/join-roles`, `/join-ecq` and `/join-mmr` commands respectively which are used to join the ws channel to create a session once they gets connected, for listening on incoming events, note that these routes **are guarded with JWT**.
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 
@@ -274,9 +274,9 @@ make renew
 
 ## 🚧 WIPs
 
-* god and dev panel app using `yew`
+* `yew` admin and dev panel app
 
-* redis pubsub streaming structure for publishing new minted role order for trading, ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/redis` folder along with their actor notifs structure inside `core/panel/events/ws` folder
+* redis pubsub streaming structure for publishing ecq (for registered events) and mmr (for event suggestion to players) topics inside `core/panel/events/publishers` folder along with their actor notifs structure inside `core/panel/events/subscribers` folder
 
 * behavioural graph virtual machine (gvm) of each player collected by the history of each event's `phases` field, event collaboration queue (ecq) and match making rating (mmr) engines 
 

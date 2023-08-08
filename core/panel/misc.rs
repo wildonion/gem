@@ -5,7 +5,7 @@ use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use crate::*;
 use crate::constants::CHARSET;
-use crate::events::redis::role::PlayerRoleInfo;
+use crate::events::publishers::role::PlayerRoleInfo;
 use actix::Addr;
 
 
@@ -464,8 +464,7 @@ macro_rules! server {
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
             use crate::constants::*;
-            use crate::events::ws::notifs::role::RoleNotifServer;
-            use crate::events::redis::RedisSubscription;
+            use crate::events::subscribers::notifs::role::RoleNotifServer;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -510,10 +509,6 @@ macro_rules! server {
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
             let shared_storage = Data::new(app_storage.clone());
 
-            let redis_async_pubsubconn = app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
-            let builtin_redis_actor = RedisSubscription::new(redis_async_pubsubconn, role_ntif_server_instance).start();
-            let shared_builtin_redis_actor = Data::new(builtin_redis_actor.clone());
-
             /*
                 the HttpServer::new function takes a factory function that 
                 produces an instance of the App, not the App instance itself. 
@@ -549,7 +544,6 @@ macro_rules! server {
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
-                    .app_data(Data::clone(&shared_builtin_redis_actor.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))

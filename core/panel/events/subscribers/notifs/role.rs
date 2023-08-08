@@ -9,7 +9,6 @@
 
 
 use crate::constants::WS_CLIENT_TIMEOUT;
-use crate::events::redis::{RedisSubscription, Unsubscribe};
 use crate::misc::*;
 use crate::*;
 use actix::prelude::*;
@@ -33,11 +32,6 @@ pub struct Disconnect {
     pub id: usize, // session id
     pub event_name: String // event room name: `reveal-role-{event_id}` to send message to and also user disconnected from this room
 }
-
-/// redis is disconnected
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct RedisDisconnect;
 
 /// join room
 #[derive(Message)]
@@ -65,7 +59,6 @@ pub struct Message(pub String);
 #[rtype(result = "()")]
 pub struct UpdateNotifRoom{
     pub notif_room: &'static str,
-    pub builtin_redis_actor: Addr<RedisSubscription>,
     pub peer_name: String
 }
 
@@ -95,7 +88,6 @@ pub struct RoleNotifServer{
     pub push_notif_rooms: HashMap<String, HashSet<usize>>,
     pub last_subscription_at: u64,
     pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
-    pub redis_builtin_actor: Option<Addr<RedisSubscription>>
 }
 
 impl RoleNotifServer{
@@ -108,7 +100,6 @@ impl RoleNotifServer{
             push_notif_rooms: HashMap::new(),
             last_subscription_at: 0,
             app_storage,
-            redis_builtin_actor: None
         }
     }
     
@@ -168,11 +159,9 @@ impl Actor for RoleNotifServer{
             since role notif server contains all rooms and sessions thus all of them MUST not receive 
             any push notif from redis any more.
         */
-        if self.redis_builtin_actor.is_some(){
-            let redis_actor = self.redis_builtin_actor.as_ref().unwrap();
-            redis_actor
-                .do_send(Unsubscribe);
-        }
+        
+        let async_redis = self.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
+        async_redis.unsubscribe("reveal-role-*");
 
         Running::Stop
     }
@@ -231,14 +220,6 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
     fn handle(&mut self, msg: UpdateNotifRoom, ctx: &mut Self::Context) -> Self::Result{
 
         /* 
-            if the redis_builtin_actor is not set already means we're 
-            here for the first time thus we'll update it
-        */
-        if self.redis_builtin_actor.is_none(){
-            self.redis_builtin_actor = Some(msg.builtin_redis_actor);
-        } 
-
-        /* 
             insert the passed in room to the message object to current rooms of this actor,
             if it doesn't exist it means that it's the first time we're creating the room
             thus we insert an empty hash set of peer idds otherwise we don't.
@@ -250,6 +231,7 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
         let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
         let mut conn = redis_client.get_connection().unwrap();
         
+        /* caching rooms using redis */
         let redis_result_rooms: RedisResult<String> = conn.get("role_notif_server_actor_rooms");
         let redis_rooms = match redis_result_rooms{
             Ok(data) => {
@@ -311,28 +293,6 @@ impl Handler<Disconnect> for RoleNotifServer{
             }
         }
 
-    }
-}
-
-impl Handler<RedisDisconnect> for RoleNotifServer{
-
-    type Result = ();
-
-    fn handle(&mut self, msg: RedisDisconnect, ctx: &mut Self::Context) -> Self::Result {
-        
-        info!("💡 --- redis actor is disconnected");
-        let disconn_message = format!("push notif subscription actor is not available");
-        
-        /* 
-            since self.rooms is behind a mutable reference and is 
-            moving in each iteration of the loop, thus we must 
-            borrow it in each iteration to prevent its ownership 
-            from moving 
-        */
-        let rooms = &self.rooms;
-        for room in rooms{
-            self.send_message(&room.0, &disconn_message, 0);
-        }
     }
 }
 
