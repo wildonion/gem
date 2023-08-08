@@ -57,15 +57,13 @@ impl Reveal{
             ----------------------------------------
                     PUBLISHING WITH REDIS ACTOR
             ----------------------------------------
-            since each websocket session has a 1 second interval for push notif 
-            subscription, we must publish roles constantly to the related channel 
-            to make sure that the subscribers will receive the message at their 
-            own time and once 1 subscriber receives the message we'll break the 
-            background loop.
-
-            running an async task every 1 second in the background, 
-            so we might have a successfull return from this api but 
-            still waiting for a subscriber to subscribe to the published
+            since each websocket session has a 1 second interval for push notif subscription, we must 
+            publish roles constantly to the related channel to make sure that the subscribers will receive 
+            the message at their own time and once 1 subscriber receives the message we'll break the 
+            background loop since there is only one redis async subscriber in overall which will begin to 
+            subscribing once the websocket server gets started, so in the following we're running an async 
+            task every 1 second in the background thus we might have a successfull return from inside the 
+            api where this method has called but still waiting for a subscriber to subscribe to the published
             event room 
 
         */
@@ -109,7 +107,7 @@ impl Reveal{
                             }
 
                         },
-                        Err(e) => {}
+                        Err(e) => () /* or {} */
                     }
             }
 
