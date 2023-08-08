@@ -85,7 +85,7 @@ impl Modify for SecurityAddon {
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("identifier" = String, Path, description = "identifier login")
+        ("identifier" = String, Path, description = "login identifier")
     ),
     tag = "crate::apis::user",
 )]
@@ -687,6 +687,17 @@ pub async fn tasks_report(
     }
 }
 
+#[utoipa::path(
+    context_path = "/user",
+    request_body = NewIdRequest,
+    responses(
+        (status=201, description="Built Successfully", body=UserIdResponse),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
 #[post("/cid/build")]
 #[passport(user)]
 async fn make_id(

@@ -97,16 +97,16 @@ pub struct UserData{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct DepositRequest{
-    pub from: String,
-    pub recipient: String,
+    pub from_cid: String,
+    pub recipient_cid: String,
     pub amount: u64,
     pub signature: String, /* this must be generated inside the client by signing the operation using the client private key */
     pub iat: i64, // deposited at
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct WithdrawRequest{
     pub deposited_id: i32,
     pub cid: String,
@@ -140,7 +140,7 @@ pub struct UserIdResponse{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct NewIdRequest{
     pub gmail: String,
     pub username: String,
@@ -151,7 +151,7 @@ pub struct NewIdRequest{
     pub social_id: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct Id{
     pub user_gmail: String,
     pub user_phone_number: String,
@@ -1598,12 +1598,13 @@ impl Id{
 
     pub fn verify(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
 
-        /* building the verifier from the public key */
+        /* building the public key from public key bytes */
         let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
             let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
             return Err(err);
         };
-        
+
+        /* building the verifier from the public key */
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
         /* verifying the signature byte which returns the data itself in form of utf8 bytes */
