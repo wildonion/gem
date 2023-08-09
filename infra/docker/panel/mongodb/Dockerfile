@@ -14,10 +14,12 @@ RUN cargo build --bin panel --release
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
-ENV DB_ENGINE=postgres
-ENV DB_HOST=postgres
-ENV DB_PORT=5432
-ENV ENVIRONMENT=prod
+ENV DB_PASSWORD=
+ENV DB_USERNAME=    
+ENV DB_ENGINE=mongodb
+ENV DB_HOST=mongodb
+ENV DB_PORT=27017
+ENV ENVIRONMENT=dev
 
 RUN apt-get update \
     && apt-get install libpq5 -y \

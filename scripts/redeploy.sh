@@ -4,7 +4,7 @@ cd ..
 
 sudo chmod 666 /var/run/docker.sock && sudo docker system prune --all
 export SERVER_IP=$(hostname -I | awk '{print $1}')
-export PASSEORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+export PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
 
 echo "[?] Wanna Redeploy Infrastructure? "
 read REDPLOY_INFRASTRUCTURE
@@ -22,7 +22,7 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 
     docker run -d \
     -h redis \
-    -e REDIS_PASSWORD=$PASSEORD \
+    -e REDIS_PASSWORD=$PASSWORD \
     -v $(pwd)/infra/data/redis/:/data \
     -p 6379:6379 \
     --name redis \
@@ -42,10 +42,10 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # sides.json is now inside the root of the mongodb container
     sudo docker exec mongodb mongoimport --db conse --collection last_moves last_moves.json # last_moves.json is now inside the root of the mongodb container
 
-    sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v $(pwd)/infra/data/postgres/:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSEORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
+    sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v $(pwd)/infra/data/postgres/:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSWORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
     sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
     diesel setup && diesel migration run
-    sqlant postgresql://postgres:$PASSEORD@localhost/conse > $(pwd)/infra/panel.uml
+    sqlant postgresql://postgres:$PASSWORD@localhost/conse > $(pwd)/infra/panel.uml
     java -jar $(pwd)/infra/plantuml.jar $(pwd)/infra/panel.uml
 
     # If you use the host network mode for a container, 
@@ -73,15 +73,24 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
   
 else
     echo "> Redeploying Rust Services Only"
-    echo "☕ Okay, sit back and drink your coffee :)"
+
+    echo "\t> 🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
+    read CONSE_PANEL_DB_STORAGE
+
+    if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
+        echo "> 🛢 Building Conse Panel With postgres Db Storage"
+        sudo docker build -t conse-panel-pg -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
+        sudo docker run -d --link postgres --network gem --name conse-panel-pg -p 7443:7442 conse-panel-pg
+    else
+        echo "> 🛢 Building Conse Panel With mongo Db Storage"
+        sudo docker build -t conse-panel-mongo -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
+        sudo docker run -d --link postgres --network gem --name conse-panel-mongo -p 7444:7442 conse-panel-mongo
+    fi
 
     docker stop conse-panel && docker rm -f conse-panel
     docker stop conse-catchup-bot && docker rm -f conse-catchup-bot
     docker stop conse-mafia && docker rm -f conse-mafia
     docker stop twiscord && docker rm -f twiscord
-
-    sudo docker build -t conse-panel -f $(pwd)/infra/docker/panel/Dockerfile . --no-cache
-    sudo docker run -d --link postgres --network gem --name conse-panel -p 7443:7442 conse-panel
 
     sudo docker build -t conse-catchup-bot -f $(pwd)/infra/docker/catchup-bot/Dockerfile . --no-cache
     sudo docker run -d --link redis --network gem --name conse-catchup-bot -v $(pwd)/infra/data/catchup-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
