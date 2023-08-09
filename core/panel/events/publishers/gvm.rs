@@ -1,6 +1,7 @@
 
 
 
+
 use crate::*;
 
 /*
@@ -61,3 +62,58 @@ use crate::*;
 
 */
 
+/*
+
+concepts:
+    shared ownership, 
+    interior mutability, 
+    weak, and strong references
+
+Shared ownership
+    While the children are owned by the struct, it is necessary to provide access to these 
+    children node to other code that use this tree data structure. Moving these references 
+    out of the tree isn’t desirable. And cloning the entire node before moving it out of the 
+    tree isn’t optimal either. This is where shared onwnership comes into play. In order to 
+    do that, we wrap the underlying node in a Rc. This is a reference counted pointer. However, 
+    that isn’t enough, since once we pass a (shared) reference to other code (that is using 
+        this tree), we need to provide the ability to mutate what is inside the node itself, 
+        which leads us to interior mutability.
+Interior mutability
+    Once a reference (that allows for shared ownership) of a node is passed to code 
+    using the tree, it becomes necessary to allow modifications to the underlying node 
+    itself. This requires us to use interior mutability by wrapping the node in a 
+    RefCell. Which is then wrapped in the Rc that we use to share ownership. Combining 
+    these two together gets us to where we need to be.
+
+
+NodeData
+ | | |
+ | | +- value: T ---------------------------------------+
+ | |                                                    |
+ | |                                        Simple onwership of value
+ | |
+ | +-- parent: RwLock<WeakNodeNodeRef<T>> --------+
+ |                                            |
+ |                 This describes a non-ownership relationship.
+ |                 When a node is dropped, its parent will not be dropped.
+ |
+ +---- children: RwLock<Vec<Child<T>>> ---+
+                                          |
+                This describes an ownership relationship.
+                When a node is dropped its children will be dropped as well.
+
+
+1 - When a node is dropped, its children will be dropped as well (since it owns them). 
+    We represent this relationship w/ a strong reference.
+
+2 - However, the parent should not be dropped (since it does not own them). 
+    We represent this relationship w/ a weak reference.
+
+*/
+
+/* thread safe tree using Arc and RwLock */
+struct NodeData<T>{
+    pub value: T,
+    pub parent: RwLock<Weak<NodeData<T>>>, /* parent is a weak ref since it's not owned by the struct */
+    pub children: RwLock<Vec<Arc<NodeData<T>>>> /* it's like RefCell<Rc<T>> in single thread context */
+}

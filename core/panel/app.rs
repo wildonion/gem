@@ -76,6 +76,9 @@ use themis::secure_message::{SecureSign, SecureVerify};
 use themis::keygen::gen_ec_key_pair;
 use themis::keys::{EcdsaKeyPair, EcdsaPrivateKey, EcdsaPublicKey};
 use themis::keys::KeyPair as ThemisKeyPair;
+use std::rc::Weak;
+use tokio::sync::RwLock;
+
 
 mod apis;
 mod misc;
