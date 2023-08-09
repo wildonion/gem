@@ -105,6 +105,8 @@ brew install graphviz
 cargo clean
 ```
 
+- **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on port **7443** and port **7444** respectively.
+
 - **NOTE**: **Regards to conse panel actix APIs**, if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.
 
 - **NOTE**: **Regards to conse panel actix APIs**, before migrating any table, make sure that you've an already setup database using ```diesel setup && diesel migration run``` command.
@@ -134,7 +136,7 @@ cargo run --bin argon2test
 
 > Before going for production, read the following notes: 
 
-- **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on port **7443** and port **7444** with endpoint `/mongo` respectively.
+- **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on **https://api.panel.conse.app** and **https://api.panel.conse.app/mongo** respectively.
 
 - **NOTE**: **Regards to conse panel actix APIs**, there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
 
@@ -276,6 +278,8 @@ make renew
 * once the user gets loggedin, first the `/user/verify-twitter-account/{account_name}` API must be called to verify and update the twitter username inside the db then then we must compel the user to tweet the activity code which is inside the user data response.
 
 ## 🚧 WIPs
+
+* complete `/user/stars/update`, `/user/deposit` and `/user/withdraw` of conse panel API along with their `openapi` doc and postgres schemas (nfts, withdraw and deposit postgres schemas)
 
 * `yew` admin and dev panel app
 
