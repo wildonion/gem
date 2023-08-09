@@ -114,6 +114,16 @@ NodeData
 /* thread safe tree using Arc and RwLock */
 struct NodeData<T>{
     pub value: T,
-    pub parent: RwLock<Weak<NodeData<T>>>, /* parent is a weak ref since it's not owned by the struct */
-    pub children: RwLock<Vec<Arc<NodeData<T>>>> /* it's like RefCell<Rc<T>> in single thread context */
+    /* 
+        parent is a weak ref since it's not owned by the struct 
+        also RwLock is RefCell in single thread context
+    */
+    pub parent: RwLock<Weak<NodeData<T>>>, 
+    /* 
+        children is a strong reference since it's owned by the 
+        parent so we've put Arc which is Rc in single theread 
+        context thus it's like RefCell<Rc<T>> in single 
+        thread context 
+    */
+    pub children: RwLock<Vec<Arc<NodeData<T>>>> 
 }
