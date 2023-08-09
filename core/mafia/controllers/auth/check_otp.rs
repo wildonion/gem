@@ -40,9 +40,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
 
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-    let request_data = &req.data::<(Client, Arc<Mutex<misc::app::OtpInfo>>)>().unwrap().to_owned(); // getting the request data from the incoming request
-    let db = &request_data.0;
-    let request_otp_info = &request_data.1;
+    let db = &req.data::<Client>().unwrap().to_owned();
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
