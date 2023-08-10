@@ -5,9 +5,10 @@
 use crate::*;
 
 /*
- 
-    followers weighted tree to understand the relationship between 
-    peers to suggests events using graph virtual machine
+    
+    this is lle vm graph like DOM, an state manager like yew and redux 
+    based on actor concepts so we have followers weighted tree to understand 
+    the relationship between peers to suggests events using graph virtual machine
     
     
     an state management app using actors and graph concepts, traits, 
@@ -23,6 +24,12 @@ use crate::*;
 
     write more proc macros like vm inside the lib.rs 
     and function like in misc.rs
+
+
+    lle (send sync static, shared ownership using Mutex and RwLock and RefCell, 
+    referene counting using Rc Arc, Box, Pin, &mut pointer, cap, length, 
+    traits, macros, std::mem) like vm and state manager app like redux and 
+    yew using actor and multithreaded based graphs
 
     
     share ownership between threads using Arc by borrowing the ownership using pointers like & clone 
@@ -111,7 +118,7 @@ NodeData
 
 */
 
-/* thread safe tree using Arc and RwLock */
+/* thread safe tree using Arc and RwLock to create DOM */
 struct NodeData<T>{
     pub value: T,
     /* 
