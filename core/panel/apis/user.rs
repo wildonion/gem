@@ -808,9 +808,10 @@ async fn make_id(
                         ).await;
 
                         /* 
-                            if we found a user simply we'll update all the its fields with 
-                            new one inside the NewIdRequest object except cid and the snowflake 
-                            id then return the updated data as the response of this api call
+                            if we found a user simply we'll update all its fields with 
+                            new one inside the body of NewIdRequest object except cid and 
+                            the snowflake id, then return the updated data as the err response 
+                            of the new_or_update method.
                         */
                         let Ok(mut new_id) = get_new_id else{
                             let resp = get_new_id.unwrap_err();
@@ -1195,8 +1196,8 @@ async fn withdraw(
                             here is the process of verifying the signature of signed data 
                             using the private key inside js using themis wasm 
                         */
-                        let tx_signature = withdraw_object.signature;
-                        let hex_pubkey = withdraw_object.cid;
+                        let tx_signature = withdraw_object.signature.clone();
+                        let hex_pubkey = withdraw_object.cid.clone();
                         
                         let decode_pubkey = hex::decode(hex_pubkey);
                         let decode_signature = hex::decode(tx_signature);
@@ -1245,9 +1246,10 @@ async fn withdraw(
 
                         /* decoding the signed message */
                         let pure_message = std::str::from_utf8(&encoded_data).unwrap();
+                        let pure_data = serde_json::from_slice::<WithdrawRequest>(&encoded_data).unwrap();
 
-                        /* claimed at must be equals to the decoded one inside the signature */
-                        if pure_message.parse::<i64>().unwrap() == withdraw_object.cat{
+                        /* the decoded data must be equals to the request body */
+                        if pure_data == withdraw_object.clone(){
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data

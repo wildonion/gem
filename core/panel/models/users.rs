@@ -106,7 +106,7 @@ pub struct DepositRequest{
     pub iat: i64, // deposited at
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct WithdrawRequest{
     pub deposited_id: i32,
     pub cid: String,
