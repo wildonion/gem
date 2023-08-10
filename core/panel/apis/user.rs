@@ -755,10 +755,11 @@ async fn make_id(
                     let login_identifier = token_data.identifier.unwrap();
                     let token_username = token_data.username.unwrap();
 
-                    let identifier_key = format!("{}.{}.{}", _id, token_username, new_object_id_request.device_id.clone());
+                    let identifier_key = format!("{}", _id);
 
                     let Ok(mut redis_conn) = get_redis_conn else{
 
+                        /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
@@ -781,13 +782,13 @@ async fn make_id(
                         redis_conn,
                         identifier_key.clone(), /* identifier */
                         String, /* the type of identifier */
-                        "cid_rate_limiter" /* redis key */
+                        "fin_rate_limiter" /* redis key */
                     }{
 
                         resp!{
                             &[u8], //// the data type
                             &[], //// response data
-                            ID_RATE_LIMITED, //// response message
+                            RATE_LIMITED, //// response message
                             StatusCode::TOO_MANY_REQUESTS, //// status code
                             None::<Cookie<'_>>, //// cookie
                         }
@@ -798,6 +799,10 @@ async fn make_id(
                         let get_new_id = Id::new_or_update(
                             new_object_id_request.clone(), 
                             _id, 
+                            /* 
+                                we're using new_object_id_request username since 
+                                the username inside the JWT might be empty
+                            */
                             new_object_id_request.username.clone(),
                             connection
                         ).await;
@@ -893,6 +898,7 @@ async fn deposit(
     
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
 
     /* 
           ------------------------------------- 
@@ -936,64 +942,105 @@ async fn deposit(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     let login_identifier = token_data.identifier.unwrap();
-                    
-                    let mut interval = tokio::time::interval(TokioDuration::from_secs(10));
 
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
 
-                    /* 
-                        since we need to access the tx mint hash outside of the tokio::spawn()
-                        thus we have to use tokio jobq channel to fill it inside the tokio green
-                        threadpool then use it outside of it by receiving from the channel
-                    */
-                    let (deposit_tx_hash_sender, 
-                        mut deposit_tx_hash_receiver) = 
-                        tokio::sync::oneshot::channel::<String>();
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                    /* spawning an async task in the background to do the payment and minting logics */
-                    tokio::spawn(async move{
-                        
-                        let mut contract_mint_call = false;
-
-                        loop{
-                            
-                            interval.tick().await;
-
-                            /* 
-                                ------------------------------------
-                                THE DEPOSIT API (Sender Only)
-                                ------------------------------------
-                                
-                                0 => sender pay the exchange with the amounts 
-                                1 => exchange sends the paid amount to the coinbase usdc/usdt server identifier 
-                                2 => send successful response to the sender contains tx hash of depositting into the coinbase
-
-                            */ 
-                            if contract_mint_call == true{
-                                let deposit_tx_hash = String::from("card minted this is tx hash");
-                                /* 
-                                    since the send method is not async, it can be used anywhere
-                                    which means we can call it once in each scope cause it has 
-                                    no clone() method, the clone() method must be implemented for
-                                    future objects because we dont't know when they gets solved 
-                                    and we might move them between other scopes to await on them.
-                                */
-                                deposit_tx_hash_sender.send(deposit_tx_hash);
-                                break;
-                            }
-
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
 
-                    });
+                    };
 
-                    let deposit_tx_hash = deposit_tx_hash_receiver.try_recv().unwrap();
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
 
-                    resp!{
-                        String, // the data type
-                        deposit_tx_hash, // response data
-                        DEPOSITED_SUCCESSFULLY, // response message
-                        StatusCode::CREATED, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        let mut interval = tokio::time::interval(TokioDuration::from_secs(10));
+    
+    
+                        /* 
+                            since we need to access the tx mint hash outside of the tokio::spawn()
+                            thus we have to use tokio jobq channel to fill it inside the tokio green
+                            threadpool then use it outside of it by receiving from the channel
+                        */
+                        let (deposit_tx_hash_sender, 
+                            mut deposit_tx_hash_receiver) = 
+                            tokio::sync::oneshot::channel::<String>();
+    
+                        /* spawning an async task in the background to do the payment and minting logics */
+                        tokio::spawn(async move{
+                            
+                            let mut contract_mint_call = false;
+    
+                            loop{
+                                
+                                interval.tick().await;
+    
+                                /* 
+                                    ------------------------------------
+                                    THE DEPOSIT API (Sender Only)
+                                    ------------------------------------
+                                    
+                                    0 => sender pay the exchange with the amounts 
+                                    1 => exchange sends the paid amount to the coinbase usdc/usdt server identifier 
+                                    2 => send successful response to the sender contains tx hash of depositting into the coinbase
+    
+                                */ 
+                                if contract_mint_call == true{
+                                    let deposit_tx_hash = String::from("card minted this is tx hash");
+                                    /* 
+                                        since the send method is not async, it can be used anywhere
+                                        which means we can call it once in each scope cause it has 
+                                        no clone() method, the clone() method must be implemented for
+                                        future objects because we dont't know when they gets solved 
+                                        and we might move them between other scopes to await on them.
+                                    */
+                                    deposit_tx_hash_sender.send(deposit_tx_hash);
+                                    break;
+                                }
+    
+                            }
+    
+                        });
+    
+                        let deposit_tx_hash = deposit_tx_hash_receiver.try_recv().unwrap();
+    
+                        resp!{
+                            String, // the data type
+                            deposit_tx_hash, // response data
+                            DEPOSITED_SUCCESSFULLY, // response message
+                            StatusCode::CREATED, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    
+                    }                    
 
                 },
                 Err(resp) => {
@@ -1044,6 +1091,8 @@ async fn withdraw(
     
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
 
     /* 
           ------------------------------------- 
@@ -1089,92 +1138,133 @@ async fn withdraw(
                     let role = token_data.user_role;
                     let login_identifier = token_data.identifier.unwrap();
 
-                    /* 
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
 
-                        -----------------------------------------
-                            THE WITHDRAW API (Receiver Only)
-                        -----------------------------------------
-                                
-                        0 => call coinbase trade api to exchange usdt/usdc to the passed in currency type 
-                        1 => send the traded to paypal identifier of the server  
-                        2 => send the amount from the server paypal to the receiver paypal
-                        
-                    */ 
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                    let withdraw_object = withdraw.0;
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
 
-                    /* 
-                        here is the process of verifying the signature of signed data 
-                        using the private key inside js using themis wasm 
-                    */
-                    let tx_signature = withdraw_object.signature;
-                    let hex_pubkey = withdraw_object.cid;
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
                     
-                    let decode_pubkey = hex::decode(hex_pubkey);
-                    let decode_signature = hex::decode(tx_signature);
+                        /* 
 
-                    let Ok(pubkey_bytes) = decode_pubkey else{
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            INVALID_CID, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
+                            -----------------------------------------
+                                THE WITHDRAW API (Receiver Only)
+                            -----------------------------------------
+                                    
+                            0 => call coinbase trade api to exchange usdt/usdc to the passed in currency type 
+                            1 => send the traded to paypal identifier of the server  
+                            2 => send the amount from the server paypal to the receiver paypal
+                            
+                        */ 
 
-                    };
+                        let withdraw_object = withdraw.0;
 
-
-                    let Ok(signature) = decode_signature else{
-
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            SIGNATURE_DECODE_ISSUE, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    /* verifying the data against the generated signature */
-                    let get_encoded_data = Id::verify(
-                        &signature, 
-                        &pubkey_bytes
-                    );
-
-                    let Ok(encoded_data) = get_encoded_data else{
+                        /* 
+                            here is the process of verifying the signature of signed data 
+                            using the private key inside js using themis wasm 
+                        */
+                        let tx_signature = withdraw_object.signature;
+                        let hex_pubkey = withdraw_object.cid;
                         
-                        let error = get_encoded_data.unwrap_err();
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            INVALID_SIGNATUE_OR_CID, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    };
+                        let decode_pubkey = hex::decode(hex_pubkey);
+                        let decode_signature = hex::decode(tx_signature);
 
-                    /* decoding the signed message */
-                    let pure_message = std::str::from_utf8(&encoded_data).unwrap();
+                        let Ok(pubkey_bytes) = decode_pubkey else{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
 
-                    /* claimed at must be equals to the decoded one inside the signature */
-                    if pure_message.parse::<i64>().unwrap() == withdraw_object.cat{
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            CLAIMED_SUCCESSFULLY, // response message
-                            StatusCode::OK, // status code
-                            None::<Cookie<'_>>, // cookie
+                        };
+
+
+                        let Ok(signature) = decode_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_DECODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* verifying the data against the generated signature */
+                        let get_encoded_data = Id::verify(
+                            &signature, 
+                            &pubkey_bytes
+                        );
+
+                        let Ok(encoded_data) = get_encoded_data else{
+                            
+                            let error = get_encoded_data.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_SIGNATUE_OR_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        /* decoding the signed message */
+                        let pure_message = std::str::from_utf8(&encoded_data).unwrap();
+
+                        /* claimed at must be equals to the decoded one inside the signature */
+                        if pure_message.parse::<i64>().unwrap() == withdraw_object.cat{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                CLAIMED_SUCCESSFULLY, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        } else{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_DATA, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
                         }
-                    } else{
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            INVALID_DATA, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
+                    
                     }
 
                 },
