@@ -1,7 +1,7 @@
 
 
 
-# 🤏 Conse Backend Rust Services
+# 🤏 Conse Backend Rust Engines
 
 Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockchain which uses: 
 - behavioural graph virtual machine (GVM) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.

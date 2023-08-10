@@ -1194,7 +1194,11 @@ async fn withdraw(
 
                         /* 
                             here is the process of verifying the signature of signed data 
-                            using the private key inside js using themis wasm 
+                            using the private key inside js using themis wasm,
+                            we've cloned the tx_signature and hex_pubkey since the PartialEq
+                            trait takes the ownership of the WithdrawRequest instacen
+                            when we want to compare the decoded data with the actual instance
+                            inside the request body
                         */
                         let tx_signature = withdraw_object.signature.clone();
                         let hex_pubkey = withdraw_object.cid.clone();
