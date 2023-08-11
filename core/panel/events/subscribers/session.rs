@@ -287,9 +287,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                     let v: Vec<&str> = m.splitn(2, ' ').collect();
                     match v[0]{
 
-                        /* --------------------- */
-                        /*   GET ONLINE ROOMS    */
-                        /* --------------------- */
+                        /* ------------------------------- */
+                        /*    GET ONLINE ROOMS OR EVENTS   */
+                        /* ------------------------------- */
                         "/events" => {
 
                             /* get all room from redis storage */
@@ -349,7 +349,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 });
                             }
 
-                            info!("💡 --- role subscription interval is already started");
+                            info!("💡 --- role subscription interval is already started, will notify this session if the role changes");
 
                         },
                         /* ------------------------------------*/

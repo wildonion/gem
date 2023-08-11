@@ -4,7 +4,8 @@
 # 🤏 Conse Backend Rust Engines
 
 Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockchain which uses: 
-- behavioural graph virtual machine (GVM) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
+- **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
+- behavioural graph virtual machine (**GVM**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
 
@@ -258,7 +259,7 @@ make renew
 
 * pubsub **ECQ**, **MMR** and reveal role topics are `ecq-{event_objectid}`, `mmr-{event_objectid}`, `reveal-role-{event_objectid}` respectively.   
 
-* push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively and in order to receive realtime role, ecq and mmr notifs data users must use `/join-roles`, `/join-ecq` and `/join-mmr` commands respectively which are used to join the ws channel to create a session once they gets connected, for listening on incoming events, note that these routes **are guarded with conse mafia JWT** so remember to pass the conse mafia JWT to the header of these routes like `Bearer ...JWT...`.
+* push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://notif.panel.conse.app/subscribe/ecq-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://notif.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively and in order to receive realtime role, ecq and mmr notifs data users must use `/join-roles`, `/join-ecq` and `/join-mmr` commands respectively which are used to join the ws channel to create a session once they gets connected, for listening on incoming events (ecq, mmr and reveal role), note that these routes **are guarded with conse mafia JWT** so remember to pass the conse mafia JWT to the header of these routes like `Bearer ...JWT...`, also there is an slash command called `/events` which shows the total online events to the player.
 
 * twitter task names defined by admins, must be prefixed with `twitter-*` and are twitter activities such as `tweet` which can be a specific content or the generated code by the backend, `like`, `hashtag` and `retweet` that must be done to reward users based on the score of each task.
 

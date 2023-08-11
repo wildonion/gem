@@ -2,7 +2,7 @@
 
 
 
-/* ws servers */
+/* ws notif servers */
 
 pub mod role;
 pub mod ecq;
