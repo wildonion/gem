@@ -74,6 +74,10 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 else
     echo "> Redeploying Rust Services Only"
 
+    docker stop conse-panel-pg && docker rm -f conse-panel-pg
+    docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
+    docker stop conse-mafia && docker rm -f conse-mafia
+
     echo "\t> 🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
 
@@ -87,17 +91,7 @@ else
         sudo docker run -d --link postgres --network gem --name conse-panel-mongo -p 7444:7442 conse-panel-mongo
     fi
 
-    docker stop conse-panel && docker rm -f conse-panel
-    docker stop conse-catchup-bot && docker rm -f conse-catchup-bot
-    docker stop conse-mafia && docker rm -f conse-mafia
-    docker stop twiscord && docker rm -f twiscord
-
-    sudo docker build -t conse-catchup-bot -f $(pwd)/infra/docker/catchup-bot/Dockerfile . --no-cache
-    sudo docker run -d --link redis --network gem --name conse-catchup-bot -v $(pwd)/infra/data/catchup-bot-logs/:/usr/src/app/logs/ conse-catchup-bot
-
-    sudo docker build -t twiscord -f $(pwd)/infra/docker/twiscord/Dockerfile . --no-cache
-    sudo docker run -d --link redis --network gem --name twiscord -v $(pwd)/infra/data/twiscord-logs/:/usr/src/app/logs/ twiscord
-
+    
     sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
 fi

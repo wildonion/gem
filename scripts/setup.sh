@@ -22,23 +22,6 @@ sudo rm .env && sudo mv .env.prod .env
 sudo mv twitter-accounts.prod.json twitter-accounts.json
 echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the conse panel API with admin access"
 
-echo "[?] Enter OpenAI token: "
-read OPENAI_TOKEN
-
-echo "[?] Enter Catchup Discord token: "
-read DISCORD_TOKEN
-
-echo "[?] Enter Twiscord Discord token: "
-read TWISCORD_DISCORD_TOKEN
-
-echo OPENAI_KEY=$OPENAI_TOKEN >> .env
-echo DISCORD_TOKEN=$DISCORD_TOKEN >> .env
-echo TWISCORD_DISCORD_TOKEN=$TWISCORD_DISCORD_TOKEN >> .env
-
-echo "[?] Enter Twiscord Channel Id: "
-read TWISCORD_CHANNEL_ID
-echo TWISCORD_CHANNEL_ID=$TWISCORD_CHANNEL_ID >> .env
-
 echo "[?] Enter SMS API Token: "
 read SMS_API_TOKEN
 echo SMS_API_TOKEN=$SMS_API_TOKEN >> .env

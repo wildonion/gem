@@ -62,7 +62,6 @@ routerify = "3"
 routerify-multipart = "3"
 sanitize-filename = "0.4.0"
 async-trait = "0.1.64"
-openai = "1.0.0-alpha.13"
 once_cell = "1"
 sysinfo = "0.29.4"
 tokio-cron-scheduler = "0.9.4"
@@ -84,14 +83,6 @@ name = "panel_macros"
 [[bin]]
 name = "mafia"
 path = "core/mafia/app.rs"
-
-[[bin]]
-name = "catchup-bot"
-path = "core/bots/discord/bot.rs"
-
-[[bin]]
-name = "twiscord"
-path = "core/bots/twiscord/bot.rs"
 
 [[bin]]
 name = "panel"
