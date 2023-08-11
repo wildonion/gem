@@ -14,12 +14,13 @@ RUN cargo build --bin panel --release
 FROM debian:buster-slim
 ARG APP=/usr/src/app
 
-ENV DB_PASSWORD=
-ENV DB_USERNAME=    
+ENV DB_PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+ENV DB_USERNAME=root
 ENV DB_ENGINE=mongodb
 ENV DB_HOST=mongodb
 ENV DB_PORT=27017
-ENV ENVIRONMENT=dev
+# if ENVIRONMENT was set to dev DB_USERNAME and DB_PASSWORD will be ignored
+ENV ENVIRONMENT=dev 
 
 RUN apt-get update \
     && apt-get install libpq5 -y \

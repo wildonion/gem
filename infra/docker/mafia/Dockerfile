@@ -18,7 +18,9 @@ ARG APP=/usr/src/app
 ENV MONGODB_ENGINE=mongodb
 ENV MONGODB_HOST=mongodb
 ENV MONGODB_PORT=27017
-# since we won't use a secured mongodb connection we've set it to dev
+ENV MONGODB_USERNAME=root
+ENV MONGODB_PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+# if ENVIRONMENT was set to dev DB_USERNAME and DB_PASSWORD will be ignored
 ENV DB_ENVIRONMENT=dev
 
 RUN apt-get update \
