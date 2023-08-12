@@ -118,6 +118,12 @@ NodeData
 
 */
 
+
+type ChildNodeToParentIsWeak<T> = Weak<NodeData<T>>;
+type ParentNodeToChildIsStrongThreadSafe<T> = Arc<NodeData<T>>;
+type ThreadSafeMutableParent<T> = RwLock<ChildNodeToParentIsWeak<T>>;
+type ThreadSafeMutableChildren<T> = RwLock<Vec<ParentNodeToChildIsStrongThreadSafe<T>>>;
+
 /* thread safe tree using Arc and RwLock to create DOM */
 struct NodeData<T>{
     pub value: T,
@@ -125,12 +131,12 @@ struct NodeData<T>{
         parent is a weak ref since it's not owned by the struct 
         also RwLock is RefCell in single thread context
     */
-    pub parent: RwLock<Weak<NodeData<T>>>, 
+    pub parent: ThreadSafeMutableParent<T>, 
     /* 
         children is a strong reference since it's owned by the 
         parent so we've put Arc which is Rc in single theread 
         context thus it's like RefCell<Rc<T>> in single 
         thread context 
     */
-    pub children: RwLock<Vec<Arc<NodeData<T>>>> 
+    pub children: ThreadSafeMutableChildren<T>
 }
