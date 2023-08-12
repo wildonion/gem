@@ -2,7 +2,7 @@
 
 cd ..
 
-sudo chmod 666 /var/run/docker.sock && sudo docker system prune --all
+sudo chmod 666 /var/run/docker.sock
 export SERVER_IP=$(hostname -I | awk '{print $1}')
 export PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
 

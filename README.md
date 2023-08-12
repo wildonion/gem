@@ -213,12 +213,6 @@ cd scripts
 # ---------------
 # ---- renew nginx 
 ./renew.sh
-
-# OR use make
-
-make setup 
-make redeploy
-make renew
 ```
     
 ## 🪟 Schemas and ERDs

@@ -1,8 +1,8 @@
 #!/bin/bash
-sudo apt update && sudo apt install apt-transport-https ca-certificates curl software-properties-common
+sudo apt update && sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-apt-cache policy docker-ce && sudo apt install docker-ce && sudo systemctl status docker
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -a) stable"
+apt-cache policy docker-ce && sudo apt install -y docker-ce && sudo systemctl status docker
 
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
@@ -13,14 +13,15 @@ sudo apt install -y nodejs && sudo apt install -y npm && sudo npm install pm2@la
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
 sudo apt update -y && sudo apt upgrade && sudo apt install -y libpq-dev pkg-config build-essential libudev-dev libssl-dev librust-openssl-dev
-sudo apt install snapd && sudo snap install core; sudo snap refresh core
+sudo apt install -y snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
-cargo install sqlant && sudo apt install openjdk-11-jdk && sudo apt install graphviz
+cargo install sqlant && sudo apt install -y openjdk-11-jdk && sudo apt install -y graphviz
 
 # --- for docker setup ---
+cd ..
 sudo rm .env && sudo mv .env.prod .env
 sudo mv twitter-accounts.prod.json twitter-accounts.json
-echo "Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the conse panel API with admin access"
+echo ">>> Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the conse panel API with admin access"
 
 echo "[?] Enter SMS API Token: "
 read SMS_API_TOKEN
