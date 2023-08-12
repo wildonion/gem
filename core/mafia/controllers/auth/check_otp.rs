@@ -67,6 +67,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                     let otp_info = db.clone().database(&db_name).collection::<schemas::auth::OTPInfo>("otp_info");
                     match otp_info.find_one(doc!{"phone": phone.clone(), "code": code}, None).await.unwrap(){ // NOTE - we've cloned the phone in order to prevent its ownership from moving
                         Some(otp_info_doc) => {
+
                             if time > otp_info_doc.exp_time{
 
                                 resp!{
@@ -77,7 +78,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                     "application/json" // the content type 
                                 }
 
-                            } else if time <= otp_info_doc.exp_time{ // no need to clone time cause time is of type i64 and it's saved inside the stack
+                            } else{ // no need to clone time cause time is of type i64 and it's saved inside the stack
 
                                 let user_info_col = db.clone().database(&db_name).collection::<schemas::auth::UserInfo>("users");
                                 match user_info_col.find_one(doc!{"phone": phone.clone()}, None).await.unwrap(){ // we're finding the user based on the incoming phone from the clinet - we've cloned the phone in order to prevent its ownership from moving
@@ -276,16 +277,6 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                         
                                 }
                                   
-                            } else{
-
-                                resp!{
-                                    misc::app::Nill, // the data type
-                                    misc::app::Nill(&[]), // the data itself
-                                    EXPIRED_OTP_CODE, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    "application/json" // the content type 
-                                }
-                                
                             }
                         },
                         None => { // means we didn't find any document related to this otp and we have to tell the user do a signup

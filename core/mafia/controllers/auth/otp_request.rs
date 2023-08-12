@@ -165,8 +165,8 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                     // --------------------------------------------------------------------
                                     //          GENERATING TWO MINS LATER EXPIRATION TIME FROM NOW
                                     // --------------------------------------------------------------------
-                                    let now = Local::now();
-                                    let two_mins_later = (now + Duration::seconds(120)).naive_local().timestamp(); // generating a timestamp from now till the two mins later
+                                    let now = Utc::now();
+                                    let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local().timestamp(); // generating a timestamp from now till the two mins later
 
                                     
 
