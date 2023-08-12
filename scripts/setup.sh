@@ -25,11 +25,11 @@ sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/cer
 cargo install sqlant && sudo apt install -y openjdk-11-jdk && sudo apt install -y graphviz
 
 
-wget -qO - https://pkgs-ce.cossacklabs.com/gpg | sudo apt-key add -
-sudo apt install apt-transport-https
-deb https://pkgs-ce.cossacklabs.com/stable/ubuntu $(lsb_release -cs) main | \
-  sudo tee /etc/apt/sources.list.d/cossacklabs.list
-sudo apt update && sudo apt install libthemis-dev
+# wget -qO - https://pkgs-ce.cossacklabs.com/gpg | sudo apt-key add -
+# sudo apt install apt-transport-https
+# deb https://pkgs-ce.cossacklabs.com/stable/ubuntu $(lsb_release -cs) main | \
+#   sudo tee /etc/apt/sources.list.d/cossacklabs.list
+# sudo apt update && sudo apt install libthemis-dev
 
 
 # --- for docker setup ---

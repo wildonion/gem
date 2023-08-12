@@ -9,6 +9,18 @@ RUN rm src/*.rs
 
 ADD . ./
 
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev
+
+RUN USER=root apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
+RUN USER=root git clone https://github.com/cossacklabs/themis.git \
+    && cd themis \
+    && make install
+
 RUN cargo build --bin mafia --release
 
 
@@ -27,6 +39,18 @@ RUN apt-get update \
     && apt-get install libpq5 -y \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev
+
+RUN USER=root apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
+RUN USER=root git clone https://github.com/cossacklabs/themis.git \
+    && cd themis \
+    && make install
 
 EXPOSE 7438
 
