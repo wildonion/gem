@@ -20,9 +20,6 @@ COPY key-api.mafia.conse.app.pem /etc/nginx/key-api.mafia.conse.app.pem
 #adminer.conse.app:
 COPY cert-adminer.conse.app.pem /etc/nginx/cert-adminer.conse.app.pem
 COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
-#checkpswd.conse.app:
-COPY cert-checkpswd.conse.app.pem /etc/nginx/cert-checkpswd.conse.app.pem
-COPY key-checkpswd.conse.app.pem /etc/nginx/key-checkpswd.conse.app.pem
 #notif.panel.conse.app:
 COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
 COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
@@ -43,8 +40,6 @@ COPY api.panel.conse.app.conf /etc/nginx/api.panel.conse.app.conf
 COPY api.mafia.conse.app.conf /etc/nginx/api.mafia.conse.app.conf
 COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
 COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
-COPY checkpswd.conse.app.conf /etc/nginx/checkpswd.conse.app.conf
-
 
 # Start Nginx in the foreground when the Docker container starts
 CMD ["nginx", "-g", "daemon off;"]

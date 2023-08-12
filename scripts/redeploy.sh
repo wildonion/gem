@@ -48,20 +48,6 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sqlant postgresql://postgres:$PASSWORD@localhost/conse > $(pwd)/infra/panel.uml
     java -jar $(pwd)/infra/plantuml.jar $(pwd)/infra/panel.uml
 
-    # If you use the host network mode for a container, 
-    # that container’s network stack is not isolated from the 
-    # Docker host (the container shares the host’s networking namespace), 
-    # and the container does not get its own IP-address allocated. 
-    # For instance, if you run a container which binds to port 80 and 
-    # you use host networking, the container’s application is available 
-    # on port 80 on the host’s IP address thus we use the host network 
-    # so we can access containers on 127.0.0.1 with their exposed ports 
-    # inside the nginx conf without their dns name or ip address. 
-    sudo docker stop nginx
-    sudo docker rm -f nginx
-    sudo docker build -t --no-cache nginx -f $(pwd)/infra/docker/nginx/Dockerfile .
-    sudo docker run -d -it -p 80:80 -v $(pwd)/infra/data/nginx/confs/:/etc/nginx -v $(pwd)/infra/data/nginx/wwws/:/usr/share/nginx/ -p 443:443 --name nginx --network host nginx
-
     jobs="jobs/*"
     for f in $jobs
     do

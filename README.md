@@ -174,7 +174,6 @@ api.panel.conse.app #----> points to the conse actix APIs
 panel.conse.app #---> points to the panel UI
 notif.panel.conse.app #---> points to the websocket push notification server APIs
 adminer.conse.app #---> points to the adminer UI
-checkpswd.conse.app #---> points to a very simple password checker fastapi server
 ```
 - **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 
