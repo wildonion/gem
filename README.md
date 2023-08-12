@@ -201,9 +201,7 @@ in the above records `wildonion.io` and `conse.app` are pointing to a same VPS b
 ```bash
 # -----------------------
 # ---- read/write access
-sudo chown -R root:root . && sudo chmod -R 777 .
-sudo chmod +x /root && sudo chown -R root:root /root && sudo chmod -R 777 /root
-cd scripts
+sudo chown -R root:root . && sudo chmod -R 777 . && cd scripts
 # ---------------
 # ---- setup VPS
 ./setup.sh
