@@ -819,6 +819,7 @@ async fn make_id(
                         };
 
 
+                        /* ------------------ test retrieving and signing ------------------ */
                         /* building the keypair from the public and private keys */
                         let retrieve_keypair = Id::retrieve_keypair(
                             &new_id.new_cid.as_ref().unwrap(),
@@ -828,6 +829,7 @@ async fn make_id(
 
                         /* signing the data using the private key */
                         let signed_id_hex_string = new_id.test_sign();
+                        /* ----------------------------------------------------------------- */
 
 
                         /* 
@@ -970,7 +972,7 @@ async fn deposit(
                         redis_conn,
                         identifier_key.clone(), /* identifier */
                         String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key */
+                        "fin_rate_limiter" /* redis key, the value is a hashmap between identifier and its time */
                     }{
 
                         resp!{
@@ -1008,10 +1010,12 @@ async fn deposit(
                                     ------------------------------------
                                     THE DEPOSIT API (Sender Only)
                                     ------------------------------------
+                                    https://thirdweb.com/dashboard/contracts
                                     
                                     0 => sender pay the exchange with the amounts 
                                     1 => exchange sends the paid amount to the coinbase usdc/usdt server identifier 
-                                    2 => send successful response to the sender contains tx hash of depositting into the coinbase
+                                    2 => nft card will be minted on polygon chain using thirdweb api
+                                    2 => send successful response to the sender contains tx hash of depositting into the coinbase and minting nft 
     
                                 */ 
                                 if contract_mint_call == true{
@@ -1200,11 +1204,15 @@ async fn withdraw(
                             when we want to compare the decoded data with the actual instance
                             inside the request body
                         */
-                        let tx_signature = withdraw_object.signature.clone();
+                        let hex_tx_signature = withdraw_object.signature.clone();
                         let hex_pubkey = withdraw_object.cid.clone();
+
+                        /* dropping the first 2 bytes or 0x from the hex string */
+                        let tx_signature = &hex_tx_signature[2..];
+                        let pubkey = &hex_pubkey[2..];
                         
-                        let decode_pubkey = hex::decode(hex_pubkey);
-                        let decode_signature = hex::decode(tx_signature);
+                        let decode_pubkey = hex::decode(pubkey.to_string());
+                        let decode_signature = hex::decode(tx_signature.to_string());
 
                         let Ok(pubkey_bytes) = decode_pubkey else{
                             resp!{

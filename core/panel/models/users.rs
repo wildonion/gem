@@ -1627,6 +1627,7 @@ impl Id{
             );  
         };
 
+        let hex_cid = Some(format!("0x{}", self.new_cid.clone().unwrap()));
         match diesel::update(users.find(self.user_id))
             .set(
         (   
@@ -1642,7 +1643,7 @@ impl Id{
                     account_number.eq(self.account_number.clone()),
                     device_id.eq(self.device_id.clone()),
                     social_id.eq(self.social_id.clone()),
-                    cid.eq(self.new_cid.clone()),
+                    cid.eq(hex_cid),
                     snowflake_id.eq(self.new_snowflake_id),
                 )
             )
@@ -1667,13 +1668,12 @@ impl Id{
                                 }
                             },
                             token_time: updated_user.token_time,
-                            last_login: { 
-                                if updated_user.last_login.is_some(){
+                            last_login: if updated_user.last_login.is_some(){
                                     Some(updated_user.last_login.unwrap().to_string())
                                 } else{
                                     Some("".to_string())
                                 }
-                            },
+                            ,
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             gmail: updated_user.gmail,
@@ -1696,7 +1696,6 @@ impl Id{
 
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                        
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));

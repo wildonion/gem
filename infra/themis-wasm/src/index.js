@@ -9,8 +9,10 @@ window.onload = function() {
 
         /* ----------------------------------- */
         /* ----------------------------------- */
-        // public key is: 554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16
+        // public key is: 0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16
         // the verifying process will be done in Rust inside the /user/withdraw api 
+        let hex_pubkey = "0x524543320000002d4fe6311900b579ca7abb58fc8328e2673d1b938681ce696f6a7231a3d87cd5a0a6a08aa997";
+        let pubkey = hex_pubkey.slice(2, pub.length);
         const private_key_hex = "524543320000002d4fe6311900b579ca7abb58fc8328e2673d1b938681ce696f6a7231a3d87cd5a0a6a08aa997";
         function hexToBytes(hex) {
             const bytes = new Uint8Array(hex.length / 2);
@@ -38,7 +40,8 @@ window.onload = function() {
         const signedMessage = signer.sign(message);
         const signedMessageHex = bytesToHex(signedMessage);
 
-        console.log(signedMessageHex);
+        let final_sig = "0x"+signedMessage;
+        console.log(final_sig);
         /* ----------------------------------- */
         /* ----------------------------------- */
 
