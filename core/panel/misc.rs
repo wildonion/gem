@@ -486,7 +486,7 @@ macro_rules! server {
             /* 
                 app_sotrage contains the mongodb, postgres and actix_redis, redis 
                 and redis_async which can be used to authorize then publish topics,
-                response caching and subscribing to topics respectively
+                response caching and subscribing asyncly to topics respectively
             */
             let app_storage = storage!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,

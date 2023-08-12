@@ -3,7 +3,7 @@
 
 # 🤏 Conse Backend Rust Engines
 
-Conse is an AI based Crypto Game Event Manager Platform on top of Solana blockchain which uses: 
+Conse is an AI based Crypto Game Event Manager Platform on top of Solana and Polygon blockchains which uses: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - behavioural graph virtual machine (**GVM**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
@@ -120,6 +120,8 @@ cargo clean
 - **NOTE**: **Regards to conse panel actix APIs**, use ```diesel migration generate <MIGRAION_NAME>``` to create the migration file containing the postgres table setup, ```diesel migration redo``` to drop the table and ```diesel migration run``` to apply all migration tables to the database after submitting changes to the sql fiels.
 
 - **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia dev 0` or `cargo run --bin mafia dev 0` finally login with that user to register a new god for the game.
+
+- **NOTE**: **Regards to conse mafia hyper APIs**, remember to fill the `SMS_API_TOKEN` var inside the `.env` file.
 
 ```bash
 # 🧪 Test Conse Hyper Server
