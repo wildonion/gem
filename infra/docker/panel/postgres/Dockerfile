@@ -30,9 +30,9 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libssl-dev
 
-RUN git clone https://github.com/cossacklabs/themis.git && \
-    cd themis && \
-    make install
+RUN USER=root git clone https://github.com/cossacklabs/themis.git \
+    && cd themis \
+    && make install
 
 EXPOSE 7442
 
