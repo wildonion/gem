@@ -58,21 +58,21 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     sudo docker ps -a && sudo docker compose ps -a && sudo docker images
   
 else
-    echo "> Redeploying Rust Services Only"
+    echo "> Redeploying Rust Services Only"\n
 
     docker stop conse-panel-pg && docker rm -f conse-panel-pg
     docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
     docker stop conse-mafia && docker rm -f conse-mafia
 
-    echo "\t> 🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
+    echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
 
     if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
-        echo "> 🛢 Building Conse Panel With postgres Db Storage"
+        echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
         sudo docker build -t conse-panel-pg -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
         sudo docker run -d --link postgres --network gem --name conse-panel-pg -p 7443:7442 conse-panel-pg
     else
-        echo "> 🛢 Building Conse Panel With mongo Db Storage"
+        echo \n"> 🛢 Building Conse Panel With mongo Db Storage"
         sudo docker build -t conse-panel-mongo -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
         sudo docker run -d --link postgres --network gem --name conse-panel-mongo -p 7444:7442 conse-panel-mongo
     fi

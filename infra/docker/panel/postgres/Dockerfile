@@ -26,6 +26,14 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev
+
+RUN git clone https://github.com/cossacklabs/themis.git && \
+    cd themis && \
+    make install
+
 EXPOSE 7442
 
 ENV TZ=Etc/UTC \

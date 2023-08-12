@@ -24,11 +24,20 @@ sudo apt install -y snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
 cargo install sqlant && sudo apt install -y openjdk-11-jdk && sudo apt install -y graphviz
 
+
+wget -qO - https://pkgs-ce.cossacklabs.com/gpg | sudo apt-key add -
+sudo apt install apt-transport-https
+deb https://pkgs-ce.cossacklabs.com/stable/ubuntu $(lsb_release -cs) main | \
+  sudo tee /etc/apt/sources.list.d/cossacklabs.list
+sudo apt update && sudo apt install libthemis-dev
+
+
 # --- for docker setup ---
 cd ..
 sudo rm .env && sudo mv .env.prod .env
 sudo mv twitter-accounts.prod.json twitter-accounts.json
-echo ">>> Please fill up the 'twitter-accounts.json' without your twitter dev account keys using the conse panel API with admin access"
+echo \t">>> Please fill up the 'twitter-accounts.json' without your twitter dev account keys"
+echo \t"using the conse panel API with admin access"
 
 echo "[?] Enter SMS API Token: "
 read SMS_API_TOKEN
