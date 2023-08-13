@@ -5,6 +5,11 @@
     | websocket session actor to receive push notif subscription from redis subscriber of role, mmr and ecq publishers 
     | -----------------------------------------------------------------------------------------------------------------
     |
+    | with actors we can communicate between different parts of the app by sending async 
+    | messages to each other through jobq channels, they also must have a handler for each 
+    | type of incoming messages like redis streams and pubsub patterns with ws actors and 
+    | tokio concepts (jobq channels, spawn, select, time interval) by streaming over io 
+    | future object of bytes to register a push notif.
     |
 */
 
@@ -278,6 +283,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                 ctx.pong(&msg);
             },
             ws::Message::Pong(_) => {
+                /* once we received the pong message we'll update the last heartbeat */
                 self.hb = Instant::now(); /* updating the last heartbeat */
             },
             ws::Message::Text(text) => {
@@ -297,6 +303,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             let redis_result_rooms_string: String = redis_conn.get("role_notif_server_actor_rooms").unwrap();
                             let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(redis_result_rooms_string.as_str()).unwrap();
                             
+                            /* sending to this peer */
                             ctx.text(format!("online events: {}", rooms_in_redis.len()));
 
                         },

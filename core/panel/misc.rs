@@ -479,9 +479,6 @@ macro_rules! server {
             let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
             let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-            let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
-            let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
-
 
             /* 
                 app_sotrage contains the mongodb, postgres and actix_redis, redis 
@@ -502,39 +499,35 @@ macro_rules! server {
             /*  
                                         SETTING UP SHARED STATE DATA
                 
-                make sure we're starting the actor in here and pass the actor isntance to the routers' threads 
-                otherwise the actor will be started each time by calling the related websocket route
+                make sure we're starting the RoleNotifServer actor in here and pass the actor isntance to 
+                the routers' threadpool otherwise the actor will be started each time by calling the related 
+                websocket route
             */
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
             let shared_storage = Data::new(app_storage.clone());
 
             /*
-                the HttpServer::new function takes a factory function that 
-                produces an instance of the App, not the App instance itself. 
-                This is because each worker thread needs to have 
+                the HttpServer::new function takes a factory function that produces an instance of the App, 
+                not the App instance itself. This is because each worker thread needs to have 
                 its own App instance.
 
-                handle streaming async tasks like socket connections in a none blocking
-                manner asyncly and concurrently using tokio::spawn(async move{}) and 
-                shared state data between tokio::spawn() green threadpool using jobq channels 
-                and clusters using redis and routers' threads using arc, mutex and rwlock 
-                also data must be Send + Sync + 'static also handle incoming async 
-                events into the server using tokio::select!{} eventloop. 
+                handle streaming async tasks like socket connections in a none blocking manner asyncly and 
+                concurrently using tokio::spawn(async move{}) and shared state data between tokio::spawn() 
+                green threadpool using jobq channels and clusters using redis and routers' threads using arc, 
+                mutex and rwlock also data must be Send + Sync + 'static also handle incoming async events 
+                into the server using tokio::select!{} eventloop. 
 
-                we're sharing the db_instance and redis connection state between 
-                routers' threads to get the data inside each api also for this the 
-                db and redis connection data must be shareable and safe to send 
-                between threads which must be bounded to Send + Sync traits 
+                we're sharing the db_instance and redis connection state between routers' threads to get the 
+                data inside each api also for this the db and redis connection data must be shareable and safe 
+                to send between threads which must be bounded to Send + Sync traits 
 
-                since every api or router is an async task that must be handled 
-                inside the hyper threads thus the data that we want to use inside 
-                of them and share it between other routers must be 
+                since every api or router is an async task that must be handled inside the hyper threads thus 
+                the data that we want to use inside of them and share it between other routers must be 
                 Arc<Mutex<Data>> + Send + Sync + 'static 
 
-                mongodb and redis connection instances must be only Arc (shareable)
-                to share them between threads since we don't want to mutate them 
-                in actix routers' threads. 
+                mongodb and redis connection instances must be only Arc (shareable) to share them between threads 
+                since we don't want to mutate them in actix routers' threads. 
             */
             info!("➔ 🚀 {} panel server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
             let s = match HttpServer::new(move ||{

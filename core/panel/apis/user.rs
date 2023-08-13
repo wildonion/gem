@@ -889,7 +889,6 @@ async fn make_id(
 
 }
 
-
 #[post("/deposit")]
 #[passport(user)]
 async fn deposit(
@@ -897,7 +896,6 @@ async fn deposit(
     deposit: web::Json<DepositRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
-
     
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -1012,10 +1010,12 @@ async fn deposit(
                                     ------------------------------------
                                     https://thirdweb.com/dashboard/contracts
                                     
+                                        ---- redis rate limiter ----
                                     0 => sender pay the exchange with the amounts 
-                                    1 => exchange sends the paid amount to the coinbase usdc/usdt server identifier 
+                                    1 => exchange sends the paid amount to the coinbase usdt server wallet
                                     2 => nft card will be minted on polygon chain using thirdweb api
-                                    2 => send successful response to the sender contains tx hash of depositting into the coinbase and minting nft 
+                                    2 => send successful response to the sender contains tx hash of depositing 
+                                        into the coinbase and minting nft 
     
                                 */ 
                                 if contract_mint_call == true{

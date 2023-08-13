@@ -1542,8 +1542,8 @@ impl Id{
                         device_id: id_.device_id, 
                         social_id: id_.social_id, 
                         new_snowflake_id,
-                        new_cid,
-                        signer,
+                        new_cid: Some(format!("0x{}", new_cid.unwrap())),
+                        signer: Some(format!("0x{}", signer.unwrap()))
                     }
                 )
 
