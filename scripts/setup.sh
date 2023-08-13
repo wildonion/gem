@@ -24,13 +24,10 @@ sudo apt install -y snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
 cargo install sqlant && sudo apt install -y openjdk-11-jdk && sudo apt install -y graphviz
 
-
-# wget -qO - https://pkgs-ce.cossacklabs.com/gpg | sudo apt-key add -
-# sudo apt install apt-transport-https
-# deb https://pkgs-ce.cossacklabs.com/stable/ubuntu $(lsb_release -cs) main | \
-#   sudo tee /etc/apt/sources.list.d/cossacklabs.list
-# sudo apt update && sudo apt install libthemis-dev
-
+git clone https://github.com/cossacklabs/themis.git
+cd themis
+make
+sudo make install
 
 # --- for docker setup ---
 cd ..

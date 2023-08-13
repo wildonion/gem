@@ -64,6 +64,9 @@ else
     docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
     docker stop conse-mafia && docker rm -f conse-mafia
 
+    sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
+    sudo docker run -d --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
+    
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
 
@@ -77,7 +80,4 @@ else
         sudo docker run -d --link postgres --network gem --name conse-panel-mongo -p 7444:7442 conse-panel-mongo
     fi
 
-    
-    sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
-    sudo docker run -d --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
 fi
