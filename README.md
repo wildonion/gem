@@ -240,6 +240,38 @@ sudo chown -R root:root . && sudo chmod -R 777 . && cd scripts
 
 > **Regards to conse panel actix APIs**:
 
+* the logic flow of an HTTP API body should be as the following:
+```rust
+
+#[post("/a/sexy/route/{sexy-param}")]
+async fn api(
+        req: HttpRequest, app_storage: 
+        storage: web::Data<Option<Arc<Storage>>>,
+        req_body: web::Json<ReqBody>,
+        a_sexy_param: web::Path<String>
+    ) -> PanelHttpResponse{
+
+
+    /* extracting storage objects (none async redis, redis async pubsub conn, postgres and mongodb) */
+    // ...
+
+    /* extracting required roles */
+    // ...
+
+    /* matching over extracted storage object */
+    // ...
+        
+        /* passport checking */
+        // ...
+            
+            /* redis rate limit checker */ 
+            
+                /* api body and code flow responses */ 
+                // ...
+
+}
+```
+
 * to all gorgeous admins, the `role` field must be **uppercase** and it's default value when it's not passed is **Dev**.
 
 * the generated cookie inside the response of the conse panel admin and user login APIs is in form `<JWT>::<SHA256_OF_LOGIN_TIME>`.
