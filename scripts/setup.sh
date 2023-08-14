@@ -29,26 +29,4 @@ cd themis
 make
 sudo make install
 
-# --- for docker setup ---
-cd ..
-sudo rm .env && sudo mv .env.prod .env
-sudo mv twitter-accounts.prod.json twitter-accounts.json
-echo \t">>> Please fill up the 'twitter-accounts.json' without your twitter dev account keys"
-echo \t"using the conse panel API with admin access"
-
-echo "[?] Enter SMS API Token: "
-read SMS_API_TOKEN
-echo SMS_API_TOKEN=$SMS_API_TOKEN >> .env
-
-echo "[?] Enter SMS API Template: "
-read SMS_API_TAMPLATE
-echo SMS_API_TAMPLATE=$SMS_API_TAMPLATE >> .env
-
-echo "[?] Enter Machine Id: "
-read MACHINE_ID
-echo MACHINE_ID=$MACHINE_ID >> .env
-echo "[?] Enter Node Id: "
-read NODE_ID
-echo NODE_ID=$NODE_ID >> .env
-
 sudo docker network create -d bridge gem || true
