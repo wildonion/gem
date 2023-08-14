@@ -2614,23 +2614,6 @@
 						{
 							"name": "Deposit",
 							"request": {
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/deposit",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"deposit"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Withdraw",
-							"request": {
 								"auth": {
 									"type": "bearer",
 									"bearer": [
@@ -2645,7 +2628,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"deposited_id\": 1,\n    \"cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"signature\": \"0x202604260a00000047000000313639313337373637353045022100b3d98fe940a1246b5373db2d8ea22b78744cb02ba645e2b16af45bedef9e478f02207503a4682e2a61bfb1f1f920c9ed151fc39b2221122bda0cd193c761c4d78dff\",\n    \"cat\": 1691377675\n}",
+									"raw": "{\n    \"recipient_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"from_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"amount\": 5,\n    \"signature\": \"0x202604260a00000047000000313639313337373637353045022100b3d98fe940a1246b5373db2d8ea22b78744cb02ba645e2b16af45bedef9e478f02207503a4682e2a61bfb1f1f920c9ed151fc39b2221122bda0cd193c761c4d78dff\",\n    \"iat\": 1691377675\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2653,13 +2636,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/user/withdraw",
+									"raw": "{{panel-user}}/deposit",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"user",
-										"withdraw"
+										"deposit"
 									]
 								}
 							},

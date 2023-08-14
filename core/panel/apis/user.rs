@@ -18,7 +18,7 @@ use crate::misc::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
-use models::users::{WithdrawRequest, DepositRequest};
+use models::users::DepositRequest;
 
 
 
@@ -889,207 +889,12 @@ async fn make_id(
 
 }
 
+
 #[post("/deposit")]
 #[passport(user)]
 async fn deposit(
     req: HttpRequest,
     deposit: web::Json<DepositRequest>,
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-) -> PanelHttpResponse{
-    
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let get_redis_conn = redis_client.get_async_connection().await;
-
-    /* 
-          ------------------------------------- 
-        | --------- PASSPORT CHECKING --------- 
-        | ------------------------------------- 
-        | granted_role has been injected into this 
-        | api body using #[passport()] proc macro 
-        | at compile time thus we're checking it
-        | at runtime
-        |
-    */
-    let granted_role = 
-        if granted_roles.len() == 3{ /* everyone can pass */
-            None /* no access is required perhaps it's an public route! */
-        } else if granted_roles.len() == 1{
-            match granted_roles[0]{ /* the first one is the right access */
-                "admin" => Some(UserRole::Admin),
-                "user" => Some(UserRole::User),
-                _ => Some(UserRole::Dev)
-            }
-        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                ACCESS_DENIED, // response message
-                StatusCode::FORBIDDEN, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        };
-
-    match storage.clone().unwrap().as_ref().get_pgdb().await{
-
-        Some(pg_pool) => {
-
-            let connection = &mut pg_pool.get().unwrap();
-
-            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
-                Ok(token_data) => {
-                    
-                    let _id = token_data._id;
-                    let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
-
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    /* checking that the incoming request is already rate limited or not */
-                    if is_rate_limited!{
-                        redis_conn,
-                        identifier_key.clone(), /* identifier */
-                        String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key, the value is a hashmap between identifier and its time */
-                    }{
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            RATE_LIMITED, //// response message
-                            StatusCode::TOO_MANY_REQUESTS, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    } else {
-                    
-                        let mut interval = tokio::time::interval(TokioDuration::from_secs(10));
-    
-    
-                        /* 
-                            since we need to access the tx mint hash outside of the tokio::spawn()
-                            thus we have to use tokio jobq channel to fill it inside the tokio green
-                            threadpool then use it outside of it by receiving from the channel
-                        */
-                        let (deposit_tx_hash_sender, 
-                            mut deposit_tx_hash_receiver) = 
-                            tokio::sync::oneshot::channel::<String>();
-    
-                        /* spawning an async task in the background to do the payment and minting logics */
-                        tokio::spawn(async move{
-                            
-                            let mut contract_mint_call = false;
-    
-                            loop{
-                                
-                                interval.tick().await;
-    
-                                /* 
-                                    ------------------------------------
-                                    THE DEPOSIT API (Sender Only)
-                                    ------------------------------------
-                                    https://thirdweb.com/dashboard/contracts
-                                    
-                                        ---- redis rate limiter ----
-                                    0 => sender pay the exchange with the amounts 
-                                    1 => exchange sends the paid amount to the coinbase usdt server wallet
-                                    2 => nft card will be minted on polygon chain using thirdweb api
-                                    2 => send successful response to the sender contains tx hash of depositing 
-                                        into the coinbase and minting nft 
-    
-                                */ 
-                                if contract_mint_call == true{
-                                    let deposit_tx_hash = String::from("card minted this is tx hash");
-                                    /* 
-                                        since the send method is not async, it can be used anywhere
-                                        which means we can call it once in each scope cause it has 
-                                        no clone() method, the clone() method must be implemented for
-                                        future objects because we dont't know when they gets solved 
-                                        and we might move them between other scopes to await on them.
-                                    */
-                                    deposit_tx_hash_sender.send(deposit_tx_hash);
-                                    break;
-                                }
-    
-                            }
-    
-                        });
-    
-                        let deposit_tx_hash = deposit_tx_hash_receiver.try_recv().unwrap();
-    
-                        resp!{
-                            String, // the data type
-                            deposit_tx_hash, // response data
-                            DEPOSITED_SUCCESSFULLY, // response message
-                            StatusCode::CREATED, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    
-                    }                    
-
-                },
-                Err(resp) => {
-                    
-                    /* 
-                        🥝 response can be one of the following:
-                        
-                        - NOT_FOUND_COOKIE_VALUE
-                        - NOT_FOUND_TOKEN
-                        - INVALID_COOKIE_TIME_HASH
-                        - INVALID_COOKIE_FORMAT
-                        - EXPIRED_COOKIE
-                        - USER_NOT_FOUND
-                        - NOT_FOUND_COOKIE_TIME_HASH
-                        - ACCESS_DENIED, 
-                        - NOT_FOUND_COOKIE_EXP
-                        - INTERNAL_SERVER_ERROR 
-                    */
-                    resp
-                }
-            }
-
-        },
-        None => {
-
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        }
-    }
-
-
-}
-
-
-#[post("/withdraw")]
-#[passport(user)]
-async fn withdraw(
-    req: HttpRequest,
-    withdraw: web::Json<WithdrawRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -1181,31 +986,19 @@ async fn withdraw(
                         }
 
                     } else {
-                    
-                        /* 
 
-                            -----------------------------------------
-                                THE WITHDRAW API (Receiver Only)
-                            -----------------------------------------
-                                    
-                            0 => call coinbase trade api to exchange usdt/usdc to the passed in currency type 
-                            1 => send the traded to paypal identifier of the server  
-                            2 => send the amount from the server paypal to the receiver paypal
-                            
-                        */ 
-
-                        let withdraw_object = withdraw.0;
+                        let deposit_object = deposit.0;
 
                         /* 
                             here is the process of verifying the signature of signed data 
-                            using the private key inside js using themis wasm,
+                            using the private key inside js using themis wasm.
                             we've cloned the tx_signature and hex_pubkey since the PartialEq
                             trait takes the ownership of the WithdrawRequest instacen
                             when we want to compare the decoded data with the actual instance
                             inside the request body
                         */
-                        let hex_tx_signature = withdraw_object.signature.clone();
-                        let hex_pubkey = withdraw_object.cid.clone();
+                        let hex_tx_signature = deposit_object.signature.clone();
+                        let hex_pubkey = deposit_object.from_cid.clone();
 
                         /* dropping the first 2 bytes or 0x from the hex string */
                         let tx_signature = &hex_tx_signature[2..];
@@ -1246,6 +1039,7 @@ async fn withdraw(
 
                         let Ok(encoded_data) = get_encoded_data else{
                             
+                            /* verifying signature or building pubkey error */
                             let error = get_encoded_data.unwrap_err();
                             resp!{
                                 &[u8], // the data type
@@ -1258,17 +1052,36 @@ async fn withdraw(
 
                         /* decoding the signed message */
                         let pure_message = std::str::from_utf8(&encoded_data).unwrap();
-                        let pure_data = serde_json::from_slice::<WithdrawRequest>(&encoded_data).unwrap();
+                        let pure_data = serde_json::from_slice::<DepositRequest>(&encoded_data).unwrap();
 
                         /* the decoded data must be equals to the request body */
-                        if pure_data == withdraw_object.clone(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                CLAIMED_SUCCESSFULLY, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
+                        if pure_data == deposit_object.clone(){
+
+                            /* 
+                                1 => deposit into the conse IR wallet
+                                2 => save into db 
+                            */
+                            // ...
+
+                            let deposit_ir_res = 200;
+                            if deposit_ir_res == 200{
+                                resp!{
+                                    DepositRequest, // the data type
+                                    deposit_object, // response data
+                                    DEPOSITED_SUCCESSFULLY, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            } else{
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_DEPOSIT, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
                             }
+
                         } else{
                             resp!{
                                 &[u8], // the data type
@@ -1328,5 +1141,4 @@ pub mod exports{
     pub use super::tasks_report;
     pub use super::make_id;
     pub use super::deposit;
-    pub use super::withdraw;
 }

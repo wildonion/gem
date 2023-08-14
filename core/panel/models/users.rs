@@ -97,21 +97,13 @@ pub struct UserData{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct DepositRequest{
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: u64,
     pub signature: String, /* this must be generated inside the client by signing the operation using the client private key */
     pub iat: i64, // deposited at
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
-pub struct WithdrawRequest{
-    pub deposited_id: i32,
-    pub cid: String,
-    pub signature: String, /* this must be generated inside the client by signing the operation using the client private key */
-    pub cat: i64, // claimed at
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
@@ -1601,7 +1593,7 @@ impl Id{
         /* building the public key from public key bytes */
         let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
             let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
-            return Err(err);
+            return Err(err); /* can't build pubkey from the passed in slice */
         };
 
         /* building the verifier from the public key */

@@ -99,7 +99,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::verify_twitter_account);
     config.service(apis::user::tasks_report);
     config.service(apis::user::make_id);
-    config.service(apis::user::withdraw);
     config.service(apis::user::deposit);
 
     // other routs maybe ?

@@ -35,7 +35,8 @@ window.onload = function() {
 
         const private_key_bytes = hexToBytes(private_key_hex);
         const signer = new sms(new prv(private_key_bytes));
-
+        
+        // request body signing
         const message = new TextEncoder().encode("1691377675");
         const signedMessage = signer.sign(message);
         const signedMessageHex = bytesToHex(signedMessage);

@@ -7,8 +7,8 @@ pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 
-pub static DEPOSITED_SUCCESSFULLY: &str = "Deposit Successfully";
-pub static CLAIMED_SUCCESSFULLY: &str = "Claimed Successfully";
+pub static DEPOSITED_SUCCESSFULLY: &str = "Deposited Successfully";
+pub static CANT_DEPOSIT: &str = "Can't Deposit At The Moment, Try Again Later";
 pub static ID_BUILT: &str = "New Conse Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Future Data";
 pub static RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
