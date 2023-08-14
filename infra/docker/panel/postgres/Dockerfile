@@ -55,6 +55,7 @@ RUN groupadd $APP_USER \
     && mkdir -p ${APP}
 
 
+# - Copy `libpq` dependencies into the image (Required by diesel)
 COPY --from=builder /gem/target/release/panel ${APP}/panel
 COPY --from=builder /usr/local/lib/libthemis.so.0 /usr/local/lib/libthemis.so.0
 COPY --from=builder /usr/local/lib/lib* /usr/local/lib/
