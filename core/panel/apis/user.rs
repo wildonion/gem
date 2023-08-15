@@ -2,6 +2,7 @@
 
 
 use crate::*;
+use crate::models::users_deposits::UserDepositData;
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
@@ -18,7 +19,7 @@ use crate::misc::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
-use models::users::DepositRequest;
+use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 
 
 
@@ -763,7 +764,7 @@ async fn make_id(
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -889,12 +890,24 @@ async fn make_id(
 
 }
 
-
+#[utoipa::path(
+    context_path = "/user",
+    request_body = NewUserDepositRequest,
+    responses(
+        (status=201, description="Deposited Successfully", body=NewUserDepositRequest),
+        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
+        (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
 #[post("/deposit")]
 #[passport(user)]
 async fn deposit(
     req: HttpRequest,
-    deposit: web::Json<DepositRequest>,
+    deposit: web::Json<NewUserDepositRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -955,7 +968,7 @@ async fn deposit(
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -987,7 +1000,7 @@ async fn deposit(
 
                     } else {
 
-                        let deposit_object = deposit.0;
+                        let deposit_object = deposit.to_owned();
 
                         /* 
                             here is the process of verifying the signature of signed data 
@@ -997,7 +1010,7 @@ async fn deposit(
                             when we want to compare the decoded data with the actual instance
                             inside the request body
                         */
-                        let hex_tx_signature = deposit_object.signature.clone();
+                        let hex_tx_signature = deposit_object.tx_signature.clone();
                         let hex_pubkey = deposit_object.from_cid.clone();
 
                         /* dropping the first 2 bytes or 0x from the hex string */
@@ -1052,32 +1065,51 @@ async fn deposit(
 
                         /* decoding the signed message */
                         let pure_message = std::str::from_utf8(&encoded_data).unwrap();
-                        let pure_data = serde_json::from_slice::<DepositRequest>(&encoded_data).unwrap();
+                        let pure_data = serde_json::from_slice::<NewUserDepositRequest>(&encoded_data).unwrap();
 
                         /* the decoded data must be equals to the request body */
                         if pure_data == deposit_object.clone(){
 
                             /* 
-                                1 => deposit into the conse IR wallet
-                                2 => save into db 
+
+                                payment process 
+                                minting process using thirdweb
+                                ...
+                            
                             */
-                            // ...
 
                             let deposit_ir_res = 200;
+                            let payment_id = "successfull payment id".to_string();
                             if deposit_ir_res == 200{
-                                resp!{
-                                    DepositRequest, // the data type
-                                    deposit_object, // response data
-                                    DEPOSITED_SUCCESSFULLY, // response message
-                                    StatusCode::OK, // status code
-                                    None::<Cookie<'_>>, // cookie
+
+                                match UserDeposit::insert(deposit.to_owned(), payment_id, connection).await{
+                                    Ok(user_deposit_data) => {
+
+                                        resp!{
+                                            NewUserDepositRequest, // the data type
+                                            deposit_object, // response data
+                                            DEPOSITED_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        }
+
+                                    },
+                                    Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                        */
+                                        resp
+                                    }
                                 }
+                                
                             } else{
                                 resp!{
                                     &[u8], // the data type
                                     &[], // response data
                                     CANT_DEPOSIT, // response message
-                                    StatusCode::OK, // status code
+                                    StatusCode::EXPECTATION_FAILED, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
                             }
@@ -1131,6 +1163,180 @@ async fn deposit(
 
 }
 
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
+        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
+    ),
+    params(
+        ("cid" = String, Path, description = "user cid"),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[get("/deposit/get/user/{cid}")]
+#[passport(user)]
+async fn get_all_user_deposits(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    user_cid: web::Path<String>
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    let login_identifier = token_data.identifier.unwrap();
+
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                       
+                       let hex_user_cid = &user_cid.to_owned()[2..];
+                       match UserDeposit::get_all_for(hex_user_cid.to_string(), connection).await{
+                            Ok(user_deposits) => {
+
+                                resp!{
+                                    Vec<UserDepositData>, // the data type
+                                    user_deposits, // response data
+                                    FETCHED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+
+
+                            },
+                            Err(resp) => {
+                                /* 
+                                    🥝 response can be one of the following:
+                                    
+                                    - DIESEL INSERT ERROR RESPONSE
+                                */
+                                resp
+                            }
+                       }
+                    
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 
 
 
@@ -1141,4 +1347,5 @@ pub mod exports{
     pub use super::tasks_report;
     pub use super::make_id;
     pub use super::deposit;
+    pub use super::get_all_user_deposits;
 }

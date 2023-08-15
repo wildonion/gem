@@ -77,6 +77,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_admin_tasks);
     config.service(apis::admin::exports::get_users_tasks);
     config.service(apis::admin::exports::add_twitter_account);
+    config.service(apis::admin::get_all_users_deposits);
 
     // other routs maybe ?
     // ...
@@ -100,6 +101,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::tasks_report);
     config.service(apis::user::make_id);
     config.service(apis::user::deposit);
+    config.service(apis::user::get_all_user_deposits);
 
     // other routs maybe ?
     // ...

@@ -107,7 +107,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"wildonion\",\r\n    \"pwd\": \"wildoinon@1234%\"\r\n}\r\n",
+									"raw": "{\r\n    \"username\": \"conse\",\r\n    \"pwd\": \"conse@1234\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -498,7 +498,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MSwiZXhwIjoxNjkyMzgyMjU0LCJpYXQiOjE2ODk3OTAyNTR9.GVThvQmrNNL94blIAQdBFgWKBiujtNBamyxQitY6-Uh7XeE8NFlYkjkYDCAEJCT9TE08kmtZSpOuOSMFdLtl_Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjQ3NDgwMWIzNDE4YjgwNWE3NDI1NCJ9LCJ1c2VybmFtZSI6ImNvbnNlIiwiYWNjZXNzX2xldmVsIjoxLCJleHAiOjE2OTQ3MTAwNzcsImlhdCI6MTY5MjExODA3N30.gyhdoiE59cts9duA6snNtNt5ee6thuRFfqkRfNtZ_XIDZrTjkQeXG5h0pwaq8_SflA1pEDufGVwZLttJC5ANaw",
 											"type": "string"
 										}
 									]
@@ -2212,7 +2212,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MSwiZXhwIjoxNjkzNTYzNDEyLCJpYXQiOjE2OTA5NzE0MTJ9.LAEZUt_11MDFbZGgiFj7y-V32hwgrJFZfXSLowm3-u7DxWI5p3z3-e0wDgxkLNZjcgyBPDf5VuUeGsrQnHFZmg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjQ3NDgwMWIzNDE4YjgwNWE3NDI1NCJ9LCJ1c2VybmFtZSI6ImNvbnNlIiwiYWNjZXNzX2xldmVsIjoxLCJleHAiOjE2OTQ3MTAwNzcsImlhdCI6MTY5MjExODA3N30.gyhdoiE59cts9duA6snNtNt5ee6thuRFfqkRfNtZ_XIDZrTjkQeXG5h0pwaq8_SflA1pEDufGVwZLttJC5ANaw",
 											"type": "string"
 										}
 									]
@@ -2225,7 +2225,7 @@
 										{
 											"key": "img",
 											"type": "file",
-											"src": "/Users/wildonion/Desktop/Screenshot 2023-07-30 at 12.03.09 PM.png"
+											"src": "/Users/wildonion/Downloads/images.jpeg"
 										}
 									]
 								},
@@ -2436,6 +2436,35 @@
 							"response": []
 						},
 						{
+							"name": "Get Users Deposits",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/deposit/get/all",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"deposit",
+										"get",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get Users",
 							"request": {
 								"auth": {
@@ -2509,7 +2538,7 @@
 					"name": "User APIs",
 					"item": [
 						{
-							"name": "Login",
+							"name": "Login With Identifier",
 							"request": {
 								"method": "POST",
 								"header": [],
@@ -2527,13 +2556,13 @@
 							"response": []
 						},
 						{
-							"name": "Login With Wallet and Password",
+							"name": "Login With Identifier and Password",
 							"request": {
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"wallet\": \"\",\n    \"password\": \"\"\n}",
+									"raw": "{\n    \"identifier\": \"\",\n    \"password\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2598,12 +2627,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/user/cid/build",
+									"raw": "{{panel-user}}/cid/build",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"user",
 										"cid",
 										"build"
 									]
@@ -2642,6 +2670,36 @@
 									],
 									"path": [
 										"deposit"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Deposits",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/deposit/get/user/0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"deposit",
+										"get",
+										"user",
+										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
 									]
 								}
 							},

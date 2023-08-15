@@ -7,3 +7,4 @@ pub mod users;
 pub mod tasks;
 pub mod users_tasks;
 pub mod bot;
+pub mod users_deposits;

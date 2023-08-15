@@ -54,6 +54,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_deposits (id) {
+        id -> Int4,
+        payment_id -> Varchar,
+        from_cid -> Varchar,
+        recipient_cid -> Varchar,
+        amount -> Int8,
+        tx_signature -> Varchar,
+        iat -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_tasks (user_id, task_id) {
         user_id -> Int4,
         task_id -> Int4,
@@ -68,5 +80,6 @@ diesel::joinable!(users_tasks -> users (user_id));
 diesel::allow_tables_to_appear_in_same_query!(
     tasks,
     users,
+    users_deposits,
     users_tasks,
 );
