@@ -204,7 +204,7 @@ impl Task{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                    let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
                     
@@ -251,7 +251,7 @@ impl Task{
                             use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                              
                             let error_content = &e.to_string();
-                            let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                            let error_content = error_content.as_bytes().to_vec();  
                             let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -324,7 +324,7 @@ impl Task{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                    let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -360,7 +360,7 @@ impl Task{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                    let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -412,7 +412,7 @@ impl Task{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                    let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -464,7 +464,7 @@ impl Task{
                 use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                  
                 let error_content = &e.to_string();
-                let error_content = error_content.as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                let error_content = error_content.as_bytes().to_vec();  
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
                 

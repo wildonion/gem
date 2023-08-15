@@ -49,7 +49,7 @@ use actix::prelude::*;
     the subscribed redis topics to the channel that contains event peers
 
 */
-#[get("/{user_id}/{notif_room}")]
+#[get("/{user_id}/{notif_room}")] /* an specific user can join an specific event */
 async fn notif_subs(
     req: HttpRequest, 
     stream: web::Payload, 

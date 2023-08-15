@@ -16,6 +16,7 @@ pub static SIGNATURE_DECODE_ISSUE: &str = "Can't Decode Signature Hex String";
 pub static INVALID_CID: &str = "Can't Decode Conse Id Hex String";
 pub static INVALID_SIGNATUE_OR_CID: &str = "Invalid Signature Or Conse Id";
 pub static INVALID_DATA: &str = "Invalid Data";
+pub static CID_HAS_NOT_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
 
 
 pub const DEV_ACCESS: u8 = 0;

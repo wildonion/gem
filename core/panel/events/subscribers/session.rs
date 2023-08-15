@@ -49,7 +49,7 @@ pub struct NotifySession{
 
 
 
-/* a session or peer data, RoleNotifServer actor contains all session instances from the following struct */
+/* a session or peer data, RoleNotifServer actor contains all session instances from the following struct in its rooms */
 pub(crate) struct WsNotifSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
@@ -96,7 +96,7 @@ impl WsNotifSession{
 
                 use error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
-                let error_content = e.to_string().as_bytes().to_vec(); /* extend the empty msg_content from the error utf8 slice */
+                let error_content = e.to_string().as_bytes().to_vec();  
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)));
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -372,6 +372,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         /* ------------------------------------*/
                         "/join-mmr" => {
 
+                            /* 
+                                mmq setup:
+                                select 1 random player from the self.notif_room room
+                                from the role notif server except self.peer_name 
+
+                            */
+                            
                             todo!()
 
                         },
