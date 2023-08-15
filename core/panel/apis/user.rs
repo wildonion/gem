@@ -693,6 +693,8 @@ pub async fn tasks_report(
     request_body = NewIdRequest,
     responses(
         (status=201, description="Built Successfully", body=UserIdResponse),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
+        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
     ),
     tag = "crate::apis::user",
     security(
@@ -897,6 +899,7 @@ async fn make_id(
         (status=201, description="Deposited Successfully", body=NewUserDepositRequest),
         (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
         (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
     ),
     tag = "crate::apis::user",
     security(
@@ -1168,6 +1171,7 @@ async fn deposit(
     responses(
         (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
         (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
     ),
     params(
         ("cid" = String, Path, description = "user cid"),

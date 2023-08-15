@@ -15,8 +15,8 @@ use crate::schema::users_deposits::dsl::*;
 /* 
 
     diesel migration generate users_deposits ---> create users_deposits migration sql files
-    diesel migration run            ---> apply sql files to db 
-    diesel migration redo           ---> drop tables 
+    diesel migration run                     ---> apply sql files to db 
+    diesel migration redo                    ---> drop tables 
 
 */
 

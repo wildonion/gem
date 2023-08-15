@@ -2131,6 +2131,7 @@ async fn add_twitter_account(
     context_path = "/admin",
     responses(
         (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
     ),
     tag = "crate::apis::admin",
     security(
