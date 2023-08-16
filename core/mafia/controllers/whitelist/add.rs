@@ -139,7 +139,6 @@ pub async fn upsert(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
                 
                 let token_data = token_data.unwrap();
                 let _id = token_data.claims._id;
-                let username = token_data.claims.username;
                 let access_level = token_data.claims.access_level;
                 let req = request.unwrap();
 

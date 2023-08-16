@@ -68,13 +68,12 @@ pub async fn update_role(req: Request<Body>) -> MafiaResult<hyper::Response<Body
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -269,13 +268,12 @@ pub async fn update_side(req: Request<Body>) -> MafiaResult<hyper::Response<Body
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -469,13 +467,12 @@ pub async fn update_status(req: Request<Body>) -> MafiaResult<hyper::Response<Bo
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -672,13 +669,12 @@ pub async fn update_role_ability(req: Request<Body>) -> MafiaResult<hyper::Respo
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -870,13 +866,12 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> MafiaResult<hyper::Respo
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -1137,13 +1132,12 @@ pub async fn chain_to_another_player(req: Request<Body>) -> MafiaResult<hyper::R
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -1328,13 +1322,12 @@ pub async fn get_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
                             
             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev, admin (God) and player can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -1550,13 +1543,12 @@ pub async fn get_single_god_vote(req: Request<Body>) -> MafiaResult<hyper::Respo
                             
             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev, admin (God) and player can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -1723,13 +1715,12 @@ pub async fn get_all_god_votes(req: Request<Body>) -> MafiaResult<hyper::Respons
             
     
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev, admin (God) and player can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -1905,13 +1896,12 @@ pub async fn get_player_role_ability(req: Request<Body>) -> MafiaResult<hyper::R
                             
             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev, admin (God) and player can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -2072,13 +2062,12 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> MafiaResult<hyper::Re
                             
             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev, admin (God) and player can handle this route
                     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
                     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait

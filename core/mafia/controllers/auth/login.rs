@@ -55,7 +55,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                 Ok(is_correct) => {
                                     if is_correct{
                                         let (now, exp) = misc::jwt::gen_times().await;
-                                        let jwt_payload = misc::jwt::Claims{_id: user_doc.clone()._id, username: user_doc.clone().username, access_level: user_doc.access_level, iat: now, exp}; // building jwt if passwords are matched
+                                        let jwt_payload = misc::jwt::Claims{_id: user_doc.clone()._id, access_level: user_doc.access_level, iat: now, exp}; // building jwt if passwords are matched
                                         match misc::jwt::construct(jwt_payload).await{
                                             Ok(token) => {
                                                 users.update_one(doc!{"username": user_doc.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();

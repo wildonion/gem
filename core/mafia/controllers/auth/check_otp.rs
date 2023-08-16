@@ -98,7 +98,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                 /* ----------- constructing jwt ----------- */
                                                 /* ---------------------------------------- */
                                                 let (now, exp) = misc::jwt::gen_times().await;
-                                                let jwt_payload = misc::jwt::Claims{_id: user_info._id, username: user_info.clone().username, access_level: user_info.access_level, iat: now, exp}; // building jwt if passwords are matched
+                                                let jwt_payload = misc::jwt::Claims{_id: user_info._id, access_level: user_info.access_level, iat: now, exp}; // building jwt if passwords are matched
                                                 match misc::jwt::construct(jwt_payload).await{
                                                     Ok(token) => {
                                                         users.update_one(doc!{"username": user_info.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();
@@ -200,7 +200,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                         /* ----------- constructing jwt ----------- */
                                                         /* ---------------------------------------- */
                                                         let (now, exp) = misc::jwt::gen_times().await;
-                                                        let jwt_payload = misc::jwt::Claims{_id: insert_result.inserted_id.as_object_id(), username: user_doc.clone().username, access_level: user_doc.access_level.unwrap(), iat: now, exp}; // building jwt if passwords are matched
+                                                        let jwt_payload = misc::jwt::Claims{_id: insert_result.inserted_id.as_object_id(), access_level: user_doc.access_level.unwrap(), iat: now, exp}; // building jwt if passwords are matched
                                                         match misc::jwt::construct(jwt_payload).await{
                                                             Ok(token) => {
                                                                 users.update_one(doc!{"username": user_doc.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();

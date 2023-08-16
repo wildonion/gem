@@ -288,7 +288,6 @@ pub mod jwt{
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Claims{
         pub _id: Option<ObjectId>, // mongodb object id
-        pub username: String,
         pub access_level: u8,
         pub exp: i64, // expiration timestamp
         pub iat: i64, // issued timestamp
@@ -811,9 +810,8 @@ macro_rules! passport {
                 
                 let (token_data, req) = pass.unwrap(); // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function
                 let _id = token_data.claims._id;
-                let username = token_data.claims.username.clone();
                 let access_level = token_data.claims.access_level;
-                if middlewares::auth::user::exists(Some(&$db.clone()), _id, username.clone(), access_level).await{ // finding the user with these info extracted from jwt
+                if middlewares::auth::user::exists(Some(&$db.clone()), _id, access_level).await{ // finding the user with these info extracted from jwt
                     if $access_levels.contains(&access_level){   
                         Some(
                                 (

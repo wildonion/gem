@@ -115,14 +115,14 @@ pub mod auth{
         
         
 
-        pub async fn exists(storage: Option<&Client>, user_id: Option<ObjectId>, username: String, access_level: u8) -> bool{
+        pub async fn exists(storage: Option<&Client>, user_id: Option<ObjectId>, access_level: u8) -> bool{
     
             ////////////////// DB Ops
 
             let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
             let serialized_access_level = bson::to_bson(&access_level).unwrap(); // we have to serialize the access_level to BSON Document object in order to find a user with this info cause mongodb can't do serde ops on raw u8
             let users = storage.unwrap().database(&db_name).collection::<schemas::auth::UserInfo>("users"); // selecting users collection to fetch all user infos into the UserInfo struct
-            match users.find_one(doc!{"_id": user_id, "username": username, "access_level": serialized_access_level}, None).await.unwrap(){ // finding user based on username, _id and access_level
+            match users.find_one(doc!{"_id": user_id, "access_level": serialized_access_level}, None).await.unwrap(){ // finding user based on username, _id and access_level
                 Some(user_doc) => true, 
                 None => false,
             }

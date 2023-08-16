@@ -151,12 +151,11 @@ pub async fn player_all_expired(req: Request<Body>) -> MafiaResult<hyper::Respon
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev and player can handle this route
 
 
@@ -322,12 +321,11 @@ pub async fn player_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Respon
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == DEV_ACCESS { // NOTE - only dev can handle this route
 
 
@@ -496,12 +494,11 @@ pub async fn player_all_none_expired(req: Request<Body>) -> MafiaResult<hyper::R
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == DEV_ACCESS || access_level == DEFAULT_USER_ACCESS{ // NOTE - only dev and player can handle this route
 
                     ////////////////// DB Ops
@@ -1059,12 +1056,11 @@ pub async fn god_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                 
                     let event_id = format!("{}", req.param("eventId").unwrap()); // we must create the url param using format!() since this macro will borrow the req object and doesn't move it so we can access the req object later to handle other incoming data 
@@ -1225,12 +1221,11 @@ pub async fn god_all(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, h
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == ADMIN_ACCESS || access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                 
 
@@ -1371,12 +1366,11 @@ pub async fn god_all_for_dev(req: Request<Body>) -> MafiaResult<hyper::Response<
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
                             
             let _id = token_data.claims._id;
-            let username = token_data.claims.username;
             let access_level = token_data.claims.access_level;
     
             
             let db_to_pass = db.clone();
-            if middlewares::auth::user::exists(Some(&db_to_pass), _id, username, access_level).await{ // finding the user with these info extracted from jwt
+            if middlewares::auth::user::exists(Some(&db_to_pass), _id, access_level).await{ // finding the user with these info extracted from jwt
                 if access_level == DEV_ACCESS{ // NOTE - only dev and admin (God) can handle this route
                 
 
