@@ -37,7 +37,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[openapi(
     paths(
         reveal_role,   
-        update_event_img,
         login,
         register_new_user,
         register_new_task, 
@@ -272,22 +271,6 @@ async fn reveal_role(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=201, description="Updated Successfully", body=[u8]),
-        (status=403, description="Invalid Token", body=[u8]),
-        (status=403, description="No Authorization Header Is Provided", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("event_id" = String, Path, description = "event id")
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/event/{event_id}/upload/img")]
 async fn update_event_img(
     req: HttpRequest, 
@@ -2194,7 +2177,6 @@ async fn get_all_users_deposits(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
 
                     let identifier_key = format!("{}", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
