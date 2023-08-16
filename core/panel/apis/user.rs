@@ -892,7 +892,7 @@ async fn make_id(
     context_path = "/user",
     request_body = NewUserDepositRequest,
     responses(
-        (status=201, description="Deposited Successfully", body=NewUserDepositRequest),
+        (status=201, description="Deposited Successfully", body=UserDepositData),
         (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
         (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
         (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
@@ -1070,22 +1070,38 @@ async fn deposit(
 
                             /* 
 
-                                IR payment process 
-                                minting process using thirdweb
-                                ...
-                            
-                            */
+                                if we have mint_tx_signature means that the whole payment 
+                                process is done successfully, minter paid IR exchange and 
+                                the exchange charged the server paypal with PYUSD, because 
+                                once we received the payapl successful PYUSD payment 
+                                transaction we should mint the NFT on chain.
 
+                                ----------------- PAYMENT/FIAT LOGIC -----------------
+                                    IR payment process to charge exchange
+                                            ↓↑
+                                    exchange charge server paypal with usdt or PYUSD
+                                            ↓↑
+                                    minting process using thirdweb on polygon chain (mint an nft to the receiver)
+                                            ↓↑
+                                    withdraw process
+                                            ↓↑
+                                    paying out the receiver with the PYUSD from the server paypal
+                                            ↓↑
+                                    show claimed paypal transaction to minter
+                                -------------------------------------------------------
+
+                            */
+                            
                             let deposit_ir_res = 200;
-                            let payment_id = "successfull payment id".to_string();
+                            let mint_tx_signature = "tx-mint-hash".to_string();
                             if deposit_ir_res == 200{
 
-                                match UserDeposit::insert(deposit.to_owned(), payment_id, connection).await{
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
                                     Ok(user_deposit_data) => {
 
                                         resp!{
-                                            NewUserDepositRequest, // the data type
-                                            deposit_object, // response data
+                                            UserDepositData, // the data type
+                                            user_deposit_data, // response data
                                             DEPOSITED_SUCCESSFULLY, // response message
                                             StatusCode::CREATED, // status code
                                             None::<Cookie<'_>>, // cookie

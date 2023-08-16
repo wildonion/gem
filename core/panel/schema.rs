@@ -56,7 +56,7 @@ diesel::table! {
 diesel::table! {
     users_deposits (id) {
         id -> Int4,
-        payment_id -> Varchar,
+        mint_tx_signature -> Varchar,
         from_cid -> Varchar,
         recipient_cid -> Varchar,
         amount -> Int8,

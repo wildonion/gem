@@ -25,7 +25,7 @@ use crate::schema::users_deposits::dsl::*;
 #[diesel(table_name=users_deposits)]
 pub struct UserDeposit { /* note that the ordering of fields must be the same as the table fields in up.sql */
     pub id: i32,
-    pub payment_id: String,
+    pub mint_tx_signature: String,
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
@@ -39,7 +39,7 @@ pub struct NewUserDeposit{
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
-    pub payment_id: String,
+    pub mint_tx_signature: String,
     pub tx_signature: String, /* this must be generated inside the client by signing the operation using the client private key */
     pub iat: chrono::NaiveDateTime // deposited at
 }
@@ -59,20 +59,20 @@ pub struct UserDepositData{
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
-    pub payment_id: String,
+    pub mint_tx_signature: String,
     pub signature: String, 
     pub iat: chrono::NaiveDateTime 
 }
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_payment_id: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_signature: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
             recipient_cid: user_deposit_request.recipient_cid,
             amount: user_deposit_request.amount,
-            payment_id: succ_payment_id,
+            mint_tx_signature: succ_mint_tx_signature,
             tx_signature: user_deposit_request.tx_signature,
             iat: user_deposit_request.iat,
         };
@@ -90,7 +90,7 @@ impl UserDeposit{
                         recipient_cid: user_deposit.recipient_cid, 
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
-                        payment_id: user_deposit.payment_id,
+                        mint_tx_signature: user_deposit.mint_tx_signature,
                         iat: user_deposit.iat 
                     })
 
@@ -147,7 +147,7 @@ impl UserDeposit{
                         from_cid: d.from_cid,
                         recipient_cid: d.recipient_cid,
                         amount: d.amount,
-                        payment_id: d.payment_id,
+                        mint_tx_signature: d.mint_tx_signature,
                         signature: d.tx_signature,
                         iat: d.iat,
                     }
@@ -182,7 +182,7 @@ impl UserDeposit{
                         from_cid: d.from_cid,
                         recipient_cid: d.recipient_cid,
                         amount: d.amount,
-                        payment_id: d.payment_id,
+                        mint_tx_signature: d.mint_tx_signature,
                         signature: d.tx_signature,
                         iat: d.iat,
                     }
