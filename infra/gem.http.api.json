@@ -2230,13 +2230,13 @@
 									]
 								},
 								"url": {
-									"raw": "{{panel-admin}}/event/64b82757d916781c6d689488/upload/img",
+									"raw": "{{panel-admin}}/event/64c939bfd19645f57fd9f98a/upload/img",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
 										"event",
-										"64b82757d916781c6d689488",
+										"64c939bfd19645f57fd9f98a",
 										"upload",
 										"img"
 									]
