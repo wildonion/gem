@@ -360,16 +360,16 @@ async fn update_event_img(
 
                         /* creating the filename and the filepath */
                         let filename = content_type.get_filename().unwrap().to_lowercase();
-                        let ext_position_png = filename.find("png").unwrap();
-                        let ext_position_jpg = filename.find("jpg").unwrap();
-                        let ext_position_jpeg = filename.find("jpeg").unwrap();
+                        let ext_position_png = filename.find("png");
+                        let ext_position_jpg = filename.find("jpg");
+                        let ext_position_jpeg = filename.find("jpeg");
 
                         let ext_position = if filename.find("png").is_some(){
-                            ext_position_png
+                            ext_position_png.unwrap()
                         } else if filename.find("jpg").is_some(){
-                            ext_position_jpg
+                            ext_position_jpg.unwrap()
                         } else if filename.find("jpeg").is_some(){
-                            ext_position_jpeg
+                            ext_position_jpeg.unwrap()
                         } else{
 
                             resp!{
