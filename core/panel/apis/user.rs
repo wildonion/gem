@@ -454,7 +454,6 @@ async fn verify_twitter_account(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
 
                     /* rate limiter based on doer id */
                     let chill_zone_duration = 30_000u64; //// 30 seconds chillzone
@@ -501,7 +500,7 @@ async fn verify_twitter_account(
 
 
                         /* we can pass usernmae by reference or its slice form instead of cloning it */
-                        match User::update_social_account(&login_identifier, &account_name.to_owned(), connection).await{
+                        match User::update_social_account(_id, &account_name.to_owned(), connection).await{
                             Ok(updated_user) => {
                     
                                 resp!{
@@ -631,7 +630,6 @@ pub async fn tasks_report(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
 
 
                     match UserTask::reports(user_id.to_owned(), connection).await{
@@ -755,8 +753,6 @@ async fn make_id(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
-                    let token_username = token_data.username.unwrap();
 
                     let identifier_key = format!("{}", _id);
 
@@ -962,7 +958,6 @@ async fn deposit(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
 
                     let identifier_key = format!("{}", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
@@ -1075,7 +1070,7 @@ async fn deposit(
 
                             /* 
 
-                                payment process 
+                                IR payment process 
                                 minting process using thirdweb
                                 ...
                             
@@ -1237,7 +1232,6 @@ async fn get_all_user_deposits(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    let login_identifier = token_data.identifier.unwrap();
 
                     let identifier_key = format!("{}", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{

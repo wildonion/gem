@@ -193,8 +193,6 @@ pub struct EditUserByAdmin<'p>{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWTClaims{
     pub _id: i32, // mongodb object id
-    pub username: Option<String>,
-    pub identifier: Option<String>,
     pub user_role: UserRole,
     pub token_time: i64,
     pub exp: i64, // expiration timestamp
@@ -515,8 +513,10 @@ impl User{
         
         let payload = JWTClaims{
             _id: self.id,
-            username: Some(self.username.clone()), /* here username and user_role are behind a reference which can't be moved thus we must clone them */
-            identifier: self.identifier.clone(),
+            /* 
+                if a user role is changed by the admin, user must logout 
+                then login again since the jwt must be updated with new role
+            */
             user_role: self.user_role.clone(),
             token_time: _token_time,
             exp: exp_time,
@@ -1274,14 +1274,14 @@ impl User{
     }
 
     pub async fn update_social_account(
-        identifier_login: &str, 
+        social_owner_id: i32, 
         account_name: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
-            let Ok(user) = User::find_by_identifier(identifier_login, connection).await else{
+            let Ok(user) = User::find_by_id(social_owner_id, connection).await else{
                 let resp = Response{
-                    data: Some(identifier_login),
+                    data: Some(social_owner_id),
                     message: USER_NOT_FOUND,
                     status: 404
                 };
@@ -1375,7 +1375,7 @@ impl User{
             } else{
 
                 let resp = Response{
-                    data: Some(identifier_login),
+                    data: Some(social_owner_id),
                     message: TWITTER_USER_IS_NOT_VALID,
                     status: 406
                 };
