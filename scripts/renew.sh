@@ -35,5 +35,5 @@ docker system prune --all
 sudo docker stop nginx
 sudo docker rm -f nginx
 sudo docker build -t --no-cache nginx -f infra/docker/nginx/Dockerfile .
-sudo docker run -d -it -p 80:80 -v $(pwd)/infra/data/nginx/confs/:/etc/nginx -v $(pwd)/infra/data/nginx/wwws/:/usr/share/nginx/ -p 443:443 --name nginx --network host nginx
+sudo docker run -d -it -p 80:80 -p 443:443 -v $(pwd)/infra/data/nginx/confs/:/etc/nginx -v $(pwd)/infra/data/nginx/wwws/:/usr/share/nginx/ -v $(pwd)/infra/assets/:/etc/nginx/assets --name nginx --network host nginx
 sudo docker ps -a && sudo docker compose ps -a && sudo docker images

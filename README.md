@@ -240,6 +240,16 @@ sudo chown -R root:root . && sudo chmod -R 777 . && cd scripts
 
 > **Regards to conse panel actix APIs**:
 
+* we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/usr/src/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/infra/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
+```bash
+# mount from conse panel containers into host: 
+... -v $(pwd)/infra/assets/:/usr/src/app/assets ...
+# mount from host into the nginx container 
+... -v $(pwd)/infra/assets/:/etc/nginx/assets ...
+```
+
+* based on the last wrapup the `assets` directory can be accessible through the `https://api.panel.conse.app/assets/` address.
+
 * the logic flow of an HTTP API body should be as the following:
 ```rust
 
