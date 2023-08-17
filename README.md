@@ -200,7 +200,12 @@ in the above records `wildonion.io` and `conse.app` are pointing to a same VPS b
 ```bash
 # -----------------------
 # ---- read/write access
-sudo chown -R root:root . && sudo chmod -R 777 . && cd scripts
+sudo chown -R root:root . && sudo chmod -R 777 . 
+sudo chown -R www-data:www-data . && sudo chmod +x /root
+sudo chown -R root:root /root && sudo chmod -R 777 /root
+sudo chmod +x /root && sudo chown -R www-data:www-data /root && sudo chmod -R 777 /root
+sudo gpasswd -a www-data root && sudo chmod g+x /root && sudo -u www-data stat /root
+sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra && sudo chmod +x /root/gem/infra/assets && cd scripts
 # ---------------
 # ---- setup VPS
 ./setup.sh
@@ -239,6 +244,8 @@ sudo chown -R root:root . && sudo chmod -R 777 . && cd scripts
 * to see a full list of conse mafia hyper server, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
 
 > **Regards to conse panel actix APIs**:
+
+* front-end can access the image of an event through the address `https://api.panel.conse.app/assets/images/events/{image_path}` like so: `https://api.panel.conse.app/assets/images/events/event64c93cc7d19645f57fd9f98d-img1692289627686439.jpg`
 
 * we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/usr/src/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/infra/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
 ```bash
