@@ -2290,7 +2290,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\", // uppercase: Admin, User, Dev\n    \"username\": \"\",\n    \"wallet\": \"\"\n    // \"password\": \"\" // it may not pass\n}",
+									"raw": "{\n    \"user_id\": \"\",\n    \"role\": \"\", // uppercase: Admin, User, Dev\n    \"username\": \"\",\n    \"identifier\": \"\"\n    // \"password\": \"\" // it may not pass\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2457,6 +2457,35 @@
 									],
 									"path": [
 										"deposit",
+										"get",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Users Withdrawals",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/withdraw/get/all",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"withdraw",
 										"get",
 										"all"
 									]
@@ -2656,7 +2685,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"from_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"amount\": 5,\n    \"signature\": \"0x202604260a00000047000000313639313337373637353045022100b3d98fe940a1246b5373db2d8ea22b78744cb02ba645e2b16af45bedef9e478f02207503a4682e2a61bfb1f1f920c9ed151fc39b2221122bda0cd193c761c4d78dff\",\n    \"iat\": 1691377675\n}",
+									"raw": "{\n    \"recipient_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"from_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"amount\": 5,\n    \"tx_signature\": \"0x20260426e5000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c2266726f6d5f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c22616d6f756e74223a357d30450220685061d8d5abe0a89a6515f592d7c601761755442a8541d21eb7dcb056039092022100f8be0e6d53221fdc140752d9a9d9908a8833ffed0b54142ee5c6bd3b88ca29cf\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2664,12 +2693,49 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/deposit",
+									"raw": "{{panel-user}}/user/deposit",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
+										"user",
 										"deposit"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Withdraw",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"recipient_cid\": \"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16\",\n    \"deposit_id\": 1,\n    \"tx_signature\": \"0x202604267f000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c226465706f7369745f6964223a317d3045022100f2e84fa8e025ae3f9baa0ae1dc72eaa8baa1d51dcc9b0ffb012b768c11892cc20220459d1e2962bae4cf59f3552553a8a5588921229f26bc41c6892176c025b1d7a9\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/withdraw",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"withdraw"
 									]
 								}
 							},
@@ -2697,6 +2763,36 @@
 									],
 									"path": [
 										"deposit",
+										"get",
+										"user",
+										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Withdrawals",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/withdraw/get/user/0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"withdraw",
 										"get",
 										"user",
 										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"

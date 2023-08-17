@@ -2,7 +2,8 @@
 
 
 use crate::*;
-use crate::models::users_deposits::UserDepositData;
+use crate::models::users_deposits::{UserDepositData, DecodedSignedDepositData};
+use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData, DecodedSignedWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
@@ -20,6 +21,7 @@ use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
+use models::users_withdrawals::NewUserWithdrawRequest;
 
 
 
@@ -1061,12 +1063,17 @@ async fn deposit(
                             }
                         };
 
-                        /* decoding the signed message */
-                        let pure_message = std::str::from_utf8(&encoded_data).unwrap();
-                        let pure_data = serde_json::from_slice::<NewUserDepositRequest>(&encoded_data).unwrap();
+                        /* decoding the signed message bytes */
+                        let pure_data = serde_json::from_slice::<DecodedSignedDepositData>(&encoded_data).unwrap();
 
                         /* the decoded data must be equals to the request body */
-                        if pure_data == deposit_object.clone(){
+                        let request_body_data = DecodedSignedDepositData{
+                            from_cid: deposit_object.from_cid,
+                            recipient_cid: deposit_object.recipient_cid,
+                            amount: deposit_object.amount,
+                        };
+
+                        if pure_data == request_body_data.clone(){
 
                             /* 
 
@@ -1081,16 +1088,19 @@ async fn deposit(
                                             ↓↑
                                     exchange charge server paypal with usdt or PYUSD
                                             ↓↑
-                                    minting process using thirdweb on polygon chain (mint an nft to the receiver)
+                                    thridweb minting process on polygon chain (mint an nft to the receiver)
                                             ↓↑
-                                    withdraw process
-                                            ↓↑
-                                    paying out the receiver with the PYUSD from the server paypal
-                                            ↓↑
-                                    show claimed paypal transaction to minter
+                                    withdraw api
                                 -------------------------------------------------------
 
                             */
+
+                            tokio::task::spawn(async move{
+
+                                // run python code to mint the nft using thirdweb api
+                                // ...
+
+                            });
                             
                             let deposit_ir_res = 200;
                             let mint_tx_signature = "tx-mint-hash".to_string();
@@ -1351,6 +1361,473 @@ async fn get_all_user_deposits(
 
 }
 
+#[utoipa::path(
+    context_path = "/user",
+    request_body = NewUserWithdrawRequest,
+    responses(
+        (status=201, description="Withdrawn Successfully", body=UserWithdrawalData),
+        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
+        (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
+        (status=404, description="Deposit Object Not Found", body=i32),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
+        (status=302, description="Already Withdrawn", body=&[u8]),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[post("/withdraw")]
+#[passport(user)]
+async fn withdraw(
+    req: HttpRequest,
+    withdraw: web::Json<NewUserWithdrawRequest>,
+    storage: web::Data<Option<Arc<Storage>>>,
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        let withdraw_object = withdraw.to_owned();
+
+                        /* 
+                            here is the process of verifying the signature of signed data 
+                            using the private key inside js using themis wasm.
+                            we've cloned the tx_signature and hex_pubkey since the PartialEq
+                            trait takes the ownership of the WithdrawRequest instacen
+                            when we want to compare the decoded data with the actual instance
+                            inside the request body
+                        */
+                        let hex_tx_signature = withdraw_object.tx_signature.clone();
+                        let hex_pubkey = withdraw_object.recipient_cid.clone();
+
+                        /* dropping the first 2 bytes or 0x from the hex string */
+                        let tx_signature = &hex_tx_signature[2..];
+                        let pubkey = &hex_pubkey[2..];
+                        
+                        let decode_pubkey = hex::decode(pubkey.to_string());
+                        let decode_signature = hex::decode(tx_signature.to_string());
+
+                        let Ok(pubkey_bytes) = decode_pubkey else{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+
+                        let Ok(signature) = decode_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_DECODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* verifying the data against the generated signature */
+                        let get_encoded_data = Id::verify(
+                            &signature, 
+                            &pubkey_bytes
+                        );
+
+                        let Ok(encoded_data) = get_encoded_data else{
+                            
+                            /* verifying signature or building pubkey error */
+                            let error = get_encoded_data.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_SIGNATUE_OR_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        /* decoding the signed message bytes */
+                        let pure_data = serde_json::from_slice::<DecodedSignedWithdrawalData>(&encoded_data).unwrap();
+
+                        /* the decoded data must be equals to the request body */
+                        let request_body_data = DecodedSignedWithdrawalData{
+                            recipient_cid: withdraw_object.recipient_cid,
+                            deposit_id: withdraw_object.deposit_id
+                        };
+
+                        /* the decoded data must be equals to the request body */
+                        if pure_data == request_body_data.clone(){
+
+                            /*
+     
+                                ----------------- WITHDRAWAL LOGIC --------------------
+                                    withdraw process
+                                            ↓↑
+                                    burn the minted nft id on chain to get the burn tx signature
+                                            ↓↑
+                                    paying out the receiver with the PYUSD from the server paypal
+                                            ↓↑
+                                    show claimed paypal transaction to minter
+                                ------------------------------------------------------- 
+                            
+                            */
+
+                            tokio::task::spawn(async move{
+
+                                // run python code to burn the minted nft using thirdweb api
+                                // ...
+
+                            });
+                            
+                            let payout_pyusd_res = 200;
+                            let burn_tx_signature = "tx-burn-hash".to_string();
+                            if payout_pyusd_res == 200{
+
+                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
+                                    Ok(user_withdrawal_data) => {
+
+                                        resp!{
+                                            UserWithdrawalData, // the data type
+                                            user_withdrawal_data, // response data
+                                            WITHDRAWN_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        }
+
+                                    },
+                                    Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                            - DEPOSIT OBJECT NOT FOUND
+                                            - ALREADY_WITHDRAWN
+                                        */
+                                        resp
+                                    }
+                                }
+                                
+                            } else{
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_DEPOSIT, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
+                        } else{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_DATA, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=201, description="Fetched Successfully", body=Vec<UserWithdrawalData>),
+        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
+    ),
+    params(
+        ("cid" = String, Path, description = "user cid"),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[get("/withdraw/get/user/{cid}")]
+#[passport(user)]
+async fn get_all_user_withdrawals(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    user_cid: web::Path<String>
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                       
+                       let hex_user_cid = &user_cid.to_owned()[2..];
+                       match UserWithdrawal::get_all_for(hex_user_cid.to_string(), connection).await{
+                            Ok(user_withdrawals) => {
+
+                                resp!{
+                                    Vec<UserWithdrawalData>, // the data type
+                                    user_withdrawals, // response data
+                                    FETCHED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+
+
+                            },
+                            Err(resp) => {
+                                /* 
+                                    🥝 response can be one of the following:
+                                    
+                                    - DIESEL INSERT ERROR RESPONSE
+                                */
+                                resp
+                            }
+                       }
+                    
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 
 
 
@@ -1361,5 +1838,7 @@ pub mod exports{
     pub use super::tasks_report;
     pub use super::make_id;
     pub use super::deposit;
+    pub use super::withdraw;
+    pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
 }

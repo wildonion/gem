@@ -8,6 +8,9 @@ pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 
 pub static DEPOSITED_SUCCESSFULLY: &str = "Deposited Successfully";
+pub static DEPOSITED_NOT_FOUND: &str = "Deposited Object Not Found";
+pub static ALREADY_WITHDRAWN: &str = "Already Withdrawn";
+pub static WITHDRAWN_SUCCESSFULLY: &str = "Withdrawn Successfully";
 pub static CANT_DEPOSIT: &str = "Can't Deposit At The Moment, Try Again Later";
 pub static ID_BUILT: &str = "New Conse Id Built Successfully, Save Your `singer` Field Value Some Where Since It Will Be Used To Sign Future Data";
 pub static RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
@@ -16,7 +19,7 @@ pub static SIGNATURE_DECODE_ISSUE: &str = "Can't Decode Signature Hex String";
 pub static INVALID_CID: &str = "Can't Decode Conse Id Hex String";
 pub static INVALID_SIGNATUE_OR_CID: &str = "Invalid Signature Or Conse Id";
 pub static INVALID_DATA: &str = "Invalid Data";
-pub static CID_HAS_NOT_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
+pub static CID_HAS_NO_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
 
 
 pub const DEV_ACCESS: u8 = 0;

@@ -73,6 +73,18 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    users_withdrawals (id) {
+        id -> Int4,
+        deposit_id -> Int4,
+        burn_tx_signature -> Varchar,
+        recipient_cid -> Varchar,
+        is_claimed -> Bool,
+        tx_signature -> Varchar,
+        wat -> Timestamptz,
+    }
+}
+
 diesel::joinable!(tasks -> users (admin_id));
 diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
@@ -82,4 +94,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     users,
     users_deposits,
     users_tasks,
+    users_withdrawals,
 );

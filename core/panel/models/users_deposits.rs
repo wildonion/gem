@@ -40,8 +40,11 @@ pub struct NewUserDeposit{
     pub recipient_cid: String,
     pub amount: i64,
     pub mint_tx_signature: String,
-    pub tx_signature: String, /* this must be generated inside the client by signing the operation using the client private key */
-    pub iat: chrono::NaiveDateTime // deposited at
+    /* 
+        this must be generated inside the client by signing the whole 
+        data body of this struct using the client private key 
+    */
+    pub tx_signature: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
@@ -49,8 +52,17 @@ pub struct NewUserDepositRequest{
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
-    pub tx_signature: String, /* this must be generated inside the client by signing the operation using the client private key */
-    pub iat: chrono::NaiveDateTime // deposited at
+    /* 
+        this must be generated inside the client by signing the whole 
+        data body of this struct using the client private key 
+    */
+    pub tx_signature: String,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+pub struct DecodedSignedDepositData{
+    pub from_cid: String,
+    pub recipient_cid: String,
+    pub amount: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
@@ -74,7 +86,6 @@ impl UserDeposit{
             amount: user_deposit_request.amount,
             mint_tx_signature: succ_mint_tx_signature,
             tx_signature: user_deposit_request.tx_signature,
-            iat: user_deposit_request.iat,
         };
 
         match diesel::insert_into(users_deposits)
@@ -130,7 +141,7 @@ impl UserDeposit{
         let Ok(deposits) = user_deposits else{
             let resp = Response{
                 data: Some(user_cid.clone()),
-                message: CID_HAS_NOT_DEPOSIT_YET,
+                message: CID_HAS_NO_DEPOSIT_YET,
                 status: 404,
             };
             return Err(
@@ -165,7 +176,7 @@ impl UserDeposit{
         let Ok(deposits) = user_deposits else{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: CID_HAS_NOT_DEPOSIT_YET,
+                message: CID_HAS_NO_DEPOSIT_YET,
                 status: 404,
             };
             return Err(

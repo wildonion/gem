@@ -1,11 +1,11 @@
 
 
 ```bash
-npm install
+sudo npm install --force
 ```
 
 Build and open in your browser:
 
 ```
-npm run start
+sudo npm run start
 ```
