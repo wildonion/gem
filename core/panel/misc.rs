@@ -9,6 +9,7 @@ use crate::events::publishers::role::PlayerRoleInfo;
 use actix::Addr;
 
 
+
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AddGroupInfoToEvent{
     pub _id: String, // ObjectId is the bson type of _id inside the mongodb
@@ -201,6 +202,93 @@ pub struct Keys{
 #[derive(Clone, Serialize, Deserialize, ToSchema)]
 pub struct TwitterAccounts{
     pub keys: Vec<Keys>
+}
+
+
+pub fn generate_secp256k1_crypto_keypairs() -> (SecretKey, PublicKey){
+    let secp = secp256k1::Secp256k1::new();
+    secp.generate_keypair(&mut rand::thread_rng())
+}
+
+pub fn generate_ecdsa_keypairs() -> (EcdsaPublicKey, EcdsaPrivateKey){
+    let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
+    let (private, public) = ec_key_pair.clone().split();
+    (public, private)
+}
+
+pub fn public_key_address(public_key: &PublicKey) -> Address{
+    let public_key = public_key.serialize_uncompressed();
+    let hash = keccak256(&public_key[1..]);
+    Address::from_slice(&hash[12..])
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Wallet {
+    pub secret_key: String,
+    pub public_key: String,
+    pub public_address: String,
+}
+
+impl Wallet{
+
+    pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self{
+
+        let addr: Address = public_key_address(&public_key);
+        Wallet{
+            secret_key: hex::encode(secret_key.secret_bytes()),
+            public_key: public_key.to_string(),
+            public_address: addr.to_string()
+        }
+    }
+
+    pub fn save_to_file(&self, file_path: &str) -> Result<(), ()>{
+
+        let file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(file_path)
+            .unwrap(); /* File is a buffer that can be full filled */
+        
+        /* creating a new buffer from the file */
+        let buf_writer = BufWriter::new(file);
+
+        /* full filling the buffer with the json strigified of the self object */
+        serde_json::to_writer_pretty(buf_writer, self).unwrap();
+
+        Ok(())
+
+    }
+
+    pub fn from_file(&self, file_path: &str) -> Result<Wallet, ()>{
+
+        let file = OpenOptions::new()
+            .read(true)
+            .open(file_path)
+            .unwrap();
+        
+        /* reading the full filled bytes of the file and put it into a buffer reader */
+        let buf_reader = BufReader::new(file);
+
+        /* decoding the full filled bytes into the Wallet struct */
+        let wallet: Wallet = serde_json::from_reader(buf_reader).unwrap();
+
+        Ok(wallet)
+
+    }
+
+    pub fn get_public_key(&self) -> Result<PublicKey, secp256k1::Error>{
+
+        let pub_key = PublicKey::from_str(&self.public_key);
+        pub_key
+
+    }
+
+    pub fn verify_signature(&self){
+
+   
+
+    }
+    
 }
 
 #[derive(Clone)] // can't bound Copy trait cause engine and url are String which are heap data structure 

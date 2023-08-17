@@ -820,19 +820,6 @@ async fn make_id(
                         };
 
 
-                        /* ------------------ test retrieving and signing ------------------ */
-                        /* building the keypair from the public and private keys */
-                        let retrieve_keypair = Id::retrieve_keypair(
-                            &new_id.new_cid.as_ref().unwrap(),
-                            &new_id.signer.as_ref().unwrap()
-                        );
-
-
-                        /* signing the data using the private key */
-                        let signed_id_hex_string = new_id.test_sign();
-                        /* ----------------------------------------------------------------- */
-
-
                         /* 
                             saveing the new Id into db, also if we're here means 
                             that we're creating a new Id for the user since on the 
@@ -1077,12 +1064,6 @@ async fn deposit(
 
                             /* 
 
-                                if we have mint_tx_signature means that the whole payment 
-                                process is done successfully, minter paid IR exchange and 
-                                the exchange charged the server paypal with PYUSD, because 
-                                once we received the payapl successful PYUSD payment 
-                                transaction we should mint the NFT on chain.
-
                                 ----------------- PAYMENT/FIAT LOGIC -----------------
                                     IR payment process to charge exchange
                                             ↓↑
@@ -1095,36 +1076,100 @@ async fn deposit(
 
                             */
 
-                            tokio::task::spawn(async move{
-
-                                // run python code to mint the nft using thirdweb api
-                                // ...
-
-                            });
-                            
                             let deposit_ir_res = 200;
-                            let mint_tx_signature = "tx-mint-hash".to_string();
                             if deposit_ir_res == 200{
 
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
-                                    Ok(user_deposit_data) => {
+                                /* 
+                                    if we have mint_tx_signature means that the whole payment 
+                                    process is done successfully, minter paid IR exchange and 
+                                    the exchange charged the server paypal with PYUSD, because 
+                                    once we received the payapl successful PYUSD payment 
+                                    transaction we should mint the NFT on chain.
+                                */
 
-                                        resp!{
-                                            UserDepositData, // the data type
-                                            user_deposit_data, // response data
-                                            DEPOSITED_SUCCESSFULLY, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
+                                let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                                let mut mint_tx_signature = String::from("");
+                                let polygon_recipient_address = "0xDE6D7045Df57346Ec6A70DfE1518Ae7Fe61113f4".to_string();
+                                
+                                /* -------------------------------------------------------------------- */
+                                /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
+                                /* -------------------------------------------------------------------- */
+                                tokio::task::spawn(async move{
+
+                     
+                                       
+                                    // use pyo3::prelude::*;
+                                    // use pyo3::types::{PyList, PyTuple};
+                                    // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
+                                    // let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
+                                    
+                                    // let burn_tx_sig = Python::with_gil(|py| -> String{
+                                        
+                                    //     let syspath: &PyList = py.import("sys")
+                                    //         .unwrap()
+                                    //         .getattr("path")
+                                    //         .unwrap()
+                                    //         .downcast()
+                                    //         .unwrap();
+
+                                    //     syspath.insert(0, &path).unwrap();
+                                        
+                                    //     let args = PyTuple::new(py, &[polygon_recipient_address]);
+                                    //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
+                                    //         .unwrap()
+                                    //         .getattr("mint_nft")
+                                    //         .unwrap()
+                                    //         .call1(args)
+                                    //         .unwrap()
+                                    //         .extract()
+                                    //         .unwrap();
+                                    //     burn_tx_sig
+
+                                    // });
+
+                                    let burn_tx_sig = "".to_string();
+                                    if burn_tx_sig.starts_with("0x"){
+                                        mint_tx_signature_sender.send(burn_tx_sig).await;
+                                    }
+
+    
+                                });
+
+
+                                while let Some(tx_hash) = mint_tx_signature_receiver.recv().await{
+                                    mint_tx_signature = tx_hash;
+                                }
+                                
+                                if !mint_tx_signature.is_empty(){
+                                    match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
+                                        Ok(user_deposit_data) => {
+    
+                                            resp!{
+                                                UserDepositData, // the data type
+                                                user_deposit_data, // response data
+                                                DEPOSITED_SUCCESSFULLY, // response message
+                                                StatusCode::CREATED, // status code
+                                                None::<Cookie<'_>>, // cookie
+                                            }
+    
+                                        },
+                                        Err(resp) => {
+                                            /* 
+                                                🥝 response can be one of the following:
+                                                
+                                                - DIESEL INSERT ERROR RESPONSE
+                                            */
+                                            resp
                                         }
+                                    }
+                                } else{
 
-                                    },
-                                    Err(resp) => {
-                                        /* 
-                                            🥝 response can be one of the following:
-                                            
-                                            - DIESEL INSERT ERROR RESPONSE
-                                        */
-                                        resp
+                                    resp!{
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        CANT_MINT_CARD, // response message
+                                        StatusCode::FAILED_DEPENDENCY, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
                                 }
                                 
@@ -1560,39 +1605,93 @@ async fn withdraw(
                                 ------------------------------------------------------- 
                             
                             */
-
-                            tokio::task::spawn(async move{
-
-                                // run python code to burn the minted nft using thirdweb api
-                                // ...
-
-                            });
                             
                             let payout_pyusd_res = 200;
-                            let burn_tx_signature = "tx-burn-hash".to_string();
                             if payout_pyusd_res == 200{
+                                
+                                let (burn_tx_signature_sender, mut burn_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                                let mut burn_tx_signature = String::from("");
+                                let token_id = "4".to_string();
+                                
+                                /* --------------------------------------------------------------------- */
+                                /* burning nft for the receiver using pyo3 inside tokio greed threadpool */
+                                /* --------------------------------------------------------------------- */
+                                tokio::task::spawn(async move{
 
-                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
-                                    Ok(user_withdrawal_data) => {
+                                    // use pyo3::prelude::*;
+                                    // use pyo3::types::{PyList, PyTuple};
+                                    // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
+                                    // let py_app = std::fs::read_to_string(path.join("burn.py")).unwrap();
+                                    
+                                    // let burn_tx_sig = Python::with_gil(|py| -> String{
+                                        
+                                    //     let syspath: &PyList = py.import("sys")
+                                    //         .unwrap()
+                                    //         .getattr("path")
+                                    //         .unwrap()
+                                    //         .downcast()
+                                    //         .unwrap();
 
-                                        resp!{
-                                            UserWithdrawalData, // the data type
-                                            user_withdrawal_data, // response data
-                                            WITHDRAWN_SUCCESSFULLY, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
+                                    //     syspath.insert(0, &path).unwrap();
+                                        
+                                    //     let args = PyTuple::new(py, &[token_id]);
+                                    //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
+                                    //         .unwrap()
+                                    //         .getattr("burn_nft")
+                                    //         .unwrap()
+                                    //         .call1(args)
+                                    //         .unwrap()
+                                    //         .extract()
+                                    //         .unwrap();
+                                    //     burn_tx_sig
+
+                                    // });
+                                    
+                                    let burn_tx_sig = "".to_string(); 
+                                    if burn_tx_sig.starts_with("0x"){
+                                        burn_tx_signature_sender.send(burn_tx_sig).await;
+                                    }
+
+    
+                                });
+
+
+                                while let Some(tx_hash) = burn_tx_signature_receiver.recv().await{
+                                    burn_tx_signature = tx_hash;
+                                }
+
+                                if !burn_tx_signature.is_empty(){
+                                    match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
+                                        Ok(user_withdrawal_data) => {
+    
+                                            resp!{
+                                                UserWithdrawalData, // the data type
+                                                user_withdrawal_data, // response data
+                                                WITHDRAWN_SUCCESSFULLY, // response message
+                                                StatusCode::CREATED, // status code
+                                                None::<Cookie<'_>>, // cookie
+                                            }
+    
+                                        },
+                                        Err(resp) => {
+                                            /* 
+                                                🥝 response can be one of the following:
+                                                
+                                                - DIESEL INSERT ERROR RESPONSE
+                                                - DEPOSIT OBJECT NOT FOUND
+                                                - ALREADY_WITHDRAWN
+                                            */
+                                            resp
                                         }
+                                    }
+                                } else{
 
-                                    },
-                                    Err(resp) => {
-                                        /* 
-                                            🥝 response can be one of the following:
-                                            
-                                            - DIESEL INSERT ERROR RESPONSE
-                                            - DEPOSIT OBJECT NOT FOUND
-                                            - ALREADY_WITHDRAWN
-                                        */
-                                        resp
+                                    resp!{
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        CANT_BURN_CARD, // response message
+                                        StatusCode::EXPECTATION_FAILED, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
                                 }
                                 

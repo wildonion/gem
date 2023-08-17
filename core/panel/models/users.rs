@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
+use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number, Wallet, generate_ecdsa_keypairs, generate_secp256k1_crypto_keypairs};
 use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -1502,10 +1502,13 @@ impl Id{
             _ => {
 
                 /* ECDSA keypair */
-                let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-                let (private, public) = ec_key_pair.clone().split();
-                let new_cid = Some(hex::encode(public.as_ref()));
-                let signer = Some(hex::encode(private.as_ref()));
+                let (ecdsa_pubk, ecdsa_prvk) = generate_ecdsa_keypairs();
+                let hex_pub = Some(hex::encode(ecdsa_pubk.as_ref()));
+                let hex_prv = Some(hex::encode(ecdsa_prvk.as_ref()));
+
+                /* SECP256k1 keypair (compatible with all evm based chains) */
+                let (prvk, pubk) = generate_secp256k1_crypto_keypairs();
+                let wallet = Wallet::new(&prvk, &pubk);
 
                 /* generating snowflake id */
                 let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
@@ -1525,8 +1528,8 @@ impl Id{
                         device_id: id_.device_id, 
                         social_id: id_.social_id, 
                         new_snowflake_id,
-                        new_cid: Some(format!("0x{}", new_cid.unwrap())),
-                        signer: Some(format!("0x{}", signer.unwrap()))
+                        new_cid: Some(wallet.public_address), /* SECP256k1 */
+                        signer: Some(wallet.secret_key) /* SECP256k1 */
                     }
                 )
 
@@ -1535,7 +1538,7 @@ impl Id{
 
     }
 
-    pub fn retrieve_keypair(hex_pubkey: &str, hex_prvkey: &str) -> themis::keys::KeyPair{
+    pub fn retrieve_ecdsa_keypair(hex_pubkey: &str, hex_prvkey: &str) -> themis::keys::KeyPair{
 
         /* building ECDSA keypair from pubkey and prvkey slices */
         let pubkey_bytes = hex::decode(hex_pubkey).unwrap();
@@ -1547,7 +1550,7 @@ impl Id{
 
     }
 
-    pub fn test_sign(&mut self) -> Option<String>{
+    pub fn test_ecdsa_sign(&mut self) -> Option<String>{
 
         /* building the signer from the private key */
         let prvkey_bytes = hex::decode(self.signer.as_ref().unwrap()).unwrap();
@@ -1611,7 +1614,6 @@ impl Id{
             );  
         };
 
-        let hex_cid = Some(format!("0x{}", self.new_cid.clone().unwrap()));
         match diesel::update(users.find(self.user_id))
             .set(
         (   
@@ -1627,7 +1629,7 @@ impl Id{
                     account_number.eq(self.account_number.clone()),
                     device_id.eq(self.device_id.clone()),
                     social_id.eq(self.social_id.clone()),
-                    cid.eq(hex_cid),
+                    cid.eq(self.new_cid.clone().unwrap()),
                     snowflake_id.eq(self.new_snowflake_id),
                 )
             )

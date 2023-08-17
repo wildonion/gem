@@ -107,7 +107,9 @@ impl PanelError{
         /* writing to buffer */
         let mut buffer = Vec::new(); 
         let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
-
+        /* OR */
+        // serde_json::to_writer_pretty(buffer, &error_log_content);
+        
         /* writing to file */
         let filepath = format!("logs/error-kind/panel-error.log");
         let mut panel_error_log;
@@ -151,6 +153,8 @@ impl PanelError{
         /* writing to buffer */
         let mut buffer = Vec::new(); 
         let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
+        /* OR */
+        // serde_json::to_writer_pretty(buffer, &error_log_content);
 
         /* writing to file */
         let filepath = format!("logs/error-kind/panel-error.log");
