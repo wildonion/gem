@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number, Wallet, generate_ecdsa_keypairs, generate_secp256k1_crypto_keypairs};
+use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number, Wallet};
 use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -36,6 +36,7 @@ pub struct User{
     pub device_id: Option<String>, /* unique */
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
     pub stars: Option<i64>,
     pub user_role: UserRole,
@@ -63,6 +64,7 @@ pub struct FetchUser{
     pub device_id: Option<String>, /* unique */
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
     pub stars: Option<i64>,
     pub user_role: UserRole,
@@ -88,6 +90,7 @@ pub struct UserData{
     pub device_id: Option<String>, /* unique */
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* unique */
     pub snowflake_id: Option<i64>, /* unique */
     pub stars: Option<i64>,
     pub user_role: String,
@@ -113,6 +116,7 @@ pub struct UserIdResponse{
     pub device_id: Option<String>, /* unique */
     pub social_id: Option<String>, /* unique */
     pub cid: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* keccak256 */
     pub snowflake_id: Option<i64>, /* unique */
     pub stars: Option<i64>,
     pub signer: Option<String>,
@@ -146,6 +150,7 @@ pub struct Id{
     pub username: String,
     pub new_snowflake_id: Option<i64>,
     pub new_cid: Option<String>, /* pubkey */
+    pub screen_cid: Option<String>, /* keccak256 */
     pub signer: Option<String>, /* prvkey */
 }
 
@@ -729,6 +734,7 @@ impl User{
                         device_id: fetched_user.clone().device_id,
                         social_id: fetched_user.clone().social_id,
                         cid: fetched_user.clone().cid,
+                        screen_cid: fetched_user.clone().screen_cid,
                         snowflake_id: fetched_user.snowflake_id,
                         stars: fetched_user.stars
                     };
@@ -843,6 +849,7 @@ impl User{
                         device_id: fetched_user.clone().device_id,
                         social_id: fetched_user.clone().social_id,
                         cid: fetched_user.clone().cid,
+                        screen_cid: fetched_user.clone().screen_cid,
                         snowflake_id: fetched_user.snowflake_id,
                         stars: fetched_user.stars
                     };
@@ -1049,12 +1056,12 @@ impl User{
                     Ok(
                         UserData { 
                             id: updated_user.id, 
-                            username: updated_user.username, 
-                            activity_code: updated_user.activity_code, 
-                            twitter_username: updated_user.twitter_username, 
-                            facebook_username: updated_user.facebook_username, 
-                            discord_username: updated_user.discord_username, 
-                            identifier: updated_user.identifier, 
+                            username: updated_user.clone().username, 
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
                             user_role: {
                                 match updated_user.user_role.clone(){
                                     UserRole::Admin => "Admin".to_string(),
@@ -1072,13 +1079,14 @@ impl User{
                             },
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
-                            gmail: updated_user.gmail,
-                            phone_number: updated_user.phone_number,
-                            paypal_id: updated_user.paypal_id,
-                            account_number: updated_user.account_number,
-                            device_id: updated_user.device_id,
-                            social_id: updated_user.social_id,
-                            cid: updated_user.cid,
+                            gmail: updated_user.clone().gmail,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
                             stars: updated_user.stars
                         }
@@ -1175,12 +1183,12 @@ impl User{
                         .into_iter()
                         .map(|u| UserData { 
                             id: u.id, 
-                            username: u.username, 
-                            activity_code: u.activity_code, 
-                            twitter_username: u.twitter_username, 
-                            facebook_username: u.facebook_username, 
-                            discord_username: u.discord_username, 
-                            identifier: u.identifier, 
+                            username: u.clone().username, 
+                            activity_code: u.clone().activity_code, 
+                            twitter_username: u.clone().twitter_username, 
+                            facebook_username: u.clone().facebook_username, 
+                            discord_username: u.clone().discord_username, 
+                            identifier: u.clone().identifier, 
                             user_role: {
                                 match u.user_role.clone(){
                                     UserRole::Admin => "Admin".to_string(),
@@ -1198,13 +1206,14 @@ impl User{
                             },
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
-                            gmail: u.gmail,
-                            phone_number: u.phone_number,
-                            paypal_id: u.paypal_id,
-                            account_number: u.account_number,
-                            device_id: u.device_id,
-                            social_id: u.social_id,
-                            cid: u.cid,
+                            gmail: u.clone().gmail,
+                            phone_number: u.clone().phone_number,
+                            paypal_id: u.clone().paypal_id,
+                            account_number: u.clone().account_number,
+                            device_id: u.clone().device_id,
+                            social_id: u.clone().social_id,
+                            cid: u.clone().cid,
+                            screen_cid: u.clone().screen_cid,
                             snowflake_id: u.snowflake_id,
                             stars: u.stars
                         })
@@ -1313,12 +1322,12 @@ impl User{
                             Ok(
                                 UserData { 
                                     id: updated_user.id, 
-                                    username: updated_user.username, 
-                                    activity_code: updated_user.activity_code, 
-                                    twitter_username: updated_user.twitter_username, 
-                                    facebook_username: updated_user.facebook_username, 
-                                    discord_username: updated_user.discord_username, 
-                                    identifier: updated_user.identifier, 
+                                    username: updated_user.clone().username, 
+                                    activity_code: updated_user.clone().activity_code, 
+                                    twitter_username: updated_user.clone().twitter_username, 
+                                    facebook_username: updated_user.clone().facebook_username, 
+                                    discord_username: updated_user.clone().discord_username, 
+                                    identifier: updated_user.clone().identifier, 
                                     user_role: {
                                         match updated_user.user_role.clone(){
                                             UserRole::Admin => "Admin".to_string(),
@@ -1336,13 +1345,14 @@ impl User{
                                     },
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
-                                    gmail: updated_user.gmail,
-                                    phone_number: updated_user.phone_number,
-                                    paypal_id: updated_user.paypal_id,
-                                    account_number: updated_user.account_number,
-                                    device_id: updated_user.device_id,
-                                    social_id: updated_user.social_id,
-                                    cid: updated_user.cid,
+                                    gmail: updated_user.clone().gmail,
+                                    phone_number: updated_user.clone().phone_number,
+                                    paypal_id: updated_user.clone().paypal_id,
+                                    account_number: updated_user.clone().account_number,
+                                    device_id: updated_user.clone().device_id,
+                                    social_id: updated_user.clone().social_id,
+                                    cid: updated_user.clone().cid,
+                                    screen_cid: updated_user.clone().screen_cid,
                                     snowflake_id: updated_user.snowflake_id,
                                     stars: updated_user.stars
                                 }
@@ -1431,12 +1441,12 @@ impl Id{
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
-                                username: updated_user.username, 
-                                activity_code: updated_user.activity_code, 
-                                twitter_username: updated_user.twitter_username, 
-                                facebook_username: updated_user.facebook_username, 
-                                discord_username: updated_user.discord_username, 
-                                identifier: updated_user.identifier, 
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
                                 user_role: {
                                     match updated_user.user_role.clone(){
                                         UserRole::Admin => "Admin".to_string(),
@@ -1454,13 +1464,14 @@ impl Id{
                                 },
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
-                                gmail: updated_user.gmail,
-                                phone_number: updated_user.phone_number,
-                                paypal_id: updated_user.paypal_id,
-                                account_number: updated_user.account_number,
-                                device_id: updated_user.device_id,
-                                social_id: updated_user.social_id,
-                                cid: updated_user.cid,
+                                gmail: updated_user.clone().gmail,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
                                 stars: updated_user.stars
                             };
@@ -1501,14 +1512,9 @@ impl Id{
             },
             _ => {
 
-                /* ECDSA keypair */
-                let (ecdsa_pubk, ecdsa_prvk) = generate_ecdsa_keypairs();
-                let hex_pub = Some(hex::encode(ecdsa_pubk.as_ref()));
-                let hex_prv = Some(hex::encode(ecdsa_prvk.as_ref()));
+                /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
+                let wallet = Wallet::new_secp256k1();
 
-                /* SECP256k1 keypair (compatible with all evm based chains) */
-                let (prvk, pubk) = generate_secp256k1_crypto_keypairs();
-                let wallet = Wallet::new(&prvk, &pubk);
 
                 /* generating snowflake id */
                 let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
@@ -1528,75 +1534,14 @@ impl Id{
                         device_id: id_.device_id, 
                         social_id: id_.social_id, 
                         new_snowflake_id,
-                        new_cid: Some(wallet.public_address), /* SECP256k1 */
-                        signer: Some(wallet.secret_key) /* SECP256k1 */
+                        new_cid: wallet.secp256k1_public_key, /* secp256k1 */
+                        screen_cid: wallet.secp256k1_public_address, /* secp256k1 */
+                        signer: wallet.secp256k1_secret_key /* secp256k1 */
                     }
                 )
 
             }
         } 
-
-    }
-
-    pub fn retrieve_ecdsa_keypair(hex_pubkey: &str, hex_prvkey: &str) -> themis::keys::KeyPair{
-
-        /* building ECDSA keypair from pubkey and prvkey slices */
-        let pubkey_bytes = hex::decode(hex_pubkey).unwrap();
-        let prvkey_bytes = hex::decode(hex_prvkey).unwrap();
-        let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
-        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
-        let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
-        generated_ec_keypair
-
-    }
-
-    pub fn test_ecdsa_sign(&mut self) -> Option<String>{
-
-        /* building the signer from the private key */
-        let prvkey_bytes = hex::decode(self.signer.as_ref().unwrap()).unwrap();
-        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
-        let ec_signer = SecureSign::new(ec_prvkey.clone());
-
-        /* stringifying the object_id instance to generate the signature */
-        let json_input = serde_json::json!({
-            "gmail": self.user_gmail,
-            "phone_number": self.user_phone_number,
-            "user_id": self.user_id,
-            "paypal_id": self.paypal_id,
-            "account_number": self.account_number,
-            "social_id": self.social_id,
-            "username": self.username,
-            "new_snowflake_id": self.new_snowflake_id,
-            "device_id": self.device_id.clone(),
-            "new_cid": self.new_cid.as_ref().unwrap(), /* unwrap() takes the ownership of self thus we've used as_ref() to prevent from moving */
-        });
-        
-        /* json stringifying the json_input value */
-        let inputs_to_sign = serde_json::to_string(&json_input).unwrap(); 
-    
-        /* generating signature from the input data */
-        let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
-        
-        /* converting the signature byte into hex string */
-        Some(hex::encode(&ec_sig))
-
-    }
-
-    pub fn verify(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
-
-        /* building the public key from public key bytes */
-        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
-            let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
-            return Err(err); /* can't build pubkey from the passed in slice */
-        };
-
-        /* building the verifier from the public key */
-        let ec_verifier = SecureVerify::new(ec_pubkey.clone());
-
-        /* verifying the signature byte which returns the data itself in form of utf8 bytes */
-        let encoded_data = ec_verifier.verify(signature);
-
-        encoded_data
 
     }
 
@@ -1630,6 +1575,7 @@ impl Id{
                     device_id.eq(self.device_id.clone()),
                     social_id.eq(self.social_id.clone()),
                     cid.eq(self.new_cid.clone().unwrap()),
+                    screen_cid.eq(self.screen_cid.clone().unwrap()),
                     snowflake_id.eq(self.new_snowflake_id),
                 )
             )
@@ -1669,6 +1615,7 @@ impl Id{
                             device_id: updated_user.device_id,
                             social_id: updated_user.social_id,
                             cid: updated_user.cid,
+                            screen_cid: self.screen_cid.clone(),
                             signer: self.signer.clone(),
                             snowflake_id: updated_user.snowflake_id,
                             stars: updated_user.stars

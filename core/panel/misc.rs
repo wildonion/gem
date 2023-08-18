@@ -3,6 +3,8 @@
 
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
+use secp256k1::ecdsa::Signature;
+use secp256k1::{Secp256k1, All};
 use crate::*;
 use crate::constants::CHARSET;
 use crate::events::publishers::role::PlayerRoleInfo;
@@ -205,87 +207,141 @@ pub struct TwitterAccounts{
 }
 
 
-pub fn generate_secp256k1_crypto_keypairs() -> (SecretKey, PublicKey){
-    let secp = secp256k1::Secp256k1::new();
-    secp.generate_keypair(&mut rand::thread_rng())
-}
-
-pub fn generate_ecdsa_keypairs() -> (EcdsaPublicKey, EcdsaPrivateKey){
-    let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-    let (private, public) = ec_key_pair.clone().split();
-    (public, private)
-}
-
-pub fn public_key_address(public_key: &PublicKey) -> Address{
-    let public_key = public_key.serialize_uncompressed();
-    let hash = keccak256(&public_key[1..]);
-    Address::from_slice(&hash[12..])
-}
-
+// https://thalesdocs.com/gphsm/luna/7/docs/network/Content/sdk/using/ecc_curve_cross-reference.htm
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Wallet {
-    pub secret_key: String,
-    pub public_key: String,
-    pub public_address: String,
+    pub secp256k1_secret_key: Option<String>,
+    pub secp256k1_public_key: Option<String>,
+    pub secp256k1_public_address: Option<String>,
+    pub secp256r1_secret_key: Option<String>,
+    pub secp256r1_public_key: Option<String>
 }
 
 impl Wallet{
 
-    pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self{
+    pub fn generate_keccak256_from(pubk: String) -> String{
 
-        let addr: Address = public_key_address(&public_key);
+        let pubk = PublicKey::from_str(&pubk).unwrap();
+        let public_key = pubk.serialize_uncompressed();
+        let hash = keccak256(&public_key[1..]);
+        let addr: Address = Address::from_slice(&hash[12..]);
+        let addr_bytes = addr.as_bytes();
+        let addr_string = format!("0x{}", hex::encode(&addr_bytes));
+        addr_string
+
+    }
+
+    pub fn new_secp256k1() -> Self{
+
+        let secp = secp256k1::Secp256k1::new();
+        let rng = &mut rand::thread_rng();
+        let (prvk, pubk) = secp.generate_keypair(rng);
+        let prv_str = prvk.display_secret().to_string();
+
         Wallet{
-            secret_key: hex::encode(secret_key.secret_bytes()),
-            public_key: public_key.to_string(),
-            public_address: addr.to_string()
+            secp256k1_secret_key: Some(prv_str),
+            secp256k1_public_key: Some(pubk.to_string()),
+            secp256k1_public_address: Some(Self::generate_keccak256_from(pubk.to_string())),
+            secp256r1_public_key: None,
+            secp256r1_secret_key: None,
         }
     }
 
-    pub fn save_to_file(&self, file_path: &str) -> Result<(), ()>{
+    pub fn new_secp256r1() -> Self{
 
-        let file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(file_path)
-            .unwrap(); /* File is a buffer that can be full filled */
+        /* ECDSA keypairs */
+        let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
+        let (private, public) = ec_key_pair.clone().split();
+        let hex_pub = Some(hex::encode(public.as_ref()));
+        let hex_prv = Some(hex::encode(private.as_ref()));
+
+        Wallet { 
+            secp256k1_secret_key: None, 
+            secp256k1_public_key: None, 
+            secp256k1_public_address: None, 
+            secp256r1_secret_key: hex_prv, 
+            secp256r1_public_key: hex_pub
+        }
+
+    }
+
+    pub fn verify_secp256k1_signature(data: String, sig: Signature, pk: PublicKey) -> Result<(), secp256k1::Error>{
+
+        let data_bytes = data.as_bytes();
+        let hashed_data = Message::from_hashed_data::<sha256::Hash>(data_bytes);
+            
+        /* message is an sha256 bits hashed data */
+        let secp = Secp256k1::verification_only();
+        secp.verify_ecdsa(&hashed_data, &sig, &pk)
+
+    }
+
+    pub fn retrieve_secp256k1_keypair(secret_key: &[u8], public_key: &[u8]) -> (PublicKey, SecretKey){
+
+        let secp = Secp256k1::new();
+        let secret_key = SecretKey::from_slice(secret_key).unwrap();
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+
+        (public_key, secret_key)
+    }
+
+    pub fn secp256k1_sign(signer: String, data: String) -> Signature{
+
+        let secret_key = SecretKey::from_str(&signer).unwrap();
+        let data_bytes = data.as_bytes();
+        let hashed_data = Message::from_hashed_data::<sha256::Hash>(data_bytes);
         
-        /* creating a new buffer from the file */
-        let buf_writer = BufWriter::new(file);
-
-        /* full filling the buffer with the json strigified of the self object */
-        serde_json::to_writer_pretty(buf_writer, self).unwrap();
-
-        Ok(())
+        /* message is an sha256 bits hashed data */
+        let secp = Secp256k1::new();
+        secp.sign_ecdsa(&hashed_data, &secret_key)
 
     }
 
-    pub fn from_file(&self, file_path: &str) -> Result<Wallet, ()>{
+    pub fn retrieve_secp256r1_keypair(hex_pubkey: &str, hex_prvkey: &str) -> themis::keys::KeyPair{
 
-        let file = OpenOptions::new()
-            .read(true)
-            .open(file_path)
-            .unwrap();
+        /* building ECDSA keypair from pubkey and prvkey slices */
+        let pubkey_bytes = hex::decode(hex_pubkey).unwrap();
+        let prvkey_bytes = hex::decode(hex_prvkey).unwrap();
+        let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
+        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
+        let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
+        generated_ec_keypair
+
+    }
+
+    pub fn secp256r1_sign(signer: String, data: String) -> Option<String>{
+
+        /* building the signer from the private key */
+        let prvkey_bytes = hex::decode(signer).unwrap();
+        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
+        let ec_signer = SecureSign::new(ec_prvkey.clone());
         
-        /* reading the full filled bytes of the file and put it into a buffer reader */
-        let buf_reader = BufReader::new(file);
-
-        /* decoding the full filled bytes into the Wallet struct */
-        let wallet: Wallet = serde_json::from_reader(buf_reader).unwrap();
-
-        Ok(wallet)
-
-    }
-
-    pub fn get_public_key(&self) -> Result<PublicKey, secp256k1::Error>{
-
-        let pub_key = PublicKey::from_str(&self.public_key);
-        pub_key
+        /* json stringifying the json_input value */
+        let inputs_to_sign = serde_json::to_string(&data).unwrap(); 
+    
+        /* generating signature from the input data */
+        let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
+        
+        /* converting the signature byte into hex string */
+        Some(hex::encode(&ec_sig))
 
     }
 
-    pub fn verify_signature(&self){
+    pub fn verify_secp256r1_signature(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
 
-   
+        /* building the public key from public key bytes */
+        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
+            let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
+            return Err(err); /* can't build pubkey from the passed in slice */
+        };
+
+        /* building the verifier from the public key */
+        let ec_verifier = SecureVerify::new(ec_pubkey.clone());
+
+        /* verifying the signature byte which returns the data itself in form of utf8 bytes */
+        let encoded_data = ec_verifier.verify(signature);
+
+        encoded_data
 
     }
     

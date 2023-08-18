@@ -214,7 +214,7 @@ async fn check_token(
                             .filter(id.eq(_id))
                             .select((id, username, activity_code, twitter_username, 
                                     facebook_username, discord_username, account_number,
-                                    identifier, gmail, phone_number, paypal_id,
+                                    identifier, gmail, phone_number, paypal_id, screen_cid,
                                     device_id, social_id, cid, snowflake_id, stars, user_role, 
                                     token_time, last_login, created_at, updated_at))
                             .first::<FetchUser>(connection);
@@ -262,6 +262,7 @@ async fn check_token(
                             device_id: user.device_id,
                             social_id: user.social_id,
                             cid: user.cid,
+                            screen_cid: user.screen_cid,
                             snowflake_id: user.snowflake_id,
                             stars: user.stars
                         };

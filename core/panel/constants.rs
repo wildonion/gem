@@ -17,10 +17,8 @@ pub static CANT_DEPOSIT: &str = "Can't Deposit At The Moment, Try Again Later";
 pub static ID_BUILT: &str = "New Conse Id Built Successfully, Remember To Save Your `singer` Field Value";
 pub static RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
-pub static SIGNATURE_DECODE_ISSUE: &str = "Can't Decode Signature Hex String";
-pub static INVALID_CID: &str = "Can't Decode Conse Id Hex String";
-pub static INVALID_SIGNATUE_OR_CID: &str = "Invalid Signature Or Conse Id";
-pub static INVALID_DATA: &str = "Invalid Data";
+pub static SIGNATURE_ENCODE_ISSUE: &str = "Can't Encode Signature From String";
+pub static INVALID_CID: &str = "Can't Encode Conse Id From String";
 pub static CID_HAS_NO_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
 
 

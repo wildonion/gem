@@ -42,6 +42,7 @@ diesel::table! {
         device_id -> Nullable<Varchar>,
         social_id -> Nullable<Varchar>,
         cid -> Nullable<Varchar>,
+        screen_cid -> Nullable<Varchar>,
         snowflake_id -> Nullable<Int8>,
         stars -> Nullable<Int8>,
         user_role -> Userrole,

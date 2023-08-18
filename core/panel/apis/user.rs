@@ -12,7 +12,8 @@ use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
-use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
+use futures_util::TryStreamExt;
+use secp256k1::ecdsa::Signature; /* TryStreamExt can be used to call try_next() on future object */
 use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
@@ -156,6 +157,7 @@ async fn login(
                         device_id: user.device_id,
                         social_id: user.social_id,
                         cid: user.cid,
+                        screen_cid: user.screen_cid,
                         snowflake_id: user.snowflake_id,
                         stars: user.stars
                     };
@@ -316,6 +318,7 @@ async fn login_with_identifier_and_password(
                         device_id: user.device_id,
                         social_id: user.social_id,
                         cid: user.cid,
+                        screen_cid: user.screen_cid,
                         snowflake_id: user.snowflake_id,
                         stars: user.stars
                     };
@@ -989,25 +992,11 @@ async fn deposit(
 
                         let deposit_object = deposit.to_owned();
 
-                        /* 
-                            here is the process of verifying the signature of signed data 
-                            using the private key inside js using themis wasm.
-                            we've cloned the tx_signature and hex_pubkey since the PartialEq
-                            trait takes the ownership of the WithdrawRequest instacen
-                            when we want to compare the decoded data with the actual instance
-                            inside the request body
-                        */
-                        let hex_tx_signature = deposit_object.tx_signature.clone();
-                        let hex_pubkey = deposit_object.from_cid.clone();
-
-                        /* dropping the first 2 bytes or 0x from the hex string */
-                        let tx_signature = &hex_tx_signature[2..];
-                        let pubkey = &hex_pubkey[2..];
+                        let get_secp256k1_pubkey = PublicKey::from_str(&deposit_object.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&deposit_object.tx_signature);
                         
-                        let decode_pubkey = hex::decode(pubkey.to_string());
-                        let decode_signature = hex::decode(tx_signature.to_string());
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
 
-                        let Ok(pubkey_bytes) = decode_pubkey else{
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
@@ -1018,177 +1007,165 @@ async fn deposit(
 
                         };
 
-
-                        let Ok(signature) = decode_signature else{
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
 
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                SIGNATURE_DECODE_ISSUE, // response message
+                                SIGNATURE_ENCODE_ISSUE, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
 
                         };
+
+                        let strigified_deposit_data = serde_json::json!({
+                            "recipient_cid": deposit_object.recipient_cid,
+                            "from_cid": deposit_object.from_cid,
+                            "amount": deposit_object.amount
+                        });
 
                         /* verifying the data against the generated signature */
-                        let get_encoded_data = Id::verify(
-                            &signature, 
-                            &pubkey_bytes
+                        let get_verification = Wallet::verify_secp256k1_signature(
+                            strigified_deposit_data.to_string(),
+                            secp256k1_signature, 
+                            secp256k1_pubkey
                         );
 
-                        let Ok(encoded_data) = get_encoded_data else{
-                            
-                            /* verifying signature or building pubkey error */
-                            let error = get_encoded_data.unwrap_err();
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                INVALID_SIGNATUE_OR_CID, // response message
+                                &verification_error.to_string(), // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
+
                         };
 
-                        /* decoding the signed message bytes */
-                        let pure_data = serde_json::from_slice::<DecodedSignedDepositData>(&encoded_data).unwrap();
 
-                        /* the decoded data must be equals to the request body */
-                        let request_body_data = DecodedSignedDepositData{
-                            from_cid: deposit_object.from_cid,
-                            recipient_cid: deposit_object.recipient_cid,
-                            amount: deposit_object.amount,
-                        };
+                        /* 
 
-                        if pure_data == request_body_data.clone(){
+                            ----------------- PAYMENT/FIAT LOGIC -----------------
+                                IR payment process to charge exchange
+                                        ↓↑
+                                exchange charge server paypal with usdt or PYUSD
+                                        ↓↑
+                                thridweb minting process on polygon chain (mint an nft to the receiver)
+                                        ↓↑
+                                withdraw api
+                            -------------------------------------------------------
+
+                        */
+
+                        let deposit_ir_res = 200;
+                        if deposit_ir_res == 200{
 
                             /* 
-
-                                ----------------- PAYMENT/FIAT LOGIC -----------------
-                                    IR payment process to charge exchange
-                                            ↓↑
-                                    exchange charge server paypal with usdt or PYUSD
-                                            ↓↑
-                                    thridweb minting process on polygon chain (mint an nft to the receiver)
-                                            ↓↑
-                                    withdraw api
-                                -------------------------------------------------------
-
+                                if we have mint_tx_signature means that the whole payment 
+                                process is done successfully, minter paid IR exchange and 
+                                the exchange charged the server paypal with PYUSD, because 
+                                once we received the payapl successful PYUSD payment 
+                                transaction we should mint the NFT on chain.
                             */
 
-                            let deposit_ir_res = 200;
-                            if deposit_ir_res == 200{
+                            let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                            let mut mint_tx_signature = String::from("");
 
-                                /* 
-                                    if we have mint_tx_signature means that the whole payment 
-                                    process is done successfully, minter paid IR exchange and 
-                                    the exchange charged the server paypal with PYUSD, because 
-                                    once we received the payapl successful PYUSD payment 
-                                    transaction we should mint the NFT on chain.
-                                */
+                            /* generate keccak256 from recipient_cid to mint nft to */
+                            let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_cid);
+                            
+                            /* -------------------------------------------------------------------- */
+                            /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
+                            /* -------------------------------------------------------------------- */
+                            tokio::task::spawn(async move{
 
-                                let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
-                                let mut mint_tx_signature = String::from("");
-                                let polygon_recipient_address = "0xDE6D7045Df57346Ec6A70DfE1518Ae7Fe61113f4".to_string();
-                                
-                                /* -------------------------------------------------------------------- */
-                                /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
-                                /* -------------------------------------------------------------------- */
-                                tokio::task::spawn(async move{
-
-                     
-                                       
-                                    // use pyo3::prelude::*;
-                                    // use pyo3::types::{PyList, PyTuple};
-                                    // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
-                                    // let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
+                    
                                     
-                                    // let burn_tx_sig = Python::with_gil(|py| -> String{
-                                        
-                                    //     let syspath: &PyList = py.import("sys")
-                                    //         .unwrap()
-                                    //         .getattr("path")
-                                    //         .unwrap()
-                                    //         .downcast()
-                                    //         .unwrap();
-
-                                    //     syspath.insert(0, &path).unwrap();
-                                        
-                                    //     let args = PyTuple::new(py, &[polygon_recipient_address]);
-                                    //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
-                                    //         .unwrap()
-                                    //         .getattr("mint_nft")
-                                    //         .unwrap()
-                                    //         .call1(args)
-                                    //         .unwrap()
-                                    //         .extract()
-                                    //         .unwrap();
-                                    //     burn_tx_sig
-
-                                    // });
-
-                                    let burn_tx_sig = "".to_string();
-                                    if burn_tx_sig.starts_with("0x"){
-                                        mint_tx_signature_sender.send(burn_tx_sig).await;
-                                    }
-
-    
-                                });
-
-
-                                while let Some(tx_hash) = mint_tx_signature_receiver.recv().await{
-                                    mint_tx_signature = tx_hash;
-                                }
+                                // use pyo3::prelude::*;
+                                // use pyo3::types::{PyList, PyTuple};
+                                // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
+                                // let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
                                 
-                                if !mint_tx_signature.is_empty(){
-                                    match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
-                                        Ok(user_deposit_data) => {
-    
-                                            resp!{
-                                                UserDepositData, // the data type
-                                                user_deposit_data, // response data
-                                                DEPOSITED_SUCCESSFULLY, // response message
-                                                StatusCode::CREATED, // status code
-                                                None::<Cookie<'_>>, // cookie
-                                            }
-    
-                                        },
-                                        Err(resp) => {
-                                            /* 
-                                                🥝 response can be one of the following:
-                                                
-                                                - DIESEL INSERT ERROR RESPONSE
-                                            */
-                                            resp
+                                // let burn_tx_sig = Python::with_gil(|py| -> String{
+                                    
+                                //     let syspath: &PyList = py.import("sys")
+                                //         .unwrap()
+                                //         .getattr("path")
+                                //         .unwrap()
+                                //         .downcast()
+                                //         .unwrap();
+
+                                //     syspath.insert(0, &path).unwrap();
+                                    
+                                //     let args = PyTuple::new(py, &[polygon_recipient_address]);
+                                //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
+                                //         .unwrap()
+                                //         .getattr("mint_nft")
+                                //         .unwrap()
+                                //         .call1(args)
+                                //         .unwrap()
+                                //         .extract()
+                                //         .unwrap();
+                                //     burn_tx_sig
+
+                                // });
+
+                                let burn_tx_sig = "".to_string();
+                                if burn_tx_sig.starts_with("0x"){
+                                    mint_tx_signature_sender.send(burn_tx_sig).await;
+                                }
+
+
+                            });
+
+
+                            while let Some(tx_hash) = mint_tx_signature_receiver.recv().await{
+                                mint_tx_signature = tx_hash;
+                            }
+                            
+                            if !mint_tx_signature.is_empty(){
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
+                                    Ok(user_deposit_data) => {
+
+                                        resp!{
+                                            UserDepositData, // the data type
+                                            user_deposit_data, // response data
+                                            DEPOSITED_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
-                                    }
-                                } else{
 
-                                    resp!{
-                                        &[u8], // the data type
-                                        &[], // response data
-                                        CANT_MINT_CARD, // response message
-                                        StatusCode::FAILED_DEPENDENCY, // status code
-                                        None::<Cookie<'_>>, // cookie
+                                    },
+                                    Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                        */
+                                        resp
                                     }
                                 }
-                                
                             } else{
+
                                 resp!{
                                     &[u8], // the data type
                                     &[], // response data
-                                    CANT_DEPOSIT, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    CANT_MINT_CARD, // response message
+                                    StatusCode::FAILED_DEPENDENCY, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
                             }
-
+                            
                         } else{
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                INVALID_DATA, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
+                                CANT_DEPOSIT, // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }
@@ -1519,25 +1496,11 @@ async fn withdraw(
 
                         let withdraw_object = withdraw.to_owned();
 
-                        /* 
-                            here is the process of verifying the signature of signed data 
-                            using the private key inside js using themis wasm.
-                            we've cloned the tx_signature and hex_pubkey since the PartialEq
-                            trait takes the ownership of the WithdrawRequest instacen
-                            when we want to compare the decoded data with the actual instance
-                            inside the request body
-                        */
-                        let hex_tx_signature = withdraw_object.tx_signature.clone();
-                        let hex_pubkey = withdraw_object.recipient_cid.clone();
-
-                        /* dropping the first 2 bytes or 0x from the hex string */
-                        let tx_signature = &hex_tx_signature[2..];
-                        let pubkey = &hex_pubkey[2..];
+                        let get_secp256k1_pubkey = PublicKey::from_str(&withdraw_object.recipient_cid);
+                        let get_secp256k1_signature = Signature::from_str(&withdraw_object.tx_signature);
                         
-                        let decode_pubkey = hex::decode(pubkey.to_string());
-                        let decode_signature = hex::decode(tx_signature.to_string());
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
 
-                        let Ok(pubkey_bytes) = decode_pubkey else{
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
@@ -1548,169 +1511,152 @@ async fn withdraw(
 
                         };
 
-
-                        let Ok(signature) = decode_signature else{
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
 
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                SIGNATURE_DECODE_ISSUE, // response message
+                                SIGNATURE_ENCODE_ISSUE, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
 
                         };
+
+                        let strigified_withdraw_data = serde_json::json!({
+                            "recipient_cid": withdraw_object.recipient_cid,
+                            "deposit_id": withdraw_object.deposit_id,
+                        });
 
                         /* verifying the data against the generated signature */
-                        let get_encoded_data = Id::verify(
-                            &signature, 
-                            &pubkey_bytes
+                        let get_verification = Wallet::verify_secp256k1_signature(
+                            strigified_withdraw_data.to_string(),
+                            secp256k1_signature, 
+                            secp256k1_pubkey
                         );
 
-                        let Ok(encoded_data) = get_encoded_data else{
-                            
-                            /* verifying signature or building pubkey error */
-                            let error = get_encoded_data.unwrap_err();
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                INVALID_SIGNATUE_OR_CID, // response message
+                                &verification_error.to_string(), // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
+
                         };
 
-                        /* decoding the signed message bytes */
-                        let pure_data = serde_json::from_slice::<DecodedSignedWithdrawalData>(&encoded_data).unwrap();
-
-                        /* the decoded data must be equals to the request body */
-                        let request_body_data = DecodedSignedWithdrawalData{
-                            recipient_cid: withdraw_object.recipient_cid,
-                            deposit_id: withdraw_object.deposit_id
-                        };
-
-                        /* the decoded data must be equals to the request body */
-                        if pure_data == request_body_data.clone(){
-
-                            /*
-     
-                                ----------------- WITHDRAWAL LOGIC --------------------
-                                    withdraw process
-                                            ↓↑
-                                    burn the minted nft id on chain to get the burn tx signature
-                                            ↓↑
-                                    paying out the receiver with the PYUSD from the server paypal
-                                            ↓↑
-                                    show claimed paypal transaction to minter
-                                ------------------------------------------------------- 
-                            
-                            */
-                            
-                            let payout_pyusd_res = 200;
-                            if payout_pyusd_res == 200{
-                                
-                                let (burn_tx_signature_sender, mut burn_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
-                                let mut burn_tx_signature = String::from("");
-                                let token_id = "4".to_string();
-                                
-                                /* --------------------------------------------------------------------- */
-                                /* burning nft for the receiver using pyo3 inside tokio greed threadpool */
-                                /* --------------------------------------------------------------------- */
-                                tokio::task::spawn(async move{
-
-                                    // use pyo3::prelude::*;
-                                    // use pyo3::types::{PyList, PyTuple};
-                                    // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
-                                    // let py_app = std::fs::read_to_string(path.join("burn.py")).unwrap();
-                                    
-                                    // let burn_tx_sig = Python::with_gil(|py| -> String{
-                                        
-                                    //     let syspath: &PyList = py.import("sys")
-                                    //         .unwrap()
-                                    //         .getattr("path")
-                                    //         .unwrap()
-                                    //         .downcast()
-                                    //         .unwrap();
-
-                                    //     syspath.insert(0, &path).unwrap();
-                                        
-                                    //     let args = PyTuple::new(py, &[token_id]);
-                                    //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
-                                    //         .unwrap()
-                                    //         .getattr("burn_nft")
-                                    //         .unwrap()
-                                    //         .call1(args)
-                                    //         .unwrap()
-                                    //         .extract()
-                                    //         .unwrap();
-                                    //     burn_tx_sig
-
-                                    // });
-                                    
-                                    let burn_tx_sig = "".to_string(); 
-                                    if burn_tx_sig.starts_with("0x"){
-                                        burn_tx_signature_sender.send(burn_tx_sig).await;
-                                    }
-
+                        /*
     
-                                });
+                            ----------------- WITHDRAWAL LOGIC --------------------
+                                withdraw process
+                                        ↓↑
+                                burn the minted nft id on chain to get the burn tx signature
+                                        ↓↑
+                                paying out the receiver with the PYUSD from the server paypal
+                                        ↓↑
+                                show claimed paypal transaction to minter
+                            ------------------------------------------------------- 
+                        
+                        */
+                        
+                        let payout_pyusd_res = 200;
+                        if payout_pyusd_res == 200{
+                            
+                            let (burn_tx_signature_sender, mut burn_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                            let mut burn_tx_signature = String::from("");
+                            let token_id = "4".to_string();
+                            
+                            /* --------------------------------------------------------------------- */
+                            /* burning nft for the receiver using pyo3 inside tokio greed threadpool */
+                            /* --------------------------------------------------------------------- */
+                            tokio::task::spawn(async move{
 
+                                // use pyo3::prelude::*;
+                                // use pyo3::types::{PyList, PyTuple};
+                                // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
+                                // let py_app = std::fs::read_to_string(path.join("burn.py")).unwrap();
+                                
+                                // let burn_tx_sig = Python::with_gil(|py| -> String{
+                                    
+                                //     let syspath: &PyList = py.import("sys")
+                                //         .unwrap()
+                                //         .getattr("path")
+                                //         .unwrap()
+                                //         .downcast()
+                                //         .unwrap();
 
-                                while let Some(tx_hash) = burn_tx_signature_receiver.recv().await{
-                                    burn_tx_signature = tx_hash;
+                                //     syspath.insert(0, &path).unwrap();
+                                    
+                                //     let args = PyTuple::new(py, &[token_id]);
+                                //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
+                                //         .unwrap()
+                                //         .getattr("burn_nft")
+                                //         .unwrap()
+                                //         .call1(args)
+                                //         .unwrap()
+                                //         .extract()
+                                //         .unwrap();
+                                //     burn_tx_sig
+
+                                // });
+                                
+                                let burn_tx_sig = "".to_string(); 
+                                if burn_tx_sig.starts_with("0x"){
+                                    burn_tx_signature_sender.send(burn_tx_sig).await;
                                 }
 
-                                if !burn_tx_signature.is_empty(){
-                                    match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
-                                        Ok(user_withdrawal_data) => {
-    
-                                            resp!{
-                                                UserWithdrawalData, // the data type
-                                                user_withdrawal_data, // response data
-                                                WITHDRAWN_SUCCESSFULLY, // response message
-                                                StatusCode::CREATED, // status code
-                                                None::<Cookie<'_>>, // cookie
-                                            }
-    
-                                        },
-                                        Err(resp) => {
-                                            /* 
-                                                🥝 response can be one of the following:
-                                                
-                                                - DIESEL INSERT ERROR RESPONSE
-                                                - DEPOSIT OBJECT NOT FOUND
-                                                - ALREADY_WITHDRAWN
-                                            */
-                                            resp
+
+                            });
+
+
+                            while let Some(tx_hash) = burn_tx_signature_receiver.recv().await{
+                                burn_tx_signature = tx_hash;
+                            }
+
+                            if !burn_tx_signature.is_empty(){
+                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
+                                    Ok(user_withdrawal_data) => {
+
+                                        resp!{
+                                            UserWithdrawalData, // the data type
+                                            user_withdrawal_data, // response data
+                                            WITHDRAWN_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
-                                    }
-                                } else{
 
-                                    resp!{
-                                        &[u8], // the data type
-                                        &[], // response data
-                                        CANT_BURN_CARD, // response message
-                                        StatusCode::EXPECTATION_FAILED, // status code
-                                        None::<Cookie<'_>>, // cookie
+                                    },
+                                    Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                            - DEPOSIT OBJECT NOT FOUND
+                                            - ALREADY_WITHDRAWN
+                                        */
+                                        resp
                                     }
                                 }
-                                
                             } else{
+
                                 resp!{
                                     &[u8], // the data type
                                     &[], // response data
-                                    CANT_DEPOSIT, // response message
+                                    CANT_BURN_CARD, // response message
                                     StatusCode::EXPECTATION_FAILED, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
                             }
-
+                            
                         } else{
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                INVALID_DATA, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
+                                CANT_DEPOSIT, // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }

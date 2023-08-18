@@ -349,6 +349,7 @@ impl UserTask{
                         device_id: user.device_id,
                         social_id: user.social_id,
                         cid: user.cid,
+                        screen_cid: user.screen_cid,
                         snowflake_id: user.snowflake_id,
                         stars: user.stars
                     },
