@@ -85,7 +85,7 @@ else
     docker stop conse-mafia && docker rm -f conse-mafia
 
     sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
-    sudo docker run -d --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
+    sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
@@ -93,11 +93,11 @@ else
     if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
         echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
         sudo docker build -t conse-panel-pg -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
-        sudo docker run -d --link postgres --network gem --name conse-panel-pg -p 7443:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-pg
+        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-pg -p 7443:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-pg
     else
         echo \n"> 🛢 Building Conse Panel With mongo Db Storage"
         sudo docker build -t conse-panel-mongo -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
-        sudo docker run -d --link postgres --network gem --name conse-panel-mongo -p 7444:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets  -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-mongo
+        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-mongo -p 7444:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets  -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-mongo
     fi
 
 fi

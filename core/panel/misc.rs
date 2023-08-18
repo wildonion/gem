@@ -234,14 +234,17 @@ impl Wallet{
 
     pub fn new_secp256k1(input_id: NewIdRequest) -> Self{
 
-        /* generating the seed to create the rng from the input id */
+        /* generating seed from the input id to create the rng for secp256k1 keypair */
         let input_id_string = serde_json::to_string(&input_id).unwrap();
         let input_id_bytes = input_id_string.as_bytes();
         let hashed_input_id = ring::digest::digest(&ring::digest::SHA256, input_id_bytes);
         let hashed_input_id_bytes = hashed_input_id.as_ref();
+        
+        /* to create the rng we need a 32 bytes seed and we're sure that the hash is 32 bytes cause it's sha256 bits */
         let seed = <[u8; 32]>::try_from(&hashed_input_id_bytes[0..32]).unwrap();
         let rng = &mut StdRng::from_seed(seed);
         
+        /* since the secp is going to be built from an specific seed thus the generated keypair will be the same everytime we request a new one */
         let secp = secp256k1::Secp256k1::new();
         let (prvk, pubk) = secp.generate_keypair(rng);
         let prv_str = prvk.display_secret().to_string();
