@@ -1,6 +1,6 @@
 
 
-use secp256k1::{rand::rngs as secp_rngs, PublicKey, SecretKey, Message, hashes::sha256};
+use secp256k1::{rand::SeedableRng, rand::rngs::StdRng, PublicKey, SecretKey, Message, hashes::sha256};
 use std::io::BufWriter;
 use tiny_keccak::keccak256;
 use std::str::FromStr;

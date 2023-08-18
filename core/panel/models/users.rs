@@ -2,6 +2,8 @@
 
 
 
+use borsh::{BorshSerialize, BorshDeserialize};
+
 use crate::*;
 use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number, Wallet};
 use crate::schema::{users, users_tasks};
@@ -127,7 +129,7 @@ pub struct UserIdResponse{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize)]
 pub struct NewIdRequest{
     pub gmail: String,
     pub username: String,
@@ -1513,7 +1515,18 @@ impl Id{
             _ => {
 
                 /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
-                let wallet = Wallet::new_secp256k1();
+                let wallet = Wallet::new_secp256k1(id_.clone());
+
+                /* sample signing using ECDSA with secp256k1 curve */
+                let data_to_be_signed = serde_json::json!({
+                    "recipient_cid": "0xb3e106f72e8cb2f759be095318f70ad59e96bfc2",
+                    "from_cid": wallet.secp256k1_public_key,
+                    "amount": 5
+                });
+                let sig = Wallet::secp256k1_sign(
+                    wallet.secp256k1_secret_key.as_ref().unwrap().clone(), 
+                    data_to_be_signed.to_string()
+                );
 
 
                 /* generating snowflake id */

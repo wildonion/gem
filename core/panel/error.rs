@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use std::io::Write;
+use std::io::{Write, Read};
 use tokio::fs::OpenOptions;
 use tokio::io::ReadBuf;
 
@@ -171,7 +171,24 @@ impl PanelError{
         /* reading the full filled bytes of the file and put it into a buffer reader */
         let buf_reader = std::io::BufReader::new(loaded_file);
 
-        /* decoding the full filled bytes into the Wallet struct */
+        /* OR 
+
+        let mut file_content_buffer = vec![];
+        loop{
+            let bytes_read = loaded_file.read(&mut file_content_buffer).unwrap();
+            /* 
+                if the zero bytes are in there means we've 
+                read all the bytes and filled the buffer with 
+                the file bytes
+            */
+            if bytes_read == 0{
+                break;
+            }
+        }
+
+        */
+
+        /* decoding the buffer reader into the String struct */
         let decoded_error_log_content: String = serde_json::from_reader(buf_reader).unwrap();
         /* --------------------------------------------------------------------------------- */
         /* --------------------------------------------------------------------------------- */

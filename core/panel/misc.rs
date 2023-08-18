@@ -8,6 +8,7 @@ use secp256k1::{Secp256k1, All};
 use crate::*;
 use crate::constants::CHARSET;
 use crate::events::publishers::role::PlayerRoleInfo;
+use crate::models::users::NewIdRequest;
 use actix::Addr;
 
 
@@ -231,10 +232,17 @@ impl Wallet{
 
     }
 
-    pub fn new_secp256k1() -> Self{
+    pub fn new_secp256k1(input_id: NewIdRequest) -> Self{
 
+        /* generating the seed to create the rng from the input id */
+        let input_id_string = serde_json::to_string(&input_id).unwrap();
+        let input_id_bytes = input_id_string.as_bytes();
+        let hashed_input_id = ring::digest::digest(&ring::digest::SHA256, input_id_bytes);
+        let hashed_input_id_bytes = hashed_input_id.as_ref();
+        let seed = <[u8; 32]>::try_from(&hashed_input_id_bytes[0..32]).unwrap();
+        let rng = &mut StdRng::from_seed(seed);
+        
         let secp = secp256k1::Secp256k1::new();
-        let rng = &mut rand::thread_rng();
         let (prvk, pubk) = secp.generate_keypair(rng);
         let prv_str = prvk.display_secret().to_string();
 

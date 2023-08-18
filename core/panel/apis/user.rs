@@ -1061,6 +1061,9 @@ async fn deposit(
 
                         */
 
+                        
+                        /* TODO - connect to IR exchange APIs */
+
                         let deposit_ir_res = 200;
                         if deposit_ir_res == 200{
 
@@ -1076,7 +1079,10 @@ async fn deposit(
                             let mut mint_tx_signature = String::from("");
 
                             /* generate keccak256 from recipient_cid to mint nft to */
-                            let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_cid);
+                            // let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_cid);
+
+                            /* deposit_object.recipient_cid must be the keccak256 of the recipient public key */
+                            let polygon_recipient_address = deposit_object.recipient_cid;
                             
                             /* -------------------------------------------------------------------- */
                             /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
@@ -1562,6 +1568,8 @@ async fn withdraw(
                         
                         */
                         
+                        /* TODO - connect to paypal APIs */
+
                         let payout_pyusd_res = 200;
                         if payout_pyusd_res == 200{
                             
