@@ -58,7 +58,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon blockc
 
 * 📣 **redis** based pubsub streaming channel to publish and subscribe to the revealed roles, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating) topics
 
-* 💾 **redis** http response caching to avoid high latencies cause I believe reading from RAM is much faster than HardDisk.   
+* 💾 **redis** http response caching to avoid high latencies cause we all know reading from RAM is much faster than HardDisk.   
 
 * 🎯 **actix ws** notif servers for streaming over redis subscribed topics to send notifs to ws sessions.
 
@@ -168,7 +168,7 @@ cargo run --bin argon2test
 
 - **NOTE**: registered (sub)domain records in DNS panel must be:
 ```bash
-conse.app #---> this main domain is related to the home of the app
+conse.app #---> this main domain is related to the home UI of the app
 api.mafia.conse.app #---> points to the conse mafia hyper APIs
 api.panel.conse.app #----> points to the conse actix APIs
 panel.conse.app #---> points to the panel UI
