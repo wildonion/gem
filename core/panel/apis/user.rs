@@ -1088,41 +1088,39 @@ async fn deposit(
                             /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
                             /* -------------------------------------------------------------------- */
                             tokio::task::spawn(async move{
-
-                    
-                                    
-                                // use pyo3::prelude::*;
-                                // use pyo3::types::{PyList, PyTuple};
-                                // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
-                                // let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
+    
+                                use pyo3::prelude::*;
+                                use pyo3::types::{PyList, PyTuple};
+                                let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
+                                let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
                                 
-                                // let burn_tx_sig = Python::with_gil(|py| -> String{
+                                let mint_tx_sig = Python::with_gil(|py| -> String{
                                     
-                                //     let syspath: &PyList = py.import("sys")
-                                //         .unwrap()
-                                //         .getattr("path")
-                                //         .unwrap()
-                                //         .downcast()
-                                //         .unwrap();
+                                    let syspath: &PyList = py.import("sys")
+                                        .unwrap()
+                                        .getattr("path")
+                                        .unwrap()
+                                        .downcast()
+                                        .unwrap();
 
-                                //     syspath.insert(0, &path).unwrap();
+                                    syspath.insert(0, &path).unwrap();
                                     
-                                //     let args = PyTuple::new(py, &[polygon_recipient_address]);
-                                //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
-                                //         .unwrap()
-                                //         .getattr("mint_nft")
-                                //         .unwrap()
-                                //         .call1(args)
-                                //         .unwrap()
-                                //         .extract()
-                                //         .unwrap();
-                                //     burn_tx_sig
+                                    let args = PyTuple::new(py, &[polygon_recipient_address]);
+                                    let mint_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
+                                        .unwrap()
+                                        .getattr("mint_nft")
+                                        .unwrap()
+                                        .call1(args)
+                                        .unwrap()
+                                        .extract()
+                                        .unwrap();
+                                    mint_tx_sig
 
-                                // });
+                                });
 
-                                let burn_tx_sig = "".to_string();
-                                if burn_tx_sig.starts_with("0x"){
-                                    mint_tx_signature_sender.send(burn_tx_sig).await;
+                                let mint_tx_sig = "".to_string();
+                                if mint_tx_sig.starts_with("0x"){
+                                    mint_tx_signature_sender.send(mint_tx_sig).await;
                                 }
 
 
