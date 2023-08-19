@@ -23,7 +23,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
-
+use crate::wallet::Wallet;
 
 
 

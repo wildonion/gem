@@ -3,9 +3,9 @@
 
 
 use borsh::{BorshSerialize, BorshDeserialize};
-
+use crate::wallet::Wallet;
 use crate::*;
-use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number, Wallet};
+use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
 use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
