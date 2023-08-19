@@ -69,8 +69,11 @@ pub static INVALID_COOKIE_TIME_HASH: &str = "Invalid Cookie Time Hash";
 pub static NOT_FOUND_COOKIE_TIME_HASH: &str = "No Time Hash Found In Cookie";
 pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
+
+
 pub const CHARSET: &[u8] = b"0123456789";
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
+pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
 pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";

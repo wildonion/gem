@@ -9,6 +9,7 @@
 
 
 use crate::*;
+use crate::constants::LOGS_FOLDER_ERROR_KIND;
 use std::io::{Write, Read};
 use tokio::fs::OpenOptions;
 use tokio::io::ReadBuf;
@@ -108,7 +109,10 @@ impl PanelError{
         let this = self;
         let Self { code, msg, kind } = this;
 
-        let filepath = format!("logs/error-kind/panel-error.log");
+        /* creating the logs/error-kind folder if it doesn't exist */
+        tokio::fs::create_dir_all(LOGS_FOLDER_ERROR_KIND).await.unwrap();
+        let filepath = format!("{}/panel-error.log", LOGS_FOLDER_ERROR_KIND);
+
         let mut panel_error_log;
         let msg_content = String::from_utf8(msg.to_owned());
         let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
@@ -121,7 +125,7 @@ impl PanelError{
         // serde_json::to_writer_pretty(buffer, &error_log_content);
         
         /* writing to file */
-        match tokio::fs::metadata("logs/error-kind/panel-error.log").await{
+        match tokio::fs::metadata(filepath.clone()).await{
             Ok(_) => {
                 /* ------- we found the file, append to it ------- */
                 let mut file = OpenOptions::new()
@@ -133,13 +137,13 @@ impl PanelError{
             },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 /* ------- we didn't found the file, create a new one ------- */
-                panel_error_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
+                panel_error_log = tokio::fs::File::create(filepath.clone().as_str()).await.unwrap();
                 panel_error_log.write_all(error_log_content.as_bytes()).await.unwrap();
             },
             Err(e) => {
                 /* ------- can't create a new file or append to it ------- */
                 let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("logs/error-kind/{}-panel-error-custom-error-handler-log-file.log", log_name);
+                let filepath = format!("{}/{}-panel-error-custom-error-handler-log-file.log", log_name, LOGS_FOLDER_ERROR_KIND);
                 let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
                 error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
             }
@@ -154,7 +158,10 @@ impl PanelError{
         let this = self;
         let Self { code, msg, kind } = this;
 
-        let filepath = format!("logs/error-kind/panel-error.log");
+        /* creating the logs/error-kind folder if it doesn't exist */
+        std::fs::create_dir_all(LOGS_FOLDER_ERROR_KIND).unwrap();
+        let filepath = format!("{}/panel-error.log", LOGS_FOLDER_ERROR_KIND);
+
         let mut panel_error_log;
         let msg_content = serde_json::from_slice::<String>(msg.as_slice());
         let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis());
@@ -201,7 +208,7 @@ impl PanelError{
         /* --------------------------------------------------------------------------------- */
 
         /* writing to file */
-        match std::fs::metadata("logs/error-kind/panel-error.log"){
+        match std::fs::metadata(filepath.clone()){
             Ok(_) => {
                 /* ------- we found the file, append to it ------- */
                 let mut file = std::fs::OpenOptions::new()
@@ -213,13 +220,13 @@ impl PanelError{
             },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 /* ------- we didn't found the file, create a new one ------- */
-                panel_error_log = std::fs::File::create(filepath.as_str()).unwrap();
+                panel_error_log = std::fs::File::create(filepath.clone().as_str()).unwrap();
                 panel_error_log.write_all(error_log_content.as_bytes()).unwrap();
             },
             Err(e) => {
                 /* ------- can't create a new file or append to it ------- */
                 let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("logs/error-kind/{}-panel-error-custom-error-handler-log-file.log", log_name);
+                let filepath = format!("{}/{}-panel-error-custom-error-handler-log-file.log", log_name, LOGS_FOLDER_ERROR_KIND);
                 let mut error_kind_log = std::fs::File::create(filepath.as_str()).unwrap();
                 error_kind_log.write_all(e.to_string().as_bytes()).unwrap();
             }

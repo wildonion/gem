@@ -87,9 +87,6 @@ RUN chown -R $APP_USER:$APP_USER ${APP}
 COPY ./.env ${APP}/.env
 COPY ./twitter-accounts.json ${APP}/twitter-accounts.json
 
-RUN mkdir -p ${APP}/logs
-RUN mkdir -p ${APP}/logs/error-kind
-
 USER $APP_USER
 WORKDIR ${APP}
 
