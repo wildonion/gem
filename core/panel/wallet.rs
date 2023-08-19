@@ -2,30 +2,8 @@
 
 
 use crate::models::users::NewIdRequest;
-use crate::constants;
 use crate::misc;
-use ring::{signature::KeyPair, pkcs8::Document};
-use ring::signature::Ed25519KeyPair;
-use secp256k1::Secp256k1;
-use secp256k1::ecdsa::Signature;
-use serde::{Deserialize, Serialize};
-use std::fmt::Write;
-use ring::{signature as ring_signature, rand as ring_rand};
-use secp256k1::{rand::SeedableRng, rand::rngs::StdRng, PublicKey, SecretKey, Message, hashes::sha256};
-use std::io::BufWriter;
-use tiny_keccak::keccak256;
-use std::str::FromStr;
-use std::{fs::OpenOptions, io::BufReader};
-use web3::{
-    transports,
-    types::{Address, TransactionParameters, H256, U256},
-    Web3,
-};
-use themis::keys as themis_keys;
-use themis::secure_message::{SecureSign, SecureVerify};
-use themis::keygen::gen_ec_key_pair;
-use themis::keys::{EcdsaKeyPair, EcdsaPrivateKey, EcdsaPublicKey};
-use themis::keys::KeyPair as ThemisKeyPair;
+use crate::*;
 
 
 
@@ -256,6 +234,7 @@ pub struct Contract{
 }
 
 impl Contract{
+
     pub fn new(owner: &str) -> Self{
         
         let static_owner = misc::string_to_static_str(owner.to_string());
@@ -269,7 +248,7 @@ impl Contract{
         
     }
 
-    pub fn test(){
+    pub fn ed25519_test() -> Result<(), ()>{
         
         #[derive(Serialize, Deserialize)]
         struct Data{
@@ -284,23 +263,17 @@ impl Contract{
         };
         let stringify_data = serde_json::to_string_pretty(&data).unwrap();
 
-        let contract = Contract::new("wildonion");
+        let contract = Self::new("wildonion");
         
         let signature_hex = Wallet::ed25519_sign(stringify_data.clone(), contract.wallet.ed25519_secret_key.unwrap());
         
         let is_verified = Wallet::verify_ed25519_signature(signature_hex.unwrap(), stringify_data, contract.wallet.ed25519_public_key.unwrap());
 
-        if is_verified{
-
-            // start the project 
-            // ...
-
-        } else{
-
-            // stop working
-            // ...
+        match is_verified{
+            true => Ok(()),
+            false => Err(())
         }
-        
+
     }
 
 }
