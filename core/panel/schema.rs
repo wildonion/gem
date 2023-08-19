@@ -58,6 +58,7 @@ diesel::table! {
     users_deposits (id) {
         id -> Int4,
         mint_tx_signature -> Varchar,
+        nft_id -> Numeric,
         from_cid -> Varchar,
         recipient_cid -> Varchar,
         amount -> Int8,

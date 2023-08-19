@@ -11,7 +11,6 @@ use crate::schema::users_deposits::dsl::*;
 
 
 
-
 /* 
 
     diesel migration generate users_deposits ---> create users_deposits migration sql files
@@ -26,6 +25,7 @@ use crate::schema::users_deposits::dsl::*;
 pub struct UserDeposit { /* note that the ordering of fields must be the same as the table fields in up.sql */
     pub id: i32,
     pub mint_tx_signature: String,
+    pub nft_id: BigDecimal,
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
@@ -33,12 +33,13 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
     pub iat: chrono::NaiveDateTime
 }
 
-#[derive(Insertable, Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Insertable, Clone, Debug, ToSchema, PartialEq)]
 #[diesel(table_name=users_deposits)]
 pub struct NewUserDeposit{
     pub from_cid: String,
     pub recipient_cid: String,
     pub amount: i64,
+    pub nft_id: BigDecimal,
     pub mint_tx_signature: String,
     /* 
         this must be generated inside the client by signing the whole 
@@ -70,6 +71,7 @@ pub struct UserDepositData{
     pub id: i32,
     pub from_cid: String,
     pub recipient_cid: String,
+    pub nft_id: String,
     pub amount: i64,
     pub mint_tx_signature: String,
     pub signature: String, 
@@ -78,12 +80,13 @@ pub struct UserDepositData{
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_signature: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_signature: String, token_id: BigDecimal, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
             recipient_cid: user_deposit_request.recipient_cid,
             amount: user_deposit_request.amount,
+            nft_id: token_id,
             mint_tx_signature: succ_mint_tx_signature,
             tx_signature: user_deposit_request.tx_signature,
         };
@@ -98,7 +101,8 @@ impl UserDeposit{
                     Ok(UserDepositData{ 
                         id: user_deposit.id, 
                         from_cid: user_deposit.from_cid, 
-                        recipient_cid: user_deposit.recipient_cid, 
+                        recipient_cid: user_deposit.recipient_cid,
+                        nft_id: user_deposit.nft_id.to_string(),
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
                         mint_tx_signature: user_deposit.mint_tx_signature,
@@ -132,6 +136,38 @@ impl UserDeposit{
 
     }
 
+    pub async fn find_by_id(deposit_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+
+        let user_deposits = users_deposits
+            .filter(users_deposits::id.eq(deposit_id))
+            .first::<UserDeposit>(connection);
+            
+        let Ok(deposit) = user_deposits else{
+            let resp = Response{
+                data: Some(deposit_id),
+                message: DEPOSIT_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+
+        Ok(
+            UserDepositData{ 
+                id: deposit.id, 
+                from_cid: deposit.from_cid, 
+                recipient_cid: deposit.recipient_cid, 
+                nft_id: deposit.nft_id.to_string(), 
+                amount: deposit.amount, 
+                mint_tx_signature: deposit.mint_tx_signature, 
+                signature: deposit.tx_signature, 
+                iat: deposit.iat 
+            }
+        )
+
+    }
+
     pub async fn get_all_for(user_cid: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
 
         let user_deposits = users_deposits
@@ -158,6 +194,7 @@ impl UserDeposit{
                         from_cid: d.from_cid,
                         recipient_cid: d.recipient_cid,
                         amount: d.amount,
+                        nft_id: d.nft_id.to_string(),
                         mint_tx_signature: d.mint_tx_signature,
                         signature: d.tx_signature,
                         iat: d.iat,
@@ -193,6 +230,7 @@ impl UserDeposit{
                         from_cid: d.from_cid,
                         recipient_cid: d.recipient_cid,
                         amount: d.amount,
+                        nft_id: d.nft_id.to_string(),
                         mint_tx_signature: d.mint_tx_signature,
                         signature: d.tx_signature,
                         iat: d.iat,

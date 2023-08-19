@@ -2,6 +2,7 @@
 CREATE TABLE users_deposits (
   id SERIAL PRIMARY KEY,
   mint_tx_signature VARCHAR NOT NULL,
+  nft_id numeric NOT NULL,
   from_cid VARCHAR NOT NULL,
   recipient_cid VARCHAR NOT NULL,
   amount BigInt NOT NULL,

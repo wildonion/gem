@@ -1075,8 +1075,9 @@ async fn deposit(
                                 transaction we should mint the NFT on chain.
                             */
 
-                            let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                            let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<(String, BigDecimal)>(1024);
                             let mut mint_tx_signature = String::from("");
+                            let mut token_id = BigDecimal::default();
 
                             /* generate keccak256 from recipient_cid to mint nft to */
                             // let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_cid);
@@ -1084,55 +1085,29 @@ async fn deposit(
                             /* deposit_object.recipient_cid must be the keccak256 of the recipient public key */
                             let polygon_recipient_address = deposit_object.recipient_cid;
                             
-                            /* -------------------------------------------------------------------- */
-                            /* minting nft to the receiver using pyo3 inside tokio greed threadpool */
-                            /* -------------------------------------------------------------------- */
                             tokio::task::spawn(async move{
     
-                                use pyo3::prelude::*;
-                                use pyo3::types::{PyList, PyTuple};
-                                let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
-                                let py_app = std::fs::read_to_string(path.join("mint.py")).unwrap();
+                                let u256 = web3::types::U256::from_str("0").unwrap().0;
                                 
-                                let mint_tx_sig = Python::with_gil(|py| -> String{
-                                    
-                                    let syspath: &PyList = py.import("sys")
-                                        .unwrap()
-                                        .getattr("path")
-                                        .unwrap()
-                                        .downcast()
-                                        .unwrap();
-
-                                    syspath.insert(0, &path).unwrap();
-                                    
-                                    let args = PyTuple::new(py, &[polygon_recipient_address]);
-                                    let mint_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
-                                        .unwrap()
-                                        .getattr("mint_nft")
-                                        .unwrap()
-                                        .call1(args)
-                                        .unwrap()
-                                        .extract()
-                                        .unwrap();
-                                    mint_tx_sig
-
-                                });
-
+                                /* calling thirdweb python server to mint nft */
+                                let token_id_string = String::from("0");
+                                let token_id = BigDecimal::from_str(&token_id_string).unwrap();
                                 let mint_tx_sig = "".to_string();
                                 if mint_tx_sig.starts_with("0x"){
-                                    mint_tx_signature_sender.send(mint_tx_sig).await;
+                                    mint_tx_signature_sender.send((mint_tx_sig, token_id)).await;
                                 }
 
 
                             });
 
 
-                            while let Some(tx_hash) = mint_tx_signature_receiver.recv().await{
+                            while let Some((tx_hash, tid)) = mint_tx_signature_receiver.recv().await{
                                 mint_tx_signature = tx_hash;
+                                token_id = tid;
                             }
                             
                             if !mint_tx_signature.is_empty(){
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, connection).await{
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, token_id, connection).await{
                                     Ok(user_deposit_data) => {
 
                                         resp!{
@@ -1570,44 +1545,22 @@ async fn withdraw(
 
                         let payout_pyusd_res = 200;
                         if payout_pyusd_res == 200{
-                            
+
+                            let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
+                            let Ok(deposit_info) = get_deposit_info else{
+
+                                let error = get_deposit_info.unwrap_err();
+                                return error;
+                            };
+
                             let (burn_tx_signature_sender, mut burn_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
                             let mut burn_tx_signature = String::from("");
-                            let token_id = "4".to_string();
+                            let token_id = deposit_info.nft_id;
                             
-                            /* --------------------------------------------------------------------- */
-                            /* burning nft for the receiver using pyo3 inside tokio greed threadpool */
-                            /* --------------------------------------------------------------------- */
+
                             tokio::task::spawn(async move{
 
-                                // use pyo3::prelude::*;
-                                // use pyo3::types::{PyList, PyTuple};
-                                // let path = std::path::Path::new("/Users/wildonion/Documents/gem/infra/thirdweb-nft");
-                                // let py_app = std::fs::read_to_string(path.join("burn.py")).unwrap();
-                                
-                                // let burn_tx_sig = Python::with_gil(|py| -> String{
-                                    
-                                //     let syspath: &PyList = py.import("sys")
-                                //         .unwrap()
-                                //         .getattr("path")
-                                //         .unwrap()
-                                //         .downcast()
-                                //         .unwrap();
-
-                                //     syspath.insert(0, &path).unwrap();
-                                    
-                                //     let args = PyTuple::new(py, &[token_id]);
-                                //     let burn_tx_sig: String = PyModule::from_code(py, &py_app, "", "")
-                                //         .unwrap()
-                                //         .getattr("burn_nft")
-                                //         .unwrap()
-                                //         .call1(args)
-                                //         .unwrap()
-                                //         .extract()
-                                //         .unwrap();
-                                //     burn_tx_sig
-
-                                // });
+                                /* calling the thirdweb python server to burn nft */
                                 
                                 let burn_tx_sig = "".to_string(); 
                                 if burn_tx_sig.starts_with("0x"){
