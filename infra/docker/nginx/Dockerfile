@@ -1,6 +1,12 @@
 # Use the official Nginx image as the base image
 FROM nginx:latest
 
+WORKDIR /etc/nginx
+
+ADD . ./
+
+WORKDIR /etc/nginx/infra/docker/nginx
+
 # Remove the default Nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
 
