@@ -26,7 +26,7 @@ use super::users_deposits::UserDeposit;
 pub struct UserWithdrawal { /* note that the ordering of fields must be the same as the table fields in up.sql */
     pub id: i32,
     pub deposit_id: i32,
-    pub burn_tx_signature: String,
+    pub burn_tx_hash: String,
     pub recipient_cid: String,
     pub is_claimed: bool,
     pub tx_signature: String,
@@ -56,7 +56,7 @@ pub struct NewUserWithdrawal{
     pub deposit_id: i32,
     pub recipient_cid: String,
     pub is_claimed: bool,
-    pub burn_tx_signature: String,
+    pub burn_tx_hash: String,
     /* 
         this must be generated inside the client by signing the whole 
         data body of this struct using the client private key 
@@ -68,7 +68,7 @@ pub struct NewUserWithdrawal{
 pub struct UserWithdrawalData{
     pub id: i32,
     pub deposit_id: i32,
-    pub burn_tx_signature: String,
+    pub burn_tx_hash: String,
     pub recipient_cid: String,
     pub is_claimed: bool,
     pub signature: String,
@@ -78,13 +78,13 @@ pub struct UserWithdrawalData{
 
 impl UserWithdrawal{
 
-    pub async fn insert(user_withdraw_request: NewUserWithdrawRequest, succ_burn_tx_signature: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWithdrawalData, PanelHttpResponse>{
+    pub async fn insert(user_withdraw_request: NewUserWithdrawRequest, succ_burn_tx_hash: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWithdrawalData, PanelHttpResponse>{
 
         let new_user_withdrawal = NewUserWithdrawal{
             recipient_cid: user_withdraw_request.recipient_cid.clone(),
             deposit_id: user_withdraw_request.deposit_id,
             is_claimed: true,
-            burn_tx_signature: succ_burn_tx_signature,
+            burn_tx_hash: succ_burn_tx_hash,
             tx_signature: user_withdraw_request.tx_signature
         };
 
@@ -141,7 +141,7 @@ impl UserWithdrawal{
                                 is_claimed: user_withdrawal.is_claimed, 
                                 signature: user_withdrawal.tx_signature,
                                 deposit_id: user_withdraw_request.deposit_id,
-                                burn_tx_signature: user_withdrawal.burn_tx_signature,
+                                burn_tx_hash: user_withdrawal.burn_tx_hash,
                                 wat: user_withdrawal.wat 
                             })
 
@@ -198,7 +198,7 @@ impl UserWithdrawal{
                         id: d.id,
                         recipient_cid: d.recipient_cid,
                         is_claimed: d.is_claimed,
-                        burn_tx_signature: d.burn_tx_signature,
+                        burn_tx_hash: d.burn_tx_hash,
                         deposit_id: d.deposit_id,
                         signature: d.tx_signature,
                         wat: d.wat,
@@ -234,7 +234,7 @@ impl UserWithdrawal{
                         recipient_cid: d.recipient_cid,
                         is_claimed: d.is_claimed,
                         deposit_id: d.deposit_id,
-                        burn_tx_signature: d.burn_tx_signature,
+                        burn_tx_hash: d.burn_tx_hash,
                         signature: d.tx_signature,
                         wat: d.wat,
                     }

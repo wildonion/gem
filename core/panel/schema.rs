@@ -57,10 +57,10 @@ diesel::table! {
 diesel::table! {
     users_deposits (id) {
         id -> Int4,
-        mint_tx_signature -> Varchar,
+        mint_tx_hash -> Varchar,
         nft_id -> Numeric,
         from_cid -> Varchar,
-        recipient_cid -> Varchar,
+        recipient_screen_cid -> Varchar,
         amount -> Int8,
         tx_signature -> Varchar,
         iat -> Timestamptz,
@@ -79,7 +79,7 @@ diesel::table! {
     users_withdrawals (id) {
         id -> Int4,
         deposit_id -> Int4,
-        burn_tx_signature -> Varchar,
+        burn_tx_hash -> Varchar,
         recipient_cid -> Varchar,
         is_claimed -> Bool,
         tx_signature -> Varchar,

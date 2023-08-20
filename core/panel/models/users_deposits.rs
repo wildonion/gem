@@ -24,10 +24,10 @@ use crate::schema::users_deposits::dsl::*;
 #[diesel(table_name=users_deposits)]
 pub struct UserDeposit { /* note that the ordering of fields must be the same as the table fields in up.sql */
     pub id: i32,
-    pub mint_tx_signature: String,
+    pub mint_tx_hash: String,
     pub nft_id: BigDecimal,
     pub from_cid: String,
-    pub recipient_cid: String,
+    pub recipient_screen_cid: String,
     pub amount: i64,
     pub tx_signature: String,
     pub iat: chrono::NaiveDateTime
@@ -37,10 +37,10 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
 #[diesel(table_name=users_deposits)]
 pub struct NewUserDeposit{
     pub from_cid: String,
-    pub recipient_cid: String,
+    pub recipient_screen_cid: String,
     pub amount: i64,
     pub nft_id: BigDecimal,
-    pub mint_tx_signature: String,
+    pub mint_tx_hash: String,
     /* 
         this must be generated inside the client by signing the whole 
         data body of this struct using the client private key 
@@ -51,7 +51,7 @@ pub struct NewUserDeposit{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct NewUserDepositRequest{
     pub from_cid: String,
-    pub recipient_cid: String,
+    pub recipient_screen_cid: String,
     pub amount: i64,
     /* 
         this must be generated inside the client by signing the whole 
@@ -62,7 +62,7 @@ pub struct NewUserDepositRequest{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct DecodedSignedDepositData{
     pub from_cid: String,
-    pub recipient_cid: String,
+    pub recipient_screen_cid: String,
     pub amount: i64,
 }
 
@@ -70,24 +70,24 @@ pub struct DecodedSignedDepositData{
 pub struct UserDepositData{
     pub id: i32,
     pub from_cid: String,
-    pub recipient_cid: String,
+    pub recipient_screen_cid: String,
     pub nft_id: String,
     pub amount: i64,
-    pub mint_tx_signature: String,
+    pub mint_tx_hash: String,
     pub signature: String, 
     pub iat: chrono::NaiveDateTime 
 }
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_signature: String, token_id: BigDecimal, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: BigDecimal, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
-            recipient_cid: user_deposit_request.recipient_cid,
+            recipient_screen_cid: user_deposit_request.recipient_screen_cid,
             amount: user_deposit_request.amount,
             nft_id: token_id,
-            mint_tx_signature: succ_mint_tx_signature,
+            mint_tx_hash: succ_mint_tx_hash,
             tx_signature: user_deposit_request.tx_signature,
         };
 
@@ -101,11 +101,11 @@ impl UserDeposit{
                     Ok(UserDepositData{ 
                         id: user_deposit.id, 
                         from_cid: user_deposit.from_cid, 
-                        recipient_cid: user_deposit.recipient_cid,
+                        recipient_screen_cid: user_deposit.recipient_screen_cid,
                         nft_id: user_deposit.nft_id.to_string(),
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
-                        mint_tx_signature: user_deposit.mint_tx_signature,
+                        mint_tx_hash: user_deposit.mint_tx_hash,
                         iat: user_deposit.iat 
                     })
 
@@ -157,10 +157,10 @@ impl UserDeposit{
             UserDepositData{ 
                 id: deposit.id, 
                 from_cid: deposit.from_cid, 
-                recipient_cid: deposit.recipient_cid, 
+                recipient_screen_cid: deposit.recipient_screen_cid, 
                 nft_id: deposit.nft_id.to_string(), 
                 amount: deposit.amount, 
-                mint_tx_signature: deposit.mint_tx_signature, 
+                mint_tx_hash: deposit.mint_tx_hash, 
                 signature: deposit.tx_signature, 
                 iat: deposit.iat 
             }
@@ -192,10 +192,10 @@ impl UserDeposit{
                     UserDepositData{
                         id: d.id,
                         from_cid: d.from_cid,
-                        recipient_cid: d.recipient_cid,
+                        recipient_screen_cid: d.recipient_screen_cid,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
-                        mint_tx_signature: d.mint_tx_signature,
+                        mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
                         iat: d.iat,
                     }
@@ -228,10 +228,10 @@ impl UserDeposit{
                     UserDepositData{
                         id: d.id,
                         from_cid: d.from_cid,
-                        recipient_cid: d.recipient_cid,
+                        recipient_screen_cid: d.recipient_screen_cid,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
-                        mint_tx_signature: d.mint_tx_signature,
+                        mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
                         iat: d.iat,
                     }

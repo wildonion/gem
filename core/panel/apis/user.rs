@@ -1020,7 +1020,7 @@ async fn deposit(
                         };
 
                         let strigified_deposit_data = serde_json::json!({
-                            "recipient_cid": deposit_object.recipient_cid,
+                            "recipient_cid": deposit_object.recipient_screen_cid,
                             "from_cid": deposit_object.from_cid,
                             "amount": deposit_object.amount
                         });
@@ -1033,18 +1033,18 @@ async fn deposit(
                         );
 
 
-                        let Ok(_) = get_verification else{
+                        // let Ok(_) = get_verification else{
 
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
+                        //     let verification_error = get_verification.unwrap_err();
+                        //     resp!{
+                        //         &[u8], // the data type
+                        //         &[], // response data
+                        //         &verification_error.to_string(), // response message
+                        //         StatusCode::NOT_ACCEPTABLE, // status code
+                        //         None::<Cookie<'_>>, // cookie
+                        //     }
 
-                        };
+                        // };
 
 
                         /* 
@@ -1068,46 +1068,64 @@ async fn deposit(
                         if deposit_ir_res == 200{
 
                             /* 
-                                if we have mint_tx_signature means that the whole payment 
+                                if we have mint_tx_hash means that the whole payment 
                                 process is done successfully, minter paid IR exchange and 
                                 the exchange charged the server paypal with PYUSD, because 
                                 once we received the payapl successful PYUSD payment 
                                 transaction we should mint the NFT on chain.
                             */
 
-                            let (mint_tx_signature_sender, mut mint_tx_signature_receiver) = tokio::sync::mpsc::channel::<(String, BigDecimal)>(1024);
-                            let mut mint_tx_signature = String::from("");
+                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, BigDecimal)>(1024);
+                            let mut mint_tx_hash = String::from("");
                             let mut token_id = BigDecimal::default();
+                            
+                            /* simd ops on u256 bits can be represented as an slice with 4 numbers each of type of 64 bits or 8 bytes */
+                            let u256 = web3::types::U256::from_str("0").unwrap().0;
 
                             /* generate keccak256 from recipient_cid to mint nft to */
-                            // let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_cid);
+                            // let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_screen_cid);
 
-                            /* deposit_object.recipient_cid must be the keccak256 of the recipient public key */
-                            let polygon_recipient_address = deposit_object.recipient_cid;
+                            /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
+                            let polygon_recipient_address = deposit_object.recipient_screen_cid;
                             
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                            /* calling the thirdweb minting api to mint inside tokio green threadpool */
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                             tokio::task::spawn(async move{
-    
-                                let u256 = web3::types::U256::from_str("0").unwrap().0;
+
+                                
+                                let host = std::env::var("HOST").expect("⚠️ no host variable set");
+                                let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
+                                let api_path = format!("http://{}:{}/mint/to/{}/{}", host, port, polygon_recipient_address, deposit_object.amount.to_string());
+                                let client = reqwest::Client::new();
+                                let res = client
+                                    .post(api_path.as_str())
+                                    .send()
+                                    .await
+                                    .unwrap();
+                                
+                                let mint_response = res.json::<ThirdwebMintResponse>().await.unwrap();
                                 
                                 /* calling thirdweb python server to mint nft */
-                                let token_id_string = String::from("0");
+                                let token_id_string = String::from(mint_response.token_id);
                                 let token_id = BigDecimal::from_str(&token_id_string).unwrap();
-                                let mint_tx_sig = "".to_string();
-                                if mint_tx_sig.starts_with("0x"){
-                                    mint_tx_signature_sender.send((mint_tx_sig, token_id)).await;
+                                let mint_tx_hash = mint_response.mint_tx_hash;
+                                
+                                if mint_tx_hash.starts_with("0x"){
+                                    mint_tx_hash_sender.send((mint_tx_hash, token_id)).await;
                                 }
 
 
                             });
 
 
-                            while let Some((tx_hash, tid)) = mint_tx_signature_receiver.recv().await{
-                                mint_tx_signature = tx_hash;
+                            while let Some((tx_hash, tid)) = mint_tx_hash_receiver.recv().await{
+                                mint_tx_hash = tx_hash;
                                 token_id = tid;
                             }
                             
-                            if !mint_tx_signature.is_empty(){
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_signature, token_id, connection).await{
+                            if !mint_tx_hash.is_empty(){
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, connection).await{
                                     Ok(user_deposit_data) => {
 
                                         resp!{
@@ -1475,6 +1493,7 @@ async fn withdraw(
 
                         let withdraw_object = withdraw.to_owned();
 
+                        /* recipient_cid will be used to verify the signature only */
                         let get_secp256k1_pubkey = PublicKey::from_str(&withdraw_object.recipient_cid);
                         let get_secp256k1_signature = Signature::from_str(&withdraw_object.tx_signature);
                         
@@ -1514,19 +1533,19 @@ async fn withdraw(
                             secp256k1_pubkey
                         );
 
-                        let Ok(_) = get_verification else{
+                        // let Ok(_) = get_verification else{
 
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
+                        //     let verification_error = get_verification.unwrap_err();
+                        //     resp!{
+                        //         &[u8], // the data type
+                        //         &[], // response data
+                        //         &verification_error.to_string(), // response message
+                        //         StatusCode::NOT_ACCEPTABLE, // status code
+                        //         None::<Cookie<'_>>, // cookie
+                        //     }
 
-                        };
-
+                        // };
+                        
                         /*
     
                             ----------------- WITHDRAWAL LOGIC --------------------
@@ -1540,43 +1559,57 @@ async fn withdraw(
                             ------------------------------------------------------- 
                         
                         */
+
+                        let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
+                        let Ok(deposit_info) = get_deposit_info else{
+
+                            let error = get_deposit_info.unwrap_err();
+                            return error;
+                        };
+
+                        let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                        let mut burn_tx_hash = String::from("");
+                        let token_id = deposit_info.nft_id;
                         
-                        /* TODO - connect to paypal APIs */
+                        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                        /* calling the thirdweb burning api to burn inside tokio green threadpool */
+                        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                        tokio::task::spawn(async move{
 
-                        let payout_pyusd_res = 200;
-                        if payout_pyusd_res == 200{
-
-                            let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
-                            let Ok(deposit_info) = get_deposit_info else{
-
-                                let error = get_deposit_info.unwrap_err();
-                                return error;
-                            };
-
-                            let (burn_tx_signature_sender, mut burn_tx_signature_receiver) = tokio::sync::mpsc::channel::<String>(1024);
-                            let mut burn_tx_signature = String::from("");
-                            let token_id = deposit_info.nft_id;
+                            let host = std::env::var("HOST").expect("⚠️ no host variable set");
+                            let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
+                            let api_path = format!("http://{}:{}/burn/{}", host, port, token_id);
+                            let client = reqwest::Client::new();
+                            let res = client
+                                .post(api_path.as_str())
+                                .send()
+                                .await
+                                .unwrap();
                             
+                            let burn_response = res.json::<ThirdwebBurnResponse>().await.unwrap();
 
-                            tokio::task::spawn(async move{
-
-                                /* calling the thirdweb python server to burn nft */
-                                
-                                let burn_tx_sig = "".to_string(); 
-                                if burn_tx_sig.starts_with("0x"){
-                                    burn_tx_signature_sender.send(burn_tx_sig).await;
-                                }
-
-
-                            });
-
-
-                            while let Some(tx_hash) = burn_tx_signature_receiver.recv().await{
-                                burn_tx_signature = tx_hash;
+                            let burn_tx_hash = burn_response.burn_tx_hash;
+                            if burn_tx_hash.starts_with("0x"){
+                                burn_tx_hash_sender.send(burn_tx_hash).await;
                             }
 
-                            if !burn_tx_signature.is_empty(){
-                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_signature, connection).await{
+
+                        });
+
+
+                        while let Some(tx_hash) = burn_tx_hash_receiver.recv().await{
+                            burn_tx_hash = tx_hash;
+                        }
+
+                        if !burn_tx_hash.is_empty(){
+
+                            /* TODO - paypal API calling */
+                            // ...
+
+                            let payout_pyusd_res = 200;
+                            if payout_pyusd_res == 200{
+                                
+                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
                                     Ok(user_withdrawal_data) => {
 
                                         resp!{
@@ -1599,27 +1632,31 @@ async fn withdraw(
                                         resp
                                     }
                                 }
+                            
+                            
                             } else{
 
                                 resp!{
                                     &[u8], // the data type
                                     &[], // response data
-                                    CANT_BURN_CARD, // response message
+                                    CANT_WITHDRAW, // response message
                                     StatusCode::EXPECTATION_FAILED, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
+
                             }
-                            
+
                         } else{
+
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                CANT_DEPOSIT, // response message
+                                CANT_BURN_CARD, // response message
                                 StatusCode::EXPECTATION_FAILED, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }
-                    
+                            
                     }
 
                 },

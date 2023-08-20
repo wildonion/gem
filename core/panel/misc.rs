@@ -207,6 +207,17 @@ pub struct TwitterAccounts{
     pub keys: Vec<Keys>
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ThirdwebMintResponse{
+    pub mint_tx_hash: String,
+    pub token_id: String
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ThirdwebBurnResponse{
+    pub burn_tx_hash: String,
+}
+
 #[derive(Clone)] // can't bound Copy trait cause engine and url are String which are heap data structure 
 pub struct Db{
     pub mode: Mode,
