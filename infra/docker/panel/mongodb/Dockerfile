@@ -53,10 +53,7 @@ ENV TZ=Etc/UTC \
     APP_USER=appuser
 
 
-RUN groupadd $APP_USER \
-    && useradd -g $APP_USER $APP_USER \
-    && adduser $APP_USER sudo \
-    && mkdir -p ${APP}
+RUN USER=root mkdir -p ${APP}
 
 # - Copy `libpq` dependencies into the image (Required by diesel)
 COPY --from=builder /gem/target/release/panel ${APP}/panel
@@ -84,21 +81,16 @@ COPY --from=builder /usr/lib/${ARCH}-linux-gnu/lib* /usr/lib/${ARCH}-linux-gnu/
 COPY --from=builder /lib/${ARCH}-linux-gnu/libcom_err.so* /lib/${ARCH}-linux-gnu/
 COPY --from=builder /lib/${ARCH}-linux-gnu/libkeyutils.so* /lib/${ARCH}-linux-gnu/
 
-RUN chown -R $APP_USER:$APP_USER ${APP}
-RUN chmod -R 777 ${APP}
+
+
+RUN USER=root chown -R root:root ${APP}
+
 
 COPY ./.env ${APP}/.env
 COPY ./twitter-accounts.json ${APP}/twitter-accounts.json
 
-RUN USER=root mkdir ${APP}/logs
-RUN USER=root chmod -R 777 ${APP}/logs
-RUN USER=root mkdir ${APP}/logs/error-kind
-RUN USER=root chmod -R 777 ${APP}/logs/error-kind
 
-RUN USER=root mkdir ${APP}/assets
-RUN USER=root chmod -R 777 ${APP}/assets
-
-USER $APP_USER
+USER root
 WORKDIR ${APP}
 
 CMD ["./panel"]
