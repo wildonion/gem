@@ -1079,7 +1079,11 @@ async fn deposit(
                             let mut mint_tx_hash = String::from("");
                             let mut token_id = BigDecimal::default();
                             
-                            /* simd ops on u256 bits can be represented as an slice with 4 numbers each of type of 64 bits or 8 bytes */
+                            /* 
+                                simd ops on u256 bits can be represented as an slice with 4 elements 
+                                each of type 64 bits or 8 bytes, also 256 bits is 64 chars in hex 
+                                and 32 bytes of utf8
+                            */
                             let u256 = web3::types::U256::from_str("0").unwrap().0;
 
                             /* generate keccak256 from recipient_cid to mint nft to */

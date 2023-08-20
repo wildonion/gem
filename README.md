@@ -70,6 +70,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon blockc
 
 * `core`: hyper, actix web HTTP and actix WS servers.
     * `panel`: dev and admin panel actix web and actix WS server.
+    * `thirdweb`: thirdweb NFT fastapi server contains minting and burning APIs.
     * `www`: dev and admin panel app written in yew.
     * `mafia`: mafia game APIs
         * `controllers`: in-game async controllers related to hyper server.
@@ -109,6 +110,26 @@ brew link --force openssl
 brew install libpq && brew link --force libpq
 brew install graphviz
 cargo clean
+```
+
+- **NOTE**: also make sure that you have a compatible version of `bigdecimal` crate with `diesel` by running `cargo tree -p diesel --depth=1` command to find the version used by `diesel`, an example of running this command on MacOS M1 is (refer to [this](https://stackoverflow.com/questions/55783064/the-trait-dieselexpression-is-not-implemented-for-bigdecimalbigdecimal) issue on stackoverflow): 
+```bash
+diesel v2.1.0
+├── bigdecimal v0.2.2
+├── bitflags v2.3.1
+├── byteorder v1.4.3
+├── chrono v0.4.26
+├── diesel_derives v2.1.0 (proc-macro)
+├── itoa v1.0.6
+├── num-bigint v0.4.3
+│   [build-dependencies]
+├── num-integer v0.1.45
+│   [build-dependencies]
+├── num-traits v0.2.15
+│   [build-dependencies]
+├── pq-sys v0.4.8
+├── r2d2 v0.8.10
+└── uuid v1.3.3
 ```
 
 - **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on port **7443** and port **7444** respectively.
