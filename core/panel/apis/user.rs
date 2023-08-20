@@ -1033,18 +1033,18 @@ async fn deposit(
                         );
 
 
-                        // let Ok(_) = get_verification else{
+                        let Ok(_) = get_verification else{
 
-                        //     let verification_error = get_verification.unwrap_err();
-                        //     resp!{
-                        //         &[u8], // the data type
-                        //         &[], // response data
-                        //         &verification_error.to_string(), // response message
-                        //         StatusCode::NOT_ACCEPTABLE, // status code
-                        //         None::<Cookie<'_>>, // cookie
-                        //     }
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
 
-                        // };
+                        };
 
 
                         /* 
@@ -1533,18 +1533,18 @@ async fn withdraw(
                             secp256k1_pubkey
                         );
 
-                        // let Ok(_) = get_verification else{
+                        let Ok(_) = get_verification else{
 
-                        //     let verification_error = get_verification.unwrap_err();
-                        //     resp!{
-                        //         &[u8], // the data type
-                        //         &[], // response data
-                        //         &verification_error.to_string(), // response message
-                        //         StatusCode::NOT_ACCEPTABLE, // status code
-                        //         None::<Cookie<'_>>, // cookie
-                        //     }
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
 
-                        // };
+                        };
                         
                         /*
     
