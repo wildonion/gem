@@ -83,9 +83,13 @@ else
     docker stop conse-panel-pg && docker rm -f conse-panel-pg
     docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
     docker stop conse-mafia && docker rm -f conse-mafia
+    docker stop thirdweb && docker rm -f thirdweb
 
     sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
+
+    sudo docker build -t thirdweb -f $(pwd)/infra/docker/thirdweb/Dockerfile . --no-cache
+    sudo docker run -d --restart unless-stopped --network gem --name thirdweb -p 7651:7650 thirdweb
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
