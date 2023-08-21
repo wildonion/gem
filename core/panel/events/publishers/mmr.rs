@@ -73,7 +73,22 @@ pub struct CurrentMatch{
 }
 
 
+fn serding(){
+    #[derive(Serialize, Deserialize, Clone)]
+    struct HexStringEx{
+        pub name: String,
+    }
+    let mut instance = HexStringEx{name: "wildonion".to_string()};
+    let string = serde_json::to_string(&instance).unwrap();
+    let bytes = string.as_bytes();
+    let hex_string = hex::encode(bytes);
 
+    let rev_bytes = hex::decode(hex_string).unwrap();
+    let rev_instance = serde_json::from_slice::<HexStringEx>(&rev_bytes).unwrap();
+
+    let instance_name_encoded = rev_instance.name.as_bytes();
+    let instance_name_decoded = std::str::from_utf8(instance_name_encoded).unwrap().to_string();
+}
 
 // fire/emit/publish UserNotif events in ws/rpc/zmq server or using redis
 // like using emit!(UserNotif{}) macro which emit and fire an
