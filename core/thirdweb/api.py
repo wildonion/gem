@@ -23,7 +23,7 @@ def mint_nft(mint_to, amount):
 
     # Note that you can customize this metadata however you like
     metadata = NFTMetadataInput.from_json({
-        "name": f"{amount} MT YouWho NFT",
+        "name": f"{amount} YouWho NFT",
         "description": "YouWho NFT Card",
         "image": open("card.png", "rb"),
     })

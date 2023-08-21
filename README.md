@@ -38,7 +38,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon blockc
 
 * 🦾 functional, macro, MVC and ACL based design pattern server APIs
 
-* ☢️ better error handling using **match** and **Option** syntax
+* ☢️ better error handling using **match** and **Option** syntax, also all errors are in form `Result<actix::HttpResponse, actix::Error>` which allows the client to know the all in-app error reasons and prevent server from crashing.
 
 * ❌ custom error handler (`PanelError`) to logs all possible server (actixweb and websocket) and storage (redis, redis async and diesel) IO errors into file in conse panel service.
  
