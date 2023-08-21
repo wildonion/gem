@@ -2591,7 +2591,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifier\": \"\",\n    \"password\": \"\"\n}",
+									"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2639,7 +2639,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkyMzUyNjI1NTc0NzY5MDAwLCJleHAiOjE2OTQ5NDQ2MjUsImlhdCI6MTY5MjM1MjYyNX0.CLwNoZCP_99K87fldblbHm-zudUniZV0ktl6Bsib414WSpsxwLzm8XeJ69F4vp_DozoPYGcSk3ELuQmLziE90Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkyNTIxOTM4MzY1Mjc5MDAwLCJleHAiOjE2OTUxMTM5MzgsImlhdCI6MTY5MjUyMTkzOH0.YpgbcR0jvWjeKkG841mAgl-Q4Xl3sFen0Cp0qvKYFOq2lWJqT9LZngMRVy4ud_RPp3XoOpFudiWkyNQ4CzZxfg",
 											"type": "string"
 										}
 									]
@@ -2648,7 +2648,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"6219861901336676\",\n    \"device_id\": \"sjkhGDGLS-231\",\n    \"social_id\": \"0019888041\"\n}",
+									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"11\",\n    \"device_id\": \"2222\",\n    \"social_id\": \"1111\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2685,7 +2685,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient_cid\": \"0xb3e106f72e8cb2f759be095318f70ad59e96bfc2\",\n    \"from_cid\": \"034856f59e3a91dfcd5ef58a684044baf606b296a1c41210c5ad6a297f4d721f3b\",\n    \"amount\": 5,\n    \"tx_signature\": \"30440220391d00c2c0f1f6ab80fca987f447cc8eb5ee4b7bb9537da81ea09c32b9c5fb7d0220370149cbbe7bbd8bef0c782478cc85d4917b89e34ee2483da6acbaf37e45d2ca\"\n}",
+									"raw": "{\n    \"recipient_screen_cid\": \"0xDE6D7045Df57346Ec6A70DfE1518Ae7Fe61113f4\",\n    \"from_cid\": \"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d\",\n    \"amount\": 12,\n    \"tx_signature\": \"30440220391d00c2c0f1f6ab80fca987f447cc8eb5ee4b7bb9537da81ea09c32b9c5fb7d0220370149cbbe7bbd8bef0c782478cc85d4917b89e34ee2483da6acbaf37e45d2ca\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2721,7 +2721,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient_cid\": \"02b353321c3b0f7a1e98abf5285e1e7e0f76b3c4044af3b960d212e82ad78f8922\",\n    \"deposit_id\": 1,\n    \"tx_signature\": \"3045022100d6fb3692d9fe49e2daaae9c12516851088e0c5469ec328c047d2275121a4da01022069a622cead1d1e1aff214426677cc8367223632e935d86223b6351b6b17a55d6\"\n}",
+									"raw": "{\n    \"recipient_cid\": \"02b353321c3b0f7a1e98abf5285e1e7e0f76b3c4044af3b960d212e82ad78f8922\",\n    \"deposit_id\": 1,\n    \"tx_signature\": \"30440220391d00c2c0f1f6ab80fca987f447cc8eb5ee4b7bb9537da81ea09c32b9c5fb7d0220370149cbbe7bbd8bef0c782478cc85d4917b89e34ee2483da6acbaf37e45d2ca\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2919,7 +2919,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJuYW1lIjoiOFN6SHJQVmtEZjV4aG1qeVVKN1c4dkRheGhUaUdGOVhCVDlYWDJQdGl3WUYiLCJ3YWxsZXQiOiI4U3pIclBWa0RmNXhobWp5VUo3Vzh2RGF4aFRpR0Y5WEJUOVhYMlB0aXdZRiIsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkxMzI1ODkxNzA1MjkwMDAwLCJleHAiOjE2OTM5MTc4OTEsImlhdCI6MTY5MTMyNTg5MX0.EE10EyZUhCImmbEywN0_WVCEmh31J65TVV7RrXCTbi83QjaPRjkyOe7s8DeA6ebkDSg4z3-O2gQjvpFJciLnUQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjE3LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MjQ2OTk0NjAxNjYxNjU0MywiZXhwIjoxNjk1MDYxOTQ2LCJpYXQiOjE2OTI0Njk5NDZ9.d1mDqFH6LQjEL9-Vmt1g34YWpZ7eDl7nHBbw5769YgOGOdKMAnkky04N6wW-Iiqkxdpcso7EqZKfXL0oMOxgkQ",
 											"type": "string"
 										}
 									]

@@ -1478,7 +1478,7 @@ async fn withdraw(
                     };
 
                     /* checking that the incoming request is already rate limited or not */
-                    if is_rate_limited!{
+                    if is_rate_limited!{ /* chill 30 seconds */
                         redis_conn,
                         identifier_key.clone(), /* identifier */
                         String, /* the type of identifier */
@@ -1493,8 +1493,27 @@ async fn withdraw(
                             None::<Cookie<'_>>, //// cookie
                         }
 
-                    } else {
+                    } else { /* not rate limited, we're ok to go */
 
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        let user_paypal_id = user.paypal_id.unwrap_or("".to_string());
+                        if user_paypal_id.is_empty(){
+                            resp!{
+                                i32, // the data type
+                                _id, // response data
+                                EMPTY_PAYPAL_ID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                        
                         let withdraw_object = withdraw.to_owned();
 
                         /* recipient_cid will be used to verify the signature only */
@@ -1607,7 +1626,10 @@ async fn withdraw(
 
                         if !burn_tx_hash.is_empty(){
 
-                            /* TODO - paypal API calling */
+                            /* if we're here we're sure that the user updated the paypal id */
+                            let receiver_paypal_id = user_paypal_id;
+                            
+                            /* TODO - send from server paypal to receiver paypal */
                             // ...
 
                             let payout_pyusd_res = 200;
