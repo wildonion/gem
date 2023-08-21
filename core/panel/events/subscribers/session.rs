@@ -242,6 +242,7 @@ impl Handler<RoleMessage> for WsNotifSession {
     }
 }
 
+/* notification event handler */
 impl Handler<NotifySession> for WsNotifSession{
 
     type Result = ();
@@ -254,7 +255,7 @@ impl Handler<NotifySession> for WsNotifSession{
 
 }
 
-/* event listener or streamer to receive ws message */
+/* event listener, handler or streamer to receive and handle ws byte messages */
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {

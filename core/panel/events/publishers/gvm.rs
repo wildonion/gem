@@ -66,6 +66,7 @@ use crate::*;
     https://medium.com/iridium-vm/so-you-want-to-build-a-language-vm-in-rust-part-09-15d90084002
     https://medium.com/clevyio/using-rust-and-nom-to-create-an-open-source-programming-language-for-chatbots-12fe67582af5
     https://cheats.rs/#behind-the-scenes
+    https://www.i-programmer.info/programming/theory/
 
 */
 
