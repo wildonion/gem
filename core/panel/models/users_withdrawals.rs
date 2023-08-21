@@ -28,7 +28,6 @@ pub struct UserWithdrawal { /* note that the ordering of fields must be the same
     pub deposit_id: i32,
     pub burn_tx_hash: String,
     pub recipient_cid: String,
-    pub is_claimed: bool,
     pub tx_signature: String,
     pub wat: chrono::NaiveDateTime
 }
@@ -55,7 +54,6 @@ pub struct DecodedSignedWithdrawalData{
 pub struct NewUserWithdrawal{
     pub deposit_id: i32,
     pub recipient_cid: String,
-    pub is_claimed: bool,
     pub burn_tx_hash: String,
     /* 
         this must be generated inside the client by signing the whole 
@@ -70,7 +68,6 @@ pub struct UserWithdrawalData{
     pub deposit_id: i32,
     pub burn_tx_hash: String,
     pub recipient_cid: String,
-    pub is_claimed: bool,
     pub signature: String,
     pub wat: chrono::NaiveDateTime
 }
@@ -83,7 +80,6 @@ impl UserWithdrawal{
         let new_user_withdrawal = NewUserWithdrawal{
             recipient_cid: user_withdraw_request.recipient_cid.clone(),
             deposit_id: user_withdraw_request.deposit_id,
-            is_claimed: true,
             burn_tx_hash: succ_burn_tx_hash,
             tx_signature: user_withdraw_request.tx_signature
         };
@@ -109,7 +105,6 @@ impl UserWithdrawal{
         let get_user_withdrawal = users_withdrawals
             .filter(recipient_cid.eq(user_withdraw_request.recipient_cid.clone()))
             .filter(deposit_id.eq(user_withdraw_request.deposit_id))
-            .filter(is_claimed.eq(true))
             .first::<UserWithdrawal>(connection);
 
         match get_user_withdrawal{
@@ -135,10 +130,17 @@ impl UserWithdrawal{
                     {
                         Ok(user_withdrawal) => {
 
+                            /* updating the is_claimed field inside the users_deposits table for this deposit */
+                            let get_updated_user_deposit = UserDeposit::set_claim(user_withdrawal.deposit_id, connection).await;
+                            let Ok(_) = get_updated_user_deposit else{
+                                /* let client know about the result of can't updating the field using actix http response */
+                                let error_resp = get_updated_user_deposit.unwrap_err();
+                                return Err(error_resp);
+                            };
+
                             Ok(UserWithdrawalData{ 
                                 id: user_withdrawal.id, 
-                                recipient_cid: user_withdrawal.recipient_cid, 
-                                is_claimed: user_withdrawal.is_claimed, 
+                                recipient_cid: user_withdrawal.recipient_cid,
                                 signature: user_withdrawal.tx_signature,
                                 deposit_id: user_withdraw_request.deposit_id,
                                 burn_tx_hash: user_withdrawal.burn_tx_hash,
@@ -197,7 +199,6 @@ impl UserWithdrawal{
                     UserWithdrawalData{
                         id: d.id,
                         recipient_cid: d.recipient_cid,
-                        is_claimed: d.is_claimed,
                         burn_tx_hash: d.burn_tx_hash,
                         deposit_id: d.deposit_id,
                         signature: d.tx_signature,
@@ -232,7 +233,6 @@ impl UserWithdrawal{
                     UserWithdrawalData{
                         id: d.id,
                         recipient_cid: d.recipient_cid,
-                        is_claimed: d.is_claimed,
                         deposit_id: d.deposit_id,
                         burn_tx_hash: d.burn_tx_hash,
                         signature: d.tx_signature,

@@ -105,6 +105,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::withdraw);
     config.service(apis::user::get_all_user_withdrawals);
     config.service(apis::user::get_all_user_deposits);
+    config.service(apis::user::get_recipient_unclaimed_deposits);
 
     // other routs maybe ?
     // ...

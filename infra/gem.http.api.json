@@ -2756,7 +2756,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/deposit/get/user/0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
+									"raw": "{{panel-user}}/deposit/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -2764,7 +2764,7 @@
 										"deposit",
 										"get",
 										"user",
-										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
 									]
 								}
 							},
@@ -2795,6 +2795,37 @@
 										"get",
 										"user",
 										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Recipient Unclaimed Deposits",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"deposit",
+										"get",
+										"unclaimed",
+										"recipient",
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
 									]
 								}
 							},

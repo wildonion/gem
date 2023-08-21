@@ -21,6 +21,7 @@ pub static CID_RECORD_UPDATED: &str = "Conse Id Record Updated Successfully";
 pub static SIGNATURE_ENCODE_ISSUE: &str = "Can't Encode Signature From String";
 pub static INVALID_CID: &str = "Can't Encode Conse Id From String";
 pub static CID_HAS_NO_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
+pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Deposit Yet";
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";
 pub static EMPTY_PAYPAL_ID: &str = "Can't Withdraw At The Moment, Make Sure You Have A Valid PayPal Id";
 

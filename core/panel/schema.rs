@@ -61,6 +61,7 @@ diesel::table! {
         nft_id -> Numeric,
         from_cid -> Varchar,
         recipient_screen_cid -> Varchar,
+        is_claimed -> Bool,
         amount -> Int8,
         tx_signature -> Varchar,
         iat -> Timestamptz,
@@ -81,7 +82,6 @@ diesel::table! {
         deposit_id -> Int4,
         burn_tx_hash -> Varchar,
         recipient_cid -> Varchar,
-        is_claimed -> Bool,
         tx_signature -> Varchar,
         wat -> Timestamptz,
     }

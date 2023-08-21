@@ -4,7 +4,6 @@ CREATE TABLE users_withdrawals (
   deposit_id INTEGER NOT NULL,
   burn_tx_hash VARCHAR NOT NULL,
   recipient_cid VARCHAR NOT NULL,
-  is_claimed BOOLEAN NOT NULL DEFAULT false,
   tx_signature VARCHAR NOT NULL,
   wat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

@@ -28,6 +28,7 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
     pub nft_id: BigDecimal,
     pub from_cid: String,
     pub recipient_screen_cid: String,
+    pub is_claimed: bool,
     pub amount: i64,
     pub tx_signature: String,
     pub iat: chrono::NaiveDateTime
@@ -38,6 +39,7 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
 pub struct NewUserDeposit{
     pub from_cid: String,
     pub recipient_screen_cid: String,
+    pub is_claimed: bool,
     pub amount: i64,
     pub nft_id: BigDecimal,
     pub mint_tx_hash: String,
@@ -72,6 +74,7 @@ pub struct UserDepositData{
     pub from_cid: String,
     pub recipient_screen_cid: String,
     pub nft_id: String,
+    pub is_claimed: bool,
     pub amount: i64,
     pub mint_tx_hash: String,
     pub signature: String, 
@@ -85,6 +88,7 @@ impl UserDeposit{
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
             recipient_screen_cid: user_deposit_request.recipient_screen_cid,
+            is_claimed: false,
             amount: user_deposit_request.amount,
             nft_id: token_id,
             mint_tx_hash: succ_mint_tx_hash,
@@ -103,6 +107,7 @@ impl UserDeposit{
                         from_cid: user_deposit.from_cid, 
                         recipient_screen_cid: user_deposit.recipient_screen_cid,
                         nft_id: user_deposit.nft_id.to_string(),
+                        is_claimed: user_deposit.is_claimed,
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
                         mint_tx_hash: user_deposit.mint_tx_hash,
@@ -159,6 +164,7 @@ impl UserDeposit{
                 from_cid: deposit.from_cid, 
                 recipient_screen_cid: deposit.recipient_screen_cid, 
                 nft_id: deposit.nft_id.to_string(), 
+                is_claimed: deposit.is_claimed,
                 amount: deposit.amount, 
                 mint_tx_hash: deposit.mint_tx_hash, 
                 signature: deposit.tx_signature, 
@@ -193,6 +199,7 @@ impl UserDeposit{
                         id: d.id,
                         from_cid: d.from_cid,
                         recipient_screen_cid: d.recipient_screen_cid,
+                        is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
@@ -203,6 +210,55 @@ impl UserDeposit{
         )
 
 
+    }
+
+    pub async fn set_claim(deposit_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+
+        match diesel::update(users_deposits.find(deposit_id))
+            .set(is_claimed.eq(true))
+            .returning(UserDeposit::as_returning())
+            .get_result(connection)
+            {
+            
+                Ok(d) => {
+                    Ok(
+                        UserDepositData{
+                            id: d.id,
+                            from_cid: d.from_cid,
+                            recipient_screen_cid: d.recipient_screen_cid,
+                            is_claimed: d.is_claimed,
+                            amount: d.amount,
+                            nft_id: d.nft_id.to_string(),
+                            mint_tx_hash: d.mint_tx_hash,
+                            signature: d.tx_signature,
+                            iat: d.iat,
+                        }
+                    )
+
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            
+            }
     }
 
     pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
@@ -229,6 +285,7 @@ impl UserDeposit{
                         id: d.id,
                         from_cid: d.from_cid,
                         recipient_screen_cid: d.recipient_screen_cid,
+                        is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
@@ -240,5 +297,47 @@ impl UserDeposit{
 
 
     }
+
+
+    pub async fn get_unclaimeds_for(user_screen_cid: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+
+        let user_deposits = users_deposits
+            .filter(users_deposits::recipient_screen_cid.eq(user_screen_cid))
+            .filter(users_deposits::is_claimed.eq(false))
+            .load::<UserDeposit>(connection);
+            
+        let Ok(deposits) = user_deposits else{
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: RECIPIENT_HAS_NO_DEPOSIT_YET,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+
+        Ok(
+            deposits
+                .into_iter()
+                .map(|d| {
+                    UserDepositData{
+                        id: d.id,
+                        from_cid: d.from_cid,
+                        recipient_screen_cid: d.recipient_screen_cid,
+                        is_claimed: d.is_claimed,
+                        amount: d.amount,
+                        nft_id: d.nft_id.to_string(),
+                        mint_tx_hash: d.mint_tx_hash,
+                        signature: d.tx_signature,
+                        iat: d.iat,
+                    }
+                }).collect::<Vec<UserDepositData>>()
+        )
+
+
+    }
+
+
 
 }

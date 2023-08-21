@@ -1046,21 +1046,6 @@ async fn deposit(
 
                         };
 
-
-                        /* 
-
-                            ----------------- PAYMENT/FIAT LOGIC -----------------
-                                IR payment process to charge exchange
-                                        ↓↑
-                                exchange charge server paypal with usdt or PYUSD
-                                        ↓↑
-                                thridweb minting process on polygon chain (mint an nft to the receiver)
-                                        ↓↑
-                                withdraw api
-                            -------------------------------------------------------
-
-                        */
-
                         
                         /* TODO - connect to IR exchange APIs */
 
@@ -1085,9 +1070,6 @@ async fn deposit(
                                 and 32 bytes of utf8
                             */
                             let u256 = web3::types::U256::from_str("0").unwrap().0;
-
-                            /* generate keccak256 from recipient_cid to mint nft to */
-                            // let polygon_recipient_address = Wallet::generate_keccak256_from(deposit_object.recipient_screen_cid);
 
                             /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
                             let polygon_recipient_address = deposit_object.recipient_screen_cid;
@@ -1214,7 +1196,6 @@ async fn deposit(
     context_path = "/user",
     responses(
         (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
-        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
         (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
     ),
     params(
@@ -1282,71 +1263,29 @@ async fn get_all_user_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
+                    match UserDeposit::get_all_for(user_cid.to_string(), connection).await{
+                        Ok(user_deposits) => {
 
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    /* checking that the incoming request is already rate limited or not */
-                    if is_rate_limited!{
-                        redis_conn,
-                        identifier_key.clone(), /* identifier */
-                        String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key */
-                    }{
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            RATE_LIMITED, //// response message
-                            StatusCode::TOO_MANY_REQUESTS, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    } else {
-
-                       
-                       let hex_user_cid = &user_cid.to_owned()[2..];
-                       match UserDeposit::get_all_for(hex_user_cid.to_string(), connection).await{
-                            Ok(user_deposits) => {
-
-                                resp!{
-                                    Vec<UserDepositData>, // the data type
-                                    user_deposits, // response data
-                                    FETCHED, // response message
-                                    StatusCode::OK, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-
-                            },
-                            Err(resp) => {
-                                /* 
-                                    🥝 response can be one of the following:
-                                    
-                                    - DIESEL INSERT ERROR RESPONSE
-                                */
-                                resp
+                            resp!{
+                                Vec<UserDepositData>, // the data type
+                                user_deposits, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
-                       }
-                    
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
                     }
+
 
                 },
                 Err(resp) => {
@@ -1568,20 +1507,6 @@ async fn withdraw(
                             }
 
                         };
-                        
-                        /*
-    
-                            ----------------- WITHDRAWAL LOGIC --------------------
-                                withdraw process
-                                        ↓↑
-                                burn the minted nft id on chain to get the burn tx signature
-                                        ↓↑
-                                paying out the receiver with the PYUSD from the server paypal
-                                        ↓↑
-                                show claimed paypal transaction to minter
-                            ------------------------------------------------------- 
-                        
-                        */
 
                         let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
                         let Ok(deposit_info) = get_deposit_info else{
@@ -1725,7 +1650,6 @@ async fn withdraw(
     context_path = "/user",
     responses(
         (status=201, description="Fetched Successfully", body=Vec<UserWithdrawalData>),
-        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
         (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
     ),
     params(
@@ -1792,72 +1716,164 @@ async fn get_all_user_withdrawals(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+    
+                    match UserWithdrawal::get_all_for(user_cid.to_string(), connection).await{
+                        Ok(user_withdrawals) => {
 
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    /* checking that the incoming request is already rate limited or not */
-                    if is_rate_limited!{
-                        redis_conn,
-                        identifier_key.clone(), /* identifier */
-                        String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key */
-                    }{
-
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            RATE_LIMITED, //// response message
-                            StatusCode::TOO_MANY_REQUESTS, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    } else {
-
-                       
-                       let hex_user_cid = &user_cid.to_owned()[2..];
-                       match UserWithdrawal::get_all_for(hex_user_cid.to_string(), connection).await{
-                            Ok(user_withdrawals) => {
-
-                                resp!{
-                                    Vec<UserWithdrawalData>, // the data type
-                                    user_withdrawals, // response data
-                                    FETCHED, // response message
-                                    StatusCode::OK, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-
-                            },
-                            Err(resp) => {
-                                /* 
-                                    🥝 response can be one of the following:
-                                    
-                                    - DIESEL INSERT ERROR RESPONSE
-                                */
-                                resp
+                            resp!{
+                                Vec<UserWithdrawalData>, // the data type
+                                user_withdrawals, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
-                       }
-                    
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
                     }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=201, description="Fetched Successfully", body=Vec<UserWithdrawalData>),
+        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
+    ),
+    params(
+        ("cid" = String, Path, description = "user cid"),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[get("/deposit/get/unclaimed/recipient/{recipient_cid}")]
+#[passport(user)]
+async fn get_recipient_unclaimed_deposits(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    recipient_cid: web::Path<String>
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;      
+
+                    /* generate keccak256 from recipient_cid to mint nft to */
+                    let polygon_recipient_address = Wallet::generate_keccak256_from(recipient_cid.to_owned().clone());
+
+                    match UserDeposit::get_unclaimeds_for(polygon_recipient_address, connection).await{
+                        Ok(user_unclaimeds) => {
+
+                            resp!{
+                                Vec<UserDepositData>, // the data type
+                                user_unclaimeds, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
+                    }
+                        
 
                 },
                 Err(resp) => {
@@ -1898,6 +1914,8 @@ async fn get_all_user_withdrawals(
 
 
 
+
+
 pub mod exports{
     pub use super::login;
     pub use super::login_with_identifier_and_password;
@@ -1908,4 +1926,5 @@ pub mod exports{
     pub use super::withdraw;
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
+    pub use super::get_recipient_unclaimed_deposits;
 }
