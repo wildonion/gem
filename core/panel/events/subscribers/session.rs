@@ -139,6 +139,14 @@ impl WsNotifSession{
 
     }
 
+    pub async fn ecq_subscription(){
+
+
+        todo!()
+        
+
+    }
+
     /* client heartbeat */
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>){ /* ctx also contains the instance of the WsNotifSession struct */
         /* 

@@ -100,6 +100,7 @@ else
         sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-pg -p 7443:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-pg
     else
         echo \n"> 🛢 Building Conse Panel With mongo Db Storage"
+        echo \t"--[make sure you're matching over storage.clone().unwrap().get_mongodb() in your code]--"
         sudo docker build -t conse-panel-mongo -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-mongo -p 7444:7442 -v $(pwd)/infra/assets/:/usr/src/app/assets  -v $(pwd)/infra/logs/:/usr/src/app/logs conse-panel-mongo
     fi

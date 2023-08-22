@@ -77,8 +77,8 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_admin_tasks);
     config.service(apis::admin::exports::get_users_tasks);
     config.service(apis::admin::exports::add_twitter_account);
-    config.service(apis::admin::get_all_users_deposits);
-    config.service(apis::admin::get_all_users_withdrawals);
+    config.service(apis::admin::exports::get_all_users_deposits);
+    config.service(apis::admin::exports::get_all_users_withdrawals);
 
     // other routs maybe ?
     // ...
@@ -97,15 +97,16 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 pub fn init_user(config: &mut web::ServiceConfig){
     
     config.service(apis::user::exports::login);
-    config.service(apis::user::login_with_identifier_and_password);
-    config.service(apis::user::verify_twitter_account);
-    config.service(apis::user::tasks_report);
-    config.service(apis::user::make_id);
-    config.service(apis::user::deposit);
-    config.service(apis::user::withdraw);
-    config.service(apis::user::get_all_user_withdrawals);
-    config.service(apis::user::get_all_user_deposits);
-    config.service(apis::user::get_recipient_unclaimed_deposits);
+    config.service(apis::user::exports::login_with_identifier_and_password);
+    config.service(apis::user::exports::verify_twitter_account);
+    config.service(apis::user::exports::tasks_report);
+    config.service(apis::user::exports::make_id);
+    config.service(apis::user::exports::deposit);
+    config.service(apis::user::exports::withdraw);
+    config.service(apis::user::exports::get_all_user_withdrawals);
+    config.service(apis::user::exports::get_all_user_deposits);
+    config.service(apis::user::exports::get_recipient_unclaimed_deposits);
+    config.service(apis::user::exports::verify_mail);
 
     // other routs maybe ?
     // ...
@@ -125,7 +126,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
 
     config.service(apis::health::exports::index);
     config.service(apis::health::exports::check_token);
-    config.service(apis::health::get_tasks);
+    config.service(apis::health::exports::get_tasks);
     config.service(apis::health::exports::logout);
 
     // other routs maybe ?
