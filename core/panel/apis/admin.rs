@@ -48,7 +48,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
         get_users,
         get_admin_tasks,
         get_users_tasks,
-        add_twitter_account
+        add_twitter_account,
+        get_all_users_withdrawals,
+        get_all_users_deposits
     ),
     components(
         schemas(
@@ -61,7 +63,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
             NewUserInfoRequest,
             EditUserByAdminRequest,
             NewTaskRequest,
-            EditTaskRequest
+            EditTaskRequest,
+            UserDepositData,
+            UserWithdrawalData
         )
     ),
     tags(

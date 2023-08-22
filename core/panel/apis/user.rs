@@ -43,13 +43,22 @@ use crate::wallet::Wallet;
         login_with_identifier_and_password,
         verify_twitter_account,
         tasks_report,
+        make_id,
+        deposit,
+        withdraw,
+        get_all_user_withdrawals,
+        get_all_user_deposits,
+        get_recipient_unclaimed_deposits,
+        verify_mail
     ),
     components(
         schemas(
             UserData,
             FetchUserTaskReport,
             UserLoginInfoRequest,
-            TaskData
+            TaskData,
+            UserDepositData,
+            UserWithdrawalData
         )
     ),
     tags(
@@ -206,6 +215,128 @@ async fn login(
         },
         None => {
             
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=200, description="Verification Code Sent Successfully", body=[u8]),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("mail" = String, Path, description = "user mail")
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/verify-mail/{mail}")]
+#[passport(user)]
+async fn verify_mail(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    
+    let storage = storage.as_ref().to_owned();
+    
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match User::send_verification_code_to(_id, connection).await{
+                        
+                        Ok(updated_user) => {
+
+                            todo!()
+
+
+                        },
+                        Err(resp) => {
+
+                            /* 
+                                🥝 response can be one of the following:
+
+                                - USER NOT FOUND RESPONE
+                                - MAIL CLIENT ERROR
+                            */
+                            resp
+
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
             resp!{
                 &[u8], // the data type
                 &[], // response data
@@ -1927,4 +2058,5 @@ pub mod exports{
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;
+    pub use super::verify_mail;
 }

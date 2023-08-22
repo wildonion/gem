@@ -5,7 +5,7 @@
 use borsh::{BorshSerialize, BorshDeserialize};
 use crate::wallet::Wallet;
 use crate::*;
-use crate::misc::{Response, gen_chars, gen_random_idx, gen_random_number};
+use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
 use crate::schema::{users, users_tasks};
 use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -683,7 +683,7 @@ impl User{
 
     pub async fn insert(identifier_login: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
-        let random_chars = gen_chars(gen_random_number(5, 11));
+        let random_chars = gen_random_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
             let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
             CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
@@ -797,7 +797,7 @@ impl User{
 
     pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
-        let random_chars = gen_chars(gen_random_number(5, 11));
+        let random_chars = gen_random_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
             let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
             CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
@@ -1400,6 +1400,22 @@ impl User{
 
     }
 
+    pub async fn send_verification_code_to(mail_owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+        let random_code: String = (0..8).map(|_|{
+            let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
+            CHARSET[idx] as char // CHARSET is of type slice of utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+        }).collect();
+
+        /* 
+            1 - mail validation 
+            2 - send code if mail was valid 
+        */
+
+        todo!()
+
+    }
+
 }
 
 
@@ -1660,5 +1676,5 @@ impl Id{
             }
     
     }
-
+    
 }
