@@ -1056,7 +1056,7 @@ async fn deposit(
                                 if we have mint_tx_hash means that the whole payment 
                                 process is done successfully, minter paid IR exchange and 
                                 the exchange charged the server paypal with PYUSD, because 
-                                once we received the payapl successful PYUSD payment 
+                                once we received the paypal successful PYUSD payment 
                                 transaction we should mint the NFT on chain.
                             */
 
@@ -1554,7 +1554,7 @@ async fn withdraw(
                             /* if we're here we're sure that the user updated the paypal id */
                             let receiver_paypal_id = user_paypal_id;
                             
-                            /* TODO - send from server paypal to receiver paypal */
+                            /* TODO - send from server paypal to receiver paypal as PYUSD */
                             // ...
 
                             let payout_pyusd_res = 200;

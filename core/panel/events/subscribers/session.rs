@@ -86,7 +86,8 @@ impl WsNotifSession{
                 we must receive asyncly from the redis subscription streaming 
                 channel otherwise actor gets halted in here since using sync 
                 redis and actor redis cause the current thread gets halted
-                because they'll receive in a blocking manner.
+                because they'll receive in a blocking manner, thus we must 
+                use tokio::spawn() to do so.
             !!! 🚨 */
             let get_stream_messages = redis_async_pubsubconn
                 .subscribe(&cloned_notif_room)
