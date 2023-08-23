@@ -69,7 +69,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjkyMzc5NDcxLCJpYXQiOjE2ODk3ODc0NzF9.HpfuVbtogY6SaChtGB9ngmBWY2p-MxYncF60FsCBtBYIgcZXGelRAvM9BBdbaPrq5aDAr41zGrw7on6WCAT51A",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5NTI5NTY4NSwiaWF0IjoxNjkyNzAzNjg1fQ.Xhjf1ZotAEzKkPNelzKvmXji6gXDTo4mTK5XjrWloAOIVARAH-qsP2nMz3aFHxv2P2iz6ucIrqq8Cs2stgrpPA",
 											"type": "string"
 										}
 									]
@@ -78,7 +78,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"_id\": \"64b817de361f2c1b45dfb460\"\r\n}",
+									"raw": "{\r\n    \"_id\": \"64e3aa002f82de61ac1db820\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -107,7 +107,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"conse\",\r\n    \"pwd\": \"conse@1234\"\r\n}\r\n",
+									"raw": "{\r\n    \"username\": \"dev\",\r\n    \"pwd\": \"dev@1234%\"\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2632,6 +2632,34 @@
 							"response": []
 						},
 						{
+							"name": "Verify Mail",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5NTI5NTY4NSwiaWF0IjoxNjkyNzAzNjg1fQ.Xhjf1ZotAEzKkPNelzKvmXji6gXDTo4mTK5XjrWloAOIVARAH-qsP2nMz3aFHxv2P2iz6ucIrqq8Cs2stgrpPA",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/verify-mail/ea_pain@yahoo.com",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"verify-mail",
+										"ea_pain@yahoo.com"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Build Conse Id",
 							"request": {
 								"auth": {
@@ -2648,7 +2676,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"gmail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"11\",\n    \"device_id\": \"2222\",\n    \"social_id\": \"1111\"\n}",
+									"raw": "{\n    \"mail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"11\",\n    \"device_id\": \"2222\",\n    \"social_id\": \"1111\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3054,8 +3082,7 @@
 					"name": "Notif APIs",
 					"item": []
 				}
-			],
-			"description": "**NOTE** that dev APIs require conse hyper server **JWT** to be passed to request Authorization header.\n\n**NOTE** that you can get the **JWT** from the response cookie of the admin and user `login` API which is the first part of `::` sign.\n\n**NOTE** that to define twitter tasks we must prefix the `task_name` field inside the register new task API with `twitter-\\\\*` which `\\\\*` can be one of the following task names:\n\n- username\n- code\n- tweet\n- retweet\n- hashtag\n- like"
+			]
 		}
 	],
 	"event": [

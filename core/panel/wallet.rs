@@ -1,11 +1,35 @@
 
 
+/* 
+     ---------------------------------------------------------------- 
+    |  Asymmetric Crypto Wallet Implementations using ECC Algorithm
+    |----------------------------------------------------------------
+    | ed25519
+    | secp256k1
+    | secp256r1
+    |
+
+*/
+
+
 
 use crate::models::users::NewIdRequest;
 use crate::misc;
 use crate::*;
 
 
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NewSeedRequest{
+    pub mail: String,
+    pub username: String,
+    pub phone_number: String,
+    pub paypal_id: String,
+    pub account_number: String,
+    pub device_id: String,
+    pub social_id: String,
+}
 
 // https://thalesdocs.com/gphsm/luna/7/docs/network/Content/sdk/using/ecc_curve_cross-reference.htm
 #[derive(Serialize, Deserialize, Debug)]

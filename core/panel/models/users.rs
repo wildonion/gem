@@ -25,13 +25,15 @@ use super::users_tasks::UserTask;
 #[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct User{
     pub id: i32,
+    pub region: UserRegion,
     pub username: String, /* unique */
     pub activity_code: String,
     pub twitter_username: Option<String>, /* unique */
     pub facebook_username: Option<String>, /* unique */
     pub discord_username: Option<String>, /* unique */
     pub identifier: Option<String>, /* unique */
-    pub gmail: Option<String>, /* unique */
+    pub mail: Option<String>, /* unique */
+    pub is_mail_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -53,13 +55,15 @@ pub struct User{
 #[diesel(table_name=users)]
 pub struct FetchUser{
     pub id: i32,
+    pub region: UserRegion,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
-    pub gmail: Option<String>, /* unique */
+    pub mail: Option<String>, /* unique */
+    pub is_mail_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -79,13 +83,15 @@ pub struct FetchUser{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserData{
     pub id: i32,
+    pub region: UserRegion,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
-    pub gmail: Option<String>, /* unique */
+    pub mail: Option<String>, /* unique */
+    pub is_mail_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -105,13 +111,15 @@ pub struct UserData{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserIdResponse{
     pub id: i32,
+    pub region: UserRegion,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
-    pub gmail: Option<String>, /* unique */
+    pub mail: Option<String>, /* unique */
+    pub is_mail_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -131,7 +139,7 @@ pub struct UserIdResponse{
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize)]
 pub struct NewIdRequest{
-    pub gmail: String,
+    pub mail: String,
     pub username: String,
     pub phone_number: String,
     pub paypal_id: String,
@@ -142,7 +150,7 @@ pub struct NewIdRequest{
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct Id{
-    pub user_gmail: String,
+    pub user_mail: String,
     pub user_phone_number: String,
     pub user_id: i32,
     pub paypal_id: String,
@@ -176,6 +184,15 @@ pub enum UserRole{
     User,
     Dev
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(diesel_derive_enum::DbEnum)]
+#[ExistingTypePath = "crate::schema::sql_types::Userregion"]
+pub enum UserRegion{
+    Ir,
+    NoneIr,
+}
+
 
 #[derive(Insertable)]
 #[diesel(table_name=users)]
@@ -706,6 +723,7 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
+                        region: fetched_user.clone().region,
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -729,7 +747,8 @@ impl User{
                         },
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
-                        gmail: fetched_user.clone().gmail,
+                        mail: fetched_user.clone().mail,
+                        is_mail_verified: fetched_user.is_mail_verified,
                         phone_number: fetched_user.clone().phone_number,
                         paypal_id: fetched_user.clone().paypal_id,
                         account_number: fetched_user.clone().account_number,
@@ -821,6 +840,7 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
+                        region: fetched_user.clone().region,
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -844,7 +864,8 @@ impl User{
                         },
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
-                        gmail: fetched_user.clone().gmail,
+                        mail: fetched_user.clone().mail,
+                        is_mail_verified: fetched_user.is_mail_verified,
                         phone_number: fetched_user.clone().phone_number,
                         paypal_id: fetched_user.clone().paypal_id,
                         account_number: fetched_user.clone().account_number,
@@ -1058,6 +1079,7 @@ impl User{
                     Ok(
                         UserData { 
                             id: updated_user.id, 
+                            region: updated_user.clone().region,
                             username: updated_user.clone().username, 
                             activity_code: updated_user.clone().activity_code, 
                             twitter_username: updated_user.clone().twitter_username, 
@@ -1081,7 +1103,8 @@ impl User{
                             },
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
-                            gmail: updated_user.clone().gmail,
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
                             phone_number: updated_user.clone().phone_number,
                             paypal_id: updated_user.clone().paypal_id,
                             account_number: updated_user.clone().account_number,
@@ -1185,6 +1208,7 @@ impl User{
                         .into_iter()
                         .map(|u| UserData { 
                             id: u.id, 
+                            region: u.clone().region,
                             username: u.clone().username, 
                             activity_code: u.clone().activity_code, 
                             twitter_username: u.clone().twitter_username, 
@@ -1208,7 +1232,8 @@ impl User{
                             },
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
-                            gmail: u.clone().gmail,
+                            mail: u.clone().mail,
+                            is_mail_verified: u.clone().is_mail_verified,
                             phone_number: u.clone().phone_number,
                             paypal_id: u.clone().paypal_id,
                             account_number: u.clone().account_number,
@@ -1324,6 +1349,7 @@ impl User{
                             Ok(
                                 UserData { 
                                     id: updated_user.id, 
+                                    region: updated_user.clone().region,
                                     username: updated_user.clone().username, 
                                     activity_code: updated_user.clone().activity_code, 
                                     twitter_username: updated_user.clone().twitter_username, 
@@ -1347,7 +1373,8 @@ impl User{
                                     },
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
-                                    gmail: updated_user.clone().gmail,
+                                    mail: updated_user.clone().mail,
+                                    is_mail_verified: updated_user.is_mail_verified,
                                     phone_number: updated_user.clone().phone_number,
                                     paypal_id: updated_user.clone().paypal_id,
                                     account_number: updated_user.clone().account_number,
@@ -1443,7 +1470,7 @@ impl Id{
                 match diesel::update(users.find(id_owner))
                     .set(
                 (
-                            gmail.eq(id_.gmail.clone()),
+                            mail.eq(id_.mail.clone()),
                             phone_number.eq(id_.phone_number.clone()),
                             username.eq(id_.username.clone()),
                             paypal_id.eq(id_.paypal_id.clone()),
@@ -1459,6 +1486,7 @@ impl Id{
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
+                                region: updated_user.clone().region,
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -1482,7 +1510,8 @@ impl Id{
                                 },
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
-                                gmail: updated_user.clone().gmail,
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
                                 phone_number: updated_user.clone().phone_number,
                                 paypal_id: updated_user.clone().paypal_id,
                                 account_number: updated_user.clone().account_number,
@@ -1554,7 +1583,7 @@ impl Id{
 
                 Ok(
                     Id { 
-                        user_gmail: id_.gmail,
+                        user_mail: id_.mail,
                         user_phone_number: id_.phone_number,
                         user_id: id_owner,
                         username: id_username, 
@@ -1592,11 +1621,11 @@ impl Id{
             .set(
         (   
                 /* 
-                    can't return heap data like self.user_gmail which is of type String 
+                    can't return heap data like self.user_mail which is of type String 
                     we must clone them or use their borrowed form or return the static 
                     version of their slice like &'static str
                 */
-                    gmail.eq(self.user_gmail.clone()),
+                    mail.eq(self.user_mail.clone()),
                     phone_number.eq(self.user_phone_number.clone()),
                     username.eq(self.username.clone()),
                     paypal_id.eq(self.paypal_id.clone()),
@@ -1615,6 +1644,7 @@ impl Id{
                     Ok(
                         UserIdResponse { 
                             id: updated_user.id, 
+                            region: updated_user.clone().region,
                             username: updated_user.username, 
                             activity_code: updated_user.activity_code, 
                             twitter_username: updated_user.twitter_username, 
@@ -1637,7 +1667,8 @@ impl Id{
                             ,
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
-                            gmail: updated_user.gmail,
+                            mail: updated_user.mail,
+                            is_mail_verified: updated_user.is_mail_verified,
                             phone_number: updated_user.phone_number,
                             paypal_id: updated_user.paypal_id,
                             account_number: updated_user.account_number,

@@ -1,16 +1,19 @@
 -- Your SQL goes here
 
 CREATE TYPE UserRole AS ENUM ('admin', 'dev', 'user');
+CREATE TYPE UserRegion AS ENUM ('ir', 'noneir');
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
+  region UserRegion NOT NULL DEFAULT 'ir',
   username VARCHAR NOT NULL UNIQUE,
   activity_code VARCHAR NOT NULL,
   twitter_username VARCHAR DEFAULT NULL UNIQUE,
   facebook_username VARCHAR DEFAULT NULL UNIQUE,
   discord_username VARCHAR DEFAULT NULL UNIQUE,
   identifier VARCHAR DEFAULT NULL UNIQUE,
-  gmail VARCHAR DEFAULT NULL UNIQUE,
+  mail VARCHAR DEFAULT NULL UNIQUE,
+  is_mail_verified BOOLEAN NOT NULL DEFAULT false,
   phone_number VARCHAR DEFAULT NULL UNIQUE,
   paypal_id VARCHAR DEFAULT NULL UNIQUE,
   account_number VARCHAR DEFAULT NULL UNIQUE,

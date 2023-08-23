@@ -319,6 +319,7 @@ impl UserTask{
                 UserTaskData{
                     user: UserData { 
                         id: user.id, 
+                        region: user.clone().region,
                         username: user.username, 
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 
@@ -342,7 +343,8 @@ impl UserTask{
                         },
                         created_at: user.created_at.to_string(),
                         updated_at: user.updated_at.to_string(),
-                        gmail: user.gmail,
+                        mail: user.mail,
+                        is_mail_verified: user.is_mail_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,

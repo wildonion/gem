@@ -2,6 +2,10 @@
 
 pub mod sql_types {
     #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "userregion"))]
+    pub struct Userregion;
+
+    #[derive(diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "userrole"))]
     pub struct Userrole;
 }
@@ -25,17 +29,20 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
+    use super::sql_types::Userregion;
     use super::sql_types::Userrole;
 
     users (id) {
         id -> Int4,
+        region -> Userregion,
         username -> Varchar,
         activity_code -> Varchar,
         twitter_username -> Nullable<Varchar>,
         facebook_username -> Nullable<Varchar>,
         discord_username -> Nullable<Varchar>,
         identifier -> Nullable<Varchar>,
-        gmail -> Nullable<Varchar>,
+        mail -> Nullable<Varchar>,
+        is_mail_verified -> Bool,
         phone_number -> Nullable<Varchar>,
         paypal_id -> Nullable<Varchar>,
         account_number -> Nullable<Varchar>,

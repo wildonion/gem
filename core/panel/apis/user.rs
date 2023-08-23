@@ -136,6 +136,7 @@ async fn login(
                     
                     let user_login_data = UserData{
                         id: user.id,
+                        region: user.region,
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -159,7 +160,8 @@ async fn login(
                         },
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
-                        gmail: user.gmail,
+                        mail: user.mail,
+                        is_mail_verified: user.is_mail_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,
@@ -419,6 +421,7 @@ async fn login_with_identifier_and_password(
                     
                     let user_login_data = UserData{
                         id: user.id,
+                        region: user.region,
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -442,7 +445,8 @@ async fn login_with_identifier_and_password(
                         },
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
-                        gmail: user.gmail,
+                        mail: user.mail,
+                        is_mail_verified: user.is_mail_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,
@@ -1121,6 +1125,35 @@ async fn deposit(
 
                     } else {
 
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        let mut is_ir = false;
+                        let user_deposit_address = match user.region{
+                            UserRegion::Ir => {
+                                is_ir = true;
+                                user.account_number.unwrap_or("".to_string())
+                            },
+                            _ => {
+                                user.paypal_id.unwrap_or("".to_string())
+                            }
+                        };
+                        
+                        if user_deposit_address.is_empty(){
+                            resp!{
+                                i32, // the data type
+                                _id, // response data
+                                EMPTY_WITHDRAWAL_ADDRESS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+
                         let deposit_object = deposit.to_owned();
 
                         let get_secp256k1_pubkey = PublicKey::from_str(&deposit_object.from_cid);
@@ -1177,19 +1210,33 @@ async fn deposit(
 
                         };
 
+                        /* 
+                            send from user paypal or IR account to server paypal or server IR gateway
+                            also if we're here we're sure that the user updated the paypal 
+                            id or account number
+                        */
+
+                        let portal_response = 417 as u16;
+                        if is_ir{
+                            
+                            let sender_account_number = user_deposit_address;
+                            let portal_response = 200 as u16;
+
+                            // TODO - send from user IR account to server IR gateway
+                            // ...
                         
-                        /* TODO - connect to IR exchange APIs */
+                        } else{
 
-                        let deposit_ir_res = 200;
-                        if deposit_ir_res == 200{
+                            let sender_paypal_id = user_deposit_address;
+                            let portal_response = 200 as u16;
 
-                            /* 
-                                if we have mint_tx_hash means that the whole payment 
-                                process is done successfully, minter paid IR exchange and 
-                                the exchange charged the server paypal with PYUSD, because 
-                                once we received the paypal successful PYUSD payment 
-                                transaction we should mint the NFT on chain.
-                            */
+                            // TODO - send from user paypal account to server payapl wallet
+                            // ...
+
+                        }
+
+                        /* if the portal response was 200 we'll mint the nft and insert a new user deposit */
+                        if portal_response == 200{
 
                             let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, BigDecimal)>(1024);
                             let mut mint_tx_hash = String::from("");
@@ -1573,12 +1620,22 @@ async fn withdraw(
                             return error_resp;
                         };
 
-                        let user_paypal_id = user.paypal_id.unwrap_or("".to_string());
-                        if user_paypal_id.is_empty(){
+                        let mut is_ir = false;
+                        let user_withdraw_address = match user.region{
+                            UserRegion::Ir => {
+                                is_ir = true;
+                                user.account_number.unwrap_or("".to_string())
+                            },
+                            _ => {
+                                user.paypal_id.unwrap_or("".to_string())
+                            }
+                        };
+                        
+                        if user_withdraw_address.is_empty(){
                             resp!{
                                 i32, // the data type
                                 _id, // response data
-                                EMPTY_PAYPAL_ID, // response message
+                                EMPTY_WITHDRAWAL_ADDRESS, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
@@ -1682,14 +1739,34 @@ async fn withdraw(
 
                         if !burn_tx_hash.is_empty(){
 
-                            /* if we're here we're sure that the user updated the paypal id */
-                            let receiver_paypal_id = user_paypal_id;
-                            
-                            /* TODO - send from server paypal to receiver paypal as PYUSD */
-                            // ...
+                            /* 
+                                send from server paypal or IR gateway to receiver paypal as PYUSD 
+                                or IR account number also if we're here we're sure that the 
+                                user updated the paypal id or account number
+                            */
 
-                            let payout_pyusd_res = 200;
-                            if payout_pyusd_res == 200{
+                            let portal_response = 417 as u16;
+                            if is_ir{
+                                
+                                let receiver_account_number = user_withdraw_address;
+                                let portal_response = 200 as u16;
+
+                                // TODO - send from server paypal to receiver payal as PYUSD
+                                // ...
+
+                            
+                            } else{
+
+                                let receiver_paypal_id = user_withdraw_address;
+                                let portal_response = 200 as u16;
+
+                                // TODO - send from server IR gateway to receiver IR account number
+                                // ...
+
+                            }
+
+                            /* if the portal response was 200 we'll insert a new user withdrawal */
+                            if portal_response == 200{
                                 
                                 match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
                                     Ok(user_withdrawal_data) => {

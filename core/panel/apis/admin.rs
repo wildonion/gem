@@ -522,6 +522,7 @@ async fn login(
                             
                             let user_login_data = UserData{
                                 id: user.id,
+                                region: user.region,
                                 username: user.username.clone(),
                                 activity_code: user.activity_code.clone(),
                                 twitter_username: user.twitter_username.clone(),
@@ -545,7 +546,8 @@ async fn login(
                                 },
                                 created_at: user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
-                                gmail: user.gmail,
+                                mail: user.mail,
+                                is_mail_verified: user.is_mail_verified,
                                 phone_number: user.phone_number,
                                 paypal_id: user.paypal_id,
                                 account_number: user.account_number,
