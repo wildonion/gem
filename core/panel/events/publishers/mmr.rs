@@ -6,6 +6,8 @@
 
     https://github.com/wildonion/redis4
     
+    actix ws actor event and stream handler/loop using tokio spawn, select, mpsc, mutex and tcp
+
     ------------------------------------------------
     networking(actor, ws, redis pubsub and streams):
     ------------------------------------------------
