@@ -248,6 +248,14 @@ impl Contract{
         
     }
 
+}
+
+
+#[cfg(test)]
+pub mod tests{
+
+    use super::*;
+
     pub fn ed25519_test() -> Result<(), ()>{
         
         #[derive(Serialize, Deserialize)]
@@ -263,7 +271,7 @@ impl Contract{
         };
         let stringify_data = serde_json::to_string_pretty(&data).unwrap();
 
-        let contract = Self::new("wildonion");
+        let contract = Contract::new("wildonion");
         
         let signature_hex = Wallet::ed25519_sign(stringify_data.clone(), contract.wallet.ed25519_secret_key.unwrap());
         
@@ -275,5 +283,6 @@ impl Contract{
         }
 
     }
+
 
 }
