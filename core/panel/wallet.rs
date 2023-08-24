@@ -92,7 +92,7 @@ impl Wallet{
         let hashed_input_id_bytes = hashed_input_id.as_ref();
         
         /* to create the rng we need a 32 bytes seed and we're sure that the hash is 32 bytes cause it's sha256 bits */
-        let seed = <[u8; 32]>::try_from(&hashed_input_id_bytes[0..32]).unwrap();
+        let seed = <[u8; 32]>::try_from(&hashed_input_id_bytes[0..32]).unwrap(); /* creating a 32 bytes from the first 32 bytes of hashed_input_id_bytes */
         let rng = &mut StdRng::from_seed(seed);
         
         /* since the secp is going to be built from an specific seed thus the generated keypair will be the same everytime we request a new one */
@@ -133,9 +133,17 @@ impl Wallet{
 
     pub fn ed25519_sign(data: String, prvkey: String) -> Option<String>{
 
+        /* generating sha25 bits hash of data */
+        let mut hasher = Sha256::new();
+        hasher.update(data.as_str());
+        let hash_data = hasher.finalize();
+
+        /* decoding private key to bytes cause it's in hex format */
         let prvkey_bytes = hex::decode(prvkey).unwrap();
         let ed25519 = Self::retrieve_ed25519_keypair(&prvkey_bytes);
-        let signature = ed25519.sign(data.as_bytes());
+
+        /* signing the hashed data */
+        let signature = ed25519.sign(&hash_data);
         let sig = signature.as_ref().to_vec();
         Some(hex::encode(&sig))
 
@@ -143,17 +151,25 @@ impl Wallet{
 
     pub fn verify_ed25519_signature(sig: String, data: String, pubkey: String) -> bool{
 
+        /* decoding sig string to bytes cause it's in hex format */
         let sig_bytes = hex::decode(&sig).unwrap();
-        let message = data.as_bytes();
-        let pubkey = hex::encode(pubkey);
-        let ring_pubkey = ring_signature::UnparsedPublicKey::new(&ring_signature::ED25519, pubkey);
+
+        /* generating sha25 bits hash of data */
+        let mut hasher = Sha256::new();
+        hasher.update(data.as_str());
+        let hash_data = hasher.finalize();
+
+        /* creating the public key  */
+        let ring_pubkey = ring_signature::UnparsedPublicKey::new(
+            &ring_signature::ED25519, 
+            pubkey.as_bytes());
 
         /* 
             Vec<u8> can be coerced to &[u8] slice by taking a reference to it 
             since a pointer to the underlying Vec<u8> means taking a slice of 
             vector with a valid lifetime
         */
-        match ring_pubkey.verify(message, &sig_bytes){ 
+        match ring_pubkey.verify(&hash_data, &sig_bytes){ 
             Ok(_) => true,
             Err(_) => false
         }
@@ -171,6 +187,10 @@ impl Wallet{
 
     pub fn verify_secp256k1_signature(data: String, sig: Signature, pk: PublicKey) -> Result<(), secp256k1::Error>{
 
+        /* 
+            data is required to be passed to the method since we'll compare
+            the hash of it with the one inside the signature 
+        */
         let data_bytes = data.as_bytes();
         let hashed_data = Message::from_hashed_data::<sha256::Hash>(data_bytes);
             
@@ -197,6 +217,8 @@ impl Wallet{
         
         /* message is an sha256 bits hashed data */
         let secp = Secp256k1::new();
+
+        /* signing the hashed data */
         secp.sign_ecdsa(&hashed_data, &secret_key)
 
     }
@@ -222,11 +244,16 @@ impl Wallet{
         
         /* json stringifying the json_input value */
         let inputs_to_sign = serde_json::to_string(&data).unwrap(); 
+
+        /* generating sha256 bits hash of data */
+        let mut hasher = Sha256::new();
+        hasher.update(inputs_to_sign.as_str());
+        let hash_data = hasher.finalize();
     
-        /* generating signature from the input data */
-        let ec_sig = ec_signer.sign(inputs_to_sign.as_bytes()).unwrap();
+        /* generating signature from the hashed data */
+        let ec_sig = ec_signer.sign(&hash_data).unwrap();
         
-        /* converting the signature byte into hex string */
+        /* converting the signature bytes into hex string */
         Some(hex::encode(&ec_sig))
 
     }
@@ -242,7 +269,7 @@ impl Wallet{
         /* building the verifier from the public key */
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
-        /* verifying the signature byte which returns the data itself in form of utf8 bytes */
+        /* verifying the signature byte which returns the hash of data in form of vector of utf8 bytes */
         let encoded_data = ec_verifier.verify(signature);
 
         encoded_data
