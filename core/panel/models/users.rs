@@ -580,6 +580,9 @@ impl User{
                                         .into_iter()
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
+        
+        // let time_hash_hex_string = hex::encode(&time_hash);
+
 
         /* if we're here means that the password was correct */
         let token = self.generate_token(time_hash_now).unwrap();
@@ -614,6 +617,8 @@ impl User{
                                         .into_iter()
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
+        
+        // let time_hash_hex_string = hex::encode(&time_hash);
 
         if time_hash_hex_string == cookie_time_hash{
             true
