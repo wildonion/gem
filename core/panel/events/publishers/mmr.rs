@@ -5,7 +5,7 @@
 /*
     
     actix ws actor event and stream handler/loop using tokio spawn, 
-    select, mpsc, mutex and tcp with redis and libp2p pubsub
+    select, mpsc, mutex and tcp with redis and libp2p pubsub streams
 
     ------------------------------------------------
     networking(actor, ws, redis pubsub and streams):

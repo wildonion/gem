@@ -137,7 +137,7 @@ pub struct UserIdResponse{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
 pub struct NewIdRequest{
     pub mail: String,
     pub username: String,
