@@ -1216,23 +1216,50 @@ async fn deposit(
                             id or account number
                         */
 
-                        let portal_response = 417 as u16;
+                        let mut portal_response = 417 as u16;
+                        let (portal_response_sender, mut portal_response_receiver) = tokio::sync::mpsc::channel::<u16>(1024);
                         if is_ir{
                             
                             let sender_account_number = user_deposit_address;
                             let portal_response = 200 as u16;
 
-                            // TODO - send from user IR account to server IR gateway
-                            // ...
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                            /* send from user IR account to server IR gateway */
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                            tokio::spawn(async move{
+
+                                // TODO -
+                                // ...
+
+                                let rcode = 417 as u16;
+                                portal_response_sender.send(rcode).await;
+
+                            });
+
                         
                         } else{
 
                             let sender_paypal_id = user_deposit_address;
                             let portal_response = 200 as u16;
 
-                            // TODO - send from user paypal account to server payapl wallet
-                            // ...
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                            /* send from user paypal account to server payapl */
+                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                            tokio::spawn(async move{
 
+                                // TODO -
+                                // ...
+
+                                let rcode = 417 as u16;
+                                portal_response_sender.send(rcode).await;
+                                
+                            });
+
+
+                        }
+                            /* receiving asyncly from the channel */
+                        while let Some(rcode) = portal_response_receiver.recv().await{
+                            portal_response = rcode;
                         }
 
                         /* if the portal response was 200 we'll mint the nft and insert a new user deposit */
@@ -1282,7 +1309,7 @@ async fn deposit(
 
                             });
 
-
+                            /* receiving asyncly from the channel */
                             while let Some((tx_hash, tid)) = mint_tx_hash_receiver.recv().await{
                                 mint_tx_hash = tx_hash;
                                 token_id = tid;
@@ -1732,7 +1759,7 @@ async fn withdraw(
 
                         });
 
-
+                        /* receiving asyncly from the channel */
                         while let Some(tx_hash) = burn_tx_hash_receiver.recv().await{
                             burn_tx_hash = tx_hash;
                         }
@@ -1745,24 +1772,48 @@ async fn withdraw(
                                 user updated the paypal id or account number
                             */
 
-                            let portal_response = 417 as u16;
+                            let mut portal_response = 417 as u16;
+                            let (portal_response_sender, mut portal_response_receiver) = tokio::sync::mpsc::channel::<u16>(1024);
                             if is_ir{
                                 
                                 let receiver_account_number = user_withdraw_address;
                                 let portal_response = 200 as u16;
 
-                                // TODO - send from server paypal to receiver payal as PYUSD
-                                // ...
+                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                                /* calling the paypal send api to send from server paypal to receiver payal as PYUSD  */
+                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+                                tokio::spawn(async move{
+                                    
+                                    // TODO - 
+                                    // ...
 
+                                    let rcode = 417 as u16;
+                                    portal_response_sender.send(rcode).await;
+
+                                });
                             
                             } else{
 
                                 let receiver_paypal_id = user_withdraw_address;
                                 let portal_response = 200 as u16;
 
-                                // TODO - send from server IR gateway to receiver IR account number
-                                // ...
+                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+                                /* calling the IR gateway send api to send from server IR account to receiver IR account */
+                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+                                tokio::spawn(async move{
 
+                                    // TODO - 
+                                    // ...
+
+                                    let rcode = 417 as u16;
+                                    portal_response_sender.send(rcode).await;
+                                
+                                });
+
+                            }
+                            /* receiving asyncly from the channel */
+                            while let Some(rcode) = portal_response_receiver.recv().await{
+                                portal_response = rcode;
                             }
 
                             /* if the portal response was 200 we'll insert a new user withdrawal */
@@ -2118,10 +2169,6 @@ async fn get_recipient_unclaimed_deposits(
     }
 
 }
-
-
-
-
 
 
 pub mod exports{

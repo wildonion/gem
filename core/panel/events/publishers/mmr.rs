@@ -10,7 +10,7 @@
     ------------------------------------------------
     networking(actor, ws, redis pubsub and streams):
     ------------------------------------------------
-        event or async task handler, streamer, loop 
+        event of async task handler, streamer, loop 
         inside std::thread::scope and tokio::spawn based 
         tokio tcp stream or mmq streaming over future 
         bytes using tokio and ws actor and redis pubsub 
@@ -74,23 +74,6 @@ pub struct CurrentMatch{
 }
 
 
-fn serding(){
-    #[derive(Serialize, Deserialize, Clone)]
-    struct HexStringEx{
-        pub name: String,
-    }
-    let mut instance = HexStringEx{name: "wildonion".to_string()};
-    let string = serde_json::to_string(&instance).unwrap();
-    let bytes = string.as_bytes();
-    let hex_string = hex::encode(bytes);
-
-    let rev_bytes = hex::decode(hex_string).unwrap();
-    let rev_instance = serde_json::from_slice::<HexStringEx>(&rev_bytes).unwrap();
-
-    let instance_name_encoded = rev_instance.name.as_bytes();
-    let instance_name_decoded = std::str::from_utf8(instance_name_encoded).unwrap().to_string();
-}
-
 pub async fn race_condition_avoidance(){
 
     /* ---------------------------------------------------------------------- */
@@ -106,12 +89,13 @@ pub async fn race_condition_avoidance(){
         and mutate the type then send it through the jobq channel to the other 
         threads for reading
     */
+    pub type ArcedMutexed = std::sync::Arc<tokio::sync::Mutex<String>>;
     #[derive(Clone)]
-    pub struct Data{
+    pub struct Data<D: Send + Sync + 'static>{
         /* we're using tokio mutex to avoid blocing issues inside the current thread since it locks asycnly */
-        pub actual: std::sync::Arc<tokio::sync::Mutex<String>>
+        pub actual: D
     }
-    let mut data_instance = Data{
+    let mut data_instance = Data::<ArcedMutexed>{
         actual: std::sync::Arc::new(tokio::sync::
             Mutex::new(
                 String::from("a mutexed data")
@@ -123,7 +107,7 @@ pub async fn race_condition_avoidance(){
     
     /* reading from the channel is a mutable process thus receiver must be mutable */
     let (data_sender, mut data_receiver) = 
-        tokio::sync::mpsc::channel::<Data>(1024);
+        tokio::sync::mpsc::channel::<Data<ArcedMutexed>>(1024);
     /*
         since tokio spawn takes a closure which captures the env vars 
         we have to use the cloned form of those types and pass them into

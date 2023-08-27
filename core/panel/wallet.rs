@@ -14,24 +14,12 @@
 
 
 use secp256k1::hashes::Hash;
-
 use crate::models::users::NewIdRequest;
 use crate::misc;
 use crate::*;
 
 
 
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewSeedRequest{
-    pub mail: String,
-    pub username: String,
-    pub phone_number: String,
-    pub paypal_id: String,
-    pub account_number: String,
-    pub device_id: String,
-    pub social_id: String,
-}
 
 // https://thalesdocs.com/gphsm/luna/7/docs/network/Content/sdk/using/ecc_curve_cross-reference.htm
 #[derive(Serialize, Deserialize, Debug)]
@@ -85,16 +73,16 @@ impl Wallet{
 
     }
 
-    pub fn new_secp256k1(input_id: NewIdRequest) -> Self{
+    pub fn new_secp256k1(input_seed: NewIdRequest) -> Self{
 
         /* generating seed from the input id to create the rng for secp256k1 keypair */
-        let input_id_string = serde_json::to_string(&input_id).unwrap();
-        let input_id_bytes = input_id_string.as_bytes();
-        let hashed_input_id = ring::digest::digest(&ring::digest::SHA256, input_id_bytes);
-        let hashed_input_id_bytes = hashed_input_id.as_ref();
+        let input_seed_string = serde_json::to_string(&input_seed).unwrap();
+        let input_seed_bytes = input_seed_string.as_bytes();
+        let hashed_input_seed = ring::digest::digest(&ring::digest::SHA256, input_seed_bytes);
+        let hashed_input_seed_bytes = hashed_input_seed.as_ref();
         
         /* to create the rng we need a 32 bytes seed and we're sure that the hash is 32 bytes cause it's sha256 bits */
-        let seed = <[u8; 32]>::try_from(&hashed_input_id_bytes[0..32]).unwrap(); /* creating a 32 bytes from the first 32 bytes of hashed_input_id_bytes */
+        let seed = <[u8; 32]>::try_from(&hashed_input_seed_bytes[0..32]).unwrap(); /* creating a 32 bytes from the first 32 bytes of hashed_input_seed_bytes */
         let rng = &mut StdRng::from_seed(seed);
         
         /* since the secp is going to be built from an specific seed thus the generated keypair will be the same everytime we request a new one */
@@ -133,14 +121,12 @@ impl Wallet{
 
     }
 
-    pub fn ed25519_sign(data: String, prvkey: String) -> Option<String>{
+    pub fn ed25519_sign(data: String, prvkey: &str) -> Option<String>{
 
         /* generating sha25 bits hash of data */
         let hash_data_bytes = Self::generate_sha256_from(data);
 
-        /* decoding private key to bytes cause it's in hex format */
-        let prvkey_bytes = hex::decode(prvkey).unwrap();
-        let ed25519 = Self::retrieve_ed25519_keypair(&prvkey_bytes);
+        let ed25519 = Self::retrieve_ed25519_keypair(prvkey);
 
         /* signing the hashed data */
         let signature = ed25519.sign(&hash_data_bytes);
@@ -151,8 +137,13 @@ impl Wallet{
 
     pub fn verify_ed25519_signature(sig: String, data: String, pubkey: String) -> bool{
 
-        /* decoding sig string to bytes cause it's in hex format */
+        /* 
+            since sig and pubkey are hex string we have to get their bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
         let sig_bytes = hex::decode(&sig).unwrap();
+        let pubkey_bytes = hex::decode(pubkey).unwrap();
 
         /* generating sha25 bits hash of data */
         let hash_data_bytes = Self::generate_sha256_from(data);
@@ -160,7 +151,7 @@ impl Wallet{
         /* creating the public key  */
         let ring_pubkey = ring_signature::UnparsedPublicKey::new(
             &ring_signature::ED25519, 
-            pubkey.as_bytes());
+            &pubkey_bytes);
 
         /* 
             Vec<u8> can be coerced to &[u8] slice by taking a reference to it 
@@ -174,10 +165,14 @@ impl Wallet{
 
     }
 
-    pub fn retrieve_ed25519_keypair(prv_key: &[u8]) -> Ed25519KeyPair{
+    pub fn retrieve_ed25519_keypair(prv_key: &str) -> Ed25519KeyPair{
 
-        /* constructing keypair from the private key */
-        let private_key = hex::decode(&prv_key).unwrap();
+        /* 
+            since prv_key is a hex string we have to get its bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
+        let private_key = hex::decode(prv_key).unwrap();
         let generated_ed25519_keys = Ed25519KeyPair::from_pkcs8(private_key.as_ref()).unwrap();
         generated_ed25519_keys
 
@@ -203,10 +198,16 @@ impl Wallet{
 
     }
 
-    pub fn retrieve_secp256k1_keypair(secret_key: &[u8], public_key: &[u8]) -> (PublicKey, SecretKey){
+    pub fn retrieve_secp256k1_keypair(secret_key: &str) -> (PublicKey, SecretKey){
 
+        /* 
+            since secret_key is a hex string we have to get its bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
+        let prv_bytes = hex::decode(secret_key).unwrap();
         let secp = Secp256k1::new();
-        let secret_key = SecretKey::from_slice(secret_key).unwrap();
+        let secret_key = SecretKey::from_slice(&prv_bytes).unwrap();
         let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
         (public_key, secret_key)
@@ -226,11 +227,19 @@ impl Wallet{
 
     }
 
-    pub fn retrieve_secp256r1_keypair(pubkey_bytes: &[u8], prvkey_bytes: &[u8]) -> themis::keys::KeyPair{
+    pub fn retrieve_secp256r1_keypair(pubkey: &str, prvkey: &str) -> themis::keys::KeyPair{
+
+        /* 
+            since pubkey and prvkey are hex string we have to get their bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
+        let pubkey_bytes = hex::decode(pubkey).unwrap();
+        let prvkey_bytes = hex::decode(prvkey).unwrap();
 
         /* building ECDSA keypair from pubkey and prvkey slices */
-        let ec_pubkey = EcdsaPublicKey::try_from_slice(pubkey_bytes).unwrap();
-        let ec_prvkey = EcdsaPrivateKey::try_from_slice(prvkey_bytes).unwrap();
+        let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
+        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
         let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
         generated_ec_keypair
 
@@ -238,7 +247,11 @@ impl Wallet{
 
     pub fn secp256r1_sign(signer: String, data: String) -> Option<String>{
 
-        /* building the signer from the private key */
+        /* 
+            since signer is a hex string we have to get its bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
         let prvkey_bytes = hex::decode(signer).unwrap();
         let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
         let ec_signer = SecureSign::new(ec_prvkey.clone());
@@ -254,11 +267,19 @@ impl Wallet{
 
     }
 
-    pub fn verify_secp256r1_signature(signature: &[u8], pubkey: &[u8]) -> Result<Vec<u8>, themis::Error>{
+    pub fn verify_secp256r1_signature(signature: &str, pubkey: &str) -> Result<Vec<u8>, themis::Error>{
+
+        /* 
+            since signature and pubkey are hex string we have to get their bytes using 
+            hex::decode() cause calling .as_bytes() on the hex string converts
+            the hex string itself into bytes and it doesn't return the acutal bytes
+        */
+        let signature_bytes = hex::decode(signature).unwrap();
+        let pubkey_bytes = hex::decode(pubkey).unwrap();
 
         /* building the public key from public key bytes */
-        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(pubkey) else{
-            let err = EcdsaPublicKey::try_from_slice(pubkey).unwrap_err();
+        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(&pubkey_bytes) else{
+            let err = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap_err();
             return Err(err); /* can't build pubkey from the passed in slice */
         };
 
@@ -266,7 +287,7 @@ impl Wallet{
         let ec_verifier = SecureVerify::new(ec_pubkey.clone());
 
         /* verifying the signature byte which returns the hash of data in form of vector of utf8 bytes */
-        let encoded_data = ec_verifier.verify(signature);
+        let encoded_data = ec_verifier.verify(&signature_bytes);
 
         /* this is the encoded sha256 bits hash of data */
         encoded_data
@@ -360,7 +381,7 @@ pub mod tests{
 
         let contract = Contract::new_with_ed25519("wildonion");
         
-        let signature_hex = Wallet::ed25519_sign(stringify_data.clone(), contract.wallet.ed25519_secret_key.as_ref().unwrap().to_string());
+        let signature_hex = Wallet::ed25519_sign(stringify_data.clone(), contract.wallet.ed25519_secret_key.as_ref().unwrap());
         
         let is_verified = Wallet::verify_ed25519_signature(signature_hex.unwrap(), stringify_data, contract.wallet.ed25519_public_key.unwrap());
 
@@ -369,7 +390,7 @@ pub mod tests{
                 unwrap() takes the ownership of the type hence we must borrow 
                 the type before calling it using as_ref() 
             */
-            contract.wallet.ed25519_secret_key.unwrap().as_bytes()
+            contract.wallet.ed25519_secret_key.unwrap().as_str()
         );
 
         match is_verified{
@@ -401,20 +422,17 @@ pub mod tests{
 
         let hashed_data = Wallet::generate_sha256_from(stringify_data.clone());
 
-        let signature_hex = Wallet::secp256r1_sign(stringify_data.clone(), contract.wallet.secp256r1_secret_key.as_ref().unwrap().to_string());
-        
-        let signature_bytes = hex::decode(signature_hex.unwrap()).unwrap();
-        let pubkey_bytes = hex::decode(contract.wallet.secp256r1_public_key.as_ref().unwrap().to_string()).unwrap();
+        let signature_hex = Wallet::secp256r1_sign(contract.wallet.secp256r1_secret_key.as_ref().unwrap().to_string(), stringify_data.clone());
 
-        let verification_result = Wallet::verify_secp256r1_signature(&signature_bytes, &pubkey_bytes);
+        let verification_result = Wallet::verify_secp256r1_signature(&signature_hex.unwrap(), contract.wallet.secp256r1_public_key.as_ref().unwrap().as_str());
 
         let keypair = Wallet::retrieve_secp256r1_keypair(
             /* 
                 unwrap() takes the ownership of the type hence we must borrow 
                 the type before calling it using as_ref() 
             */
-            contract.wallet.secp256r1_secret_key.as_ref().unwrap().as_bytes(), 
-            contract.wallet.secp256r1_public_key.as_ref().unwrap().as_bytes()
+            contract.wallet.secp256r1_public_key.as_ref().unwrap(),
+            contract.wallet.secp256r1_secret_key.as_ref().unwrap() 
         );
 
         match verification_result{
@@ -450,7 +468,7 @@ pub mod tests{
 
         let contract = Contract::new_with_secp256k1("wildonion");
 
-        let signature = Wallet::secp256k1_sign(stringify_data.clone(), contract.wallet.secp256k1_secret_key.as_ref().unwrap().to_string());
+        let signature = Wallet::secp256k1_sign(contract.wallet.secp256k1_secret_key.as_ref().unwrap().to_string(), stringify_data.clone());
 
         let pubkey = Wallet::generate_secp256k1_pubkey_from(contract.wallet.secp256k1_public_key.as_ref().unwrap().to_string());
 
@@ -459,8 +477,7 @@ pub mod tests{
                 unwrap() takes the ownership of the type hence we must borrow 
                 the type before calling it using as_ref() 
             */
-            contract.wallet.secp256k1_secret_key.as_ref().unwrap().as_bytes(), 
-            contract.wallet.secp256k1_public_key.as_ref().unwrap().as_bytes()
+            contract.wallet.secp256k1_secret_key.as_ref().unwrap().as_str()
         );
 
         match pubkey{
