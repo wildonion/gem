@@ -138,10 +138,10 @@ pub async fn race_condition_avoidance(){
             we're mutating data string inside the actual field in data_instance_cloned
             this will mutate the actual field inside data_instance_cloned 
         */
-        *data_string = new_string;
+        *data_string = new_string; /* the actual field of the data_instance_cloned will be mutated */
 
         if let Err(why) = sender.send(data_instance_cloned).await{
-            println!("why can't send {:?}", why.to_string());
+            println!("can't send because {:?}", why.to_string());
         }
 
     });

@@ -168,7 +168,7 @@ impl Actor for RoleNotifServer{
 }
 
 
-/* handlers for all type of messages for RoleNotifServer actor */
+/* handlers for all type of messages for RoleNotifServer actor to communicate with other actors */
 
 impl Handler<NotifySessionsWithRedisSubscription> for RoleNotifServer{
 
