@@ -1,7 +1,7 @@
 
 
 
-# Deploy
+## 🌋 Deploy
 
 ```bash
 sudo docker build -t thirdweb -f $(pwd)/infra/docker/thirdweb/Dockerfile . --no-cache

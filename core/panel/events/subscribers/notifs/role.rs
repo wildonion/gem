@@ -4,6 +4,7 @@
     | role notif actor to communicate (send/receive messages) with session or peer actor 
     | ----------------------------------------------------------------------------------
     |
+    | topic: `reveal-role-{event_objectid}`
     |
 */
 

@@ -1,11 +1,11 @@
 
 
-
-
-/* 
-
-    `mmr-{event_id}`
-
+/*   -----------------------------------------------------------------------------------
+    | role notif actor to communicate (send/receive messages) with session or peer actor 
+    | ----------------------------------------------------------------------------------
+    |
+    | topic: `mmr-{event_objectid}`   
+    |
 */
 
 use actix::Context;
@@ -28,7 +28,7 @@ impl Handler<Connect> for MmrNotifServer{
     type Result = ();
 
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result{
-           
+
     }
 
 }
