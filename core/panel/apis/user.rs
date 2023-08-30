@@ -298,8 +298,13 @@ async fn verify_mail(
                         
                         Ok(updated_user) => {
 
-                            todo!()
-
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
 
                         },
                         Err(resp) => {
@@ -893,6 +898,24 @@ async fn make_id(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    /* check that the user has a verified mail or not */
+                    let get_user = User::find_by_id(_id, connection).await;
+                    let Ok(user) = get_user else{
+                        
+                        let err_resp = get_user.unwrap_err();
+                        return err_resp;
+                    };
+
+                    if user.mail.is_none(){
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            NOT_VERIFIED_MAIL, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    }
 
                     let identifier_key = format!("{}", _id);
 

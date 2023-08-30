@@ -1440,8 +1440,9 @@ impl User{
         }).collect();
 
         /* 
-            1 - mail validation 
-            2 - send code if mail was valid 
+            0 - mail validation 
+            1 - send code if mail was valid 
+            2 - update mail field with this mail
         */
 
         todo!()

@@ -24,6 +24,7 @@ pub static CID_HAS_NO_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
 pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Deposit Yet";
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";
 pub static EMPTY_WITHDRAWAL_ADDRESS: &str = "Can't Withdraw At The Moment, Make Sure You Have A Valid Withdrawal Address";
+pub static NOT_VERIFIED_MAIL: &str = "Mail Is Not Verified";
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
