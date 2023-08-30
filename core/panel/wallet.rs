@@ -1,16 +1,5 @@
 
 
-/* 
-     ---------------------------------------------------------------------
-    |  RSA (Asymmetric) Crypto Wallet Implementations using ECC Algorithms
-    |---------------------------------------------------------------------
-    | ed25519   -> EdDSA 
-    | secp256k1 -> EC
-    | secp256r1 -> ECDSA
-    |
-
-*/
-
 
 
 use secp256k1::hashes::Hash;
@@ -47,32 +36,6 @@ impl Wallet{
 
     }
 
-    pub fn new_ed25519() -> Self{
-
-        let rng = ring_rand::SystemRandom::new();
-        let pkcs8_bytes = ring_signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
-        let keys = ring_signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref()).unwrap();
-
-        /* ED25519 keypair */
-        let pubkey = keys.public_key().as_ref();
-        let prvkey = pkcs8_bytes.as_ref();
-
-        /* converting bytes to hex string */
-        let pubkey_string = hex::encode(&pubkey);
-        let prvkey_string  = hex::encode(&prvkey);
-
-        Wallet{
-            secp256k1_secret_key: None,
-            secp256k1_public_key: None,
-            secp256k1_public_address: None,
-            secp256r1_public_key: None,
-            secp256r1_secret_key: None,
-            ed25519_public_key: Some(pubkey_string),
-            ed25519_secret_key: Some(prvkey_string)
-        }
-
-    }
-
     pub fn new_secp256k1(input_seed: NewIdRequest) -> Self{
 
         /* generating seed from the input id to create the rng for secp256k1 keypair */
@@ -101,88 +64,6 @@ impl Wallet{
         }
     }
 
-    pub fn new_secp256r1() -> Self{
-
-        /* ECDSA keypairs */
-        let ec_key_pair = gen_ec_key_pair(); // generates a pair of Elliptic Curve (ECDSA) keys
-        let (private, public) = ec_key_pair.clone().split();
-        let hex_pub = Some(hex::encode(public.as_ref()));
-        let hex_prv = Some(hex::encode(private.as_ref()));
-
-        Wallet { 
-            secp256k1_secret_key: None, 
-            secp256k1_public_key: None, 
-            secp256k1_public_address: None, 
-            secp256r1_secret_key: hex_prv, 
-            secp256r1_public_key: hex_pub,
-            ed25519_public_key: None,
-            ed25519_secret_key: None,
-        }
-
-    }
-
-    pub fn ed25519_sign(data: String, prvkey: &str) -> Option<String>{
-
-        /* generating sha25 bits hash of data */
-        let hash_data_bytes = Self::generate_sha256_from(data);
-
-        let ed25519 = Self::retrieve_ed25519_keypair(prvkey);
-
-        /* signing the hashed data */
-        let signature = ed25519.sign(&hash_data_bytes);
-        let sig = signature.as_ref().to_vec();
-        Some(hex::encode(&sig))
-
-    }
-
-    pub fn verify_ed25519_signature(sig: String, data: String, pubkey: String) -> bool{
-
-        /* 
-            since sig and pubkey are hex string we have to get their bytes using 
-            hex::decode() cause calling .as_bytes() on the hex string converts
-            the hex string itself into bytes and it doesn't return the acutal bytes
-        */
-        let sig_bytes = hex::decode(&sig).unwrap();
-        let pubkey_bytes = hex::decode(pubkey).unwrap();
-
-        /* generating sha25 bits hash of data */
-        let hash_data_bytes = Self::generate_sha256_from(data);
-
-        /* creating the public key  */
-        let ring_pubkey = ring_signature::UnparsedPublicKey::new(
-            &ring_signature::ED25519, 
-            &pubkey_bytes);
-
-        /* 
-            Vec<u8> can be coerced to &[u8] slice by taking a reference to it 
-            since a pointer to the underlying Vec<u8> means taking a slice of 
-            vector with a valid lifetime
-        */
-        match ring_pubkey.verify(&hash_data_bytes, &sig_bytes){ 
-            Ok(_) => true,
-            Err(_) => false
-        }
-
-    }
-
-    pub fn retrieve_ed25519_keypair(prv_key: &str) -> Ed25519KeyPair{
-
-        /* 
-            since prv_key is a hex string we have to get its bytes using 
-            hex::decode() cause calling .as_bytes() on the hex string converts
-            the hex string itself into bytes and it doesn't return the acutal bytes
-        */
-        let private_key = hex::decode(prv_key).unwrap();
-        let generated_ed25519_keys = Ed25519KeyPair::from_pkcs8(private_key.as_ref()).unwrap();
-        generated_ed25519_keys
-
-    }
-
-    pub fn generate_secp256k1_pubkey_from(pk: String) -> Result<PublicKey, secp256k1::Error>{
-        let secp256k1_pubkey = PublicKey::from_str(&pk);
-        secp256k1_pubkey
-    }
-
     pub fn verify_secp256k1_signature(data: String, sig: Signature, pk: PublicKey) -> Result<(), secp256k1::Error>{
 
         /* 
@@ -197,6 +78,21 @@ impl Wallet{
         secp.verify_ecdsa(&hashed_data, &sig, &pk)
 
     }
+
+    pub fn secp256k1_sign(signer: String, data: String) -> Signature{
+
+        let secret_key = SecretKey::from_str(&signer).unwrap();
+        let data_bytes = data.as_bytes();
+        let hashed_data = Message::from_hashed_data::<sha256::Hash>(data_bytes);
+        
+        /* message is an sha256 bits hashed data */
+        let secp = Secp256k1::new();
+
+        /* signing the hashed data */
+        secp.sign_ecdsa(&hashed_data, &secret_key)
+
+    }
+    
 
     pub fn retrieve_secp256k1_keypair(secret_key: &str) -> (PublicKey, SecretKey){
 
@@ -213,95 +109,4 @@ impl Wallet{
         (public_key, secret_key)
     }
 
-    pub fn secp256k1_sign(signer: String, data: String) -> Signature{
-
-        let secret_key = SecretKey::from_str(&signer).unwrap();
-        let data_bytes = data.as_bytes();
-        let hashed_data = Message::from_hashed_data::<sha256::Hash>(data_bytes);
-        
-        /* message is an sha256 bits hashed data */
-        let secp = Secp256k1::new();
-
-        /* signing the hashed data */
-        secp.sign_ecdsa(&hashed_data, &secret_key)
-
-    }
-
-    pub fn retrieve_secp256r1_keypair(pubkey: &str, prvkey: &str) -> themis::keys::KeyPair{
-
-        /* 
-            since pubkey and prvkey are hex string we have to get their bytes using 
-            hex::decode() cause calling .as_bytes() on the hex string converts
-            the hex string itself into bytes and it doesn't return the acutal bytes
-        */
-        let pubkey_bytes = hex::decode(pubkey).unwrap();
-        let prvkey_bytes = hex::decode(prvkey).unwrap();
-
-        /* building ECDSA keypair from pubkey and prvkey slices */
-        let ec_pubkey = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap();
-        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
-        let generated_ec_keypair = ThemisKeyPair::try_join(ec_prvkey, ec_pubkey).unwrap();
-        generated_ec_keypair
-
-    }
-
-    pub fn secp256r1_sign(signer: String, data: String) -> Option<String>{
-
-        /* 
-            since signer is a hex string we have to get its bytes using 
-            hex::decode() cause calling .as_bytes() on the hex string converts
-            the hex string itself into bytes and it doesn't return the acutal bytes
-        */
-        let prvkey_bytes = hex::decode(signer).unwrap();
-        let ec_prvkey = EcdsaPrivateKey::try_from_slice(&prvkey_bytes).unwrap();
-        let ec_signer = SecureSign::new(ec_prvkey.clone());
-
-        /* generating sha25 bits hash of data */
-        let hash_data_bytes = Self::generate_sha256_from(data);
-    
-        /* generating signature from the hashed data */
-        let ec_sig = ec_signer.sign(&hash_data_bytes).unwrap();
-        
-        /* converting the signature bytes into hex string */
-        Some(hex::encode(&ec_sig))
-
-    }
-
-    pub fn verify_secp256r1_signature(signature: &str, pubkey: &str) -> Result<Vec<u8>, themis::Error>{
-
-        /* 
-            since signature and pubkey are hex string we have to get their bytes using 
-            hex::decode() cause calling .as_bytes() on the hex string converts
-            the hex string itself into bytes and it doesn't return the acutal bytes
-        */
-        let signature_bytes = hex::decode(signature).unwrap();
-        let pubkey_bytes = hex::decode(pubkey).unwrap();
-
-        /* building the public key from public key bytes */
-        let Ok(ec_pubkey) = EcdsaPublicKey::try_from_slice(&pubkey_bytes) else{
-            let err = EcdsaPublicKey::try_from_slice(&pubkey_bytes).unwrap_err();
-            return Err(err); /* can't build pubkey from the passed in slice */
-        };
-
-        /* building the verifier from the public key */
-        let ec_verifier = SecureVerify::new(ec_pubkey.clone());
-
-        /* verifying the signature byte which returns the hash of data in form of vector of utf8 bytes */
-        let encoded_data = ec_verifier.verify(&signature_bytes);
-
-        /* this is the encoded sha256 bits hash of data */
-        encoded_data
-
-    }
-
-    pub fn generate_sha256_from(data: String) -> [u8; 32]{
-
-        /* generating sha25 bits hash of data */
-        let data_bytes = data.as_bytes();
-        let hash_data = sha256::Hash::hash(data_bytes);
-        let hash_data_bytes = hash_data.as_byte_array();
-        hash_data_bytes.to_owned()
-
-    }
-    
 }
