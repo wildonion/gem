@@ -10,6 +10,11 @@
         using actix StreamHandler and tokio tcp 
     - message handler to handle the message type which is going to 
         be sent between other actors
+    - ws actor stream and event handlers are like:
+        streaming over incoming bytes through the tokio tcp socket 
+        to send them as the async task to tokio green threadpool using
+        tokio spawn to handle them as an event using tokio select event 
+        loop handler
 
 
     ------------------------------------------------
@@ -32,18 +37,6 @@
             }
         });
 
-
-    mmr, mmq and ecq notif server actor setup for players
-    redis pubsub streaming structure for publishing ecq (for registered events) and 
-    mmr (for event suggestion to players) topics inside `core/panel/events/publishers`
-    folder along with their actor notifs structure inside 
-    `core/panel/events/subscribers` folder
-
-    ws actor stream and event handlers are like:
-        streaming over incoming bytes through the tokio tcp socket 
-        to send them as the async task to tokio green threadpool using
-        tokio spawn to handle them as an event using tokio select event 
-        loop handler
 
 */
 
