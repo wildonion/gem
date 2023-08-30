@@ -62,7 +62,7 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon Blockc
 
 * 🎯 **actix ws** notif servers for streaming over redis subscribed topics to send notifs to ws sessions.
 
-* 🪙 **ECDSA** based cryptoghrapy algorithm used to generate a unique cosne Id for each user to allow them to sign in game operations with their own private keys, also see the `infra/themis-wasm` folder to get the idea of how using **themis** inside the pure `js` and browser libs to sign any data using the user private key.
+* 🪙 **ECDSA-secp256k1** based cryptoghrapy algorithm used to generate a unique cosne Id for each user to allow them to sign in game operations with their own private keys.
 
 ### 🗃️ Directory and Structure Explained
 
