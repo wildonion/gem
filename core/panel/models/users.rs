@@ -1443,9 +1443,11 @@ impl User{
             0 - mail validation 
             1 - send code if mail was valid 
             2 - update mail field with this mail
+            3 - store code in users_mails table
         */
 
         todo!()
+
 
     }
 
@@ -1568,6 +1570,7 @@ impl Id{
                 /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
                 let wallet = Wallet::new_secp256k1(id_.clone());
 
+                /* ------------------------------------------------ */
                 /* sample signing using ECDSA with secp256k1 curve */
                 let data_to_be_signed = serde_json::json!({
                     "recipient_cid": "0xb3e106f72e8cb2f759be095318f70ad59e96bfc2",
@@ -1578,7 +1581,7 @@ impl Id{
                     wallet.secp256k1_secret_key.as_ref().unwrap().clone(), 
                     data_to_be_signed.to_string()
                 );
-
+                /* ------------------------------------------------ */
 
                 /* generating snowflake id */
                 let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
