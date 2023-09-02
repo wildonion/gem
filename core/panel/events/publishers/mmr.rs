@@ -6,8 +6,8 @@
     
     - actix ws actor event and stream handler/loop using tokio spawn, 
         select, mpsc, mutex and tcp with redis and libp2p pubsub streams
-    - event and stream handler to handle the incoming async task like ws messages 
-        using actix StreamHandler and tokio tcp 
+    - event and stream handler to handle the incoming async task like ws 
+        messages packets using actix StreamHandler and tokio tcp 
     - message handler to handle the message type which is going to 
         be sent between other actors
     - ws actor stream and event handlers are like:
@@ -15,6 +15,9 @@
         to send them as the async task to tokio green threadpool using
         tokio spawn to handle them as an event using tokio select event 
         loop handler
+    - those players whose their ranks are matched together 
+        will be put inside the mmq to start the event by 
+        minting all the roles
 
 
     ------------------------------------------------
@@ -36,7 +39,6 @@
                 sender.send(decoded)
             }
         });
-
 
 */
 
@@ -77,17 +79,19 @@ pub async fn race_condition_avoidance(){
     /* ---------------------------------------------------------------------- */
     /* ---------------------- RACE CONDITION AVOIDANCE ---------------------- */
     /*  
-                    https://github.com/wildonion/redis4
+        for tcp connection refer to: https://github.com/wildonion/redis4
 
         race conditions means that two threads want to mutate the data 
-        at the same time we have to use mutex so thell the other threads
+        at the same time, we have to use mutex so tell the other threads
         wait there is a threads that is trying to mutate this type and 
         will update you once the lock gets freed and in order to avoid blockcing 
         issues in the current thread we have to lock inside a separate thread 
-        and mutate the type then send it through the jobq channel to the other 
-        threads for reading
+        and mutate the type in there like tokio::spawn() then send it through 
+        the jobq channel to the other threads for reading and future mutations
     */
-    pub type ArcedMutexed = std::sync::Arc<tokio::sync::Mutex<String>>;
+    
+    pub type ArcedMutexed<'lifetime> = std::sync::Arc<tokio::sync::Mutex<String>>;
+    
     #[derive(Clone)]
     pub struct Data<D: Send + Sync + 'static>{
         /* we're using tokio mutex to avoid blocing issues inside the current thread since it locks asycnly */
@@ -136,7 +140,7 @@ pub async fn race_condition_avoidance(){
             we're mutating data string inside the actual field in data_instance_cloned
             this will mutate the actual field inside data_instance_cloned 
         */
-        *data_string = new_string; /* the actual field of the data_instance_cloned will be mutated */
+        *data_string = new_string; /* the actual field of the data_instance_cloned will be mutated too */
 
         if let Err(why) = sender.send(data_instance_cloned).await{
             println!("can't send because {:?}", why.to_string());
@@ -158,11 +162,12 @@ pub async fn race_condition_avoidance(){
 }
 
 
-// fire/emit/publish UserNotif events in ws/rpc/zmq server or using redis
+// fire/emit/publish UserNotif events in ws server or using redis
 // like using emit!(UserNotif{}) macro which emit and fire an
-// event through the redis streaming channel to clients 
-// sub or listen to UserNotif events in ws/rpc/zmq client
-// using an event loop or listener.
+// event through the redis or ws streaming channel to clients 
+// sub or listen to UserNotif events in ws client or redis
+// in ws server then sends message to ws client using an event 
+// loop or listener.
 // update UserNotif on every data changes through its related api calls
 // then fire the updated data event through the ws server so the client
 // can subs using ws to the fired event 

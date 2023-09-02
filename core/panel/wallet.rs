@@ -16,10 +16,6 @@ pub struct Wallet {
     pub secp256k1_secret_key: Option<String>,
     pub secp256k1_public_key: Option<String>,
     pub secp256k1_public_address: Option<String>,
-    pub secp256r1_secret_key: Option<String>,
-    pub secp256r1_public_key: Option<String>,
-    pub ed25519_secret_key: Option<String>,
-    pub ed25519_public_key: Option<String>
 }
 
 impl Wallet{
@@ -57,10 +53,6 @@ impl Wallet{
             secp256k1_secret_key: Some(prv_str),
             secp256k1_public_key: Some(pubk.to_string()),
             secp256k1_public_address: Some(Self::generate_keccak256_from(pubk.to_string())),
-            secp256r1_public_key: None,
-            secp256r1_secret_key: None,
-            ed25519_public_key: None,
-            ed25519_secret_key: None
         }
     }
 

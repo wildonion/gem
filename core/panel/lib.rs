@@ -89,9 +89,9 @@ impl Parse for Args {
     api methods before generating the output or executing any extra
     logics before getting into the api body like actix #[get()] which
     checks the request path in the first place before sliding into 
-    the request body, also to get the Rust code from TokenStream we must
-    use syn::parse and to get the TokenStream from Rust codes we msut 
-    use quote
+    the request body, also to get the Rust token codes from TokenStream 
+    we must use syn::parse and to get the TokenStream from Rust codes 
+    we msut use quote
 */
 #[proc_macro_attribute]
 pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -151,7 +151,7 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
         that can be returned to the proc macro caller.
     */
     let new_stmt = syn::parse2(
-        quote!{
+        quote!{ /* building new token stream from the Rust token codes */
             
             /* 
                 granted_roles can be accessible inside the api body at runtime, 
@@ -171,21 +171,21 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
         return the newly generated AST by the quote of the input api Rust code  
         which contains the updated and compiled codes of the function body
     */
-    TokenStream::from(quote!(#api_ast))
+    TokenStream::from(quote!(#api_ast)) /* building new token stream from the updated api_ast Rust token codes */
 
 
 }
 
 
 #[proc_macro]
-pub fn my_fn_like_proc_macro(input: TokenStream) -> TokenStream {
+pub fn fn_like_proc_macro(input: TokenStream) -> TokenStream {
 
     input
 
 }
 
 #[proc_macro_derive(PassportDrive)]
-pub fn my_derive_proc_macro(input: TokenStream) -> TokenStream {
+pub fn derive_proc_macro(input: TokenStream) -> TokenStream {
 
     input
 

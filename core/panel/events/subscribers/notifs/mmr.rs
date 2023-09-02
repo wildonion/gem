@@ -1,7 +1,7 @@
 
 
 /*   -----------------------------------------------------------------------------------
-    | role notif actor to communicate (send/receive messages) with session or peer actor 
+    | mmr notif actor to communicate (send/receive messages) with session or peer actor 
     | ----------------------------------------------------------------------------------
     |
     | topic: `mmr-{event_objectid}`   
@@ -44,6 +44,7 @@ impl Actor for MmrNotifServer{
     type Context = Context<MmrNotifServer>;
 }
 
+/* stream or event handler to handle the incoming websocket packets in realtime */
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MmrNotifServer{
 
 

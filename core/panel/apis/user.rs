@@ -907,6 +907,7 @@ async fn make_id(
                         return err_resp;
                     };
 
+                    /* if the mail wasn't verified user can't create id */
                     if user.mail.is_none(){
                         resp!{
                             &[u8], // the date type
