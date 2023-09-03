@@ -25,6 +25,7 @@ pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Depos
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";
 pub static EMPTY_WITHDRAWAL_ADDRESS: &str = "Can't Withdraw At The Moment, Make Sure You Have A Valid Withdrawal Address";
 pub static NOT_VERIFIED_MAIL: &str = "Mail Is Not Verified";
+pub static VERIFICATION_CODE_SENT: &str = "Mail Verification Code Has Benn Sent Successfully";
 
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access

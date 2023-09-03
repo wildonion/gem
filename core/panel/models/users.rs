@@ -3,6 +3,7 @@
 
 
 use borsh::{BorshSerialize, BorshDeserialize};
+use lettre::message::Mailbox;
 use crate::wallet::Wallet;
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
@@ -11,6 +12,7 @@ use crate::schema::users::dsl::*;
 use crate::schema::users_tasks::dsl::*;
 use crate::models::bot::Twitter;
 use crate::constants::*;
+use super::users_mails::UserMail;
 use super::users_tasks::UserTask;
 
 
@@ -1432,22 +1434,187 @@ impl User{
 
     }
 
-    pub async fn send_verification_code_to(mail_owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn update_mail(
+        mail_owner_id: i32, 
+        new_mail: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+            let Ok(user) = User::find_by_id(mail_owner_id, connection).await else{
+                let resp = Response{
+                    data: Some(mail_owner_id),
+                    message: USER_NOT_FOUND,
+                    status: 404
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                );
+            };
+
+
+            match diesel::update(users.find(user.id))
+                .set(mail.eq(new_mail.to_lowercase()))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                region: updated_user.clone().region,
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
+                                snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
+                            }
+                        )
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+
+                    }
+                }
+
+
+
+    }
+
+    pub async fn send_verification_code_to(mail_owner_id: i32, user_mail: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         let random_code: String = (0..8).map(|_|{
             let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
             CHARSET[idx] as char // CHARSET is of type slice of utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
-        /* 
-            0 - mail validation 
-            1 - send code if mail was valid 
-            2 - update mail field with this mail
-            3 - store code in users_mails table
-        */
+        let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
+        let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
+        let smtp_creds = Credentials::new(smtp_username.clone(), smtp_password);
+        
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay("smtp.gmail.com")
+            .unwrap()
+            .credentials(smtp_creds)
+            .build();
 
-        todo!()
+        let from = format!("{}: <{}>", APP_NAME, smtp_username).parse::<Mailbox>();
+        let to = format!("{}: <{}>", mail_owner_id, user_mail).parse::<Mailbox>();
 
+        if from.is_err() || to.is_err(){
+
+            let send_mail_error = from.unwrap_err();
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: &send_mail_error.to_string(),
+                status: 417
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            );
+               
+        }
+
+        // let (from, to) = match (from, to){
+        //     (Ok(from), Ok(to)) => {
+        //         (from, to)
+        //     }, 
+        //     (Err(from_err)) | (Err(to_err)) => {
+
+        //         /* handle error */
+        //         // ...
+
+        //     }
+        // };
+
+        let now = Utc::now();
+        let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
+
+        let subject = "Mail Verification";
+        let body = format!("<h3>Verification Code: {}</h3><br><p>Expires at: {}</p>", random_code, two_mins_later.to_string());
+
+        let email = LettreMessage::builder()
+            .from(from.unwrap())
+            .to(to.unwrap())
+            .subject(subject)
+            .header(LettreContentType::TEXT_HTML)
+            .body(body)
+            .unwrap();
+
+        let get_mail_res = mailer.send(email).await;
+        let Ok(_) = get_mail_res else {
+
+            let send_mail_error = get_mail_res.unwrap_err();
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: &send_mail_error.to_string(),
+                status: 417
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            );
+        };
+
+        let save_mail_res = UserMail::save(&user_mail, mail_owner_id, random_code, two_mins_later, connection).await;
+        let Ok(_) = save_mail_res else{
+
+            let resp_err = save_mail_res.unwrap_err();
+            return Err(resp_err);
+        };
+
+        /* if we're here means code has been sent successfully */
+        match User::update_mail(mail_owner_id, &user_mail, connection).await{
+            Ok(user_data) => Ok(user_data),
+            Err(e) => Err(e)
+        }
 
     }
 

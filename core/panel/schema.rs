@@ -65,13 +65,24 @@ diesel::table! {
     users_deposits (id) {
         id -> Int4,
         mint_tx_hash -> Varchar,
-        nft_id -> Numeric,
+        nft_id -> Varchar,
         from_cid -> Varchar,
         recipient_screen_cid -> Varchar,
         is_claimed -> Bool,
         amount -> Int8,
         tx_signature -> Varchar,
         iat -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    users_mails (id) {
+        id -> Int4,
+        user_id -> Nullable<Int4>,
+        mail -> Varchar,
+        code -> Varchar,
+        exp -> Timestamptz,
+        vat -> Timestamptz,
     }
 }
 
@@ -95,6 +106,7 @@ diesel::table! {
 }
 
 diesel::joinable!(tasks -> users (admin_id));
+diesel::joinable!(users_mails -> users (user_id));
 diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
 
@@ -102,6 +114,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     tasks,
     users,
     users_deposits,
+    users_mails,
     users_tasks,
     users_withdrawals,
 );

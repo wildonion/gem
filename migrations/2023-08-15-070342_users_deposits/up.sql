@@ -2,7 +2,7 @@
 CREATE TABLE users_deposits (
   id SERIAL PRIMARY KEY,
   mint_tx_hash VARCHAR NOT NULL,
-  nft_id numeric NOT NULL,
+  nft_id VARCHAR NOT NULL,
   from_cid VARCHAR NOT NULL,
   recipient_screen_cid VARCHAR NOT NULL,
   is_claimed BOOLEAN NOT NULL DEFAULT false,

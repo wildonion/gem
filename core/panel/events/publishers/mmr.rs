@@ -15,9 +15,11 @@
         to send them as the async task to tokio green threadpool using
         tokio spawn to handle them as an event using tokio select event 
         loop handler
-    - those players whose their ranks are matched together 
-        will be put inside the mmq to start the event by 
-        minting all the roles
+    - an event manager (god) must mint a god card then he can set 
+        a new proposal to make an event then those players whose 
+        their ranks are matched together will be put inside the mmq 
+        to start voting in the event to mint all the generated roles
+        to start the game.
 
 
     ------------------------------------------------

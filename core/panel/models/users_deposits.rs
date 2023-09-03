@@ -25,7 +25,7 @@ use crate::schema::users_deposits::dsl::*;
 pub struct UserDeposit { /* note that the ordering of fields must be the same as the table fields in up.sql */
     pub id: i32,
     pub mint_tx_hash: String,
-    pub nft_id: BigDecimal,
+    pub nft_id: String,
     pub from_cid: String,
     pub recipient_screen_cid: String,
     pub is_claimed: bool,
@@ -41,7 +41,7 @@ pub struct NewUserDeposit{
     pub recipient_screen_cid: String,
     pub is_claimed: bool,
     pub amount: i64,
-    pub nft_id: BigDecimal,
+    pub nft_id: String,
     pub mint_tx_hash: String,
     /* 
         this must be generated inside the client by signing the whole 
@@ -83,7 +83,7 @@ pub struct UserDepositData{
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: BigDecimal, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,

@@ -245,11 +245,13 @@ async fn login(
 #[passport(user)]
 async fn verify_mail(
     req: HttpRequest,
+    user_mail: web::Path<String>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    
     let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -293,31 +295,72 @@ async fn verify_mail(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-                    
-                    match User::send_verification_code_to(_id, connection).await{
-                        
-                        Ok(updated_user) => {
 
-                            resp!{
-                                UserData, // the data type
-                                updated_user, // response data
-                                UPDATED, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
+                    let identifier_key = format!("{}", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
 
-                        },
-                        Err(resp) => {
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                            /* 
-                                🥝 response can be one of the following:
-
-                                - USER NOT FOUND RESPONE
-                                - MAIL CLIENT ERROR
-                            */
-                            resp
-
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        match User::send_verification_code_to(_id, user_mail.to_owned(), connection).await{
+                            
+                            Ok(updated_user) => {
+    
+                                resp!{
+                                    UserData, // the data type
+                                    updated_user, // response data
+                                    VERIFICATION_CODE_SENT, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+    
+                            },
+                            Err(resp) => {
+    
+                                /* 
+                                    🥝 response can be one of the following:
+    
+                                    - USER NOT FOUND RESPONE
+                                    - MAIL CLIENT ERROR
+                                */
+                                resp
+    
+                            }
+                        }
+                    
                     }
 
                 },
@@ -1289,9 +1332,9 @@ async fn deposit(
                         /* if the portal response was 200 we'll mint the nft and insert a new user deposit */
                         if portal_response == 200{
 
-                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, BigDecimal)>(1024);
+                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, String)>(1024);
                             let mut mint_tx_hash = String::from("");
-                            let mut token_id = BigDecimal::default();
+                            let mut token_id = String::from("");
                             
                             /* 
                                 simd ops on u256 bits can be represented as an slice with 4 elements 
@@ -1323,11 +1366,10 @@ async fn deposit(
                                 
                                 /* calling thirdweb python server to mint nft */
                                 let token_id_string = String::from(mint_response.token_id);
-                                let token_id = BigDecimal::from_str(&token_id_string).unwrap();
                                 let mint_tx_hash = mint_response.mint_tx_hash;
                                 
                                 if mint_tx_hash.starts_with("0x"){
-                                    mint_tx_hash_sender.send((mint_tx_hash, token_id)).await;
+                                    mint_tx_hash_sender.send((mint_tx_hash, token_id_string)).await;
                                 }
 
 

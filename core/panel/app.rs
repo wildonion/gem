@@ -1,6 +1,12 @@
 
 
 
+use lettre::{
+    message::header::ContentType as LettreContentType,
+    transport::smtp::authentication::Credentials, 
+    AsyncSmtpTransport, AsyncTransport, Message as LettreMessage,
+    Tokio1Executor, 
+};
 use secp256k1::Secp256k1;
 use secp256k1::ecdsa::Signature;
 use secp256k1::{rand::SeedableRng, rand::rngs::StdRng, PublicKey, SecretKey, Message, hashes::sha256};
@@ -92,7 +98,6 @@ use themis::keys::{EcdsaKeyPair, EcdsaPrivateKey, EcdsaPublicKey};
 use themis::keys::KeyPair as ThemisKeyPair;
 use std::rc::Weak;
 use tokio::sync::RwLock;
-use bigdecimal::BigDecimal;
 
 mod wallet;
 mod apis;

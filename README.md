@@ -112,7 +112,7 @@ brew install graphviz
 cargo clean
 ```
 
-- **NOTE**: also make sure that you have a compatible version of `bigdecimal` crate with `diesel` by running `cargo tree -p diesel --depth=1` command to find the version used by `diesel`, an example of running this command on MacOS M1 is (refer to [this](https://stackoverflow.com/questions/55783064/the-trait-dieselexpression-is-not-implemented-for-bigdecimalbigdecimal) issue on stackoverflow): 
+- **NOTE**: also make sure that you have a compatible version of `bigdecimal` crate with `diesel` by running `cargo tree -p diesel --depth=1` command to find the version used by `diesel` also add the `numeric` feature to diesel create, an example of running this command on MacOS M1 is (refer to [this](https://stackoverflow.com/questions/55783064/the-trait-dieselexpression-is-not-implemented-for-bigdecimalbigdecimal) issue on stackoverflow): 
 ```bash
 diesel v2.1.0
 ├── bigdecimal v0.2.2

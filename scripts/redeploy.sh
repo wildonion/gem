@@ -15,6 +15,14 @@ echo "[?] Enter SMS API Template: "
 read SMS_API_TAMPLATE
 echo SMS_API_TAMPLATE=$SMS_API_TAMPLATE >> .env
 
+echo "[?] Enter SMTP Username: "
+read SMTP_USERNAME
+echo SMTP_USERNAME=$SMTP_USERNAME >> .env
+
+echo "[?] Enter SMTP App Password: "
+read SMTP_PASSWORD
+echo SMTP_PASSWORD=$SMTP_PASSWORD >> .env
+
 echo "[?] Enter Machine Id: "
 read MACHINE_ID
 echo MACHINE_ID=$MACHINE_ID >> .env
