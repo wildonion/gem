@@ -1578,7 +1578,11 @@ impl User{
         let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
 
         let subject = "Mail Verification";
-        let body = format!("<h3>Verification Code: {}</h3><br><p>Expires at: {}</p>", random_code, two_mins_later.to_string());
+        let body = format!("
+            <p>Use the this code to get verified in {}: <b>{}<b></p>
+            <br>
+            <p>Expires at: {}</p>", 
+            APP_NAME, random_code, two_mins_later.to_string());
 
         let email = LettreMessage::builder()
             .from(from.unwrap())
