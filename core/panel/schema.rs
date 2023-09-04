@@ -78,11 +78,11 @@ diesel::table! {
 diesel::table! {
     users_mails (id) {
         id -> Int4,
-        user_id -> Nullable<Int4>,
+        user_id -> Int4,
         mail -> Varchar,
         code -> Varchar,
-        exp -> Timestamptz,
-        vat -> Timestamptz,
+        exp -> Int8,
+        vat -> Int8,
     }
 }
 
@@ -106,7 +106,6 @@ diesel::table! {
 }
 
 diesel::joinable!(tasks -> users (admin_id));
-diesel::joinable!(users_mails -> users (user_id));
 diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
 

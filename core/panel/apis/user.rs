@@ -49,7 +49,8 @@ use crate::wallet::Wallet;
         get_all_user_withdrawals,
         get_all_user_deposits,
         get_recipient_unclaimed_deposits,
-        verify_mail
+        request_mail_code,
+        verify_mail_code
     ),
     components(
         schemas(
@@ -58,7 +59,8 @@ use crate::wallet::Wallet;
             UserLoginInfoRequest,
             TaskData,
             UserDepositData,
-            UserWithdrawalData
+            UserWithdrawalData,
+            CheckUserVerificationRequest
         )
     ),
     tags(
@@ -233,7 +235,7 @@ async fn login(
 #[utoipa::path(
     context_path = "/user",
     responses(
-        (status=200, description="Verification Code Sent Successfully", body=[u8]),
+        (status=200, description="Verification Code Sent Successfully", body=UserData),
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
@@ -241,9 +243,9 @@ async fn login(
     ),
     tag = "crate::apis::user",
 )]
-#[post("/verify-mail/{mail}")]
+#[post("/request-mail-code/{mail}")]
 #[passport(user)]
-async fn verify_mail(
+async fn request_mail_code(
     req: HttpRequest,
     user_mail: web::Path<String>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -335,7 +337,7 @@ async fn verify_mail(
 
                     } else {
                     
-                        match User::send_verification_code_to(_id, user_mail.to_owned(), connection).await{
+                        match User::send_mail_verification_code_to(_id, user_mail.to_owned(), connection).await{
                             
                             Ok(updated_user) => {
     
@@ -361,6 +363,134 @@ async fn verify_mail(
                             }
                         }
                     
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    request_body = CheckUserVerificationRequest,
+    responses(
+        (status=200, description="Mail Verified Successfully", body=UserData),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/verify-mail-code")]
+#[passport(user)]
+async fn verify_mail_code(
+    req: HttpRequest,
+    check_user_verification_request: web::Json<CheckUserVerificationRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match User::check_mail_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
+                        
+                        Ok(updated_user) => {
+
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                MAIL_VERIFIED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* 
+                                🥝 response can be one of the following:
+
+                                - USER NOT FOUND RESPONE
+                                - MAIL CLIENT ERROR
+                            */
+                            resp
+
+                        }
                     }
 
                 },
@@ -951,7 +1081,9 @@ async fn make_id(
                     };
 
                     /* if the mail wasn't verified user can't create id */
-                    if user.mail.is_none(){
+                    if user.mail.is_none() || 
+                        !user.is_mail_verified || 
+                        user.mail.unwrap() != new_object_id_request.clone().mail{
                         resp!{
                             &[u8], // the date type
                             &[], // the data itself
@@ -2248,5 +2380,6 @@ pub mod exports{
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;
-    pub use super::verify_mail;
+    pub use super::request_mail_code;
+    pub use super::verify_mail_code;
 }

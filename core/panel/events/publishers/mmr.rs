@@ -17,9 +17,11 @@
         loop handler
     - an event manager (god) must mint a god card then he can set 
         a new proposal to make an event then those players whose 
-        their ranks are matched together will be put inside the mmq 
-        to start voting in the event to mint all the generated roles
-        to start the game.
+        their ranks are matched together and have conse tokens will 
+        be put inside the mmq to start voting in the event to mint 
+        all the generated roles as a collection to start the game,
+        players reserve event by upvoting in proposal using conse
+        token and they'll earn new token after game (P2E)
 
 
     ------------------------------------------------

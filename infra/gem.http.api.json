@@ -2632,14 +2632,14 @@
 							"response": []
 						},
 						{
-							"name": "Verify Mail",
+							"name": "Request Mail Code",
 							"request": {
 								"auth": {
 									"type": "bearer",
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5NTI5NTY4NSwiaWF0IjoxNjkyNzAzNjg1fQ.Xhjf1ZotAEzKkPNelzKvmXji6gXDTo4mTK5XjrWloAOIVARAH-qsP2nMz3aFHxv2P2iz6ucIrqq8Cs2stgrpPA",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkzODEyMjEzNDQ4NzUyMDAwLCJleHAiOjE2OTY0MDQyMTMsImlhdCI6MTY5MzgxMjIxM30.qzB637UdMgYpPWjF-7w1GLWOZ9Rd4NfjNQLrCtQA-zcfV6dkEl1g6fmwWsN6oBIKvcfu6b3uvaHuYEvhLvuoIg",
 											"type": "string"
 										}
 									]
@@ -2647,13 +2647,46 @@
 								"method": "POST",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/verify-mail/ea_pain@yahoo.com",
+									"raw": "{{panel-user}}/request-mail-code/ea_pain@yahoo.com",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"verify-mail",
+										"request-mail-code",
 										"ea_pain@yahoo.com"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify Mail Code",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkzODEyMjEzNDQ4NzUyMDAwLCJleHAiOjE2OTY0MDQyMTMsImlhdCI6MTY5MzgxMjIxM30.qzB637UdMgYpPWjF-7w1GLWOZ9Rd4NfjNQLrCtQA-zcfV6dkEl1g6fmwWsN6oBIKvcfu6b3uvaHuYEvhLvuoIg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"08892415\",\n    \"vat\": 1693813111111\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}verify-mail-code",
+									"host": [
+										"{{panel-user}}verify-mail-code"
 									]
 								}
 							},

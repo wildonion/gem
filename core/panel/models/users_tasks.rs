@@ -18,8 +18,8 @@ use crate::models::{users::{User, UserData, UserRole}, tasks::{Task, TaskData}};
 /* 
 
     diesel migration generate users_tasks ---> create users_tasks migration sql files
-    diesel migration run            ---> apply sql files to db 
-    diesel migration redo           ---> drop tables 
+    diesel migration run                  ---> apply sql files to db 
+    diesel migration redo                 ---> drop tables 
 
 */
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]

@@ -7,9 +7,8 @@ use lettre::message::Mailbox;
 use crate::wallet::Wallet;
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
-use crate::schema::{users, users_tasks};
+use crate::schema::{users, users_tasks, users_mails};
 use crate::schema::users::dsl::*;
-use crate::schema::users_tasks::dsl::*;
 use crate::models::bot::Twitter;
 use crate::constants::*;
 use super::users_mails::UserMail;
@@ -164,6 +163,13 @@ pub struct Id{
     pub new_cid: Option<String>, /* pubkey */
     pub screen_cid: Option<String>, /* keccak256 */
     pub signer: Option<String>, /* prvkey */
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct CheckUserVerificationRequest{
+    pub user_mail: String,
+    pub verification_code: String,
+    pub vat: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
@@ -1528,7 +1534,149 @@ impl User{
 
     }
 
-    pub async fn send_verification_code_to(mail_owner_id: i32, user_mail: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn verify_mail(
+        mail_owner_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+            let Ok(user) = User::find_by_id(mail_owner_id, connection).await else{
+                let resp = Response{
+                    data: Some(mail_owner_id),
+                    message: USER_NOT_FOUND,
+                    status: 404
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                );
+            };
+
+
+            match diesel::update(users.find(user.id))
+                .set(is_mail_verified.eq(true))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                region: updated_user.clone().region,
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
+                                snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
+                            }
+                        )
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+
+                    }
+                }
+
+
+
+    }
+
+    pub async fn send_mail_verification_code_to(mail_owner_id: i32, user_mail: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+        let get_single_user = User::find_by_id(mail_owner_id, connection).await;
+        let Ok(single_user) = get_single_user else{
+            let resp = Response{
+                data: Some(mail_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        /* if the passed in mail was the one inside the db, means it has already been verified */
+        if single_user.mail.is_some() && 
+            single_user.mail.unwrap() == user_mail &&
+            /* 
+                is_mail_verified also must be true since user might 
+                entered an expired code which we won't update this 
+                field thus he must enter a new code by calling this api
+                and if this field isn't set to true we must allow him 
+                to get the code otherwise means that his mail is already
+                verified.
+            */ 
+            single_user.is_mail_verified{
+            let resp = Response{
+                data: Some(mail_owner_id),
+                message: ALREADY_VERIFIED_MAIL,
+                status: 302
+            };
+            return Err(
+                Ok(HttpResponse::Found().json(resp))
+            );
+        }
+
+        /* 
+            if we're here means that the user is trying to verify a new mail so 
+            we have to set the is_mail_verified to false, we'll set this to true
+            once the user sent the code back to the server
+        */
+        if single_user.is_mail_verified{
+
+            let res = diesel::update(users.find(mail_owner_id))
+                .set(is_mail_verified.eq(false))
+                .returning(FetchUser::as_returning())
+                .get_result(connection);
+        }
+
 
         let random_code: String = (0..8).map(|_|{
             let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
@@ -1575,14 +1723,14 @@ impl User{
         // };
 
         let now = Utc::now();
-        let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
+        let five_mins_later = (now + chrono::Duration::minutes(5)).naive_local();
 
         let subject = "Mail Verification";
         let body = format!("
             <p>Use the this code to get verified in {}: <b>{}<b></p>
             <br>
             <p>Expires at: {}</p>", 
-            APP_NAME, random_code, two_mins_later.to_string());
+            APP_NAME, random_code, five_mins_later.and_utc().to_rfc3339_opts(chrono::SecondsFormat::Secs, true).to_string());
 
         let email = LettreMessage::builder()
             .from(from.unwrap())
@@ -1607,7 +1755,7 @@ impl User{
             );
         };
 
-        let save_mail_res = UserMail::save(&user_mail, mail_owner_id, random_code, two_mins_later, connection).await;
+        let save_mail_res = UserMail::save(&user_mail, mail_owner_id, random_code, five_mins_later, connection).await;
         let Ok(_) = save_mail_res else{
 
             let resp_err = save_mail_res.unwrap_err();
@@ -1616,6 +1764,120 @@ impl User{
 
         /* if we're here means code has been sent successfully */
         match User::update_mail(mail_owner_id, &user_mail, connection).await{
+            Ok(user_data) => Ok(user_data),
+            Err(e) => Err(e)
+        }
+
+    }
+
+    pub async fn check_mail_verification_code(check_user_verification_request: CheckUserVerificationRequest, receiver_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+            
+
+        let get_single_user = User::find_by_id(receiver_id, connection).await;
+        let Ok(single_user) = get_single_user else{
+            let resp = Response{
+                data: Some(receiver_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        if single_user.is_mail_verified{
+            
+            let resp = Response{
+                data: Some(receiver_id),
+                message: ALREADY_VERIFIED_MAIL,
+                status: 302
+            };
+            return Err(
+                Ok(HttpResponse::Found().json(resp))
+            );
+
+        }
+
+
+        let single_user_mail = {
+            use crate::schema::users_mails::dsl::*;
+            use crate::schema::users_mails;
+            let single_user_mail = users_mails
+                .filter(users_mails::user_id.eq(receiver_id))
+                .filter(users_mails::code.eq(check_user_verification_request.clone().verification_code))
+                .first::<UserMail>(connection);
+            single_user_mail
+
+        };
+                        
+        let Ok(user_mail) = single_user_mail else{
+            let resp = Response{
+                data: Some(receiver_id),
+                message: NO_MAIL_FOR_THIS_USER,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        let exp_code = user_mail.exp;
+        let user_vat = check_user_verification_request.vat;
+        let user_code = check_user_verification_request.verification_code;
+        let user_mail_request = check_user_verification_request.user_mail;
+        
+        /* user mail inside the users_mails table must be the one in the request object */
+        if user_mail_request != user_mail.mail{
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_MAIL,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+        /* code must not be expired */
+        if user_vat > exp_code{
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: EXPIRED_MAIL_CODE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+
+        }
+
+        /* user code inside the users_mails table must be the one in the request objecy */
+        if user_code != user_mail.code{
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_MAIL_CODE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+
+        }
+
+        /* update vat field */
+        let save_mail_res = UserMail::update_vat(user_mail.id, user_vat, connection).await;
+        let Ok(_) = save_mail_res else{
+
+            let resp_err = save_mail_res.unwrap_err();
+            return Err(resp_err);
+        };
+
+        /* update is_mail_verified field */
+        match User::verify_mail(receiver_id, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
