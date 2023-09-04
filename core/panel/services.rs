@@ -100,7 +100,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::login_with_identifier_and_password);
     config.service(apis::user::exports::verify_twitter_account);
     config.service(apis::user::exports::tasks_report);
-    config.service(apis::user::exports::make_id);
+    config.service(apis::user::exports::make_cid);
     config.service(apis::user::exports::deposit);
     config.service(apis::user::exports::withdraw);
     config.service(apis::user::exports::get_all_user_withdrawals);

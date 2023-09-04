@@ -2591,7 +2591,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
+									"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2676,7 +2676,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"08892415\",\n    \"vat\": 1693813111111\n}",
+									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"08443662\",\n    \"vat\": 1693837465402 // milliseconds\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2684,9 +2684,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}verify-mail-code",
+									"raw": "{{panel-user}}/verify-mail-code",
 									"host": [
-										"{{panel-user}}verify-mail-code"
+										"{{panel-user}}"
+									],
+									"path": [
+										"verify-mail-code"
 									]
 								}
 							},
@@ -2709,7 +2712,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"mail\": \"abarmardeatashyne@gmail.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"+989211686115\",\n    \"paypal_id\": \"mohammaderfan\",\n    \"account_number\": \"11\",\n    \"device_id\": \"2222\",\n    \"social_id\": \"1111\"\n}",
+									"raw": "{\n    \"mail\": \"ea_pain@yahoo.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"\",\n    \"paypal_id\": \"\",\n    \"account_number\": \"\",\n    \"device_id\": \"\",\n    \"social_id\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3187,11 +3190,6 @@
 		{
 			"key": "panel-bot",
 			"value": "https://api.panel.conse.app/bot",
-			"type": "string"
-		},
-		{
-			"key": "panel-fin",
-			"value": "https://api.panel.conse.app/fin",
 			"type": "string"
 		}
 	]

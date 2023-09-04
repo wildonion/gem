@@ -43,7 +43,7 @@ use crate::wallet::Wallet;
         login_with_identifier_and_password,
         verify_twitter_account,
         tasks_report,
-        make_id,
+        make_cid,
         deposit,
         withdraw,
         get_all_user_withdrawals,
@@ -1019,7 +1019,7 @@ pub async fn tasks_report(
 )]
 #[post("/cid/build")]
 #[passport(user)]
-async fn make_id(
+async fn make_cid(
     req: HttpRequest,
     id_: web::Json<NewIdRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2374,7 +2374,7 @@ pub mod exports{
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
     pub use super::tasks_report;
-    pub use super::make_id;
+    pub use super::make_cid;
     pub use super::deposit;
     pub use super::withdraw;
     pub use super::get_all_user_withdrawals;

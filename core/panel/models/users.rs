@@ -1730,7 +1730,7 @@ impl User{
 
         let subject = "Mail Verification";
         let body = format!("
-            <p>Use the this code to get verified in {}: <b>{}</b></p>
+            <p>Use this code to get verified in {}: <b>{}</b></p>
             <br>
             <p>This code will expire at: <b>{} UTC</b></p>", 
             APP_NAME, random_code, five_mins_later.and_utc().to_rfc2822().to_string());
