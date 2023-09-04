@@ -30,7 +30,7 @@ pub static EXPIRED_MAIL_CODE: &str = "Mail Code Has Been Expired";
 pub static INVALID_MAIL: &str = "Mail Is Invalid For This User";
 pub static INVALID_MAIL_CODE: &str = "Invalid Mail Code";
 pub static MAIL_VERIFIED: &str = "User Mail Has Been Verified Successfully";
-pub static NO_MAIL_FOR_THIS_USER: &str = "There Is No Mail For This User";
+pub static NO_MAIL_FOR_THIS_USER: &str = "There Is No Verification Process For This Mail";
 pub static ALREADY_VERIFIED_MAIL: &str = "Mail Is Already Verified";
 
 pub const DEV_ACCESS: u8 = 0;

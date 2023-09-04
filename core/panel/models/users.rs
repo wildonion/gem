@@ -2,7 +2,10 @@
 
 
 
+use std::borrow::BorrowMut;
+
 use borsh::{BorshSerialize, BorshDeserialize};
+use chrono::Timelike;
 use lettre::message::Mailbox;
 use crate::wallet::Wallet;
 use crate::*;
@@ -1729,8 +1732,8 @@ impl User{
         let body = format!("
             <p>Use the this code to get verified in {}: <b>{}<b></p>
             <br>
-            <p>Expires at: {}</p>", 
-            APP_NAME, random_code, five_mins_later.and_utc().to_rfc3339_opts(chrono::SecondsFormat::Secs, true).to_string());
+            <p>Expires at: {} - UTC</p>", 
+            APP_NAME, random_code, five_mins_later.and_utc().to_rfc2822().to_string());
 
         let email = LettreMessage::builder()
             .from(from.unwrap())
@@ -1805,6 +1808,7 @@ impl User{
             use crate::schema::users_mails;
             let single_user_mail = users_mails
                 .filter(users_mails::user_id.eq(receiver_id))
+                .filter(users_mails::mail.eq(check_user_verification_request.clone().user_mail))
                 .filter(users_mails::code.eq(check_user_verification_request.clone().verification_code))
                 .first::<UserMail>(connection);
             single_user_mail
@@ -1824,42 +1828,27 @@ impl User{
 
         let exp_code = user_mail.exp;
         let user_vat = check_user_verification_request.vat;
-        let user_code = check_user_verification_request.verification_code;
-        let user_mail_request = check_user_verification_request.user_mail;
-        
-        /* user mail inside the users_mails table must be the one in the request object */
-        if user_mail_request != user_mail.mail{
 
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: INVALID_MAIL,
-                status: 406
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            );
-        }
+        let now = Utc::now();
+        let given_time = chrono::DateTime::<Utc>::from_utc(
+            chrono::NaiveDateTime::from_timestamp_millis(exp_code).unwrap(),
+            Utc,
+        );
+
+        let duration = now.signed_duration_since(given_time);
 
         /* code must not be expired */
-        if user_vat > exp_code{
+        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in range 5 mins */
+            /* delete the record, user must request the code again */
+            let del_res = diesel::delete(users_mails::table
+                .filter(users_mails::user_id.eq(receiver_id)))
+                .filter(users_mails::mail.eq(check_user_verification_request.clone().user_mail))
+                .filter(users_mails::code.eq(check_user_verification_request.clone().verification_code))
+                .execute(connection);
 
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: EXPIRED_MAIL_CODE,
-                status: 406
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            );
-
-        }
-
-        /* user code inside the users_mails table must be the one in the request objecy */
-        if user_code != user_mail.code{
-
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: INVALID_MAIL_CODE,
                 status: 406
             };
             return Err(
@@ -1876,11 +1865,18 @@ impl User{
             return Err(resp_err);
         };
 
+        /* delete all the records ralated to the receiver_id with vat 0 */
+        let del_res = diesel::delete(users_mails::table
+            .filter(users_mails::user_id.eq(receiver_id)))
+            .filter(users_mails::vat.eq(0))
+            .execute(connection);
+        
         /* update is_mail_verified field */
         match User::verify_mail(receiver_id, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
+
 
     }
 

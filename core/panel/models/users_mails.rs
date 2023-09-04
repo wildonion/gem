@@ -46,7 +46,7 @@ pub struct NewUserMail<'s>{
 
 impl UserMail{
 
-    pub async fn save(user_mail: &str, receiver_id: i32, random_code: String, two_mins_later: chrono::NaiveDateTime,
+    pub async fn save(user_mail: &str, receiver_id: i32, random_code: String, five_mins_later: chrono::NaiveDateTime,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
 
         
@@ -71,7 +71,7 @@ impl UserMail{
             user_id: receiver_id,
             mail: user_mail,
             code: &random_code,
-            exp: two_mins_later.timestamp_nanos()
+            exp: five_mins_later.timestamp_millis()
         };
         match diesel::insert_into(users_mails::table)
             .values(&new_user_mail)
