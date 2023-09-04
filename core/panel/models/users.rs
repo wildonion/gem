@@ -1730,9 +1730,9 @@ impl User{
 
         let subject = "Mail Verification";
         let body = format!("
-            <p>Use the this code to get verified in {}: <b>{}<b></p>
+            <p>Use the this code to get verified in {}: <b>{}</b></p>
             <br>
-            <p>Expires at: {} - UTC</p>", 
+            <p>This code will expire at: <b>{} UTC</b></p>", 
             APP_NAME, random_code, five_mins_later.and_utc().to_rfc2822().to_string());
 
         let email = LettreMessage::builder()
@@ -1829,16 +1829,18 @@ impl User{
         let exp_code = user_mail.exp;
         let user_vat = check_user_verification_request.vat;
 
+        /* calculate the naive datetime from the passed in exp milli timestamp */
         let now = Utc::now();
         let given_time = chrono::DateTime::<Utc>::from_utc(
             chrono::NaiveDateTime::from_timestamp_millis(exp_code).unwrap(),
             Utc,
         );
 
+        /* calculate the datetime diff between now and the exp time */
         let duration = now.signed_duration_since(given_time);
 
         /* code must not be expired */
-        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in range 5 mins */
+        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in not older than 5 mins */
             /* delete the record, user must request the code again */
             let del_res = diesel::delete(users_mails::table
                 .filter(users_mails::user_id.eq(receiver_id)))
