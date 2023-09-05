@@ -23,6 +23,10 @@ echo "[?] Enter SMTP App Password: "
 read SMTP_PASSWORD
 echo SMTP_PASSWORD=$SMTP_PASSWORD >> .env
 
+echo "[?] Enter SMTP Server: "
+read SMTP_SERVER
+echo SMTP_SERVER=$SMTP_SERVER >> .env
+
 echo "[?] Enter Machine Id: "
 read MACHINE_ID
 echo MACHINE_ID=$MACHINE_ID >> .env

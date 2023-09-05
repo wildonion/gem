@@ -1688,9 +1688,10 @@ impl User{
 
         let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
         let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
+        let smtp_server = std::env::var("SMTP_SERVER").unwrap();
         let smtp_creds = Credentials::new(smtp_username.clone(), smtp_password);
         
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay("smtp.gmail.com")
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_server.as_str())
             .unwrap()
             .credentials(smtp_creds)
             .build();
