@@ -87,7 +87,7 @@ pub struct FetchUser{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserData{
     pub id: i32,
-    pub region: UserRegion,
+    pub region: String,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
@@ -115,7 +115,7 @@ pub struct UserData{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserIdResponse{
     pub id: i32,
-    pub region: UserRegion,
+    pub region: String,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
@@ -143,6 +143,7 @@ pub struct UserIdResponse{
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
 pub struct NewIdRequest{
+    pub region: String,
     pub mail: String,
     pub username: String,
     pub phone_number: String,
@@ -739,7 +740,12 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
-                        region: fetched_user.clone().region,
+                        region: {
+                            match fetched_user.region.clone(){
+                                UserRegion::Ir => "ir".to_string(),
+                                _ => "none-ir".to_string(),
+                            }
+                        },
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -856,7 +862,12 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
-                        region: fetched_user.clone().region,
+                        region: {
+                            match fetched_user.region.clone(){
+                                UserRegion::Ir => "ir".to_string(),
+                                _ => "none-ir".to_string(),
+                            }
+                        },
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -1095,7 +1106,12 @@ impl User{
                     Ok(
                         UserData { 
                             id: updated_user.id, 
-                            region: updated_user.clone().region,
+                            region: {
+                                match updated_user.region.clone(){
+                                    UserRegion::Ir => "ir".to_string(),
+                                    _ => "none-ir".to_string(),
+                                }
+                            },
                             username: updated_user.clone().username, 
                             activity_code: updated_user.clone().activity_code, 
                             twitter_username: updated_user.clone().twitter_username, 
@@ -1224,7 +1240,12 @@ impl User{
                         .into_iter()
                         .map(|u| UserData { 
                             id: u.id, 
-                            region: u.clone().region,
+                            region: {
+                                match u.region.clone(){
+                                    UserRegion::Ir => "ir".to_string(),
+                                    _ => "none-ir".to_string(),
+                                }
+                            },
                             username: u.clone().username, 
                             activity_code: u.clone().activity_code, 
                             twitter_username: u.clone().twitter_username, 
@@ -1365,7 +1386,12 @@ impl User{
                             Ok(
                                 UserData { 
                                     id: updated_user.id, 
-                                    region: updated_user.clone().region,
+                                    region: {
+                                        match updated_user.region.clone(){
+                                            UserRegion::Ir => "ir".to_string(),
+                                            _ => "none-ir".to_string(),
+                                        }
+                                    },
                                     username: updated_user.clone().username, 
                                     activity_code: updated_user.clone().activity_code, 
                                     twitter_username: updated_user.clone().twitter_username, 
@@ -1470,7 +1496,12 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: updated_user.clone().region,
+                                region: {
+                                    match updated_user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -1563,7 +1594,12 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: updated_user.clone().region,
+                                region: {
+                                    match updated_user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -1906,11 +1942,18 @@ impl Id{
             /* we'll be here only if the old_cid is not an empty string */
             Some(old_cid) if !old_cid.is_empty() => { 
                 
+                let u_region = id_.region.as_str();
                 /* updating other fields except cid and snowflake id */
                 match diesel::update(users.find(id_owner))
                     .set(
                 (
                             mail.eq(id_.mail.clone()),
+                            region.eq({
+                                match u_region{
+                                    "ir" => UserRegion::Ir,
+                                    _ => UserRegion::NoneIr
+                                }
+                            }),
                             phone_number.eq(id_.phone_number.clone()),
                             username.eq(id_.username.clone()),
                             paypal_id.eq(id_.paypal_id.clone()),
@@ -1926,7 +1969,12 @@ impl Id{
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
-                                region: updated_user.clone().region,
+                                region: {
+                                    match updated_user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -2085,7 +2133,12 @@ impl Id{
                     Ok(
                         UserIdResponse { 
                             id: updated_user.id, 
-                            region: updated_user.clone().region,
+                            region: {
+                                match updated_user.region.clone(){
+                                    UserRegion::Ir => "ir".to_string(),
+                                    _ => "none-ir".to_string(),
+                                }
+                            },
                             username: updated_user.username, 
                             activity_code: updated_user.activity_code, 
                             twitter_username: updated_user.twitter_username, 

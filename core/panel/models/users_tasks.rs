@@ -10,6 +10,7 @@ use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
 use crate::models::{users::{User, UserData, UserRole}, tasks::{Task, TaskData}};
+use super::users::UserRegion;
 
 
 
@@ -319,7 +320,12 @@ impl UserTask{
                 UserTaskData{
                     user: UserData { 
                         id: user.id, 
-                        region: user.clone().region,
+                        region: {
+                            match user.region.clone(){
+                                UserRegion::Ir => "ir".to_string(),
+                                _ => "none-ir".to_string(),
+                            }
+                        },
                         username: user.username, 
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 

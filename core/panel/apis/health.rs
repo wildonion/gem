@@ -199,7 +199,10 @@ async fn check_token(
 
                     let user_data = UserData { 
                         id: user.id, 
-                        region: user.region,
+                        region: match user.region{
+                            UserRegion::Ir => "ir".to_string(),
+                            _ => "none-ir".to_string()
+                        },
                         username: user.username, 
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 

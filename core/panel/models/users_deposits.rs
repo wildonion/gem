@@ -78,7 +78,7 @@ pub struct UserDepositData{
     pub amount: i64,
     pub mint_tx_hash: String,
     pub signature: String, 
-    pub iat: chrono::NaiveDateTime 
+    pub iat: String
 }
 
 impl UserDeposit{
@@ -111,7 +111,7 @@ impl UserDeposit{
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
                         mint_tx_hash: user_deposit.mint_tx_hash,
-                        iat: user_deposit.iat 
+                        iat: user_deposit.iat.to_string()
                     })
 
                 },
@@ -168,7 +168,7 @@ impl UserDeposit{
                 amount: deposit.amount, 
                 mint_tx_hash: deposit.mint_tx_hash, 
                 signature: deposit.tx_signature, 
-                iat: deposit.iat 
+                iat: deposit.iat.to_string()
             }
         )
 
@@ -204,7 +204,7 @@ impl UserDeposit{
                         nft_id: d.nft_id.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
-                        iat: d.iat,
+                        iat: d.iat.to_string(),
                     }
                 }).collect::<Vec<UserDepositData>>()
         )
@@ -231,7 +231,7 @@ impl UserDeposit{
                             nft_id: d.nft_id.to_string(),
                             mint_tx_hash: d.mint_tx_hash,
                             signature: d.tx_signature,
-                            iat: d.iat,
+                            iat: d.iat.to_string(),
                         }
                     )
 
@@ -290,7 +290,7 @@ impl UserDeposit{
                         nft_id: d.nft_id.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
-                        iat: d.iat,
+                        iat: d.iat.to_string(),
                     }
                 }).collect::<Vec<UserDepositData>>()
         )
@@ -330,7 +330,7 @@ impl UserDeposit{
                         nft_id: d.nft_id.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
-                        iat: d.iat,
+                        iat: d.iat.to_string(),
                     }
                 }).collect::<Vec<UserDepositData>>()
         )

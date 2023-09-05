@@ -152,7 +152,7 @@ async fn reveal_role(
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
                         
-                        info!("📥 sending request to the conse mafia hyper server at {}", chrono::Local::now().timestamp_nanos());
+                        info!("📥 sending reveal role request to the conse mafia hyper server at {} for event [{}]", chrono::Local::now().timestamp_nanos(), event_id);
 
                         /* calling rveal role API of the mafia hyper server to get the players' roles */
                         let get_response_value = reqwest::Client::new()
@@ -522,7 +522,12 @@ async fn login(
                             
                             let user_login_data = UserData{
                                 id: user.id,
-                                region: user.region,
+                                region: {
+                                    match user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
                                 username: user.username.clone(),
                                 activity_code: user.activity_code.clone(),
                                 twitter_username: user.twitter_username.clone(),
