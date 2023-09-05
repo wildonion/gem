@@ -60,7 +60,10 @@ use crate::wallet::Wallet;
             TaskData,
             UserDepositData,
             UserWithdrawalData,
-            CheckUserVerificationRequest
+            CheckUserVerificationRequest,
+            NewUserDepositRequest,
+            NewIdRequest,
+            UserIdResponse
         )
     ),
     tags(
@@ -138,7 +141,12 @@ async fn login(
                     
                     let user_login_data = UserData{
                         id: user.id,
-                        region: user.region,
+                        region: {
+                            match user.region.clone(){
+                                UserRegion::Ir => "ir".to_string(),
+                                _ => "none-ir".to_string(),
+                            }
+                        },
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -298,7 +306,7 @@ async fn request_mail_code(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
+                    let identifier_key = format!("{}-request-mail-code", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
 
                         /* handling the redis connection error using PanelError */
@@ -599,7 +607,12 @@ async fn login_with_identifier_and_password(
                     
                     let user_login_data = UserData{
                         id: user.id,
-                        region: user.region,
+                        region: {
+                            match user.region.clone(){
+                                UserRegion::Ir => "ir".to_string(),
+                                _ => "none-ir".to_string(),
+                            }
+                        },
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -1093,7 +1106,7 @@ async fn make_cid(
                         }
                     }
 
-                    let identifier_key = format!("{}", _id);
+                    let identifier_key = format!("{}-make-cid", _id);
 
                     let Ok(mut redis_conn) = get_redis_conn else{
 
@@ -1285,7 +1298,7 @@ async fn deposit(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
+                    let identifier_key = format!("{}-deposit", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
 
                         /* handling the redis connection error using PanelError */
@@ -1798,7 +1811,7 @@ async fn withdraw(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
+                    let identifier_key = format!("{}-withdraw", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
 
                         /* handling the redis connection error using PanelError */
