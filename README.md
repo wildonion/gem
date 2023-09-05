@@ -27,10 +27,9 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon Blockc
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🎙️ HOSTED ON ==> Digitalocean
 🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
-🥪 GEM ERD SCHEMAS ==> https://github.com/wildonion/gem/wiki/Gem-ERD-Schemas
 ```
 
-## 🍩 V0.1.3 Features
+## 🍩 Panel APIs V0.1.3 Features
 
 * **🦀 Rust flows in you 🌊**: write codes that are the matter-of-future flows!
 
@@ -48,13 +47,15 @@ Conse is an AI based Crypto Game Event Manager Platform on top of Polygon Blockc
 
 * 🔐 **Argon2** as the **KDF** used for password hasing
 
+* 📬 mail verification process for users
+
 * 🥝 server health-check APIs (check-token, health and logout)
 
 * 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible server's responses 
 
 * 🎒 supports **postgres**, **mongodb** and **redis** as the app storage  
 
-* 🛎️ **actix web** and **hyper** based HTTP servers and handling push notif subscriptions
+* 🛎️ **actix web** (for handling push notif subscriptions and panel APIs) and **hyper** (conse mafia APIs) based HTTP servers
 
 * 📣 **redis** based pubsub streaming channel to publish and subscribe to the revealed roles, **ECQ** (Event Collaboration Queue), **MMR** (Match Making Rating) topics
 
@@ -248,7 +249,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
     <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
 </p>
 
-### 🍢 Conse Mongodb ERD Schema
+### 🍢 Conse Mafia Mongodb ERD Schema
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
