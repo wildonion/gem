@@ -640,14 +640,14 @@ impl User{
 
     }
 
-    pub fn hash_pswd(password: &str) -> Result<String, argon2::Error>{
+    pub fn hash_pswd(password: &str) -> Result<String, argon2::Error>{ /* argon2 as the kdf */
         let salt = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
         let salt_bytes = salt.as_bytes();
         let password_bytes = password.as_bytes();
         argon2::hash_encoded(password_bytes, salt_bytes, &argon2::Config::default())
     }
 
-    pub fn verify_pswd(&self, raw_pswd: &str) -> Result<bool, argon2::Error>{
+    pub fn verify_pswd(&self, raw_pswd: &str) -> Result<bool, argon2::Error>{ /* argon2 as the kdf */
         let password_bytes = raw_pswd.as_bytes();
         Ok(argon2::verify_encoded(&self.pswd, password_bytes).unwrap())
     }
@@ -1738,6 +1738,7 @@ impl User{
         if from.is_err() || to.is_err(){
 
             let send_mail_error = from.unwrap_err();
+            // let send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
 
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),

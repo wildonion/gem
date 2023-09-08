@@ -58,21 +58,20 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct CollaborationQueue{
-    pub players: Vec<Player>, // user pool that can be used to start a match between them
+    pub players: Vec<PlayerRank>, // user pool that can be used to start a match between them
     pub event_id: String, 
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Player{
-    pub pub_key: String,
+pub struct PlayerRank{
+    pub cid: String, /* crypto id usally pubkey */
     pub rank: u16,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CurrentMatch{
     pub event_id: String,
-    pub players: Vec<Player>,
+    pub players: Vec<PlayerRank>,
     pub room_id: String,
     pub is_locked: bool
 }
@@ -166,15 +165,17 @@ pub async fn race_condition_avoidance(){
 }
 
 
-// fire/emit/publish UserNotif events in ws server or using redis
-// like using emit!(UserNotif{}) macro which emit and fire an
-// event through the redis or ws streaming channel to clients 
-// sub or listen to UserNotif events in ws client or redis
-// in ws server then sends message to ws client using an event 
-// loop or listener.
-// update UserNotif on every data changes through its related api calls
-// then fire the updated data event through the ws server so the client
-// can subs using ws to the fired event 
+/* 
+    fire/emit/publish UserNotif events in ws server or using redis
+    like using emit!(UserNotif{}) macro which emit and fire an
+    event through the redis or ws streaming channel to clients 
+    sub or listen to UserNotif events in ws client or redis
+    in ws server then sends message to ws client using an event 
+    loop or listener.
+    update UserNotif on every data changes through its related api calls
+    then fire the updated data event through the ws server so the client
+    can subs using ws to the fired event 
+*/
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserNotif{
     user_id: String,
@@ -237,4 +238,12 @@ pub struct Nft{
     pub owner: String,
     pub royalties: Vec<Royalty>, // Royalty struct must be public if this field is public since we want to access this field later which contains the Royalty instances
     pub events: Vec<UserNotif>
+}
+
+impl Nft{
+
+    fn generate_event_hash<'t>() -> &'t str{
+        let event_hash = "";
+        event_hash
+    }
 }
