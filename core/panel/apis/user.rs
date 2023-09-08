@@ -1850,7 +1850,6 @@ async fn withdraw(
 
                     } else { /* not rate limited, we're ok to go */
 
-
                         /* making sure that the user has a full filled paypal id */
                         let get_user = User::find_by_id(_id, connection).await;
                         let Ok(user) = get_user else{
@@ -1881,7 +1880,7 @@ async fn withdraw(
                         
                         let withdraw_object = withdraw.to_owned();
 
-                        /* recipient_cid will be used to verify the signature only */
+                        /* recipient_cid will be used to verify the signature only cause only the receiver can withdraw the deposited amount */
                         let get_secp256k1_pubkey = PublicKey::from_str(&withdraw_object.recipient_cid);
                         let get_secp256k1_signature = Signature::from_str(&withdraw_object.tx_signature);
                         
@@ -1940,6 +1939,19 @@ async fn withdraw(
                             let error = get_deposit_info.unwrap_err();
                             return error;
                         };
+
+                        
+                        /* generate keccak256 from recipient_cid to check aginst the one in db */
+                        let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
+                        if deposit_info.recipient_screen_cid != polygon_recipient_address{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                NO_DEPOSIT_FOR_THIS_RECIPIENT, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = tokio::sync::mpsc::channel::<String>(1024);
                         let mut burn_tx_hash = String::from("");
