@@ -6,7 +6,7 @@ authors = ["wildonion <abarmardeatashyne@gmail.com>"]
 description = "Conse Rust Backend Services"
 homepage = "https://github.com/wildonion/gem/"
 keywords = ["game", "web", "app", "rust", "crypto", "blockchain"]
-license = "UNLICENSED"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/wildonion/gem/"
 
 
