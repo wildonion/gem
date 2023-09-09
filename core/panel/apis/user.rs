@@ -1440,7 +1440,7 @@ async fn deposit(
                             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                             tokio::spawn(async move{
 
-                                // TODO -
+                                // TODO - call ir gateway portal api in here to deposit into server ir account
                                 // ...
 
                                 let rcode = 417 as u16;
@@ -1459,7 +1459,7 @@ async fn deposit(
                             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                             tokio::spawn(async move{
 
-                                // TODO -
+                                // TODO - call paypal api in here to deposit into server paypal
                                 // ...
 
                                 let rcode = 417 as u16;
@@ -2007,7 +2007,8 @@ async fn withdraw(
                                 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                                 tokio::spawn(async move{
                                     
-                                    // TODO - 
+                                    // TODO - call ir gateway portal api in here to withdraw from server ir account 
+                                    //        and send to user ir account
                                     // ...
 
                                     let rcode = 417 as u16;
@@ -2025,7 +2026,8 @@ async fn withdraw(
                                 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
                                 tokio::spawn(async move{
 
-                                    // TODO - 
+                                    // TODO - call paypal api in here to withdraw from server paypal 
+                                    //        and send to user paypal
                                     // ...
 
                                     let rcode = 417 as u16;

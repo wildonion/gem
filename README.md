@@ -143,7 +143,7 @@ diesel v2.1.0
 
 - **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level to `dev` first do a signup for the user using `/auth/signup` API then run the mafia binary server like so: `./mafia dev 0` or `cargo run --bin mafia dev 0` finally login with that user to register a new god for the game.
 
-- **NOTE**: **Regards to conse mafia hyper APIs**, remember to fill the `SMS_API_TOKEN` var inside the `.env` file.
+- **NOTE**: **Regards to conse mafia hyper APIs**, remember to fill the `OTP_API_TOKEN` var inside the `.env` file.
 
 ```bash
 # 🧪 Test Conse Hyper Server

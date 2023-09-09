@@ -8,12 +8,12 @@ echo \t">>> Please fill up the 'twitter-accounts.json' without your twitter dev 
 echo \t"using the conse panel API with admin access"
 
 echo "[?] Enter SMS API Token: "
-read SMS_API_TOKEN
-echo SMS_API_TOKEN=$SMS_API_TOKEN >> .env
+read OTP_API_TOKEN
+echo OTP_API_TOKEN=$OTP_API_TOKEN >> .env
 
 echo "[?] Enter SMS API Template: "
-read SMS_API_TAMPLATE
-echo SMS_API_TAMPLATE=$SMS_API_TAMPLATE >> .env
+read OTP_API_TEMPLATE
+echo OTP_API_TEMPLATE=$OTP_API_TEMPLATE >> .env
 
 echo "[?] Enter SMTP Username: "
 read SMTP_USERNAME

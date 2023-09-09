@@ -76,8 +76,8 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
 
 
                     let phone = otp_req.phone;
-                    let sms_api_token = env::var("SMS_API_TOKEN").expect("⚠️ no sms api token variable set");
-                    let sms_template = env::var("SMS_API_TEMPLATE").expect("⚠️ no sms template variable set");
+                    let sms_api_token = env::var("OTP_API_TOKEN").expect("⚠️ no sms api token variable set");
+                    let sms_template = env::var("OTP_API_TEMPLATE").expect("⚠️ no sms template variable set");
 
 
                     
