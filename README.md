@@ -3,7 +3,7 @@
 
 # 🤏 Conse Backend Rust Engines
 
-Conse is an AI based Crypto Game Event Manager Platform on top of Polygon Blockchain using **Thirdweb** Contracts which uses: 
+Conse is a Game Event Manager Platform which uses: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - behavioural graph virtual machine [**GVM**](https://github.com/wildonion/gvm) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
