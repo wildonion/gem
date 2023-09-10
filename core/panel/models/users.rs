@@ -1751,6 +1751,9 @@ impl User{
                
         }
 
+        /* ------------------------- */
+        /* matching over from and to */
+        /* ------------------------- */
         // let (from, to) = match (from, to){
         //     (Ok(from), Ok(to)) => {
         //         (from, to)
@@ -1959,7 +1962,6 @@ impl Id{
                             username.eq(id_.username.clone()),
                             paypal_id.eq(id_.paypal_id.clone()),
                             account_number.eq(id_.account_number.clone()),
-                            device_id.eq(id_.device_id.clone()),
                             social_id.eq(id_.social_id.clone()),
                         )
                     )

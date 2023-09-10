@@ -264,9 +264,10 @@ impl Handler<NotifySession> for WsNotifSession{
 
 }
 
-/* event listener, handler or streamer to receive and handle ws byte messages */
+/* stream, listener or event handler to handle the incoming websocket byte packets in realtime */
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
+     /* the handler method to handle the incoming websocket messages by decoding them */
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
 
         let msg = match msg{

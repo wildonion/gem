@@ -65,7 +65,7 @@ pub struct CollaborationQueue{
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlayerRank{
     pub cid: String, /* crypto id usally pubkey */
-    pub rank: u16,
+    pub rank: u16, /* one of the criterion is player status during the game */
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

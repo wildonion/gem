@@ -15,7 +15,7 @@ use crate::*;
 use actix::prelude::*;
 
 
-/* implementing Message traits for all type of messages that can be used by RoleNotifServer actor */
+/* implementing Message traits for all type of messages that can be used by RoleNotifServer actor to communicate with other actors */
 
 /// new chat session is created
 #[derive(Message)]
@@ -200,7 +200,10 @@ impl Handler<NotifySessionWithRedisSubscription> for RoleNotifServer{
         if self.push_notif_rooms.contains_key(&room){
             if let Some(sessions) = self.push_notif_rooms.get(&room){
                 for id in sessions{
-                    /* sending the assigned role to the passed in session in msg instance */
+                    /* 
+                        sending the assigned role to the passed in session in msg 
+                        instance through the actor message sending protocol 
+                    */
                     if *id.to_string() != 0.to_string() && *id.to_string() == session_id.to_string(){
                         if let Some(addr) = self.sessions.get(id){
                             addr.do_send(Message(role.to_owned())) 
