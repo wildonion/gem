@@ -15,6 +15,9 @@
         to send them as the async task to tokio green threadpool using
         tokio spawn to handle them as an event using tokio select event 
         loop handler
+    - players can get a higher rank by paying for the rank, playing with 
+      more than 3 gods in a week, player ability limitation when the god 
+      is updating the status 
     - an event manager (god) must mint a god card then he can set 
         a new proposal to make an event then those players whose 
         their ranks are matched together and have conse tokens will 
