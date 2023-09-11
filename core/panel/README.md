@@ -5,7 +5,7 @@
 
 ### 👤 User Access
 - push notif subscriptions (mmr ranking, ecq and reveal role) `<---mafia jwt--->` mafia hyper server
-- twitter, otp and mail verification process
+- twitter, otp, mail, identity and bank accounts verification process
 - new login and check token flow
 - building crypto wallet
 - do and get related tasks
@@ -30,3 +30,10 @@
 - user task verification using twitter bot
 - check user task 
 - get posts
+
+### 🔑 Tiny KYC Identity Verification Process
+
+- first of all the `/user/login` API must be called to register a new user.
+- second of all the `/user/request-mail-code/{mail}` and `/user/verify-mail-code` APIs must be called to verify the user mail in order to create the **Crypto Id**.
+- then the `/user/cid/build` API must be called to upsert the fields, it'll create a new **Crypto Id** with the passed in `username`, `region` and `device_id`, on the first call and update `username` and `region` fields only on the second call.
+- finally we can call the `/user/request-phone-code/{phone}` and `/user/verify-phone-code` APIs to verify the user phone number which will send the **OTP** code from the IR or none-IR **OTP** provider based on the updated user region in previous step.

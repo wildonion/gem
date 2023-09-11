@@ -607,7 +607,7 @@ macro_rules! server {
                     */
                     .service(
                         actix_web::web::scope("/bot")
-                            .configure(services::init_bot)
+                            .configure(services::init_public)
                     )
                     /*
                         INIT SWAGGER UI SERIVES

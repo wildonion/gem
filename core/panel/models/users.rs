@@ -10,11 +10,12 @@ use lettre::message::Mailbox;
 use crate::wallet::Wallet;
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
-use crate::schema::{users, users_tasks, users_mails};
+use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::bot::Twitter;
 use crate::constants::*;
 use super::users_mails::UserMail;
+use super::users_phones::UserPhone;
 use super::users_tasks::UserTask;
 
 
@@ -38,6 +39,7 @@ pub struct User{
     pub identifier: Option<String>, /* unique */
     pub mail: Option<String>, /* unique */
     pub is_mail_verified: bool,
+    pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -68,6 +70,7 @@ pub struct FetchUser{
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
     pub is_mail_verified: bool,
+    pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -96,6 +99,7 @@ pub struct UserData{
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
     pub is_mail_verified: bool,
+    pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -124,6 +128,7 @@ pub struct UserIdResponse{
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
     pub is_mail_verified: bool,
+    pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
     pub paypal_id: Option<String>, /* unique */
     pub account_number: Option<String>, /* unique */
@@ -144,24 +149,15 @@ pub struct UserIdResponse{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
 pub struct NewIdRequest{
     pub region: String,
-    pub mail: String,
     pub username: String,
-    pub phone_number: String,
-    pub paypal_id: String,
-    pub account_number: String,
     pub device_id: String,
-    pub social_id: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct Id{
-    pub user_mail: String,
-    pub user_phone_number: String,
+    pub region: String,
     pub user_id: i32,
-    pub paypal_id: String,
-    pub account_number: String,
     pub device_id: String,
-    pub social_id: String,
     pub username: String,
     pub new_snowflake_id: Option<i64>,
     pub new_cid: Option<String>, /* pubkey */
@@ -170,8 +166,15 @@ pub struct Id{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
-pub struct CheckUserVerificationRequest{
+pub struct CheckUserMailVerificationRequest{
     pub user_mail: String,
+    pub verification_code: String,
+    pub vat: i64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct CheckUserPhoneVerificationRequest{
+    pub user_phone: String,
     pub verification_code: String,
     pub vat: i64,
 }
@@ -250,6 +253,66 @@ pub struct EditUserByAdminRequest{
     pub username: String,
     pub identifier: String,
     pub password: Option<String>
+}
+
+#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Debug, Clone)]
+pub struct SMSResponse{
+    pub r#return: SMSResponseReturn, // use r# to escape reserved keywords to use them as identifiers in rust
+    pub entries: Vec<SMSResponseEntries>,
+}
+
+#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+pub struct SMSResponseReturn{
+    pub status: u16,
+    pub message: String,
+}
+
+#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+pub struct SMSResponseEntries{
+    pub messageid: f64,
+    pub message: String,
+    pub status: u8,
+    pub statustext: String,
+    pub sender: String,
+    pub receptor: String,
+    pub date: i64,
+    pub cost: u16, 
+}
+
+#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+pub struct MessageBirdSMSResponse{
+    
+    /* 
+        {
+            "id":"e8077d803532c0b5937c639b60216938",
+            "href":"https://rest.messagebird.com/messages/e8077d803532c0b5937c639b60216938",
+            "direction":"mt",
+            "type":"sms",
+            "originator":"YourName",
+            "body":"This is a test message",
+            "reference":null,
+            "validity":null,
+            "gateway":null,
+            "typeDetails":{},
+            "datacoding":"plain",
+            "mclass":1,
+            "scheduledDatetime":null,
+            "createdDatetime":"2016-05-03T14:26:57+00:00",
+            "recipients":{
+                "totalCount":1,
+                "totalSentCount":1,
+                "totalDeliveredCount":0,
+                "totalDeliveryFailedCount":0,
+                "items":[
+                {
+                    "recipient":31612345678,
+                    "status":"sent",
+                    "statusDatetime":"2016-05-03T14:26:57+00:00"
+                }
+                ]
+            }
+        }
+    */
 }
 
 impl User{
@@ -771,6 +834,7 @@ impl User{
                         updated_at: fetched_user.updated_at.to_string(),
                         mail: fetched_user.clone().mail,
                         is_mail_verified: fetched_user.is_mail_verified,
+                        is_phone_verified: fetched_user.is_phone_verified,
                         phone_number: fetched_user.clone().phone_number,
                         paypal_id: fetched_user.clone().paypal_id,
                         account_number: fetched_user.clone().account_number,
@@ -893,6 +957,7 @@ impl User{
                         updated_at: fetched_user.updated_at.to_string(),
                         mail: fetched_user.clone().mail,
                         is_mail_verified: fetched_user.is_mail_verified,
+                        is_phone_verified: fetched_user.is_phone_verified,
                         phone_number: fetched_user.clone().phone_number,
                         paypal_id: fetched_user.clone().paypal_id,
                         account_number: fetched_user.clone().account_number,
@@ -1137,6 +1202,7 @@ impl User{
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
                             is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
                             paypal_id: updated_user.clone().paypal_id,
                             account_number: updated_user.clone().account_number,
@@ -1271,6 +1337,7 @@ impl User{
                             updated_at: u.updated_at.to_string(),
                             mail: u.clone().mail,
                             is_mail_verified: u.clone().is_mail_verified,
+                            is_phone_verified: u.clone().is_phone_verified,
                             phone_number: u.clone().phone_number,
                             paypal_id: u.clone().paypal_id,
                             account_number: u.clone().account_number,
@@ -1417,6 +1484,7 @@ impl User{
                                     updated_at: updated_user.updated_at.to_string(),
                                     mail: updated_user.clone().mail,
                                     is_mail_verified: updated_user.is_mail_verified,
+                                    is_phone_verified: updated_user.is_phone_verified,
                                     phone_number: updated_user.clone().phone_number,
                                     paypal_id: updated_user.clone().paypal_id,
                                     account_number: updated_user.clone().account_number,
@@ -1527,6 +1595,470 @@ impl User{
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
                                 is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
+                                snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
+                            }
+                        )
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+
+                    }
+                }
+
+
+
+    }
+
+    pub async fn update_phone(
+        phone_owner_id: i32, 
+        new_phone: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+            let Ok(user) = User::find_by_id(phone_owner_id, connection).await else{
+                let resp = Response{
+                    data: Some(phone_owner_id),
+                    message: USER_NOT_FOUND,
+                    status: 404
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                );
+            };
+
+
+            match diesel::update(users.find(user.id))
+                .set(phone_number.eq(new_phone))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                region: {
+                                    match updated_user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
+                                snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
+                            }
+                        )
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+
+                    }
+                }
+
+
+
+    }
+
+    pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+        let otp_token = std::env::var("OTP_API_TOKEN").unwrap();
+        let otp_template = std::env::var("OTP_API_TEMPLATE").unwrap();
+        let messagebird_access_key = std::env::var("MESSAGEBIRD_ACCESS_KEY").unwrap();
+
+        let get_single_user = User::find_by_id(phone_owner_id, connection).await;
+        let Ok(single_user) = get_single_user else{
+            let resp = Response{
+                data: Some(phone_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        /* if the passed in mail was the one inside the db, means it has already been verified */
+        if single_user.phone_number.is_some() && 
+            single_user.phone_number.unwrap() == user_phone &&
+            /* 
+                is_mail_verified also must be true since user might 
+                entered an expired code which we won't update this 
+                field thus he must enter a new code by calling this api
+                and if this field isn't set to true we must allow him 
+                to get the code otherwise means that his mail is already
+                verified.
+            */ 
+            single_user.is_phone_verified{
+            let resp = Response{
+                data: Some(phone_owner_id),
+                message: ALREADY_VERIFIED_PHONE,
+                status: 302
+            };
+            return Err(
+                Ok(HttpResponse::Found().json(resp))
+            );
+        }
+
+        /* 
+            if we're here means that the user is trying to verify a new phone so 
+            we have to set the is_phone_verified to false, we'll set this to true
+            once the user sent the code back to the server
+        */
+        if single_user.is_phone_verified{
+
+            let res = diesel::update(users.find(phone_owner_id))
+                .set(is_phone_verified.eq(false))
+                .returning(FetchUser::as_returning())
+                .get_result(connection);
+        }
+
+
+        let random_code: String = (0..6).map(|_|{
+            let idx = gen_random_idx(random::<u8>() as usize); // idx is one byte cause it's of type u8
+            CHARSET[idx] as char // CHARSET is of type slice of utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
+        }).collect();
+
+        
+        let now = Utc::now();
+        let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
+
+        let otp_res_stat = match single_user.region{
+            UserRegion::Ir => {
+                
+                let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
+                let otp_request = reqwest::Client::new()
+                    .get(otp_endpoint.as_str())
+                    .send()
+                    .await;
+
+                let res_stat = otp_request
+                    .as_ref()
+                    .unwrap()
+                    .status()
+                    .as_u16();
+
+                let otp_response_data = otp_request
+                    .unwrap()
+                    /* mapping the streaming of future io bytes into the SMSResponse struct */
+                    .json::<SMSResponse>()
+                    .await;
+
+                res_stat
+
+            },
+            _ => {
+
+                let body_content = format!("Use this code to get verified in {}: {}", APP_NAME, random_code);
+                let mut data = HashMap::new();
+                data.insert("recipients", user_phone.clone());
+                data.insert("originator", APP_NAME.to_string());
+                data.insert("body", body_content);
+
+                let auth_header_key = format!("AccessKey {}", messagebird_access_key);
+                let otp_endpoint = format!("https://rest.messagebird.com/messages");
+                
+                let otp_request = reqwest::Client::new()
+                    .post(otp_endpoint.as_str())
+                    .header("Authorization", auth_header_key.as_str())
+                    .form(&data)
+                    .send()
+                    .await;
+
+                let res_stat = otp_request
+                    .as_ref()
+                    .unwrap()
+                    .status()
+                    .as_u16();
+
+                let otp_response_data = otp_request
+                    .unwrap()
+                    /* mapping the streaming of future io bytes into the SMSResponse struct */
+                    .json::<MessageBirdSMSResponse>()
+                    .await;
+
+                res_stat    
+
+            }
+        };
+                
+        
+        /* 
+            we're borrowing the otp_request here to prevent it from moving 
+            cause unwrap() takes the ownership of self 
+        */
+        if otp_res_stat != 200{
+
+            let resp = Response{
+                data: Some(phone_owner_id),
+                message: OTP_PROVIDER_DIDNT_SEND_CODE,
+                status: 417
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            );
+
+        }
+
+        let save_phone_res = UserPhone::save(&user_phone, phone_owner_id, random_code, two_mins_later, connection).await;
+        let Ok(_) = save_phone_res else{
+
+            let resp_err = save_phone_res.unwrap_err();
+            return Err(resp_err);
+        };
+
+        /* if we're here means code has been sent successfully */
+        match User::update_phone(phone_owner_id, &user_phone, connection).await{
+            Ok(user_data) => Ok(user_data),
+            Err(e) => Err(e)
+        }
+
+    }
+
+    pub async fn check_phone_verification_code(check_user_verification_request: CheckUserPhoneVerificationRequest, receiver_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+            
+
+        let get_single_user = User::find_by_id(receiver_id, connection).await;
+        let Ok(single_user) = get_single_user else{
+            let resp = Response{
+                data: Some(receiver_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        if single_user.is_phone_verified{
+            
+            let resp = Response{
+                data: Some(receiver_id),
+                message: ALREADY_VERIFIED_MAIL,
+                status: 302
+            };
+            return Err(
+                Ok(HttpResponse::Found().json(resp))
+            );
+
+        }
+
+
+        let single_user_phone = {
+            use crate::schema::users_phones::dsl::*;
+            use crate::schema::users_phones;
+            let single_user_phone = users_phones
+                .filter(users_phones::user_id.eq(receiver_id))
+                .filter(users_phones::phone.eq(check_user_verification_request.clone().user_phone))
+                .filter(users_phones::code.eq(check_user_verification_request.clone().verification_code))
+                .first::<UserPhone>(connection);
+            single_user_phone
+
+        };
+                        
+        let Ok(user_mail) = single_user_phone else{
+            let resp = Response{
+                data: Some(receiver_id),
+                message: NO_MAIL_FOR_THIS_USER,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        let exp_code = user_mail.exp;
+        let user_vat = check_user_verification_request.vat;
+
+        /* calculate the naive datetime from the passed in exp milli timestamp */
+        let now = Utc::now();
+        let given_time = chrono::DateTime::<Utc>::from_utc(
+            chrono::NaiveDateTime::from_timestamp_millis(exp_code).unwrap(),
+            Utc,
+        );
+
+        /* calculate the datetime diff between now and the exp time */
+        let duration = now.signed_duration_since(given_time);
+
+        /* code must not be expired */
+        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in not older than 5 mins */
+            /* delete the record, user must request the code again */
+            let del_res = diesel::delete(users_phones::table
+                .filter(users_phones::user_id.eq(receiver_id)))
+                .filter(users_phones::phone.eq(check_user_verification_request.clone().user_phone))
+                .filter(users_phones::code.eq(check_user_verification_request.clone().verification_code))
+                .execute(connection);
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: EXPIRED_MAIL_CODE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+
+        }
+
+        /* update vat field */
+        let save_mail_res = UserMail::update_vat(user_mail.id, user_vat, connection).await;
+        let Ok(_) = save_mail_res else{
+
+            let resp_err = save_mail_res.unwrap_err();
+            return Err(resp_err);
+        };
+
+        /* delete all the records ralated to the receiver_id with vat 0 */
+        let del_res = diesel::delete(users_mails::table
+            .filter(users_mails::user_id.eq(receiver_id)))
+            .filter(users_mails::vat.eq(0))
+            .execute(connection);
+        
+        /* update is_mail_verified field */
+        match User::verify_mail(receiver_id, connection).await{
+            Ok(user_data) => Ok(user_data),
+            Err(e) => Err(e)
+        }
+
+
+    }
+
+    pub async fn verify_phone(
+        phone_owner_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+            let Ok(user) = User::find_by_id(phone_owner_id, connection).await else{
+                let resp = Response{
+                    data: Some(phone_owner_id),
+                    message: USER_NOT_FOUND,
+                    status: 404
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                );
+            };
+
+
+            match diesel::update(users.find(user.id))
+                .set(is_phone_verified.eq(true))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                region: {
+                                    match updated_user.region.clone(){
+                                        UserRegion::Ir => "ir".to_string(),
+                                        _ => "none-ir".to_string(),
+                                    }
+                                },
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
                                 paypal_id: updated_user.clone().paypal_id,
                                 account_number: updated_user.clone().account_number,
@@ -1625,6 +2157,7 @@ impl User{
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
                                 is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
                                 paypal_id: updated_user.clone().paypal_id,
                                 account_number: updated_user.clone().account_number,
@@ -1814,7 +2347,7 @@ impl User{
 
     }
 
-    pub async fn check_mail_verification_code(check_user_verification_request: CheckUserVerificationRequest, receiver_id: i32, 
+    pub async fn check_mail_verification_code(check_user_verification_request: CheckUserMailVerificationRequest, receiver_id: i32, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
             
 
@@ -1951,18 +2484,14 @@ impl Id{
                 match diesel::update(users.find(id_owner))
                     .set(
                 (
-                            mail.eq(id_.mail.clone()),
+                        // update only region and username
                             region.eq({
                                 match u_region{
                                     "ir" => UserRegion::Ir,
                                     _ => UserRegion::NoneIr
                                 }
                             }),
-                            phone_number.eq(id_.phone_number.clone()),
                             username.eq(id_.username.clone()),
-                            paypal_id.eq(id_.paypal_id.clone()),
-                            account_number.eq(id_.account_number.clone()),
-                            social_id.eq(id_.social_id.clone()),
                         )
                     )
                     .returning(FetchUser::as_returning())
@@ -2003,6 +2532,7 @@ impl Id{
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
                                 is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
                                 paypal_id: updated_user.clone().paypal_id,
                                 account_number: updated_user.clone().account_number,
@@ -2074,15 +2604,11 @@ impl Id{
                 let new_snowflake_id = Some(new_snowflake_id);
 
                 Ok(
-                    Id { 
-                        user_mail: id_.mail,
-                        user_phone_number: id_.phone_number,
+                    Id{ 
                         user_id: id_owner,
+                        region: id_.region,
                         username: id_username, 
-                        paypal_id: id_.paypal_id, 
-                        account_number: id_.account_number, 
                         device_id: id_.device_id, 
-                        social_id: id_.social_id, 
                         new_snowflake_id,
                         new_cid: wallet.secp256k1_public_key, /* secp256k1 */
                         screen_cid: wallet.secp256k1_public_address, /* secp256k1 */
@@ -2109,6 +2635,7 @@ impl Id{
             );  
         };
 
+        let user_region_str = self.region.as_str();
         match diesel::update(users.find(self.user_id))
             .set(
         (   
@@ -2117,13 +2644,14 @@ impl Id{
                     we must clone them or use their borrowed form or return the static 
                     version of their slice like &'static str
                 */
-                    mail.eq(self.user_mail.clone()),
-                    phone_number.eq(self.user_phone_number.clone()),
                     username.eq(self.username.clone()),
-                    paypal_id.eq(self.paypal_id.clone()),
-                    account_number.eq(self.account_number.clone()),
+                    region.eq({
+                        match user_region_str{
+                            "ir" => UserRegion::Ir,
+                            _ => UserRegion::NoneIr
+                        }
+                    }),
                     device_id.eq(self.device_id.clone()),
-                    social_id.eq(self.social_id.clone()),
                     cid.eq(self.new_cid.clone().unwrap()),
                     screen_cid.eq(self.screen_cid.clone().unwrap()),
                     snowflake_id.eq(self.new_snowflake_id),
@@ -2166,6 +2694,7 @@ impl Id{
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.mail,
                             is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.phone_number,
                             paypal_id: updated_user.paypal_id,
                             account_number: updated_user.account_number,

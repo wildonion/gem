@@ -43,6 +43,7 @@ diesel::table! {
         identifier -> Nullable<Varchar>,
         mail -> Nullable<Varchar>,
         is_mail_verified -> Bool,
+        is_phone_verified -> Bool,
         phone_number -> Nullable<Varchar>,
         paypal_id -> Nullable<Varchar>,
         account_number -> Nullable<Varchar>,
@@ -87,6 +88,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_phones (id) {
+        id -> Int4,
+        user_id -> Int4,
+        phone -> Varchar,
+        code -> Varchar,
+        exp -> Int8,
+        vat -> Int8,
+    }
+}
+
+diesel::table! {
     users_tasks (user_id, task_id) {
         user_id -> Int4,
         task_id -> Int4,
@@ -114,6 +126,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     users,
     users_deposits,
     users_mails,
+    users_phones,
     users_tasks,
     users_withdrawals,
 );

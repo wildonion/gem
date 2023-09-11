@@ -351,6 +351,7 @@ impl UserTask{
                         updated_at: user.updated_at.to_string(),
                         mail: user.mail,
                         is_mail_verified: user.is_mail_verified,
+                        is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,

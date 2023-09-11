@@ -15,6 +15,10 @@ echo "[?] Enter SMS API Template: "
 read OTP_API_TEMPLATE
 echo OTP_API_TEMPLATE=$OTP_API_TEMPLATE >> .env
 
+echo "[?] Enter Messagebird Access Key: "
+read MESSAGEBIRD_ACCESS_KEY
+echo MESSAGEBIRD_ACCESS_KEY=$MESSAGEBIRD_ACCESS_KEY >> .env
+
 echo "[?] Enter SMTP Username: "
 read SMTP_USERNAME
 echo SMTP_USERNAME=$SMTP_USERNAME >> .env

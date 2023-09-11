@@ -50,7 +50,9 @@ use crate::wallet::Wallet;
         get_all_user_deposits,
         get_recipient_unclaimed_deposits,
         request_mail_code,
-        verify_mail_code
+        verify_mail_code,
+        request_phone_code,
+        verify_phone_code,
     ),
     components(
         schemas(
@@ -60,7 +62,8 @@ use crate::wallet::Wallet;
             TaskData,
             UserDepositData,
             UserWithdrawalData,
-            CheckUserVerificationRequest,
+            CheckUserMailVerificationRequest,
+            CheckUserPhoneVerificationRequest,
             NewUserDepositRequest,
             NewIdRequest,
             UserIdResponse
@@ -172,6 +175,7 @@ async fn login(
                         updated_at: updated_user.updated_at.to_string(),
                         mail: user.mail,
                         is_mail_verified: user.is_mail_verified,
+                        is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,
@@ -352,7 +356,7 @@ async fn request_mail_code(
                                 resp!{
                                     UserData, // the data type
                                     updated_user, // response data
-                                    VERIFICATION_CODE_SENT, // response message
+                                    MAIL_VERIFICATION_CODE_SENT, // response message
                                     StatusCode::OK, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
@@ -412,7 +416,7 @@ async fn request_mail_code(
 
 #[utoipa::path(
     context_path = "/user",
-    request_body = CheckUserVerificationRequest,
+    request_body = CheckUserMailVerificationRequest,
     responses(
         (status=200, description="Mail Verified Successfully", body=UserData),
         (status=500, description="Storage Issue", body=[u8])
@@ -423,7 +427,7 @@ async fn request_mail_code(
 #[passport(user)]
 async fn verify_mail_code(
     req: HttpRequest,
-    check_user_verification_request: web::Json<CheckUserVerificationRequest>,
+    check_user_verification_request: web::Json<CheckUserMailVerificationRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -476,6 +480,313 @@ async fn verify_mail_code(
                     let role = token_data.user_role;
                     
                     match User::check_mail_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
+                        
+                        Ok(updated_user) => {
+
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                MAIL_VERIFIED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* 
+                                🥝 response can be one of the following:
+
+                                - USER NOT FOUND RESPONE
+                                - MAIL CLIENT ERROR
+                            */
+                            resp
+
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=200, description="Verification Code Sent Successfully", body=UserData),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("mail" = String, Path, description = "user mail")
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/request-phone-code/{phone}")]
+#[passport(user)]
+async fn request_phone_code(
+    req: HttpRequest,
+    user_phone: web::Path<String>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* we need rate limit in this api since otp providers have rate limits */
+                    let identifier_key = format!("{}-request-phone-code", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                        
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let get_user_err = get_user.unwrap_err();
+                            return get_user_err; /* user not found response */
+                        };
+                        
+                      
+                        match User::send_phone_verification_code_to(_id, user_phone.to_owned(), connection).await{
+                            
+                            Ok(updated_user) => {
+    
+                                resp!{
+                                    UserData, // the data type
+                                    updated_user, // response data
+                                    PHONE_VERIFICATION_CODE_SENT, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+    
+                            },
+                            Err(resp) => {
+    
+                                /* 
+                                    🥝 response can be one of the following:
+    
+                                    - USER NOT FOUND RESPONE
+                                    - MAIL CLIENT ERROR
+                                */
+                                resp
+    
+                            }
+                        }
+
+                    
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    request_body = CheckUserPhoneVerificationRequest,
+    responses(
+        (status=200, description="Phone Verified Successfully", body=UserData),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/verify-phone-code")]
+#[passport(user)]
+async fn verify_phone_code(
+    req: HttpRequest,
+    check_user_verification_request: web::Json<CheckUserPhoneVerificationRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match User::check_phone_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
                         
                         Ok(updated_user) => {
 
@@ -638,6 +949,7 @@ async fn login_with_identifier_and_password(
                         updated_at: updated_user.updated_at.to_string(),
                         mail: user.mail,
                         is_mail_verified: user.is_mail_verified,
+                        is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,
                         paypal_id: user.paypal_id,
                         account_number: user.account_number,
@@ -1095,8 +1407,7 @@ async fn make_cid(
 
                     /* if the mail wasn't verified user can't create id */
                     if user.mail.is_none() || 
-                        !user.is_mail_verified || 
-                        user.mail.unwrap() != new_object_id_request.clone().mail{
+                        !user.is_mail_verified{
                         resp!{
                             &[u8], // the date type
                             &[], // the data itself
@@ -2409,9 +2720,9 @@ pub mod exports{
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::request_mail_code;
     pub use super::verify_mail_code;
-    /* 
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
+    /* 
     pub use super::add_post_comment;
     pub use super::like_post;
     */

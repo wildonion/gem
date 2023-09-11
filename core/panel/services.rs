@@ -108,6 +108,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_recipient_unclaimed_deposits);
     config.service(apis::user::exports::request_mail_code);
     config.service(apis::user::exports::verify_mail_code);
+    config.service(apis::user::exports::request_phone_code);
+    config.service(apis::user::exports::verify_phone_code);
 
     // other routs maybe ?
     // ...
@@ -144,7 +146,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
     |
 
 */
-pub fn init_bot(config: &mut web::ServiceConfig){
+pub fn init_public(config: &mut web::ServiceConfig){
 
     config.service(apis::public::exports::verify_twitter_task);
     config.service(apis::public::exports::check_users_tassk);

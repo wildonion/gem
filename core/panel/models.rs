@@ -10,3 +10,4 @@ pub mod bot;
 pub mod users_deposits;
 pub mod users_withdrawals;
 pub mod users_mails;
+pub mod users_phones;
