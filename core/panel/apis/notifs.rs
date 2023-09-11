@@ -16,7 +16,9 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use crate::events::{
-    subscribers::notifs::role::{RoleNotifServer, UpdateNotifRoom},
+    subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
+    subscribers::notifs::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
+    subscribers::notifs::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
     subscribers::session::WsNotifSession,
 };
 use actix::prelude::*;
@@ -56,6 +58,8 @@ async fn notif_subs(
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
+    ws_mmr_notif_server: web::Data<Addr<MmrNotifServer>>,
+    ws_ecq_notif_server: web::Data<Addr<EcqNotifServer>>,
 ) -> PanelHttpResponse {
 
 
@@ -89,21 +93,64 @@ async fn notif_subs(
                         let notif_room = route_paths.1.to_owned();
                         let notif_room_str = string_to_static_str(notif_room.clone());
                         let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
+                        let ws_mmr_notif_actor_address = ws_mmr_notif_server.get_ref().to_owned();
+                        let ws_ecq_notif_actor_address = ws_ecq_notif_server.get_ref().to_owned();
+
 
                         /* 
+                            ------------------------------------------------------------
+                             UPDATING NOTIF ROOMS OF ALL ACTORS WITH THE PASSED IN ROOM
+                            ------------------------------------------------------------
                             sending the update message to mutate the notif room before starting the session actor
-                            also make sure that the RoleNotifServer actor is already started when we're here
-                            otherwise by calling this route every time a new actor will be started and the previous 
-                            state will be lost.
+                            also make sure that the RoleNotifServer, MmrNotifServer and EcqNotifServer actors are 
+                            already started when we're here otherwise by calling this route every time a new actor 
+                            will be started and the previous state will be lost thus rooms won't be stored and the 
+                            new one will be replace the old one
                         */
-                        let update_notif_room_result = ws_role_notif_actor_address
-                            .send(UpdateNotifRoom{
+                        let update_role_notif_room_result = ws_role_notif_actor_address
+                            .send(RoleUpdateNotifRoom{
                                 notif_room: notif_room_str, 
                                 peer_name: user_id.clone()
                             })
                             .await;
 
-                        let Ok(_) = update_notif_room_result else{
+                        let Ok(_) = update_role_notif_room_result else{
+                        
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
+                                StatusCode::REQUEST_TIMEOUT, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        let update_mmr_notif_room_result = ws_mmr_notif_actor_address
+                            .send(MmrUpdateNotifRoom{
+                                notif_room: notif_room_str, 
+                                peer_name: user_id.clone()
+                            })
+                            .await;
+
+                        let Ok(_) = update_mmr_notif_room_result else{
+                        
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
+                                StatusCode::REQUEST_TIMEOUT, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        let update_ecq_notif_room_result = ws_ecq_notif_actor_address
+                            .send(EcqUpdateNotifRoom{
+                                notif_room: notif_room_str, 
+                                peer_name: user_id.clone()
+                            })
+                            .await;
+
+                        let Ok(_) = update_ecq_notif_room_result else{
                         
                             resp!{
                                 &[u8], // the data type
@@ -133,6 +180,8 @@ async fn notif_subs(
                                         peer_name: Some(user_id),
                                         notif_room: notif_room_str,
                                         ws_role_notif_actor_address,
+                                        ws_mmr_notif_actor_address,
+                                        ws_ecq_notif_actor_address,
                                         app_storage: storage.clone(),
                                         is_subscription_interval_started: false
                                     }, 

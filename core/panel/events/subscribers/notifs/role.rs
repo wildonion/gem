@@ -161,7 +161,12 @@ impl Actor for RoleNotifServer{
             any push notif from redis any more.
         */
         
-        let async_redis = self.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
+        let async_redis = self.app_storage
+            .as_ref()
+            .clone()
+            .unwrap()
+            .get_async_redis_pubsub_conn_sync()
+            .unwrap();
         async_redis.unsubscribe("reveal-role-*");
 
         Running::Stop

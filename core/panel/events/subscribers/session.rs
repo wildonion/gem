@@ -23,6 +23,16 @@ use actix::prelude::*;
 use diesel::sql_types::ops::Add;
 use redis_async::resp::FromResp;
 use super::notifs::{
+    mmr::{
+        Message as MmrMessage, 
+        MmrNotifServer, Disconnect as MmrNotifServerDisconnectMessage,
+        Connect as MmrNotifServerConnectMessage, JoinForPushNotif as MmrNotifServerJoinMessage
+    },
+    ecq::{
+        Message as EcqMessage, 
+        EcqNotifServer, Disconnect as EcqNotifServerDisconnectMessage,
+        Connect as EcqNotifServerConnectMessage, JoinForPushNotif as EcqNotifServerJoinMessage
+    },
     role::{
         Message as RoleMessage, 
         RoleNotifServer, Disconnect as RoleNotifServerDisconnectMessage,
@@ -49,13 +59,19 @@ pub struct NotifySession{
 
 
 
-/* a session or peer data, RoleNotifServer actor contains all session instances from the following struct in its rooms */
+/* 
+    a session or peer data, 
+    RoleNotifServer, MmrNotifServer and EcqNotifServer actors 
+    contain all session instances from the following struct in its rooms 
+*/
 pub(crate) struct WsNotifSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
     pub notif_room: &'static str, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
+    pub ws_mmr_notif_actor_address: Addr<MmrNotifServer>, // the mmr notif actor server address,
+    pub ws_ecq_notif_actor_address: Addr<EcqNotifServer>, // the ecq notif actor server address,
     pub app_storage: Option<Arc<Storage>>,
     pub is_subscription_interval_started: bool
 }
@@ -353,7 +369,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                     let redis_async_pubsubconn = actor.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
                                     let ws_role_notif_actor_address = actor.ws_role_notif_actor_address.clone();
                                     let peer_name = actor.peer_name.clone();
-                                    let session_id = actor.id;
+                                    let session_id = actor.id; /* random id of this session */
                                     
                                     tokio::spawn(async move{
                                         /* starting subscription loop in the background asyncly */
@@ -379,7 +395,50 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             
                             /* communicating with ecq notif server actor (notifs/ecq.rs) */
                             
-                            todo!()
+                            self.ws_ecq_notif_actor_address.do_send(EcqNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
+                            let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
+                            ctx.text(joined_msg);
+
+                            /* 
+                                if the interval is not already started we'll start it and set the flag to true 
+                                otherwise we won't do this on second /join command, which prevents from adding 
+                                more interval to the actor state.
+                            */
+                            if !self.is_subscription_interval_started{
+                                
+                                info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
+                                
+                                /* 
+                                    start subscription interval for this joined session, since ctx is not Send 
+                                    we couldn't put the interval part inside the tokio::spawn()
+                                */
+                                ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+                                    
+                                    actor.is_subscription_interval_started = true;
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
+                                    
+                                    /* cloning the types that they need to be captured inside tokio::spawn() */
+                                    let notif_room = actor.notif_room;
+                                    let redis_async_pubsubconn = actor.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
+                                    let ws_ecq_notif_actor_address = actor.ws_ecq_notif_actor_address.clone();
+                                    let peer_name = actor.peer_name.clone();
+                                    let session_id = actor.id; /* random id of this session */
+                                    
+                                    
+                                    tokio::spawn(async move{
+        
+
+                                        
+                                        /* 
+                                            dual event setup:
+                                            event collaboration notifs and setup
+                                        */
+
+
+
+                                    });
+                                });
+                            }
                         
                         },
                         /* ------------------------------------*/
@@ -388,14 +447,52 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         "/join-mmr" => {
 
                             /* communicating with mmr notif server actor (notifs/mmr.rs) */
-                            /* 
-                                mmq setup:
-                                select 1 random player from the self.notif_room room
-                                from the role notif server except self.peer_name 
 
+                            self.ws_mmr_notif_actor_address.do_send(MmrNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
+                            let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
+                            ctx.text(joined_msg);
+
+                            /* 
+                                if the interval is not already started we'll start it and set the flag to true 
+                                otherwise we won't do this on second /join command, which prevents from adding 
+                                more interval to the actor state.
                             */
-                            
-                            todo!()
+                            if !self.is_subscription_interval_started{
+                                
+                                info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
+                                
+                                /* 
+                                    start subscription interval for this joined session, since ctx is not Send 
+                                    we couldn't put the interval part inside the tokio::spawn()
+                                */
+                                ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+                                    
+                                    actor.is_subscription_interval_started = true;
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
+                                    
+                                    /* cloning the types that they need to be captured inside tokio::spawn() */
+                                    let notif_room = actor.notif_room;
+                                    let redis_async_pubsubconn = actor.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
+                                    let ws_mmr_notif_actor_address = actor.ws_mmr_notif_actor_address.clone();
+                                    let peer_name = actor.peer_name.clone();
+                                    let session_id = actor.id; /* random id of this session */
+                                    
+                                    
+                                    tokio::spawn(async move{
+        
+
+                                        /* 
+                                            mmq and ranking setup:
+                                            select 1 random player from the self.notif_room room
+                                            from the role notif server except self.peer_name 
+
+                                        */
+
+
+
+                                    });
+                                });
+                            }
 
                         },
                         _ => ctx.text(format!("unknown command")),
