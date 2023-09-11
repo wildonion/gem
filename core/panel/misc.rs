@@ -481,6 +481,8 @@ macro_rules! server {
             use dotenv::dotenv;
             use crate::constants::*;
             use crate::events::subscribers::notifs::role::RoleNotifServer;
+            use crate::events::subscribers::notifs::mmr::MmrNotifServer;
+            use crate::events::subscribers::notifs::ecq::EcqNotifServer;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -515,12 +517,19 @@ macro_rules! server {
             /*  
                                         SETTING UP SHARED STATE DATA
                 
-                make sure we're starting the RoleNotifServer actor in here and pass the actor isntance to 
-                the routers' threadpool otherwise the actor will be started each time by calling the related 
-                websocket route
+                make sure we're starting the RoleNotifServer, MmrNotifServer and EcqNotifServer actor in here 
+                and pass the actor isntance to the routers' threadpool otherwise the actor will be started each 
+                time by calling the related websocket route
             */
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
+            
+            let mmr_ntif_server_instance = MmrNotifServer::new(app_storage.clone()).start();
+            let shared_ws_mmr_notif_server = Data::new(mmr_ntif_server_instance.clone());
+
+            let ecq_ntif_server_instance = EcqNotifServer::new(app_storage.clone()).start();
+            let shared_ws_ecq_notif_server = Data::new(ecq_ntif_server_instance.clone());
+
             let shared_storage = Data::new(app_storage.clone());
 
             /*
@@ -553,6 +562,8 @@ macro_rules! server {
                     */
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
+                    .app_data(Data::clone(&shared_ws_mmr_notif_server.clone()))
+                    .app_data(Data::clone(&shared_ws_ecq_notif_server.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
@@ -619,8 +630,8 @@ macro_rules! server {
                             apis::health::HealthApiDoc::openapi(),
                         ),
                         (
-                            Url::new("bot", "/api-docs/bot.json"),
-                            apis::bot::BotApiDoc::openapi(),
+                            Url::new("public", "/api-docs/public.json"),
+                            apis::public::PublicApiDoc::openapi(),
                         )
                     ]))
                 }) // each thread of the HttpServer instance needs its own app factory 

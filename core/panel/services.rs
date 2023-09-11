@@ -146,8 +146,8 @@ pub fn init_health(config: &mut web::ServiceConfig){
 */
 pub fn init_bot(config: &mut web::ServiceConfig){
 
-    config.service(apis::bot::exports::verify_twitter_task);
-    config.service(apis::bot::exports::check_users_tassk);
+    config.service(apis::public::exports::verify_twitter_task);
+    config.service(apis::public::exports::check_users_tassk);
 
     // other routs maybe ?
     // ...
