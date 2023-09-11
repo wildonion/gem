@@ -2427,7 +2427,17 @@ async fn get_all_users_withdrawals(
 
 
 pub mod exports{
-    pub use super::reveal_role;   
+    /*
+    pub use super::advertise_event; // `<---mafia jwt--->` mafia hyper server
+    pub use super::request_ecq;  // `<---mafia jwt--->` mafia hyper server
+    pub use super::register_new_post;
+    pub use super::delete_post;
+    pub use super::get_admin_posts;
+    pub use super::get_all_post_comments;
+    pub use super::get_all_post_likes;
+    pub use super::update_post_image;
+    */
+    pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;
     pub use super::register_new_user;
     pub use super::register_new_task; 
@@ -2439,7 +2449,7 @@ pub mod exports{
     pub use super::get_admin_tasks;
     pub use super::get_users_tasks;
     pub use super::add_twitter_account;
-    pub use super::update_event_img;
+    pub use super::update_event_img; // `<---mafia jwt--->` mafia hyper server
     pub use super::get_all_users_withdrawals;
     pub use super::get_all_users_deposits;
 }

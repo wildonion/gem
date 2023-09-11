@@ -3,7 +3,7 @@
 
 # 🤏 Conse Backend Rust Engines
 
-Conse is a Game Event Manager Platform which uses: 
+Conse is a Game Event Manager Platform which has the following engines: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - behavioural graph virtual machine [**GVM**](https://github.com/wildonion/gvm) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
@@ -70,9 +70,8 @@ Conse is a Game Event Manager Platform which uses:
 > Note that to use dev and admin panel APIs Remember to run conse mafia hyper server first.
 
 * `core`: hyper, actix web HTTP and actix WS servers.
-    * `panel`: dev and admin panel actix web and actix WS server.
+    * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
     * `thirdweb`: thirdweb NFT fastapi server contains minting and burning APIs.
-    * `www`: dev and admin panel app written in yew.
     * `mafia`: mafia game APIs
         * `controllers`: in-game async controllers related to hyper server.
         * `routers`: in-game API routers related to hyper server.

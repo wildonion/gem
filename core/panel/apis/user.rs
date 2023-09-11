@@ -2409,4 +2409,10 @@ pub mod exports{
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::request_mail_code;
     pub use super::verify_mail_code;
+    /* 
+    pub use super::request_phone_code;
+    pub use super::verify_phone_code;
+    pub use super::add_post_comment;
+    pub use super::like_post;
+    */
 }
