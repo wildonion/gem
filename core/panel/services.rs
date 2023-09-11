@@ -138,7 +138,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
 
 /*
      --------------------------------
-    |     REGISTER BOT ROUTES
+    |     REGISTER PUBLIC ROUTES
     | -------------------------------
     |
     |

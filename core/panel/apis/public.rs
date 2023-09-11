@@ -99,7 +99,7 @@ pub struct PublicApiDoc;
     ),
     tag = "crate::apis::bot",
 )]
-#[post("/verify-user/{doer_id}/twitter-task/{job_id}")]
+#[post("/bot/verify-user/{doer_id}/twitter-task/{job_id}")]
 async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
@@ -288,7 +288,7 @@ async fn verify_twitter_task(
     
 */
 
-#[get("/check-users-tasks")]
+#[get("/bot/check-users-tasks")]
 async fn check_users_tassk(
         req: HttpRequest,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)

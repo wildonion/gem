@@ -3073,7 +3073,7 @@
 					]
 				},
 				{
-					"name": "Bot APIs",
+					"name": "Public",
 					"item": [
 						{
 							"name": "Verify User Task",
@@ -3081,11 +3081,12 @@
 								"method": "POST",
 								"header": [],
 								"url": {
-									"raw": "{{panel-bot}}/verify-user/1/twitter-task/2",
+									"raw": "{{panel-public}}/bot/verify-user/1/twitter-task/2",
 									"host": [
-										"{{panel-bot}}"
+										"{{panel-public}}"
 									],
 									"path": [
+										"bot",
 										"verify-user",
 										"1",
 										"twitter-task",
@@ -3101,11 +3102,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-bot}}/check-users-tasks",
+									"raw": "{{panel-public}}/bot/check-users-tasks",
 									"host": [
-										"{{panel-bot}}"
+										"{{panel-public}}"
 									],
 									"path": [
+										"bot",
 										"check-users-tasks"
 									]
 								}
@@ -3188,8 +3190,8 @@
 			"type": "string"
 		},
 		{
-			"key": "panel-bot",
-			"value": "https://api.panel.conse.app/bot",
+			"key": "panel-public",
+			"value": "https://api.panel.conse.app/public",
 			"type": "string"
 		}
 	]

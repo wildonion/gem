@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-echo "-> add (sub)domain? "
+echo "-> wanna add (sub)domain? "
 read is_new_domain
 DIRECTORY=..
 REALPTH_GEM=TRUEDIR=$(cd -- "$DIRECTORY" && pwd)
