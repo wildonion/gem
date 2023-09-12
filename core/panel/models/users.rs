@@ -2461,7 +2461,7 @@ impl User{
 
 impl Id{
 
-    pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String,
+    pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String, user_ip: String,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Id, PanelHttpResponse>{
 
         let Ok(user) = User::find_by_id(id_owner, connection).await else{
@@ -2478,8 +2478,26 @@ impl Id{
         match user.cid{
             /* we'll be here only if the old_cid is not an empty string */
             Some(old_cid) if !old_cid.is_empty() => { 
-                
-                let u_region = id_.region.as_str();
+
+                /* region detection process based on ip parsnig */
+                let u_region = {
+                    let mut real_region = "";
+                    let ips = subnets::get_ir_ips();
+                    for ip in ips{
+
+                        let parsed_subnet = ip.parse::<ipnetwork::Ipv4Network>();
+                        if parsed_subnet.unwrap().to_string() == user_ip{
+                            real_region = "ir";
+                            break;
+                        } else{
+                            real_region = id_.region.as_str();
+                            break;
+                        }
+                    }
+                    
+                    real_region
+                };
+
                 /* updating other fields except cid and snowflake id */
                 match diesel::update(users.find(id_owner))
                     .set(

@@ -1359,7 +1359,8 @@ async fn make_cid(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-                    
+            
+            let user_ip = req.peer_addr().unwrap().to_string();
 
             /* 
                  ------------------------------------- 
@@ -1466,6 +1467,7 @@ async fn make_cid(
                                 the username inside the JWT might be empty
                             */
                             new_object_id_request.username.clone(),
+                            user_ip,
                             connection
                         ).await;
 
