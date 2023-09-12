@@ -2437,6 +2437,7 @@ pub mod exports{
     pub use super::get_all_post_comments;
     pub use super::get_all_post_likes;
     pub use super::update_post_image;
+    pub use super::verify_post_comment;
     */
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;

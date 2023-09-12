@@ -1,14 +1,14 @@
 
 
 
-## conse user, dev and admin dashboard panel APIs.
+## 🎛️ conse user, dev and admin dashboard panel APIs based on their access are:
 
 ### 👤 User Access
 - push notif subscriptions (mmr ranking, ecq and reveal role) `<---mafia jwt--->` mafia hyper server
-- twitter, otp, mail, identity and bank accounts verification process
+- twitter account, otp, mail, identity and bank accounts verification process
 - new login and check token flow
 - building crypto wallet
-- do and get related tasks
+- do and get related twitter tasks
 - deposit and withdraw NFT `<---exchange token--->` ir and paypal servers
 - get related deposits and withdrawals
 - add comment on and like the post
@@ -19,19 +19,20 @@
 - publish ecq topic of an event `<---mafia jwt--->` mafia hyper server
 - update event image `<---mafia jwt--->` mafia hyper server
 - add twitter account for the twitter bot
-- register/delete/edit new tasks, posts and users
-- get all withdrawals, deposits, users and tasks
+- register/delete/edit new twitter tasks, posts and users
+- get all withdrawals, deposits, users and twitter tasks
+- verify and get all posts and their comments and likes 
 
 ### 👨🏻‍💻 Dev Access
 - get all data of a user `<---mafia jwt--->` mafia hyper server
 - get all data of an admin `<---mafia jwt--->` mafia hyper server
 
 ### 🌎 Public Access
-- user task verification using twitter bot
-- check user task 
+- user twitter task verification using twitter bot
+- check user twitter task 
 - get posts
 
-### 🔑 Tiny KYC Identity Verification Process
+## 🔑 Tiny KYC Identity Verification Process
 
 - first of all the `/user/login` API must be called to register a new user.
 - second of all the `/user/request-mail-code/{mail}` and `/user/verify-mail-code` APIs must be called to verify the user mail in order to create the **Crypto Id**.

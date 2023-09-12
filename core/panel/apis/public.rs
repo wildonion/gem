@@ -172,9 +172,9 @@ async fn verify_twitter_task(
                     false => {
                         
                         let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
-                        let new_twitter = Twitter::new(Some(bot_endpoint)).await;
+                        // let new_twitter = Twitter::new(Some(bot_endpoint)).await;
 
-                        // let new_twitter = Twitter::new(None).await;
+                        let new_twitter = Twitter::new(None).await;
                         let Ok(bot) =  new_twitter else{
                             return new_twitter.unwrap_err();
                         };
@@ -221,8 +221,10 @@ async fn verify_twitter_task(
                                     }
             
                                 } else{
-            
-                                    /* maybe discord tasks :) */
+                                    
+                                    /* -------------------------------------------- */
+                                    /* maybe discord or other social media tasks :) */
+                                    /* -------------------------------------------- */
             
                                     resp!{
                                         &[u8], // the data type

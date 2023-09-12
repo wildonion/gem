@@ -679,7 +679,7 @@ impl Twitter{
 
                                     /* if the user tweet contains the specified tweet then the task is verified */
                                     for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-                                        if tweet.text == tweet_text{
+                                        if tweet_text.contains(tweet.text.as_str()){
                                             is_verified = true;
                                         }
                                     }
