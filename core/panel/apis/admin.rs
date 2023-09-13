@@ -319,7 +319,7 @@ async fn update_event_img(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_event_img");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -522,12 +522,7 @@ async fn login(
                             
                             let user_login_data = UserData{
                                 id: user.id,
-                                region: {
-                                    match user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: user.region.clone(),
                                 username: user.username.clone(),
                                 activity_code: user.activity_code.clone(),
                                 twitter_username: user.twitter_username.clone(),
@@ -2200,7 +2195,7 @@ async fn get_all_users_deposits(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "get_all_users_deposits");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -2350,7 +2345,7 @@ async fn get_all_users_withdrawals(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "get_all_users_withdrawals");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{

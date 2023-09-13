@@ -10,7 +10,6 @@ use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
 use crate::models::{users::{User, UserData, UserRole}, tasks::{Task, TaskData}};
-use super::users::UserRegion;
 
 
 
@@ -70,7 +69,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::all");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -125,7 +124,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::insert");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -160,7 +159,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -227,7 +226,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -261,7 +260,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::tasks_per_user");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -296,7 +295,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::tasks_per_user");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -320,12 +319,7 @@ impl UserTask{
                 UserTaskData{
                     user: UserData { 
                         id: user.id, 
-                        region: {
-                            match user.region.clone(){
-                                UserRegion::Ir => "ir".to_string(),
-                                _ => "none-ir".to_string(),
-                            }
-                        },
+                        region: user.region.clone(),
                         username: user.username, 
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 
@@ -425,7 +419,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::delete_by_doer");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -457,7 +451,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::delete_by_task");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{

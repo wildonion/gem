@@ -144,12 +144,7 @@ async fn login(
                     
                     let user_login_data = UserData{
                         id: user.id,
-                        region: {
-                            match user.region.clone(){
-                                UserRegion::Ir => "ir".to_string(),
-                                _ => "none-ir".to_string(),
-                            }
-                        },
+                        region: user.region.clone(),
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -318,7 +313,7 @@ async fn request_mail_code(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_mail_code");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -617,7 +612,7 @@ async fn request_phone_code(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_phone_code");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -793,7 +788,7 @@ async fn verify_phone_code(
                             resp!{
                                 UserData, // the data type
                                 updated_user, // response data
-                                MAIL_VERIFIED, // response message
+                                PHONE_VERIFIED, // response message
                                 StatusCode::OK, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
@@ -918,12 +913,7 @@ async fn login_with_identifier_and_password(
                     
                     let user_login_data = UserData{
                         id: user.id,
-                        region: {
-                            match user.region.clone(){
-                                UserRegion::Ir => "ir".to_string(),
-                                _ => "none-ir".to_string(),
-                            }
-                        },
+                        region: user.region.clone(),
                         username: user.username.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
@@ -1360,7 +1350,7 @@ async fn make_cid(
             
             let connection = &mut pg_pool.get().unwrap();
             
-            let user_ip = req.peer_addr().unwrap().to_string();
+            let user_ip = req.peer_addr().unwrap().ip().to_string();
 
             /* 
                  ------------------------------------- 
@@ -1427,7 +1417,7 @@ async fn make_cid(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "make_cid");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -1619,7 +1609,7 @@ async fn deposit(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -1657,9 +1647,21 @@ async fn deposit(
                             return error_resp;
                         };
 
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
                         let mut is_ir = false;
-                        let user_deposit_address = match user.region{
-                            UserRegion::Ir => {
+                        let user_deposit_address = match user.region.unwrap().as_str(){
+                            "ir" => {
                                 is_ir = true;
                                 user.account_number.unwrap_or("".to_string())
                             },
@@ -2132,7 +2134,7 @@ async fn withdraw(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "withdraw");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -2171,8 +2173,8 @@ async fn withdraw(
                         };
 
                         let mut is_ir = false;
-                        let user_withdraw_address = match user.region{
-                            UserRegion::Ir => {
+                        let user_withdraw_address = match user.region.unwrap().as_str(){
+                            "ir" => {
                                 is_ir = true;
                                 user.account_number.unwrap_or("".to_string())
                             },
@@ -2252,6 +2254,18 @@ async fn withdraw(
                             let error = get_deposit_info.unwrap_err();
                             return error;
                         };
+
+                        /* if the phone wasn't verified user can't withdraw */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         
                         /* generate keccak256 from recipient_cid to check aginst the one in db */

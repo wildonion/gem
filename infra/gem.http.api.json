@@ -2632,7 +2632,7 @@
 							"response": []
 						},
 						{
-							"name": "Request Mail Code",
+							"name": "Request Phone Code",
 							"request": {
 								"auth": {
 									"type": "bearer",
@@ -2640,6 +2640,70 @@
 										{
 											"key": "token",
 											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkzODEyMjEzNDQ4NzUyMDAwLCJleHAiOjE2OTY0MDQyMTMsImlhdCI6MTY5MzgxMjIxM30.qzB637UdMgYpPWjF-7w1GLWOZ9Rd4NfjNQLrCtQA-zcfV6dkEl1g6fmwWsN6oBIKvcfu6b3uvaHuYEvhLvuoIg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/request-phone-code/+989211686115",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"request-phone-code",
+										"+989211686115"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Verify Phone Code",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkzODEyMjEzNDQ4NzUyMDAwLCJleHAiOjE2OTY0MDQyMTMsImlhdCI6MTY5MzgxMjIxM30.qzB637UdMgYpPWjF-7w1GLWOZ9Rd4NfjNQLrCtQA-zcfV6dkEl1g6fmwWsN6oBIKvcfu6b3uvaHuYEvhLvuoIg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_phone\": \"+989211686115\",\n    \"verification_code\": \"445749\",\n    \"vat\": 1694589917858 // milliseconds\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/verify-phone-code",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"verify-phone-code"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Request Mail Code",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NTgwNDA4OTYxMjAyMDAwLCJleHAiOjE2OTcxNzI0MDgsImlhdCI6MTY5NDU4MDQwOH0.43zyRjsD90Zsyrz_2EOIW2VHPAX2glp_x339tAtbgxhOSlRyINknkJ9NdEWZKYahDKcYhR3G69uenel-kGEkfg",
 											"type": "string"
 										}
 									]
@@ -2676,7 +2740,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"08443662\",\n    \"vat\": 1693837465402 // milliseconds\n}",
+									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"53988408\",\n    \"vat\": 1693837465402 // milliseconds\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2703,7 +2767,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjkyNTIxOTM4MzY1Mjc5MDAwLCJleHAiOjE2OTUxMTM5MzgsImlhdCI6MTY5MjUyMTkzOH0.YpgbcR0jvWjeKkG841mAgl-Q4Xl3sFen0Cp0qvKYFOq2lWJqT9LZngMRVy4ud_RPp3XoOpFudiWkyNQ4CzZxfg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NTg4OTg2OTM4NDE2MDAwLCJleHAiOjE2OTcxODA5ODYsImlhdCI6MTY5NDU4ODk4Nn0.Dvp3hm4jbKb3xUO60xa2Zo-ajggcuhLTks6yq-Ptd6-5Ngkf1BdgUL8YcdHW3llJi4U_ppPtkRKWblDrqENmDQ",
 											"type": "string"
 										}
 									]
@@ -2712,7 +2776,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"region\": \"ir\",\n    \"mail\": \"ea_pain@yahoo.com\",\n    \"username\": \"wildonion\",\n    \"phone_number\": \"\",\n    \"paypal_id\": \"\",\n    \"account_number\": \"\",\n    \"device_id\": \"\",\n    \"social_id\": \"\"\n}",
+									"raw": "{\n    \"region\": \"us\",\n    \"username\": \"wildonion\",\n    \"device_id\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"

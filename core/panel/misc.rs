@@ -8,7 +8,7 @@ use secp256k1::{Secp256k1, All};
 use crate::*;
 use crate::constants::CHARSET;
 use crate::events::publishers::role::PlayerRoleInfo;
-use crate::models::users::NewIdRequest;
+use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use actix::Addr;
 
 
@@ -132,6 +132,57 @@ pub fn gen_random_idx(idx: usize) -> usize{
     } else{
         gen_random_idx(random::<u8>() as usize)
     }
+}
+
+pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
+
+    /* region detection process based on ip parsnig */
+    let mut ipinfo_data = IpInfoResponse::default();
+    let (ipinfo_data_sender, mut ipinfo_data_receiver) = 
+        tokio::sync::mpsc::channel::<IpInfoResponse>(1024);
+    
+    tokio::spawn(async move{
+
+        let ipinfo_token = std::env::var("IPINFO_TOKEN").unwrap();
+        let get_ip_api = format!("https://ipinfo.io/{}?token={}", user_ip, ipinfo_token);
+        let get_ip_response = reqwest::Client::new()
+            .get(get_ip_api.as_str())
+            .send()
+            .await;
+
+        let ip_response_data = get_ip_response
+            .unwrap()
+            .json::<IpInfoResponse>()
+            .await
+            .unwrap();
+
+        ipinfo_data_sender.send(ip_response_data).await;
+
+    });
+
+    while let Some(channel_ipinfo_data) = ipinfo_data_receiver.recv().await{
+        /*
+            
+            since u_country is of type String thus an slice of it must be valid 
+            as long as the actual type is valid or u_country is valid and once the 
+            u_country gets dropped any slice of it or reference to it can't live long
+            enough and will be dropped too otherwise leads us to dangling pointer, 
+            thus we should return the u_country itself from this loop and convert it
+            to &str later.
+
+            let u_country = ipinfo_data.country.to_lowercase();
+
+            // u_country_str is defined outside of the loop!
+            u_country_str = u_country.as_str();
+        
+        */
+
+        ipinfo_data = channel_ipinfo_data;
+
+    }
+
+    ipinfo_data
+
 }
 
 /* 
@@ -650,7 +701,7 @@ macro_rules! server {
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();
         
-                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(ActixWeb(e)));
+                        let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(ActixWeb(e)), "HttpServer::new().bind");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
                         panic!("panicked at running actix web server at {}", chrono::Local::now());

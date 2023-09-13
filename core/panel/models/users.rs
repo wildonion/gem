@@ -9,7 +9,7 @@ use chrono::Timelike;
 use lettre::message::Mailbox;
 use crate::wallet::Wallet;
 use crate::*;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
+use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::bot::Twitter;
@@ -30,7 +30,7 @@ use super::users_tasks::UserTask;
 #[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct User{
     pub id: i32,
-    pub region: UserRegion,
+    pub region: Option<String>,
     pub username: String, /* unique */
     pub activity_code: String,
     pub twitter_username: Option<String>, /* unique */
@@ -61,7 +61,7 @@ pub struct User{
 #[diesel(table_name=users)]
 pub struct FetchUser{
     pub id: i32,
-    pub region: UserRegion,
+    pub region: Option<String>,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
@@ -90,7 +90,7 @@ pub struct FetchUser{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserData{
     pub id: i32,
-    pub region: String,
+    pub region: Option<String>,
     pub username: String,
     pub activity_code: String,
     pub twitter_username: Option<String>,
@@ -200,15 +200,6 @@ pub enum UserRole{
     Dev
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
-#[derive(diesel_derive_enum::DbEnum)]
-#[ExistingTypePath = "crate::schema::sql_types::Userregion"]
-pub enum UserRegion{
-    Ir,
-    NoneIr,
-}
-
-
 #[derive(Insertable)]
 #[diesel(table_name=users)]
 pub struct NewUser<'l> {
@@ -277,6 +268,18 @@ pub struct SMSResponseEntries{
     pub receptor: String,
     pub date: i64,
     pub cost: u16, 
+}
+
+#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+pub struct IpInfoResponse{
+    pub ip: String,
+    pub city: String,
+    pub region: String, 
+    pub country: String, 
+    pub loc: String,
+    pub org: String,
+    pub timezone: String,
+    
 }
 
 #[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
@@ -642,7 +645,8 @@ impl User{
         /*
             since cookie can be stored inside the request object thus for peers on the same network 
             which have an equal ip address they share a same cookie thus we'll face the bug of which 
-            every user can be every user in which they can see other peer's jwt info inside their browser!
+            every user can be every user in which they can see other peer's jwt info inside their browser
+            which allows them to be inside each other panel!
         */
         let time_hash_now = chrono::Local::now().timestamp_nanos();
         let time_hash_now_now_str = format!("{}", time_hash_now);
@@ -803,12 +807,7 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
-                        region: {
-                            match fetched_user.region.clone(){
-                                UserRegion::Ir => "ir".to_string(),
-                                _ => "none-ir".to_string(),
-                            }
-                        },
+                        region: fetched_user.region.clone(),
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -883,7 +882,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::insert");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -926,12 +925,7 @@ impl User{
 
                     let user_login_data = UserData{
                         id: fetched_user.id,
-                        region: {
-                            match fetched_user.region.clone(){
-                                UserRegion::Ir => "ir".to_string(),
-                                _ => "none-ir".to_string(),
-                            }
-                        },
+                        region: fetched_user.region.clone(),
                         username: fetched_user.username.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
@@ -1006,7 +1000,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::insert_by_identifier_password");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1070,7 +1064,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::insert_new_user");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1171,12 +1165,7 @@ impl User{
                     Ok(
                         UserData { 
                             id: updated_user.id, 
-                            region: {
-                                match updated_user.region.clone(){
-                                    UserRegion::Ir => "ir".to_string(),
-                                    _ => "none-ir".to_string(),
-                                }
-                            },
+                            region: updated_user.region.clone(),
                             username: updated_user.clone().username, 
                             activity_code: updated_user.clone().activity_code, 
                             twitter_username: updated_user.clone().twitter_username, 
@@ -1225,7 +1214,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::edit_by_admin");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1271,7 +1260,7 @@ impl User{
                              
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::delete_by_admin");
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                             let resp = Response::<&[u8]>{
@@ -1306,12 +1295,7 @@ impl User{
                         .into_iter()
                         .map(|u| UserData { 
                             id: u.id, 
-                            region: {
-                                match u.region.clone(){
-                                    UserRegion::Ir => "ir".to_string(),
-                                    _ => "none-ir".to_string(),
-                                }
-                            },
+                            region: u.region.clone(),
                             username: u.clone().username, 
                             activity_code: u.clone().activity_code, 
                             twitter_username: u.clone().twitter_username, 
@@ -1361,7 +1345,7 @@ impl User{
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  
-                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::get_all");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                 let resp = Response::<&[u8]>{
@@ -1396,7 +1380,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::logout");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1453,12 +1437,7 @@ impl User{
                             Ok(
                                 UserData { 
                                     id: updated_user.id, 
-                                    region: {
-                                        match updated_user.region.clone(){
-                                            UserRegion::Ir => "ir".to_string(),
-                                            _ => "none-ir".to_string(),
-                                        }
-                                    },
+                                    region: updated_user.region.clone(),
                                     username: updated_user.clone().username, 
                                     activity_code: updated_user.clone().activity_code, 
                                     twitter_username: updated_user.clone().twitter_username, 
@@ -1507,7 +1486,7 @@ impl User{
                              
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_social_account");
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                             let resp = Response::<&[u8]>{
@@ -1564,12 +1543,7 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: {
-                                    match updated_user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -1618,7 +1592,7 @@ impl User{
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         let resp = Response::<&[u8]>{
@@ -1664,12 +1638,7 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: {
-                                    match updated_user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -1718,7 +1687,7 @@ impl User{
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_phone");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         let resp = Response::<&[u8]>{
@@ -1800,8 +1769,9 @@ impl User{
         let now = Utc::now();
         let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
 
-        let otp_res_stat = match single_user.region{
-            UserRegion::Ir => {
+        let u_region = single_user.region.unwrap();
+        let otp_res_stat = match u_region.as_str(){
+            "ir" => {
                 
                 let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
                 let otp_request = reqwest::Client::new()
@@ -1934,10 +1904,10 @@ impl User{
 
         };
                         
-        let Ok(user_mail) = single_user_phone else{
+        let Ok(user_phone) = single_user_phone else{
             let resp = Response{
                 data: Some(receiver_id),
-                message: NO_MAIL_FOR_THIS_USER,
+                message: NO_PHONE_FOR_THIS_USER,
                 status: 404
             };
             return Err(
@@ -1945,7 +1915,7 @@ impl User{
             );
         };
 
-        let exp_code = user_mail.exp;
+        let exp_code = user_phone.exp;
         let user_vat = check_user_verification_request.vat;
 
         /* calculate the naive datetime from the passed in exp milli timestamp */
@@ -1969,7 +1939,7 @@ impl User{
 
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: EXPIRED_MAIL_CODE,
+                message: EXPIRED_PHONE_CODE,
                 status: 406
             };
             return Err(
@@ -1979,21 +1949,21 @@ impl User{
         }
 
         /* update vat field */
-        let save_mail_res = UserMail::update_vat(user_mail.id, user_vat, connection).await;
-        let Ok(_) = save_mail_res else{
+        let save_phonw_res = UserPhone::update_vat(user_phone.id, user_vat, connection).await;
+        let Ok(_) = save_phonw_res else{
 
-            let resp_err = save_mail_res.unwrap_err();
+            let resp_err = save_phonw_res.unwrap_err();
             return Err(resp_err);
         };
 
         /* delete all the records ralated to the receiver_id with vat 0 */
-        let del_res = diesel::delete(users_mails::table
-            .filter(users_mails::user_id.eq(receiver_id)))
-            .filter(users_mails::vat.eq(0))
+        let del_res = diesel::delete(users_phones::table
+            .filter(users_phones::user_id.eq(receiver_id)))
+            .filter(users_phones::vat.eq(0))
             .execute(connection);
         
         /* update is_mail_verified field */
-        match User::verify_mail(receiver_id, connection).await{
+        match User::verify_phone(receiver_id, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
@@ -2027,12 +1997,7 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: {
-                                    match updated_user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -2081,7 +2046,7 @@ impl User{
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "verify_phone");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         let resp = Response::<&[u8]>{
@@ -2126,12 +2091,7 @@ impl User{
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
-                                region: {
-                                    match updated_user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -2180,7 +2140,7 @@ impl User{
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "verify_mail");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         let resp = Response::<&[u8]>{
@@ -2475,40 +2435,21 @@ impl Id{
             ); 
         };
 
+        
+
+        // let u_country = get_ip_data(user_ip).await.country.as_str().to_lowercase();
+        let u_country = id_.clone().region;
+
         match user.cid{
             /* we'll be here only if the old_cid is not an empty string */
             Some(old_cid) if !old_cid.is_empty() => { 
-
-                /* region detection process based on ip parsnig */
-                let u_region = {
-                    let mut real_region = "";
-                    let ips = subnets::get_ir_ips();
-                    for ip in ips{
-
-                        let parsed_subnet = ip.parse::<ipnetwork::Ipv4Network>();
-                        if parsed_subnet.unwrap().to_string() == user_ip{
-                            real_region = "ir";
-                            break;
-                        } else{
-                            real_region = id_.region.as_str();
-                            break;
-                        }
-                    }
-                    
-                    real_region
-                };
 
                 /* updating other fields except cid and snowflake id */
                 match diesel::update(users.find(id_owner))
                     .set(
                 (
                         // update only region and username
-                            region.eq({
-                                match u_region{
-                                    "ir" => UserRegion::Ir,
-                                    _ => UserRegion::NoneIr
-                                }
-                            }),
+                            region.eq(u_country),
                             username.eq(id_.username.clone()),
                         )
                     )
@@ -2519,12 +2460,7 @@ impl Id{
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
-                                region: {
-                                    match updated_user.region.clone(){
-                                        UserRegion::Ir => "ir".to_string(),
-                                        _ => "none-ir".to_string(),
-                                    }
-                                },
+                                region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
@@ -2580,7 +2516,7 @@ impl Id{
                                 
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::new_or_update");
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                             let resp = Response::<&[u8]>{
@@ -2653,22 +2589,15 @@ impl Id{
             );  
         };
 
-        let user_region_str = self.region.as_str();
         match diesel::update(users.find(self.user_id))
             .set(
         (   
                 /* 
-                    can't return heap data like self.user_mail which is of type String 
-                    we must clone them or use their borrowed form or return the static 
-                    version of their slice like &'static str
+                    can't return heap data of type String we must clone them or use their 
+                    borrowed form or return the static version of their slice like &'static str
                 */
                     username.eq(self.username.clone()),
-                    region.eq({
-                        match user_region_str{
-                            "ir" => UserRegion::Ir,
-                            _ => UserRegion::NoneIr
-                        }
-                    }),
+                    region.eq(self.region.clone()),
                     device_id.eq(self.device_id.clone()),
                     cid.eq(self.new_cid.clone().unwrap()),
                     screen_cid.eq(self.screen_cid.clone().unwrap()),
@@ -2682,12 +2611,7 @@ impl Id{
                     Ok(
                         UserIdResponse { 
                             id: updated_user.id, 
-                            region: {
-                                match updated_user.region.clone(){
-                                    UserRegion::Ir => "ir".to_string(),
-                                    _ => "none-ir".to_string(),
-                                }
-                            },
+                            region: updated_user.region.unwrap(),
                             username: updated_user.username, 
                             activity_code: updated_user.activity_code, 
                             twitter_username: updated_user.twitter_username, 
@@ -2735,7 +2659,7 @@ impl Id{
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)));
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{

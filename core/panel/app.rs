@@ -1,6 +1,7 @@
 
 
 
+use ipinfo::{IpInfo, IpInfoConfig};
 use ipnetwork;
 use lettre::{
     message::header::ContentType as LettreContentType,

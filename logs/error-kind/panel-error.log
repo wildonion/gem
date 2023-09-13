@@ -826,3 +826,15 @@ code: 65535 | message: Connection in progress | due to: Storage(RedisAsync(Conne
 code: 65534 | message: Address already in use (os error 48) | due to: Server(ActixWeb(Os { code: 48, kind: AddrInUse, message: "Address already in use" })) | time: 1691485869622
 code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1691486033676
 code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1691486049598
+code: 65535 | message: invalid input value for enum userregion: "none_ir" | due to: Storage(Diesel(DatabaseError(Unknown, "invalid input value for enum userregion: \"none_ir\""))) | time: 1694580682888
+code: 65535 | message: invalid input value for enum userregion: "none_ir" | due to: Storage(Diesel(DatabaseError(Unknown, "invalid input value for enum userregion: \"none_ir\""))) | time: 1694580725515
+code: 65535 | message: invalid input value for enum userregion: "none_ir" | due to: Storage(Diesel(DatabaseError(Unknown, "invalid input value for enum userregion: \"none_ir\""))) | time: 1694580768126
+code: 65535 | message: invalid input value for enum userregion: "none_ir" | due to: Storage(Diesel(DatabaseError(Unknown, "invalid input value for enum userregion: \"none_ir\""))) | time: 1694587110014
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591171141
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591190109
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591219667
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591220431
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591319600
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591368453
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591409607
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694593486207 | method name: UserMail::update_vat

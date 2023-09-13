@@ -5,7 +5,7 @@ CREATE TYPE UserRegion AS ENUM ('ir', 'noneir');
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
-  region UserRegion NOT NULL DEFAULT 'ir',
+  region VARCHAR DEFAULT NULL,
   username VARCHAR NOT NULL UNIQUE,
   activity_code VARCHAR NOT NULL,
   twitter_username VARCHAR DEFAULT NULL UNIQUE,

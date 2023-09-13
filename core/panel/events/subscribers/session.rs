@@ -114,7 +114,7 @@ impl WsNotifSession{
                 use error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
                 let error_content = e.to_string().as_bytes().to_vec();  
-                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)));
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)), "WsNotifSession::role_subscription");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                 return ();
@@ -296,7 +296,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();
 
-                let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(Ws(e)));
+                let error_instance = PanelError::new(*SERVER_IO_ERROR_CODE, error_content, ErrorKind::Server(Ws(e)), "WsNotifSession::StreamHandler::handle");
                 let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer from the error  */
 
                 ctx.stop();
