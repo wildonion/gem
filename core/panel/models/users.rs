@@ -2437,8 +2437,8 @@ impl Id{
 
         
 
-        // let u_country = get_ip_data(user_ip).await.country.as_str().to_lowercase();
-        let u_country = id_.clone().region;
+        let u_country = get_ip_data(user_ip.clone()).await.country.as_str().to_lowercase();
+        // let u_country = id_.clone().region;
 
         match user.cid{
             /* we'll be here only if the old_cid is not an empty string */
@@ -2560,7 +2560,7 @@ impl Id{
                 Ok(
                     Id{ 
                         user_id: id_owner,
-                        region: id_.region,
+                        region: get_ip_data(user_ip).await.country.as_str().to_lowercase(), // never trust user input
                         username: id_username, 
                         device_id: id_.device_id, 
                         new_snowflake_id,
