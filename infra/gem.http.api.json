@@ -2776,7 +2776,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"region\": \"us\",\n    \"username\": \"wildonion\",\n    \"device_id\": \"\"\n}",
+									"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"

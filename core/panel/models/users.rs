@@ -148,7 +148,6 @@ pub struct UserIdResponse{
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
 pub struct NewIdRequest{
-    pub region: String,
     pub username: String,
     pub device_id: String,
 }
@@ -2561,6 +2560,7 @@ impl Id{
                     Id{ 
                         user_id: id_owner,
                         region: get_ip_data(user_ip).await.country.as_str().to_lowercase(), // never trust user input
+                        // region: id_.region,
                         username: id_username, 
                         device_id: id_.device_id, 
                         new_snowflake_id,
