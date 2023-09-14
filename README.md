@@ -1,17 +1,15 @@
 
 
 
-# 🤏 Conse Backend Rust Engines
+# 🤏 Conse Rust Backend and Engines
 
-Conse is a Game Event Manager Platform which has the following engines: 
+Conse is a crypto based friendly gathering **Game Event Manager** and advertising platform on top of Polygon uses the following engines: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - behavioural graph virtual machine [**GVM**](https://github.com/wildonion/gvm) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
 - match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
 
-<p align="center">
-    <img width=350 height=350 src="https://github.com/wildonion/gem/blob/master/assets/conse.png"
-</p>
+## 🚟 Infra Routes and APIs
 
 ```bash
 # panel dev username/password              : devdevy/d3v@%$^$3hjsD
@@ -41,7 +39,7 @@ Conse is a Game Event Manager Platform which has the following engines:
 
 * ❌ custom error handler (`PanelError`) to logs all possible server (actixweb and websocket) and storage (redis, redis async and diesel) IO errors into file in conse panel service.
  
-* 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events via SMS inside the panel  
+* 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events inside the panel  
 
 * 🍪 **cookie** and **JWT** based authentication strategy
 

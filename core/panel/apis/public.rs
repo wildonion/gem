@@ -390,5 +390,8 @@ pub mod exports{
     pub use super::check_users_tassk;
     /* 
     pub use super::get_posts; // /?from=1&to=10
+    pub use super::get_collections; /?from=1&to=10
+    pub use super::get_main_room_nfts_of_collection; // /?from=1&to=10
+    pub use super::get_main_room_nft_info;
     */
 }

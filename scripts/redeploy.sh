@@ -19,6 +19,14 @@ echo "[?] Enter Messagebird Access Key: "
 read MESSAGEBIRD_ACCESS_KEY
 echo MESSAGEBIRD_ACCESS_KEY=$MESSAGEBIRD_ACCESS_KEY >> .env
 
+echo "[?] Enter Ip Info Access Key: "
+read IPINFO_TOKEN
+echo IPINFO_TOKEN=$IPINFO_TOKEN >> .env
+
+echo "[?] Currency Layer Token: "
+read CURRENCY_LAYER_TOKEN
+echo CURRENCY_LAYER_TOKEN=$CURRENCY_LAYER_TOKEN >> .env
+
 echo "[?] Enter SMTP Username: "
 read SMTP_USERNAME
 echo SMTP_USERNAME=$SMTP_USERNAME >> .env
