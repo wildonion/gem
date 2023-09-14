@@ -2534,7 +2534,7 @@ impl Id{
             _ => {
 
                 /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
-                let wallet = Wallet::new_secp256k1(id_.clone());
+                let wallet = Wallet::new_secp256k1(id_.clone()); // seed is the username and device id 
 
                 /* ------------------------------------------------ */
                 /* sample signing using ECDSA with secp256k1 curve */
@@ -2547,6 +2547,7 @@ impl Id{
                     wallet.secp256k1_secret_key.as_ref().unwrap().clone(), 
                     data_to_be_signed.to_string()
                 );
+                info!("test signature :::: {}", sig.to_string());
                 /* ------------------------------------------------ */
 
                 /* generating snowflake id */
