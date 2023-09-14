@@ -144,11 +144,16 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
     tokio::spawn(async move{
 
         let ipinfo_token = std::env::var("IPINFO_TOKEN").unwrap();
-        let get_ip_api = format!("https://ipinfo.io/{}?token={}", user_ip, ipinfo_token);
+        let get_ip_api = format!("https://ipinfo.io/{}", user_ip);
+        let token = format!("Bearer {}", ipinfo_token);
         let get_ip_response = reqwest::Client::new()
             .get(get_ip_api.as_str())
+            .header("Authorization", &token)
             .send()
             .await;
+
+        // let response = get_ip_response.unwrap();
+        // let response = response.text().await.unwrap();
 
         let ip_response_data = get_ip_response
             .unwrap()

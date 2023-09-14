@@ -1349,8 +1349,32 @@ async fn make_cid(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-            
-            let user_ip = req.peer_addr().unwrap().ip().to_string();
+            let mut user_ip = "".to_string();
+
+            /* ---------------------------------------------------------------------------------
+                if we're getting 127.0.0.1 for client ip addr from the incoming request means
+                the address 127.0.0.1 is the loopback address, which means the request is 
+                coming from the same machine where the server is running. if we're running 
+                both the server and the browser on the same computer and we're connecting 
+                to localhost or 127.0.0.1 in the browser, then this behavior is expected.
+                if Actix application is behind a reverse proxy like Nginx or Apache, the proxy 
+                may be forwarding requests to your application in such a way that all client 
+                connections appear to come from the loopback address. to fix this issue and get 
+                the original client's IP address, you can use the X-Forwarded-For or X-Real-IP 
+                headers. These headers are typically set by the reverse proxy to indicate the 
+                original IP address of the client, also we have to make sure that these are set
+                inside the nginx config file:
+
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               ---------------------------------------------------------------------------------
+            */
+            if let Some(header) = req.headers().get("X-Forwarded-For") {
+                if let Ok(ip_str) = header.to_str() {
+                    user_ip = ip_str.to_string();
+                }
+            }
 
             /* 
                  ------------------------------------- 
@@ -2729,8 +2753,6 @@ pub mod exports{
     pub use super::verify_twitter_account;
     pub use super::tasks_report;
     pub use super::make_cid;
-    pub use super::deposit;
-    pub use super::withdraw;
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;
@@ -2739,7 +2761,35 @@ pub mod exports{
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
     /* 
+    pub use super::verify_social_id; // update the social_id field
+    pub use super::verify_account_number; // update the account_number field
+    pub use super::verify_paypal_id; // update the paypal_id field
     pub use super::add_post_comment;
     pub use super::like_post;
+    pub use super::add_nft_comment;
+    pub use super::like_nft;
+    */
+    /* -------------------------------------------------------------------------- */
+    /* user pay with in-app token and backend pay with matic using thirdweb calls */
+    /* -------------------------------------------------------------------------- */
+    // followings need CID signature and user must sign the calls
+    pub use super::deposit;
+    pub use super::withdraw;
+    /*
+    pub use super::send_invitation_link;
+    pub use super::get_private_room_info_of; // fetch private room info and nfts of a user, only user can see it
+    pub use super::mint_nft; // goes to private room
+    pub use super::add_offer_to; 
+    pub use super::accept_offer; // pay with token
+    pub use super::reject_offer; // pay back the token
+    pub use super::start_auction_on; 
+    pub use super::add_bid_on;
+    pub use super::sell_nft; 
+    pub use super::add_user_to_friend;
+    pub use super::remove_user_from_friend;
+    pub use super::advertise_collection;
+    pub use super::get_public_room_nfts_info_of; // fetch public room info and nfts of a user, only friends can see it
+    /* -------------------------------------------------------------------------- */
+    pub use super::buy_token; // price of 1 token = usd+eur+gbp/3
     */
 }
