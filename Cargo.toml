@@ -13,7 +13,7 @@ repository = "https://github.com/wildonion/gem/"
 [dependencies]
 async-std = "1.12.0"
 hyper = { version = "0.14", features = ["full"] }
-reqwest = { version = "0.11", features = ["json", "blocking"] }
+reqwest = { version = "0.11", features = ["json", "blocking", "rustls-tls"] } # use rustls feature instead of openssl inside docker 
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = "0.24.0"
 actix-redis = "0.12.0"
