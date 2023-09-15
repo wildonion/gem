@@ -2,7 +2,6 @@
 
 
 
-use std::borrow::BorrowMut;
 
 use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
@@ -2573,7 +2572,7 @@ impl Id{
                 /* ------------------------------------------------ */
                 /* sample signing using ECDSA with secp256k1 curve */
                 let data_to_be_signed = serde_json::json!({
-                    "recipient_cid": "0xb3e106f72e8cb2f759be095318f70ad59e96bfc2",
+                    "recipient": "wildonion",
                     "from_cid": wallet.secp256k1_public_key,
                     "amount": 5
                 });

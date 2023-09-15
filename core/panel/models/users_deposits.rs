@@ -53,7 +53,7 @@ pub struct NewUserDeposit{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct NewUserDepositRequest{
     pub from_cid: String,
-    pub recipient_screen_cid: String,
+    pub recipient: String,
     pub amount: i64,
     /* 
         this must be generated inside the client by signing the whole 
@@ -83,11 +83,11 @@ pub struct UserDepositData{
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, polygon_recipient_address: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
-            recipient_screen_cid: user_deposit_request.recipient_screen_cid,
+            recipient_screen_cid: polygon_recipient_address,
             is_claimed: false,
             amount: user_deposit_request.amount,
             nft_id: token_id,

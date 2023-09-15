@@ -2813,7 +2813,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient_screen_cid\": \"0xb3e106f72e8cb2f759be095318f70ad59e96bfc2\",\n    \"from_cid\": \"03fd01287b99d4d82a6519653dea55cc8ec23893f52de99a669418cea5c46cc871\",\n    \"amount\": 5,\n    \"tx_signature\": \"30450221008ae4a8ffccd3e6fc1da6f826bae4a105bf5eae47663d7eafddd9a549524c02e202207491ce5dad37c3f0b2688dd81515bf6a6c1f4c00ff23a477513924ee8fd38350\"\n}",
+									"raw": "{\n    \"recipient\": \"wildonion\",\n    \"from_cid\": \"03fd01287b99d4d82a6519653dea55cc8ec23893f52de99a669418cea5c46cc871\",\n    \"amount\": 5,\n    \"tx_signature\": \"30450221008ae4a8ffccd3e6fc1da6f826bae4a105bf5eae47663d7eafddd9a549524c02e202207491ce5dad37c3f0b2688dd81515bf6a6c1f4c00ff23a477513924ee8fd38350\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"

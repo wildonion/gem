@@ -1707,12 +1707,12 @@ async fn deposit(
 
                         let deposit_object = deposit.to_owned();
 
-                        let find_user_screen_cid = User::find_by_screen_cid(&deposit_object.recipient_screen_cid, connection).await;
-                        let Ok(user) = find_user_screen_cid else{
+                        let find_user_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
+                        let Ok(recipient_info) = find_user_screen_cid else{
                             
                             resp!{
                                 String, // the data type
-                                deposit_object.recipient_screen_cid, // response data
+                                deposit_object.recipient, // response data
                                 &RECIPIENT_NOT_FOUND, // response message
                                 StatusCode::NOT_FOUND, // status code
                                 None::<Cookie<'_>>, // cookie
@@ -1747,7 +1747,7 @@ async fn deposit(
                         };
 
                         let strigified_deposit_data = serde_json::json!({
-                            "recipient_cid": deposit_object.recipient_screen_cid,
+                            "username": deposit_object.recipient,
                             "from_cid": deposit_object.from_cid,
                             "amount": deposit_object.amount
                         });
@@ -1840,7 +1840,17 @@ async fn deposit(
                             let u256 = web3::types::U256::from_str("0").unwrap().0;
 
                             /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
-                            let polygon_recipient_address = deposit_object.recipient_screen_cid;
+                            if recipient_info.screen_cid.is_none(){
+                                resp!{
+                                    String, // the date type
+                                    deposit_object.recipient, // the data itself
+                                    RECIPIENT_SCREEN_CID_NOT_FOUND, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+                            let polygon_recipient_address = recipient_info.screen_cid.unwrap();
+                            let cloned_polygon_recipient_address = polygon_recipient_address.clone();
                             
                             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                             /* calling the thirdweb minting api to mint inside tokio green threadpool */
@@ -1850,7 +1860,7 @@ async fn deposit(
                                 
                                 let host = std::env::var("HOST").expect("⚠️ no host variable set");
                                 let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
-                                let api_path = format!("http://{}:{}/mint/to/{}/{}", host, port, polygon_recipient_address, deposit_object.amount.to_string());
+                                let api_path = format!("http://{}:{}/mint/to/{}/{}", host, port, cloned_polygon_recipient_address.clone(), deposit_object.amount.to_string());
                                 let client = reqwest::Client::new();
                                 let res = client
                                     .post(api_path.as_str())
@@ -1878,7 +1888,7 @@ async fn deposit(
                             }
                             
                             if !mint_tx_hash.is_empty(){
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, connection).await{
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, connection).await{
                                     Ok(user_deposit_data) => {
 
                                         resp!{
