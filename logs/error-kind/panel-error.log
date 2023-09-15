@@ -838,3 +838,5 @@ code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | ti
 code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591368453
 code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694591409607
 code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1694593486207 | method name: UserMail::update_vat
+code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1694770309123 | method name: Id::save
+code: 65535 | message: duplicate key value violates unique constraint "users_phone_number_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_phone_number_key\""))) | time: 1694770842544 | method name: User::update_phone

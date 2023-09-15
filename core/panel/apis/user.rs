@@ -159,6 +159,7 @@ async fn login(
                             }
                         },
                         token_time: updated_user.token_time,
+                        balance: updated_user.balance,
                         last_login: { 
                             if updated_user.last_login.is_some(){
                                 Some(updated_user.last_login.unwrap().to_string())
@@ -928,6 +929,7 @@ async fn login_with_identifier_and_password(
                             }
                         },
                         token_time: updated_user.token_time,
+                        balance: updated_user.balance,
                         last_login: { 
                             if updated_user.last_login.is_some(){
                                 Some(updated_user.last_login.unwrap().to_string())
@@ -1321,6 +1323,244 @@ pub async fn tasks_report(
 
 #[utoipa::path(
     context_path = "/user",
+    responses(
+        (status=201, description="Paid Successfully", body=&[u8]),
+        (status=500, description="Internal Server Erros Caused By Diesel or Redis", body=&[u8]),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+
+#[get("/cid/buy-token")]
+#[passport(user)]
+async fn buy_token(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+
+                    let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                    };
+
+
+                    // step 1 - get the mapping value of paid amount and price of token 
+                    //          (price of 1 token = usd+eur+gbp/3) using currency layer apis
+                    // step 2 - based on the user region redirect them to ir or paypal gateway
+                    // step 2 - charge wallet or update balance field with the paid amount 
+                    // ...
+
+                    todo!()
+                        
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    responses(
+        (status=201, description="Paid Successfully", body=&[u8]),
+        (status=500, description="Internal Server Erros Caused By Diesel or Redis", body=&[u8]),
+    ),
+    tag = "crate::apis::user",
+    security(
+        ("jwt" = [])
+    )
+)]
+#[get("/cid/brun-token")]
+#[passport(user)]
+async fn burn_token(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+
+                    let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                    };
+
+
+                    // user can burn token and receive rial, dollars or euros amount
+                    // ...
+
+                    todo!()
+                        
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
     request_body = NewIdRequest,
     responses(
         (status=201, description="Built Successfully", body=UserIdResponse),
@@ -1683,28 +1923,6 @@ async fn deposit(
                             }
                         }
 
-                        let mut is_ir = false;
-                        let user_deposit_address = match user.region.unwrap().as_str(){
-                            "ir" => {
-                                is_ir = true;
-                                user.account_number.unwrap_or("".to_string())
-                            },
-                            _ => {
-                                user.paypal_id.unwrap_or("".to_string())
-                            }
-                        };
-                        
-                        if user_deposit_address.is_empty(){
-                            resp!{
-                                i32, // the data type
-                                _id, // response data
-                                EMPTY_WITHDRAWAL_ADDRESS, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-
                         let deposit_object = deposit.to_owned();
 
                         let find_user_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
@@ -1773,60 +1991,20 @@ async fn deposit(
 
                         };
 
-                        /* 
-                            send from user paypal or IR account to server paypal or server IR gateway
-                            also if we're here we're sure that the user updated the paypal 
-                            id or account number
-                        */
 
-                        let mut portal_response = 417 as u16;
-                        let (portal_response_sender, mut portal_response_receiver) = tokio::sync::mpsc::channel::<u16>(1024);
-                        if is_ir{
-                            
-                            let sender_account_number = user_deposit_address;
-                            let portal_response = 200 as u16;
+                        if user.balance.is_some() && user.balance.unwrap() > 0{
 
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                            /* send from user IR account to server IR gateway */
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                            tokio::spawn(async move{
+                            let new_balance = user.balance.unwrap() - deposit_object.amount;
+                            if new_balance < 0 {
 
-                                // TODO - call ir gateway portal api in here to deposit into server ir account
-                                // ...
-
-                                let rcode = 200 as u16;
-                                portal_response_sender.send(rcode).await;
-
-                            });
-
-                        
-                        } else{
-
-                            let sender_paypal_id = user_deposit_address;
-                            let portal_response = 200 as u16;
-
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                            /* send from user paypal account to server payapl */
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                            tokio::spawn(async move{
-
-                                // TODO - call paypal api in here to deposit into server paypal
-                                // ...
-
-                                let rcode = 200 as u16;
-                                portal_response_sender.send(rcode).await;
-                                
-                            });
-
-
-                        }
-                            /* receiving asyncly from the channel */
-                        while let Some(rcode) = portal_response_receiver.recv().await{
-                            portal_response = rcode;
-                        }
-
-                        /* if the portal response was 200 we'll mint the nft and insert a new user deposit */
-                        if portal_response == 200{
+                                resp!{
+                                    &[u8], // the date type
+                                    &[], // the data itself
+                                    INSUFFICIENT_FUNDS, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
 
                             let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, String)>(1024);
                             let mut mint_tx_hash = String::from("");
@@ -1888,27 +2066,39 @@ async fn deposit(
                             }
                             
                             if !mint_tx_hash.is_empty(){
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, connection).await{
-                                    Ok(user_deposit_data) => {
+                                
+                                match User::update_balance(user.id, new_balance, connection).await{
+                                    Ok(updated_user_data) => {
 
-                                        resp!{
-                                            UserDepositData, // the data type
-                                            user_deposit_data, // response data
-                                            DEPOSITED_SUCCESSFULLY, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
+                                        match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, connection).await{
+                                            Ok(user_deposit_data) => {
+        
+                                                resp!{
+                                                    UserDepositData, // the data type
+                                                    user_deposit_data, // response data
+                                                    DEPOSITED_SUCCESSFULLY, // response message
+                                                    StatusCode::CREATED, // status code
+                                                    None::<Cookie<'_>>, // cookie
+                                                }
+        
+                                            },
+                                            Err(resp) => {
+                                                /* 
+                                                    🥝 response can be one of the following:
+                                                    
+                                                    - DIESEL INSERT ERROR RESPONSE
+                                                */
+                                                resp
+                                            }
                                         }
-
-                                    },
+                                        
+                                    }, 
                                     Err(resp) => {
-                                        /* 
-                                            🥝 response can be one of the following:
-                                            
-                                            - DIESEL INSERT ERROR RESPONSE
-                                        */
                                         resp
                                     }
                                 }
+
+                                
                             } else{
 
                                 resp!{
@@ -2211,7 +2401,6 @@ async fn withdraw(
 
                     } else { /* not rate limited, we're ok to go */
 
-                        /* making sure that the user has a full filled paypal id */
                         let get_user = User::find_by_id(_id, connection).await;
                         let Ok(user) = get_user else{
                             let error_resp = get_user.unwrap_err();
@@ -2225,27 +2414,6 @@ async fn withdraw(
                                 &[u8], // the date type
                                 &[], // the data itself
                                 NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        let mut is_ir = false;
-                        let user_withdraw_address = match user.region.unwrap().as_str(){
-                            "ir" => {
-                                is_ir = true;
-                                user.account_number.unwrap_or("".to_string())
-                            },
-                            _ => {
-                                user.paypal_id.unwrap_or("".to_string())
-                            }
-                        };
-                        
-                        if user_withdraw_address.is_empty(){
-                            resp!{
-                                i32, // the data type
-                                _id, // response data
-                                EMPTY_WITHDRAWAL_ADDRESS, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
@@ -2313,7 +2481,6 @@ async fn withdraw(
                             return error;
                         };
 
-                        
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
                         let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
                         if deposit_info.recipient_screen_cid != polygon_recipient_address{
@@ -2362,96 +2529,40 @@ async fn withdraw(
 
                         if !burn_tx_hash.is_empty(){
 
-                            /* 
-                                send from server paypal or IR gateway to receiver paypal as PYUSD 
-                                or IR account number also if we're here we're sure that the 
-                                user updated the paypal id or account number
-                            */
+                            /* update user in-app token balance */
+                            match User::update_balance(user.id, deposit_info.amount, connection).await{
 
-                            let mut portal_response = 417 as u16;
-                            let (portal_response_sender, mut portal_response_receiver) = tokio::sync::mpsc::channel::<u16>(1024);
-                            if is_ir{
-                                
-                                let receiver_account_number = user_withdraw_address;
-                                let portal_response = 200 as u16;
+                                Ok(updated_user_data) => {
 
-                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                                /* calling the paypal send api to send from server paypal to receiver payal as PYUSD  */
-                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                                tokio::spawn(async move{
-                                    
-                                    // TODO - call ir gateway portal api in here to withdraw from server ir account 
-                                    //        and send to user ir account
-                                    // ...
-
-                                    let rcode = 200 as u16;
-                                    portal_response_sender.send(rcode).await;
-
-                                });
-                            
-                            } else{
-
-                                let receiver_paypal_id = user_withdraw_address;
-                                let portal_response = 200 as u16;
-
-                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-                                /* calling the IR gateway send api to send from server IR account to receiver IR account */
-                                /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-                                tokio::spawn(async move{
-
-                                    // TODO - call paypal api in here to withdraw from server paypal 
-                                    //        and send to user paypal
-                                    // ...
-
-                                    let rcode = 200 as u16;
-                                    portal_response_sender.send(rcode).await;
-                                
-                                });
-
-                            }
-                            /* receiving asyncly from the channel */
-                            while let Some(rcode) = portal_response_receiver.recv().await{
-                                portal_response = rcode;
-                            }
-
-                            /* if the portal response was 200 we'll insert a new user withdrawal */
-                            if portal_response == 200{
-                                
-                                match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
-                                    Ok(user_withdrawal_data) => {
-
-                                        resp!{
-                                            UserWithdrawalData, // the data type
-                                            user_withdrawal_data, // response data
-                                            WITHDRAWN_SUCCESSFULLY, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
+                                    match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
+                                        Ok(user_withdrawal_data) => {
+    
+                                            resp!{
+                                                UserWithdrawalData, // the data type
+                                                user_withdrawal_data, // response data
+                                                WITHDRAWN_SUCCESSFULLY, // response message
+                                                StatusCode::CREATED, // status code
+                                                None::<Cookie<'_>>, // cookie
+                                            }
+    
+                                        },
+                                        Err(resp) => {
+                                            /* 
+                                                🥝 response can be one of the following:
+                                                
+                                                - DIESEL INSERT ERROR RESPONSE
+                                                - DEPOSIT OBJECT NOT FOUND
+                                                - ALREADY_WITHDRAWN
+                                            */
+                                            resp
                                         }
-
-                                    },
-                                    Err(resp) => {
-                                        /* 
-                                            🥝 response can be one of the following:
-                                            
-                                            - DIESEL INSERT ERROR RESPONSE
-                                            - DEPOSIT OBJECT NOT FOUND
-                                            - ALREADY_WITHDRAWN
-                                        */
-                                        resp
                                     }
-                                }
-                            
-                            
-                            } else{
 
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    CANT_WITHDRAW, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
-                                    None::<Cookie<'_>>, // cookie
+                                },
+                                Err(resp) => {
+                                    resp
                                 }
-
+                                
                             }
 
                         } else{
@@ -2782,19 +2893,20 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
-    /* 
-    pub use super::verify_social_id; // update the social_id field
-    pub use super::verify_account_number; // update the account_number field
-    pub use super::verify_paypal_id; // update the paypal_id field
+    pub use super::buy_token; 
+    pub use super::burn_token; 
+    /*
     pub use super::add_post_comment;
     pub use super::like_post;
     pub use super::add_nft_comment;
     pub use super::like_nft;
     */
-    /* -------------------------------------------------------------------------- */
-    /* user pay with in-app token and backend pay with matic using thirdweb calls */
-    /* -------------------------------------------------------------------------- */
-    // followings need CID signature and user must sign the calls
+    /* ---------------------------------------------------- 
+        user must pay token in following calls and 
+        backend pay the gas fee with matic through 
+        thirdweb calls also followings need CID signature 
+        and user must sign the calls
+    ------------------------------------------------------- */
     pub use super::deposit;
     pub use super::withdraw;
     /*
@@ -2812,6 +2924,8 @@ pub mod exports{
     pub use super::advertise_collection;
     pub use super::get_public_room_nfts_info_of; // fetch public room info and nfts of a user, only friends can see it
     /* -------------------------------------------------------------------------- */
-    pub use super::buy_token; // price of 1 token = usd+eur+gbp/3
+    pub use super::verify_social_id; // update the social_id field
+    pub use super::verify_account_number; // update the account_number field
+    pub use super::verify_paypal_id; // update the paypal_id field
     */
 }

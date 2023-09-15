@@ -537,6 +537,7 @@ async fn login(
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())

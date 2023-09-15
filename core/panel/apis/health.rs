@@ -183,7 +183,7 @@ async fn check_token(
                                 facebook_username, discord_username,
                                 identifier, mail, is_mail_verified, is_phone_verified, phone_number, paypal_id, account_number, 
                                 device_id, social_id, cid, screen_cid, snowflake_id, stars, user_role, 
-                                token_time, last_login, created_at, updated_at))
+                                token_time, balance, last_login, created_at, updated_at))
                         .first::<FetchUser>(connection);
 
 
@@ -214,6 +214,7 @@ async fn check_token(
                             }
                         },
                         token_time: user.token_time,
+                        balance: user.balance,
                         last_login: { 
                             if user.last_login.is_some(){
                                 Some(user.last_login.unwrap().to_string())

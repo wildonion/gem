@@ -334,6 +334,7 @@ impl UserTask{
                             }
                         },
                         token_time: user.token_time,
+                        balance: user.balance,
                         last_login: { 
                             if user.last_login.is_some(){
                                 Some(user.last_login.unwrap().to_string())

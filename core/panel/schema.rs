@@ -51,6 +51,7 @@ diesel::table! {
         user_role -> Userrole,
         pswd -> Varchar,
         token_time -> Nullable<Int8>,
+        balance -> Nullable<Int8>,
         last_login -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,

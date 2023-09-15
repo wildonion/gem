@@ -9,7 +9,7 @@
 - new login and check token flow
 - building crypto wallet
 - do and get related twitter tasks
-- deposit and withdraw NFT `<---exchange token--->` ir and paypal servers
+- transferring in-app tokens by minting (`deposit`) and burning (`withdraw`) nft 
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
@@ -18,7 +18,7 @@
     - advertising collection
     - add comment on and like the nft
     - add/remove friend
-- buy in-app token
+- buy in-app token (charge wallet)
 
 ### 👑 Admin Access
 - advertise event `<---mafia jwt--->` mafia hyper server
@@ -56,4 +56,5 @@
 - crypto id (username)
 - phone verification 
 - account number and PayPal verification 
-- pay in-app token to deposit and withdraw to transfer nft
+- charge wallet for in-app transactions
+- depositor can call deposit method to transfer nft by spending in-app tokens from his wallet

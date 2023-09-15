@@ -1,7 +1,6 @@
 -- Your SQL goes here
 
 CREATE TYPE UserRole AS ENUM ('admin', 'dev', 'user');
-CREATE TYPE UserRegion AS ENUM ('ir', 'noneir');
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -27,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
   user_role UserRole NOT NULL DEFAULT 'user',
   pswd VARCHAR NOT NULL,
   token_time BigInt DEFAULT NULL,
+  balance BigInt DEFAULT NULL,
   last_login TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL

@@ -51,6 +51,7 @@ pub struct User{
     pub user_role: UserRole,
     pub pswd: String,
     pub token_time: Option<i64>,
+    pub balance: Option<i64>,
     pub last_login: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -81,6 +82,7 @@ pub struct FetchUser{
     pub stars: Option<i64>,
     pub user_role: UserRole,
     pub token_time: Option<i64>,
+    pub balance: Option<i64>,
     pub last_login: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -110,6 +112,7 @@ pub struct UserData{
     pub stars: Option<i64>,
     pub user_role: String,
     pub token_time: Option<i64>,
+    pub balance: Option<i64>,
     pub last_login: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -140,6 +143,7 @@ pub struct UserIdResponse{
     pub signer: Option<String>,
     pub user_role: String,
     pub token_time: Option<i64>,
+    pub balance: Option<i64>,
     pub last_login: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -841,6 +845,7 @@ impl User{
                             }
                         },
                         token_time: fetched_user.token_time,
+                        balance: fetched_user.balance,
                         last_login: { 
                             if fetched_user.last_login.is_some(){
                                 Some(fetched_user.last_login.unwrap().to_string())
@@ -959,6 +964,7 @@ impl User{
                             }
                         },
                         token_time: fetched_user.token_time,
+                        balance: fetched_user.balance,
                         last_login: { 
                             if fetched_user.last_login.is_some(){
                                 Some(fetched_user.last_login.unwrap().to_string())
@@ -1199,6 +1205,7 @@ impl User{
                                 }
                             },
                             token_time: updated_user.token_time,
+                            balance: updated_user.balance,
                             last_login: { 
                                 if updated_user.last_login.is_some(){
                                     Some(updated_user.last_login.unwrap().to_string())
@@ -1329,6 +1336,7 @@ impl User{
                                 }
                             },
                             token_time: u.token_time,
+                            balance: u.balance,
                             last_login: { 
                                 if u.last_login.is_some(){
                                     Some(u.last_login.unwrap().to_string())
@@ -1416,6 +1424,108 @@ impl User{
 
     }
 
+    pub async fn update_balance(owner_id: i32, new_balance: i64,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+        let Ok(user) = User::find_by_id(owner_id, connection).await else{
+            let resp = Response{
+                data: Some(owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        if new_balance < 0 {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INSUFFICIENT_FUNDS,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+
+        match diesel::update(users.find(user.id))
+            .set(balance.eq(new_balance))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
     pub async fn update_social_account(
         social_owner_id: i32, 
         account_name: &str, 
@@ -1471,6 +1581,7 @@ impl User{
                                         }
                                     },
                                     token_time: updated_user.token_time,
+                                    balance: updated_user.balance,
                                     last_login: { 
                                         if updated_user.last_login.is_some(){
                                             Some(updated_user.last_login.unwrap().to_string())
@@ -1577,6 +1688,7 @@ impl User{
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())
@@ -1672,6 +1784,7 @@ impl User{
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())
@@ -2045,6 +2158,7 @@ impl User{
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())
@@ -2139,6 +2253,7 @@ impl User{
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())
@@ -2507,6 +2622,7 @@ impl Id{
                                     }
                                 },
                                 token_time: updated_user.token_time,
+                                balance: updated_user.balance,
                                 last_login: { 
                                     if updated_user.last_login.is_some(){
                                         Some(updated_user.last_login.unwrap().to_string())
@@ -2659,6 +2775,7 @@ impl Id{
                                 }
                             },
                             token_time: updated_user.token_time,
+                            balance: updated_user.balance,
                             last_login: if updated_user.last_login.is_some(){
                                     Some(updated_user.last_login.unwrap().to_string())
                                 } else{

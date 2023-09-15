@@ -68,6 +68,7 @@ pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static DO_LOGIN: &str = "Invalid Token Time, Please Login To Generate New JWT";
 pub static USER_NOT_FOUND: &str = "User Not Found";
+pub static INSUFFICIENT_FUNDS: &str = "Insufficient Balance";
 pub static RECIPIENT_NOT_FOUND: &str = "No Recipient Found With This Username";
 pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This Recipient";
 pub static USERNAME_CANT_BE_EMPTY: &str = "Username Can't Be Empty";
