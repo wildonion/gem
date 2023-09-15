@@ -679,7 +679,9 @@ impl Twitter{
 
                                     /* if the user tweet contains the specified tweet then the task is verified */
                                     for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-                                        if tweet_text.contains(tweet.text.as_str()){
+                                        let sliced_user_tweet_text = tweet.text.as_str().replace("…", "");
+                                        let sliced_tweet_text = &tweet_text[0..sliced_user_tweet_text.as_str().len()];
+                                        if sliced_user_tweet_text.as_str() == sliced_tweet_text{
                                             is_verified = true;
                                         }
                                     }
