@@ -2303,18 +2303,6 @@ async fn withdraw(
                             return error;
                         };
 
-                        /* if the phone wasn't verified user can't withdraw */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
                         
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
                         let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
