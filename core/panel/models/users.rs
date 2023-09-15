@@ -781,6 +781,27 @@ impl User{
 
     }
 
+    pub async fn find_by_screen_cid(user_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(users::screen_cid.eq(user_screen_cid))
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_screen_cid),
+                message: RECIPIENT_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
     pub async fn insert(identifier_login: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_random_chars(gen_random_number(5, 11));
@@ -1768,7 +1789,21 @@ impl User{
         let now = Utc::now();
         let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
 
+        
+        /* make sure that the region is not empty to send otp code based on that */
+        if single_user.region.is_none(){
+            let resp = Response{
+                data: Some(phone_owner_id),
+                message: REGION_IS_NONE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
         let u_region = single_user.region.unwrap();
+
         let otp_res_stat = match u_region.as_str(){
             "ir" => {
                 
@@ -1833,7 +1868,7 @@ impl User{
             we're borrowing the otp_request here to prevent it from moving 
             cause unwrap() takes the ownership of self 
         */
-        if otp_res_stat != 200{
+        if otp_res_stat != 200 || otp_res_stat != 201{
 
             let resp = Response{
                 data: Some(phone_owner_id),
@@ -2437,7 +2472,6 @@ impl Id{
         
 
         let u_country = get_ip_data(user_ip.clone()).await.country.as_str().to_lowercase();
-        // let u_country = id_.clone().region;
 
         match user.cid{
             /* we'll be here only if the old_cid is not an empty string */
@@ -2561,7 +2595,6 @@ impl Id{
                     Id{ 
                         user_id: id_owner,
                         region: get_ip_data(user_ip).await.country.as_str().to_lowercase(), // never trust user input
-                        // region: id_.region,
                         username: id_username, 
                         device_id: id_.device_id, 
                         new_snowflake_id,

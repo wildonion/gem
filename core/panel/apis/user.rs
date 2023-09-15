@@ -1707,6 +1707,18 @@ async fn deposit(
 
                         let deposit_object = deposit.to_owned();
 
+                        let find_user_screen_cid = User::find_by_screen_cid(&deposit_object.recipient_screen_cid, connection).await;
+                        let Ok(user) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                deposit_object.recipient_screen_cid, // response data
+                                &RECIPIENT_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
                         let get_secp256k1_pubkey = PublicKey::from_str(&deposit_object.from_cid);
                         let get_secp256k1_signature = Signature::from_str(&deposit_object.tx_signature);
                         
@@ -1782,7 +1794,7 @@ async fn deposit(
                                 // TODO - call ir gateway portal api in here to deposit into server ir account
                                 // ...
 
-                                let rcode = 417 as u16;
+                                let rcode = 200 as u16;
                                 portal_response_sender.send(rcode).await;
 
                             });
@@ -1801,7 +1813,7 @@ async fn deposit(
                                 // TODO - call paypal api in here to deposit into server paypal
                                 // ...
 
-                                let rcode = 417 as u16;
+                                let rcode = 200 as u16;
                                 portal_response_sender.send(rcode).await;
                                 
                             });
@@ -2196,6 +2208,18 @@ async fn withdraw(
                             return error_resp;
                         };
 
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
                         let mut is_ir = false;
                         let user_withdraw_address = match user.region.unwrap().as_str(){
                             "ir" => {
@@ -2362,7 +2386,7 @@ async fn withdraw(
                                     //        and send to user ir account
                                     // ...
 
-                                    let rcode = 417 as u16;
+                                    let rcode = 200 as u16;
                                     portal_response_sender.send(rcode).await;
 
                                 });
@@ -2381,7 +2405,7 @@ async fn withdraw(
                                     //        and send to user paypal
                                     // ...
 
-                                    let rcode = 417 as u16;
+                                    let rcode = 200 as u16;
                                     portal_response_sender.send(rcode).await;
                                 
                                 });
