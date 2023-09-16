@@ -31,6 +31,10 @@
     ------------------------------------------------
     networking(actor, ws, redis pubsub and streams):
     ------------------------------------------------
+        streaming over incoming encoded io future object of utf8 bytes 
+        to decode them into structs to mutate them concurrently by moving
+        them between tokio threads using jobq channels and mutex 
+                            or 
         event of async task handler, streamer, loop 
         inside std::thread::scope and tokio::spawn based 
         tokio tcp stream or mmq streaming over future 

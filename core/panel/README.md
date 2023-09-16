@@ -13,7 +13,7 @@
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
-    - mint, sell, offer, auction, 
+    - mint, sell (listing), offer, auction, 
     - public and private room collections, 
     - advertising collection
     - add comment on and like the nft
@@ -38,10 +38,17 @@
 - user twitter task verification using twitter bot
 - check user twitter task 
 - get posts
+- get token price
 - gallery public calls
     - get collections
     - get main room nfts of collection
     - get main room nft info
+
+### 🥞 Health Routes
+- check server status
+- check token 
+- logout
+- get all the tasks
 
 ## 🔑 Tiny KYC Identity Verification Process
 
@@ -57,4 +64,5 @@
 - phone verification 
 - account number and PayPal verification 
 - charge wallet for in-app transactions
-- depositor can call deposit method to transfer nft by spending in-app tokens from his wallet
+- depositor can call `deposit` method to transfer nft by spending in-app tokens from his wallet
+- withdrawer can call `withdraw` method to claim nft to update his in-app token balance

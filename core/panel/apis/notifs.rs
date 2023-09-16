@@ -15,6 +15,7 @@ use crate::*;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use crate::events::{
     subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
     subscribers::notifs::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
@@ -28,11 +29,14 @@ use actix::prelude::*;
 /* 
 
     this route will be used to receive push notif from admin reveal roles, mmr 
-    and ecq engines, here is the example connect address:
-    
-        ws://localhost:7442/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488
-        ws://localhost:7442/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488
-        ws://localhost:7442/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488
+    and ecq engines, here is the example connect address and make sure that client
+    is passing the mafia server JWT to the header request like `Bearer JWT`:
+
+        localhost: ws://localhost:7442/subscribe/
+
+        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488
+        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488
+        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488
 
     NOTE: we just have to make sure that the user is already inside the event 
           and did the reservation process for the event. 
@@ -41,9 +45,9 @@ use actix::prelude::*;
     also there is a path in this route which is the event room that must be connected to 
     and is the name of the notification room which can be one of the following:
     
-        `ecq-{event_id}`, 
-        `mmr-{event_id}`,
-        `reveal-role-{event_id}`
+        `ecq-{event_id}`,        ----- /join-ecq
+        `mmr-{event_id}`,        ----- /join-mmr
+        `reveal-role-{event_id}` ----- /join-roles
 
     users after participating in an event we'll redirect them to the event page after that 
     the client must call this route with the passed in event id like so: /{user_id}/reveal-role-{notif_room}

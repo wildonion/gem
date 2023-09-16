@@ -16,6 +16,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;

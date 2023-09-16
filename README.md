@@ -277,14 +277,17 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 * based on the last wrapup the `assets` directory can be accessible through the `https://api.panel.conse.app/assets/` address.
 
 * the logic flow of an HTTP API body should be as the following:
+
+> make sure that you're passing the JWT into the request header, defined the request body strucutre and storage (diesel, mongodb or redis) schemas. 
+
 ```rust
 
-#[post("/a/sexy/route/{sexy-param}")]
+#[post("/a/sexy/route/{sexy-param}/{another-sexy-param-id}")]
 async fn api(
         req: HttpRequest, app_storage: 
         storage: web::Data<Option<Arc<Storage>>>,
         req_body: web::Json<ReqBody>,
-        a_sexy_param: web::Path<String>
+        a_sexy_param: web::Path<(String, i32)>
     ) -> PanelHttpResponse{
 
 

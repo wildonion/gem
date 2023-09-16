@@ -5,6 +5,7 @@ use crate::*;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;

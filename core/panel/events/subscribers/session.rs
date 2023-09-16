@@ -16,7 +16,7 @@
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::events::subscribers::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
-use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
+use crate::{misc::*, misc::s3::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::dev::channel;
 use actix::prelude::*;
