@@ -7,6 +7,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*, bot::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -25,7 +26,8 @@ use crate::schema::tasks;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        verify_twitter_task
+        verify_twitter_task,
+        get_token_price
     ),
     components(
         schemas(
@@ -279,6 +281,56 @@ async fn verify_twitter_task(
     
 }
 
+#[utoipa::path(
+    context_path = "/public",
+    responses(
+        (status=200, description="Fetched Successfully", body=i64),
+    ),
+    tag = "crate::apis::public",
+)]
+#[get("/get-token-price")]
+#[passport(admin, user, dev)]
+async fn get_token_price(
+        req: HttpRequest,  
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            let price = calculate_token_price(5).await;
+            
+            resp!{
+                i64, // the data type
+                price, // response data
+                FETCHED, // response message
+                StatusCode::OK, // status code
+                None::<Cookie<'_>>,
+            }
+
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>,
+            }
+        }
+    }
+
+}
+
 /*
 
     following API will be called by a crontab to check all user taks 
@@ -388,6 +440,7 @@ async fn check_users_tassk(
 pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_tassk;
+    pub use super::get_token_price;
     /* 
     pub use super::get_posts; // /?from=1&to=10
     pub use super::get_collections; /?from=1&to=10

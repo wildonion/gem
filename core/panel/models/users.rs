@@ -6,7 +6,7 @@
 use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
 use lettre::message::Mailbox;
-use crate::wallet::Wallet;
+use wallexerr::Wallet;
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
@@ -141,6 +141,7 @@ pub struct UserIdResponse{
     pub snowflake_id: Option<i64>, /* unique */
     pub stars: Option<i64>,
     pub signer: Option<String>,
+    pub mnemonic: Option<String>,
     pub user_role: String,
     pub token_time: Option<i64>,
     pub balance: Option<i64>,
@@ -155,6 +156,14 @@ pub struct NewIdRequest{
     pub device_id: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
+pub struct ChargeWalletRequest{
+    pub user_id: i32,
+    pub buyer_cid: String,
+    pub tokens: i64,
+    pub tx_signature: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct Id{
     pub region: String,
@@ -165,6 +174,7 @@ pub struct Id{
     pub new_cid: Option<String>, /* pubkey */
     pub screen_cid: Option<String>, /* keccak256 */
     pub signer: Option<String>, /* prvkey */
+    pub mnemonic: Option<String>, /* mnemonic */
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
@@ -814,9 +824,9 @@ impl User{
         }).collect();
 
         let new_user = NewUser{
-            username: &identifier_login, /* first insert the username is the identifier address */
+            username: &identifier_login.to_lowercase(), /* first insert the username is the identifier address */
             activity_code: &random_code,
-            identifier: &identifier_login,
+            identifier: &identifier_login.to_lowercase(),
             user_role: UserRole::User,
             pswd: "",
         };
@@ -933,9 +943,9 @@ impl User{
 
         let pass = User::hash_pswd(password.as_str()).unwrap();
         let new_user = NewUser{
-            username: &identifier_login, /* first insert the username is the identifier address */
+            username: &identifier_login.to_lowercase(), /* first insert the username is the identifier address */
             activity_code: &random_code,
-            identifier: &identifier_login,
+            identifier: &identifier_login.to_lowercase(),
             user_role: UserRole::User,
             pswd: &pass
         };
@@ -2683,7 +2693,7 @@ impl Id{
             _ => {
 
                 /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
-                let wallet = Wallet::new_secp256k1(id_.clone()); // seed is the username and device id 
+                let wallet = Wallet::new_secp256k1(""); // seed is the username and device id 
 
                 /* ------------------------------------------------ */
                 /* sample signing using ECDSA with secp256k1 curve */
@@ -2715,7 +2725,8 @@ impl Id{
                         new_snowflake_id,
                         new_cid: wallet.secp256k1_public_key, /* secp256k1 */
                         screen_cid: wallet.secp256k1_public_address, /* secp256k1 */
-                        signer: wallet.secp256k1_secret_key /* secp256k1 */
+                        signer: wallet.secp256k1_secret_key, /* secp256k1 */
+                        mnemonic: wallet.secp256k1_mnemonic,
                     }
                 )
 
@@ -2738,91 +2749,110 @@ impl Id{
             );  
         };
 
-        match diesel::update(users.find(self.user_id))
-            .set(
-        (   
-                /* 
-                    can't return heap data of type String we must clone them or use their 
-                    borrowed form or return the static version of their slice like &'static str
-                */
-                    username.eq(self.username.clone()),
-                    region.eq(self.region.clone()),
-                    device_id.eq(self.device_id.clone()),
-                    cid.eq(self.new_cid.clone().unwrap()),
-                    screen_cid.eq(self.screen_cid.clone().unwrap()),
-                    snowflake_id.eq(self.new_snowflake_id),
-                )
-            )
-            .returning(FetchUser::as_returning())
-            .get_result(connection)
-            {
-                Ok(updated_user) => {
-                    Ok(
-                        UserIdResponse { 
-                            id: updated_user.id, 
-                            region: updated_user.region.unwrap(),
-                            username: updated_user.username, 
-                            activity_code: updated_user.activity_code, 
-                            twitter_username: updated_user.twitter_username, 
-                            facebook_username: updated_user.facebook_username, 
-                            discord_username: updated_user.discord_username, 
-                            identifier: updated_user.identifier, 
-                            user_role: {
-                                match updated_user.user_role.clone(){
-                                    UserRole::Admin => "Admin".to_string(),
-                                    UserRole::User => "User".to_string(),
-                                    _ => "Dev".to_string(),
-                                }
-                            },
-                            token_time: updated_user.token_time,
-                            balance: updated_user.balance,
-                            last_login: if updated_user.last_login.is_some(){
-                                    Some(updated_user.last_login.unwrap().to_string())
-                                } else{
-                                    Some("".to_string())
-                                }
-                            ,
-                            created_at: updated_user.created_at.to_string(),
-                            updated_at: updated_user.updated_at.to_string(),
-                            mail: updated_user.mail,
-                            is_mail_verified: updated_user.is_mail_verified,
-                            is_phone_verified: updated_user.is_phone_verified,
-                            phone_number: updated_user.phone_number,
-                            paypal_id: updated_user.paypal_id,
-                            account_number: updated_user.account_number,
-                            device_id: updated_user.device_id,
-                            social_id: updated_user.social_id,
-                            cid: updated_user.cid,
-                            screen_cid: self.screen_cid.clone(),
-                            signer: self.signer.clone(),
-                            snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
-                        }
+
+        /* 
+            first update user balance and if that was successfull 
+            we'll save the crypto id otherwise user cant call the 
+            make_cid api again to build it until we hit the jackpot!
+        */
+
+        match User::update_balance(self.user_id, 5, connection).await{
+
+            Ok(updated_user_data) => {
+
+                match diesel::update(users.find(self.user_id))
+                    .set(
+                (   
+                        /* 
+                            can't return heap data of type String we must clone them or use their 
+                            borrowed form or return the static version of their slice like &'static str
+                        */
+                            username.eq(self.username.clone()),
+                            region.eq(self.region.clone()),
+                            device_id.eq(self.device_id.clone()),
+                            cid.eq(self.new_cid.clone().unwrap()),
+                            screen_cid.eq(self.screen_cid.clone().unwrap()),
+                            snowflake_id.eq(self.new_snowflake_id),
+                        )
                     )
-                },
-                Err(e) => {
-                    
-                    let resp_err = &e.to_string();
+                    .returning(FetchUser::as_returning())
+                    .get_result(connection)
+                    {
+                        Ok(updated_user) => {
+                            Ok(
+                                UserIdResponse { 
+                                    id: updated_user.id, 
+                                    region: updated_user.region.unwrap(),
+                                    username: updated_user.username, 
+                                    activity_code: updated_user.activity_code, 
+                                    twitter_username: updated_user.twitter_username, 
+                                    facebook_username: updated_user.facebook_username, 
+                                    discord_username: updated_user.discord_username, 
+                                    identifier: updated_user.identifier, 
+                                    user_role: {
+                                        match updated_user.user_role.clone(){
+                                            UserRole::Admin => "Admin".to_string(),
+                                            UserRole::User => "User".to_string(),
+                                            _ => "Dev".to_string(),
+                                        }
+                                    },
+                                    token_time: updated_user.token_time,
+                                    balance: updated_user.balance,
+                                    last_login: if updated_user.last_login.is_some(){
+                                            Some(updated_user.last_login.unwrap().to_string())
+                                        } else{
+                                            Some("".to_string())
+                                        }
+                                    ,
+                                    created_at: updated_user.created_at.to_string(),
+                                    updated_at: updated_user.updated_at.to_string(),
+                                    mail: updated_user.mail,
+                                    is_mail_verified: updated_user.is_mail_verified,
+                                    is_phone_verified: updated_user.is_phone_verified,
+                                    phone_number: updated_user.phone_number,
+                                    paypal_id: updated_user.paypal_id,
+                                    account_number: updated_user.account_number,
+                                    device_id: updated_user.device_id,
+                                    social_id: updated_user.social_id,
+                                    cid: updated_user.cid,
+                                    screen_cid: self.screen_cid.clone(),
+                                    signer: self.signer.clone(),
+                                    mnemonic: self.mnemonic.clone(),
+                                    snowflake_id: updated_user.snowflake_id,
+                                    stars: updated_user.stars
+                                }
+                            )
+                        },
+                        Err(e) => {
+                            
+                            let resp_err = &e.to_string();
 
 
-                    /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                    let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");
-                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            let error_content = &e.to_string();
+                            let error_content = error_content.as_bytes().to_vec();  
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: resp_err,
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: resp_err,
+                                status: 500
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
 
-                }
+                        }
+                    }
+
+            },
+            Err(resp) => {
+                Err(resp) /* because error part of this method is the actix result response */
             }
+        }
+
     
     }
     

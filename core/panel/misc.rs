@@ -113,6 +113,22 @@ pub struct PlayerEventInfo{
     pub updated_at: Option<i64>,
 }
 
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct CurrencyLayerResponse{
+    pub success: bool,
+    pub terms: String,
+    pub privacy: String,
+    pub timestamp: i64,
+    pub source: String,
+    pub quotes: Quote
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct Quote{
+    pub USDEUR: f64,
+    pub USDGBP: f64,
+}
+
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
@@ -187,6 +203,32 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
     }
 
     ipinfo_data
+
+}
+
+pub async fn calculate_token_price(tokens: i64) -> i64{
+
+    let currencty_layer_secret_key = std::env::var("CURRENCY_LAYER_TOKEN").unwrap();
+    let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,GBP&source=USD&format=1", currencty_layer_secret_key);
+    let get_currencies = reqwest::Client::new()
+        .get(endpoint.as_str())
+        .send()
+        .await;
+
+    let currencies = get_currencies.unwrap().json::<CurrencyLayerResponse>().await.unwrap();
+
+    let price_of_a_token = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
+    let final_price = tokens as f64 * price_of_a_token;
+    
+    // Scale to keep 4 decimal places (e.g., 1.2345 becomes 12345)
+    let scaled_final_price = (final_price * 10000.0).round(); 
+    let final_price_i64: i64 = scaled_final_price as i64;
+
+    /* converting the float back to i64 */
+    let original_final_price: f64 = final_price_i64 as f64 / 100.0;
+    
+    final_price_i64
+
 
 }
 
@@ -275,40 +317,38 @@ pub struct ThirdwebBurnResponse{
     pub burn_tx_hash: String,
 }
 
-#[derive(Clone)] // can't bound Copy trait cause engine and url are String which are heap data structure 
-pub struct Db{
-    pub mode: Mode,
-    pub engine: Option<String>,
-    pub url: Option<String>,
-    pub instance: Option<Client>,
-    pub pool: Option<Pool<ConnectionManager<PgConnection>>>,
-    pub redis: Option<RedisClient>,
-    pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
-    pub redis_actix_actor: Option<Addr<RedisActor>>,
-}
 
-impl Default for Db{
-    fn default() -> Db {
-        Db{
-            mode: self::Mode::Off,
-            engine: None,
-            url: None,
-            instance: None,
-            pool: None, // pg pool
-            redis: None,
-            redis_async_pubsub_conn: None,
-            redis_actix_actor: None,
-        }
+/*  ----------------------
+   | shared state storage 
+   |----------------------
+   | redis
+   | redis async
+   | redis actor
+   | mongodb
+   | postgres
+   |
+*/
+pub mod s3{
+
+    pub use super::*;
+
+    #[derive(Clone)] // can't bound Copy trait cause engine and url are String which are heap data structure 
+    pub struct Db{
+        pub mode: Mode,
+        pub engine: Option<String>,
+        pub url: Option<String>,
+        pub instance: Option<Client>,
+        pub pool: Option<Pool<ConnectionManager<PgConnection>>>,
+        pub redis: Option<RedisClient>,
+        pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
+        pub redis_actix_actor: Option<Addr<RedisActor>>,
     }
-}
-
-impl Db{
     
-    pub async fn new() -> Result<Db, Box<dyn std::error::Error>>{
-        Ok(
-            Db{ // building an instance with generic type C which is the type of the db client instance
-                mode: Mode::On, // 1 means is on 
-                engine: None, 
+    impl Default for Db{
+        fn default() -> Db {
+            Db{
+                mode: self::Mode::Off,
+                engine: None,
                 url: None,
                 instance: None,
                 pool: None, // pg pool
@@ -316,111 +356,129 @@ impl Db{
                 redis_async_pubsub_conn: None,
                 redis_actix_actor: None,
             }
-        )
+        }
     }
-    /* 
-        don't call a method which has self (not &self) as it's first 
-        param since by call it on the instance the instance will be 
-        dropped from the ram move borrowed form of the type in most 
-        cases unless its pointer is a shared pointer in which we 
-        must deref it using * or clone
-     
-        Client object uses std::sync::Arc internally, so it can safely be 
-        shared across threads or async tasks like tokio::spawn(async move{}) 
-        green threads also it is highly recommended to create a single 
-        Client and persist it for the lifetime of your application.
-    */
-    pub async fn GetMongoDbInstance(&self) -> Client{ // it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
-        Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() // building mongodb client instance
-    }
-
-    pub async fn GetPostgresPool(&self) -> Pool<ConnectionManager<PgConnection>>{
-        let uri = self.url.as_ref().unwrap().as_str();
-        let manager = ConnectionManager::<PgConnection>::new(uri);
-        let pool = Pool::builder().test_on_check_out(true).build(manager).unwrap();
-        pool
-    }
-
-}
-
-#[derive(Clone)]
-pub struct Storage{
-    pub id: Uuid,
-    pub db: Option<Db>, // we could have no db at all
-}
-
-impl Storage{
-
-    /* 
-        since unwrap() takes the ownership of the instance, because 
-        it doesn't have &self in its first param, it has self, thus
-        we must call as_ref() on the instance before using it to return 
-        a reference to the instance to take the ownership of the referenced
-        instance by using the unwrap()
-    */
     
-    pub async fn get_mongodb(&self) -> Option<&Client>{
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().instance.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    impl Db{
+        
+        pub async fn new() -> Result<Db, Box<dyn std::error::Error>>{
+            Ok(
+                Db{ // building an instance with generic type C which is the type of the db client instance
+                    mode: Mode::On, // 1 means is on 
+                    engine: None, 
+                    url: None,
+                    instance: None,
+                    pool: None, // pg pool
+                    redis: None,
+                    redis_async_pubsub_conn: None,
+                    redis_actix_actor: None,
+                }
+            )
         }
-    }
-
-    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+        /* 
+            don't call a method which has self (not &self) as it's first 
+            param since by call it on the instance the instance will be 
+            dropped from the ram move borrowed form of the type in most 
+            cases unless its pointer is a shared pointer in which we 
+            must deref it using * or clone
+         
+            Client object uses std::sync::Arc internally, so it can safely be 
+            shared across threads or async tasks like tokio::spawn(async move{}) 
+            green threads also it is highly recommended to create a single 
+            Client and persist it for the lifetime of your application.
+        */
+        pub async fn GetMongoDbInstance(&self) -> Client{ // it'll return an instance of the mongodb client - we set the first argument to &self in order to have the instance of the object later on after calling this method and prevent ownership moving
+            Client::with_uri_str(self.url.as_ref().unwrap()).await.unwrap() // building mongodb client instance
         }
-    }
-
-    pub async fn get_redis(&self) -> Option<&RedisClient>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+        pub async fn GetPostgresPool(&self) -> Pool<ConnectionManager<PgConnection>>{
+            let uri = self.url.as_ref().unwrap().as_str();
+            let manager = ConnectionManager::<PgConnection>::new(uri);
+            let pool = Pool::builder().test_on_check_out(true).build(manager).unwrap();
+            pool
         }
+    
     }
-
-    pub fn get_redis_sync(&self) -> Option<&RedisClient>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+    #[derive(Clone)]
+    pub struct Storage{
+        pub id: Uuid,
+        pub db: Option<Db>, // we could have no db at all
+    }
+    
+    impl Storage{
+    
+        /* 
+            since unwrap() takes the ownership of the instance, because 
+            it doesn't have &self in its first param, it has self, thus
+            we must call as_ref() on the instance before using it to return 
+            a reference to the instance to take the ownership of the referenced
+            instance by using the unwrap()
+        */
+        
+        pub async fn get_mongodb(&self) -> Option<&Client>{
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().instance.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Client> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
         }
-    }
-
-    pub async fn get_async_redis_pubsub_conn(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+        pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
         }
-    }
-
-    pub fn get_async_redis_pubsub_conn_sync(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+        pub async fn get_redis(&self) -> Option<&RedisClient>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
         }
-    }
-
-    pub async fn get_redis_actix_actor(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+        pub fn get_redis_sync(&self) -> Option<&RedisClient>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
         }
-    }
-
-    pub fn get_redis_actix_actor_sync(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
-        match self.db.as_ref().unwrap().mode{
-            Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
-            Mode::Off => None, // no storage is available cause it's off
+    
+        pub async fn get_async_redis_pubsub_conn(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
         }
+    
+        pub fn get_async_redis_pubsub_conn_sync(&self) -> Option<Arc<PubsubConnection>>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis_async_pubsub_conn.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
+        }
+    
+        pub async fn get_redis_actix_actor(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
+        }
+    
+        pub fn get_redis_actix_actor_sync(&self) -> Option<Addr<RedisActor>>{ /* an in memory data storage */
+            match self.db.as_ref().unwrap().mode{
+                Mode::On => self.db.as_ref().unwrap().redis_actix_actor.clone(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<RedisClient> or Option<&T>
+                Mode::Off => None, // no storage is available cause it's off
+            }
+        }
+    
     }
-
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum Mode{ // enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
-    On, // zero byte size
-    Off, // zero byte size
+    
+    #[derive(Copy, Clone, Debug)]
+    pub enum Mode{ // enum uses 8 bytes (usize which is 64 bits on 64 bits arch) tag which is a pointer pointing to the current variant - the total size of this enum is 8 bytes tag + the largest variant size = 8 + 0 = 8 bytes; cause in our case On and Off variant both have 0 size
+        On, // zero byte size
+        Off, // zero byte size
+    }
 }
 
 
@@ -662,7 +720,7 @@ macro_rules! server {
                         INIT BOT SERIVE
                     */
                     .service(
-                        actix_web::web::scope("/bot")
+                        actix_web::web::scope("/public")
                             .configure(services::init_public)
                     )
                     /*
@@ -694,7 +752,11 @@ macro_rules! server {
                 .bind((host.as_str(), port)){
                     Ok(server) => {
                         server
-                            .workers(10) /* running it on a threadpool with 10 spawned threads to handle incoming connections asyncly and concurrently */
+                            /* 
+                                running server in a threadpool with 10 spawned threads to handle 
+                                incoming connections asyncly and concurrently 
+                            */
+                            .workers(10) 
                             .run()
                             .await
                     },
@@ -742,6 +804,8 @@ macro_rules! storage {
         async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use crate::misc::*;
+use crate::misc::s3::*;
+            use crate::misc::s3::*;
 
             /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
 

@@ -8,6 +8,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -18,12 +19,13 @@ use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
 use crate::misc::*;
+use crate::misc::s3::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
-use crate::wallet::Wallet;
+use wallexerr::Wallet;
 
 
 
@@ -53,6 +55,7 @@ use crate::wallet::Wallet;
         verify_mail_code,
         request_phone_code,
         verify_phone_code,
+        charge_wallet
     ),
     components(
         schemas(
@@ -66,7 +69,8 @@ use crate::wallet::Wallet;
             CheckUserPhoneVerificationRequest,
             NewUserDepositRequest,
             NewIdRequest,
-            UserIdResponse
+            UserIdResponse,
+            ChargeWalletRequest
         )
     ),
     tags(
@@ -1323,8 +1327,9 @@ pub async fn tasks_report(
 
 #[utoipa::path(
     context_path = "/user",
+    request_body = ChargeWalletRequest,
     responses(
-        (status=201, description="Paid Successfully", body=&[u8]),
+        (status=201, description="Paid Successfully", body=UserData),
         (status=500, description="Internal Server Erros Caused By Diesel or Redis", body=&[u8]),
     ),
     tag = "crate::apis::user",
@@ -1333,10 +1338,11 @@ pub async fn tasks_report(
     )
 )]
 
-#[get("/cid/buy-token")]
+#[get("/cid/wallet/charge")]
 #[passport(user)]
-async fn buy_token(
+async fn charge_wallet(
     req: HttpRequest,
+    charge_wallet_request: web::Json<ChargeWalletRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -1389,6 +1395,7 @@ async fn buy_token(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    let charge_wallet_request_object = charge_wallet_request.to_owned();
 
                     let get_user = User::find_by_id(_id, connection).await;
                         let Ok(user) = get_user else{
@@ -1396,133 +1403,173 @@ async fn buy_token(
                             return error_resp;
                     };
 
-
-                    // step 1 - get the mapping value of paid amount and price of token 
-                    //          (price of 1 token = usd+eur+gbp/3) using currency layer apis
-                    // step 2 - based on the user region redirect them to ir or paypal gateway
-                    // step 2 - charge wallet or update balance field with the paid amount 
-                    // ...
-
-                    todo!()
-                        
-
-                },
-                Err(resp) => {
+                    let get_secp256k1_pubkey = PublicKey::from_str(&charge_wallet_request.buyer_cid);
+                    let get_secp256k1_signature = Signature::from_str(&charge_wallet_request.tx_signature);
                     
-                    /* 
-                        🥝 response can be one of the following:
-                        
-                        - NOT_FOUND_COOKIE_VALUE
-                        - NOT_FOUND_TOKEN
-                        - INVALID_COOKIE_TIME_HASH
-                        - INVALID_COOKIE_FORMAT
-                        - EXPIRED_COOKIE
-                        - USER_NOT_FOUND
-                        - NOT_FOUND_COOKIE_TIME_HASH
-                        - ACCESS_DENIED, 
-                        - NOT_FOUND_COOKIE_EXP
-                        - INTERNAL_SERVER_ERROR 
-                    */
-                    resp
-                }
-            }
+                    let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
 
-        },
-        None => {
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            INVALID_CID, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
 
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        }
-    }
-
-}
-
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=201, description="Paid Successfully", body=&[u8]),
-        (status=500, description="Internal Server Erros Caused By Diesel or Redis", body=&[u8]),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
-#[get("/cid/brun-token")]
-#[passport(user)]
-async fn burn_token(
-    req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-) -> PanelHttpResponse{
-
-
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let get_redis_conn = redis_client.get_async_connection().await;
-
-
-    /* 
-          ------------------------------------- 
-        | --------- PASSPORT CHECKING --------- 
-        | ------------------------------------- 
-        | granted_role has been injected into this 
-        | api body using #[passport()] proc macro 
-        | at compile time thus we're checking it
-        | at runtime
-        |
-    */
-    let granted_role = 
-        if granted_roles.len() == 3{ /* everyone can pass */
-            None /* no access is required perhaps it's an public route! */
-        } else if granted_roles.len() == 1{
-            match granted_roles[0]{ /* the first one is the right access */
-                "admin" => Some(UserRole::Admin),
-                "user" => Some(UserRole::User),
-                _ => Some(UserRole::Dev)
-            }
-        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                ACCESS_DENIED, // response message
-                StatusCode::FORBIDDEN, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        };
-
-    match storage.clone().unwrap().as_ref().get_pgdb().await{
-
-        Some(pg_pool) => {
-
-            let connection = &mut pg_pool.get().unwrap();
-
-
-            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
-                Ok(token_data) => {
-                    
-                    let _id = token_data._id;
-                    let role = token_data.user_role;
-
-
-                    let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
-                            return error_resp;
                     };
 
+                    let Ok(secp256k1_signature) = get_secp256k1_signature else{
 
-                    // user can burn token and receive rial, dollars or euros amount
-                    // ...
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            SIGNATURE_ENCODE_ISSUE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
 
-                    todo!()
+                    };
+
+                    let strigified_deposit_data = serde_json::json!({
+                        "user_id": charge_wallet_request.user_id,
+                        "buyer_cid": charge_wallet_request.buyer_cid,
+                        "tokens": charge_wallet_request.tokens
+                    });
+
+                    /* verifying the data against the generated signature */
+                    let get_verification = Wallet::verify_secp256k1_signature(
+                        strigified_deposit_data.to_string(),
+                        secp256k1_signature, 
+                        secp256k1_pubkey
+                    );
+
+
+                    let Ok(_) = get_verification else{
+
+                        let verification_error = get_verification.unwrap_err();
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            &verification_error.to_string(), // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    if charge_wallet_request_object.tokens < 0 &&
+                        charge_wallet_request_object.tokens < 5{
+
+                            resp!{
+                                i32, // the data type
+                                _id, // response data
+                                INVALID_TOKEN_AMOUNT, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        }
+
+                    if user.region.is_none(){
+
+                        resp!{
+                            i32, // the data type
+                            _id, // response data
+                            REGION_IS_NONE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    }
+
+                    let u_region = user.region.unwrap();
+
+                    /* this is the equivalent amount of token price that must be paid based on user region (dollars, euros or ir) */
+                    let amount_to_be_paid = calculate_token_price(charge_wallet_request_object.tokens).await;
+
+                    let gateway_resp = match u_region.as_str(){
+                        "ir" => {
+
+                            if user.account_number.is_some() && 
+                                !user.account_number.unwrap().is_empty(){
+
+                                    // ir gateway
+                                    // ...
+
+                                    200 
+
+                            } else{
+
+                                resp!{
+                                    i32, // the data type
+                                    _id, // response data
+                                    INVALID_ACCOUNT_NUMBER, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+
+                            }
+
+                        },
+                        _ => {
+
+                            if user.paypal_id.is_some() && 
+                                !user.paypal_id.unwrap().is_empty(){
+
+                                    // paypal_id gateway
+                                    // ...
+
+                                    200 
+
+                            } else{
+
+                                resp!{
+                                    i32, // the data type
+                                    _id, // response data
+                                    INVALID_PAYPAL_ID, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
+                        }
+                    };
+                    
+
+                    if gateway_resp == 200 || gateway_resp == 201{
+
+                        let new_balance = user.balance.unwrap() + charge_wallet_request.tokens;
+                        match User::update_balance(_id, new_balance, connection).await{
+
+                            Ok(updated_user_data) => {
+
+                                resp!{
+                                    UserData, // the data type
+                                    updated_user_data, // response data
+                                    PAID_SUCCESSFULLY, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+
+
+                    } else{
+
+                        resp!{
+                            i32, // the data type
+                            _id, // response data
+                            CANT_CHARGE_WALLET, // response message
+                            StatusCode::EXPECTATION_FAILED, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    }
                         
-
                 },
                 Err(resp) => {
                     
@@ -1720,7 +1767,7 @@ async fn make_cid(
                                 we're using new_object_id_request username since 
                                 the username inside the JWT might be empty
                             */
-                            new_object_id_request.username.clone(),
+                            new_object_id_request.username.clone().to_lowercase(),
                             user_ip,
                             connection
                         ).await;
@@ -1965,7 +2012,7 @@ async fn deposit(
                         };
 
                         let strigified_deposit_data = serde_json::json!({
-                            "username": deposit_object.recipient,
+                            "recipient": deposit_object.recipient,
                             "from_cid": deposit_object.from_cid,
                             "amount": deposit_object.amount
                         });
@@ -1991,20 +2038,20 @@ async fn deposit(
 
                         };
 
+                        /* 
 
-                        if user.balance.is_some() && user.balance.unwrap() > 0{
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            user for paying that price which is the deposit_object.amount field in deposit 
+                            request body also if a user want to claim the card he gets paid by sending the exact
+                            token that depositor has paid for to his wallet
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > deposit_object.amount{
 
                             let new_balance = user.balance.unwrap() - deposit_object.amount;
-                            if new_balance < 0 {
-
-                                resp!{
-                                    &[u8], // the date type
-                                    &[], // the data itself
-                                    INSUFFICIENT_FUNDS, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
 
                             let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, String)>(1024);
                             let mut mint_tx_hash = String::from("");
@@ -2067,36 +2114,35 @@ async fn deposit(
                             
                             if !mint_tx_hash.is_empty(){
                                 
-                                match User::update_balance(user.id, new_balance, connection).await{
-                                    Ok(updated_user_data) => {
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, connection).await{
+                                    Ok(user_deposit_data) => {
 
-                                        match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, connection).await{
-                                            Ok(user_deposit_data) => {
-        
-                                                resp!{
-                                                    UserDepositData, // the data type
-                                                    user_deposit_data, // response data
-                                                    DEPOSITED_SUCCESSFULLY, // response message
-                                                    StatusCode::CREATED, // status code
-                                                    None::<Cookie<'_>>, // cookie
-                                                }
-        
-                                            },
-                                            Err(resp) => {
-                                                /* 
-                                                    🥝 response can be one of the following:
-                                                    
-                                                    - DIESEL INSERT ERROR RESPONSE
-                                                */
-                                                resp
-                                            }
+                                        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                                        let Ok(updated_user_data) = update_user_balance else{
+
+                                            let err_resp = update_user_balance.unwrap_err();
+                                            return err_resp;
+                                            
+                                        };
+
+                                        resp!{
+                                            UserDepositData, // the data type
+                                            user_deposit_data, // response data
+                                            DEPOSITED_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
                                         }
-                                        
-                                    }, 
+
+                                    },
                                     Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                        */
                                         resp
                                     }
-                                }
+                                }                                    
 
                                 
                             } else{
@@ -2112,10 +2158,10 @@ async fn deposit(
                             
                         } else{
                             resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                CANT_DEPOSIT, // response message
-                                StatusCode::EXPECTATION_FAILED, // status code
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }
@@ -2529,41 +2575,38 @@ async fn withdraw(
 
                         if !burn_tx_hash.is_empty(){
 
-                            /* update user in-app token balance */
-                            match User::update_balance(user.id, deposit_info.amount, connection).await{
+                            match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
+                                Ok(user_withdrawal_data) => {
+                                    
+                                    let update_user_balance = User::update_balance(user.id, deposit_info.amount, connection).await;
+                                    let Ok(updated_user_data) = update_user_balance else{
 
-                                Ok(updated_user_data) => {
-
-                                    match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
-                                        Ok(user_withdrawal_data) => {
-    
-                                            resp!{
-                                                UserWithdrawalData, // the data type
-                                                user_withdrawal_data, // response data
-                                                WITHDRAWN_SUCCESSFULLY, // response message
-                                                StatusCode::CREATED, // status code
-                                                None::<Cookie<'_>>, // cookie
-                                            }
-    
-                                        },
-                                        Err(resp) => {
-                                            /* 
-                                                🥝 response can be one of the following:
-                                                
-                                                - DIESEL INSERT ERROR RESPONSE
-                                                - DEPOSIT OBJECT NOT FOUND
-                                                - ALREADY_WITHDRAWN
-                                            */
-                                            resp
-                                        }
+                                        let err_resp = update_user_balance.unwrap_err();
+                                        return err_resp;
+                                        
+                                    };
+                                    
+                                    resp!{
+                                        UserWithdrawalData, // the data type
+                                        user_withdrawal_data, // response data
+                                        WITHDRAWN_SUCCESSFULLY, // response message
+                                        StatusCode::CREATED, // status code
+                                        None::<Cookie<'_>>, // cookie
                                     }
 
                                 },
                                 Err(resp) => {
+                                    /* 
+                                        🥝 response can be one of the following:
+                                        
+                                        - DIESEL INSERT ERROR RESPONSE
+                                        - DEPOSIT OBJECT NOT FOUND
+                                        - ALREADY_WITHDRAWN
+                                    */
                                     resp
                                 }
-                                
                             }
+                                
 
                         } else{
 
@@ -2893,9 +2936,10 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
-    pub use super::buy_token; 
-    pub use super::burn_token; 
     /*
+    pub use super::verify_social_id; // update the social_id field
+    pub use super::verify_account_number; // update the account_number field
+    pub use super::verify_paypal_id; // update the paypal_id field
     pub use super::add_post_comment;
     pub use super::like_post;
     pub use super::add_nft_comment;
@@ -2909,6 +2953,7 @@ pub mod exports{
     ------------------------------------------------------- */
     pub use super::deposit;
     pub use super::withdraw;
+    pub use super::charge_wallet; 
     /*
     pub use super::send_invitation_link;
     pub use super::get_private_room_info_of; // fetch private room info and nfts of a user, only user can see it
@@ -2924,8 +2969,5 @@ pub mod exports{
     pub use super::advertise_collection;
     pub use super::get_public_room_nfts_info_of; // fetch public room info and nfts of a user, only friends can see it
     /* -------------------------------------------------------------------------- */
-    pub use super::verify_social_id; // update the social_id field
-    pub use super::verify_account_number; // update the account_number field
-    pub use super::verify_paypal_id; // update the paypal_id field
     */
 }

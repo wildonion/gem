@@ -101,7 +101,6 @@ use themis::keys::KeyPair as ThemisKeyPair;
 use std::rc::Weak;
 use tokio::sync::RwLock;
 
-mod wallet;
 mod apis;
 mod misc;
 mod constants;
