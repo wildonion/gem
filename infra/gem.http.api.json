@@ -2567,6 +2567,44 @@
 					"name": "User APIs",
 					"item": [
 						{
+							"name": "Charge Wallet",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_id\": 1,\n    \"buyer_cid\": \"\",\n    \"tokens\": 10,\n    \"tx_signature\": \"30450221008ae4a8ffccd3e6fc1da6f826bae4a105bf5eae47663d7eafddd9a549524c02e202207491ce5dad37c3f0b2688dd81515bf6a6c1f4c00ff23a477513924ee8fd38350\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/cid/wallet/charge",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"cid",
+										"wallet",
+										"charge"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Login With Identifier",
 							"request": {
 								"method": "POST",
@@ -2703,7 +2741,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0ODEwOTIzMDcwMTA5MDAwLCJleHAiOjE2OTc0MDI5MjMsImlhdCI6MTY5NDgxMDkyM30.UKLq0qj1i4aCuXXF3cso4eV5YUH6woQYDSnBhm-PQ2KTRqQTLINFMqBrqO1whQgFNAcLrvwKTFINEvPXIV6CrQ",
 											"type": "string"
 										}
 									]
@@ -2821,12 +2859,16 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/deposit",
+									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"deposit"
+										"deposit",
+										"get",
+										"unclaimed",
+										"recipient",
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
 									]
 								}
 							},
@@ -3140,6 +3182,27 @@
 					"name": "Public",
 					"item": [
 						{
+							"name": "Get Token Price",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-token-price/5",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-token-price",
+										"5"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Verify User Task",
 							"request": {
 								"method": "POST",
@@ -3179,10 +3242,6 @@
 							"response": []
 						}
 					]
-				},
-				{
-					"name": "Notif APIs",
-					"item": []
 				}
 			]
 		}

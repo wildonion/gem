@@ -288,10 +288,11 @@ async fn verify_twitter_task(
     ),
     tag = "crate::apis::public",
 )]
-#[get("/get-token-price")]
+#[get("/get-token-price/{tokens}")]
 #[passport(admin, user, dev)]
 async fn get_token_price(
         req: HttpRequest,  
+        tokens: web::Path<i64>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -305,7 +306,7 @@ async fn get_token_price(
 
             let connection = &mut pg_pool.get().unwrap();
 
-            let price = calculate_token_price(5).await;
+            let price = calculate_token_price(tokens.to_owned()).await;
             
             resp!{
                 i64, // the data type
