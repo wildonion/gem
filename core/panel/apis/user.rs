@@ -2083,7 +2083,7 @@ async fn deposit(
                             tokio::task::spawn(async move{
 
                                 
-                                let host = std::env::var("HOST").expect("⚠️ no host variable set");
+                                let host = std::env::var("THIRDWEB_HOST").expect("⚠️ no thirdweb host variable set");
                                 let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
                                 let api_path = format!("http://{}:{}/mint/to/{}/{}", host, port, cloned_polygon_recipient_address.clone(), deposit_object.amount.to_string());
                                 let client = reqwest::Client::new();
@@ -2548,7 +2548,7 @@ async fn withdraw(
                         /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                         tokio::task::spawn(async move{
 
-                            let host = std::env::var("HOST").expect("⚠️ no host variable set");
+                            let host = std::env::var("THIRDWEB_HOST").expect("⚠️ no thirdweb host variable set");
                             let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
                             let api_path = format!("http://{}:{}/burn/{}", host, port, token_id);
                             let client = reqwest::Client::new();

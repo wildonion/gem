@@ -225,7 +225,7 @@ pub async fn calculate_token_price(tokens: i64) -> i64{
     let final_price_i64: i64 = scaled_final_price as i64;
 
     /* converting the float back to i64 */
-    let original_final_price: f64 = final_price_i64 as f64 / 100.0;
+    let original_final_price: f64 = final_price_i64 as f64 / 10000.0;
     
     final_price_i64
 

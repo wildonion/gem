@@ -2038,7 +2038,7 @@ impl User{
             
             let resp = Response{
                 data: Some(receiver_id),
-                message: ALREADY_VERIFIED_MAIL,
+                message: ALREADY_VERIFIED_PHONE,
                 status: 302
             };
             return Err(

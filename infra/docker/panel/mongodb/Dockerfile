@@ -27,6 +27,10 @@ RUN apt-get update && \
 FROM debian:bullseye-slim
 ARG ARCH=x86_64
 
+# is required for any http client crate like reqwest to send to https servers
+# trusted ssl certs must be in /etc/ssl/certs/ca-certificates.crt
+RUN apt-get update && apt-get install -y libssl-dev ca-certificates
+
 ENV LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 ENV DB_PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
 ENV DB_USERNAME=root
