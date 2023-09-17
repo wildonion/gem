@@ -1484,8 +1484,9 @@ async fn charge_wallet(
 
                     let u_region = user.region.unwrap();
 
-                    /* this is the equivalent amount of token price that must be paid based on user region (dollars, euros or ir) */
-                    let amount_to_be_paid = calculate_token_price(charge_wallet_request_object.tokens).await;
+                    let token_price = calculate_token_value(charge_wallet_request_object.tokens).await;
+                    let usd_token_price = token_price.0;
+                    let irr_token_price = token_price.1;
 
                     let gateway_resp = match u_region.as_str(){
                         "ir" => {
@@ -1493,7 +1494,10 @@ async fn charge_wallet(
                             if user.account_number.is_some() && 
                                 !user.account_number.unwrap().is_empty(){
 
-                                    // ir gateway
+                                    /* this is the equivalent amount of token price that must be paid in ir */
+                                    let final_amount_to_be_paid = irr_token_price as f64 / 1000000.0; /* converting the ir price back to float */
+                                    
+                                    // 🚪 ir gateway
                                     // ...
 
                                     200 
@@ -1516,7 +1520,10 @@ async fn charge_wallet(
                             if user.paypal_id.is_some() && 
                                 !user.paypal_id.unwrap().is_empty(){
 
-                                    // paypal_id gateway
+                                    /* this is the equivalent amount of token price that must be paid in none ir */
+                                    let final_amount_to_be_paid = usd_token_price as f64 / 10000.0;  /* converting the usd price back to float */
+
+                                    // 🚪 paypal_id gateway to charge user with current_token_price amount
                                     // ...
 
                                     200 
@@ -2565,7 +2572,6 @@ async fn withdraw(
                                 burn_tx_hash_sender.send(burn_tx_hash).await;
                             }
 
-
                         });
 
                         /* receiving asyncly from the channel */
@@ -2953,8 +2959,9 @@ pub mod exports{
     ------------------------------------------------------- */
     pub use super::deposit;
     pub use super::withdraw;
-    pub use super::charge_wallet; 
+    pub use super::charge_wallet;
     /*
+    pub use super::give_stars_to;
     pub use super::send_invitation_link;
     pub use super::get_private_room_info_of; // fetch private room info and nfts of a user, only user can see it
     pub use super::mint_nft; // goes to private room

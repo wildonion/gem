@@ -125,8 +125,16 @@ pub struct CurrencyLayerResponse{
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct Quote{
+    /* following need to be uppercase cause the response fields are uppercase */
     pub USDEUR: f64,
     pub USDGBP: f64,
+    pub USDIRR: f64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct GetTokenValueResponse{
+    pub irr: i64,
+    pub usd: i64
 }
 
 pub fn gen_random_chars(size: u32) -> String{
@@ -206,10 +214,10 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 
 }
 
-pub async fn calculate_token_price(tokens: i64) -> i64{
+pub async fn calculate_token_value(tokens: i64) -> (i64, i64){
 
     let currencty_layer_secret_key = std::env::var("CURRENCY_LAYER_TOKEN").unwrap();
-    let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,GBP&source=USD&format=1", currencty_layer_secret_key);
+    let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,GBP,IRR&source=USD&format=1", currencty_layer_secret_key);
     let get_currencies = reqwest::Client::new()
         .get(endpoint.as_str())
         .send()
@@ -217,17 +225,18 @@ pub async fn calculate_token_price(tokens: i64) -> i64{
 
     let currencies = get_currencies.unwrap().json::<CurrencyLayerResponse>().await.unwrap();
 
-    let price_of_a_token = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
-    let final_price = tokens as f64 * price_of_a_token;
+    let value_of_a_token_usd = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
     
-    // Scale to keep 4 decimal places (e.g., 1.2345 becomes 12345)
-    let scaled_final_price = (final_price * 10000.0).round(); 
-    let final_price_i64: i64 = scaled_final_price as i64;
+    let final_value = tokens as f64 * value_of_a_token_usd;
+    let scaled_final_value = (final_value * 1000000.0).round(); // scale to keep 4 decimal places (e.g., 1.2345 becomes 12345)
+    let final_value_i64: i64 = scaled_final_value as i64;
 
-    /* converting the float back to i64 */
-    let original_final_price: f64 = final_price_i64 as f64 / 10000.0;
-    
-    final_price_i64
+    let irr_price = scaled_final_value * currencies.quotes.USDIRR;
+    let scaled_final_irr_price = (irr_price * 1000000.0).round(); 
+    let final_irr_price_i64: i64 = scaled_final_irr_price as i64;
+
+
+    (final_value_i64, final_irr_price_i64)
 
 
 }

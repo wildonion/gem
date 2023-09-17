@@ -27,12 +27,13 @@ use crate::schema::tasks;
 #[openapi(
     paths(
         verify_twitter_task,
-        get_token_price
+        get_token_value
     ),
     components(
         schemas(
             UserData,
-            TaskData
+            TaskData,
+            GetTokenValueResponse
         )
     ),
     tags(
@@ -284,13 +285,13 @@ async fn verify_twitter_task(
 #[utoipa::path(
     context_path = "/public",
     responses(
-        (status=200, description="Fetched Successfully", body=i64),
+        (status=200, description="Fetched Successfully", body=GetTokenPriceResponse),
     ),
     tag = "crate::apis::public",
 )]
-#[get("/get-token-price/{tokens}")]
+#[get("/get-token-value/{tokens}")]
 #[passport(admin, user, dev)]
-async fn get_token_price(
+async fn get_token_value(
         req: HttpRequest,  
         tokens: web::Path<i64>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -306,16 +307,18 @@ async fn get_token_price(
 
             let connection = &mut pg_pool.get().unwrap();
 
-            let price = calculate_token_price(tokens.to_owned()).await;
-            
+            let value = calculate_token_value(tokens.to_owned()).await;
+
             resp!{
-                i64, // the data type
-                price, // response data
+                GetTokenValueResponse, // the data type
+                GetTokenValueResponse{
+                    usd: value.0,
+                    irr: value.1,
+                }, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>,
             }
-
 
         },
         None => {
@@ -441,7 +444,7 @@ async fn check_users_tassk(
 pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_tassk;
-    pub use super::get_token_price;
+    pub use super::get_token_value;
     /* 
     pub use super::get_posts; // /?from=1&to=10
     pub use super::get_collections; /?from=1&to=10
