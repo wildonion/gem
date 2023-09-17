@@ -2863,7 +2863,7 @@ async fn get_recipient_unclaimed_deposits(
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
-                    let role = token_data.user_role;      
+                    let role = token_data.user_role;
 
                     /* generate keccak256 from recipient_cid to mint nft to */
                     let polygon_recipient_address = Wallet::generate_keccak256_from(recipient_cid.to_owned().clone());
@@ -2879,7 +2879,6 @@ async fn get_recipient_unclaimed_deposits(
                                 None::<Cookie<'_>>, // cookie
                             }
 
-
                         },
                         Err(resp) => {
                             /* 
@@ -2890,7 +2889,6 @@ async fn get_recipient_unclaimed_deposits(
                             resp
                         }
                     }
-                        
 
                 },
                 Err(resp) => {
@@ -2975,6 +2973,5 @@ pub mod exports{
     pub use super::remove_user_from_friend;
     pub use super::advertise_collection;
     pub use super::get_public_room_nfts_info_of; // fetch public room info and nfts of a user, only friends can see it
-    /* -------------------------------------------------------------------------- */
     */
 }

@@ -302,35 +302,16 @@ async fn get_token_value(
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
 
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-
-            let connection = &mut pg_pool.get().unwrap();
-
-            let value = calculate_token_value(tokens.to_owned()).await;
-
-            resp!{
-                GetTokenValueResponse, // the data type
-                GetTokenValueResponse{
-                    usd: value.0,
-                    irr: value.1,
-                }, // response data
-                FETCHED, // response message
-                StatusCode::OK, // status code
-                None::<Cookie<'_>>,
-            }
-
-        },
-        None => {
-
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>,
-            }
-        }
+    let value = calculate_token_value(tokens.to_owned()).await;
+    resp!{
+        GetTokenValueResponse, // the data type
+        GetTokenValueResponse{
+            usd: value.0,
+            irr: value.1,
+        }, // response data
+        FETCHED, // response message
+        StatusCode::OK, // status code
+        None::<Cookie<'_>>,
     }
 
 }

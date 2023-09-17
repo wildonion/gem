@@ -2741,7 +2741,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0ODEwOTIzMDcwMTA5MDAwLCJleHAiOjE2OTc0MDI5MjMsImlhdCI6MTY5NDgxMDkyM30.UKLq0qj1i4aCuXXF3cso4eV5YUH6woQYDSnBhm-PQ2KTRqQTLINFMqBrqO1whQgFNAcLrvwKTFINEvPXIV6CrQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0OTcxMDc4MTA4MTg3MDAwLCJleHAiOjE2OTc1NjMwNzgsImlhdCI6MTY5NDk3MTA3OH0.Spn_LPyTeQHk6wDoMY35ALlE4SfiFknLOu9XFiX8mWBPZdUUYw-F4iZ1RH5Ggbm00jyK3xNvaFL8EcugrmJR2Q",
 											"type": "string"
 										}
 									]
@@ -2769,7 +2769,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0OTcxMDc4MTA4MTg3MDAwLCJleHAiOjE2OTc1NjMwNzgsImlhdCI6MTY5NDk3MTA3OH0.Spn_LPyTeQHk6wDoMY35ALlE4SfiFknLOu9XFiX8mWBPZdUUYw-F4iZ1RH5Ggbm00jyK3xNvaFL8EcugrmJR2Q",
 											"type": "string"
 										}
 									]
@@ -2778,7 +2778,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"user_mail\": \"abarmardeatashyne@gmail.com\",\n    \"verification_code\": \"57125710\",\n    \"vat\": 1694770105129 // milliseconds\n}",
+									"raw": "{\n    \"user_mail\": \"abarmardeatashyne@gmail.com\",\n    \"verification_code\": \"97273238\",\n    \"vat\": 1694770105129 // milliseconds\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2805,7 +2805,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0OTcxMDc4MTA4MTg3MDAwLCJleHAiOjE2OTc1NjMwNzgsImlhdCI6MTY5NDk3MTA3OH0.Spn_LPyTeQHk6wDoMY35ALlE4SfiFknLOu9XFiX8mWBPZdUUYw-F4iZ1RH5Ggbm00jyK3xNvaFL8EcugrmJR2Q",
 											"type": "string"
 										}
 									]
@@ -3182,7 +3182,7 @@
 					"name": "Public",
 					"item": [
 						{
-							"name": "Get Token Price",
+							"name": "Get Token Value",
 							"request": {
 								"auth": {
 									"type": "noauth"
