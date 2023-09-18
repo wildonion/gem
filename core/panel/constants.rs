@@ -94,7 +94,7 @@ pub static INVALID_COOKIE_TIME_HASH: &str = "Invalid Cookie Time Hash";
 pub static NOT_FOUND_COOKIE_TIME_HASH: &str = "No Time Hash Found In Cookie";
 pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
-
+pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";

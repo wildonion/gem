@@ -152,6 +152,7 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::verify_twitter_task);
     config.service(apis::public::exports::check_users_tassk);
     config.service(apis::public::exports::get_token_value);
+    config.service(apis::public::exports::start_tcp_server);
 
 
     // other routs maybe ?
