@@ -2703,8 +2703,8 @@ impl Id{
                     "amount": 5
                 });
                 let sig = Wallet::secp256k1_sign(
-                    wallet.secp256k1_secret_key.as_ref().unwrap().clone(), 
-                    data_to_be_signed.to_string()
+                    wallet.secp256k1_secret_key.as_ref().unwrap().as_str(), 
+                    data_to_be_signed.to_string().as_str()
                 );
                 info!("test signature :::: {}", sig.to_string());
                 /* ------------------------------------------------ */

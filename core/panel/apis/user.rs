@@ -1437,10 +1437,10 @@ async fn charge_wallet(
                     });
 
                     /* verifying the data against the generated signature */
-                    let get_verification = Wallet::verify_secp256k1_signature(
-                        strigified_deposit_data.to_string(),
-                        secp256k1_signature, 
-                        secp256k1_pubkey
+                    let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                        strigified_deposit_data.to_string().as_str(),
+                        &charge_wallet_request.tx_signature, 
+                        &charge_wallet_request.buyer_cid
                     );
 
 
@@ -2025,10 +2025,10 @@ async fn deposit(
                         });
 
                         /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature(
-                            strigified_deposit_data.to_string(),
-                            secp256k1_signature, 
-                            secp256k1_pubkey
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_deposit_data.to_string().as_str(),
+                            &deposit_object.tx_signature, 
+                            &deposit_object.from_cid
                         );
 
 
@@ -2508,10 +2508,10 @@ async fn withdraw(
                         });
 
                         /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature(
-                            strigified_withdraw_data.to_string(),
-                            secp256k1_signature, 
-                            secp256k1_pubkey
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_withdraw_data.to_string().as_str(),
+                            &withdraw_object.tx_signature, 
+                            &withdraw_object.recipient_cid
                         );
 
                         let Ok(_) = get_verification else{
