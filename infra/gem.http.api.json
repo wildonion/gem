@@ -2436,6 +2436,29 @@
 							"response": []
 						},
 						{
+							"name": "Start TCP Listener",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/listener/start/tcp/2425",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"listener",
+										"start",
+										"tcp",
+										"2425"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get Users Deposits",
 							"request": {
 								"auth": {
@@ -2677,7 +2700,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQyMzIxMTUzNDk2MDAwLCJleHAiOjE2OTc2MzQzMjEsImlhdCI6MTY5NTA0MjMyMX0.39asKGaWOB5GvUjveQ-psKp8MOPHRwtwRRyFNN_Q_qHoZZU3DpEaKRFKIMNGM3EvSa4qc8RDsh1_YepXHik3Dg",
 											"type": "string"
 										}
 									]
@@ -3096,7 +3119,14 @@
 							"name": "Logout",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQxOTUyMjI1OTQ3MDAwLCJleHAiOjE2OTc2MzM5NTIsImlhdCI6MTY5NTA0MTk1Mn0.jknOjsKMbAwOmxC0_WHyTb85KXfA3hqsQ9ynsOs6FLKFD9Xw-Xz6YOx-OzEczc9bfZoh_UgrHhhjWhnw4axbWg",
+											"type": "string"
+										}
+									]
 								},
 								"method": "POST",
 								"header": [],
@@ -3203,6 +3233,24 @@
 							"response": []
 						},
 						{
+							"name": "Crontab Check Users Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/bot/check-users-tasks",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"bot",
+										"check-users-tasks"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Verify User Task",
 							"request": {
 								"method": "POST",
@@ -3218,24 +3266,6 @@
 										"1",
 										"twitter-task",
 										"2"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Check Users Tasks | CRONTJOB API",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-public}}/bot/check-users-tasks",
-									"host": [
-										"{{panel-public}}"
-									],
-									"path": [
-										"bot",
-										"check-users-tasks"
 									]
 								}
 							},

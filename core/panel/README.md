@@ -42,7 +42,6 @@
 - gallery public calls
     - get collections
     - get main room nfts of collection
-    - get main room nft info
 
 ### 🥞 Health Routes
 - check server status

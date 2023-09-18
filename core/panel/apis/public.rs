@@ -421,118 +421,15 @@ async fn check_users_tassk(
     }
 }
 
-#[get("/listener/start/tcp/{port}")]
-#[passport(admin, user, dev)]
-async fn start_tcp_server(
-        req: HttpRequest,  
-        port: web::Path<u16>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> PanelHttpResponse {
-
-    let storage = storage.as_ref().to_owned();
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
-
-    let (tcp_msg_sender, mut tcp_msg_receiver) = 
-        tokio::sync::oneshot::channel::<bool>();
-    
-    /* ----------------------------------------- */
-    /* starting a tcp listener in the background */
-    /* ----------------------------------------- */
-    // https://github.com/wildonion/redis4/blob/main/src/s4.rs
-    tokio::spawn(async move{
-
-        let bind_address = format!("0.0.0.0:{}", port.to_owned());
-        let mut api_listener = tokio::net::TcpListener::bind(bind_address.as_str()).await;
-        
-        if api_listener.is_ok(){
-            tcp_msg_sender.send(true);
-        } else{
-            tcp_msg_sender.send(false);
-        }
-
-        let api_listener = api_listener.unwrap();
-        info!("➔ 🚀 tcp listener is started");
-        while let Ok((mut api_streamer, addr)) = api_listener.accept().await{
-
-            info!("🍐 got peer connection from [{}]", addr.to_string());
-            tokio::spawn(async move{
-                
-                let mut buffer = vec![];
-                while match api_streamer.read(&mut buffer).await{
-                    Ok(size) if size == 0 => false,
-                    Ok(size) => {
-
-                        let data = "some stringified data".as_bytes();
-                        api_streamer.write_all(&data).await;
-                        
-                        true 
-
-                    },
-                    Err(e) => {
-
-                        info!("➔ terminating connection {}", api_streamer.peer_addr().unwrap());
-                        /* http server closes the connection after handling each task */
-                        if let Err(e) = api_streamer.shutdown().await{
-                            error!("➔ error in closing tcp connection");
-                        }
-                        
-                        false
-                    }
-                }{}
-
-            });
-
-        }
-        
-    }); 
-    
-    match tcp_msg_receiver.try_recv(){
-        Ok(flag) if flag => {
-            resp!{
-                &[u8], // response data
-                &[], // response message
-                CREATED,
-                StatusCode::OK, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-
-        },
-        Err(e) => {
-            resp!{
-                &[u8], // response data
-                &[], // response message
-                &e.to_string(),
-                StatusCode::EXPECTATION_FAILED, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        },
-        _ => {
-
-            resp!{
-                &[u8], // response data
-                &[], // response message
-                TCP_SERVER_ERROR,
-                StatusCode::EXPECTATION_FAILED, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-
-        },
-    }
-
-
-}
-
 
 pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_tassk;
     pub use super::get_token_value;
-    pub use super::start_tcp_server;
+    // https://docs.opensea.io/reference/api-overview
     /* 
     pub use super::get_posts; // /?from=1&to=10
     pub use super::get_collections; /?from=1&to=10
     pub use super::get_main_room_nfts_of_collection; // /?from=1&to=10
-    pub use super::get_main_room_nft_info;
     */
 }

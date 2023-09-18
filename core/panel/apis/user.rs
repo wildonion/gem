@@ -2940,6 +2940,7 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
+    // https://docs.opensea.io/reference/api-overview
     /*
     pub use super::verify_social_id; // update the social_id field
     pub use super::verify_account_number; // update the account_number field
@@ -2948,6 +2949,7 @@ pub mod exports{
     pub use super::like_post;
     pub use super::add_nft_comment;
     pub use super::like_nft;
+    pub use super::get_user_nfts;
     */
     /* ---------------------------------------------------- 
         user must pay token in following calls and 
@@ -2961,7 +2963,7 @@ pub mod exports{
     /*
     pub use super::give_stars_to;
     pub use super::send_invitation_link;
-    pub use super::get_private_room_info_of; // fetch private room info and nfts of a user, only user can see it
+    pub use super::get_private_room_nfts_info_of; // fetch private room info and nfts of a user, only user can see it
     pub use super::mint_nft; // goes to private room
     pub use super::add_offer_to; 
     pub use super::accept_offer; // pay with token
