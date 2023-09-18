@@ -813,7 +813,6 @@ macro_rules! storage {
         async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use crate::misc::*;
-use crate::misc::s3::*;
             use crate::misc::s3::*;
 
             /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
