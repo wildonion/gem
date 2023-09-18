@@ -438,8 +438,9 @@ impl User{
                         the token time will be set to zero and by logging 
                         in again a new token time will be initialized.
                     */
-                    if user.token_time.is_none() && /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
-                        user.token_time.unwrap() != _token_time{
+                    if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
+                        user.token_time.unwrap() != _token_time || 
+                        user.token_time.unwrap() == 0{ /* user did a logout! */
                         
                         let resp = Response{
                             data: Some(_id.to_owned()),
