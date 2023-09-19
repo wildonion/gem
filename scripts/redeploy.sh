@@ -23,9 +23,17 @@ echo "[?] Enter Ip Info Access Key: "
 read IPINFO_TOKEN
 echo IPINFO_TOKEN=$IPINFO_TOKEN >> .env
 
-echo "[?] Currency Layer Token: "
+echo "[?] Enter Currency Layer Token: "
 read CURRENCY_LAYER_TOKEN
 echo CURRENCY_LAYER_TOKEN=$CURRENCY_LAYER_TOKEN >> .env
+
+echo "[?] Enter PayPal Token: "
+read PAYPAL_TOKEN
+echo PAYPAL_TOKEN=$PAYPAL_TOKEN >> .env
+
+echo "[?] Enter Nft Port Token: "
+read NFTYPORT_TOKEN
+echo NFTYPORT_TOKEN=$NFTYPORT_TOKEN >> .env
 
 echo "[?] Enter SMTP Username: "
 read SMTP_USERNAME
@@ -107,13 +115,13 @@ else
     docker stop conse-panel-pg && docker rm -f conse-panel-pg
     docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
     docker stop conse-mafia && docker rm -f conse-mafia
-    docker stop thirdweb && docker rm -f thirdweb
+    docker stop nftport && docker rm -f nftport
+
+    sudo docker build -t nftport -f $(pwd)/infra/docker/nftport/Dockerfile . --no-cache
+    sudo docker run -d --restart unless-stopped --network gem --name nftport -p 7651:7650 nftport
 
     sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
-
-    sudo docker build -t thirdweb -f $(pwd)/infra/docker/thirdweb/Dockerfile . --no-cache
-    sudo docker run -d --restart unless-stopped --network gem --name thirdweb -p 7651:7650 thirdweb
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE

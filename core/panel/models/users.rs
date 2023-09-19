@@ -1520,7 +1520,7 @@ impl User{
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_balance");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -2125,6 +2125,110 @@ impl User{
             Err(e) => Err(e)
         }
 
+
+    }
+
+    pub async fn verify_paypal_id(
+        user_paypal_id: String,
+        owner_id: i32,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+    ) -> Result<UserData, PanelHttpResponse>{
+
+
+        // paypal api to verify user
+        // curl -v -X GET https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=openid \
+        // -H 'Authorization: Bearer <Access-Token>' \
+        // -H 'Content-Type: application/x-www-form-urlencoded'  
+        // ...
+
+        let verify_paypal_user_endpoint = format!("");
+
+        
+        let Ok(user) = User::find_by_id(owner_id, connection).await else{
+            let resp = Response{
+                data: Some(owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+
+        match diesel::update(users.find(user.id))
+            .set(paypal_id.eq(user_paypal_id))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "verify_paypal_id");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
 
     }
 

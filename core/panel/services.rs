@@ -111,6 +111,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::verify_mail_code);
     config.service(apis::user::exports::request_phone_code);
     config.service(apis::user::exports::verify_phone_code);
+    config.service(apis::user::exports::verify_paypal_id);
     config.service(apis::user::exports::charge_wallet);
     
     // other routs maybe ?

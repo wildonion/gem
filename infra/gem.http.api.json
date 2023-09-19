@@ -1966,49 +1966,6 @@
 								"description": "⚠️ ***This API needs God or Dev Access Level.***"
 							},
 							"response": []
-						},
-						{
-							"name": "Update Group Image",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzMTVmOTlhODk3OGQ3NjFlOTdhOWIzYSJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjk0MDAyNzAwLCJpYXQiOjE2NjI0NjY3MDB9.iHKLDg_HHuP6di-vPLS3OVlSOt7WaRhhNhYG9CqkoiqM41b1SBpnPDWI9FAFRCFcVuGpfqktSo87xaxVPWFJnQ",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "group_image",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{game}}/game/god/update/group/6308a9a8b013ad8289c28453/image",
-									"host": [
-										"{{game}}"
-									],
-									"path": [
-										"game",
-										"god",
-										"update",
-										"group",
-										"6308a9a8b013ad8289c28453",
-										"image"
-									]
-								},
-								"description": "⚠️ ***This API needs God or Dev Access Level.***\n\n*⚠️* ***Group id must be pass into the url param.***"
-							},
-							"response": []
 						}
 					]
 				},
@@ -2439,10 +2396,26 @@
 							"name": "Start TCP Listener",
 							"request": {
 								"auth": {
-									"type": "noauth"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NTEwODcwNDUzODYyMzAwMCwiZXhwIjoxNjk3NzAwNzA0LCJpYXQiOjE2OTUxMDg3MDR9.DpIbBdUCkBvE9GGaDUxFR3NCp8rarYp9r0pZNvhRPNbKx_CuK-Lfr0KBpV1_FNBih6OcQ1VeDX9uoOJQ5vCqaQ",
+											"type": "string"
+										}
+									]
 								},
 								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"data\": \"name=wildonion?age=26\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
 									"raw": "{{panel-admin}}/listener/start/tcp/2425",
 									"host": [
@@ -2652,7 +2625,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
+									"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2828,7 +2801,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0OTcxMDc4MTA4MTg3MDAwLCJleHAiOjE2OTc1NjMwNzgsImlhdCI6MTY5NDk3MTA3OH0.Spn_LPyTeQHk6wDoMY35ALlE4SfiFknLOu9XFiX8mWBPZdUUYw-F4iZ1RH5Ggbm00jyK3xNvaFL8EcugrmJR2Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MTUxMjMxMTA3MzExMDAwLCJleHAiOjE2OTc3NDMyMzEsImlhdCI6MTY5NTE1MTIzMX0.CA1cv3vwmRyZyW3Vol5_TPirwtkbdYS4dCECVoAEmrdSfrBp1dJ6wc1ES20G2lv9Wk6ygNruMHRAtuPXJxQdMA",
 											"type": "string"
 										}
 									]
@@ -2837,7 +2810,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"username\": \"deadkings\",\n    \"device_id\": \"111111\"\n}",
+									"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"000\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2865,7 +2838,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MTUxMDk1NzQ5OTQ0MDAwLCJleHAiOjE2OTc3NDMwOTUsImlhdCI6MTY5NTE1MTA5NX0.a0vnW5mKk9hxpO_C3NIk1IfFZlTqCuNLAZv0SurJj1VlB_JBlnpnxkYfdp7tgsGzF-ct99RXXPCIzLtT8gzq9w",
 											"type": "string"
 										}
 									]
@@ -2874,7 +2847,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient\": \"wildonion\",\n    \"from_cid\": \"03fd01287b99d4d82a6519653dea55cc8ec23893f52de99a669418cea5c46cc871\",\n    \"amount\": 5,\n    \"tx_signature\": \"30450221008ae4a8ffccd3e6fc1da6f826bae4a105bf5eae47663d7eafddd9a549524c02e202207491ce5dad37c3f0b2688dd81515bf6a6c1f4c00ff23a477513924ee8fd38350\"\n}",
+									"raw": "{\n    \"recipient\": \"wildonion\",\n    \"from_cid\": \"038fe86c4bfe4952fb6714eed7e94152bd68d671946bbdd181067fbe2521d52bc8\",\n    \"amount\": 5,\n    \"tx_signature\": \"30450221008ae4a8ffccd3e6fc1da6f826bae4a105bf5eae47663d7eafddd9a549524c02e202207491ce5dad37c3f0b2688dd81515bf6a6c1f4c00ff23a477513924ee8fd38350\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2882,16 +2855,14 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/deposit/to/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
 										"deposit",
-										"get",
-										"unclaimed",
-										"recipient",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"to",
+										"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
 									]
 								}
 							},
@@ -2922,12 +2893,14 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-user}}/withdraw",
+									"raw": "{{panel-user}}/withdraw/from/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
-										"withdraw"
+										"withdraw",
+										"from",
+										"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
 									]
 								}
 							},

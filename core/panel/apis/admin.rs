@@ -2426,6 +2426,7 @@ async fn get_all_users_withdrawals(
 async fn start_tcp_server(
         req: HttpRequest,  
         port: web::Path<u16>,
+        tcp_server_data: web::Json<TcpServerData>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -2469,6 +2470,7 @@ async fn start_tcp_server(
 
             let connection = &mut pg_pool.get().unwrap();
 
+            let tcp_server_data = tcp_server_data.to_owned();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
             match User::passport(req, granted_role, connection).await{
@@ -2502,18 +2504,25 @@ async fn start_tcp_server(
                     info!("➔ 🚀 tcp listener is started at [{}]", bind_address);
 
                     tokio::spawn(async move{
+                        
                         while let Ok((mut api_streamer, addr)) = api_listener.accept().await{
                     
                             info!("🍐 new peer connection from [{}]", addr.to_string());
                             
+                            /* cloning in each iteration to prevent from moving since we're using it inside inner tokio::spawn */
+                            let tcp_server_data = tcp_server_data.clone();
+                            
                             tokio::spawn(async move{
                                 let mut buffer = vec![];
                                 while match api_streamer.read(&mut buffer).await{
-                                    Ok(size) if size == 0 => false,
-                                    Ok(size) => {
+                                    Ok(rcvd_bytes) if rcvd_bytes == 0 => false,
+                                    Ok(rcvd_bytes) => {
                     
-                                        let data = "some stringified data".as_bytes();
-                                        api_streamer.write_all(&data).await;
+                                        let tcp_server_data = tcp_server_data.data.as_bytes(); /* create longer lifetime by cloning it */
+                                        api_streamer.write_all(&tcp_server_data).await;
+                                        
+                                        let string_data = std::str::from_utf8(&buffer[..rcvd_bytes]).unwrap();
+                                        info!("📺 received bytes: {}", string_data);
                                         
                                         true 
                     
@@ -2537,7 +2546,7 @@ async fn start_tcp_server(
                     resp!{
                         &[u8], // response data
                         &[], // response message
-                        CREATED,
+                        TCP_SERVER_STARTED,
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }
@@ -2591,6 +2600,12 @@ pub mod exports{
     pub use super::get_all_post_likes;
     pub use super::update_post_image;
     pub use super::verify_post_comment;
+    -----------------------------------------------------------------------
+    https://docs.nftport.xyz/reference/deploy-nft-product-contract
+    https://docs.nftport.xyz/reference/retrieve-nft-collection-contract
+    pub use super::create_limited_nft_contract; // useful for launchpad
+    pub use super::create_unlimited_contract; // a contract contains unlimted nfts
+    -----------------------------------------------------------------------
     */
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;

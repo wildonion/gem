@@ -2,6 +2,7 @@
 
 
 use crate::*;
+use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
 use crate::models::users_deposits::{UserDepositData, DecodedSignedDepositData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData, DecodedSignedWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -46,8 +47,8 @@ use wallexerr::Wallet;
         verify_twitter_account,
         tasks_report,
         make_cid,
-        deposit,
         withdraw,
+        deposit,
         get_all_user_withdrawals,
         get_all_user_deposits,
         get_recipient_unclaimed_deposits,
@@ -55,7 +56,8 @@ use wallexerr::Wallet;
         verify_mail_code,
         request_phone_code,
         verify_phone_code,
-        charge_wallet
+        verify_paypal_id,
+        charge_wallet,
     ),
     components(
         schemas(
@@ -549,7 +551,7 @@ async fn verify_mail_code(
         (status=500, description="Storage Issue", body=[u8])
     ),
     params(
-        ("mail" = String, Path, description = "user mail")
+        ("phone" = String, Path, description = "user phone")
     ),
     tag = "crate::apis::user",
 )]
@@ -787,6 +789,137 @@ async fn verify_phone_code(
                     let role = token_data.user_role;
                     
                     match User::check_phone_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
+                        
+                        Ok(updated_user) => {
+
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                PHONE_VERIFIED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+
+                            /* 
+                                🥝 response can be one of the following:
+
+                                - USER NOT FOUND RESPONE
+                                - MAIL CLIENT ERROR
+                            */
+                            resp
+
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[utoipa::path(
+    context_path = "/user",
+    request_body = CheckUserPhoneVerificationRequest,
+    responses(
+        (status=200, description="PayPal Id Verified Successfully", body=UserData),
+        (status=500, description="Storage Issue", body=[u8])
+    ),
+    params(
+        ("user_paypal_id" = String, Path, description = "user PayPal Id")
+    ),
+    tag = "crate::apis::user",
+)]
+#[post("/verify-paypal/{user_paypal_id}")]
+#[passport(user)]
+async fn verify_paypal_id(
+    req: HttpRequest,
+    user_paypal_id: web::Path<String>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+                    
+                    match User::verify_paypal_id(user_paypal_id.to_owned(), _id, connection).await{
                         
                         Ok(updated_user) => {
 
@@ -1862,10 +1995,11 @@ async fn make_cid(
         ("jwt" = [])
     )
 )]
-#[post("/deposit")]
+#[post("/deposit/to/{contract_address}")]
 #[passport(user)]
 async fn deposit(
     req: HttpRequest,
+    contract_address: web::Path<String>,
     deposit: web::Json<NewUserDepositRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -2048,7 +2182,7 @@ async fn deposit(
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
                             user for paying that price which is the deposit_object.amount field in deposit 
                             request body also if a user want to claim the card he gets paid by sending the exact
                             token that depositor has paid for to his wallet
@@ -2060,14 +2194,15 @@ async fn deposit(
 
                             let new_balance = user.balance.unwrap() - deposit_object.amount;
 
-                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = tokio::sync::mpsc::channel::<(String, String)>(1024);
+                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = 
+                                tokio::sync::mpsc::channel::<(String, String)>(1024);
                             let mut mint_tx_hash = String::from("");
                             let mut token_id = String::from("");
                             
                             /* 
                                 simd ops on u256 bits can be represented as an slice with 4 elements 
                                 each of type 64 bits or 8 bytes, also 256 bits is 64 chars in hex 
-                                and 32 bytes of utf8
+                                and 32 bytes of utf8 and  rust doesn't have u256
                             */
                             let u256 = web3::types::U256::from_str("0").unwrap().0;
 
@@ -2081,30 +2216,63 @@ async fn deposit(
                                     None::<Cookie<'_>>, // cookie
                                 }
                             }
+
+                            if recipient_info.cid.unwrap() == deposit_object.from_cid{
+
+                                resp!{
+                                    String, // the date type
+                                    deposit_object.from_cid, // the data itself
+                                    SENDER_CANT_BE_RECEIVER, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
                             let polygon_recipient_address = recipient_info.screen_cid.unwrap();
-                            let cloned_polygon_recipient_address = polygon_recipient_address.clone();
+                            /* 
+                                we're going to use the cloned version of polygon_recipient_address inside the tokio::spawn()
+                                async move inside tokio::spawn() captures this
+                            */
+                            let cloned_polygon_recipient_address = polygon_recipient_address.clone(); 
                             
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                            /* calling the thirdweb minting api to mint inside tokio green threadpool */
-                            /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                             tokio::task::spawn(async move{
+                                
+                                let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+                                let metadata_uri = upload_file_to_ipfs("assets/card.png", &nftport_token).await;
+
+                                // upload metadata to ipfs
+                                // ...
+
+                                let mut mint_data = HashMap::new();
+                                mint_data.insert("chain", "polygon");
+                                mint_data.insert("contract_address", &contract_address);
+                                mint_data.insert("metadata_uri", &metadata_uri);
+                                mint_data.insert("mint_to_address", &cloned_polygon_recipient_address);
+                                let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+                                let res = reqwest::Client::new()
+                                    .post(nftport_mint_endpoint.as_str())
+                                    .header("Authorization", nftport_token.as_str())
+                                    .json(&mint_data)
+                                    .send()
+                                    .await;
 
                                 
-                                let host = std::env::var("THIRDWEB_HOST").expect("⚠️ no thirdweb host variable set");
-                                let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
-                                let api_path = format!("http://{}:{}/mint/to/{}/{}", host, port, cloned_polygon_recipient_address.clone(), deposit_object.amount.to_string());
-                                let client = reqwest::Client::new();
-                                let res = client
-                                    .post(api_path.as_str())
-                                    .send()
-                                    .await
-                                    .unwrap();
+                                let mint_response = res.unwrap().json::<NftPortMintResponse>().await.unwrap();
+                                let mint_tx_hash = mint_response.transaction_hash;
                                 
-                                let mint_response = res.json::<ThirdwebMintResponse>().await.unwrap();
+                                let token_id_string = {
+
+                                    let nftport_get_nft_endpoint = format!("https://api.nftport.xyz/v0/mints/{}?chain=polygon", mint_tx_hash);
+                                    let res = reqwest::Client::new()
+                                        .post(nftport_get_nft_endpoint.as_str())
+                                        .header("Authorization", nftport_token.as_str())
+                                        .send()
+                                        .await;
+
+                                    let get_nft_response = res.unwrap().json::<NftPortGetNftResponse>().await.unwrap();
+                                    get_nft_response.token_id
                                 
-                                /* calling thirdweb python server to mint nft */
-                                let token_id_string = String::from(mint_response.token_id);
-                                let mint_tx_hash = mint_response.mint_tx_hash;
+                                };
                                 
                                 if mint_tx_hash.starts_with("0x"){
                                     mint_tx_hash_sender.send((mint_tx_hash, token_id_string)).await;
@@ -2359,10 +2527,11 @@ async fn get_all_user_deposits(
         ("jwt" = [])
     )
 )]
-#[post("/withdraw")]
+#[post("/withdraw/from/{contract_address}")]
 #[passport(user)]
 async fn withdraw(
     req: HttpRequest,
+    contract_address: web::Path<String>,
     withdraw: web::Json<NewUserWithdrawRequest>,
     storage: web::Data<Option<Arc<Storage>>>,
 ) -> PanelHttpResponse{
@@ -2546,28 +2715,31 @@ async fn withdraw(
                             }
                         }
 
-                        let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = tokio::sync::mpsc::channel::<String>(1024);
+                        let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = 
+                            tokio::sync::mpsc::channel::<String>(1024);
                         let mut burn_tx_hash = String::from("");
                         let token_id = deposit_info.nft_id;
                         
-                        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
-                        /* calling the thirdweb burning api to burn inside tokio green threadpool */
-                        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
                         tokio::task::spawn(async move{
 
-                            let host = std::env::var("THIRDWEB_HOST").expect("⚠️ no thirdweb host variable set");
-                            let port = std::env::var("THIRDWEB_PORT").expect("⚠️ no thirdweb port variable set").parse::<u16>().unwrap();
-                            let api_path = format!("http://{}:{}/burn/{}", host, port, token_id);
-                            let client = reqwest::Client::new();
-                            let res = client
-                                .post(api_path.as_str())
+                            let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+                                
+                            let mut burn_data = HashMap::new();
+                            burn_data.insert("chain", "polygon");
+                            burn_data.insert("contract_address", &contract_address);
+                            burn_data.insert("token_id", &token_id);
+                            let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+                            let res = reqwest::Client::new()
+                                .delete(nftport_burn_endpoint.as_str())
+                                .header("Authorization", nftport_token.as_str())
+                                .json(&burn_data)
                                 .send()
-                                .await
-                                .unwrap();
-                            
-                            let burn_response = res.json::<ThirdwebBurnResponse>().await.unwrap();
+                                .await;
 
-                            let burn_tx_hash = burn_response.burn_tx_hash;
+                            
+                            let burn_response = res.unwrap().json::<NftPortBurnResponse>().await.unwrap();
+                            let burn_tx_hash = burn_response.transaction_hash;
+
                             if burn_tx_hash.starts_with("0x"){
                                 burn_tx_hash_sender.send(burn_tx_hash).await;
                             }
@@ -2926,6 +3098,1208 @@ async fn get_recipient_unclaimed_deposits(
 
 }
 
+#[post("/contract/add/nft")]
+#[passport(user)]
+async fn add_nft_to_contract(
+    req: HttpRequest,
+    add_nft_to_contract_request: web::Json<NewUserAddNftToContractRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-add_nft_to_contract", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
+
+
+                        let get_secp256k1_pubkey = PublicKey::from_str(&add_nft_to_contract_request.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&add_nft_to_contract_request.tx_signature);
+                        
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_ENCODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let strigified_add_nft_to_contract_request = serde_json::json!({
+                            "from_cid": add_nft_to_contract_request.from_cid,
+                            "token_id": add_nft_to_contract_request.token_id,
+                            "contract_address": add_nft_to_contract_request.contract_address,
+                            "amount": add_nft_to_contract_request.amount,
+                        });
+
+                        /* verifying the data against the generated signature */
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_add_nft_to_contract_request.to_string().as_str(),
+                            &add_nft_to_contract_request.tx_signature, 
+                            &add_nft_to_contract_request.from_cid
+                        );
+
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            user for paying that price which is the add_nft_to_contract_request.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > add_nft_to_contract_request.amount{
+
+                            let new_balance = user.balance.unwrap() - add_nft_to_contract_request.amount;
+
+                            
+                            // it'll link the nft to the private room of the user and upload to ipfs, this doesn't mint it!
+                            // ...
+                            
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[post("/contract/create")]
+#[passport(user)]
+async fn create_contract(
+    req: HttpRequest,
+    create_contract_request: web::Json<NewUserContractRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-create_contract", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let create_contract_request = create_contract_request.to_owned();
+
+
+                        let get_secp256k1_pubkey = PublicKey::from_str(&create_contract_request.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&create_contract_request.tx_signature);
+                        
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_ENCODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let strigified_create_contract_request = serde_json::json!({
+                            "from_cid": create_contract_request.from_cid,
+                            "amount": create_contract_request.amount,
+                        });
+
+                        /* verifying the data against the generated signature */
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_create_contract_request.to_string().as_str(),
+                            &create_contract_request.tx_signature, 
+                            &create_contract_request.from_cid
+                        );
+
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            user for paying that price which is the create_contract_request.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > create_contract_request.amount{
+                            
+                            let new_balance = user.balance.unwrap() - create_contract_request.amount;
+
+                            // a user can create up to 10 contracts to show his products
+                            // create contract per user to put unlimited nft arts and products in it
+                            // this is the unlimited collection contract per user
+                            // this will create a public and private room for the user in which 
+                            // all created nfts and none minted ones are in private and all minted
+                            // nfts in public room.
+
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[post("/contract/advertise")]
+#[passport(user)]
+async fn advertise_contract(
+    req: HttpRequest,
+    advertise_request: web::Json<NewUserAdvertiseRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-advertise_contract", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let advertise_request = advertise_request.to_owned();
+
+
+                        let get_secp256k1_pubkey = PublicKey::from_str(&advertise_request.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&advertise_request.tx_signature);
+                        
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_ENCODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let strigified_advertise_request = serde_json::json!({
+                            "from_cid": advertise_request.from_cid,
+                            "contract_address": advertise_request.contract_address,
+                            "amount": advertise_request.amount,
+                        });
+
+                        /* verifying the data against the generated signature */
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_advertise_request.to_string().as_str(),
+                            &advertise_request.tx_signature, 
+                            &advertise_request.from_cid
+                        );
+
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            user for paying that price which is the advertise_request.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > advertise_request.amount{
+
+                            let new_balance = user.balance.unwrap() - advertise_request.amount;
+                            
+                             // advertise a contract
+
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[post("/contract/nft/mint")]
+#[passport(user)]
+async fn mint(
+    req: HttpRequest,
+    mint_request_object: web::Json<NewUserMintRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-mint", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let mint_request_object = mint_request_object.to_owned();
+
+                        let find_user_screen_cid = User::find_by_username(&mint_request_object.recipient, connection).await;
+                        let Ok(recipient_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                mint_request_object.recipient, // response data
+                                &RECIPIENT_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        let get_secp256k1_pubkey = PublicKey::from_str(&mint_request_object.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&mint_request_object.tx_signature);
+                        
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_ENCODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let strigified_mint_request_object = serde_json::json!({
+                            "from_cid": mint_request_object.from_cid,
+                            "recipient": mint_request_object.recipient,
+                            "contract_address": mint_request_object.contract_address,
+                            "amount": mint_request_object.amount,
+                        });
+
+                        /* verifying the data against the generated signature */
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_mint_request_object.to_string().as_str(),
+                            &mint_request_object.tx_signature, 
+                            &mint_request_object.from_cid
+                        );
+
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            user for paying that price which is the mint_request_object.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > mint_request_object.amount{
+
+                            let new_balance = user.balance.unwrap() - mint_request_object.amount;
+                            
+                            // it'll link the nft to the public room of recipient field
+
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[post("/contract/nft/burn")]
+#[passport(user)]
+async fn burn(
+    req: HttpRequest,
+    nft_burn_request: web::Json<NewUserNftBurnRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-burn", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* checking that the incoming request is already rate limited or not */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        /* making sure that the user has a full filled paypal id */
+                        let get_user = User::find_by_id(_id, connection).await;
+                        let Ok(user) = get_user else{
+                            let error_resp = get_user.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* if the phone wasn't verified user can't deposit */
+                        if user.phone_number.is_none() || 
+                        !user.is_phone_verified{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                NOT_VERIFIED_PHONE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let nft_burn_request = nft_burn_request.to_owned();
+
+
+                        let get_secp256k1_pubkey = PublicKey::from_str(&nft_burn_request.from_cid);
+                        let get_secp256k1_signature = Signature::from_str(&nft_burn_request.tx_signature);
+                        
+                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CID, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                SIGNATURE_ENCODE_ISSUE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        let strigified_nft_burn_request = serde_json::json!({
+                            "from_cid": nft_burn_request.from_cid,
+                            "token_id": nft_burn_request.token_id,
+                            "contract_address": nft_burn_request.contract_address,
+                            "amount": nft_burn_request.amount,
+                        });
+
+                        /* verifying the data against the generated signature */
+                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
+                            strigified_nft_burn_request.to_string().as_str(),
+                            &nft_burn_request.tx_signature, 
+                            &nft_burn_request.from_cid
+                        );
+
+
+                        let Ok(_) = get_verification else{
+
+                            let verification_error = get_verification.unwrap_err();
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &verification_error.to_string(), // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            user for paying that price which is the nft_burn_request.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > nft_burn_request.amount{
+
+                            let new_balance = user.balance.unwrap() - nft_burn_request.amount;
+                            
+                            // burn from contract, only the contract owner can call it
+
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
 
 pub mod exports{
     pub use super::login;
@@ -2940,40 +4314,37 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
-    // https://docs.opensea.io/reference/api-overview
+    pub use super::verify_paypal_id;
     /*
     pub use super::verify_social_id; // update the social_id field
     pub use super::verify_account_number; // update the account_number field
-    pub use super::verify_paypal_id; // update the paypal_id field
     pub use super::add_post_comment;
     pub use super::like_post;
     pub use super::add_nft_comment;
     pub use super::like_nft;
-    pub use super::get_user_nfts;
+    pub use super::give_stars_to;
+    pub use super::send_invitation_link;
+    pub use super::add_user_to_friend;
+    pub use super::remove_user_from_friend;
+    -----------------------------------------------------------------------
+    https://docs.nftport.xyz/reference/retrieve-nfts-owned-by-account
+    https://docs.nftport.xyz/reference/retrieve-contract-nfts
+    pub use super::get_none_minted_nfts_info_of; // those that are stored on ipfs but not minted
+    pub use super::get_minted_nfts_info_of; // those that are stored on ipfs and minted
+    -----------------------------------------------------------------------
     */
     /* ---------------------------------------------------- 
         user must pay token in following calls and 
         backend pay the gas fee with matic through 
-        thirdweb calls also followings need CID signature 
+        nftport calls also followings need CID signature 
         and user must sign the calls
     ------------------------------------------------------- */
-    pub use super::deposit;
-    pub use super::withdraw;
+    pub use super::deposit; /* nft card money transfer */
+    pub use super::withdraw; /* nft card money claim */
+    pub use super::mint;
+    pub use super::burn;
     pub use super::charge_wallet;
-    /*
-    pub use super::give_stars_to;
-    pub use super::send_invitation_link;
-    pub use super::get_private_room_nfts_info_of; // fetch private room info and nfts of a user, only user can see it
-    pub use super::mint_nft; // goes to private room
-    pub use super::add_offer_to; 
-    pub use super::accept_offer; // pay with token
-    pub use super::reject_offer; // pay back the token
-    pub use super::start_auction_on; 
-    pub use super::add_bid_on;
-    pub use super::sell_nft; 
-    pub use super::add_user_to_friend;
-    pub use super::remove_user_from_friend;
-    pub use super::advertise_collection;
-    pub use super::get_public_room_nfts_info_of; // fetch public room info and nfts of a user, only friends can see it
-    */
+    pub use super::create_contract;
+    pub use super::add_nft_to_contract;
+    pub use super::advertise_contract;
 }

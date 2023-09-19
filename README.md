@@ -69,7 +69,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * `core`: hyper, actix web HTTP and actix WS servers.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
-    * `thirdweb`: thirdweb NFT fastapi server contains minting and burning APIs.
+    * `nftport`: nftport fastapi server to upload file to ipfs.
     * `mafia`: mafia game APIs
         * `controllers`: in-game async controllers related to hyper server.
         * `routers`: in-game API routers related to hyper server.
@@ -88,7 +88,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * [Engines](https://conse.gitbook.io/engines)
 
-* [CID](https://conse.gitbook.io/cid)
+* [Crypto ID](https://conse.gitbook.io/cid)
 
 * [Reveal Role](https://conse.gitbook.io/reveal-role)
 

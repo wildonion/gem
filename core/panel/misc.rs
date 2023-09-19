@@ -14,6 +14,11 @@ use actix::Addr;
 
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct TcpServerData{
+    pub data: String,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AddGroupInfoToEvent{
     pub _id: String, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,
@@ -135,6 +140,29 @@ pub struct Quote{
 pub struct GetTokenValueResponse{
     pub irr: i64,
     pub usd: i64
+}
+
+pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> String{
+
+    let metadata_uri = {
+
+        let nftport_host = std::env::var("NFTPORT_HOST").unwrap();
+        let nftport_port = std::env::var("NFTPORT_PORT").unwrap();
+        let upload_ipfs_endpoint = format!("http://{}:{}/upload/{}", nftport_host, nftport_port, nftport_token);
+        let res = reqwest::Client::new()
+            .post(upload_ipfs_endpoint.as_str())
+            .send()
+            .await;
+
+        
+        let upload_ipf_response = res.unwrap().json::<NftPortUploadFileToIpfsResponse>().await.unwrap();
+
+        upload_ipf_response.res.ipfs_url
+
+    };
+
+    metadata_uri
+
 }
 
 pub fn gen_random_chars(size: u32) -> String{
@@ -316,16 +344,47 @@ pub struct TwitterAccounts{
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ThirdwebMintResponse{
-    pub mint_tx_hash: String,
-    pub token_id: String
+pub struct NftPortMintResponse{
+    pub response: String,
+    pub chain: String,
+    pub contract_address: String,
+    pub transaction_hash: String,
+    pub transaction_external_url: String,
+    pub metadata_uri: String,
+    pub mint_to_address: String
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ThirdwebBurnResponse{
-    pub burn_tx_hash: String,
+pub struct NftPortGetNftResponse{
+    pub response: String,
+    pub chain: String,
+    pub contract_address: String,
+    pub token_id: String,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NftPortBurnResponse{
+    pub response: String,
+    pub chain: String,
+    pub contract_address: String,
+    pub transaction_hash: String,
+    pub transaction_external_url: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NftPortUploadFileToIpfsResponse{
+    pub res: NftPortUploadFileToIpfsData
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NftPortUploadFileToIpfsData{
+    pub response: String,
+    pub ipfs_url: String,
+    pub file_name: String,
+    pub content_type: String,
+    pub file_size: String,
+    pub file_size_mb: String
+}
 
 /*  ----------------------
    | shared state storage 

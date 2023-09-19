@@ -1,5 +1,5 @@
 FROM python:3.9
-RUN pip install thirdweb-sdk fastapi uvicorn
+RUN pip install fastapi uvicorn requests
 
 RUN USER=root mkdir app
 
@@ -7,7 +7,7 @@ WORKDIR ./app
 
 ADD . ./
 
-WORKDIR /app/core/thirdweb
+WORKDIR /app/core/nftport
 
 EXPOSE 7650
 

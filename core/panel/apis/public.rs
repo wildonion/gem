@@ -426,10 +426,9 @@ pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_tassk;
     pub use super::get_token_value;
-    // https://docs.opensea.io/reference/api-overview
     /* 
-    pub use super::get_posts; // /?from=1&to=10
-    pub use super::get_collections; /?from=1&to=10
-    pub use super::get_main_room_nfts_of_collection; // /?from=1&to=10
+    pub use super::get_posts; // /?from=1&to=50
+    pub use super::get_all_contracts; // /?from=1&to=50
+    pub use super::get_all_minted_nfts_of_contract; // /?from=1&to=50
     */
 }

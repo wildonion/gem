@@ -73,6 +73,7 @@ pub static USER_NOT_FOUND: &str = "User Not Found";
 pub static INSUFFICIENT_FUNDS: &str = "Insufficient Balance";
 pub static RECIPIENT_NOT_FOUND: &str = "No Recipient Found With This Username";
 pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This Recipient";
+pub static SENDER_CANT_BE_RECEIVER: &str = "Sender Can't Be The Recipient";
 pub static USERNAME_CANT_BE_EMPTY: &str = "Username Can't Be Empty";
 pub static WALLET_CANT_BE_EMPTY: &str = "Wallet Can't Be Empty";
 pub static TASK_NOT_FOUND: &str = "Task Not Found";
@@ -95,6 +96,7 @@ pub static NOT_FOUND_COOKIE_TIME_HASH: &str = "No Time Hash Found In Cookie";
 pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
 pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
+pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";

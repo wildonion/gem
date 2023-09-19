@@ -13,9 +13,8 @@
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
-    - mint, sell (listing), offer, auction, 
-    - public and private room collections, 
-    - advertising collection
+    - mint, burn
+    - advertising contract
     - add comment on and like the nft
     - add/remove friend
 - buy in-app token (charge wallet)
@@ -40,8 +39,8 @@
 - get posts
 - get token price
 - gallery public calls
-    - get collections
-    - get main room nfts of collection
+    - get contracts
+    - get nfts of a contract 
 
 ### 🥞 Health Routes
 - check server status
@@ -63,5 +62,5 @@
 - phone verification 
 - account number and PayPal verification 
 - charge wallet for in-app transactions
-- depositor can call `deposit` method to transfer nft by spending in-app tokens from his wallet
-- withdrawer can call `withdraw` method to claim nft to update his in-app token balance
+- depositor can call `deposit` API to mint nft to a user by spending in-app tokens from his wallet
+- withdrawer can call `withdraw` API to burn nft to update his in-app token balance
