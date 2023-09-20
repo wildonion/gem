@@ -50,9 +50,11 @@
 
 ## 🔑 Tiny KYC Identity Verification Process
 
+> in each verification process 1 token will be given to the user.
+
 - first of all the `/user/login` API must be called to register a new user.
 - second of all the `/user/request-mail-code/{mail}` and `/user/verify-mail-code` APIs must be called to verify the user mail in order to create the **Crypto Id**.
-- then the `/user/cid/build` API must be called to upsert the fields, it'll create a new **Crypto Id** with the passed in `username` and `device_id`, on the first call and update `username` field only on the second call.
+- then the `/user/cid/build` API must be called to upsert the `username` and `region` fields, it'll create a new **Crypto Id** with the passed in `username` and `device_id`, on the first call and update `username` and `region` field (based on the location of the requested IP address) only on the second call.
 - finally we can call the `/user/request-phone-code/{phone}` and `/user/verify-phone-code` APIs to verify the user phone number which will send the **OTP** code from the IR or none-IR **OTP** provider based on the updated user region in previous step.
 
 ## 🧬 Deposit and Withdrawal Process

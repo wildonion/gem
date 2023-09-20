@@ -27,7 +27,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
 ```
 
-## 🍩 Panel APIs V0.1.3 Features
+## 🍩 Panel APIs V0.1.3 Infra Features
 
 * **🦀 Rust flows in you 🌊**: write codes that are the matter-of-future flows!
 

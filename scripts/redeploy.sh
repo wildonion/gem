@@ -35,6 +35,14 @@ echo "[?] Enter Nft Port Token: "
 read NFTYPORT_TOKEN
 echo NFTYPORT_TOKEN=$NFTYPORT_TOKEN >> .env
 
+echo "[?] Infra WS Polygon: "
+read INFRA_POLYGON_WS_ENDPOINT
+echo INFRA_POLYGON_WS_ENDPOINT=$INFRA_POLYGON_WS_ENDPOINT >> .env
+
+echo "[?] Infra HTTPS Polygon: "
+read INFRA_POLYGON_HTTPS_ENDPOINT
+echo INFRA_POLYGON_HTTPS_ENDPOINT=$INFRA_POLYGON_HTTPS_ENDPOINT >> .env
+
 echo "[?] Enter SMTP Username: "
 read SMTP_USERNAME
 echo SMTP_USERNAME=$SMTP_USERNAME >> .env
