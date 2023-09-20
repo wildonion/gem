@@ -2601,10 +2601,22 @@ pub mod exports{
     pub use super::update_post_image;
     pub use super::verify_post_comment;
     -----------------------------------------------------------------------
-    https://docs.nftport.xyz/reference/deploy-nft-product-contract
     https://docs.nftport.xyz/reference/retrieve-nft-collection-contract
-    pub use super::create_limited_nft_contract; // useful for chatroom launchpad (Collection Contracts) + set secondary sells amount and royalty address in contract
-    pub use super::create_unlimited_contract; // a contract contains unlimted nfts + set secondary sells amount and royalty address in contract
+    
+    >>> following calls require method signing <<<
+    
+    /*
+        https://docs.nftport.xyz/reference/deploy-nft-collection-contract 
+        useful for chatroom and event launchpad (Collection Contracts) + 
+        set secondary sells amount and royalty address in contract 
+    */
+    pub use super::create_limited_nft_contract; 
+    /* 
+        https://docs.nftport.xyz/reference/deploy-nft-product-contract
+        a contract contains unlimted nfts like gift cards and single products + 
+        set secondary sells amount and royalty address in contract 
+    */
+    pub use super::create_unlimited_contract;
     -----------------------------------------------------------------------
     */
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
