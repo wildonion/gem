@@ -10,6 +10,7 @@ use crate::constants::{CHARSET, APP_NAME};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
+use crate::models::users_withdrawals::NewUserWithdrawRequest;
 use actix::Addr;
 
 
@@ -164,8 +165,8 @@ pub async fn start_minting_card_process(
             /* upload metadata to ipfs */
             let mut custom_fields = HashMap::new();
             custom_fields.insert("amount".to_string(), deposit_object.amount.to_string());
-            let meta_name = format!("{} Card", APP_NAME);
-            let meta_desc = format!("Transferring {} Card to {}", APP_NAME, recipient_info.username);
+            let meta_name = format!("{} gift card with value of {} tokens", APP_NAME, deposit_object.amount);
+            let meta_desc = format!("Transferring a {} gift card to {}", APP_NAME, recipient_info.username);
             let upload_data = NftPortMintRequest{
                 name: meta_name,
                 description: meta_desc,
@@ -237,8 +238,47 @@ pub async fn start_minting_card_process(
 
 }
 
-pub async fn start_burning_card_process(){
-    
+pub async fn start_burning_card_process(
+        withdraw_object: NewUserWithdrawRequest, 
+        burn_tx_hash_sender: tokio::sync::mpsc::Sender<String>,
+        contract_address: String,
+        token_id: String,
+    ){
+
+    tokio::spawn(async move{
+
+        /* burn request */
+        let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+        let mut burn_data = HashMap::new();
+        burn_data.insert("chain", "polygon");
+        burn_data.insert("contract_address", &contract_address);
+        burn_data.insert("token_id", &token_id);
+        let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+        let res = reqwest::Client::new()
+            .delete(nftport_burn_endpoint.as_str())
+            .header("Authorization", nftport_token.as_str())
+            .json(&burn_data)
+            .send()
+            .await;
+
+        let burn_response = res.unwrap().json::<NftPortBurnResponse>().await.unwrap();
+
+        if burn_response.response == String::from("OK"){
+
+            let burn_tx_hash = burn_response.transaction_hash;
+
+            if burn_tx_hash.starts_with("0x"){
+                burn_tx_hash_sender.send(burn_tx_hash).await;
+            }
+
+        } else{
+            
+            burn_tx_hash_sender.send((String::from(""))).await;
+
+        }
+
+    });
+
 }
 
 pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> NftPortUploadFileToIpfsData{
