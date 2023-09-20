@@ -1541,10 +1541,11 @@ async fn charge_wallet(
                     
                     let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
 
+                        let pubkey_error = get_secp256k1_pubkey.unwrap_err();
                         resp!{
                             &[u8], // the data type
                             &[], // response data
-                            INVALID_CID, // response message
+                            &pubkey_error.to_string(), // response message
                             StatusCode::NOT_ACCEPTABLE, // status code
                             None::<Cookie<'_>>, // cookie
                         }
@@ -1553,10 +1554,11 @@ async fn charge_wallet(
 
                     let Ok(secp256k1_signature) = get_secp256k1_signature else{
 
+                        let sig_error = get_secp256k1_signature.unwrap_err();
                         resp!{
                             &[u8], // the data type
                             &[], // response data
-                            SIGNATURE_ENCODE_ISSUE, // response message
+                            &sig_error.to_string(), // response message
                             StatusCode::NOT_ACCEPTABLE, // status code
                             None::<Cookie<'_>>, // cookie
                         }
@@ -2125,64 +2127,11 @@ async fn deposit(
                             }
                         };
 
-                        let get_secp256k1_pubkey = PublicKey::from_str(&deposit_object.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&deposit_object.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_deposit_data = serde_json::json!({
-                            "recipient": deposit_object.recipient,
-                            "from_cid": deposit_object.from_cid,
-                            "amount": deposit_object.amount
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_deposit_data.to_string().as_str(),
-                            &deposit_object.tx_signature, 
-                            &deposit_object.from_cid
-                        );
-
-
-                        // let Ok(_) = get_verification else{
-
-                        //     let verification_error = get_verification.unwrap_err();
-                        //     resp!{
-                        //         &[u8], // the data type
-                        //         &[], // response data
-                        //         &verification_error.to_string(), // response message
-                        //         StatusCode::NOT_ACCEPTABLE, // status code
-                        //         None::<Cookie<'_>>, // cookie
-                        //     }
-
-                        // };
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the deposit_object.amount field in deposit 
                             request body also if a user want to claim the card he gets paid by sending the exact
                             token that depositor has paid for to his wallet
@@ -2605,59 +2554,6 @@ async fn withdraw(
                         
                         let withdraw_object = withdraw.to_owned();
 
-                        /* recipient_cid will be used to verify the signature only cause only the receiver can withdraw the deposited amount */
-                        let get_secp256k1_pubkey = PublicKey::from_str(&withdraw_object.recipient_cid);
-                        let get_secp256k1_signature = Signature::from_str(&withdraw_object.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_withdraw_data = serde_json::json!({
-                            "recipient_cid": withdraw_object.recipient_cid,
-                            "deposit_id": withdraw_object.deposit_id,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_withdraw_data.to_string().as_str(),
-                            &withdraw_object.tx_signature, 
-                            &withdraw_object.recipient_cid
-                        );
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
                         let Ok(deposit_info) = get_deposit_info else{
 
@@ -2679,34 +2575,15 @@ async fn withdraw(
 
                         let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = 
                             tokio::sync::mpsc::channel::<String>(1024);
-                        let mut burn_tx_hash = String::from("");
                         let token_id = deposit_info.nft_id;
+                        let mut burn_tx_hash = String::from("");
                         
-                        tokio::task::spawn(async move{
-
-                            let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
-                                
-                            let mut burn_data = HashMap::new();
-                            burn_data.insert("chain", "polygon");
-                            burn_data.insert("contract_address", &contract_address);
-                            burn_data.insert("token_id", &token_id);
-                            let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
-                            let res = reqwest::Client::new()
-                                .delete(nftport_burn_endpoint.as_str())
-                                .header("Authorization", nftport_token.as_str())
-                                .json(&burn_data)
-                                .send()
-                                .await;
-
-                            
-                            let burn_response = res.unwrap().json::<NftPortBurnResponse>().await.unwrap();
-                            let burn_tx_hash = burn_response.transaction_hash;
-
-                            if burn_tx_hash.starts_with("0x"){
-                                burn_tx_hash_sender.send(burn_tx_hash).await;
-                            }
-
-                        });
+                        start_burning_card_process(
+                            withdraw_object,
+                            burn_tx_hash_sender.clone(),
+                            contract_address.to_owned(), 
+                            token_id
+                        ).await;
 
                         /* receiving asyncly from the channel */
                         while let Some(tx_hash) = burn_tx_hash_receiver.recv().await{
@@ -3177,66 +3054,10 @@ async fn add_nft_to_contract(
 
                         let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
 
-
-                        let get_secp256k1_pubkey = PublicKey::from_str(&add_nft_to_contract_request.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&add_nft_to_contract_request.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_add_nft_to_contract_request = serde_json::json!({
-                            "from_cid": add_nft_to_contract_request.from_cid,
-                            "token_id": add_nft_to_contract_request.token_id,
-                            "contract_address": add_nft_to_contract_request.contract_address,
-                            "amount": add_nft_to_contract_request.amount,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_add_nft_to_contract_request.to_string().as_str(),
-                            &add_nft_to_contract_request.tx_signature, 
-                            &add_nft_to_contract_request.from_cid
-                        );
-
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the add_nft_to_contract_request.amount field in 
                             request body.
                         
@@ -3417,64 +3238,10 @@ async fn create_contract(
 
                         let create_contract_request = create_contract_request.to_owned();
 
-
-                        let get_secp256k1_pubkey = PublicKey::from_str(&create_contract_request.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&create_contract_request.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_create_contract_request = serde_json::json!({
-                            "from_cid": create_contract_request.from_cid,
-                            "amount": create_contract_request.amount,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_create_contract_request.to_string().as_str(),
-                            &create_contract_request.tx_signature, 
-                            &create_contract_request.from_cid
-                        );
-
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the create_contract_request.amount field in 
                             request body.
                         
@@ -3486,11 +3253,11 @@ async fn create_contract(
                             let new_balance = user.balance.unwrap() - create_contract_request.amount;
 
                             // a user can create up to 10 contracts to show his products
-                            // create contract per user to put unlimited nft arts and products in it
-                            // this is the unlimited collection contract per user
-                            // this will create a public and private room for the user in which 
-                            // all created nfts and none minted ones are in private and all minted
-                            // nfts in public room.
+                            // he can put unlimited nft arts and products in it
+                            // this also will create a public and private room for the user in which 
+                            // all created nfts (uploaded to ipfs) and none minted ones are in 
+                            // private and all minted nfts in public room.
+                            // https://docs.nftport.xyz/reference/deploy-nft-product-contract
 
                             todo!()
                             
@@ -3659,64 +3426,10 @@ async fn advertise_contract(
                         let advertise_request = advertise_request.to_owned();
 
 
-                        let get_secp256k1_pubkey = PublicKey::from_str(&advertise_request.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&advertise_request.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_advertise_request = serde_json::json!({
-                            "from_cid": advertise_request.from_cid,
-                            "contract_address": advertise_request.contract_address,
-                            "amount": advertise_request.amount,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_advertise_request.to_string().as_str(),
-                            &advertise_request.tx_signature, 
-                            &advertise_request.from_cid
-                        );
-
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the advertise_request.amount field in 
                             request body.
                         
@@ -3906,65 +3619,10 @@ async fn mint(
                             }
                         };
 
-                        let get_secp256k1_pubkey = PublicKey::from_str(&mint_request_object.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&mint_request_object.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_mint_request_object = serde_json::json!({
-                            "from_cid": mint_request_object.from_cid,
-                            "recipient": mint_request_object.recipient,
-                            "contract_address": mint_request_object.contract_address,
-                            "amount": mint_request_object.amount,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_mint_request_object.to_string().as_str(),
-                            &mint_request_object.tx_signature, 
-                            &mint_request_object.from_cid
-                        );
-
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the mint_request_object.amount field in 
                             request body.
                         
@@ -3976,6 +3634,7 @@ async fn mint(
                             let new_balance = user.balance.unwrap() - mint_request_object.amount;
                             
                             // it'll link the nft to the public room of recipient field
+                            // or the one who wants to mint the nft
 
                             todo!()
                             
@@ -4142,66 +3801,10 @@ async fn burn(
 
                         let nft_burn_request = nft_burn_request.to_owned();
 
-
-                        let get_secp256k1_pubkey = PublicKey::from_str(&nft_burn_request.from_cid);
-                        let get_secp256k1_signature = Signature::from_str(&nft_burn_request.tx_signature);
-                        
-                        let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                INVALID_CID, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                SIGNATURE_ENCODE_ISSUE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
-                        let strigified_nft_burn_request = serde_json::json!({
-                            "from_cid": nft_burn_request.from_cid,
-                            "token_id": nft_burn_request.token_id,
-                            "contract_address": nft_burn_request.contract_address,
-                            "amount": nft_burn_request.amount,
-                        });
-
-                        /* verifying the data against the generated signature */
-                        let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                            strigified_nft_burn_request.to_string().as_str(),
-                            &nft_burn_request.tx_signature, 
-                            &nft_burn_request.from_cid
-                        );
-
-
-                        let Ok(_) = get_verification else{
-
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        };
-
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the nft card price to charge the 
+                            to get the latest and exact equivalent token of the gift card price to charge the 
                             user for paying that price which is the nft_burn_request.amount field in 
                             request body.
                         
@@ -4301,8 +3904,14 @@ pub mod exports{
         nftport calls also followings need CID signature 
         and user must sign the calls
     ------------------------------------------------------- */
-    pub use super::deposit; /* nft card money transfer */
-    pub use super::withdraw; /* nft card money claim */
+    /* 
+    pub use super::create_proposal;
+    pub use super::create_event;
+    pub use super::vote_to_proposal;
+    pub use super::participate_in_event;
+    */
+    pub use super::deposit; /* gift card money transfer */
+    pub use super::withdraw; /* gift card money claim */
     pub use super::mint;
     pub use super::burn;
     pub use super::charge_wallet;

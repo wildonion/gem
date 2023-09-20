@@ -1770,9 +1770,15 @@ impl User{
                 );
             };
 
-
+            let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
             match diesel::update(users.find(user.id))
-                .set(phone_number.eq(new_phone))
+                .set(
+                    (
+                        phone_number.eq(new_phone),
+                        balance.eq(new_balance)
+                    )
+                    
+                )
                 .returning(FetchUser::as_returning())
                 .get_result(connection)
                 {
@@ -2134,15 +2140,6 @@ impl User{
     ) -> Result<UserData, PanelHttpResponse>{
 
 
-        // paypal api to verify user
-        // curl -v -X GET https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=openid \
-        // -H 'Authorization: Bearer <Access-Token>' \
-        // -H 'Content-Type: application/x-www-form-urlencoded'  
-        // ...
-
-        let verify_paypal_user_endpoint = format!("");
-
-        
         let Ok(user) = User::find_by_id(owner_id, connection).await else{
             let resp = Response{
                 data: Some(owner_id),
@@ -2154,80 +2151,107 @@ impl User{
             );
         };
 
+        let payapl_error_msg = "";
+        let paypal_response = {
 
-        match diesel::update(users.find(user.id))
-            .set(paypal_id.eq(user_paypal_id))
-            .returning(FetchUser::as_returning())
-            .get_result(connection)
-            {
-                Ok(updated_user) => {
-                    Ok(
-                        UserData { 
-                            id: updated_user.id, 
-                            region: updated_user.region.clone(),
-                            username: updated_user.clone().username, 
-                            activity_code: updated_user.clone().activity_code, 
-                            twitter_username: updated_user.clone().twitter_username, 
-                            facebook_username: updated_user.clone().facebook_username, 
-                            discord_username: updated_user.clone().discord_username, 
-                            identifier: updated_user.clone().identifier, 
-                            user_role: {
-                                match updated_user.user_role.clone(){
-                                    UserRole::Admin => "Admin".to_string(),
-                                    UserRole::User => "User".to_string(),
-                                    _ => "Dev".to_string(),
-                                }
-                            },
-                            token_time: updated_user.token_time,
-                            balance: updated_user.balance,
-                            last_login: { 
-                                if updated_user.last_login.is_some(){
-                                    Some(updated_user.last_login.unwrap().to_string())
-                                } else{
-                                    Some("".to_string())
-                                }
-                            },
-                            created_at: updated_user.created_at.to_string(),
-                            updated_at: updated_user.updated_at.to_string(),
-                            mail: updated_user.clone().mail,
-                            is_mail_verified: updated_user.is_mail_verified,
-                            is_phone_verified: updated_user.is_phone_verified,
-                            phone_number: updated_user.clone().phone_number,
-                            paypal_id: updated_user.clone().paypal_id,
-                            account_number: updated_user.clone().account_number,
-                            device_id: updated_user.clone().device_id,
-                            social_id: updated_user.clone().social_id,
-                            cid: updated_user.clone().cid,
-                            screen_cid: updated_user.clone().screen_cid,
-                            snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
-                        }
-                    )
-                },
-                Err(e) => {
-                    
-                    let resp_err = &e.to_string();
+            // paypal api to verify user
+            // curl -v -X GET https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=openid \
+            // -H 'Authorization: Bearer <Access-Token>' \
+            // -H 'Content-Type: application/x-www-form-urlencoded'  
+            // ...
 
+            let verify_paypal_user_endpoint = format!("");
+            200
+        };
 
-                    /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+        if paypal_response == 200{
+            
+            match diesel::update(users.find(user.id))
+                .set(paypal_id.eq(user_paypal_id))
+                .returning(FetchUser::as_returning())
+                .get_result(connection)
+                {
+                    Ok(updated_user) => {
+                        Ok(
+                            UserData { 
+                                id: updated_user.id, 
+                                region: updated_user.region.clone(),
+                                username: updated_user.clone().username, 
+                                activity_code: updated_user.clone().activity_code, 
+                                twitter_username: updated_user.clone().twitter_username, 
+                                facebook_username: updated_user.clone().facebook_username, 
+                                discord_username: updated_user.clone().discord_username, 
+                                identifier: updated_user.clone().identifier, 
+                                user_role: {
+                                    match updated_user.user_role.clone(){
+                                        UserRole::Admin => "Admin".to_string(),
+                                        UserRole::User => "User".to_string(),
+                                        _ => "Dev".to_string(),
+                                    }
+                                },
+                                token_time: updated_user.token_time,
+                                balance: updated_user.balance,
+                                last_login: { 
+                                    if updated_user.last_login.is_some(){
+                                        Some(updated_user.last_login.unwrap().to_string())
+                                    } else{
+                                        Some("".to_string())
+                                    }
+                                },
+                                created_at: updated_user.created_at.to_string(),
+                                updated_at: updated_user.updated_at.to_string(),
+                                mail: updated_user.clone().mail,
+                                is_mail_verified: updated_user.is_mail_verified,
+                                is_phone_verified: updated_user.is_phone_verified,
+                                phone_number: updated_user.clone().phone_number,
+                                paypal_id: updated_user.clone().paypal_id,
+                                account_number: updated_user.clone().account_number,
+                                device_id: updated_user.clone().device_id,
+                                social_id: updated_user.clone().social_id,
+                                cid: updated_user.clone().cid,
+                                screen_cid: updated_user.clone().screen_cid,
+                                snowflake_id: updated_user.snowflake_id,
+                                stars: updated_user.stars
+                            }
+                        )
+                    },
+                    Err(e) => {
                         
-                    let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "verify_paypal_id");
-                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: resp_err,
-                        status: 500
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-
+                        let resp_err = &e.to_string();
+    
+    
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "verify_paypal_id");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+    
+                    }
                 }
-            }
+
+        } else{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: payapl_error_msg,
+                status: 417
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            );
+        }
+
 
     }
 
@@ -2342,9 +2366,14 @@ impl User{
                 );
             };
 
-
+            let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
             match diesel::update(users.find(user.id))
-                .set(is_mail_verified.eq(true))
+                .set(
+                    (
+                        is_mail_verified.eq(true),
+                        balance.eq(new_balance)
+                    )
+                )
                 .returning(FetchUser::as_returning())
                 .get_result(connection)
                 {
@@ -2492,12 +2521,13 @@ impl User{
 
         if from.is_err() || to.is_err(){
 
-            let send_mail_error = from.unwrap_err();
-            // let send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
+            // let from_send_mail_error = from.unwrap_err();
+            // let to_send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
+            let final_err = format!("Invalid Sender Or Receiver Mail Address");
 
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: &send_mail_error.to_string(),
+                message: &final_err,
                 status: 417
             };
             return Err(
@@ -2810,8 +2840,77 @@ impl Id{
                     wallet.secp256k1_secret_key.as_ref().unwrap().as_str(), 
                     data_to_be_signed.to_string().as_str()
                 );
-                info!("test signature :::: {}", sig.to_string());
+                info!("test secp256k1 signature :::: {}", sig.to_string());
                 /* ------------------------------------------------ */
+
+                /* ------------------------------------------------ */
+                /*
+                   when the keccak256 hash of a transaction or data is signed, 
+                   v, r and s values are generated by the sender, the r and s values 
+                   are generated by the ECDSA algorithm, while v is set based on 
+                   the network and the key used to produce the signature.
+
+                   r and s: these are two 256-bit numbers that together form the actual signature.
+                   
+                   v: is known as the recovery id, its purpose is to recover 
+                      the public key from the signature, in Ethereum, v is often 
+                      either 27 or 28, and with EIP-155, it can also encode the 
+                      chain id to prevent replay attacks between different networks.
+                */
+                /* sample signing and verification using web3 */
+                let endpoint = env::var("INFRA_POLYGON_WS_ENDPOINT").unwrap();
+                let transport = transports::WebSocket::new(&endpoint).await.unwrap();
+                let web3_con = Web3::new(transport);
+                
+                let data_to_be_signed = serde_json::json!({
+                    "recipient": "wildonion",
+                    "from_cid": wallet.secp256k1_public_key,
+                    "amount": 5
+                });
+                
+                /* generating EVM based secret key from secp256k1 secret key */
+                let web3_sec = web3::signing::SecretKey::from_str(wallet.secp256k1_secret_key.as_ref().unwrap().as_str()).unwrap();
+                
+                /* signing the keccak256 hash of data */
+                let signed_data = web3_con.accounts().sign(
+                    web3_con.accounts().hash_message(data_to_be_signed.to_string().as_bytes()), 
+                    &web3_sec
+                );
+                
+                info!("web3 signed data {:?}", signed_data); 
+                
+                /* generating signature of the signed data */
+                // signature bytes schema: pub struct Bytes(pub Vec<u8>);
+                let sig_bytes = signed_data.signature.0.as_slice();
+                let sig_str = hex::encode(sig_bytes);
+                info!("test web3 signature :::: {}", sig_str);
+                let signature = web3::types::H520::from_str(sig_str.as_str()).unwrap(); /* 64 bytes signature */
+                
+                /* generating r */
+                let r = signed_data.r.0.as_slice();
+                let r_str = hex::encode(r);
+                info!("first 32 bytes of signature :::: {}", r_str);
+                let r = web3::types::H256::from_str(r_str.as_str()).unwrap(); /* first 256 bits or 32 bytes of signature */
+
+                /* generating s */
+                let s = signed_data.s.0.as_slice();
+                let s_str = hex::encode(s);
+                info!("second 32 bytes of signature :::: {}", s_str);
+                let s = web3::types::H256::from_str(s_str.as_str()).unwrap(); /* second 256 bits or 32 bytes of signature */
+
+                /* recovering public address from signature, r, s and hash and hash of the message */
+                let data_hash = web3_con.accounts().hash_message(data_to_be_signed.to_string().as_bytes()).to_string().as_bytes().to_vec();
+                let rec_msg = web3::types::RecoveryMessage::Data(data_hash);
+                let rec = web3::types::Recovery::new(rec_msg, signed_data.v.into(), r, s);
+                /* recovers the EVM based public address or screen_cid which was used to sign the given data */
+                let user_screen_cid = web3_con.accounts().recover(rec).unwrap();
+                info!("who has signed? :::: {}", user_screen_cid);
+
+                if user_screen_cid.to_string() == wallet.secp256k1_public_address.clone().unwrap(){
+                    info!("valid signature");
+                }
+                /* ------------------------------------------------ */
+
 
                 /* generating snowflake id */
                 let machine_id = std::env::var("MACHINE_ID").unwrap_or("1".to_string()).parse::<i32>().unwrap();
@@ -2860,7 +2959,8 @@ impl Id{
             make_cid api again to build it until we hit the jackpot!
         */
 
-        match User::update_balance(self.user_id, 5, connection).await{
+        let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
+        match User::update_balance(self.user_id, new_balance, connection).await{
 
             Ok(updated_user_data) => {
 
