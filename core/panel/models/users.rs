@@ -1985,8 +1985,7 @@ impl User{
 
             }
         };
-                
-        
+
         /* 
             we're borrowing the otp_request here to prevent it from moving 
             cause unwrap() takes the ownership of self 

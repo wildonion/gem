@@ -2166,18 +2166,18 @@ async fn deposit(
                         );
 
 
-                        let Ok(_) = get_verification else{
+                        // let Ok(_) = get_verification else{
 
-                            let verification_error = get_verification.unwrap_err();
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &verification_error.to_string(), // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
+                        //     let verification_error = get_verification.unwrap_err();
+                        //     resp!{
+                        //         &[u8], // the data type
+                        //         &[], // response data
+                        //         &verification_error.to_string(), // response message
+                        //         StatusCode::NOT_ACCEPTABLE, // status code
+                        //         None::<Cookie<'_>>, // cookie
+                        //     }
 
-                        };
+                        // };
 
                         /* 
 
@@ -2217,7 +2217,7 @@ async fn deposit(
                                 }
                             }
 
-                            if recipient_info.cid.unwrap() == deposit_object.from_cid{
+                            if recipient_info.cid.clone().unwrap() == deposit_object.from_cid{
 
                                 resp!{
                                     String, // the date type
@@ -2228,58 +2228,20 @@ async fn deposit(
                                 }
                             }
 
-                            let polygon_recipient_address = recipient_info.screen_cid.unwrap();
+                            let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
                             /* 
                                 we're going to use the cloned version of polygon_recipient_address inside the tokio::spawn()
                                 async move inside tokio::spawn() captures this
                             */
                             let cloned_polygon_recipient_address = polygon_recipient_address.clone(); 
                             
-                            tokio::task::spawn(async move{
-                                
-                                let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
-                                let metadata_uri = upload_file_to_ipfs("assets/card.png", &nftport_token).await;
-
-                                // upload metadata to ipfs
-                                // ...
-
-                                let mut mint_data = HashMap::new();
-                                mint_data.insert("chain", "polygon");
-                                mint_data.insert("contract_address", &contract_address);
-                                mint_data.insert("metadata_uri", &metadata_uri);
-                                mint_data.insert("mint_to_address", &cloned_polygon_recipient_address);
-                                let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
-                                let res = reqwest::Client::new()
-                                    .post(nftport_mint_endpoint.as_str())
-                                    .header("Authorization", nftport_token.as_str())
-                                    .json(&mint_data)
-                                    .send()
-                                    .await;
-
-                                
-                                let mint_response = res.unwrap().json::<NftPortMintResponse>().await.unwrap();
-                                let mint_tx_hash = mint_response.transaction_hash;
-                                
-                                let token_id_string = {
-
-                                    let nftport_get_nft_endpoint = format!("https://api.nftport.xyz/v0/mints/{}?chain=polygon", mint_tx_hash);
-                                    let res = reqwest::Client::new()
-                                        .post(nftport_get_nft_endpoint.as_str())
-                                        .header("Authorization", nftport_token.as_str())
-                                        .send()
-                                        .await;
-
-                                    let get_nft_response = res.unwrap().json::<NftPortGetNftResponse>().await.unwrap();
-                                    get_nft_response.token_id
-                                
-                                };
-                                
-                                if mint_tx_hash.starts_with("0x"){
-                                    mint_tx_hash_sender.send((mint_tx_hash, token_id_string)).await;
-                                }
-
-
-                            });
+                            start_minting_card_process(
+                                deposit_object.clone(), 
+                                mint_tx_hash_sender.clone(), 
+                                recipient_info.clone(),
+                                contract_address.clone(),
+                                cloned_polygon_recipient_address.clone()
+                            ).await;
 
                             /* receiving asyncly from the channel */
                             while let Some((tx_hash, tid)) = mint_tx_hash_receiver.recv().await{

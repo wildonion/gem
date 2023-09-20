@@ -6,9 +6,10 @@ use redis_async::client::PubsubConnection;
 use secp256k1::ecdsa::Signature;
 use secp256k1::{Secp256k1, All};
 use crate::*;
-use crate::constants::CHARSET;
+use crate::constants::{CHARSET, APP_NAME};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
+use crate::models::users_deposits::NewUserDepositRequest;
 use actix::Addr;
 
 
@@ -142,9 +143,107 @@ pub struct GetTokenValueResponse{
     pub usd: i64
 }
 
-pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> String{
+pub async fn start_minting_card_process(
+        deposit_object: NewUserDepositRequest, 
+        mint_tx_hash_sender: tokio::sync::mpsc::Sender<(String, String)>,
+        recipient_info: User,
+        contract_address: String,
+        cloned_polygon_recipient_address: String
+    ){
 
-    let metadata_uri = {
+    tokio::task::spawn(async move{
+                                
+        /* upload card to ipfs */
+        let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+        let metadata_uri = upload_file_to_ipfs("assets/card.png", &nftport_token).await;
+
+        if metadata_uri.response == String::from("OK"){
+
+            let metadata_uri = metadata_uri.ipfs_url;
+
+            /* upload metadata to ipfs */
+            let mut custom_fields = HashMap::new();
+            custom_fields.insert("amount".to_string(), deposit_object.amount.to_string());
+            let meta_name = format!("{} Card", APP_NAME);
+            let meta_desc = format!("Transferring {} Card to {}", APP_NAME, recipient_info.username);
+            let upload_data = NftPortMintRequest{
+                name: meta_name,
+                description: meta_desc,
+                file_url: metadata_uri,
+                custom_fields: serde_json::to_string(&custom_fields).unwrap()
+            };
+
+            let nftport_upload_meta_endpoint = format!("https://api.nftport.xyz/v0/metadata");
+            let res = reqwest::Client::new()
+                .post(nftport_upload_meta_endpoint.as_str())
+                .header("Authorization", nftport_token.as_str())
+                .json(&upload_data)
+                .send()
+                .await;
+
+            let upload_meta_response = res.unwrap().json::<NftPortUploadMetadataResponse>().await.unwrap();
+
+            if upload_meta_response.response == String::from("OK"){
+
+                /* mint request */
+                let mut mint_data = HashMap::new();
+                mint_data.insert("chain", "polygon");
+                mint_data.insert("contract_address", &contract_address);
+                mint_data.insert("metadata_uri", &upload_meta_response.metadata_uri);
+                mint_data.insert("mint_to_address", &cloned_polygon_recipient_address);
+                let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+                let res = reqwest::Client::new()
+                    .post(nftport_mint_endpoint.as_str())
+                    .header("Authorization", nftport_token.as_str())
+                    .json(&mint_data)
+                    .send()
+                    .await;
+        
+                let mint_response = res.unwrap().json::<NftPortMintResponse>().await.unwrap();
+                let mint_tx_hash = mint_response.transaction_hash;
+
+                if mint_response.response == String::from("OK"){
+
+                    let token_id_string = {
+            
+                        /* get minted nft info */
+                        let nftport_get_nft_endpoint = format!("https://api.nftport.xyz/v0/mints/{}?chain=polygon", mint_tx_hash);
+                        let res = reqwest::Client::new()
+                            .post(nftport_get_nft_endpoint.as_str())
+                            .header("Authorization", nftport_token.as_str())
+                            .send()
+                            .await;
+            
+                        let get_nft_response = res.unwrap().json::<NftPortGetNftResponse>().await.unwrap();
+                        get_nft_response.token_id
+                    
+                    };
+                    
+                    if mint_tx_hash.starts_with("0x"){
+                        mint_tx_hash_sender.send((mint_tx_hash, token_id_string)).await;
+                    }
+
+                }
+
+            }
+
+        } else{
+
+            mint_tx_hash_sender.send((String::from(""), String::from(""))).await;
+
+        }
+        
+    });
+
+}
+
+pub async fn start_burning_card_process(){
+    
+}
+
+pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> NftPortUploadFileToIpfsData{
+
+    let upload_ipf_response = {
 
         let nftport_host = std::env::var("NFTPORT_HOST").unwrap();
         let nftport_port = std::env::var("NFTPORT_PORT").unwrap();
@@ -157,11 +256,11 @@ pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> String{
         
         let upload_ipf_response = res.unwrap().json::<NftPortUploadFileToIpfsResponse>().await.unwrap();
 
-        upload_ipf_response.res.ipfs_url
+        upload_ipf_response.res
 
     };
 
-    metadata_uri
+    upload_ipf_response
 
 }
 
@@ -355,6 +454,14 @@ pub struct NftPortMintResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct NftPortMintRequest{
+    pub name: String,
+    pub description: String,
+    pub file_url: String,
+    pub custom_fields: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NftPortGetNftResponse{
     pub response: String,
     pub chain: String,
@@ -372,6 +479,19 @@ pub struct NftPortBurnResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct NftPortUploadMetadataResponse{
+    pub response: String,
+    pub metadata_uri: String,
+    pub name: String,
+    pub description: String,
+    pub file_url: String,
+    pub external_url: Option<String>,
+    pub animation_url: Option<String>,
+    pub custom_fields: Option<String>,
+    pub attributes: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct NftPortUploadFileToIpfsResponse{
     pub res: NftPortUploadFileToIpfsData
 }
@@ -382,8 +502,8 @@ pub struct NftPortUploadFileToIpfsData{
     pub ipfs_url: String,
     pub file_name: String,
     pub content_type: String,
-    pub file_size: String,
-    pub file_size_mb: String
+    pub file_size: i64,
+    pub file_size_mb: f64
 }
 
 /*  ----------------------

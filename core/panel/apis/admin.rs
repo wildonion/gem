@@ -2603,8 +2603,8 @@ pub mod exports{
     -----------------------------------------------------------------------
     https://docs.nftport.xyz/reference/deploy-nft-product-contract
     https://docs.nftport.xyz/reference/retrieve-nft-collection-contract
-    pub use super::create_limited_nft_contract; // useful for launchpad
-    pub use super::create_unlimited_contract; // a contract contains unlimted nfts
+    pub use super::create_limited_nft_contract; // useful for chatroom launchpad (Collection Contracts) + set secondary sells amount and royalty address in contract
+    pub use super::create_unlimited_contract; // a contract contains unlimted nfts + set secondary sells amount and royalty address in contract
     -----------------------------------------------------------------------
     */
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server

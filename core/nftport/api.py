@@ -21,4 +21,4 @@ def upload(access_token):
     
     print("response coming from nftport: ", response.json())
     
-    return {"res": response.json}
+    return {"res": response.json()}
