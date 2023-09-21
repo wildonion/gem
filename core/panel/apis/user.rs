@@ -2115,8 +2115,8 @@ async fn deposit(
 
                         let deposit_object = deposit.to_owned();
 
-                        let find_user_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
-                        let Ok(recipient_info) = find_user_screen_cid else{
+                        let find_recipient_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
+                        let Ok(recipient_info) = find_recipient_screen_cid else{
                             
                             resp!{
                                 String, // the data type
@@ -2127,13 +2127,13 @@ async fn deposit(
                             }
                         };
 
-                        let find_sender_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_sender_screen_cid = User::find_by_screen_cid(&deposit_object.from_cid, connection).await;
                         let Ok(sender_info) = find_sender_screen_cid else{
                             
                             resp!{
                                 String, // the data type
                                 deposit_object.from_cid, // response data
-                                &SENDER_NOT_FOUND, // response message
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
                                 StatusCode::NOT_FOUND, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
@@ -3099,7 +3099,7 @@ async fn add_nft_to_contract(
 
                         let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
 
-                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_user_screen_cid = User::find_by_screen_cid(&add_nft_to_contract_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -3312,7 +3312,7 @@ async fn create_contract(
 
                         let create_contract_request = create_contract_request.to_owned();
 
-                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_user_screen_cid = User::find_by_screen_cid(&create_contract_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -3528,7 +3528,7 @@ async fn advertise_contract(
 
                         let advertise_request = advertise_request.to_owned();
 
-                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_user_screen_cid = User::find_by_screen_cid(&advertise_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -3738,7 +3738,7 @@ async fn mint(
 
                         let mint_request_object = mint_request_object.to_owned();
 
-                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_user_screen_cid = User::find_by_screen_cid(&mint_request_object.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -3795,6 +3795,9 @@ async fn mint(
                             
                             // it'll link the nft to the public room of recipient field
                             // or the one who wants to mint the nft
+
+                            // create contract first, check contract addr, upload pics
+
 
                             todo!()
                             
@@ -3961,7 +3964,7 @@ async fn burn(
 
                         let nft_burn_request = nft_burn_request.to_owned();
 
-                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let find_user_screen_cid = User::find_by_screen_cid(&nft_burn_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -4005,6 +4008,7 @@ async fn burn(
                             let new_balance = user.balance.unwrap() - nft_burn_request.amount;
                             
                             // burn from contract, only the contract owner can call it
+                            // create contract first, check contract addr, upload pics
 
                             todo!()
                             
