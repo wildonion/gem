@@ -3,7 +3,7 @@
 
 use crate::*;
 use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
-use crate::models::users_deposits::{UserDepositData, DecodedSignedDepositData};
+use crate::models::users_deposits::UserDepositData;
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData, DecodedSignedWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
@@ -1536,61 +1536,36 @@ async fn charge_wallet(
                             return error_resp;
                     };
 
-                    let get_secp256k1_pubkey = PublicKey::from_str(&charge_wallet_request.buyer_cid);
-                    let get_secp256k1_signature = Signature::from_str(&charge_wallet_request.tx_signature);
-                    
-                    let Ok(secp256k1_pubkey) = get_secp256k1_pubkey else{
+                    /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.from_cid, connection).await;
+                    let Ok(user_info) = find_user_screen_cid else{
+                        
+                        resp!{
+                            String, // the data type
+                            charge_wallet_request_object.from_cid, // response data
+                            &USER_SCREEN_CID_NOT_FOUND, // response message
+                            StatusCode::NOT_FOUND, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    };
 
-                        let pubkey_error = get_secp256k1_pubkey.unwrap_err();
+                    let verification_res = wallet::evm::verify_signature(
+                        user_info.screen_cid.unwrap(), 
+                        charge_wallet_request_object.v as u64, 
+                        &charge_wallet_request_object.r, 
+                        &charge_wallet_request_object.s, 
+                        &charge_wallet_request_object.hash_data
+                    ).await;
+                    if verification_res.is_err(){
                         resp!{
                             &[u8], // the data type
                             &[], // response data
-                            &pubkey_error.to_string(), // response message
+                            &INVALID_SIGNATURE, // response message
                             StatusCode::NOT_ACCEPTABLE, // status code
                             None::<Cookie<'_>>, // cookie
                         }
+                    }
 
-                    };
-
-                    let Ok(secp256k1_signature) = get_secp256k1_signature else{
-
-                        let sig_error = get_secp256k1_signature.unwrap_err();
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            &sig_error.to_string(), // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    let strigified_deposit_data = serde_json::json!({
-                        "user_id": charge_wallet_request.user_id,
-                        "buyer_cid": charge_wallet_request.buyer_cid,
-                        "tokens": charge_wallet_request.tokens
-                    });
-
-                    /* verifying the data against the generated signature */
-                    let get_verification = Wallet::verify_secp256k1_signature_from_pubkey_str(
-                        strigified_deposit_data.to_string().as_str(),
-                        &charge_wallet_request.tx_signature, 
-                        &charge_wallet_request.buyer_cid
-                    );
-
-
-                    let Ok(_) = get_verification else{
-
-                        let verification_error = get_verification.unwrap_err();
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            &verification_error.to_string(), // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
 
                     if charge_wallet_request_object.tokens < 0 &&
                         charge_wallet_request_object.tokens < 5{
@@ -2127,6 +2102,7 @@ async fn deposit(
                             }
                         };
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_sender_screen_cid = User::find_by_screen_cid(&deposit_object.from_cid, connection).await;
                         let Ok(sender_info) = find_sender_screen_cid else{
                             
@@ -3099,6 +3075,7 @@ async fn add_nft_to_contract(
 
                         let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_user_screen_cid = User::find_by_screen_cid(&add_nft_to_contract_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3312,6 +3289,7 @@ async fn create_contract(
 
                         let create_contract_request = create_contract_request.to_owned();
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_user_screen_cid = User::find_by_screen_cid(&create_contract_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3528,6 +3506,7 @@ async fn advertise_contract(
 
                         let advertise_request = advertise_request.to_owned();
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_user_screen_cid = User::find_by_screen_cid(&advertise_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3738,6 +3717,7 @@ async fn mint(
 
                         let mint_request_object = mint_request_object.to_owned();
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_user_screen_cid = User::find_by_screen_cid(&mint_request_object.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3964,6 +3944,7 @@ async fn burn(
 
                         let nft_burn_request = nft_burn_request.to_owned();
 
+                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
                         let find_user_screen_cid = User::find_by_screen_cid(&nft_burn_request.from_cid, connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             

@@ -57,12 +57,6 @@ pub struct NewUserDepositRequest{
     pub r: String,
     pub hash_data: String,
 }
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
-pub struct DecodedSignedDepositData{
-    pub from_cid: String,
-    pub recipient_screen_cid: String,
-    pub amount: i64,
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct UserDepositData{
