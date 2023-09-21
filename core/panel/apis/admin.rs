@@ -2469,7 +2469,7 @@ async fn start_tcp_server(
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
-
+            
             let tcp_server_data = tcp_server_data.to_owned();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
@@ -2478,6 +2478,35 @@ async fn start_tcp_server(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    let find_user_screen_cid = User::find_by_screen_cid(&tcp_server_data.from_cid, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                tcp_server_data.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                    let verification_res = wallet::evm::verify_signature(
+                        user_info.screen_cid.unwrap(), 
+                        tcp_server_data.v as u64, 
+                        &tcp_server_data.r, 
+                        &tcp_server_data.s, 
+                        &tcp_server_data.hash_data
+                    ).await;
+                    if verification_res.is_err(){
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            &INVALID_SIGNATURE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    }
 
                     let (tcp_msg_sender, mut tcp_msg_receiver) = 
                         tokio::sync::mpsc::channel::<bool>(1024);
@@ -2504,43 +2533,43 @@ async fn start_tcp_server(
                     info!("➔ 🚀 tcp listener is started at [{}]", bind_address);
 
                     tokio::spawn(async move{
-                        
+
                         while let Ok((mut api_streamer, addr)) = api_listener.accept().await{
-                    
-                            info!("🍐 new peer connection from [{}]", addr.to_string());
-                            
-                            /* cloning in each iteration to prevent from moving since we're using it inside inner tokio::spawn */
+                            info!("🍐 new peer connection: [{}]", addr);
+
                             let tcp_server_data = tcp_server_data.clone();
-                            
-                            tokio::spawn(async move{
-                                let mut buffer = vec![];
-                                while match api_streamer.read(&mut buffer).await{
-                                    Ok(rcvd_bytes) if rcvd_bytes == 0 => false,
+
+                            tokio::spawn(async move {
+        
+                                let mut buffer = vec![0; 1024];
+
+                                while match api_streamer.read(&mut buffer).await {
+                                    Ok(rcvd_bytes) if rcvd_bytes == 0 => return,
                                     Ok(rcvd_bytes) => {
                     
-                                        let tcp_server_data = tcp_server_data.data.as_bytes(); /* create longer lifetime by cloning it */
-                                        api_streamer.write_all(&tcp_server_data).await;
-                                        
                                         let string_data = std::str::from_utf8(&buffer[..rcvd_bytes]).unwrap();
-                                        info!("📺 received bytes: {}", string_data);
-                                        
-                                        true 
+                                        info!("📺 received data from peer: {}", string_data);
                     
+                                        let send_tcp_server_data = tcp_server_data.data.clone();
+                                        if let Err(why) = api_streamer.write_all(&send_tcp_server_data.as_bytes()).await{
+                                            error!("❌ failed to write to api_streamer; {}", why);
+                                            return;
+                                        } else{
+                                            info!("🗃️ sent {}, wrote {} bytes to api_streamer", tcp_server_data.data.clone(), send_tcp_server_data.len());
+                                            return;
+                                        }
+                                    
                                     },
                                     Err(e) => {
-                    
-                                        info!("➔ terminating connection {}", api_streamer.peer_addr().unwrap());
-                                        /* http server closes the connection after handling each task */
-                                        if let Err(e) = api_streamer.shutdown().await{
-                                            error!("➔ error in closing tcp connection");
-                                        }
-                                        
-                                        false
+                                        error!("❌ failed to read from api_streamer; {:?}", e);
+                                        return;
                                     }
-                                }{} /* this is while closing the expression */
+                                    
+                                }{}
+                    
                             });
-                            
-                        }
+                        }{}
+                        
                     });
 
                     resp!{

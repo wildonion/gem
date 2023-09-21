@@ -23,7 +23,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
     gen_passwords();
 
-
     Ok(())
 
 }

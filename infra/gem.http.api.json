@@ -2409,7 +2409,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"data\": \"name=wildonion?age=26\"\n}",
+									"raw": "{\n    \"data\": \"name=wildonion?age=26\",\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"v\": 27,\n    \"r\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c4114\",\n    \"s\": \"75ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2417,14 +2417,11 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:7442/admin/listener/start/tcp/2425",
-									"protocol": "http",
+									"raw": "{{panel-admin}}/listener/start/tcp/2425",
 									"host": [
-										"localhost"
+										"{{panel-admin}}"
 									],
-									"port": "7442",
 									"path": [
-										"admin",
 										"listener",
 										"start",
 										"tcp",

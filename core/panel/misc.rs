@@ -10,7 +10,6 @@ use crate::constants::{CHARSET, APP_NAME};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
-use crate::models::users_withdrawals::NewUserWithdrawRequest;
 use actix::Addr;
 
 
@@ -18,6 +17,12 @@ use actix::Addr;
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct TcpServerData{
     pub data: String,
+    pub from_cid: String,
+    pub tx_signature: String,
+    pub v: u64,
+    pub s: String,
+    pub r: String,
+    pub hash_data: String,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]

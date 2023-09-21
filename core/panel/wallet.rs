@@ -58,6 +58,13 @@ pub mod evm{
         let sig_bytes = signed_data.signature.0.as_slice();
         let sig_str = hex::encode(sig_bytes);
         info!("web3 hex signature :::: {}", sig_str);
+
+        /* 
+            signature is a 520 bits or 65 bytes string which has 
+            130 hex chars inside of it and can be divided into 
+            two 256 bits or 32 bytes packs of hex string namely as
+            r and s.
+        */
         let signature = web3::types::H520::from_str(sig_str.as_str()).unwrap(); /* 64 bytes signature */
         info!("web3 signature :::: {}", signature);
         
