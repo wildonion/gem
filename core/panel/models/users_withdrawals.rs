@@ -36,11 +36,11 @@ pub struct UserWithdrawal { /* note that the ordering of fields must be the same
 pub struct NewUserWithdrawRequest{
     pub deposit_id: i32,
     pub recipient_cid: String,
-    /* 
-        this must be generated inside the client by signing the whole 
-        data body of this struct using the client private key 
-    */
-    pub tx_signature: String
+    pub tx_signature: String,
+    pub v: u64,
+    pub s: String,
+    pub r: String,
+    pub hash_data: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
@@ -55,10 +55,6 @@ pub struct NewUserWithdrawal{
     pub deposit_id: i32,
     pub recipient_cid: String,
     pub burn_tx_hash: String,
-    /* 
-        this must be generated inside the client by signing the whole 
-        data body of this struct using the client private key 
-    */
     pub tx_signature: String
 }
 

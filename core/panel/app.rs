@@ -103,6 +103,7 @@ use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
+mod wallet;
 mod apis;
 mod misc;
 mod constants;

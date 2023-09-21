@@ -2127,6 +2127,35 @@ async fn deposit(
                             }
                         };
 
+                        let find_sender_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(sender_info) = find_sender_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                deposit_object.from_cid, // response data
+                                &SENDER_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                        let verification_res = wallet::evm::verify_signature(
+                            sender_info.screen_cid.unwrap(), 
+                            deposit_object.v as u64, 
+                            &deposit_object.r, 
+                            &deposit_object.s, 
+                            &deposit_object.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                        
 
                         /* 
 
@@ -2561,6 +2590,23 @@ async fn withdraw(
                             return error;
                         };
 
+                        let verification_res = wallet::evm::verify_signature(
+                            deposit_info.recipient_screen_cid.clone(), 
+                            withdraw_object.v as u64, 
+                            &withdraw_object.r, 
+                            &withdraw_object.s, 
+                            &withdraw_object.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
                         let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
                         if deposit_info.recipient_screen_cid != polygon_recipient_address{
@@ -2579,7 +2625,6 @@ async fn withdraw(
                         let mut burn_tx_hash = String::from("");
                         
                         start_burning_card_process(
-                            withdraw_object,
                             burn_tx_hash_sender.clone(),
                             contract_address.to_owned(), 
                             token_id
@@ -3054,6 +3099,35 @@ async fn add_nft_to_contract(
 
                         let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
 
+                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                add_nft_to_contract_request.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+                        
+                        let verification_res = wallet::evm::verify_signature(
+                            user_info.screen_cid.unwrap(), 
+                            add_nft_to_contract_request.v as u64, 
+                            &add_nft_to_contract_request.r, 
+                            &add_nft_to_contract_request.s, 
+                            &add_nft_to_contract_request.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
@@ -3237,6 +3311,35 @@ async fn create_contract(
                         }
 
                         let create_contract_request = create_contract_request.to_owned();
+
+                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                create_contract_request.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+                        
+                        let verification_res = wallet::evm::verify_signature(
+                            user_info.screen_cid.unwrap(), 
+                            create_contract_request.v as u64, 
+                            &create_contract_request.r, 
+                            &create_contract_request.s, 
+                            &create_contract_request.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         /* 
 
@@ -3425,6 +3528,34 @@ async fn advertise_contract(
 
                         let advertise_request = advertise_request.to_owned();
 
+                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                advertise_request.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+                        
+                        let verification_res = wallet::evm::verify_signature(
+                            user_info.screen_cid.unwrap(), 
+                            advertise_request.v as u64, 
+                            &advertise_request.r, 
+                            &advertise_request.s, 
+                            &advertise_request.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         /* 
 
@@ -3606,6 +3737,35 @@ async fn mint(
                         }
 
                         let mint_request_object = mint_request_object.to_owned();
+
+                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                mint_request_object.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+                        
+                        let verification_res = wallet::evm::verify_signature(
+                            user_info.screen_cid.unwrap(), 
+                            mint_request_object.v as u64, 
+                            &mint_request_object.r, 
+                            &mint_request_object.s, 
+                            &mint_request_object.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         let find_user_screen_cid = User::find_by_username(&mint_request_object.recipient, connection).await;
                         let Ok(recipient_info) = find_user_screen_cid else{
@@ -3800,6 +3960,35 @@ async fn burn(
                         }
 
                         let nft_burn_request = nft_burn_request.to_owned();
+
+                        let find_user_screen_cid = User::find_by_id(_id, connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                nft_burn_request.from_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+                        
+                        let verification_res = wallet::evm::verify_signature(
+                            user_info.screen_cid.unwrap(), 
+                            nft_burn_request.v as u64, 
+                            &nft_burn_request.r, 
+                            &nft_burn_request.s, 
+                            &nft_burn_request.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         /* 
 

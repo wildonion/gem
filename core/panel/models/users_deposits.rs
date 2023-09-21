@@ -43,10 +43,6 @@ pub struct NewUserDeposit{
     pub amount: i64,
     pub nft_id: String,
     pub mint_tx_hash: String,
-    /* 
-        this must be generated inside the client by signing the whole 
-        data body of this struct using the client private key 
-    */
     pub tx_signature: String,
 }
 
@@ -55,11 +51,11 @@ pub struct NewUserDepositRequest{
     pub from_cid: String,
     pub recipient: String,
     pub amount: i64,
-    /* 
-        this must be generated inside the client by signing the whole 
-        data body of this struct using the client private key 
-    */
     pub tx_signature: String,
+    pub v: u64,
+    pub s: String,
+    pub r: String,
+    pub hash_data: String,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct DecodedSignedDepositData{
