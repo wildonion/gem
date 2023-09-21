@@ -1,12 +1,13 @@
 
 
 
+
 use crate::*;
 
 pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
-
+pub static INVALID_SIGNATURE: &str = "Invalid Signature";
 pub static INVALID_TOKEN_AMOUNT: &str = "Minimum Token Amounts Must Be 5";
 pub static CANT_CHARGE_WALLET: &str = "Can't Charge Wallet At The Moment, Try Again Later";
 pub static PAID_SUCCESSFULLY: &str = "Wallet Has Been Charged Successfully";
@@ -21,9 +22,7 @@ pub static CANT_BURN_CARD: &str = "Card Is Already Burnt";
 pub static ID_BUILT: &str = "New Crypto Id Built Successfully, Remember To Save Your `singer` and `mnemonic` Fields";
 pub static RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Crypto Id Record Updated Successfully";
-pub static SIGNATURE_ENCODE_ISSUE: &str = "Can't Encode Signature From String";
 pub static NO_DEPOSIT_FOR_THIS_RECIPIENT: &str = "No Deposit Found For The Passed In Recipient";
-pub static INVALID_CID: &str = "Can't Encode Crypto Id From String";
 pub static CID_HAS_NO_DEPOSIT_YET: &str = "This CID Has No Any Deposit Yet";
 pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Deposit Yet";
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";
@@ -31,6 +30,8 @@ pub static NOT_VERIFIED_MAIL: &str = "Mail Is Not Verified";
 pub static MAIL_VERIFICATION_CODE_SENT: &str = "Mail Verification Code Has Benn Sent Successfully";
 pub static EXPIRED_MAIL_CODE: &str = "Mail Code Has Been Expired";
 pub static INVALID_MAIL: &str = "Mail Is Invalid For This User";
+pub static MAIL_EXISTS: &str = "Mail Exists, Use Another Unique Mail Address";
+pub static PHONE_EXISTS: &str = "Phone Exists, Use Another Unique Phone Number";
 pub static INVALID_MAIL_CODE: &str = "Invalid Mail Code";
 pub static MAIL_VERIFIED: &str = "User Mail Has Been Verified Successfully";
 pub static NO_MAIL_FOR_THIS_USER: &str = "There Is No Verification Process For This Mail";
@@ -72,7 +73,9 @@ pub static DO_LOGIN: &str = "Invalid Token Time, Please Login To Generate New JW
 pub static USER_NOT_FOUND: &str = "User Not Found";
 pub static INSUFFICIENT_FUNDS: &str = "Insufficient Balance";
 pub static RECIPIENT_NOT_FOUND: &str = "No Recipient Found With This Username";
+pub static SENDER_NOT_FOUND: &str = "No Sender Found With This Id";
 pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This Recipient";
+pub static USER_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This User";
 pub static SENDER_CANT_BE_RECEIVER: &str = "Sender Can't Be The Recipient";
 pub static USERNAME_CANT_BE_EMPTY: &str = "Username Can't Be Empty";
 pub static WALLET_CANT_BE_EMPTY: &str = "Wallet Can't Be Empty";
