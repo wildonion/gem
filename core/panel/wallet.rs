@@ -86,19 +86,31 @@ pub mod evm{
         let web3_con = Web3::new(transport);
     
         /* generating r */
+        if web3::types::H256::from_str(r).is_err(){
+            return Err(false);
+        }
         let r = web3::types::H256::from_str(r).unwrap(); /* first 256 bits or 32 bytes of signature */
         info!("web3 first 32 bytes of signature :::: {}", r);
     
         /* generating s */
+        if web3::types::H256::from_str(s).is_err(){
+            return Err(false);
+        }
         let s = web3::types::H256::from_str(s).unwrap(); /* second 256 bits or 32 bytes of signature */
         info!("web3 second 32 bytes of signature :::: {}", s);
     
         /* recovering public address from signature, r, s and hash and hash of the message */
+        if hex::decode(data_hash).is_err(){
+            return Err(false);
+        }
         let data_hash = hex::decode(data_hash).unwrap();
         let rec_msg = web3::types::RecoveryMessage::Data(data_hash);
         let rec = web3::types::Recovery::new(rec_msg, v, r, s);
         
         /* recovers the EVM based public address or screen_cid which was used to sign the given data */
+        if web3_con.accounts().recover(rec.clone()).is_err(){
+            return Err(false);
+        }
         let user_screen_cidh160 = web3_con.accounts().recover(rec).unwrap().to_fixed_bytes();
         let user_screen_cid_hex = format!("0x{}", hex::encode(&user_screen_cidh160));
     
