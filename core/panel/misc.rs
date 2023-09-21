@@ -238,8 +238,7 @@ pub async fn start_minting_card_process(
 
 }
 
-pub async fn start_burning_card_process(
-        withdraw_object: NewUserWithdrawRequest, 
+pub async fn start_burning_card_process( 
         burn_tx_hash_sender: tokio::sync::mpsc::Sender<String>,
         contract_address: String,
         token_id: String,
