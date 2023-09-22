@@ -33,7 +33,7 @@ use crate::constants::*;
 use crate::misc;
 use hyper::{header, Body, Response, StatusCode};
 use crate::controllers::event::{
-                                add::{main as add_event, upload_img}, 
+                                add::{main as add_event}, 
                                 get::{all as all_events, 
                                       all_none_expired as get_all_none_expired_events,
                                       all_expired as get_all_expired_events,
@@ -118,7 +118,6 @@ pub async fn register() -> Router<Body, hyper::Error>{
         .post("/update/phases/add", insert_phase)
         .post("/reserve/mock", mock_reservation)
         .post("/reveal/roles", role)
-        .post("/update/:eventId/image", upload_img)
         .post("/simd", simd_ops)
         .any(not_found) // handling 404 request
         .build()

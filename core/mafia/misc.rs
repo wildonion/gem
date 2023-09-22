@@ -24,7 +24,6 @@ use routerify::Error;
 use crate::{constants::*, schemas};
 use serde::{Serialize, Deserialize};
 use borsh::{BorshDeserialize, BorshSerialize};
-use routerify_multipart::Multipart;
 use hyper::{Client as HyperClient, Response, Body, Uri, Server, server::conn::AddrIncoming};
 use async_trait::async_trait;
 use std::net::SocketAddr;
@@ -505,30 +504,6 @@ pub fn gen_random_idx(idx: usize) -> usize{
     } else{
         gen_random_idx(random::<u8>() as usize)
     }
-}
-
-
-
-pub async fn upload_asset(path: &str, mut payload: Multipart<'_>, doc_id: &String) -> Option<String>{ // parsing the incoming file stream into MultipartItem instances - Multipart struct takes a lifetime and we've passed an unnamed lifetime to that
-    
-    // https://github.com/hyperium/hyper/blob/master/examples/send_file.rs
-
-    fs::create_dir_all(path).unwrap(); // creating the directory which must be contains the file
-    let mut filename = "".to_string();
-    let mut filepath = "".to_string();
-    while let Some(mut field) = payload.next_field().await.map_err(|err| Error::wrap(err)).unwrap(){ // reading the next field which contains IO stream future object of utf8 bytes of the payload is a mutable process and due to this fact we've defined the payload as a mutable type; we've mapped each incoming utf8 bytes future into an error if there was any error on reading them 
-        let field_name = field.name(); // getting the field's name if provided in "Content-Disposition" header from the client
-        let field_file_name = field.file_name(); // getting the field's filename if provided in "Content-Disposition" header from the client
-        filename = format!("{} - {}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), field_file_name.unwrap()); // creating the new filename with the server time
-        filepath = format!("{}/{}/{}", path, doc_id, sanitize_filename::sanitize(&filename)); // creating the new file path with the sanitized filename and the passed in document id
-        let mut buffer_file = fs::File::create(filepath.clone()).unwrap();
-        while let Some(chunk) = field.chunk().await.map_err(|err| Error::wrap(err)).unwrap(){ // mapping the incoming IO stream of futre object which contains utf8 bytes into a file
-            buffer_file.write_all(&chunk).unwrap(); // filling the buffer_file with incoming chunks from each field and write itnto the server hard
-        } // this field will be dropped in here to get the next field
-    }
-    
-    Some(filepath)
-
 }
 
 

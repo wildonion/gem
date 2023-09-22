@@ -38,7 +38,7 @@ use crate::controllers::game::{
                                          get_single, get_player_role_ability, get_player_chain_infos, cast_vote_on_player,
                                          get_single_god_vote, get_all_god_votes
                                         }, 
-                                group::{create as create_group, all as get_groups, upload_img, god_all_groups as get_all_god_groups},
+                                group::{create as create_group, all as get_groups, god_all_groups as get_all_god_groups},
                                 _404::main as not_found,
                             };
 
@@ -107,7 +107,6 @@ pub async fn register() -> Router<Body, hyper::Error>{
         .post("/player/get/god-vote/all", get_all_god_votes)
         .post("/god/create/group", create_group)
         .post("/god/cast-vote", cast_vote_on_player)
-        .post("/god/update/group/:groupId/image", upload_img)
         .post("/god/get/group/all", get_all_god_groups)
         .get("/get/group/all", get_groups)
         .any(not_found) // handling 404 request

@@ -1536,7 +1536,10 @@ async fn charge_wallet(
                             return error_resp;
                     };
 
-                    /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                    /* 
+                        first we'll try to find the a user with the passed in screen_cid 
+                        generated from keccak256 of cid then we'll go for the verification process 
+                    */
                     let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.from_cid, connection).await;
                     let Ok(user_info) = find_user_screen_cid else{
                         
@@ -2102,7 +2105,10 @@ async fn deposit(
                             }
                         };
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_sender_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(deposit_object.from_cid.clone()), connection).await;
                         let Ok(sender_info) = find_sender_screen_cid else{
                             
@@ -3075,7 +3081,10 @@ async fn add_nft_to_contract(
 
                         let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(add_nft_to_contract_request.from_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3289,7 +3298,10 @@ async fn create_contract(
 
                         let create_contract_request = create_contract_request.to_owned();
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(create_contract_request.from_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3506,7 +3518,10 @@ async fn advertise_contract(
 
                         let advertise_request = advertise_request.to_owned();
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(advertise_request.from_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3717,7 +3732,10 @@ async fn mint(
 
                         let mint_request_object = mint_request_object.to_owned();
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(mint_request_object.from_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
@@ -3944,7 +3962,10 @@ async fn burn(
 
                         let nft_burn_request = nft_burn_request.to_owned();
 
-                        /* first we'll try to find the a user with the passed in cid then we'll go for the verification process */
+                        /* 
+                            first we'll try to find the a user with the passed in screen_cid 
+                            generated from keccak256 of cid then we'll go for the verification process 
+                        */
                         let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(nft_burn_request.from_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             

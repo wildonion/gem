@@ -2215,9 +2215,7 @@ impl User{
         let paypal_response = {
 
             // paypal api to verify user
-            // curl -v -X GET https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=openid \
-            // -H 'Authorization: Bearer <Access-Token>' \
-            // -H 'Content-Type: application/x-www-form-urlencoded'  
+            // https://stackoverflow.com/questions/20570566/paypal-api-verify-that-an-account-is-valid-exists-verified
             // ...
 
             let verify_paypal_user_endpoint = format!("");

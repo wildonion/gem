@@ -2514,7 +2514,6 @@ async fn start_tcp_server(
                     /* ----------------------------------------- */
                     /* starting a tcp listener in the background */
                     /* ----------------------------------------- */
-                    // https://github.com/wildonion/redis4/blob/main/src/s4.rs
 
                     let bind_address = format!("0.0.0.0:{}", port.to_owned());
                     let mut api_listener = tokio::net::TcpListener::bind(bind_address.as_str()).await;
