@@ -31,6 +31,15 @@ pub mod evm{
     
     pub async fn sign(wallet: Wallet, data: &str) -> (SignedData, String){
     
+        trait Transport{}
+        struct Account<'a, T> where T: Transport{
+            pub data: std::rc::Rc<std::cell::RefCell<&'a [u8]>>,
+            pub transport: T
+        }
+        impl<'a, T: Transport> Account<'a, T>{
+
+        }
+
         let endpoint = env::var("INFURA_POLYGON_WS_ENDPOINT").unwrap();
         let transport = transports::WebSocket::new(&endpoint).await.unwrap();
         let web3_con = Web3::new(transport);
@@ -75,9 +84,7 @@ pub mod evm{
     
     pub async fn verify_signature(
         sender: String,
-        v: u64,
-        r: &str,
-        s: &str,
+        sig: &str,
         data_hash: &str
     ) -> Result<bool, bool>{
     
@@ -85,36 +92,26 @@ pub mod evm{
         let transport = transports::WebSocket::new(&endpoint).await.unwrap();
         let web3_con = Web3::new(transport);
     
-        /* generating r */
-        if web3::types::H256::from_str(r).is_err(){
-            return Err(false);
-        }
-        let r = web3::types::H256::from_str(r).unwrap(); /* first 256 bits or 32 bytes of signature */
-        info!("web3 first 32 bytes of signature :::: {}", r);
-    
-        /* generating s */
-        if web3::types::H256::from_str(s).is_err(){
-            return Err(false);
-        }
-        let s = web3::types::H256::from_str(s).unwrap(); /* second 256 bits or 32 bytes of signature */
-        info!("web3 second 32 bytes of signature :::: {}", s);
-    
-        /* recovering public address from signature, r, s and hash and hash of the message */
-        if hex::decode(data_hash).is_err(){
-            return Err(false);
-        }
-        let data_hash = hex::decode(data_hash).unwrap();
-        let rec_msg = web3::types::RecoveryMessage::Data(data_hash);
-        let rec = web3::types::Recovery::new(rec_msg, v, r, s);
+        /* recovering public address from signature and hash of the message */
+        let data_hash = match hex::decode(data_hash){
+            Ok(hash) => hash,
+            Err(e) => return Err(false),
+        };
+        let rec_msg = web3::types::RecoveryMessage::Data(data_hash.clone());
+
+        /* signature is a 65 bytes or 520 bits hex string contains 64 bytes of r + s (32 byte each) and a byte in the last which is v */
+        let rec = web3::types::Recovery::from_raw_signature(rec_msg, hex::decode(sig).unwrap()).unwrap();
+        
+        info!("web3 recovery object {:?}", rec);
         
         /* recovers the EVM based public address or screen_cid which was used to sign the given data */
         if web3_con.accounts().recover(rec.clone()).is_err(){
             return Err(false);
         }
-        let user_screen_cidh160 = web3_con.accounts().recover(rec).unwrap().to_fixed_bytes();
-        let user_screen_cid_hex = format!("0x{}", hex::encode(&user_screen_cidh160));
+        let recovered_screen_cidh160 = web3_con.accounts().recover(rec).unwrap().to_fixed_bytes();
+        let recovered_screen_cid_hex = format!("0x{}", hex::encode(&recovered_screen_cidh160));
     
-        if sender == user_screen_cid_hex{
+        if sender == recovered_screen_cid_hex{
             Ok(true)
         } else{
             Err(false)

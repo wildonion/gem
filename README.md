@@ -5,9 +5,8 @@
 
 Conse is a crypto based friendly gathering **Game Event Manager** and advertising platform on top of Polygon uses the following engines: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
-- behavioural graph virtual machine [**GVM**](https://github.com/wildonion/gvm) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in which players get rewarded based on their scores and positions then update the balance field of the user based on those attributes.
-- match making rating (**MMR**) graph engine which is a weighted tree that suggests players events and other games based on their past experiences, scores and earned tokens during the game.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
+- behavioural graph virtual machine (**GVM**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in essence, each player gets rewarded and ranked based on their scores and in-game positions then the `balance` field will be updated based on those attributes, the match making rating (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games based on their past experiences, scores, tokens and rewards earned using **GVM** during the game.
 
 ## 🚟 Infra Routes and APIs
 

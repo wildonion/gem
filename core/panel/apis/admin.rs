@@ -2493,9 +2493,7 @@ async fn start_tcp_server(
 
                     let verification_res = wallet::evm::verify_signature(
                         user_info.screen_cid.unwrap(), 
-                        tcp_server_data.v as u64, 
-                        &tcp_server_data.r, 
-                        &tcp_server_data.s, 
+                        &tcp_server_data.tx_signature,
                         &tcp_server_data.hash_data
                     ).await;
                     if verification_res.is_err(){

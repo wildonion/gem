@@ -1553,10 +1553,8 @@ async fn charge_wallet(
                     };
 
                     let verification_res = wallet::evm::verify_signature(
-                        user_info.screen_cid.unwrap(), 
-                        charge_wallet_request_object.v as u64, 
-                        &charge_wallet_request_object.r, 
-                        &charge_wallet_request_object.s, 
+                        user_info.screen_cid.unwrap(),
+                        &charge_wallet_request.tx_signature,
                         &charge_wallet_request_object.hash_data
                     ).await;
                     if verification_res.is_err(){
@@ -2123,9 +2121,7 @@ async fn deposit(
 
                         let verification_res = wallet::evm::verify_signature(
                             sender_info.screen_cid.unwrap(), 
-                            deposit_object.v as u64, 
-                            &deposit_object.r, 
-                            &deposit_object.s, 
+                            deposit_object.tx_signature.as_str(),
                             &deposit_object.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -2574,9 +2570,7 @@ async fn withdraw(
 
                         let verification_res = wallet::evm::verify_signature(
                             deposit_info.recipient_screen_cid.clone(), 
-                            withdraw_object.v as u64, 
-                            &withdraw_object.r, 
-                            &withdraw_object.s, 
+                            &withdraw_object.tx_signature,
                             &withdraw_object.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -3099,9 +3093,7 @@ async fn add_nft_to_contract(
                         
                         let verification_res = wallet::evm::verify_signature(
                             user_info.screen_cid.unwrap(), 
-                            add_nft_to_contract_request.v as u64, 
-                            &add_nft_to_contract_request.r, 
-                            &add_nft_to_contract_request.s, 
+                            &add_nft_to_contract_request.tx_signature,
                             &add_nft_to_contract_request.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -3128,7 +3120,7 @@ async fn add_nft_to_contract(
 
                             let new_balance = user.balance.unwrap() - add_nft_to_contract_request.amount;
 
-                            
+                            // a user can have multiple public and one private room which contains multiple collections
                             // it'll link the nft to the private room of the user and upload to ipfs, this doesn't mint it!
                             // ...
                             
@@ -3315,10 +3307,8 @@ async fn create_contract(
                         };
                         
                         let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(), 
-                            create_contract_request.v as u64, 
-                            &create_contract_request.r, 
-                            &create_contract_request.s, 
+                            user_info.screen_cid.unwrap(),
+                            &create_contract_request.tx_signature,
                             &create_contract_request.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -3535,10 +3525,8 @@ async fn advertise_contract(
                         };
                         
                         let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(), 
-                            advertise_request.v as u64, 
-                            &advertise_request.r, 
-                            &advertise_request.s, 
+                            user_info.screen_cid.unwrap(),
+                            &advertise_request.tx_signature,
                             &advertise_request.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -3750,9 +3738,7 @@ async fn mint(
                         
                         let verification_res = wallet::evm::verify_signature(
                             user_info.screen_cid.unwrap(), 
-                            mint_request_object.v as u64, 
-                            &mint_request_object.r, 
-                            &mint_request_object.s, 
+                            &mint_request_object.tx_signature,
                             &mint_request_object.hash_data
                         ).await;
                         if verification_res.is_err(){
@@ -3980,9 +3966,7 @@ async fn burn(
                         
                         let verification_res = wallet::evm::verify_signature(
                             user_info.screen_cid.unwrap(), 
-                            nft_burn_request.v as u64, 
-                            &nft_burn_request.r, 
-                            &nft_burn_request.s, 
+                            &nft_burn_request.tx_signature,
                             &nft_burn_request.hash_data
                         ).await;
                         if verification_res.is_err(){

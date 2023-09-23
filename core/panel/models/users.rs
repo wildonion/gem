@@ -163,9 +163,6 @@ pub struct ChargeWalletRequest{
     pub tokens: i64,
     pub from_cid: String,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
@@ -2924,10 +2921,8 @@ impl Id{
                 info!("hash data :::: {}", sign_res.1);
 
                 let verification_res = wallet::evm::verify_signature(
-                    wallet.secp256k1_public_address.as_ref().unwrap().to_string(), 
-                    signed_data.v as u64, 
-                    hex::encode(&signed_data.r.0).as_str(), 
-                    hex::encode(&signed_data.s.0).as_str(), 
+                    wallet.secp256k1_public_address.as_ref().unwrap().to_string(),
+                    hex::encode(&signed_data.signature.0).as_str(),
                     sign_res.1.as_str()
                 ).await;
                 

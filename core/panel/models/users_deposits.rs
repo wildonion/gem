@@ -52,9 +52,6 @@ pub struct NewUserDepositRequest{
     pub recipient: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 

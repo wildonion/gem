@@ -21,9 +21,6 @@ pub struct NewUserMintRequest{
     pub contract_address: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
@@ -34,9 +31,6 @@ pub struct NewUserNftBurnRequest{
     pub contract_address: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
@@ -46,9 +40,6 @@ pub struct NewUserAdvertiseRequest{
     pub contract_address: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
@@ -57,9 +48,6 @@ pub struct NewUserContractRequest{
     pub from_cid: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
@@ -70,8 +58,5 @@ pub struct NewUserAddNftToContractRequest{
     pub contract_address: String,
     pub amount: i64,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }

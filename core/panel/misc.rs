@@ -19,9 +19,6 @@ pub struct TcpServerData{
     pub data: String,
     pub from_cid: String,
     pub tx_signature: String,
-    pub v: u64,
-    pub s: String,
-    pub r: String,
     pub hash_data: String,
 }
 
