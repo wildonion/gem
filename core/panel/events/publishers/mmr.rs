@@ -3,62 +3,20 @@
 
 
 /*
-             https://github.com/wildonion/redis4
 
-    - actix ws actor event and stream handler/loop using tokio spawn, 
-        select, mpsc, mutex and tcp with redis and libp2p pubsub streams
-    - event and stream handler to handle the incoming async task like ws 
-        messages packets using actix StreamHandler and tokio tcp 
-    - message handler to handle the message type which is going to 
-        be sent between other actors
-    - ws actor stream and event handlers are like:
-        streaming over incoming bytes through the tokio tcp socket 
-        to send them as the async task to tokio green threadpool using
-        tokio spawn to handle them as an event using tokio select event 
-        loop handler
-    - players can get a higher rank by paying for the rank, playing with 
-      more than 3 gods in a week, player ability limitation when the god 
-      is updating the status 
-    - an event manager (god) must mint a god card then he can set 
-        a new proposal to make an event then those players whose 
-        their ranks are matched together and have conse tokens will 
-        be put inside the mmq to start voting in the event to mint 
-        all the generated roles as a collection to start the game,
-        players reserve event by upvoting in proposal using conse
-        token and they'll earn new token after game (P2E)
+    https://github.com/wildonion/penpineappleapplepen/blob/main/src/lib.rs
+    https://github.com/wildonion/gvm/blob/main/src/lib.rs
 
-
-    ------------------------------------------------
-    networking(actor, ws, redis pubsub and streams):
-    ------------------------------------------------
-        >>>> look start_tcp_server api <<<< 
-        streaming over incoming encoded io future object of utf8 bytes 
-        to decode them into structs to mutate them concurrently by moving
-        them between tokio threads using jobq channels and mutex 
-                            or 
-        event of async task handler, streamer, loop 
-        inside std::thread::scope and tokio::spawn based 
-        tokio tcp stream or mmq streaming over future 
-        bytes using tokio and ws actor and redis pubsub 
-        and streams by streaming over incoming bytes 
-        inside the tokio gread threadpool and pass them 
-        to other threads using tokio::sync::mpsc, actor, 
-        select, spawn, mutex, pubsub, tcp stream, hex, serding 
-        )to_string vs from utf8)
-        tokio::spawn(async move{
-            while let Ok(data) = streamer.recv().await{
-                /* decode the bytes to a struct; see redis4 repo */
-                let decoded;
-                sender.send(decoded)
-            }
-        });
+    complete proc macros in lib.rs
 
 */
+
 
 
 use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use borsh::{BorshDeserialize, BorshSerialize};
+use tiny_keccak::keccak256;
 use uuid::Uuid;
 
 
@@ -96,14 +54,14 @@ pub struct CurrentMatch{
     then fire the updated data event through the ws server so the client
     can subs using ws to the fired event 
 */
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct UserNotif{
     user_id: String,
     notifs: Vec<NotifData>,
     updated_at: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct NotifData{
     fired_at: Option<i64>,
     seen: bool,
@@ -117,6 +75,9 @@ impl UserNotif{
         UserNotif{
             ..user_notif /* filling all the fields with the user_notif ones */
         }
+    }
+    fn get(&mut self) -> Self{
+        UserNotif { ..Default::default() }
     }
 }
 
@@ -162,8 +123,10 @@ pub struct Nft{
 
 impl Nft{
 
-    fn generate_event_hash<'t>() -> &'t str{
-        let event_hash = "";
-        event_hash
+    fn generate_event_time_hash<'t>(event_id: String) -> [u8; 32]{
+        
+        let keccak256 = keccak256(event_id.as_bytes());
+        keccak256
+
     }
 }
