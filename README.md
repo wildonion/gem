@@ -10,20 +10,23 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 ## 🚟 Infra Routes and APIs
 
+> Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline for **gem**.
+
 ```bash
-# panel dev username/password              : devdevy/d3v@%$^$3hjsD
-# panel admin username/password            : adminy/4dmin@%$^$3hjsD
+# conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
+# conse panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
 🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> wss://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/
 🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE ==> https://api.panel.conse.app/mongo
-🗺️ MAIN API ROUTE ==> https://api.mafia.conse.app/
+🗺️ MAFIA API ROUTE ==> https://api.mafia.conse.app/
 📡 SWAGGER DOC ==> https://api.panel.conse.app/swagger/
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
+🛎️ JENKINS PANEL ==> https://jenkins.conse.app
+⛵ PORTAINER PANEL ==> https://portainer.conse.app
 🎙️ HOSTED ON ==> Digitalocean
-🚉 TLPs ==> https://github.com/wildonion/gem/wiki/TLPs
 ```
 
 ## 🍩 Panel APIs V0.1.3 Infra Features
@@ -33,6 +36,8 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 * **☕ sit-back-and-drink-your-coffee** scripts do deploy the project on VPS!
 
 * 🦾 functional, macro, MVC and ACL based design pattern server APIs
+
+* 🎨 Jenkins based CI/CD
 
 * ☢️ better error handling using **match** and **Option** syntax, also all errors are in form `Result<actix::HttpResponse, actix::Error>` which allows the client to know the all in-app error reasons and prevent server from crashing.
 
@@ -83,13 +88,15 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 **NOTE**: both `mafia` and `panel` services inside `core` are just different binaries which are sharing a same `Cargo.toml` setup.
 
-## 📘 Git Books
+## 📘 Git Books and Docs
 
 * [Engines](https://conse.gitbook.io/engines)
 
 * [Crypto ID](https://conse.gitbook.io/cid)
 
 * [Reveal Role](https://conse.gitbook.io/reveal-role)
+
+* [TLPS](https://github.com/wildonion/gem/wiki/TLPs)
 
 ## 🛠️ Development Setup
 
@@ -166,11 +173,11 @@ cargo run --bin argon2test
 
 - **NOTE**: **Regards to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
-- **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portrainer` finally login with dev user to register a new god for the game.
+- **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portainer` finally login with dev user to register a new god for the game.
 
 - **NOTE**: **Regards to conse mafia hyper APIs**, the default `dev` and `conse` user passwords are `dev@1234%` and `conse@1234` respectively which will be imported to the mongodb automatically by running the `./redeploy.sh` script, also we can run the `./mafia dev 0` binary inside the VPS to update the access level of a user to dev, finally we can register a new god or admin for the mafia game APIs using the dev user token.
 
-- **NOTE**: to access the `mongodb` container shell, login to the `portrainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
+- **NOTE**: to access the `mongodb` container shell, login to the `portainer` then fireup the `mongodb` container CMD and run ```mongosh``` or you can go inside using ```sudo docker exec -it mongodb mongosh``` command.
 
 - **NOTE**: after updating application's `Dockerfile` files, we should rebuild our container images by running ```./redeploy.sh``` script again.
 
@@ -192,6 +199,8 @@ api.panel.conse.app #----> points to the conse actix APIs
 panel.conse.app #---> points to the panel UI
 notif.panel.conse.app #---> points to the websocket push notification server APIs
 adminer.conse.app #---> points to the adminer UI
+jenkins.conse.app #---> points to the jenkins UI
+portainer.conse.app #---> points to the portainer UI
 ```
 - **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 

@@ -30,15 +30,6 @@ pub mod evm{
     */
     
     pub async fn sign(wallet: Wallet, data: &str) -> (SignedData, String){
-    
-        trait Transport{}
-        struct Account<'a, T> where T: Transport{
-            pub data: std::rc::Rc<std::cell::RefCell<&'a [u8]>>,
-            pub transport: T
-        }
-        impl<'a, T: Transport> Account<'a, T>{
-
-        }
 
         let endpoint = env::var("INFURA_POLYGON_WS_ENDPOINT").unwrap();
         let transport = transports::WebSocket::new(&endpoint).await.unwrap();

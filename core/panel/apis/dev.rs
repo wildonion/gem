@@ -99,7 +99,7 @@ async fn get_admin_data(
         
         /*
             @params: 
-                - @toke          → JWT
+                - @token          → JWT
 
             note that this token must be taken from the conse mafia hyper server
         */
@@ -248,7 +248,7 @@ async fn get_user_data(
         
         /*
             @params: 
-                - @toke          → JWT
+                - @token          → JWT
 
             note that this token must be taken from the conse mafia hyper server
         */

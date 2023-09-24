@@ -128,7 +128,7 @@ async fn reveal_role(
         
         /*
             @params: 
-                - @toke          → JWT
+                - @token          → JWT
 
             note that this token must be taken from the conse mafia hyper server
         */
@@ -292,7 +292,7 @@ async fn update_event_img(
             
             /*
                 @params: 
-                    - @toke          → JWT
+                    - @token          → JWT
     
                 note that this token must be taken from the conse mafia hyper server
             */
