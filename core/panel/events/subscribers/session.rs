@@ -320,18 +320,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                     let v: Vec<&str> = m.splitn(2, ' ').collect();
                     match v[0]{
 
-                        /* ------------------------------- */
-                        /*    GET ONLINE ROOMS OR EVENTS   */
-                        /* ------------------------------- */
-                        "/events" => {
+                        /* --------------------------------- */
+                        /*    GET ONLINE EVENTS AND PLAYERS  */
+                        /* --------------------------------- */
+                        "/info" => {
 
                             /* get all room from redis storage */
                             let mut redis_conn = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap().to_owned();
                             let redis_result_rooms_string: String = redis_conn.get("role_notif_server_actor_rooms").unwrap();
-                            let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(redis_result_rooms_string.as_str()).unwrap();
                             
+                            /* 
+                                structure of all rooms is like
+                                a mapping between the room name and its peer ids: 
+                                    HashMap<String, HashSet<usize>>
+                            */
+                            let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(redis_result_rooms_string.as_str()).unwrap();
+                            let player_in_this_event = rooms_in_redis.get(self.notif_room).unwrap();
+
                             /* sending to this peer */
                             ctx.text(format!("online events: {}", rooms_in_redis.len()));
+                            ctx.text(format!("online players in this event: {}", player_in_this_event.len()));
 
                         },
                         /* ------------------------------- */

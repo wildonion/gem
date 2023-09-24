@@ -95,12 +95,12 @@ impl Reveal{
                                     if subs >= 1{
                                         
                                         /* if we're here means that ws session received the notif */
-                                        info!("💡 --- [{subs:}] subscriber has subscribed to event: [{cloned_notif_room:}] to receive roles notif");
+                                        info!("🙋 --- [{subs:}] subscriber has subscribed to event: [{cloned_notif_room:}] to receive roles notif");
                                         break;
                                         
                                     }
                                     
-                                    info!("💡 --- no one has subscribed yet ");
+                                    info!("👤 --- no one has subscribed yet ");
 
                                 },
                                 _ => {}

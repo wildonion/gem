@@ -85,8 +85,8 @@ pub struct NotifySessionWithRedisSubscription{
 /* RoleNotifServer contains all the event rooms and sessions or peers that are connected to ws connection */
 #[derive(Clone)]
 pub struct RoleNotifServer{
-    pub rooms: HashMap<String, HashSet<usize>>, // event rooms which is based on the event id or every event is a room
-    pub sessions: HashMap<usize, Recipient<Message>>, // user in the event room, a mapping between session id and their actor address
+    pub rooms: HashMap<String, HashSet<usize>>, // a mapping between the room or event name and its peer ids
+    pub sessions: HashMap<usize, Recipient<Message>>, // a mapping between the peer id and its actor address
     pub push_notif_rooms: HashMap<String, HashSet<usize>>,
     pub last_subscription_at: u64,
     pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
