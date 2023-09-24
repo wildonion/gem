@@ -26,6 +26,12 @@ COPY key-api.mafia.conse.app.pem /etc/nginx/key-api.mafia.conse.app.pem
 #adminer.conse.app:
 COPY cert-adminer.conse.app.pem /etc/nginx/cert-adminer.conse.app.pem
 COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
+#portainer.conse.app:
+COPY cert-portainer.conse.app.pem /etc/nginx/cert-portainer.conse.app.pem
+COPY key-portainer.conse.app.pem /etc/nginx/key-portainer.conse.app.pem
+#jenkins.conse.app:
+COPY cert-jenkins.conse.app.pem /etc/nginx/cert-jenkins.conse.app.pem
+COPY key-jenkins.conse.app.pem /etc/nginx/key-jenkins.conse.app.pem
 #notif.panel.conse.app:
 COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
 COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
@@ -45,6 +51,8 @@ COPY panel.conse.app.conf /etc/nginx/panel.conse.app.conf
 COPY api.panel.conse.app.conf /etc/nginx/api.panel.conse.app.conf
 COPY api.mafia.conse.app.conf /etc/nginx/api.mafia.conse.app.conf
 COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
+COPY portainer.conse.app.conf /etc/nginx/portainer.conse.app.conf
+COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf
 COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
 
 # Start Nginx in the foreground when the Docker container starts

@@ -74,13 +74,46 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     echo "> Redeploying Infrastructure Only"
     echo "☕ Okay, sit back and drink your coffee :)"
 
-    docker stop mongodb && docker rm -f mongodb
-    docker stop postgres && docker rm -f postgres
-    docker stop adminer && docker rm -f adminer
-    docker stop nginx && docker rm -f nginx
-    docker stop redis && docker rm -f redis
+    sudo docker stop mongodb && sudo docker rm -f mongodb
+    sudo docker stop postgres && sudo docker rm -f postgres
+    sudo docker stop adminer && sudo docker rm -f adminer
+    sudo docker stop nginx && sudo docker rm -f nginx
+    sudo docker stop redis && sudo docker rm -f redis
+    sudo docker stop jenkins-docker && sudo docker rm -f jenkins-docker
+    sudo docker stop jenkins-blueocean && sudo docker rm -f jenkins-blueocean
+    sudo docker stop portainer && sudo docker rm -f portainer
 
+    sudo docker run --name jenkins-docker --rm --detach \
+    --privileged --network gem --network-alias docker \
+    --env DOCKER_TLS_CERTDIR=/certs \
+    --volume jenkins-docker-certs:/certs/client \
+    --volume jenkins-data:/var/jenkins_home \
+    --publish 2376:2376 \
+    docker:dind --storage-driver overlay2
+
+    sudo docker build -t jenkins-blueocean:lts -f $(pwd)/infra/docker/jenkins/Dockerfile . --no-cache
+
+    sudo docker run --name jenkins-blueocean --restart=on-failure --detach \
+    --network gem --env DOCKER_HOST=tcp://docker:2376 \
+    --env DOCKER_CERT_PATH=/certs/client --env DOCKER_TLS_VERIFY=1 \
+    --publish 8080:8080 --publish 50000:50000 \
+    --volume jenkins-data:/var/jenkins_home \
+    --volume jenkins-docker-certs:/certs/client:ro \
+    jenkins-blueocean:lts
+
+    echo "🚨 Please use `sudo docker logs -f jenkins-blueocean` or `sudo docker exec jenkins-blueocean cat /var/jenkins_home/secrets/initialAdminPassword` command to get the jenkins admin password!"
+
+    docker volume create portainer_data
     docker run -d \
+    -p 8000:8000 \
+    -p 9443:9443 \
+    --name portainer \
+    --restart=always \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v portainer_data:/data \
+    portainer/portainer-ce:latest
+
+    sudo docker run -d \
     -h redis \
     -e REDIS_PASSWORD=$PASSWORD \
     -v $(pwd)/infra/data/redis/:/data \
@@ -120,10 +153,10 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 else
     echo "> Redeploying Rust Services Only"\n
 
-    docker stop conse-panel-pg && docker rm -f conse-panel-pg
-    docker stop conse-panel-mongo && docker rm -f conse-panel-mongo
-    docker stop conse-mafia && docker rm -f conse-mafia
-    docker stop nftport && docker rm -f nftport
+    sudo docker stop conse-panel-pg && sudo docker rm -f conse-panel-pg
+    sudo docker stop conse-panel-mongo && sudo docker rm -f conse-panel-mongo
+    sudo docker stop conse-mafia && sudo docker rm -f conse-mafia
+    sudo docker stop nftport && sudo docker rm -f nftport
 
     sudo docker build -t nftport -f $(pwd)/infra/docker/nftport/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --network gem --name nftport -p 7651:7650 nftport
