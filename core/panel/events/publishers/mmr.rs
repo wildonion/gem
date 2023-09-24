@@ -23,15 +23,9 @@ use uuid::Uuid;
 
 
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct CollaborationQueue{
-    pub players: Vec<PlayerRank>, // user pool that can be used to start a match between them
-    pub event_id: String, 
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PlayerRank{
-    pub cid: String, /* crypto id usally pubkey */
+    pub screen_cid: String, /* crypto id usally public address */
     pub rank: u16, /* one of the criterion is player status during the game */
 }
 
@@ -43,17 +37,7 @@ pub struct CurrentMatch{
     pub is_locked: bool
 }
 
-/* 
-    fire/emit/publish UserNotif events in ws server or using redis
-    like using emit!(UserNotif{}) macro which emit and fire an
-    event through the redis or ws streaming channel to clients 
-    sub or listen to UserNotif events in ws client or redis
-    in ws server then sends message to ws client using an event 
-    loop or listener.
-    update UserNotif on every data changes through its related api calls
-    then fire the updated data event through the ws server so the client
-    can subs using ws to the fired event 
-*/
+// fire/emit/publish UserNotif events through the ws channels
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct UserNotif{
     user_id: String,
@@ -77,16 +61,11 @@ impl UserNotif{
         }
     }
     fn get(&mut self) -> Self{
-        UserNotif { ..Default::default() }
+        let this = UserNotif { ..Default::default() };
+        this
     }
 }
 
-
-// in order to call the NotifExt methods on the
-// UserNotif struct the trait must be implemented 
-// for the UserNotif struct and imported inside
-// where we want to call the methods on the struct
-// instance.
 pub trait NotifExt{
     type Data;
     fn set_user_notif(&mut self, notif_data: NotifData) -> Self;
@@ -104,29 +83,4 @@ impl NotifExt for UserNotif{
         self.set(new_notif)
     }
 
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-
-pub struct Royalty{
-    pub wallet_address: String,
-    pub amount: u64,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-
-pub struct Nft{
-    pub owner: String,
-    pub royalties: Vec<Royalty>, // Royalty struct must be public if this field is public since we want to access this field later which contains the Royalty instances
-    pub events: Vec<UserNotif>
-}
-
-impl Nft{
-
-    fn generate_event_time_hash<'t>(event_id: String) -> [u8; 32]{
-        
-        let keccak256 = keccak256(event_id.as_bytes());
-        keccak256
-
-    }
 }
