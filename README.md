@@ -37,7 +37,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * 🦾 functional, macro, MVC and ACL based design pattern server APIs
 
-* 🎨 Jenkins based CI/CD
+* 🎨 **Jenkins** based CI/CD
 
 * ☢️ better error handling using **match** and **Option** syntax, also all errors are in form `Result<actix::HttpResponse, actix::Error>` which allows the client to know the all in-app error reasons and prevent server from crashing.
 
@@ -65,7 +65,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * 🎯 **actix ws** notif servers for streaming over redis subscribed topics to send notifs to ws sessions.
 
-* 🪙 **ECDSA-secp256k1** based cryptoghrapy algorithm used to generate a unique cosne Id for each user to allow them to sign in game operations with their own private keys.
+* 🪙 **ECDSA-secp256k1** based cryptoghrapy algorithm in [wallexerr](https://crates.io/crates/wallexerr) used, to generate a unique crypto Id for each user to allow them to sign in-game operations and API calls with their own private keys using **web3**, the signature verification process will be done in panel using [web3](https://crates.io/crates/web3) crate, to verify the signer.
 
 ### 🗃️ Directory and Structure Explained
 
