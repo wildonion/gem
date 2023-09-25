@@ -26,6 +26,14 @@ pub mod evm{
         EVM based public address is derived by taking the last 20 bytes of 
         the Keccak-256 hash of the public key
     */
+
+    pub fn get_wallet() -> Wallet{
+        /* 
+            ECDSA with secp256k1 curve keypairs 
+            (compatible with all evm based chains) 
+        */
+        Wallet::new_secp256k1("")
+    }
     
     pub async fn sign(wallet: Wallet, data: &str) -> (SignedData, String){
 

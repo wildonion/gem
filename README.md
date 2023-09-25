@@ -10,7 +10,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 ## 🚟 Infra Routes and APIs
 
-> Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline for **gem**.
+> Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline job in jenkins and setup a webhook in **gem** repo to start building automatically on every push through the jenkins pipeline schema.
 
 ```bash
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD

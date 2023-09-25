@@ -2895,12 +2895,10 @@ impl Id{
             },
             _ => {
 
-                /* ECDSA with secp256k1 curve keypairs (compatible with all evm based chains) */
-                let wallet = Wallet::new_secp256k1(""); // seed is the username and device id 
-
-                /* ------------------------------------------------------------ */
-                //             web3 signing and verification sample
-                /* ------------------------------------------------------------ */
+                /* --------------------------------------------------------------------------- */
+                //   generating keypair using wallexerr, signing and verification using web3
+                /* --------------------------------------------------------------------------- */
+                let wallet = wallet::evm::get_wallet();
                 let data_to_be_signed = serde_json::json!({
                     "recipient": "deadkings",
                     "from_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
