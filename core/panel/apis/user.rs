@@ -2149,9 +2149,6 @@ async fn deposit(
                             user.balance.unwrap() > deposit_object.amount{
 
                             let new_balance = user.balance.unwrap() - deposit_object.amount;
-
-                            let (mint_tx_hash_sender, mut mint_tx_hash_receiver) = 
-                                tokio::sync::mpsc::channel::<(String, String)>(1024);
                             let mut mint_tx_hash = String::from("");
                             let mut token_id = String::from("");
                             
@@ -2186,24 +2183,20 @@ async fn deposit(
 
                             let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
                             /* 
-                                we're going to use the cloned version of polygon_recipient_address inside the tokio::spawn()
-                                async move inside tokio::spawn() captures this
+                                we're going to use the cloned version of polygon_recipient_address 
+                                inside the tokio::spawn() async move inside tokio::spawn() captures this
                             */
                             let cloned_polygon_recipient_address = polygon_recipient_address.clone(); 
                             
-                            start_minting_card_process(
-                                deposit_object.clone(), 
-                                mint_tx_hash_sender.clone(), 
+                            let (tx_hash, tid) = start_minting_card_process(
+                                deposit_object.clone(),  
                                 recipient_info.clone(),
                                 contract_address.clone(),
                                 cloned_polygon_recipient_address.clone()
                             ).await;
-
-                            /* receiving asyncly from the channel */
-                            while let Some((tx_hash, tid)) = mint_tx_hash_receiver.recv().await{
-                                mint_tx_hash = tx_hash;
-                                token_id = tid;
-                            }
+                            
+                            mint_tx_hash = tx_hash;
+                            token_id = tid;
                             
                             if !mint_tx_hash.is_empty(){
                                 
@@ -2568,49 +2561,44 @@ async fn withdraw(
                             return error;
                         };
 
-                        let verification_res = wallet::evm::verify_signature(
-                            deposit_info.recipient_screen_cid.clone(), 
-                            &withdraw_object.tx_signature,
-                            &withdraw_object.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
+                        // let verification_res = wallet::evm::verify_signature(
+                        //     deposit_info.recipient_screen_cid.clone(), 
+                        //     &withdraw_object.tx_signature,
+                        //     &withdraw_object.hash_data
+                        // ).await;
+                        // if verification_res.is_err(){
+                        //     resp!{
+                        //         &[u8], // the data type
+                        //         &[], // response data
+                        //         &INVALID_SIGNATURE, // response message
+                        //         StatusCode::NOT_ACCEPTABLE, // status code
+                        //         None::<Cookie<'_>>, // cookie
+                        //     }
+                        // }
 
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
-                        let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
-                        if deposit_info.recipient_screen_cid != polygon_recipient_address{
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                NO_DEPOSIT_FOR_THIS_RECIPIENT, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
+                        // let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
+                        // if deposit_info.recipient_screen_cid != polygon_recipient_address{
+                        //     resp!{
+                        //         &[u8], // the data type
+                        //         &[], // response data
+                        //         NO_DEPOSIT_FOR_THIS_RECIPIENT, // response message
+                        //         StatusCode::NOT_FOUND, // status code
+                        //         None::<Cookie<'_>>, // cookie
+                        //     }
+                        // }
 
-                        let (burn_tx_hash_sender, mut burn_tx_hash_receiver) = 
-                            tokio::sync::mpsc::channel::<String>(1024);
+
                         let token_id = deposit_info.nft_id;
                         let mut burn_tx_hash = String::from("");
                         
-                        start_burning_card_process(
-                            burn_tx_hash_sender.clone(),
+                        let tx_hash = start_burning_card_process(
                             contract_address.to_owned(), 
                             token_id
                         ).await;
 
-                        /* receiving asyncly from the channel */
-                        while let Some(tx_hash) = burn_tx_hash_receiver.recv().await{
-                            burn_tx_hash = tx_hash;
-                        }
-
+                        burn_tx_hash = tx_hash;
+                        
                         if !burn_tx_hash.is_empty(){
 
                             match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{

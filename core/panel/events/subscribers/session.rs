@@ -117,7 +117,13 @@ impl WsNotifSession{
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)), "WsNotifSession::role_subscription");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                return ();
+                /*
+                    since we should constantly keep subscribing to the event name 
+                    thus there is no break in the loop and if there was an error 
+                    in receiving from the pubsub streaming channel we must return;
+                    from the method 
+                */
+                return (); 
 
             };
         
@@ -144,7 +150,7 @@ impl WsNotifSession{
                                 session_id,
                             }).await
                             {
-                                error!("🚨 --- can't notify the peer cause by this mailbox error: [{}]", why);
+                                error!("🚨 --- can't notify the peer, error caused by this mailbox error: [{}]", why);
                             }
                     }
                 }
@@ -156,6 +162,14 @@ impl WsNotifSession{
     }
 
     pub async fn ecq_subscription(){
+
+
+        todo!()
+        
+
+    }
+
+    pub async fn mmr_subscription(){
 
 
         todo!()
