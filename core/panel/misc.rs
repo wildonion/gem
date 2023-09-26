@@ -11,8 +11,26 @@ use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
 use actix::Addr;
+use models::users_contracts::*;
 
 
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Keys{
+    pub twitter_bearer_token: String,
+    pub twitter_access_token: String,
+    pub twitter_access_token_secret: String,
+    pub twitter_consumer_key: String,
+    pub twitter_consumer_secret: String,
+    pub twitter_api_key: String,
+    pub twitter_api_secret: String
+}
+
+#[derive(Clone, Serialize, Deserialize, ToSchema)]
+pub struct TwitterAccounts{
+    pub keys: Vec<Keys>
+}
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct TcpServerData{
@@ -66,7 +84,6 @@ pub struct ChainInfo{
   pub to_id: String,
   pub chained_at: i64,
 }
-
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct RoleAbilityInfo{
@@ -147,9 +164,11 @@ pub struct GetTokenValueResponse{
 }
 
 pub async fn start_minting_card_process(
+        sender_screen_cid: String,
         deposit_object: NewUserDepositRequest, 
         recipient_info: User,
         contract_address: String,
+        contract_owner: String,
         polygon_recipient_address: String
     ) -> (String, String){
 
@@ -165,6 +184,8 @@ pub async fn start_minting_card_process(
         /* upload metadata to ipfs */
         let mut custom_fields = HashMap::new();
         custom_fields.insert("amount".to_string(), deposit_object.amount.to_string());
+        custom_fields.insert("sender".to_string(), sender_screen_cid);
+        custom_fields.insert("recipient".to_string(), polygon_recipient_address.clone());
         let meta_name = format!("{} gift card with value of {} tokens", APP_NAME, deposit_object.amount);
         let meta_desc = format!("Transferring a {} gift card to {}", APP_NAME, recipient_info.username);
         let upload_data = NftPortUploadMetadataRequest{
@@ -188,12 +209,11 @@ pub async fn start_minting_card_process(
         if upload_meta_response.response == String::from("OK"){
 
             /* mint request */
-            let mint_to_contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2";
             let mut mint_data = HashMap::new();
             mint_data.insert("chain", "polygon");
             mint_data.insert("contract_address", &contract_address);
             mint_data.insert("metadata_uri", &upload_meta_response.metadata_uri);
-            mint_data.insert("mint_to_address", &mint_to_contract_owner);
+            mint_data.insert("mint_to_address", &contract_owner);
             let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
             let res = reqwest::Client::new()
                 .post(nftport_mint_endpoint.as_str())
@@ -221,35 +241,18 @@ pub async fn start_minting_card_process(
                         .header("Authorization", nftport_token.as_str())
                         .send()
                         .await;
-        
+
                     let get_nft_response = res.unwrap().json::<NftPortGetNftResponse>().await.unwrap();
                     info!("✅ NftPortGetNftResponse: {:#?}", get_nft_response.clone());
     
                     if get_nft_response.response == String::from("OK"){
 
                         let token_id = get_nft_response.token_id;
-                        let nftport_transfer_nft = format!("https://api.nftport.xyz/v0/mints/transfers");
-                        let mut transfer_data = HashMap::new();
-                            transfer_data.insert("chain", "polygon");
-                            transfer_data.insert("contract_address", &contract_address);
-                            transfer_data.insert("token_id", &token_id);
-                            transfer_data.insert("transfer_to_address", &polygon_recipient_address);
+                        info!("✅ Nft Minted With Id: {}", token_id.clone());
+                        info!("✅ Nft Is Inside Contract: {}", contract_address.clone());
+    
+                        token_id
                         
-                        let res = reqwest::Client::new()
-                            .post(nftport_transfer_nft.as_str())
-                            .header("Authorization", nftport_token.as_str())
-                            .json(&transfer_data)
-                            .send()
-                            .await;
-
-                        let get_nft_transfer_response = NftPortTransferNftResponse::default();
-                        info!("✅ NftPortTransferNftResponse: {:#?}", res.unwrap().text().await.unwrap());
-                        
-                        if get_nft_transfer_response.response == String::from("OK"){
-                            token_id
-                        } else{
-                            String::from("")
-                        }
 
                     } else{
                         String::from("")
@@ -288,71 +291,47 @@ pub async fn start_minting_card_process(
 pub async fn start_burning_card_process( 
         contract_address: String,
         token_id: String,
-    ) -> String{
-
-    /* burn request */
-    let transfer_to_contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2";
+    ) -> (String, u8){
+        
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
     
-    /* 
-        in order to burn an nft the owner must be the contract itself 
-        thus first we'll transfer the minted nft to the contract owner
-    */
-    let nftport_transfer_nft = format!("https://api.nftport.xyz/v0/mints/transfers");
-    let mut transfer_data = HashMap::new();
-        transfer_data.insert("chain", "polygon");
-        transfer_data.insert("contract_address", &contract_address);
-        transfer_data.insert("token_id", &token_id);
-        transfer_data.insert("transfer_to_address", &transfer_to_contract_owner);
-    
+    /* nft owner must be the contract owner to burn it */
+    let mut burn_data = HashMap::new();
+    burn_data.insert("chain", "polygon");
+    burn_data.insert("contract_address", &contract_address);
+    burn_data.insert("token_id", &token_id);
+    let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
     let res = reqwest::Client::new()
-        .post(nftport_transfer_nft.as_str())
+        .delete(nftport_burn_endpoint.as_str())
         .header("Authorization", nftport_token.as_str())
-        .json(&transfer_data)
+        .json(&burn_data)
         .send()
         .await;
 
-    let get_nft_transfer_response = res.unwrap().json::<NftPortTransferNftResponse>().await.unwrap();
-    info!("✅ NftPortTransferNftResponse: {:#?}", get_nft_transfer_response.clone());
+    let get_burn_response = res.unwrap().json::<NftPortBurnResponse>().await;
+
+    let Ok(burn_response) = get_burn_response else{
+        return (String::from(""), 1);
+    };
+
+    info!("✅ NftPortBurnResponse: {:#?}", burn_response.clone());
     
-    if get_nft_transfer_response.response == String::from("OK"){
-        
-        /* nft owner must be the contract owner to burn it */
-        let mut burn_data = HashMap::new();
-        burn_data.insert("chain", "polygon");
-        burn_data.insert("contract_address", &contract_address);
-        burn_data.insert("token_id", &token_id);
-        let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
-        let res = reqwest::Client::new()
-            .delete(nftport_burn_endpoint.as_str())
-            .header("Authorization", nftport_token.as_str())
-            .json(&burn_data)
-            .send()
-            .await;
+    if burn_response.response == String::from("OK"){
 
-        let burn_response = res.unwrap().json::<NftPortBurnResponse>().await.unwrap();
-        info!("✅ NftPortBurnResponse: {:#?}", burn_response.clone());
-        
-        if burn_response.response == String::from("OK"){
+        let burn_tx_hash = burn_response.transaction_hash;
 
-            let burn_tx_hash = burn_response.transaction_hash;
-
-            if burn_tx_hash.starts_with("0x"){
-                return burn_tx_hash;
-            } else{
-                return String::from("");
-            }
-
+        if burn_tx_hash.starts_with("0x"){
+            return (burn_tx_hash, 0);
         } else{
-            
-            return String::from("");
-
+            return (String::from(""), 1);
         }
 
     } else{
-        String::from("")
-    }
+        
+        return (String::from(""), 1);
 
+    }
+    
 
 }
 
@@ -539,96 +518,6 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
     Box::leak(s.into_boxed_slice()) 
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct Keys{
-    pub twitter_bearer_token: String,
-    pub twitter_access_token: String,
-    pub twitter_access_token_secret: String,
-    pub twitter_consumer_key: String,
-    pub twitter_consumer_secret: String,
-    pub twitter_api_key: String,
-    pub twitter_api_secret: String
-}
-
-
-#[derive(Clone, Serialize, Deserialize, ToSchema)]
-pub struct TwitterAccounts{
-    pub keys: Vec<Keys>
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortMintResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-    pub metadata_uri: String,
-    pub mint_to_address: String
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadMetadataRequest{
-    pub name: String,
-    pub description: String,
-    pub file_url: String,
-    pub custom_fields: HashMap<String, String>,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortGetNftResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub token_id: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortTransferNftResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortBurnResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadMetadataResponse{
-    pub response: String,
-    pub metadata_uri: String,
-    pub name: String,
-    pub description: String,
-    pub file_url: String,
-    pub external_url: Option<String>,
-    pub animation_url: Option<String>,
-    pub custom_fields: Option<HashMap<String, String>>,
-    pub attributes: Option<String>,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadFileToIpfsResponse{
-    pub res: NftPortUploadFileToIpfsData
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadFileToIpfsData{
-    pub response: String,
-    pub ipfs_url: String,
-    pub file_name: String,
-    pub content_type: String,
-    pub file_size: i64,
-    pub file_size_mb: f64
-}
 
 /*  ----------------------
    | shared state storage 

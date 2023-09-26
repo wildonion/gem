@@ -1480,7 +1480,8 @@ impl User{
     }
 
     pub async fn update_balance(owner_id: i32, new_balance: i64,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserData, PanelHttpResponse>{
 
         let Ok(user) = User::find_by_id(owner_id, connection).await else{
             let resp = Response{

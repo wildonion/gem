@@ -1656,7 +1656,7 @@ async fn charge_wallet(
 
                     if gateway_resp == 200 || gateway_resp == 201{
 
-                        let new_balance = user.balance.unwrap() + charge_wallet_request.tokens;
+                        let new_balance = if user.balance.is_none(){0 + charge_wallet_request.tokens} else{user.balance.unwrap() + charge_wallet_request.tokens};
                         match User::update_balance(_id, new_balance, connection).await{
 
                             Ok(updated_user_data) => {
@@ -2120,7 +2120,7 @@ async fn deposit(
                         };
 
                         let verification_res = wallet::evm::verify_signature(
-                            sender_info.screen_cid.unwrap(), 
+                            sender_info.screen_cid.clone().unwrap(), 
                             deposit_object.tx_signature.as_str(),
                             &deposit_object.hash_data
                         ).await;
@@ -2182,20 +2182,20 @@ async fn deposit(
                             }
 
                             let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
-                            /* 
-                                we're going to use the cloned version of polygon_recipient_address 
-                                inside the tokio::spawn() async move inside tokio::spawn() captures this
-                            */
-                            let cloned_polygon_recipient_address = polygon_recipient_address.clone(); 
                             
+                            // TODO - let get_contract_owner = UserContract::get_owner_by_contract_address(contract_address.clone()).await;
+                            let contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2".to_string();   
+
                             let (tx_hash, tid) = start_minting_card_process(
+                                sender_info.screen_cid.unwrap(),
                                 deposit_object.clone(),  
                                 recipient_info.clone(),
                                 contract_address.clone(),
-                                cloned_polygon_recipient_address.clone()
+                                contract_owner.clone(),
+                                polygon_recipient_address.clone()
                             ).await;
                             
-                            mint_tx_hash = tx_hash;
+                            mint_tx_hash = tx_hash; // moving into another type
                             token_id = tid;
                             
                             if !mint_tx_hash.is_empty(){
@@ -2561,50 +2561,62 @@ async fn withdraw(
                             return error;
                         };
 
-                        // let verification_res = wallet::evm::verify_signature(
-                        //     deposit_info.recipient_screen_cid.clone(), 
-                        //     &withdraw_object.tx_signature,
-                        //     &withdraw_object.hash_data
-                        // ).await;
-                        // if verification_res.is_err(){
-                        //     resp!{
-                        //         &[u8], // the data type
-                        //         &[], // response data
-                        //         &INVALID_SIGNATURE, // response message
-                        //         StatusCode::NOT_ACCEPTABLE, // status code
-                        //         None::<Cookie<'_>>, // cookie
-                        //     }
-                        // }
+                        let verification_res = wallet::evm::verify_signature(
+                            deposit_info.recipient_screen_cid.clone(), 
+                            &withdraw_object.tx_signature,
+                            &withdraw_object.hash_data
+                        ).await;
+                        if verification_res.is_err(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                &INVALID_SIGNATURE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
-                        // let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
-                        // if deposit_info.recipient_screen_cid != polygon_recipient_address{
-                        //     resp!{
-                        //         &[u8], // the data type
-                        //         &[], // response data
-                        //         NO_DEPOSIT_FOR_THIS_RECIPIENT, // response message
-                        //         StatusCode::NOT_FOUND, // status code
-                        //         None::<Cookie<'_>>, // cookie
-                        //     }
-                        // }
-
+                        let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
+                        if deposit_info.recipient_screen_cid != polygon_recipient_address ||
+                        withdraw_object.recipient_cid != user.cid.unwrap(){
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                NO_DEPOSIT_FOR_THIS_RECIPIENT, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
 
                         let token_id = deposit_info.nft_id;
                         let mut burn_tx_hash = String::from("");
                         
-                        let tx_hash = start_burning_card_process(
+                        let res_burn = start_burning_card_process(
                             contract_address.to_owned(), 
                             token_id
                         ).await;
 
-                        burn_tx_hash = tx_hash;
+                        if res_burn.1 == 1{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                CANT_BURN_CARD, // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        burn_tx_hash = res_burn.0; // moving into another type
                         
                         if !burn_tx_hash.is_empty(){
 
                             match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
                                 Ok(user_withdrawal_data) => {
                                     
-                                    let update_user_balance = User::update_balance(user.id, deposit_info.amount, connection).await;
+                                    let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
+                                    let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
                                     let Ok(updated_user_data) = update_user_balance else{
 
                                         let err_resp = update_user_balance.unwrap_err();
