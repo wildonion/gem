@@ -26,6 +26,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
+use models::users_contracts::{UserContract};
 use wallexerr::Wallet;
 
 
@@ -1609,6 +1610,7 @@ async fn charge_wallet(
                                     let final_amount_to_be_paid = irr_token_price as f64 / 1000000.0; /* converting the ir price back to float */
                                     
                                     // 🚪 ir gateway
+                                    // --- users_payments ---
                                     // ...
 
                                     200 
@@ -1635,6 +1637,8 @@ async fn charge_wallet(
                                     let final_amount_to_be_paid = usd_token_price as f64 / 10000.0;  /* converting the usd price back to float */
 
                                     // 🚪 paypal_id gateway to charge user with current_token_price amount
+                                    // --- use stripe api --- 
+                                    // --- users_payments ---
                                     // ...
 
                                     200 
@@ -2183,7 +2187,7 @@ async fn deposit(
 
                             let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
                             
-                            // TODO - let get_contract_owner = UserContract::get_owner_by_contract_address(contract_address.clone()).await;
+                            let get_contract_owner = UserContract::get_owner_by_contract_address(&contract_address, connection).await;
                             let contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2".to_string();   
 
                             let (tx_hash, tid) = start_minting_card_process(
@@ -2192,7 +2196,8 @@ async fn deposit(
                                 recipient_info.clone(),
                                 contract_address.clone(),
                                 contract_owner.clone(),
-                                polygon_recipient_address.clone()
+                                polygon_recipient_address.clone(),
+                                redis_client.clone()
                             ).await;
                             
                             mint_tx_hash = tx_hash; // moving into another type
@@ -2594,7 +2599,8 @@ async fn withdraw(
                         
                         let res_burn = start_burning_card_process(
                             contract_address.to_owned(), 
-                            token_id
+                            token_id,
+                            redis_client.clone()
                         ).await;
 
                         if res_burn.1 == 1{
@@ -4073,8 +4079,8 @@ pub mod exports{
     -----------------------------------------------------------------------
     https://docs.nftport.xyz/reference/retrieve-nfts-owned-by-account
     https://docs.nftport.xyz/reference/retrieve-contract-nfts
-    pub use super::get_none_minted_nfts_info_of; // those that are stored on ipfs but not minted
-    pub use super::get_minted_nfts_info_of; // those that are stored on ipfs and minted
+    pub use super::get_none_minted_nfts_info_of; // those that are stored on ipfs but not minted | fetch all private room nft infos (metadata)
+    pub use super::get_minted_nfts_info_of; // those that are stored on ipfs and minted | fetch all public room nft infos (metadata)
     -----------------------------------------------------------------------
     */
     /* ---------------------------------------------------- 
@@ -4088,6 +4094,7 @@ pub mod exports{
     pub use super::create_event;
     pub use super::vote_to_proposal;
     pub use super::participate_in_event;
+    pub use super::create_nft; // upload to ipfs only
     */
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */

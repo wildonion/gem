@@ -12,3 +12,4 @@ pub mod users_withdrawals;
 pub mod users_mails;
 pub mod users_phones;
 pub mod users_contracts;
+pub mod users_payments;

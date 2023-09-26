@@ -169,13 +169,20 @@ pub async fn start_minting_card_process(
         recipient_info: User,
         contract_address: String,
         contract_owner: String,
-        polygon_recipient_address: String
+        polygon_recipient_address: String,
+        redis_client: redis::Client
     ) -> (String, String){
+
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     /* upload card to ipfs */
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
-    let metadata_uri = upload_file_to_ipfs("assets/card.png", &nftport_token).await;
+    let metadata_uri = upload_file_to_ipfs(&nftport_token).await;
     info!("✅ NftPortUploadFileToIpfsData: {:#?}", metadata_uri.clone());
+    
+    /* log caching using redis */
+    let upload_logs_key = format!("Sender:{}|Log:NftPortUploadFileToIpfsData|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
+    let ـ : RedisResult<String> = redis_conn.set(upload_logs_key, serde_json::to_string_pretty(&metadata_uri).unwrap()).await;
 
     if metadata_uri.response == String::from("OK"){
 
@@ -184,7 +191,7 @@ pub async fn start_minting_card_process(
         /* upload metadata to ipfs */
         let mut custom_fields = HashMap::new();
         custom_fields.insert("amount".to_string(), deposit_object.amount.to_string());
-        custom_fields.insert("sender".to_string(), sender_screen_cid);
+        custom_fields.insert("sender".to_string(), sender_screen_cid.clone());
         custom_fields.insert("recipient".to_string(), polygon_recipient_address.clone());
         let meta_name = format!("{} gift card with value of {} tokens", APP_NAME, deposit_object.amount);
         let meta_desc = format!("Transferring a {} gift card to {}", APP_NAME, recipient_info.username);
@@ -206,6 +213,10 @@ pub async fn start_minting_card_process(
         let upload_meta_response = res.unwrap().json::<NftPortUploadMetadataResponse>().await.unwrap();
         info!("✅ NftPortUploadMetadataRequest: {:#?}", upload_meta_response.clone());
 
+        /* log caching using redis */
+        let upload_mata_logs_key = format!("Sender:{}|Log:NftPortUploadMetadataRequest|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
+        let _: RedisResult<String> = redis_conn.set(upload_mata_logs_key, serde_json::to_string_pretty(&upload_meta_response).unwrap()).await;
+
         if upload_meta_response.response == String::from("OK"){
 
             /* mint request */
@@ -224,6 +235,10 @@ pub async fn start_minting_card_process(
     
             let mint_response = res.unwrap().json::<NftPortMintResponse>().await.unwrap();
             info!("✅ NftPortMintResponse: {:#?}", mint_response.clone());
+
+            /* log caching using redis */
+            let mint_logs_key = format!("Sender:{}|Log:NftPortMintResponse|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
+            let _: RedisResult<String> = redis_conn.set(mint_logs_key, serde_json::to_string_pretty(&mint_response).unwrap()).await;
             
             if mint_response.response == String::from("OK"){
 
@@ -244,6 +259,10 @@ pub async fn start_minting_card_process(
 
                     let get_nft_response = res.unwrap().json::<NftPortGetNftResponse>().await.unwrap();
                     info!("✅ NftPortGetNftResponse: {:#?}", get_nft_response.clone());
+
+                    /* log caching using redis */
+                    let get_nft_logs_key = format!("Sender:{}|Log:NftPortGetNftResponse|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
+                    let _: RedisResult<String> = redis_conn.set(get_nft_logs_key, serde_json::to_string_pretty(&get_nft_response).unwrap()).await;
     
                     if get_nft_response.response == String::from("OK"){
 
@@ -291,8 +310,10 @@ pub async fn start_minting_card_process(
 pub async fn start_burning_card_process( 
         contract_address: String,
         token_id: String,
+        redis_client: redis::Client
     ) -> (String, u8){
         
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
     
     /* nft owner must be the contract owner to burn it */
@@ -315,6 +336,10 @@ pub async fn start_burning_card_process(
     };
 
     info!("✅ NftPortBurnResponse: {:#?}", burn_response.clone());
+
+    /* log caching using redis */
+    let burn_nft_logs_key = format!("TokenId:{}|Log:NftPortBurnResponse|Time:{}", token_id.clone(), chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(burn_nft_logs_key, serde_json::to_string_pretty(&burn_response).unwrap()).await;
     
     if burn_response.response == String::from("OK"){
 
@@ -335,7 +360,7 @@ pub async fn start_burning_card_process(
 
 }
 
-pub async fn upload_file_to_ipfs(path: &str, nftport_token: &str) -> NftPortUploadFileToIpfsData{
+pub async fn upload_file_to_ipfs(nftport_token: &str) -> NftPortUploadFileToIpfsData{
 
     let upload_ipf_response = {
 

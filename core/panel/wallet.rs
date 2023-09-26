@@ -89,7 +89,7 @@ pub mod evm{
         let transport = transports::WebSocket::new(&endpoint).await.unwrap();
         let web3_con = Web3::new(transport);
     
-        /* recovering public address from signature and hash of the message */
+        /* recovering public address from signature and keccak256 bits hash of the message */
         let data_hash = match hex::decode(data_hash){
             Ok(hash) => hash,
             Err(e) => return Err(false),

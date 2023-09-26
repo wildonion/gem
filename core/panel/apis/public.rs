@@ -429,6 +429,6 @@ pub mod exports{
     /* 
     pub use super::get_posts; // /?from=1&to=50
     pub use super::get_all_contracts; // /?from=1&to=50
-    pub use super::get_all_minted_nfts_of_contract; // /?from=1&to=50
+    pub use super::get_all_minted_nfts_of_contract; // /?from=1&to=50 | this is the main room api
     */
 }

@@ -340,7 +340,10 @@ impl User{
         decoded_token
     }
 
-    pub const SCHEMA_NAME: &str = "User";
+    pub const SCHEMA_NAME: &'static str = "User";
+    pub const fn get_schema_name() -> &'static str{
+        Self::SCHEMA_NAME
+    }
 
     pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
 

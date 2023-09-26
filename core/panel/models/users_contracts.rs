@@ -14,6 +14,11 @@ use crate::*;
 
 */
 
+
+pub struct UserContract{
+
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct NewUserMintRequest{
     pub from_cid: String,
@@ -132,4 +137,16 @@ pub struct NftPortUploadFileToIpfsData{
     pub content_type: String,
     pub file_size: i64,
     pub file_size_mb: f64
+}
+
+
+impl UserContract{
+
+    pub async fn get_owner_by_contract_address(owner_contract_address: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserContract, PanelHttpResponse>{
+
+            todo!()
+            
+    }
 }

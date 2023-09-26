@@ -268,6 +268,8 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 ## 🧐 WrapUps 
 
+* there is an API named `/public/get-token-price/{amount}` which returns the value of the passed in tokens in USD, remember that in order to show the exact amount, the value must gets divided by `1000000` to extract the floating point format.
+
 * to see a full list of conse mafia hyper server, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
 
 > **Regards to conse panel actix APIs**:
@@ -299,7 +301,7 @@ async fn api(
     ) -> PanelHttpResponse{
 
 
-    /* extracting storage objects (none async redis, redis async pubsub conn, postgres and mongodb) */
+    /* extracting storage objects (none async redis, redis async, redis pubsub conn, postgres and mongodb) */
     // ...
 
     /* extracting required roles */

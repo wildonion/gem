@@ -13,6 +13,7 @@
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
+    - create contract
     - mint, burn
     - advertising contract
     - add comment on and like the nft

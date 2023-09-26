@@ -124,7 +124,7 @@ pub async fn role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                                 user_id: user_doc._id.unwrap().to_string(), // converting the Option<ObjectId> to ObjectId then into String
                                                                 role_id: random_role_id.to_string(), // converting the ObjectId into String
                                                                 event_id: event_doc._id.unwrap().to_string(), // converting the Option<ObjectId> to ObjectId then into String
-                                                                current_ability: None, // initialized None on inserting new doc
+                                                                current_ability: None, // initialized None on inserting new doc, this can be updated inside update_role_ability() method
                                                                 created_at: Some(now),
                                                                 updated_at: Some(now),
                                                             };
