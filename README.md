@@ -73,7 +73,6 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * `core`: hyper, actix web HTTP and actix WS servers.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
-    * `nftport`: nftport fastapi server to upload file to ipfs.
     * `mafia`: mafia game APIs
         * `controllers`: in-game async controllers related to hyper server.
         * `routers`: in-game API routers related to hyper server.
@@ -101,6 +100,8 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 ## 🛠️ Development Setup
 
 > Before developing, read the following notes: 
+
+- **NOTE**: you can download runtime crashing error logs throught the address `https://api.panel.conse.app/logs` also after setting up the `portainer`, each container logs can be downloaded inside the panel.
 
 - **NOTE**: makre sure that you've installed the following packages on **MacOS M1**:
 ```bash

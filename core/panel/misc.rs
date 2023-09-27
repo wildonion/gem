@@ -498,41 +498,38 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
     let upload_ipfs_response = {
 
         let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-        let nftport_host = std::env::var("NFTPORT_HOST").unwrap();
-        let nftport_port = std::env::var("NFTPORT_PORT").unwrap();
-        let upload_ipfs_endpoint = format!("http://{}:{}/upload/{}", nftport_host, nftport_port, nftport_token);
-        let res = reqwest::Client::new()
-            .post(upload_ipfs_endpoint.as_str())
-            .send()
-            .await;
+        let auth_header = format!("Authorization: {}", nftport_token);
 
-        /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
-            since text() and json() method take the ownership of the instance
-            thus can't call text() method on ref_resp which is behind a shared ref 
-            cause it'll be moved.
-            
-            let ref_resp = res.as_ref().unwrap();
-            let text_resp = ref_resp.text().await.unwrap();
+        let get_upload_output = std::process::Command::new("curl")
+            .arg("-X")
+            .arg("POST")
+            .arg("-H")
+            .arg("Content-Type: multipart/form-data")
+            .arg("-H")
+            .arg(&auth_header)
+            .arg("-F")
+            .arg("file=@assets/card.png")
+            .arg("https://api.nftport.xyz/v0/files")
+            .output();
 
-            to solve this issue first we get the stream of the response chunk
-            then map it to the related struct, after that we can handle logging
-            and redis caching process without losing ownership of things!
-        */
-        let get_upload_ipfs_response = &mut res.unwrap();
-        let get_upload_ipfs_response_bytes = get_upload_ipfs_response.chunk().await.unwrap();
-        let err_resp_vec = get_upload_ipfs_response_bytes.unwrap().to_vec();
-        let get_upload_ipfs_response_json = serde_json::from_slice::<NftPortUploadFileToIpfsResponse>(&err_resp_vec);
+        if get_upload_output.is_err(){
+
+            return (NftPortUploadFileToIpfsData::default(), 1);
+        }
+
+        let res = &get_upload_output.unwrap().stdout;
+        let get_upload_ipfs_response_json = serde_json::from_slice::<NftPortUploadFileToIpfsData>(&res);
         if get_upload_ipfs_response_json.is_err(){
-                
+
             /* log caching using redis */
-            let cloned_err_resp_vec = err_resp_vec.clone();
+            let cloned_err_resp_vec = res.clone();
             let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
             let upload_logs_key_err = format!("ERROR=>NftPortUploadFileToIpfsData|Time:{}", chrono::Local::now().to_string());
             let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str).await;
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
             return (NftPortUploadFileToIpfsData::default(), 1);
@@ -540,7 +537,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
         }
 
         let upload_ipfs_response = get_upload_ipfs_response_json.unwrap();
-        (upload_ipfs_response.res, 0)
+        (upload_ipfs_response, 0)
 
     };
 

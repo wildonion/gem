@@ -156,10 +156,6 @@ else
     sudo docker stop conse-panel-pg && sudo docker rm -f conse-panel-pg
     sudo docker stop conse-panel-mongo && sudo docker rm -f conse-panel-mongo
     sudo docker stop conse-mafia && sudo docker rm -f conse-mafia
-    sudo docker stop nftport && sudo docker rm -f nftport
-
-    sudo docker build -t nftport -f $(pwd)/infra/docker/nftport/Dockerfile . --no-cache
-    sudo docker run -d --restart unless-stopped --network gem --name nftport -p 7651:7650 nftport
 
     sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia

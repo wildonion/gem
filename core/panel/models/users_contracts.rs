@@ -124,10 +124,6 @@ pub struct NftPortUploadMetadataResponse{
     pub attributes: Option<String>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadFileToIpfsResponse{
-    pub res: NftPortUploadFileToIpfsData
-}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUploadFileToIpfsData{
