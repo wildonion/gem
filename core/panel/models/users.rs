@@ -991,7 +991,20 @@ impl User{
 
         let pass = User::hash_pswd(password.as_str()).unwrap();
         let new_user = NewUser{
-            username: &identifier_login.to_lowercase(), /* first insert the username is the identifier address */
+            /* 
+                we'll fill the username with the current timestamp because 
+                otherwise if a user logged in to the app with a username 
+                as the identifier, the username field also will be the same 
+                as the identifier field, this is actually a bug cause if a
+                user wants to create a cid we're checking that if the cid 
+                field is not empty then we'll insert the passed in username 
+                along with other fields into the db and since the username 
+                is already registered with the identifier, database says
+                that this username is already exists regardless of who is 
+                creating the cid, cause we don't check the username and cid
+                against the new incomng request in cid api.
+            */
+            username: &chrono::Local::now().timestamp_nanos().to_string(),
             activity_code: &random_code,
             identifier: &identifier_login.to_lowercase(),
             user_role: UserRole::User,
