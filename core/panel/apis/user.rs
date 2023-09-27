@@ -2187,10 +2187,10 @@ async fn deposit(
 
                             let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
                             
-                            let get_contract_owner = UserContract::get_owner_by_contract_address(&contract_address, connection).await;
+                            // let get_contract_owner = UserContract::get_owner_by_contract_address(&contract_address, connection).await;
                             let contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2".to_string();   
 
-                            let (tx_hash, tid) = start_minting_card_process(
+                            let (tx_hash, tid, res_burn_status) = start_minting_card_process(
                                 sender_info.screen_cid.unwrap(),
                                 deposit_object.clone(),  
                                 recipient_info.clone(),
@@ -2200,6 +2200,17 @@ async fn deposit(
                                 redis_client.clone()
                             ).await;
                             
+                            if res_burn_status == 1{
+
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_MINT_CARD, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
                             mint_tx_hash = tx_hash; // moving into another type
                             token_id = tid;
                             

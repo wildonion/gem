@@ -36,9 +36,14 @@ pub enum ServerError{
     Ws(ws::ProtocolError),
 }
 #[derive(Debug)]
+pub enum ThirdPartyApiError{
+    ReqwestTextResponse(String),
+}
+#[derive(Debug)]
 pub enum ErrorKind{
     Server(ServerError), // actix server io 
     Storage(StorageError), // diesel, redis
+    ThirdPartyApi(ThirdPartyApiError) // reqwest response text
 }
 
 /* make it senable to be shared between threads */
@@ -89,6 +94,12 @@ impl From<diesel::result::Error> for ErrorKind{
     }
 }
 
+impl From<String> for ErrorKind{
+    fn from(error: String) -> Self {
+        ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(error))
+    }
+}
+
 impl From<(Vec<u8>, u16, ErrorKind, String)> for PanelError{
     fn from(msg_code_kind_method: (Vec<u8>, u16, ErrorKind, String)) -> PanelError{
         PanelError { code: msg_code_kind_method.1, msg: msg_code_kind_method.0, kind: msg_code_kind_method.2, method_name: msg_code_kind_method.3 }
@@ -117,13 +128,6 @@ impl PanelError{
         let mut panel_error_log;
         let msg_content = String::from_utf8(msg.to_owned());
         let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {} | method name: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis(), method_name);
-
-        /* writing to buffer */
-        let mut buffer = Vec::new(); 
-        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
-        
-        /* OR */
-        // serde_json::to_writer_pretty(buffer, &error_log_content);
         
         /* writing to file */
         match tokio::fs::metadata(filepath.clone()).await{
@@ -150,6 +154,13 @@ impl PanelError{
             }
         }
 
+        /* writing to buffer */
+        let mut buffer = Vec::new(); 
+        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
+        
+        /* OR */
+        // serde_json::to_writer_pretty(buffer, &error_log_content);
+
         buffer /* returns the full filled buffer from the error  */
     
     }
@@ -166,13 +177,6 @@ impl PanelError{
         let mut panel_error_log;
         let msg_content = serde_json::from_slice::<String>(msg.as_slice());
         let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {} | method name: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis(), method_name);
-
-        /* writing to buffer */
-        let mut buffer = Vec::new(); 
-        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
-        
-        /* OR */
-        // serde_json::to_writer_pretty(buffer, &error_log_content);
 
         /* --------------------------------------------------------------------------------- */
         /* -------------- read from file buffer and decode it into the String -------------- */
@@ -233,6 +237,13 @@ impl PanelError{
             }
         }
 
+        /* writing to buffer */
+        let mut buffer = Vec::new(); 
+        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer */
+        
+        /* OR */
+        // serde_json::to_writer_pretty(buffer, &error_log_content);
+        
         buffer /* returns the full filled buffer from the error  */
     
     }

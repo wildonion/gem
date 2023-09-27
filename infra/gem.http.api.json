@@ -3193,12 +3193,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-public}}/get-token-price/5",
+									"raw": "{{panel-public}}/get-token-value/5",
 									"host": [
 										"{{panel-public}}"
 									],
 									"path": [
-										"get-token-price",
+										"get-token-value",
 										"5"
 									]
 								}
