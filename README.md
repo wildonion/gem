@@ -277,12 +277,12 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 * front-end can access the image of an event through the address `https://api.panel.conse.app/assets/images/events/{image_path}` like so: `https://api.panel.conse.app/assets/images/events/event64c93cc7d19645f57fd9f98d-img1692289627686439.jpg`
 
-* we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/usr/src/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/infra/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
+* we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
 ```bash
 # mount from conse panel containers into host: 
-... -v $(pwd)/infra/assets/:/usr/src/app/assets ...
+... -v $(pwd)/assets/:/app/assets ...
 # mount from host into the nginx container 
-... -v $(pwd)/infra/assets/:/etc/nginx/assets ...
+... -v $(pwd)/assets/:/etc/nginx/assets ...
 ```
 
 * based on the last wrapup the `assets` directory can be accessible through the `https://api.panel.conse.app/assets/` address.

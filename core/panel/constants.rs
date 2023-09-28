@@ -103,6 +103,8 @@ pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
+pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
+pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
@@ -130,9 +132,9 @@ pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
     u16 bits is 2 bytes which is 4 chars in hex 
     u8 bits is 1 byte which is 2 chars in hex 
 */
-pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE;
-pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF;
-pub static THIRDPARTYAPI_ERROR_CODE: &u16 = &0xFFFC;
+pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE; // 65534
+pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 65535
+pub static THIRDPARTYAPI_ERROR_CODE: &u16 = &0xFFFC; // 65532
 
 pub const WS_HEARTBEAT_INTERVAL: StdDuration = StdDuration::from_secs(5);
 pub const WS_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(1);
