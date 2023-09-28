@@ -193,7 +193,7 @@ async fn verify_twitter_task(
                                 if task_starts_with.starts_with("twitter"){
                                     
                                     match task_type{
-                                        "username" | "username-"=> { /* all task names start with username */
+                                        "username" | "username-"=> { /* all task names start with username */                                                
                                             bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
                                         },
                                         "code" | "code-" => { /* all task names start with code */
@@ -303,7 +303,7 @@ async fn get_token_value(
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
 
-    let value = calculate_token_value(tokens.to_owned()).await;
+    let value = calculate_token_value(tokens.to_owned(), redis_client.clone()).await;
     resp!{
         GetTokenValueResponse, // the data type
         GetTokenValueResponse{

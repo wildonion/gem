@@ -1596,7 +1596,7 @@ async fn charge_wallet(
 
                     let u_region = user.region.unwrap();
 
-                    let token_price = calculate_token_value(charge_wallet_request_object.tokens).await;
+                    let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
                     let usd_token_price = token_price.0;
                     let irr_token_price = token_price.1;
 

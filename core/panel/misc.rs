@@ -230,6 +230,10 @@ pub async fn start_minting_card_process(
         let get_upload_meta_response_bytes = get_upload_meta_response.chunk().await.unwrap();
         let err_resp_vec = get_upload_meta_response_bytes.unwrap().to_vec();
         let get_upload_meta_response_json = serde_json::from_slice::<NftPortUploadMetadataResponse>(&err_resp_vec);
+        /* 
+            if we're here means that we couldn't map the bytes into the NftPortUploadMetadataResponse 
+            and perhaps we have errors in response from the nftport service
+        */
         if get_upload_meta_response_json.is_err(){
                 
             /* log caching using redis */
@@ -240,7 +244,7 @@ pub async fn start_minting_card_process(
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
             return (String::from(""), String::from(""), 1);
@@ -287,6 +291,10 @@ pub async fn start_minting_card_process(
             let get_mint_response_bytes = get_mint_response.chunk().await.unwrap();
             let err_resp_vec = get_mint_response_bytes.unwrap().to_vec();
             let get_mint_response_json = serde_json::from_slice::<NftPortMintResponse>(&err_resp_vec);
+            /* 
+                if we're here means that we couldn't map the bytes into the NftPortMintResponse 
+                and perhaps we have errors in response from the nftport service
+            */
             if get_mint_response_json.is_err(){
                     
                 /* log caching using redis */
@@ -297,7 +305,7 @@ pub async fn start_minting_card_process(
 
                 /* custom error handler */
                 use error::{ErrorKind, ThirdPartyApiError, PanelError};
-                let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+                let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                 return (String::from(""), String::from(""), 1);
@@ -345,6 +353,10 @@ pub async fn start_minting_card_process(
                     let get_nft_response_bytes = get_nft_response.chunk().await.unwrap();
                     let err_resp_vec = get_nft_response_bytes.unwrap().to_vec();
                     let get_nft_response_json = serde_json::from_slice::<NftPortGetNftResponse>(&err_resp_vec);
+                    /* 
+                        if we're here means that we couldn't map the bytes into the NftPortGetNftResponse 
+                        and perhaps we have errors in response from the nftport service
+                    */
                     if get_nft_response_json.is_err(){
                             
                         /* log caching using redis */
@@ -355,7 +367,7 @@ pub async fn start_minting_card_process(
 
                         /* custom error handler */
                         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-                        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+                        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         return (String::from(""), String::from(""), 1);
@@ -450,6 +462,10 @@ pub async fn start_burning_card_process(
     let get_burn_response_bytes = get_burn_response.chunk().await.unwrap();
     let err_resp_vec = get_burn_response_bytes.unwrap().to_vec();
     let get_burn_response_json = serde_json::from_slice::<NftPortBurnResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortBurnResponse 
+        and perhaps we have errors in response from the nftport service
+    */
     if get_burn_response_json.is_err(){
             
         /* log caching using redis */
@@ -512,26 +528,47 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
             .arg("https://api.nftport.xyz/v0/files")
             .output();
 
+        /* if we're here means that we have io error from the std::process::Command */
         if get_upload_output.is_err(){
-
+            
+            /* custom error handler */
+            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            let process_cmd_error_content = get_upload_output.as_ref().unwrap_err().to_string();
+            let process_cmd_error_content_vec = process_cmd_error_content.as_bytes().to_vec();
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, process_cmd_error_content_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(process_cmd_error_content.clone())), "upload_file_to_ipfs");
+            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+            
+            /* log caching using redis */
+            let upload_logs_key_err = format!("ERROR=>ExecutecURLCommand|Time:{}", chrono::Local::now().to_string());
+            let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, process_cmd_error_content.clone()).await;
+            
+            error!("cURL process command output error: {}", process_cmd_error_content);
             return (NftPortUploadFileToIpfsData::default(), 1);
         }
 
-        let res = &get_upload_output.unwrap().stdout;
+        let res = &get_upload_output.as_ref().unwrap().stdout;
+        let cloned_err_resp_vec = res.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+
+        info!("decoded cURL output response: {}", err_resp_str);
         let get_upload_ipfs_response_json = serde_json::from_slice::<NftPortUploadFileToIpfsData>(&res);
+        
+        /* 
+            if we're here means that we couldn't map the bytes into the NftPortUploadFileToIpfsData 
+            and perhaps we have errors in response from the nftport service
+        */
         if get_upload_ipfs_response_json.is_err(){
 
             /* log caching using redis */
-            let cloned_err_resp_vec = res.clone();
-            let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
             let upload_logs_key_err = format!("ERROR=>NftPortUploadFileToIpfsData|Time:{}", chrono::Local::now().to_string());
             let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str).await;
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "upload_file_to_ipfs");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
+            error!("serde decoding Nftport response error: {}", err_resp_str);
             return (NftPortUploadFileToIpfsData::default(), 1);
 
         }
@@ -622,16 +659,45 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 
 }
 
-pub async fn calculate_token_value(tokens: i64) -> (i64, i64){
+pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> (i64, i64){
 
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let currencty_layer_secret_key = std::env::var("CURRENCY_LAYER_TOKEN").unwrap();
     let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,GBP,IRR&source=USD&format=1", currencty_layer_secret_key);
-    let get_currencies = reqwest::Client::new()
+    let res = reqwest::Client::new()
         .get(endpoint.as_str())
         .send()
         .await;
 
-    let currencies = get_currencies.unwrap().json::<CurrencyLayerResponse>().await.unwrap();
+    let get_currencies_response = &mut res.unwrap();
+    let get_currencies_response_bytes = get_currencies_response.chunk().await.unwrap();
+    let err_resp_vec = get_currencies_response_bytes.unwrap().to_vec();
+    let get_currencies_response_json = serde_json::from_slice::<CurrencyLayerResponse>(&err_resp_vec);
+    
+    /* 
+        if we're here means that we couldn't map the bytes into the CurrencyLayerResponse 
+        and perhaps we have errors in response from the currency layer
+    */
+    if get_currencies_response_json.is_err(){
+        
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let get_currencies_logs_key_err = format!("ERROR=>CurrencyLayerResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(get_currencies_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "calculate_token_value");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+        error!("serde decoding currecny layer response error: {}", err_resp_str);
+
+        return (0, 0);
+
+    }
+    
+    let currencies = get_currencies_response_json.unwrap();
 
     let value_of_a_token_usd = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
     
@@ -1461,6 +1527,59 @@ macro_rules! verify {
             if data_field.is_some(){
                 let status = data_field.unwrap().get("status");
                 if status.is_some(){
+
+                    /* ----------------------------------------------------------------------------------------------------------- */
+                    /* --------------------------- logging number of requests to twitter every 15 mins --------------------------- */
+                    /* ----------------------------------------------------------------------------------------------------------- */
+                    /* 
+                        
+                        HashMap<next_15mins_interval, requests_so_far>
+                        
+                        let redis_x_15mins_interval = {1695920136: 200, 1695920158: 400, ......., 1695920167: 890};
+                        
+                        the key is the next interval and the value is the total requests sent 
+                        so far to the X before reaching the next 15 mins interval.
+                    */
+                    let x_15mins_interval = 900_000u64;
+                    let now = chrono::Local::now().timestamp_millis() as u64;
+                    let mut redis_conn = $redis_client.get_async_connection().await.unwrap();
+
+                    let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
+                    let mut redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
+                        Ok(data) => {
+                            let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+                            rl_data
+                        },
+                        Err(e) => {
+                            let empty_x_15mins_interval = HashMap::<u64, u64>::new();
+                            let rl_data = serde_json::to_string(&empty_x_15mins_interval).unwrap();
+                            let _: () = redis_conn.set("x_15mins_interval", rl_data).await.unwrap();
+                            HashMap::new()
+                        }
+                    };
+
+                    /* updating twitter 15 mins interval rate limit requests  */
+                    let next_interval = if redis_x_15mins_interval.is_empty(){
+                        now + x_15mins_interval
+                    } else{
+                        let last_interval = redis_x_15mins_interval.iter().last().unwrap().1;
+                        if now - last_interval > x_15mins_interval{
+                            let next_interval = last_interval + x_15mins_interval;
+                            next_interval
+                        } else{
+                            *last_interval
+                        }
+                    };
+                    redis_x_15mins_interval.insert(next_interval, 0);
+
+                    redis_x_15mins_interval
+                        .entry(next_interval)
+                        .and_modify(|reqs| { *reqs+=2 } )
+                        .or_insert(2);
+
+                        let rl_data = serde_json::to_string(&redis_x_15mins_interval).unwrap();
+                        let _: () = redis_conn.set("x_15mins_interval_request", rl_data).await.unwrap();
+                    /* ----------------------------------------------------------------------------------------------------------- */
 
                     let bool_status = status.unwrap().to_string();
                     if bool_status == "false"{

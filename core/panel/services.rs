@@ -80,6 +80,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_deposits);
     config.service(apis::admin::exports::get_all_users_withdrawals);
     config.service(apis::admin::exports::start_tcp_server);
+    config.service(apis::admin::exports::get_x_requests);
 
     // other routs maybe ?
     // ...
