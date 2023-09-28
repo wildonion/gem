@@ -31,6 +31,9 @@ ARG ARCH=x86_64
 # trusted ssl certs must be in /etc/ssl/certs/ca-certificates.crt
 RUN apt-get update && apt-get install -y libssl-dev ca-certificates
 
+# is required to execute curl command from rust code
+RUN apt-get -y update && apt-get -y install curl
+
 ENV LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 ENV MONGODB_ENGINE=mongodb
 ENV MONGODB_HOST=mongodb
@@ -58,6 +61,7 @@ RUN USER=root chown -R root:root /app
 # we must copy necessary runtime files into this stage for ./mafia
 COPY ./.env /app/.env
 COPY ./addrs.json /app/addrs.json
+COPY assets /app/assets
 
 USER root
 
