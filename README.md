@@ -29,7 +29,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 🎙️ HOSTED ON ==> Digitalocean
 ```
 
-## 🍩 Panel APIs V0.1.3 Infra Features
+## 🍩 Panel Infra Features
 
 * **🦀 Rust flows in you 🌊**: write codes that are the matter-of-future flows!
 
@@ -37,23 +37,21 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 * 🦾 functional, macro, MVC and ACL based design pattern server APIs
 
-* 🎨 **Jenkins** based CI/CD
-
 * ☢️ better error handling using **match** and **Option** syntax, also all errors are in form `Result<actix::HttpResponse, actix::Error>` which allows the client to know the all in-app error reasons and prevent server from crashing.
 
-* ❌ custom error handler (`PanelError`) to logs all possible server (actixweb and websocket) and storage (redis, redis async and diesel) IO errors into file in conse panel service.
+* ❌ custom error handler (`PanelError`) to logs all possible server (actixweb and websocket), storage (redis, redis async and diesel) IO errors and third party errors into file in conse panel service, the file can be downloded throught the `https://api.panel.conse.app/logs` route.
  
-* 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise their events inside the panel  
+* 🧑🏻‍💼 game managers (admins) can define score based twitter tasks for users (players), reveal role, collaborate with other admins and share their registered events using conse **ECQ** (Event Collaboration Queue) system and advertise and promote their events inside the panel  
 
 * 🍪 **cookie** and **JWT** based authentication strategy
 
 * 🔐 **Argon2** as the **KDF** used for password hasing
 
-* 📬 mail verification process for users
+* 📬 mail and phone verification process for users
 
 * 🥝 server health-check APIs (check-token, health and logout)
 
-* 📡 **swagger** docs using **utoipa openapi** for all admin, dev and user panel APIs supports all possible server's responses 
+* 📡 **swagger** docs using **utoipa openapi** for some of admin, dev and user panel APIs supports all possible server's responses 
 
 * 🎒 supports **postgres**, **mongodb** and **redis** as the app storage  
 
