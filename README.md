@@ -30,7 +30,7 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 🎙️ HOSTED ON ==> Digitalocean
 ```
 
-## 🍩 Panel Infra Features
+## 🍩 Conse Panel Infra Features
 
 * **🦀 Rust flows in you 🌊**: write codes that are the matter-of-future flows!
 

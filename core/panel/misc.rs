@@ -163,6 +163,11 @@ pub struct GetTokenValueResponse{
     pub usd: i64
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct CommitWebhookEventRequest{
+
+}
+
 pub async fn start_minting_card_process(
         sender_screen_cid: String,
         deposit_object: NewUserDepositRequest, 

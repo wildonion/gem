@@ -28,7 +28,6 @@ use crate::schema::tasks;
 #[openapi(
     paths(
         verify_twitter_task,
-        get_token_value
     ),
     components(
         schemas(
@@ -283,13 +282,7 @@ async fn verify_twitter_task(
     
 }
 
-#[utoipa::path(
-    context_path = "/public",
-    responses(
-        (status=200, description="Fetched Successfully", body=GetTokenPriceResponse),
-    ),
-    tag = "crate::apis::public",
-)]
+
 #[get("/get-token-value/{tokens}")]
 #[passport(admin, user, dev)]
 async fn get_token_value(
@@ -316,6 +309,53 @@ async fn get_token_value(
     }
 
 }
+
+#[post("/commit-webhook")]
+#[passport(admin, user, dev)]
+async fn commit_webhook(
+        req: HttpRequest,
+        event_request: web::Json<CommitWebhookEventRequest>,
+        storage: web::Data<Option<Arc<Storage>>>
+    ) -> PanelHttpResponse{
+
+
+        /* 
+            once the repo gets commited, github will send a request to this route,
+            in the meanwhile we'll publish a new commit topic through the redis 
+            pubsub streaming channel in order subscribers be able to subscribe to 
+            the <REPO_NAME:COMMIT> topic in other scopes and routes of this app 
+            also we'll build a new version of the commited app in here using 
+            std::process::Command
+        */
+
+        /* extracting shared state data */
+        let storage = storage.as_ref().to_owned();
+        let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+        let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+        match storage.clone().unwrap().get_pgdb().await{
+            Some(pg_pool) => {
+
+                let connection = &mut pg_pool.get().unwrap();
+                let event_request = event_request.to_owned();
+
+
+                todo!()
+
+            },
+            None => {
+                
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    STORAGE_ISSUE, // response message
+                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            }
+        }
+
+    }
 
 /*
 
