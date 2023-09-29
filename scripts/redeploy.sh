@@ -101,7 +101,9 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     --volume jenkins-docker-certs:/certs/client:ro \
     jenkins-blueocean:lts
 
-    echo "🚨 Please use `sudo docker logs -f jenkins-blueocean` or `sudo docker exec jenkins-blueocean cat /var/jenkins_home/secrets/initialAdminPassword` command to get the jenkins admin password!"
+    echo "🚨 Please use `sudo docker logs -f jenkins-blueocean` or 
+    `sudo docker exec jenkins-blueocean cat /var/jenkins_home/secrets/initialAdminPassword` 
+    command to get the jenkins admin password!"
 
     docker volume create portainer_data
     docker run -d \
@@ -109,8 +111,8 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
     -p 9443:9443 \
     --name portainer \
     --restart=always \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v portainer_data:/data \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    --volume portainer_data:/data \
     portainer/portainer-ce:latest
 
     sudo docker run -d \
