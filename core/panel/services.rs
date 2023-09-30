@@ -80,7 +80,6 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_deposits);
     config.service(apis::admin::exports::get_all_users_withdrawals);
     config.service(apis::admin::exports::start_tcp_server);
-    config.service(apis::admin::exports::get_x_requests);
 
     // other routs maybe ?
     // ...
@@ -160,6 +159,7 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::verify_twitter_task);
     config.service(apis::public::exports::check_users_tassk);
     config.service(apis::public::exports::get_token_value);
+    config.service(apis::public::exports::get_x_requests);
 
     // other routs maybe ?
     // ...

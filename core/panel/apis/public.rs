@@ -319,43 +319,97 @@ async fn commit_webhook(
     ) -> PanelHttpResponse{
 
 
-        /* 
-            once the repo gets commited, github will send a request to this route,
-            in the meanwhile we'll publish a new commit topic through the redis 
-            pubsub streaming channel in order subscribers be able to subscribe to 
-            the <REPO_NAME:COMMIT> topic in other scopes and routes of this app 
-            also we'll build a new version of the commited app in here using 
-            std::process::Command
-        */
+    /* 
+        once the repo gets commited, github will send a request to this route,
+        in the meanwhile we'll publish a new commit topic through the redis 
+        pubsub streaming channel in order subscribers be able to subscribe to 
+        the <REPO_NAME:COMMIT> topic in other scopes and routes of this app 
+        also we'll build a new version of the commited app in here using 
+        std::process::Command
+    */
 
-        /* extracting shared state data */
-        let storage = storage.as_ref().to_owned();
-        let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-        let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+    /* extracting shared state data */
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
-        match storage.clone().unwrap().get_pgdb().await{
-            Some(pg_pool) => {
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
 
-                let connection = &mut pg_pool.get().unwrap();
-                let event_request = event_request.to_owned();
+            let connection = &mut pg_pool.get().unwrap();
+            let event_request = event_request.to_owned();
 
 
-                todo!()
+            todo!()
 
-            },
-            None => {
-                
-                resp!{
-                    &[u8], // the data type
-                    &[], // response data
-                    STORAGE_ISSUE, // response message
-                    StatusCode::INTERNAL_SERVER_ERROR, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
+        },
+        None => {
+            
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
             }
         }
-
     }
+
+}
+
+#[get("/get-x-requests")]
+async fn get_x_requests(
+        req: HttpRequest,   
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+            let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
+            let redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
+                Ok(data) => {
+                    let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+                    rl_data
+                },
+                Err(e) => {
+                    let empty_x_15mins_interval = HashMap::<u64, u64>::new();
+                    let rl_data = serde_json::to_string(&empty_x_15mins_interval).unwrap();
+                    let _: () = redis_conn.set("x_15mins_interval", rl_data).await.unwrap();
+                    HashMap::new()
+                }
+            }; 
+
+            resp!{
+                HashMap<u64, u64>, // the data type
+                redis_x_15mins_interval, // response data
+                FETCHED, // response message
+                StatusCode::OK, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+ 
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
 
 /*
 
@@ -466,6 +520,7 @@ pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_tassk;
     pub use super::get_token_value;
+    pub use super::get_x_requests;
     /* 
     pub use super::get_posts; // /?from=1&to=50
     pub use super::get_all_contracts; // /?from=1&to=50

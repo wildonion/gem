@@ -873,6 +873,9 @@ pub mod s3{
             we must call as_ref() on the instance before using it to return 
             a reference to the instance to take the ownership of the referenced
             instance by using the unwrap()
+
+            also we've used the lifetime of self param to return a reference to 
+            mongodb Client, pg Pool and redis Client objects
         */
         
         pub async fn get_mongodb(&self) -> Option<&Client>{
@@ -1551,16 +1554,8 @@ macro_rules! verify {
 
                     let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
                     let mut redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
-                        Ok(data) => {
-                            let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
-                            rl_data
-                        },
-                        Err(e) => {
-                            let empty_x_15mins_interval = HashMap::<u64, u64>::new();
-                            let rl_data = serde_json::to_string(&empty_x_15mins_interval).unwrap();
-                            let _: () = redis_conn.set("x_15mins_interval", rl_data).await.unwrap();
-                            HashMap::new()
-                        }
+                        Ok(data) => serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap(),
+                        Err(e) => HashMap::new()
                     };
 
                     /* updating twitter 15 mins interval rate limit requests  */
@@ -1573,7 +1568,7 @@ macro_rules! verify {
                             .and_modify(|reqs| { *reqs+=2 } )
                             .or_insert(2);
                     } else{
-                        let last_interval = redis_x_15mins_interval.iter().last().unwrap().1;
+                        let last_interval = redis_x_15mins_interval.keys().max().unwrap_or(&now);
                         if now - last_interval > x_15mins_interval{
                             /* we have to go for the next interval */
                             let next_interval = last_interval + x_15mins_interval;
@@ -1591,7 +1586,6 @@ macro_rules! verify {
                             .or_insert(2);
                         }
                     }
-                    
 
                     let rl_data = serde_json::to_string(&redis_x_15mins_interval).unwrap();
                     let _: () = redis_conn.set("x_15mins_interval_request", rl_data).await.unwrap();
