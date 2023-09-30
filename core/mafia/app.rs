@@ -105,8 +105,8 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
     let environment = env::var("ENVIRONMENT").expect("⚠️ no environment variable set");
     let host = env::var("HOST").expect("⚠️ no host variable set");
     let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
-    let sms_api_token = env::var("OTP_API_TOKEN").expect("⚠️ no sms api token variable set");
-    let sms_template = env::var("OTP_API_TEMPLATE").expect("⚠️ no sms template variable set");
+    let sms_api_token = env::var("OTP_API_TOKEN").expect("⚠️ no otp api token variable set");
+    let sms_template = env::var("OTP_API_TEMPLATE").expect("⚠️ no otp template variable set");
     let io_buffer_size = env::var("IO_BUFFER_SIZE").expect("⚠️ no io buffer size variable set").parse::<u32>().unwrap() as usize; // usize is the minimum size in os which is 32 bits
     let (sender, receiver) = oneshot::channel::<u8>(); // oneshot channel for handling server signals - we can't clone the receiver of the oneshot channel
     
