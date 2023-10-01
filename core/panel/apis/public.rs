@@ -216,9 +216,9 @@ async fn verify_twitter_task(
 
                     if bot1.x_app_limit_24hour_remaining.is_some(){
 
-                            if bot1.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
+                        info!("🤖 bot1 -> x_app_limit_24hour_remaining: {}", bot1.clone().x_app_limit_24hour_remaining.unwrap_or("".to_string()));
 
-                                info!("🤖 bot1 -> x_app_limit_24hour_remaining: {}", bot1.x_app_limit_24hour_remaining.unwrap_or("".to_string()));
+                            if bot1.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
 
                                 let reset_at = format!("{}, Bot1 Reset At {}", TWITTER_24HOURS_LIMITED, bot1.x_app_limit_24hour_reset.unwrap());
                                 resp!{
@@ -239,9 +239,9 @@ async fn verify_twitter_task(
 
                     if bot2.x_app_limit_24hour_remaining.is_some(){
 
-                            if bot2.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
+                        info!("🤖 bot2 -> x_app_limit_24hour_remaining: {}", bot2.clone().x_app_limit_24hour_remaining.unwrap_or("".to_string()));
 
-                                info!("🤖 bot2 -> x_app_limit_24hour_remaining: {}", bot2.x_app_limit_24hour_remaining.unwrap_or("".to_string()));
+                            if bot2.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
 
                                 let reset_at = format!("{}, Bot2 Reset At {}", TWITTER_24HOURS_LIMITED, bot2.x_app_limit_24hour_reset.unwrap());
                                 resp!{
