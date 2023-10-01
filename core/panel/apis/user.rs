@@ -1367,7 +1367,6 @@ pub async fn tasks_report(
             
             let connection = &mut pg_pool.get().unwrap();
 
-
             /* 
                  ------------------------------------- 
                 | --------- PASSPORT CHECKING --------- 

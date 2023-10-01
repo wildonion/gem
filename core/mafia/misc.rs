@@ -107,8 +107,8 @@ pub mod app{
                 name: String::from(""),
                 req: request,
                 res: response,
-                callback: None, // TODO - caching using closures
-                access_level: None, // TODO
+                callback: None,
+                access_level: None,
             }
         } 
         
@@ -257,7 +257,7 @@ pub mod app{
                 if s == 0{
                     info!("🔌 shutting down the server - {}", chrono::Local::now().naive_local());
                     tokio::signal::ctrl_c().await.expect("😖 install the plugin CTRL+C signal to the server");
-                } else if s == 1 { // TODO - freez the server
+                } else if s == 1 {
                     // ...
                 }
             },

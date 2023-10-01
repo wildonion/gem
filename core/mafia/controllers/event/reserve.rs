@@ -277,13 +277,6 @@ pub async fn process_payment_request(req: Request<Body>) -> MafiaResult<hyper::R
     let db = &req.data::<Client>().unwrap().to_owned();
 
 
-    
-    // TODO - 
-    // get all (un)successful payments for an event with admin or God access
-    // get all (un)successful payments for a user with user access
-
-
-
     let response_body = misc::app::Response::<misc::app::Nill>{
         message: NOT_IMPLEMENTED,
         data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array

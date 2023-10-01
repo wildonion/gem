@@ -86,13 +86,13 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 
 **NOTE**: both `mafia` and `panel` services inside `core` are just different binaries which are sharing a same `Cargo.toml` setup.
 
-## 📘 Git Books and Docs
+## 📘 Docs
 
-* [Engines](https://conse.gitbook.io/engines)
+* [Engines](https://github.com/wildonion/gem/wiki/Engines)
 
-* [Crypto ID](https://conse.gitbook.io/cid)
+* [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
 
-* [Reveal Role](https://conse.gitbook.io/reveal-role)
+* [Reveal Role](https://github.com/wildonion/gem/wiki/Reveal-Role)
 
 * [TLPS](https://github.com/wildonion/gem/wiki/TLPs)
 

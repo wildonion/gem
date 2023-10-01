@@ -2461,33 +2461,6 @@
 							"response": []
 						},
 						{
-							"name": "Get X Requests",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NTkyNjc3OTA5MjM2MTAwMCwiZXhwIjoxNjk4NTE4Nzc5LCJpYXQiOjE2OTU5MjY3Nzl9.jdDhvKuZXWKfe-fLXTn3RvBGsklbKEwYVYTgOnuTkYSYCakc78TRnWhMemzOaUGxb8kuDsp6Qy41B9IRultLUw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-admin}}/get-x-requests",
-									"host": [
-										"{{panel-admin}}"
-									],
-									"path": [
-										"get-x-requests"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Get Users Withdrawals",
 							"request": {
 								"auth": {
@@ -3266,6 +3239,26 @@
 										"1",
 										"twitter-task",
 										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get X Requests",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-x-requests",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-x-requests"
 									]
 								}
 							},

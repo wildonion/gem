@@ -267,11 +267,7 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         error!("😖 conse server error {} - {}", e, chrono::Local::now().naive_local());
     }
     
-    
-    // TODO - 
-    // sender.send(0).unwrap(); // sending the shutdown signal to the downside of the channel, the receiver part will receive the signal once the server gets shutdown gracefully on ctrl + c
-    
-    
+
 
 
 
