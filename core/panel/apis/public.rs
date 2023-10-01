@@ -161,14 +161,103 @@ async fn verify_twitter_task(
         redis_twitter_rate_limiter.insert(doer_id as u64, now); // updating the redis rate limiter map
         let rl_data = serde_json::to_string(&redis_twitter_rate_limiter).unwrap();
         let _: () = redis_conn.set("twitter_rate_limiter", rl_data).await.unwrap(); // writing to redis ram
-
-
         
 
         match storage.clone().unwrap().get_pgdb().await{
             Some(pg_pool) => {
                 
                 let connection = &mut pg_pool.get().unwrap();
+
+                /* ---------------------------------------------------------------------- */
+                /* checking rate limit data to see if we should reject the request or not */
+                /* ---------------------------------------------------------------------- */
+                let rl_data = fetch_x_rl_data(redis_client.clone()).await.user_rate_limit_info;
+                let get_done_tasks = UserTask::all(connection).await;
+                let Ok(done_tasks) = get_done_tasks else{
+                    let error_resp = get_done_tasks.unwrap_err();
+                    return error_resp;
+                };
+
+                if !done_tasks.is_empty() && rl_data.is_empty() ||
+                    done_tasks.is_empty() && !rl_data.is_empty(){
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        TWITTER_BOT_ISSUE, // response message
+                        StatusCode::NOT_ACCEPTABLE, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                }
+
+                /* 
+                    these must be initialized in order to be able to check them later 
+                    because the loop might not gets executed at all 
+                */
+                let mut bot1_info: Option<XRlInfo> = None;
+                let mut bot2_info: Option<XRlInfo> = None;
+
+                for x_rl_info in rl_data{
+                    let rl_info = x_rl_info.clone().rl_info;
+                    let bot = rl_info.clone().bot;
+                    if bot.is_some(){
+                        if bot.as_ref().unwrap() == &"1".to_string(){
+                            bot1_info = Some(rl_info);
+                        } else if bot.as_ref().unwrap() == &"2".to_string(){
+                            bot2_info = Some(rl_info);
+                        }
+                    } else{
+                        bot1_info = None;
+                    }
+                }
+
+                if bot1_info.is_some(){
+                    
+                    let bot1 = bot1_info.unwrap();
+
+                    if bot1.x_app_limit_24hour_remaining.is_some(){
+
+                            if bot1.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
+
+                                info!("🤖 bot1 -> x_app_limit_24hour_remaining: {}", bot1.x_app_limit_24hour_remaining.unwrap_or("".to_string()));
+
+                                let reset_at = format!("{}, Bot1 Reset At {}", TWITTER_24HOURS_LIMITED, bot1.x_app_limit_24hour_reset.unwrap());
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &reset_at, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+                    }
+
+                }
+
+                if bot2_info.is_some(){
+                    
+                    let bot2 = bot2_info.unwrap();
+
+                    if bot2.x_app_limit_24hour_remaining.is_some(){
+
+                            if bot2.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
+
+                                info!("🤖 bot2 -> x_app_limit_24hour_remaining: {}", bot2.x_app_limit_24hour_remaining.unwrap_or("".to_string()));
+
+                                let reset_at = format!("{}, Bot2 Reset At {}", TWITTER_24HOURS_LIMITED, bot2.x_app_limit_24hour_reset.unwrap());
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    &reset_at, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+                    }
+
+                }
+
+
+                /* if we're here means we're not rate limited */
 
                 /* if the user task is inside db the no need to call bot APIs since it's already done */
                 match UserTask::find(doer_id, job_id, connection).await{
@@ -372,28 +461,17 @@ async fn get_x_requests(
             let connection = pg_pool.get().unwrap();
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-            let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
-            let redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
-                Ok(data) => {
-                    let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
-                    rl_data
-                },
-                Err(e) => {
-                    let empty_x_15mins_interval = HashMap::<u64, u64>::new();
-                    let rl_data = serde_json::to_string(&empty_x_15mins_interval).unwrap();
-                    let _: () = redis_conn.set("x_15mins_interval", rl_data).await.unwrap();
-                    HashMap::new()
-                }
-            }; 
+
+            let rl_data = fetch_x_rl_data(redis_client.clone()).await;
 
             resp!{
-                HashMap<u64, u64>, // the data type
-                redis_x_15mins_interval, // response data
+                TotalXRlInfo, // the data type
+                rl_data, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie
             }
- 
+            
         
         }, 
         None => {
@@ -423,7 +501,7 @@ async fn get_x_requests(
 */
 
 #[get("/bot/check-users-tasks")]
-async fn check_users_tassk(
+async fn check_users_task(
         req: HttpRequest,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -518,7 +596,7 @@ async fn check_users_tassk(
 
 pub mod exports{
     pub use super::verify_twitter_task;
-    pub use super::check_users_tassk;
+    pub use super::check_users_task;
     pub use super::get_token_value;
     pub use super::get_x_requests;
     /* 

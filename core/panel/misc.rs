@@ -14,7 +14,29 @@ use actix::Addr;
 use models::users_contracts::*;
 
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct TotalXRlInfo{
+    pub user_rate_limit_info: Vec<XUserRateLimitInfo>,
+    pub x_15mins_interval_reqs: HashMap<u64, u64>
+}
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct XRlInfo{
+    pub bot: Option<String>,
+    pub x_rate_limit_remaining: Option<String>,
+    pub x_rate_limit_limit: Option<String>,
+    pub x_rate_limit_reset: Option<String>,
+    pub x_app_limit_24hour_limit: Option<String>,
+    pub x_app_limit_24hour_reset: Option<String>,
+    pub x_app_limit_24hour_remaining: Option<String>,
+}
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct XUserRateLimitInfo{
+    pub username: String,
+    pub route: String,
+    pub rl_info: XRlInfo,
+    pub request_at: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Keys{
@@ -587,6 +609,112 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
 
 }
 
+pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
+
+    let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+    /* ----------------------------------------------------------------------- */
+    /* ------------------ get x_15mins_interval_request data ------------------ */
+    /* ----------------------------------------------------------------------- */
+    let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
+    let redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
+        Ok(data) => {
+            let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
+            rl_data
+        },
+        Err(e) => {
+            let empty_x_15mins_interval = HashMap::<u64, u64>::new();
+            let rl_data = serde_json::to_string(&empty_x_15mins_interval).unwrap();
+            let _: () = redis_conn.set("x_15mins_interval", rl_data).await.unwrap();
+            HashMap::new()
+        }
+    }; 
+    /* ----------------------------------------------------------------------- */
+    /* ----------------------------------------------------------------------- */
+
+
+    /* ------------------------------------------------------------- */
+    /* ------------------ get redis_x_rl_info data ------------------ */
+    /* ------------------------------------------------------------- */
+    
+    /* 
+        following requests takes the XUserRateLimitInfo struct from the bot server 
+        make sure that you're retrieving the x-rate-* and x-app-* infos from the
+        response header inside each api sent to the twitter.
+    */
+    let get_redis_x_rl_info: RedisResult<String> = redis_conn.get("redis_x_rl_info").await;
+    let redis_data = match get_redis_x_rl_info{
+        Ok(redis_x_rl_info) => serde_json::from_str::<Vec<XUserRateLimitInfo>>(&redis_x_rl_info).unwrap(),
+        Err(e) => vec![XUserRateLimitInfo::default()]
+    };
+
+    let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+    let get_rl_info_route = format!("http://{}/get-ratelimit-info", bot_endpoint);
+    let res = reqwest::Client::new()
+        .get(get_rl_info_route)
+        .send()
+        .await;
+
+
+    /* ------------------- TWITTER BOT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_xrl_response = &mut res.unwrap();
+    let get_xrl_response_bytes = get_xrl_response.chunk().await.unwrap();
+    let err_resp_vec = get_xrl_response_bytes.unwrap().to_vec();
+    let get_xrl_response_json = serde_json::from_slice::<Vec<XUserRateLimitInfo>>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the Vec<XUserRateLimitInfo> 
+        and perhaps we have errors in response from the twitter bot service
+    */
+    if get_xrl_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let get_nft_logs_key_err = format!("ERROR=>NftPortGetNftResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "fetch_x_rl_data");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+        return TotalXRlInfo::default();
+
+    }
+
+    let rl_info = get_xrl_response_json.unwrap();
+
+    /* redis caching */
+    let final_data = if redis_data.len() < rl_info.len(){ // means that we have new data coming from the third party server
+        /* updating redis with new data */
+        let _: () = redis_conn.set("redis_x_rl_info", serde_json::to_string(&rl_info).unwrap()).await.unwrap();
+        rl_info
+    } else{
+        /* load from the redis cause we don't have any new data */
+        redis_data
+    };
+    /* ------------------------------------------------------------- */
+    /* ------------------------------------------------------------- */
+
+    TotalXRlInfo{ // response data
+        user_rate_limit_info: final_data,
+        x_15mins_interval_reqs: redis_x_15mins_interval, 
+    }
+    
+}
+
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
@@ -1088,14 +1216,14 @@ macro_rules! server {
                 db_password
             }.await;
 
-            
 
             /*  
                                         SETTING UP SHARED STATE DATA
                 
                 make sure we're starting the RoleNotifServer, MmrNotifServer and EcqNotifServer actor in here 
-                and pass the actor isntance to the routers' threadpool otherwise the actor will be started each 
-                time by calling the related websocket route
+                and pass the actor isntance to the routers' threadpool in order to move them between different
+                apis, otherwise each actor will be started each time by calling the related websocket route and
+                the their last state will be lost.
             */
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
@@ -1108,27 +1236,22 @@ macro_rules! server {
 
             let shared_storage = Data::new(app_storage.clone());
 
-            /*
+            /*  
+                we can have a global like data by sharing it between different parts of the app
+                using jobq channel cause in rust we don't have global concepts to define a mutable 
+                global type thus we have to put the type inside the Arc<Mutex<Type>> and share it 
+                using jobq channel like mpsc between other parts and in order to mutate it we must 
+                lock on the type to acquire the mutex for updating data, something like hashmap 
+                std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>>, that's why we're using
+                app_data() method to share mutable global data structures between actix threads and
+                apis asyncly, actually actix do this behind the scene for us using jobq channels 
+                to avoid deadlocks and race conditions, also since every api or router is an async 
+                task that must be handled inside the hyper threads thus the data that we want to 
+                use inside of them and share it between other routers must be bounded Send + Sync + 'static
+                
                 the HttpServer::new function takes a factory function that produces an instance of the App, 
                 not the App instance itself. This is because each worker thread needs to have 
                 its own App instance.
-
-                handle streaming async tasks like socket connections in a none blocking manner asyncly and 
-                concurrently using tokio::spawn(async move{}) and shared state data between tokio::spawn() 
-                green threadpool using jobq channels and clusters using redis and routers' threads using arc, 
-                mutex and rwlock also data must be Send + Sync + 'static also handle incoming async events 
-                into the server using tokio::select!{} eventloop. 
-
-                we're sharing the db_instance and redis connection state between routers' threads to get the 
-                data inside each api also for this the db and redis connection data must be shareable and safe 
-                to send between threads which must be bounded to Send + Sync traits 
-
-                since every api or router is an async task that must be handled inside the hyper threads thus 
-                the data that we want to use inside of them and share it between other routers must be 
-                Arc<Mutex<Data>> + Send + Sync + 'static 
-
-                mongodb and redis connection instances must be only Arc (shareable) to share them between threads 
-                since we don't want to mutate them in actix routers' threads. 
             */
             info!("➔ 🚀 {} panel server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
             let s = match HttpServer::new(move ||{
@@ -1248,7 +1371,8 @@ macro_rules! server {
                 from the main function, it's like the app will be halted in this
                 section of the code cause anything after those threads rquires 
                 that all the threads to be stopped and joined in order to execute 
-                the logic after running the http server.
+                the logic after running the http server, which this can be done
+                by stopping all of the threads using ctrl + c.
             */
             // info!("➔ 🎛️ starting conse panel on address: [{}:{}]", host, port);
             
@@ -1997,7 +2121,7 @@ macro_rules! contract {
             impl $name{
                         
                 // https://stackoverflow.com/questions/64790850/how-do-i-write-a-macro-that-returns-the-implemented-method-of-a-struct-based-on
-                // TODO - implement methods here 
+                // implement methods here 
                 // ...
             }
     }

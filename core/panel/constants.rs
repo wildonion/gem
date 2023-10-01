@@ -107,6 +107,8 @@ pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 
+pub static TWITTER_24HOURS_LIMITED: &str = "24 Hours Rate Limited";
+pub static TWITTER_BOT_ISSUE: &str = "Rate Limit Infos Are Empty, Bot Is Not Working Correctly";
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
 pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";
 pub static TWITTER_CODE_IS_NOT_VALID: &str = "Twitter Code Task Is Not Done";
