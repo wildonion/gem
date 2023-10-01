@@ -39,21 +39,23 @@ pub struct CurrentMatch{
 
 // fire/emit/publish UserNotif events through the ws channels
 #[derive(Serialize, Deserialize, Clone, Default)]
-pub struct UserNotif{
-    user_id: String,
-    notifs: Vec<NotifData>,
-    updated_at: Option<i64>,
+struct UserNotif<'info>{
+    pub user_id: &'info str,
+    pub notifs: Vec<NotifData<'info>>,
+    pub updated_at: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Default)]
-pub struct NotifData{
-    fired_at: Option<i64>,
-    seen: bool,
-    topic: String, // json string contains the actual data like fireing the player status (role and state changing) during the game 
+struct NotifData<'info>{
+    pub event_id: &'info str,
+    pub fired_at: i64,
+    pub seen: bool,
+    pub topic: &'info str, // event name
+    pub metadata: &'info str, // json string contains the actual data like fireing the player status (role and state changing) during the game 
 }
 
-impl UserNotif{
-    fn set(&mut self, notif_data: NotifData) -> Self{
+impl<'info> UserNotif<'info>{
+    fn set(&mut self, notif_data: NotifData<'info>) -> Self{
         self.notifs.push(notif_data);
         let user_notif = UserNotif { user_id: self.user_id.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at };
         UserNotif{
@@ -66,21 +68,41 @@ impl UserNotif{
     }
 }
 
-pub trait NotifExt{
+trait NotifExt<'info>{
     type Data;
-    fn set_user_notif(&mut self, notif_data: NotifData) -> Self;
-    fn get_user_notif(&self) -> Vec<NotifData>;
+    fn set_user_notif(&mut self, notif_data: NotifData<'info>) -> Self;
+    fn get_user_notif(&self) -> Vec<NotifData<'info>>;
 }
 
-impl NotifExt for UserNotif{
+impl<'info> NotifExt<'info> for UserNotif<'info>{
     type Data = Self;
 
-    fn get_user_notif(&self) -> Vec<NotifData> {
+    fn get_user_notif(&self) -> Vec<NotifData<'info>> {
         self.notifs.clone()
     }
 
-    fn set_user_notif(&mut self, new_notif: NotifData) -> Self { // since the set() method of the UserNotif instance is mutable this method must be mutable too
+    fn set_user_notif(&mut self, new_notif: NotifData<'info>) -> Self { // since the set() method of the UserNotif instance is mutable this method must be mutable too
         self.set(new_notif)
     }
+
+}
+
+pub async fn push_notif(event_id: &str, fired_at: i64, seen: bool, topic: &str, metadata: &str){
+
+
+    let usrer_notif = UserNotif{
+        user_id: "",
+        notifs: vec![
+            NotifData{ 
+                event_id, 
+                fired_at, 
+                seen, 
+                topic, 
+                metadata 
+            }
+        ],
+        updated_at: 0,
+    };
+
 
 }
