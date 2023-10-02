@@ -169,17 +169,18 @@ async fn verify_twitter_task(
                 let connection = &mut pg_pool.get().unwrap();
                 
                 /* check that we're 24 hours limited or not */
-                let rl_data = fetch_x_rl_data(redis_client.clone()).await.user_rate_limit_info;
+                let rl_data = fetch_x_app_rl_data(redis_client.clone()).await.app_rate_limit_info;
                 let check_is_24hours_limited = is_24hours_limited(connection, rl_data).await;
                 let Ok(_) = check_is_24hours_limited else{
                     let error_resp = check_is_24hours_limited.unwrap_err();
                     return error_resp;
                 };
 
-
-                /* if we're here means we're not rate limited */
-
-                /* if the user task is inside db the no need to call bot APIs since it's already done */
+                /*  
+                    if we're here means we're not rate limited also if the user task is inside db the 
+                    no need to call bot APIs since it's already done and with this logic we can avoid 
+                    rate limit issues and sick out the users that want to play with our apio :)
+                */
                 match UserTask::find(doer_id, job_id, connection).await{
                     false => {
                         
@@ -456,7 +457,7 @@ async fn get_x_requests(
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
 
-            let rl_data = fetch_x_rl_data(redis_client.clone()).await;
+            let rl_data = fetch_x_app_rl_data(redis_client.clone()).await;
 
             resp!{
                 TotalXRlInfo, // the data type

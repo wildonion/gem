@@ -17,7 +17,7 @@ use models::users_contracts::*;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct TotalXRlInfo{
-    pub user_rate_limit_info: Vec<XUserRateLimitInfo>,
+    pub app_rate_limit_info: Vec<XAppRlInfo>,
     pub x_15mins_interval_reqs: HashMap<u64, u64>
 }
 
@@ -31,6 +31,14 @@ pub struct XRlInfo{
     pub x_app_limit_24hour_reset: Option<String>,
     pub x_app_limit_24hour_remaining: Option<String>,
 }
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct XAppRlInfo{
+    pub bot: Option<String>,
+    pub x_app_limit_24hour_reset: Option<String>,
+    pub x_app_limit_24hour_remaining: Option<String>,
+}
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct XUserRateLimitInfo{
     pub username: String,
@@ -618,7 +626,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
 
 pub async fn is_24hours_limited(
     connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
-    rl_data: Vec<XUserRateLimitInfo>
+    rl_data: Vec<XAppRlInfo>
 ) -> Result<(), PanelHttpResponse>{
 
     /* ---------------------------------------------------------------------- */
@@ -645,124 +653,10 @@ pub async fn is_24hours_limited(
         
     }
 
-    /* 
-        these must be initialized in order to be able to check them later 
-        because the loop might not gets executed at all
+    
+    /* bots has always the latest app rate limit infos fetched from twitter bot server */
+    let bots = rl_data;
 
-        following is a sample response coming from the bot:
-
-        "data": [
-            {
-                "username": "_wildonion",
-                "route": "get_user",
-                "rl_info": {
-                    "bot": "1",
-                    "x_rate_limit_remaining": "39999",
-                    "x_rate_limit_limit": "40000",
-                    "x_rate_limit_reset": "1696171099",
-                    "x_app_limit_24hour_limit": "500",
-                    "x_app_limit_24hour_reset": "1696256599",
-                    "x_app_limit_24hour_remaining": "499"
-                },
-                "request_at": "1696170199"
-            },
-            {
-                "username": "_wildonion",
-                "route": "get_users_tweets",
-                "rl_info": {
-                    "bot": "1",
-                    "x_rate_limit_remaining": "9",
-                    "x_rate_limit_limit": "10",
-                    "x_rate_limit_reset": "1696171099",
-                    "x_app_limit_24hour_limit": null,
-                    "x_app_limit_24hour_reset": null,
-                    "x_app_limit_24hour_remaining": null
-                },
-                "request_at": "1696170199"
-            },
-            {
-                "username": "_wildonion",
-                "route": "get_tweet",
-                "rl_info": {
-                    "bot": "1",
-                    "x_rate_limit_remaining": "14",
-                    "x_rate_limit_limit": "15",
-                    "x_rate_limit_reset": "1696171099",
-                    "x_app_limit_24hour_limit": null,
-                    "x_app_limit_24hour_reset": null,
-                    "x_app_limit_24hour_remaining": null
-                },
-                "request_at": "1696170199"
-            },
-            {
-                "username": "_wildonion",
-                "route": "get_user",
-                "rl_info": {
-                    "bot": "1",
-                    "x_rate_limit_remaining": "39999",
-                    "x_rate_limit_limit": "40000",
-                    "x_rate_limit_reset": "1696193961",
-                    "x_app_limit_24hour_limit": "500",
-                    "x_app_limit_24hour_reset": "1696256599",
-                    "x_app_limit_24hour_remaining": "498"
-                },
-                "request_at": "1696193061"
-            },
-            {
-                "username": "_wildonion",
-                "route": "get_liked_tweets",
-                "rl_info": {
-                    "bot": "1",
-                    "x_rate_limit_remaining": "4",
-                    "x_rate_limit_limit": "5",
-                    "x_rate_limit_reset": "1696193961",
-                    "x_app_limit_24hour_limit": null,
-                    "x_app_limit_24hour_reset": null,
-                    "x_app_limit_24hour_remaining": null
-                },
-                "request_at": "1696193062"
-            }
-        ],
-    */
-    let mut bots = vec![];
-    for x_rl_info in rl_data{
-        let rl_info = x_rl_info.clone().rl_info;
-        let bot = rl_info.clone().bot;
-        let reset_timestamp = rl_info.clone().x_app_limit_24hour_reset;
-        if bot.is_some() && reset_timestamp.is_some(){
-            let reset_timestamp = reset_timestamp.unwrap().parse::<i64>().unwrap();
-            let now = chrono::Local::now().timestamp();
-            if reset_timestamp > now{
-                bots.push(
-                    XBotRateLimitInfo{
-                        bot: bot.unwrap(),
-                        rl_info: rl_info.clone()
-                    }
-                );
-                break;
-            }
-        } else{
-
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: TWITTER_BOT_RL_DATA_ISSUE,
-                status: 406
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            );
-
-        }
-    }
-
-    bots.sort_by(|xbotrl1, xbotrl2| {
-        match (&xbotrl1.rl_info.x_app_limit_24hour_reset, &xbotrl2.rl_info.x_app_limit_24hour_reset) {
-            (Some(xbotrl1_val), Some(xbotrl2_val)) => xbotrl1_val.cmp(xbotrl2_val),
-            (Some(_), None) => std::cmp::Ordering::Greater,
-            (None, Some(_)) => std::cmp::Ordering::Less,
-            (None, None) => std::cmp::Ordering::Equal,
-        }
-    });
     /*  
         since we have two bots in there once the first one gets rate limited the second one 
         takes place and in here we should check the last one params.
@@ -773,10 +667,9 @@ pub async fn is_24hours_limited(
     */
     if bots.len() == 2{
         let last_bot = bots.clone().into_iter().last().unwrap();
-        let last_bot_rl_info = last_bot.rl_info;
-        info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot_rl_info.x_app_limit_24hour_remaining.as_ref().unwrap());
-        if last_bot_rl_info.x_app_limit_24hour_remaining.as_ref().unwrap() == &"1".to_string(){
-            let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot_rl_info.x_app_limit_24hour_reset.unwrap());
+        info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap());
+        if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string(){
+            let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot.x_app_limit_24hour_reset.unwrap());
     
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
@@ -798,7 +691,7 @@ pub async fn is_24hours_limited(
 
 }
 
-pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
+pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
 
     let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
@@ -824,22 +717,18 @@ pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
 
 
     /* ------------------------------------------------------------- */
-    /* ------------------ get redis_x_rl_info data ------------------ */
+    /* ------------------ get redis_x_app_rl_info data ------------------ */
     /* ------------------------------------------------------------- */
-    
-    /* 
-        following requests takes the XUserRateLimitInfo struct from the bot server 
-        make sure that you're retrieving the x-rate-* and x-app-* infos from the
-        response header inside each api sent to the twitter.
-    */
-    let get_redis_x_rl_info: RedisResult<String> = redis_conn.get("redis_x_rl_info").await;
-    let redis_data = match get_redis_x_rl_info{
-        Ok(redis_x_rl_info) => serde_json::from_str::<Vec<XUserRateLimitInfo>>(&redis_x_rl_info).unwrap(),
-        Err(e) => vec![XUserRateLimitInfo::default()]
+
+    /* check that we have reached the rate limit or not */
+    let get_redis_x_app_rl_info: RedisResult<String> = redis_conn.get("redis_x_app_rl_info").await;
+    let redis_data = match get_redis_x_app_rl_info{
+        Ok(redis_x_app_rl_info) => serde_json::from_str::<Vec<XAppRlInfo>>(&redis_x_app_rl_info).unwrap(),
+        Err(e) => vec![XAppRlInfo::default()]
     };
 
     let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
-    let get_rl_info_route = format!("http://{}/get-ratelimit-info", bot_endpoint);
+    let get_rl_info_route = format!("http://{}/get-app-ratelimit-info", bot_endpoint);
     let res = reqwest::Client::new()
         .get(get_rl_info_route)
         .send()
@@ -861,9 +750,9 @@ pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     let get_xrl_response = &mut res.unwrap();
     let get_xrl_response_bytes = get_xrl_response.chunk().await.unwrap();
     let err_resp_vec = get_xrl_response_bytes.unwrap().to_vec();
-    let get_xrl_response_json = serde_json::from_slice::<Vec<XUserRateLimitInfo>>(&err_resp_vec);
+    let get_xrl_response_json = serde_json::from_slice::<Vec<XAppRlInfo>>(&err_resp_vec);
     /* 
-        if we're here means that we couldn't map the bytes into the Vec<XUserRateLimitInfo> 
+        if we're here means that we couldn't map the bytes into the Vec<XAppRlInfo> 
         and perhaps we have errors in response from the twitter bot service
     */
     if get_xrl_response_json.is_err(){
@@ -871,12 +760,12 @@ pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
         let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
-        let get_nft_logs_key_err = format!("ERROR=>NftPortGetNftResponse|Time:{}", chrono::Local::now().to_string());
+        let get_nft_logs_key_err = format!("ERROR=>XAppRlInfo|Time:{}", chrono::Local::now().to_string());
         let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "fetch_x_rl_data");
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "fetch_x_app_rl_data");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
         return TotalXRlInfo::default();
@@ -886,19 +775,19 @@ pub async fn fetch_x_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     let rl_info = get_xrl_response_json.unwrap();
 
     /* redis caching */
-    let final_data = if redis_data.len() < rl_info.len(){ // means that we have new data coming from the third party server
-        /* updating redis with new data */
-        let _: () = redis_conn.set("redis_x_rl_info", serde_json::to_string(&rl_info).unwrap()).await.unwrap();
+    let final_data = if redis_data.len() < rl_info.len(){
+        let _: () = redis_conn.set("redis_x_app_rl_info", serde_json::to_string(&rl_info).unwrap()).await.unwrap();
         rl_info
     } else{
-        /* load from the redis cause we don't have any new data */
         redis_data
     };
+
+
     /* ------------------------------------------------------------- */
     /* ------------------------------------------------------------- */
 
     TotalXRlInfo{ // response data
-        user_rate_limit_info: final_data,
+        app_rate_limit_info: final_data,
         x_15mins_interval_reqs: redis_x_15mins_interval, 
     }
     
