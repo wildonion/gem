@@ -6,10 +6,11 @@ use redis_async::client::PubsubConnection;
 use secp256k1::ecdsa::Signature;
 use secp256k1::{Secp256k1, All};
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_BOT_ISSUE, TWITTER_24HOURS_LIMITED, TWITTER_BOT_RL_DATA_ISSUE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
+use crate::models::users_tasks::UserTask;
 use actix::Addr;
 use models::users_contracts::*;
 
@@ -36,6 +37,12 @@ pub struct XUserRateLimitInfo{
     pub route: String,
     pub rl_info: XRlInfo,
     pub request_at: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct XBotRateLimitInfo{
+    pub bot: String,
+    pub rl_info: XRlInfo,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -606,6 +613,188 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
     };
 
     upload_ipfs_response
+
+}
+
+pub async fn is_24hours_limited(
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    rl_data: Vec<XUserRateLimitInfo>
+) -> Result<(), PanelHttpResponse>{
+
+    /* ---------------------------------------------------------------------- */
+    /* checking rate limit data to see if we should reject the request or not */
+    /* ---------------------------------------------------------------------- */
+    let get_done_tasks = UserTask::all(connection).await;
+    let Ok(done_tasks) = get_done_tasks else{
+        let error_resp = get_done_tasks.unwrap_err();
+        return Err(error_resp);
+    };
+
+    /* make sure we done tasks and rl data is not empty */
+    if !done_tasks.is_empty() && rl_data.is_empty() ||
+        done_tasks.is_empty() && !rl_data.is_empty(){
+        
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: TWITTER_BOT_ISSUE,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+        
+    }
+
+    /* 
+        these must be initialized in order to be able to check them later 
+        because the loop might not gets executed at all
+
+        following is a sample response coming from the bot:
+
+        "data": [
+            {
+                "username": "_wildonion",
+                "route": "get_user",
+                "rl_info": {
+                    "bot": "1",
+                    "x_rate_limit_remaining": "39999",
+                    "x_rate_limit_limit": "40000",
+                    "x_rate_limit_reset": "1696171099",
+                    "x_app_limit_24hour_limit": "500",
+                    "x_app_limit_24hour_reset": "1696256599",
+                    "x_app_limit_24hour_remaining": "499"
+                },
+                "request_at": "1696170199"
+            },
+            {
+                "username": "_wildonion",
+                "route": "get_users_tweets",
+                "rl_info": {
+                    "bot": "1",
+                    "x_rate_limit_remaining": "9",
+                    "x_rate_limit_limit": "10",
+                    "x_rate_limit_reset": "1696171099",
+                    "x_app_limit_24hour_limit": null,
+                    "x_app_limit_24hour_reset": null,
+                    "x_app_limit_24hour_remaining": null
+                },
+                "request_at": "1696170199"
+            },
+            {
+                "username": "_wildonion",
+                "route": "get_tweet",
+                "rl_info": {
+                    "bot": "1",
+                    "x_rate_limit_remaining": "14",
+                    "x_rate_limit_limit": "15",
+                    "x_rate_limit_reset": "1696171099",
+                    "x_app_limit_24hour_limit": null,
+                    "x_app_limit_24hour_reset": null,
+                    "x_app_limit_24hour_remaining": null
+                },
+                "request_at": "1696170199"
+            },
+            {
+                "username": "_wildonion",
+                "route": "get_user",
+                "rl_info": {
+                    "bot": "1",
+                    "x_rate_limit_remaining": "39999",
+                    "x_rate_limit_limit": "40000",
+                    "x_rate_limit_reset": "1696193961",
+                    "x_app_limit_24hour_limit": "500",
+                    "x_app_limit_24hour_reset": "1696256599",
+                    "x_app_limit_24hour_remaining": "498"
+                },
+                "request_at": "1696193061"
+            },
+            {
+                "username": "_wildonion",
+                "route": "get_liked_tweets",
+                "rl_info": {
+                    "bot": "1",
+                    "x_rate_limit_remaining": "4",
+                    "x_rate_limit_limit": "5",
+                    "x_rate_limit_reset": "1696193961",
+                    "x_app_limit_24hour_limit": null,
+                    "x_app_limit_24hour_reset": null,
+                    "x_app_limit_24hour_remaining": null
+                },
+                "request_at": "1696193062"
+            }
+        ],
+    */
+    let mut bots = vec![];
+    for x_rl_info in rl_data{
+        let rl_info = x_rl_info.clone().rl_info;
+        let bot = rl_info.clone().bot;
+        let reset_timestamp = rl_info.clone().x_app_limit_24hour_reset;
+        if bot.is_some() && reset_timestamp.is_some(){
+            let reset_timestamp = reset_timestamp.unwrap().parse::<i64>().unwrap();
+            let now = chrono::Local::now().timestamp();
+            if reset_timestamp > now{
+                bots.push(
+                    XBotRateLimitInfo{
+                        bot: bot.unwrap(),
+                        rl_info: rl_info.clone()
+                    }
+                );
+                break;
+            }
+        } else{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: TWITTER_BOT_RL_DATA_ISSUE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+
+        }
+    }
+
+    bots.sort_by(|xbotrl1, xbotrl2| {
+        match (&xbotrl1.rl_info.x_app_limit_24hour_reset, &xbotrl2.rl_info.x_app_limit_24hour_reset) {
+            (Some(xbotrl1_val), Some(xbotrl2_val)) => xbotrl1_val.cmp(xbotrl2_val),
+            (Some(_), None) => std::cmp::Ordering::Greater,
+            (None, Some(_)) => std::cmp::Ordering::Less,
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+    });
+    /*  
+        since we have two bots in there once the first one gets rate limited the second one 
+        takes place and in here we should check the last one params.
+
+        note that with this logic we have to know the exact number of bots configured in
+        twitter bot server to handle this process cause all bots except the last one are 
+        rate limited last bot is not rate limited yet.
+    */
+    if bots.len() == 2{
+        let last_bot = bots.clone().into_iter().last().unwrap();
+        let last_bot_rl_info = last_bot.rl_info;
+        info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot_rl_info.x_app_limit_24hour_remaining.as_ref().unwrap());
+        if last_bot_rl_info.x_app_limit_24hour_remaining.as_ref().unwrap() == &"1".to_string(){
+            let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot_rl_info.x_app_limit_24hour_reset.unwrap());
+    
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: &reset_at,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+    
+        } else{
+            
+            Ok(())
+            
+        }
+    } else{
+        Ok(())
+    }
 
 }
 
