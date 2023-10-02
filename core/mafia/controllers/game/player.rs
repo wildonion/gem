@@ -1915,8 +1915,9 @@ pub async fn get_player_role_ability(req: Request<Body>) -> MafiaResult<hyper::R
                                     ////////////////// DB Ops
 
                                     let player_id = ObjectId::parse_str(player_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
+                                    let event_id = ObjectId::parse_str(player_info.event_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                     let player_roles_info = db.clone().database(&db_name).collection::<schemas::game::PlayerRoleAbilityInfo>("player_role_ability_info"); // connecting to player_role_ability_info collection to update the current_ability field - we want to deserialize all user bsons into the PlayerRoleAbilityInfo struct
-                                    match player_roles_info.find_one(doc! { "user_id": player_id }, None).await.unwrap(){
+                                    match player_roles_info.find_one(doc! { "user_id": player_id.to_string(), "event_id": event_id.to_string() }, None).await.unwrap(){
                                         Some(player_role_ability_doc) => {
                                             let response_body = misc::app::Response::<schemas::game::PlayerRoleAbilityInfo>{
                                                 message: FETCHED,
@@ -2081,7 +2082,8 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> MafiaResult<hyper::Re
                                     ////////////////// DB Ops
 
                                     let player_id = ObjectId::parse_str(player_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
-                                    let filter = doc! { "from_id": player_id }; // filtering all none expired events
+                                    let event_id = ObjectId::parse_str(&player_info.event_id.as_str()).unwrap(); // generating mongodb object id from the id string
+                                    let filter = doc! { "from_id": player_id.to_string(), "event_id": event_id.to_string() }; // filtering all none expired events
                                     let player_chain_info = db.clone().database(&db_name).collection::<schemas::game::PlayerChainToInfo>("player_chain_info"); // connecting to player_chain_info collection to get a document - we want to deserialize player chain info into the PlayerChainToInfo struct                        
                                     let mut available_chain_infos = schemas::game::AvailableChainInfos{
                                         chain_infos: vec![],
