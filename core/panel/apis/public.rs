@@ -167,94 +167,14 @@ async fn verify_twitter_task(
             Some(pg_pool) => {
                 
                 let connection = &mut pg_pool.get().unwrap();
-
-                /* ---------------------------------------------------------------------- */
-                /* checking rate limit data to see if we should reject the request or not */
-                /* ---------------------------------------------------------------------- */
+                
+                /* check that we're 24 hours limited or not */
                 let rl_data = fetch_x_rl_data(redis_client.clone()).await.user_rate_limit_info;
-                let get_done_tasks = UserTask::all(connection).await;
-                let Ok(done_tasks) = get_done_tasks else{
-                    let error_resp = get_done_tasks.unwrap_err();
+                let check_is_24hours_limited = is_24hours_limited(connection, rl_data).await;
+                let Ok(_) = check_is_24hours_limited else{
+                    let error_resp = check_is_24hours_limited.unwrap_err();
                     return error_resp;
                 };
-
-                if !done_tasks.is_empty() && rl_data.is_empty() ||
-                    done_tasks.is_empty() && !rl_data.is_empty(){
-                    resp!{
-                        &[u8], // the data type
-                        &[], // response data
-                        TWITTER_BOT_ISSUE, // response message
-                        StatusCode::NOT_ACCEPTABLE, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
-                }
-
-                /* 
-                    these must be initialized in order to be able to check them later 
-                    because the loop might not gets executed at all 
-                */
-                let mut bot1_info: Option<XRlInfo> = None;
-                let mut bot2_info: Option<XRlInfo> = None;
-
-                for x_rl_info in rl_data{
-                    let rl_info = x_rl_info.clone().rl_info;
-                    let bot = rl_info.clone().bot;
-                    if bot.is_some(){
-                        if bot.as_ref().unwrap() == &"1".to_string(){
-                            bot1_info = Some(rl_info);
-                        } else if bot.as_ref().unwrap() == &"2".to_string(){
-                            bot2_info = Some(rl_info);
-                        }
-                    } else{
-                        bot1_info = None;
-                    }
-                }
-
-                if bot1_info.is_some(){
-                    
-                    let bot1 = bot1_info.unwrap();
-
-                    if bot1.x_app_limit_24hour_remaining.is_some(){
-
-                        info!("🤖 bot1 -> x_app_limit_24hour_remaining: {}", bot1.clone().x_app_limit_24hour_remaining.unwrap_or("".to_string()));
-
-                            if bot1.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
-
-                                let reset_at = format!("{}, Bot1 Reset At {}", TWITTER_24HOURS_LIMITED, bot1.x_app_limit_24hour_reset.unwrap());
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &reset_at, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-                    }
-
-                }
-
-                if bot2_info.is_some(){
-                    
-                    let bot2 = bot2_info.unwrap();
-
-                    if bot2.x_app_limit_24hour_remaining.is_some(){
-
-                        info!("🤖 bot2 -> x_app_limit_24hour_remaining: {}", bot2.clone().x_app_limit_24hour_remaining.unwrap_or("".to_string()));
-
-                            if bot2.clone().x_app_limit_24hour_remaining.unwrap() == "5".to_string(){
-
-                                let reset_at = format!("{}, Bot2 Reset At {}", TWITTER_24HOURS_LIMITED, bot2.x_app_limit_24hour_reset.unwrap());
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &reset_at, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-                    }
-
-                }
 
 
                 /* if we're here means we're not rate limited */
@@ -408,15 +328,6 @@ async fn commit_webhook(
     ) -> PanelHttpResponse{
 
 
-    /* 
-        once the repo gets commited, github will send a request to this route,
-        in the meanwhile we'll publish a new commit topic through the redis 
-        pubsub streaming channel in order subscribers be able to subscribe to 
-        the <REPO_NAME:COMMIT> topic in other scopes and routes of this app 
-        also we'll build a new version of the commited app in here using 
-        std::process::Command
-    */
-
     /* extracting shared state data */
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
@@ -427,9 +338,92 @@ async fn commit_webhook(
 
             let connection = &mut pg_pool.get().unwrap();
             let event_request = event_request.to_owned();
+            let (build_res_sender, mut build_res_receiver) = 
+                tokio::sync::mpsc::channel::<String>(1024);
 
 
-            todo!()
+            /* 
+                cloning the request to create a longer lifetime since 
+                we want to call headers() on it, since the req.clone()
+                is being freed at the end of the req.clone().headers() 
+                statement and it's like calling a method on a lifetime-dropped 
+                type!
+            */
+            let cloned_req = req.clone();
+            let get_event_header = cloned_req.headers().get("x-github-event");
+            
+            let  Some(event) = get_event_header else{
+
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    GITHUB_WEBHOOK_EVENT_HEADER_ISSUE, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+
+            };
+
+            /* 
+                since event_name is being moved into and captured by the tokio::spawn()  
+                thus it must have a valid lfietime across all threads and live longer 
+                until the spawned async task gets solved and executed in a free thread
+                so we converted this into String which is a heap data.
+            */
+            let event_name = event.to_str().unwrap().to_string();
+
+            let cloned_build_res_sender = build_res_sender.clone();
+            tokio::spawn(async move{
+
+                /* 
+                    once the repo gets commited, github will send a request to this route,
+                    in the meanwhile we'll publish a new commit topic through the redis 
+                    pubsub streaming channel in order subscribers be able to subscribe to 
+                    the <REPO_NAME::COMMIT::TIME> topic in other scopes and routes of this app 
+                    also we'll build a new version of the commited app in the server using 
+                    std::process::Command, so basically in here we're subscribing to push event 
+                    coming from github to build the repo based on new commits also publishing
+                    <REPO_NAME::COMMIT::TIME> topic to redis pubsub channel so other parts
+                    of the app can subscribe to it later asyncly.
+                */
+                    
+                if event_name == "push"{
+
+                    // --- start building repo in the server 
+                    // --- publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel
+                    // ...
+
+                    let build_res = format!("{}::{}::{}", "", "", "");
+                    if let Err(why) = cloned_build_res_sender.send(build_res).await{
+                        error!("🚨 can't send to downside of the mpsc channel in api [/commit-webhook], because: {}", why.to_string());
+                    }
+
+                } else{
+
+                    if let Err(why) = cloned_build_res_sender.send("".to_string()).await{
+                        error!("🚨 can't send to downside of the mpsc channel in api [/commit-webhook], because: {}", why.to_string());
+                    }
+
+                }
+            
+            });
+
+            /* 
+                respond to indicate that the delivery was successfully received,
+                our server should respond with a 2XX response within 10 seconds of 
+                receiving a webhook delivery and if our server takes longer than 
+                that to respond, then github terminates the connection and considers 
+                the delivery a failure, that's why we start building and publishing 
+                process inside the tokio::spawn() in the background to avoid blocking 
+                issues.
+            */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                GITHUB_WEBHOOK_ACCEPTED, // response message
+                StatusCode::ACCEPTED, // status code
+                None::<Cookie<'_>>, // cookie
+            }
 
         },
         None => {

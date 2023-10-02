@@ -107,6 +107,7 @@ pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 
+pub static TWITTER_BOT_RL_DATA_ISSUE: &str = "Rate Limit Data Can't Be Fetched From The Bot Correctly";
 pub static TWITTER_24HOURS_LIMITED: &str = "24 Hours Rate Limited";
 pub static TWITTER_BOT_ISSUE: &str = "Rate Limit Infos Are Empty, Bot Is Not Working Correctly";
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
@@ -129,6 +130,10 @@ pub static TWITTER_NOT_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Not Don
 pub static TWITTER_CANT_LOOP_OVER_ACCOUNTS: &str = "Can't Loop Over Twitter Accounts";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
+
+pub static GITHUB_WEBHOOK_ACCEPTED: &str = "Accepted";
+pub static GITHUB_WEBHOOK_EVENT_HEADER_ISSUE: &str = "Can't Get Github Event Header";
+
 
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 
