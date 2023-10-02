@@ -656,7 +656,13 @@ pub async fn is_24hours_limited(
     
     /* bots has always the latest app rate limit infos fetched from twitter bot server */
     let bots = rl_data;
+    info!("bots info {:#?}", bots);
+    
 
+    let first_bot = &bots[0];
+    let second_bot = &bots[1];
+
+    
     /*  
         since we have two bots in there once the first one gets rate limited the second one 
         takes place and in here we should check the last one params.
@@ -664,8 +670,11 @@ pub async fn is_24hours_limited(
         note that with this logic we have to know the exact number of bots configured in
         twitter bot server to handle this process cause all bots except the last one are 
         rate limited last bot is not rate limited yet.
+
+        we don't need to check the rate limit for the first bot since the twitter bot server
+        will switch to the second bot once the first one gets rate limted
     */
-    if bots.len() == 2{
+    if first_bot.bot.is_some() && second_bot.bot.is_some(){
         let last_bot = bots.clone().into_iter().last().unwrap();
         info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap());
         if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string(){
@@ -722,9 +731,20 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
 
     /* check that we have reached the rate limit or not */
     let get_redis_x_app_rl_info: RedisResult<String> = redis_conn.get("redis_x_app_rl_info").await;
+    let mut use_redis_data = true;
     let redis_data = match get_redis_x_app_rl_info{
         Ok(redis_x_app_rl_info) => serde_json::from_str::<Vec<XAppRlInfo>>(&redis_x_app_rl_info).unwrap(),
-        Err(e) => vec![XAppRlInfo::default()]
+        Err(e) => {
+            /* 
+                if there isn't a key with redis_x_app_rl_info name or if this is 
+                the first try to fetch the data from redis we simply return a default
+                vector with the XAppRlInfo data but we don't want to use this data
+                for rate limit checking we want the actual data coming from the bot 
+                server so we used a flag in here.
+            */
+            use_redis_data = false;
+            vec![XAppRlInfo::default()]
+        }
     };
 
     let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
@@ -773,9 +793,10 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     }
 
     let rl_info = get_xrl_response_json.unwrap();
+    info!("rl info coming from bot server {:?}", rl_info);
 
     /* redis caching */
-    let final_data = if redis_data.len() < rl_info.len(){
+    let final_data = if !use_redis_data || (redis_data.len() < rl_info.len()){
         let _: () = redis_conn.set("redis_x_app_rl_info", serde_json::to_string(&rl_info).unwrap()).await.unwrap();
         rl_info
     } else{
