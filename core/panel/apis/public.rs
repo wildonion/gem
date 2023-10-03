@@ -351,7 +351,7 @@ async fn commit_webhook(
                 type!
             */
             let cloned_req = req.clone();
-            let get_event_header = cloned_req.headers().get("x-github-event");
+            let get_event_header = cloned_req.headers().get("X-GitHub-Event");
             
             let  Some(event) = get_event_header else{
 

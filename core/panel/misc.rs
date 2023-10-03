@@ -676,23 +676,30 @@ pub async fn is_24hours_limited(
     */
     if first_bot.bot.is_some() && second_bot.bot.is_some(){
         let last_bot = bots.clone().into_iter().last().unwrap();
-        info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap());
-        if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string(){
-            let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot.x_app_limit_24hour_reset.unwrap());
-    
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: &reset_at,
-                status: 406
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            );
-    
+        /*  
+            some routes may have null x_app_limit_24hour_remaining so we don't care 
+            about them since they have user rate limit count
+        */
+        if last_bot.x_app_limit_24hour_remaining.is_some(){
+            info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap());
+            if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string(){
+                let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot.x_app_limit_24hour_reset.unwrap());
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: &reset_at,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+        
+            } else{
+                
+                Ok(())
+                
+            }
         } else{
-            
             Ok(())
-            
         }
     } else{
         Ok(())
@@ -793,7 +800,7 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     }
 
     let rl_info = get_xrl_response_json.unwrap();
-    info!("rl info coming from bot server {:?}", rl_info);
+    info!("🚧 rl info coming from bot server {:?}", rl_info);
 
     /* redis caching */
     let final_data = if !use_redis_data || (redis_data.len() < rl_info.len()){
