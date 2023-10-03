@@ -3245,6 +3245,25 @@
 							"response": []
 						},
 						{
+							"name": "Commit Webhook",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/public/commit-webhook",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"public",
+										"commit-webhook"
+									]
+								},
+								"description": "this api will be used by github to send webhook events like push, pull or issues our server must subscribe to the incoming request from github within 10 seconds period of time."
+							},
+							"response": []
+						},
+						{
 							"name": "Get X Requests",
 							"request": {
 								"auth": {

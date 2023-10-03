@@ -475,7 +475,10 @@ pub async fn start_burning_card_process(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
     
-    /* nft owner must be the contract owner to burn it */
+    /* 
+        nft owner must be the contract owner to burn it that's why we minted the nft
+        to our app wallet to be able to burn it later
+    */
     let mut burn_data = HashMap::new();
     burn_data.insert("chain", "polygon");
     burn_data.insert("contract_address", &contract_address);
@@ -624,7 +627,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
 
 }
 
-pub async fn is_24hours_limited(
+pub async fn is_bot_24hours_limited(
     connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
     rl_data: Vec<XAppRlInfo>
 ) -> Result<(), PanelHttpResponse>{
@@ -680,9 +683,17 @@ pub async fn is_24hours_limited(
             some routes may have null x_app_limit_24hour_remaining so we don't care 
             about them since they have user rate limit count
         */
-        if last_bot.x_app_limit_24hour_remaining.is_some(){
-            info!("🤖 bot{} -> x_app_limit_24hour_remaining: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap());
-            if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string(){
+        if last_bot.x_app_limit_24hour_remaining.is_some() && last_bot.x_app_limit_24hour_reset.is_some(){
+            
+            let reset_at = last_bot.x_app_limit_24hour_reset.as_ref().unwrap();
+            info!("🤖 bot{} -> x_app_limit_24hour_remaining: {} will be reset at: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap(), reset_at);
+            
+            if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string() && 
+                /* 
+                    also the current time must be smaller than than the reset time of 
+                    the current limitation window 
+                */
+                reset_at.parse::<i64>().unwrap() > chrono::Local::now().timestamp(){
                 let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot.x_app_limit_24hour_reset.unwrap());
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),

@@ -170,8 +170,8 @@ async fn verify_twitter_task(
                 
                 /* check that we're 24 hours limited or not */
                 let rl_data = fetch_x_app_rl_data(redis_client.clone()).await.app_rate_limit_info;
-                let check_is_24hours_limited = is_24hours_limited(connection, rl_data).await;
-                let Ok(_) = check_is_24hours_limited else{
+                let check_is_24hours_limited = is_bot_24hours_limited(connection, rl_data).await;
+                let Ok(not_limited) = check_is_24hours_limited else{
                     let error_resp = check_is_24hours_limited.unwrap_err();
                     return error_resp;
                 };
@@ -185,8 +185,8 @@ async fn verify_twitter_task(
                     false => {
                         
                         let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
+                        
                         // let new_twitter = Twitter::new(Some(bot_endpoint)).await;
-
                         let new_twitter = Twitter::new(None).await;
                         let Ok(bot) =  new_twitter else{
                             return new_twitter.unwrap_err();
