@@ -387,10 +387,10 @@ async fn commit_webhook(
                     <REPO_NAME::COMMIT::TIME> topic to redis pubsub channel so other parts
                     of the app can subscribe to it later asyncly.
                 */
-                    
                 if event_name == "push"{
 
-                    // --- start building repo in the server 
+                    // --- start building repo inside the server 
+                    // cd /root/youwho.club && git pull https://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@github.com/YouWhoClub/youwho.club.git
                     // --- publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel
                     // ...
 

@@ -659,7 +659,7 @@ pub async fn is_bot_24hours_limited(
     
     /* bots has always the latest app rate limit infos fetched from twitter bot server */
     let bots = rl_data;
-    info!("bots info {:#?}", bots);
+    info!("🤖 bots info {:#?}", bots);
     
 
     let first_bot = &bots[0];
@@ -694,7 +694,9 @@ pub async fn is_bot_24hours_limited(
                     the current limitation window 
                 */
                 reset_at.parse::<i64>().unwrap() > chrono::Local::now().timestamp(){
-                let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), last_bot.x_app_limit_24hour_reset.unwrap());
+                let timestamp_milli = last_bot.x_app_limit_24hour_reset.unwrap().parse::<i64>().unwrap() * 1000 as i64;
+                let datetime = chrono::NaiveDateTime::from_timestamp_millis(timestamp_milli).unwrap().to_string();
+                let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), datetime);
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: &reset_at,
@@ -743,9 +745,9 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     /* ----------------------------------------------------------------------- */
 
 
-    /* ------------------------------------------------------------- */
+    /* ------------------------------------------------------------------ */
     /* ------------------ get redis_x_app_rl_info data ------------------ */
-    /* ------------------------------------------------------------- */
+    /* ------------------------------------------------------------------ */
 
     /* check that we have reached the rate limit or not */
     let get_redis_x_app_rl_info: RedisResult<String> = redis_conn.get("redis_x_app_rl_info").await;
@@ -784,6 +786,15 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
         to solve this issue first we get the stream of the response chunk
         then map it to the related struct, after that we can handle logging
         and redis caching process without losing ownership of things!
+
+        streaming over response chunk can also be like streaming over mpsc jobq
+        channel to receive data: while let Some(data) = channel_receiver.recv().await{}
+        tokio::spawn(async move{
+            while let Some(chunk) = res.chunk().await? {
+                // decod chunk
+                // ...
+            }
+        });
     */
     let get_xrl_response = &mut res.unwrap();
     let get_xrl_response_bytes = get_xrl_response.chunk().await.unwrap();
@@ -832,27 +843,6 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     
 }
 
-pub fn gen_random_chars(size: u32) -> String{
-    let mut rng = rand::thread_rng();
-    (0..size).map(|_|{
-        /* converint the generated random ascii to char */
-        char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
-    }).collect()
-}
-
-pub fn gen_random_number(from: u32, to: u32) -> u32{
-    let mut rng = rand::thread_rng(); // we can't share this between threads and across .awaits
-    rng.gen_range(from..to)
-} 
-
-pub fn gen_random_idx(idx: usize) -> usize{
-    if idx < CHARSET.len(){
-        idx
-    } else{
-        gen_random_idx(random::<u8>() as usize)
-    }
-}
-
 pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 
     /* region detection process based on ip parsnig */
@@ -860,6 +850,10 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
     let (ipinfo_data_sender, mut ipinfo_data_receiver) = 
         tokio::sync::mpsc::channel::<IpInfoResponse>(1024);
     
+    /* 
+        getting the ip info in the background using tokio::spawn() and receive the 
+        result using mpsc jobq channel
+    */
     tokio::spawn(async move{
 
         let ipinfo_token = std::env::var("IPINFO_TOKEN").unwrap();
@@ -871,6 +865,10 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
             .send()
             .await;
 
+        /* 
+            getting the text of the response takes the ownership thus we can't have the text
+            and json of the response at the same time 
+        */
         // let response = get_ip_response.unwrap();
         // let response = response.text().await.unwrap();
 
@@ -965,6 +963,30 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 }
 
+/* -----------------------------------------------------------------------*/
+/* --------------------------- HELPER METHODS --------------------------- */
+/* -----------------------------------------------------------------------*/
+pub fn gen_random_chars(size: u32) -> String{
+    let mut rng = rand::thread_rng();
+    (0..size).map(|_|{
+        /* converint the generated random ascii to char */
+        char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
+    }).collect()
+}
+
+pub fn gen_random_number(from: u32, to: u32) -> u32{
+    let mut rng = rand::thread_rng(); // we can't share this between threads and across .awaits
+    rng.gen_range(from..to)
+} 
+
+pub fn gen_random_idx(idx: usize) -> usize{
+    if idx < CHARSET.len(){
+        idx
+    } else{
+        gen_random_idx(random::<u8>() as usize)
+    }
+}
+
 /* 
     we cannot obtain &'static str from a String because Strings may not live 
     for the entire life of our program, and that's what &'static lifetime means. 
@@ -1020,7 +1042,7 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
     */
     Box::leak(s.into_boxed_slice()) 
 }
-
+/* -----------------------------------------------------------------------*/
 
 /*  ----------------------
    | shared state storage 
@@ -1213,6 +1235,9 @@ pub struct Response<'m, T>{
 }
 
 
+/* -------------------------------------------------------------- */
+/* --------------------------- MACROS --------------------------- */
+/* -------------------------------------------------------------- */
 /*
     we can define as many as response object 
     since once the scope or method or the match

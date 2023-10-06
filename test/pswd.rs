@@ -5,9 +5,9 @@ use crate::*;
 
 pub fn gen_passwords(){
     #[derive(Clone)]
-    pub enum Pswds{
-        Admin(String),
-        Dev(String),
+    pub enum Pswds<'p>{
+        Admin(&'p [u8]),
+        Dev(&'p [u8]),
     }
 
     dotenv().expect("⚠️ .env file not found");
@@ -26,5 +26,5 @@ pub fn gen_passwords(){
     info!("dev password is {:?}", dev_pass.clone().unwrap());
     info!("admin password is {:?}", admin_pass.clone().unwrap());
 
-    let pswds = [Pswds::Admin(admin_pass.unwrap()), Pswds::Dev(dev_pass.unwrap())];
+    let pswds = [Pswds::Admin(admin_pass.unwrap().as_bytes()), Pswds::Dev(dev_pass.unwrap().as_bytes())];
 }
