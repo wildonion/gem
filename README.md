@@ -268,6 +268,10 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 ## 🧐 WrapUps 
 
+* basically if you want to execute an sql file into a database you can run the following commands:
+    - step 1: ```bash docker cp run.sql postgres:run.sql```
+    - step 2: ```bash docker exec -it postgres psql -U postgres -d conse -f /run.sql```
+
 * there is an API named `/public/get-token-price/{amount}` which returns the value of the passed in tokens in USD, remember that in order to show the exact amount, the value must gets divided by `1000000` to extract the floating point format.
 
 * to see a full list of conse mafia hyper server, import the `gem.http.api.json` into the postman which is inisde the `infra` folder, also for the conse panel actix APIs there is swagger UI which can be loaded through the `https://api.panel.conse.app/swagger/` address to see all available APIs.
@@ -314,9 +318,16 @@ async fn api(
         // ...
             
             /* redis rate limit checker */ 
-            
-                /* api body and code flow responses */ 
+            // ...
+
+                /* signature verification process */
                 // ...
+
+                    /* balance checking */
+                    // ...
+                    
+                        /* api body and code flow responses */ 
+                        // ...
 
 }
 ```

@@ -641,21 +641,6 @@ pub async fn is_bot_24hours_limited(
         return Err(error_resp);
     };
 
-    /* make sure we done tasks and rl data is not empty */
-    if !done_tasks.is_empty() && rl_data.is_empty() ||
-        done_tasks.is_empty() && !rl_data.is_empty(){
-        
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: TWITTER_BOT_ISSUE,
-            status: 406
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-        
-    }
-
     
     /* bots has always the latest app rate limit infos fetched from twitter bot server */
     let bots = rl_data;
@@ -680,31 +665,42 @@ pub async fn is_bot_24hours_limited(
     if first_bot.bot.is_some() && second_bot.bot.is_some(){
         let last_bot = bots.clone().into_iter().last().unwrap();
         /*  
+            since "".to_string() will be dropped at the end of unwrap_or() statement
+            thus it's a temp variable and taking a reference or having &"".to_string() 
+            to that is not allowed due to dangling pointer issue, and we should define 
+            a separate type contains the String::from("") and take a pointer to that type
+            in order to have a longer lifetime. 
+        */
+        let empty_init = String::from("");
+        let last_bot_x_app_limit_24hour_remaining = last_bot.x_app_limit_24hour_remaining.as_ref().unwrap_or(&empty_init);
+        let last_bot_x_app_limit_24hour_reset = last_bot.x_app_limit_24hour_reset.as_ref().unwrap_or(&empty_init);
+        /*  
             some routes may have null x_app_limit_24hour_remaining so we don't care 
             about them since they have user rate limit count
         */
-        if last_bot.x_app_limit_24hour_remaining.is_some() && last_bot.x_app_limit_24hour_reset.is_some(){
+        if !last_bot_x_app_limit_24hour_remaining.is_empty() && !last_bot_x_app_limit_24hour_reset.is_empty(){
             
             let reset_at = last_bot.x_app_limit_24hour_reset.as_ref().unwrap();
-            info!("🤖 bot{} -> x_app_limit_24hour_remaining: {} will be reset at: {}", bots.len(), last_bot.x_app_limit_24hour_remaining.as_ref().unwrap(), reset_at);
+            info!("🤖 bot{} -> x_app_limit_24hour_remaining: {} will be reset at: {}", bots.len(), last_bot_x_app_limit_24hour_remaining, last_bot_x_app_limit_24hour_reset);
             
-            if last_bot.x_app_limit_24hour_remaining.as_ref().unwrap() == &"2".to_string() && 
+            if last_bot_x_app_limit_24hour_remaining == &"2".to_string() && 
                 /* 
                     also the current time must be smaller than than the reset time of 
                     the current limitation window 
                 */
                 reset_at.parse::<i64>().unwrap() > chrono::Local::now().timestamp(){
-                let timestamp_milli = last_bot.x_app_limit_24hour_reset.unwrap().parse::<i64>().unwrap() * 1000 as i64;
-                let datetime = chrono::NaiveDateTime::from_timestamp_millis(timestamp_milli).unwrap().to_string();
-                let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), datetime);
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: &reset_at,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
+
+                    let timestamp_milli = last_bot_x_app_limit_24hour_remaining.parse::<i64>().unwrap() * 1000 as i64;
+                    let datetime = chrono::NaiveDateTime::from_timestamp_millis(timestamp_milli).unwrap().to_string();
+                    let reset_at = format!("{}, Bot{} Reset At {}", TWITTER_24HOURS_LIMITED, bots.len(), datetime);
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &reset_at,
+                        status: 406
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    );
         
             } else{
                 

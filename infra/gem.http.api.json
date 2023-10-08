@@ -2907,6 +2907,122 @@
 							"response": []
 						},
 						{
+							"name": "Update Bio",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"bio\": \"the wildest one\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/profile/update/bio",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"profile",
+										"update",
+										"bio"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Avatar",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "img",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-user}}/profile/update/avatar",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"profile",
+										"update",
+										"avatar"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Avatar Copy",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "img",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-user}}/profile/update/banner",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"profile",
+										"update",
+										"banner"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get User Deposits",
 							"request": {
 								"auth": {

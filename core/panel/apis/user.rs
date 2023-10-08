@@ -4,7 +4,7 @@
 use crate::*;
 use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
 use crate::models::users_deposits::UserDepositData;
-use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData, DecodedSignedWithdrawalData};
+use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
@@ -153,6 +153,9 @@ async fn login(
                         id: user.id,
                         region: user.region.clone(),
                         username: user.username.clone(),
+                        bio: user.bio.clone(),
+                        avatar: user.avatar.clone(),
+                        banner: user.banner.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
@@ -334,7 +337,11 @@ async fn request_mail_code(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -633,7 +640,11 @@ async fn request_phone_code(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -1054,6 +1065,9 @@ async fn login_with_identifier_and_password(
                         id: user.id,
                         region: user.region.clone(),
                         username: user.username.clone(),
+                        bio: user.bio.clone(),
+                        avatar: user.avatar.clone(),
+                        banner: user.banner.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
@@ -1874,7 +1888,11 @@ async fn make_cid(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -2067,7 +2085,11 @@ async fn deposit(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -2543,7 +2565,11 @@ async fn withdraw(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{ /* chill 30 seconds */
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -3064,7 +3090,11 @@ async fn add_nft_to_contract(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -3279,7 +3309,11 @@ async fn create_contract(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -3497,7 +3531,11 @@ async fn advertise_contract(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -3581,7 +3619,8 @@ async fn advertise_contract(
 
                             let new_balance = user.balance.unwrap() - advertise_request.amount;
                             
-                             // advertise a contract
+                             // advertise contract process and logic
+                             // ...
 
                             todo!()
                             
@@ -3709,7 +3748,11 @@ async fn mint(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -3872,7 +3915,6 @@ async fn burn(
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
-
     /* 
           ------------------------------------- 
         | --------- PASSPORT CHECKING --------- 
@@ -3937,7 +3979,11 @@ async fn burn(
 
                     };
 
-                    /* checking that the incoming request is already rate limited or not */
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
                     if is_rate_limited!{
                         redis_conn,
                         identifier_key.clone(), /* identifier */
@@ -4073,10 +4119,343 @@ async fn burn(
 
 }
 
+#[post("/profile/update/bio")]
+#[passport(user)]
+async fn edit_bio(
+    req: HttpRequest,
+    update_bio_request: web::Json<UpdateBioRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let new_bio = update_bio_request.to_owned().bio;
+
+                    match User::update_bio(_id, &new_bio, connection).await{
+                        Ok(updated_user) => {
+                            
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        },
+                        Err(resp) => {
+                            
+                            /* USER NOT FOUND response */
+                            resp
+                        }
+                    }
+
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+}
+
+#[post("/profile/update/avatar")]
+#[passport(user)]
+async fn upload_avatar(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart, /* form-data implementation to receive stream of byte fields */
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    
+                    match User::update_avatar(_id, img, connection).await{
+                        Ok(updated_user) => {
+                            
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        },
+                        Err(resp) => {
+                            
+                            /* USER NOT FOUND response */
+                            resp
+                        }
+                    }
+
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/profile/update/banner")]
+#[passport(user)]
+async fn upload_banner(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart, /* form-data implementation to receive stream of byte fields */
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match User::update_banner(_id, img, connection).await{
+                        Ok(updated_user) => {
+                            
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        },
+                        Err(resp) => {
+                            
+                            /* USER NOT FOUND response */
+                            resp
+                        }
+                    }
+
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 pub mod exports{
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
+    pub use super::edit_bio;
+    pub use super::upload_avatar;
+    pub use super::upload_banner;
     pub use super::tasks_report;
     pub use super::make_cid;
     pub use super::get_all_user_withdrawals;

@@ -17,6 +17,8 @@ use crate::*;
 
 pub struct UserContract{
 
+    pub contracts: Vec<String>, // addresses of all contracts
+
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]

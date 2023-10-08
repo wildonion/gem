@@ -184,10 +184,8 @@ async fn verify_twitter_task(
                 match UserTask::find(doer_id, job_id, connection).await{
                     false => {
                         
-                        let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");            
-                        
-                        // let new_twitter = Twitter::new(Some(bot_endpoint)).await;
-                        let new_twitter = Twitter::new(None).await;
+                        let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+                        let new_twitter = Twitter::new(Some(bot_endpoint)).await;
                         let Ok(bot) =  new_twitter else{
                             return new_twitter.unwrap_err();
                         };
@@ -342,7 +340,6 @@ async fn commit_webhook(
             let (build_res_sender, mut build_res_receiver) = 
                 tokio::sync::mpsc::channel::<String>(1024);
 
-
             /* 
                 cloning the request to create a longer lifetime since 
                 we want to call headers() on it, since the req.clone()
@@ -389,9 +386,16 @@ async fn commit_webhook(
                 */
                 if event_name == "push"{
 
-                    // --- start building repo inside the server 
-                    // cd /root/youwho.club && git pull https://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@github.com/YouWhoClub/youwho.club.git
-                    // --- publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel
+                    /* 
+                        cd /root/youwho.club && \
+                        git pull https://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@github.com/YouWhoClub/youwho.club.git \
+                        && npm install && npm run build
+                        
+                        publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel
+                        later on a discord bot can subscribe to the topic to 
+                        broadcast the new commit topic to channels through 
+                        websocket event firing logic
+                    */
                     // ...
 
                     let build_res = format!("{}::{}::{}", "", "", "");

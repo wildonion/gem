@@ -40,12 +40,6 @@ pub struct NewUserWithdrawRequest{
     pub hash_data: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
-pub struct DecodedSignedWithdrawalData{
-    pub deposit_id: i32,
-    pub recipient_cid: String,
-}
-
 #[derive(Insertable, Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 #[diesel(table_name=users_withdrawals)]
 pub struct NewUserWithdrawal{

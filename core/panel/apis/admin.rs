@@ -282,7 +282,7 @@ async fn update_event_img(
     req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-        mut img: Multipart, /* form-data implementation to receive stream of field bytes */
+        mut img: Multipart, /* form-data implementation to receive stream of byte fields */
     ) -> PanelHttpResponse{
 
 
@@ -525,6 +525,9 @@ async fn login(
                                 id: user.id,
                                 region: user.region.clone(),
                                 username: user.username.clone(),
+                                bio: user.bio.clone(),
+                                avatar: user.avatar.clone(),
+                                banner: user.banner.clone(),
                                 activity_code: user.activity_code.clone(),
                                 twitter_username: user.twitter_username.clone(),
                                 facebook_username: user.facebook_username.clone(),

@@ -180,7 +180,7 @@ async fn check_token(
 
                     let single_user = users
                         .filter(id.eq(_id))
-                        .select((id, region, username, activity_code, twitter_username, 
+                        .select((id, region, username, bio, avatar, banner, activity_code, twitter_username, 
                                 facebook_username, discord_username,
                                 identifier, mail, is_mail_verified, is_phone_verified, phone_number, paypal_id, account_number, 
                                 device_id, social_id, cid, screen_cid, snowflake_id, stars, user_role, 
@@ -202,6 +202,9 @@ async fn check_token(
                         id: user.id, 
                         region: user.region.clone(),
                         username: user.username, 
+                        bio: user.bio.clone(),
+                        avatar: user.avatar.clone(),
+                        banner: user.banner.clone(),
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 
                         facebook_username: user.facebook_username, 

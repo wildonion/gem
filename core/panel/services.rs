@@ -117,7 +117,9 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::burn);
     config.service(apis::user::exports::create_contract);
     config.service(apis::user::exports::add_nft_to_contract);
-    config.service(apis::user::exports::advertise_contract);
+    config.service(apis::user::exports::edit_bio);
+    config.service(apis::user::exports::upload_avatar);
+    config.service(apis::user::exports::upload_banner);
     
     // other routs maybe ?
     // ...

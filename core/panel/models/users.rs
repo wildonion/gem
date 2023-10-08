@@ -3,8 +3,12 @@
 
 
 
+use std::io::Write;
+use std::time::{UNIX_EPOCH, SystemTime};
+
 use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
+use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
 use wallexerr::Wallet;
 use crate::*;
@@ -31,6 +35,9 @@ pub struct User{
     pub id: i32,
     pub region: Option<String>,
     pub username: String, /* unique */
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
+    pub banner: Option<String>,
     pub activity_code: String,
     pub twitter_username: Option<String>, /* unique */
     pub facebook_username: Option<String>, /* unique */
@@ -63,6 +70,9 @@ pub struct FetchUser{
     pub id: i32,
     pub region: Option<String>,
     pub username: String,
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
+    pub banner: Option<String>,
     pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
@@ -93,6 +103,9 @@ pub struct UserData{
     pub id: i32,
     pub region: Option<String>,
     pub username: String,
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
+    pub banner: Option<String>,
     pub activity_code: String,
     pub twitter_username: Option<String>,
     pub facebook_username: Option<String>,
@@ -148,6 +161,11 @@ pub struct UserIdResponse{
     pub last_login: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
+pub struct UpdateBioRequest{
+    pub bio: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
@@ -890,6 +908,9 @@ impl User{
                         id: fetched_user.id,
                         region: fetched_user.region.clone(),
                         username: fetched_user.username.clone(),
+                        bio: fetched_user.bio.clone(),
+                        avatar: fetched_user.avatar.clone(),
+                        banner: fetched_user.banner.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
@@ -1022,6 +1043,9 @@ impl User{
                         id: fetched_user.id,
                         region: fetched_user.region.clone(),
                         username: fetched_user.username.clone(),
+                        bio: fetched_user.bio.clone(),
+                        avatar: fetched_user.avatar.clone(),
+                        banner: fetched_user.banner.clone(),
                         activity_code: fetched_user.activity_code.clone(),
                         twitter_username: fetched_user.twitter_username.clone(),
                         facebook_username: fetched_user.facebook_username.clone(),
@@ -1177,6 +1201,434 @@ impl User{
 
     }
 
+    pub async fn update_bio(
+        bio_owner_id: i32, 
+        new_bio: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+        let Ok(user) = User::find_by_id(bio_owner_id, connection).await else{
+            let resp = Response{
+                data: Some(bio_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+
+        match diesel::update(users.find(user.id))
+            .set(bio.eq(new_bio.to_lowercase()))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn update_avatar(
+        avatar_owner_id: i32, 
+        mut img: Multipart, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+        let Ok(user) = User::find_by_id(avatar_owner_id, connection).await else{
+            let resp = Response{
+                data: Some(avatar_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        /* making avatar image from incoming bytes */
+        let mut avatar_img_path = String::from("");
+        tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
+
+        /*  
+            streaming over incoming img multipart form data to extract the
+            field object for writing the bytes into the file
+        */
+        while let Ok(Some(mut field)) = img.try_next().await{
+            
+            /* getting the content_disposition header which contains the filename */
+            let content_type = field.content_disposition();
+
+            /* creating the filename and the filepath */
+            let filename = content_type.get_filename().unwrap().to_lowercase();
+            let ext_position_png = filename.find("png");
+            let ext_position_jpg = filename.find("jpg");
+            let ext_position_jpeg = filename.find("jpeg");
+
+            let ext_position = if filename.find("png").is_some(){
+                ext_position_png.unwrap()
+            } else if filename.find("jpg").is_some(){
+                ext_position_jpg.unwrap()
+            } else if filename.find("jpeg").is_some(){
+                ext_position_jpeg.unwrap()
+            } else{
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: UNSUPPORTED_IMAGE_TYPE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            };
+
+            let avatar_img_filename = format!("avatar:{}-img:{}.{}", avatar_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+            let filepath = format!("{}/{}", AVATAR_UPLOAD_PATH, sanitize_filename::sanitize(&avatar_img_filename));
+            avatar_img_path = filepath.clone();
+
+            /* 
+                web::block() executes a blocking function on a actix threadpool
+                using spawn_blocking method of actix runtime so in here we're 
+                creating a file inside a actix runtime threadpool to fill it with 
+                the incoming bytes inside the field object by streaming over field
+                object to extract the bytes
+            */
+            let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it
+            */
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+                
+                /* writing bytes into the created file with the extracted filepath */
+                f = web::block(move || f.write_all(&data).map(|_| f))
+                        .await
+                        .unwrap()
+                        .unwrap();
+            }
+
+        }
+
+        match diesel::update(users.find(user.id))
+            .set(avatar.eq(avatar_img_path))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn update_banner(
+        banner_owner_id: i32, 
+        mut img: Multipart, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+        let Ok(user) = User::find_by_id(banner_owner_id, connection).await else{
+            let resp = Response{
+                data: Some(banner_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+
+        /* making banner image from incoming bytes */
+        let mut banner_img_path = String::from("");
+        tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
+
+        /*  
+            streaming over incoming img multipart form data to extract the
+            field object for writing the bytes into the file
+        */
+        while let Ok(Some(mut field)) = img.try_next().await{
+            
+            /* getting the content_disposition header which contains the filename */
+            let content_type = field.content_disposition();
+
+            /* creating the filename and the filepath */
+            let filename = content_type.get_filename().unwrap().to_lowercase();
+            let ext_position_png = filename.find("png");
+            let ext_position_jpg = filename.find("jpg");
+            let ext_position_jpeg = filename.find("jpeg");
+
+            let ext_position = if filename.find("png").is_some(){
+                ext_position_png.unwrap()
+            } else if filename.find("jpg").is_some(){
+                ext_position_jpg.unwrap()
+            } else if filename.find("jpeg").is_some(){
+                ext_position_jpeg.unwrap()
+            } else{
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: UNSUPPORTED_IMAGE_TYPE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            };
+
+            let banner_img_filename = format!("banner:{}-img:{}.{}", banner_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+            let filepath = format!("{}/{}", AVATAR_UPLOAD_PATH, sanitize_filename::sanitize(&banner_img_filename));
+            banner_img_path = filepath.clone();
+
+            /* 
+                web::block() executes a blocking function on a actix threadpool
+                using spawn_blocking method of actix runtime so in here we're 
+                creating a file inside a actix runtime threadpool to fill it with 
+                the incoming bytes inside the field object by streaming over field
+                object to extract the bytes
+            */
+            let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it
+            */
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+                
+                /* writing bytes into the created file with the extracted filepath */
+                f = web::block(move || f.write_all(&data).map(|_| f))
+                        .await
+                        .unwrap()
+                        .unwrap();
+            }
+
+        }
+
+        match diesel::update(users.find(user.id))
+            .set(banner.eq(banner_img_path))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_mail");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
     pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         /* fetch user info based on the data inside jwt */ 
@@ -1263,6 +1715,9 @@ impl User{
                             id: updated_user.id, 
                             region: updated_user.region.clone(),
                             username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
                             activity_code: updated_user.clone().activity_code, 
                             twitter_username: updated_user.clone().twitter_username, 
                             facebook_username: updated_user.clone().facebook_username, 
@@ -1394,6 +1849,9 @@ impl User{
                             id: u.id, 
                             region: u.region.clone(),
                             username: u.clone().username, 
+                            bio: u.bio.clone(),
+                            avatar: u.avatar.clone(),
+                            banner: u.banner.clone(),
                             activity_code: u.clone().activity_code, 
                             twitter_username: u.clone().twitter_username, 
                             facebook_username: u.clone().facebook_username, 
@@ -1533,6 +1991,9 @@ impl User{
                             id: updated_user.id, 
                             region: updated_user.region.clone(),
                             username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
                             activity_code: updated_user.clone().activity_code, 
                             twitter_username: updated_user.clone().twitter_username, 
                             facebook_username: updated_user.clone().facebook_username, 
@@ -1640,6 +2101,9 @@ impl User{
                                     id: updated_user.id, 
                                     region: updated_user.region.clone(),
                                     username: updated_user.clone().username, 
+                                    bio: updated_user.bio.clone(),
+                                    avatar: updated_user.avatar.clone(),
+                                    banner: updated_user.banner.clone(),
                                     activity_code: updated_user.clone().activity_code, 
                                     twitter_username: updated_user.clone().twitter_username, 
                                     facebook_username: updated_user.clone().facebook_username, 
@@ -1747,6 +2211,9 @@ impl User{
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(),
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 
@@ -1848,7 +2315,10 @@ impl User{
                             UserData { 
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
-                                username: updated_user.clone().username, 
+                                username: updated_user.clone().username,
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(), 
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 
@@ -2249,6 +2719,9 @@ impl User{
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(),
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 
@@ -2355,6 +2828,9 @@ impl User{
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(),
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 
@@ -2455,6 +2931,9 @@ impl User{
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(),
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 
@@ -2839,6 +3318,9 @@ impl Id{
                                 id: updated_user.id, 
                                 region: updated_user.region.clone(),
                                 username: updated_user.clone().username, 
+                                bio: updated_user.bio.clone(),
+                                avatar: updated_user.avatar.clone(),
+                                banner: updated_user.banner.clone(),
                                 activity_code: updated_user.clone().activity_code, 
                                 twitter_username: updated_user.clone().twitter_username, 
                                 facebook_username: updated_user.clone().facebook_username, 

@@ -57,7 +57,12 @@ struct NotifData<'info>{
 impl<'info> UserNotif<'info>{
     fn set(&mut self, notif_data: NotifData<'info>) -> Self{
         self.notifs.push(notif_data);
-        let user_notif = UserNotif { user_id: self.user_id.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at };
+        /* 
+            call to clone() in `self.user_id.clone()` on a reference in this situation 
+            does nothing the type `str` does not implement `Clone`, so calling `clone` 
+            on `&str` copies the reference, which does not do anything and can be removed
+        */
+        let user_notif = UserNotif { user_id: self.user_id, notifs: self.notifs.clone(), updated_at: self.updated_at };
         UserNotif{
             ..user_notif /* filling all the fields with the user_notif ones */
         }
