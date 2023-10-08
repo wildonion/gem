@@ -1,6 +1,7 @@
 target
 Cargo.lock
 infra/data
+infra/logs
 infra/docker/nginx/build
 twitter-accounts.json
 assets/images

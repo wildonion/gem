@@ -2984,7 +2984,7 @@
 							"response": []
 						},
 						{
-							"name": "Upload Avatar Copy",
+							"name": "Upload Banner",
 							"request": {
 								"auth": {
 									"type": "bearer",

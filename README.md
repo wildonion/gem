@@ -26,7 +26,8 @@ Conse is a crypto based friendly gathering **Game Event Manager** and advertisin
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🛎️ JENKINS PANEL ==> https://jenkins.conse.app
 ⛵ PORTAINER PANEL ==> https://portainer.conse.app
-🗞️ PANEL ERROR LOGS ==> https://api.conse.app/logs
+🗞️ PANEL ERROR LOGS ==> https://api.panel.conse.app/logs
+🗞️ PANEL ASSETS FOLDER ==> https://api.panel.conse.app/assets
 🎙️ HOSTED ON ==> Digitalocean
 ```
 
