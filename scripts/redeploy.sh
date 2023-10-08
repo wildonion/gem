@@ -155,25 +155,31 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 else
     echo "> Redeploying Rust Services Only"\n
 
-    sudo docker stop conse-panel-pg && sudo docker rm -f conse-panel-pg
-    sudo docker stop conse-panel-mongo && sudo docker rm -f conse-panel-mongo
-    sudo docker stop conse-mafia && sudo docker rm -f conse-mafia
+    ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg-*' | awk '{print $1}')
+    ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
+    ANY_CONSE_MAFIA_CONTAINER_ID=$(docker container ls  | grep 'conse-mafia-*' | awk '{print $1}')
 
-    sudo docker build -t conse-mafia -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
-    sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia -p 7439:7438 conse-mafia
+    sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
+    sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
+    sudo docker stop $ANY_CONSE_MAFIA_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_MAFIA_CONTAINER_ID
+
+    TIMESTAMP=$(date +%s)
+
+    sudo docker build -t conse-mafia-$TIMESTAMP -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
+    sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia-$TIMESTAMP -p 7439:7438 conse-mafia-$TIMESTAMP
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
 
     if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
         echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
-        sudo docker build -t conse-panel-pg -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
-        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-pg -p 7443:7442 -v $(pwd)/assets/:/app/assets -v $(pwd)/infra/logs/:/app/logs conse-panel-pg
+        sudo docker build -t conse-panel-pg-$TIMESTAMP -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-pg-$TIMESTAMP -p 7443:7442 -v $(pwd)/assets/:/app/assets -v $(pwd)/infra/logs/:/app/logs conse-panel-pg-$TIMESTAMP
     else
         echo \n"> 🛢 Building Conse Panel With mongo Db Storage"
         echo \t"--[make sure you're matching over storage.clone().unwrap().get_mongodb() in your code]--"
-        sudo docker build -t conse-panel-mongo -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
-        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-mongo -p 7444:7442 -v $(pwd)/assets/:/app/assets  -v $(pwd)/infra/logs/:/app/logs conse-panel-mongo
+        sudo docker build -t conse-panel-mongo-$TIMESTAMP -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-mongo-$TIMESTAMP -p 7444:7442 -v $(pwd)/assets/:/app/assets  -v $(pwd)/infra/logs/:/app/logs conse-panel-mongo-$TIMESTAMP
     fi
 
 fi
