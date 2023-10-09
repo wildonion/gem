@@ -57,7 +57,6 @@ use wallexerr::Wallet;
         verify_mail_code,
         request_phone_code,
         verify_phone_code,
-        verify_paypal_id,
         charge_wallet,
     ),
     components(
@@ -865,137 +864,6 @@ async fn verify_phone_code(
 
 #[utoipa::path(
     context_path = "/user",
-    request_body = CheckUserPhoneVerificationRequest,
-    responses(
-        (status=200, description="PayPal Id Verified Successfully", body=UserData),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("user_paypal_id" = String, Path, description = "user PayPal Id")
-    ),
-    tag = "crate::apis::user",
-)]
-#[post("/verify-paypal/{user_paypal_id}")]
-#[passport(user)]
-async fn verify_paypal_id(
-    req: HttpRequest,
-    user_paypal_id: web::Path<String>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-) -> PanelHttpResponse{
-
-
-    let storage = storage.as_ref().to_owned();
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let get_redis_conn = redis_client.get_async_connection().await;
-    
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-            
-            let connection = &mut pg_pool.get().unwrap();
-            
-
-            /* 
-                 ------------------------------------- 
-                | --------- PASSPORT CHECKING --------- 
-                | ------------------------------------- 
-                | granted_role has been injected into this 
-                | api body using #[passport()] proc macro 
-                | at compile time thus we're checking it
-                | at runtime
-                |
-            */
-            let granted_role = 
-                if granted_roles.len() == 3{ /* everyone can pass */
-                    None /* no access is required perhaps it's an public route! */
-                } else if granted_roles.len() == 1{
-                    match granted_roles[0]{ /* the first one is the right access */
-                        "admin" => Some(UserRole::Admin),
-                        "user" => Some(UserRole::User),
-                        _ => Some(UserRole::Dev)
-                    }
-                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
-                    resp!{
-                        &[u8], // the data type
-                        &[], // response data
-                        ACCESS_DENIED, // response message
-                        StatusCode::FORBIDDEN, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
-                };
-
-
-            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
-                Ok(token_data) => {
-                    
-                    let _id = token_data._id;
-                    let role = token_data.user_role;
-                    
-                    match User::verify_paypal_id(user_paypal_id.to_owned(), _id, connection).await{
-                        
-                        Ok(updated_user) => {
-
-                            resp!{
-                                UserData, // the data type
-                                updated_user, // response data
-                                PHONE_VERIFIED, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        },
-                        Err(resp) => {
-
-                            /* 
-                                🥝 response can be one of the following:
-
-                                - USER NOT FOUND RESPONE
-                                - MAIL CLIENT ERROR
-                            */
-                            resp
-
-                        }
-                    }
-
-                },
-                Err(resp) => {
-                    
-                    /* 
-                        🥝 response can be one of the following:
-                        
-                        - NOT_FOUND_COOKIE_VALUE
-                        - NOT_FOUND_TOKEN
-                        - INVALID_COOKIE_TIME_HASH
-                        - INVALID_COOKIE_FORMAT
-                        - EXPIRED_COOKIE
-                        - USER_NOT_FOUND
-                        - NOT_FOUND_COOKIE_TIME_HASH
-                        - ACCESS_DENIED, 
-                        - NOT_FOUND_COOKIE_EXP
-                        - INTERNAL_SERVER_ERROR 
-                    */
-                    resp
-                }
-            }
-        
-        }, 
-        None => {
-
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        }
-    }
-
-
-}
-
-#[utoipa::path(
-    context_path = "/user",
     request_body = UserLoginInfoRequest,
     responses(
         (status=200, description="Loggedin Successfully", body=UserData),
@@ -1541,7 +1409,6 @@ async fn charge_wallet(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-
                     let charge_wallet_request_object = charge_wallet_request.to_owned();
 
                     let get_user = User::find_by_id(_id, connection).await;
@@ -1554,12 +1421,12 @@ async fn charge_wallet(
                         first we'll try to find the a user with the passed in screen_cid 
                         generated from keccak256 of cid then we'll go for the verification process 
                     */
-                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.from_cid, connection).await;
+                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
                     let Ok(user_info) = find_user_screen_cid else{
                         
                         resp!{
                             String, // the data type
-                            charge_wallet_request_object.from_cid, // response data
+                            charge_wallet_request_object.buyer_cid, // response data
                             &USER_SCREEN_CID_NOT_FOUND, // response message
                             StatusCode::NOT_FOUND, // status code
                             None::<Cookie<'_>>, // cookie
@@ -1608,68 +1475,25 @@ async fn charge_wallet(
                     }
 
                     let u_region = user.region.unwrap();
-
                     let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
-                    let usd_token_price = token_price.0;
-                    let irr_token_price = token_price.1;
+                    let usd_token_price = token_price.0 as f64 / 10000.0;  /* converting the usd price back to float */;
 
                     let gateway_resp = match u_region.as_str(){
                         "ir" => {
 
-                            if user.account_number.is_some() && 
-                                !user.account_number.unwrap().is_empty(){
-
-                                    /* this is the equivalent amount of token price that must be paid in ir */
-                                    let final_amount_to_be_paid = irr_token_price as f64 / 1000000.0; /* converting the ir price back to float */
-                                    
-                                    // 🚪 ir gateway
-                                    // --- users_payments ---
-                                    // ...
-
-                                    200 
-
-                            } else{
-
-                                resp!{
-                                    i32, // the data type
-                                    _id, // response data
-                                    INVALID_ACCOUNT_NUMBER, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-                            }
+                            200
 
                         },
                         _ => {
 
-                            if user.paypal_id.is_some() && 
-                                !user.paypal_id.unwrap().is_empty(){
+                            // stripe api
+                            // update users_payments schema
+                            // ... 
 
-                                    /* this is the equivalent amount of token price that must be paid in none ir */
-                                    let final_amount_to_be_paid = usd_token_price as f64 / 10000.0;  /* converting the usd price back to float */
-
-                                    // 🚪 paypal_id gateway to charge user with current_token_price amount
-                                    // --- use stripe api --- 
-                                    // --- users_payments ---
-                                    // ...
-
-                                    200 
-
-                            } else{
-
-                                resp!{
-                                    i32, // the data type
-                                    _id, // response data
-                                    INVALID_PAYPAL_ID, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
+                            200
 
                         }
                     };
-                    
 
                     if gateway_resp == 200 || gateway_resp == 201{
 
@@ -4465,10 +4289,7 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
-    pub use super::verify_paypal_id;
     /*
-    pub use super::verify_social_id; // update the social_id field
-    pub use super::verify_account_number; // update the account_number field
     pub use super::add_post_comment;
     pub use super::like_post;
     pub use super::add_nft_comment;
