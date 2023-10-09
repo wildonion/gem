@@ -179,7 +179,6 @@ pub struct ChargeWalletRequest{
     pub user_id: i32,
     pub buyer_cid: String,
     pub tokens: i64,
-    pub from_cid: String,
     pub tx_signature: String,
     pub hash_data: String,
 }

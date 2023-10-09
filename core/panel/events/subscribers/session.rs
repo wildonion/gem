@@ -18,9 +18,7 @@ use crate::events::publishers::role::PlayerRoleInfo;
 use crate::events::subscribers::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
 use crate::{misc::*, misc::s3::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
-use actix::dev::channel;
 use actix::prelude::*;
-use diesel::sql_types::ops::Add;
 use redis_async::resp::FromResp;
 use super::notifs::{
     mmr::{
@@ -78,11 +76,13 @@ pub(crate) struct WsNotifSession{
 
 
 impl WsNotifSession{
-
+    
     /* 
-        role subscription process is done using the redis async subscriber 
-        which subscribes asyncly to the incoming future io object streams 
-        from the passed in channel 
+        @notif_room                  : the current event room which contains this peer or session
+        @session_id                  : the id of the current session to notify it about the subscribed topic
+        @peer_name                   : the unique identifier of the peer or session, usually is the id
+        @redis_async_pubsubconn      : redis pubsub connection
+        @ws_role_notif_actor_address : the role notif actor which is used to send message to an specific peer or seesion
     */
     pub async fn role_subscription(notif_room: &'static str, session_id: usize,
         peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
@@ -94,6 +94,11 @@ impl WsNotifSession{
         let ws_role_notif_actor_address = ws_role_notif_actor_address.clone();
         let peer_name = peer_name.clone();
 
+        /* 
+            role subscription process is done using the redis async subscriber inside a tokio 
+            threadpool which subscribes asyncly to the incoming future io object streams 
+            from the passed in channel contains revealed roles
+        */
         tokio::spawn(async move{
 
             info!("💡 --- peer [{}] is subscribing to event room: [{}] at time [{}]", peer_name, notif_room, chrono::Local::now().timestamp_nanos());
@@ -135,6 +140,11 @@ impl WsNotifSession{
 
                 info!("💡 --- received revealed roles notif from admin at time: [{}]", chrono::Local::now().timestamp_nanos());
                 
+                /* 
+                    since we've stored the Vec<PlayerRoleInfo> as a string in redis thus we'll 
+                    get a stringified data by subscribing to the passed in topic which later we
+                    have to decoded into the Vec<PlayerRoleInfo>
+                */
                 let resp_val = message.unwrap();
                 let stringified_player_roles = String::from_resp(resp_val).unwrap();
                 let decoded_player_roles = serde_json::from_str::<Vec<PlayerRoleInfo>>(&stringified_player_roles).unwrap();
@@ -161,7 +171,16 @@ impl WsNotifSession{
 
     }
 
-    pub async fn ecq_subscription(){
+    /* 
+        @notif_room                  : the current event room which contains this peer or session
+        @session_id                  : the id of the current session to notify it about the subscribed topic
+        @peer_name                   : the unique identifier of the peer or session, usually is the id
+        @redis_async_pubsubconn      : redis pubsub connection
+        @ws_role_notif_actor_address : the role notif actor which is used to send message to an specific peer or seesion
+    */
+    pub async fn ecq_subscription(notif_room: &'static str, session_id: usize,
+        peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
+        ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
 
         todo!()
@@ -169,7 +188,16 @@ impl WsNotifSession{
 
     }
 
-    pub async fn mmr_subscription(){
+    /* 
+        @notif_room                  : the current event room which contains this peer or session
+        @session_id                  : the id of the current session to notify it about the subscribed topic
+        @peer_name                   : the unique identifier of the peer or session, usually is the id
+        @redis_async_pubsubconn      : redis pubsub connection
+        @ws_role_notif_actor_address : the role notif actor which is used to send message to an specific peer or seesion
+    */
+    pub async fn mmr_subscription(notif_room: &'static str, session_id: usize,
+        peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
+        ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
 
         todo!()

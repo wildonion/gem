@@ -3,16 +3,20 @@
 
 ## 🎛️ conse user, dev and admin dashboard panel APIs based on their access are:
 
+> for a complete list of all APIs refer to the [postman collection](https://github.com/wildonion/gem/blob/master/infra/gem.http.api.json)
+
 ### 👤 User Access
 - push notif subscriptions (mmr ranking, ecq and reveal role) `<---mafia jwt--->` mafia hyper server
 - twitter account, otp, mail, identity and bank accounts verification process
 - new login and check token flow
 - building crypto wallet
 - do and get related twitter tasks
+- update bio, avatar and banner
 - transferring in-app tokens by minting (`deposit`) and burning (`withdraw`) nft 
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
+    - create proposal and event for a collection 
     - create contract
     - mint, burn
     - advertising contract
@@ -29,6 +33,7 @@
 - register/delete/edit new twitter tasks, posts and users
 - get all withdrawals, deposits, users and twitter tasks
 - verify and get all posts and their comments and likes 
+- create contract
 
 ### 👨🏻‍💻 Dev Access
 - get all data of a user `<---mafia jwt--->` mafia hyper server
@@ -61,9 +66,9 @@
 ## 🧬 Deposit and Withdrawal Process
 
 - mail verification 
-- crypto id (username)
 - phone verification 
+- crypto id (username)
 - account number and PayPal verification 
 - charge wallet for in-app transactions
-- depositor can call `deposit` API to mint nft to a user by spending in-app tokens from his wallet
+- depositor can call `deposit` API to mint nft by spending in-app tokens from his wallet
 - withdrawer can call `withdraw` API to burn nft to update his in-app token balance
