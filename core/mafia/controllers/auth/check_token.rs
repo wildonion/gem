@@ -15,6 +15,8 @@ use hyper::{header, StatusCode, Body, Response, Request};
 use log::info;
 use mongodb::bson::doc;
 use mongodb::Client;
+use redis::AsyncCommands;
+use redis::RedisResult;
 use std::env;
 
 
@@ -35,6 +37,8 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<std::sync::Arc<redis::Client>>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -48,7 +52,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
             let users = db.database(&db_name).collection::<schemas::auth::UserInfo>("users"); // selecting users collection to fetch all user infos into the UserInfo struct
             match users.find_one(doc!{"_id": _id.unwrap()}, None).await.unwrap(){ // finding user based on username
                 Some(user_doc) => { // deserializing BSON into the UserInfo struct
-                    let user_response = schemas::auth::CheckTokenResponse{
+                    let mut user_response = schemas::auth::CheckTokenResponse{
                         _id: user_doc._id,
                         username: user_doc.username,
                         phone: user_doc.phone,
@@ -60,8 +64,23 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                         updated_at: user_doc.updated_at,
                         last_login_time: user_doc.last_login_time,
                         wallet_address: user_doc.wallet_address,
+                        avatar_path: None,
                         balance: user_doc.balance
                     };
+
+                    let player_id = user_response._id.clone().unwrap().to_string();
+                    let player_filename_key = format!("{player_id:}-img");
+                    let redis_result_player_filename: RedisResult<String> = redis_conn.get(player_filename_key.as_str()).await;
+                    let mut redis_player_filename = match redis_result_player_filename{
+                        Ok(data) => {
+                            data
+                        },
+                        Err(e) => {
+                            String::from("")
+                        }
+                    };
+
+                    user_response.avatar_path = Some(redis_player_filename);
 
                     resp!{
                         schemas::auth::CheckTokenResponse, // the data type

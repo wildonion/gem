@@ -439,6 +439,7 @@ pub struct CheckTokenResponse{ // NOTE - those Option values can be None tho
     pub updated_at: Option<i64>,
     pub last_login_time: Option<i64>,
     pub wallet_address: Option<String>,
+    pub avatar_path: Option<String>,
     pub balance: Option<u64>
 }
 

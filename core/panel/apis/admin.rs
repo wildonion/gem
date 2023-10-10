@@ -277,7 +277,7 @@ async fn reveal_role(
 
 }
 
-#[post("/event/{event_id}/upload/img")]
+#[post("/mafia/event/{event_id}/upload/img")]
 async fn update_event_img(
     req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
@@ -378,12 +378,13 @@ async fn update_event_img(
                             web::block() executes a blocking function on a actix threadpool
                             using spawn_blocking method of actix runtime so in here we're 
                             creating a file inside a actix runtime threadpool to fill it with 
-                            the incoming bytes inside the field object
+                            the incoming bytes inside the field object by streaming over field
+                            object to extract the bytes
                         */
                         let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
                         
                         /* 
-                            receiving asyncly from the streaming of the field future io object,
+                            receiving asyncly by streaming over the field future io object,
                             getting the some part of the next field future object to extract 
                             the image bytes from it
                         */
@@ -402,8 +403,8 @@ async fn update_event_img(
 
                     /* 
                         writing the event image filename to redis ram, by doing this we can 
-                        retrive the value from redis in conse hyper mafia server by calling 
-                        get() method
+                        retrieve the value from redis in conse hyper mafia server when we call 
+                        the get event info api
                     */
                     let _: () = redis_conn.set(event_id_img_key.as_str(), event_img_filepath.as_str()).await.unwrap();
                 

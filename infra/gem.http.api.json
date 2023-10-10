@@ -2162,7 +2162,7 @@
 							"response": []
 						},
 						{
-							"name": "Update Event Picture",
+							"name": "Upload Mafia Event Picture",
 							"request": {
 								"auth": {
 									"type": "bearer",
@@ -2187,11 +2187,12 @@
 									]
 								},
 								"url": {
-									"raw": "{{panel-admin}}/event/64c939bfd19645f57fd9f98a/upload/img",
+									"raw": "{{panel-admin}}/mafia/event/64c939bfd19645f57fd9f98a/upload/img",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
+										"mafia",
 										"event",
 										"64c939bfd19645f57fd9f98a",
 										"upload",
@@ -3017,6 +3018,47 @@
 										"profile",
 										"update",
 										"banner"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Mafia Player Avatar",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "img",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-user}}/mafia/player/64c939bfd19645f57fd9f98a/upload/avatar",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"mafia",
+										"player",
+										"64c939bfd19645f57fd9f98a",
+										"upload",
+										"avatar"
 									]
 								}
 							},

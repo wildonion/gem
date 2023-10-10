@@ -111,7 +111,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::verify_mail_code);
     config.service(apis::user::exports::request_phone_code);
     config.service(apis::user::exports::verify_phone_code);
-    config.service(apis::user::exports::charge_wallet);
+    config.service(apis::user::exports::charge_wallet_request);
     config.service(apis::user::exports::mint);
     config.service(apis::user::exports::burn);
     config.service(apis::user::exports::create_contract);
@@ -119,6 +119,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::edit_bio);
     config.service(apis::user::exports::upload_avatar);
     config.service(apis::user::exports::upload_banner);
+    config.service(apis::user::exports::update_mafia_player_avatar);
     
     // other routs maybe ?
     // ...
