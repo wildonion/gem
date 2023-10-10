@@ -74,7 +74,7 @@ proc-macro2 = "*"
 libloading = "0.8.0"
 web3 = "0.19.0"
 lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
-wallexerr = "0.1.8"
+wallexerr = "0.1.9"
 
 
 [lib]

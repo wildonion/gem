@@ -65,7 +65,7 @@ pub fn init_dev(config: &mut web::ServiceConfig){
 pub fn init_admin(config: &mut web::ServiceConfig){
     
     config.service(apis::admin::exports::reveal_role);
-    config.service(apis::admin::exports::update_event_img);
+    config.service(apis::admin::exports::update_mafia_event_img);
     config.service(apis::admin::exports::login);
     config.service(apis::admin::exports::register_new_user);
     config.service(apis::admin::exports::register_new_task);
@@ -162,6 +162,8 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::check_users_task);
     config.service(apis::public::exports::get_token_value);
     config.service(apis::public::exports::get_x_requests);
+    config.service(apis::public::exports::commit_webhook);
+    config.service(apis::public::exports::charge_wallet_webhook);
 
     // other routs maybe ?
     // ...

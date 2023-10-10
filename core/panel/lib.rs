@@ -52,6 +52,7 @@
         build a new AST from the input TokenStream by parsing incoming tokens and return the generated TokenStream from a new Rust codes
         write parser using decl_macro
         changing and analysing the AST logics of methods at compile time before getting into their body
+        bind rust code to other langs and extending code in rust using macros
     
 
 */

@@ -121,7 +121,17 @@ async fn reveal_role(
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    
+    /* 
+        reveal role event and webhook handler to call the reveal role api of conse mafia
+        hyper server then publish the roles into the redis pubsub channel, cause we'll
+        subscribe to the roles in ws server and notify each session about his role.  
+        webhook means once an event gets triggered an api call will be invoked to 
+        notify (it's like a notification to the server) server about the event happend 
+        as a result of handling another process in some where like a payment result in 
+        which server subscribes to incoming event type and can publish it to redispubsub 
+        so other app, threads and scopes can also subscribe to it
+    */
+
     if let Some(header_value) = req.headers().get("Authorization"){
 
         let token = header_value.to_str().unwrap();
@@ -278,7 +288,7 @@ async fn reveal_role(
 }
 
 #[post("/mafia/event/{event_id}/upload/img")]
-async fn update_event_img(
+async fn update_mafia_event_img(
     req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2657,7 +2667,7 @@ pub mod exports{
     pub use super::get_admin_tasks;
     pub use super::get_users_tasks;
     pub use super::add_twitter_account;
-    pub use super::update_event_img; // `<---mafia jwt--->` mafia hyper server
+    pub use super::update_mafia_event_img; // `<---mafia jwt--->` mafia hyper server
     pub use super::get_all_users_withdrawals;
     pub use super::get_all_users_deposits;
     pub use super::start_tcp_server;

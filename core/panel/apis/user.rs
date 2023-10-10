@@ -1476,9 +1476,8 @@ async fn charge_wallet_request(
                                 stripe apis
                                     - create price object
                                     - create checkout session object
-                                    - return response contains created checout session data and redirect url
-                                    - update users_checkouts schema with the checout session object data
-                                    - set webhoos on checkout.session.{{event}} to notify users
+                                    - return response contains created checkout session data (redirect url)
+                                    - insert a new users_checkouts data with the checkout session object data
                             */
 
                             200
@@ -4470,10 +4469,10 @@ pub mod exports{
     -----------------------------------------------------------------------
     */
     /* ---------------------------------------------------- 
-        user must pay token in following calls and 
-        backend pay the gas fee with matic through 
-        nftport calls also followings need CID signature 
-        and user must sign the calls
+        user must pay token for the following calls since
+        backend pay the gas fee with matic through nftport 
+        calls also invoking the followings need CID signature 
+        and user must sign the calls with his private key
     ------------------------------------------------------- */
     /* 
     pub use super::create_proposal;

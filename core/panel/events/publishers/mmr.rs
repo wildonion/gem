@@ -4,7 +4,7 @@
 
 /*
 
-    https://github.com/wildonion/penpineappleapplepen/blob/main/src/lib.rs
+    https://github.com/wildonion/zoomate/blob/main/src/lib.rs
     https://github.com/wildonion/gvm/blob/main/src/lib.rs
 
     complete proc macros in lib.rs
