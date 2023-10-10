@@ -391,12 +391,13 @@ async fn commit_webhook(
                         git pull https://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@github.com/YouWhoClub/youwho.club.git \
                         && npm install && npm run build
                         
-                        publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel
-                        later on a discord bot can subscribe to the topic to 
-                        broadcast the new commit topic to channels through 
-                        websocket event firing logic
+                        publish <REPO_NAME::COMMIT::TIME> to redis pubsub channel using redis actor
+                        later on a discord bot can subscribe to the topic to broadcast the new commit 
+                        topic to discord channels through websocket event firing logic
                     */
                     // ...
+
+                    // discord serenity commitment bot
 
                     let build_res = format!("{}::{}::{}", "", "", "");
                     if let Err(why) = cloned_build_res_sender.send(build_res).await{

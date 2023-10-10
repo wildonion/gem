@@ -57,7 +57,6 @@ use wallexerr::Wallet;
         verify_mail_code,
         request_phone_code,
         verify_phone_code,
-        charge_wallet,
     ),
     components(
         schemas(
@@ -1340,22 +1339,9 @@ pub async fn tasks_report(
     }
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = ChargeWalletRequest,
-    responses(
-        (status=201, description="Paid Successfully", body=UserData),
-        (status=500, description="Internal Server Erros Caused By Diesel or Redis", body=&[u8]),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
-
 #[get("/cid/wallet/charge")]
 #[passport(user)]
-async fn charge_wallet(
+async fn charge_wallet_request(
     req: HttpRequest,
     charge_wallet_request: web::Json<ChargeWalletRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1486,9 +1472,14 @@ async fn charge_wallet(
                         },
                         _ => {
 
-                            // stripe api
-                            // update users_payments schema
-                            // ... 
+                            /* 
+                                stripe apis
+                                    - create price object
+                                    - create checkout session object
+                                    - return response contains created checout session data and redirect url
+                                    - update users_checkouts schema with the checout session object data
+                                    - set webhoos on checkout.session.{{event}} to notify users
+                            */
 
                             200
 
@@ -4273,6 +4264,178 @@ async fn upload_banner(
 
 }
 
+/* this api must gets called by player with his JWT passed in to the request header */
+#[post("/mafia/player/{player_id}/upload/avatar")]
+async fn update_mafia_player_avatar(
+    req: HttpRequest, 
+        player_id: web::Path<String>, // mongodb objectid
+        storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        mut img: Multipart, /* form-data implementation to receive stream of byte fields */
+    ) -> PanelHttpResponse{
+
+
+        if let Some(header_value) = req.headers().get("Authorization"){
+
+            let token = header_value.to_str().unwrap();
+            
+            /*
+                @params: 
+                    - @token          → JWT
+    
+                note that this token must be taken from the conse mafia hyper server
+            */
+            match mafia_passport!{ token }{
+                true => {
+    
+                    // -------------------------------------------------------------------------------------
+                    // ------------------------------- ACCESS GRANTED REGION -------------------------------
+                    // -------------------------------------------------------------------------------------
+                    /*  
+                        this route requires the player access token from the conse 
+                        mafia hyper server to update avatar image, we'll send a request
+                        to the conse mafia hyper server to verify the passed in JWT of the
+                        player and if it was verified we'll allow the user to update the image
+                    */
+    
+                    let storage = storage.as_ref().to_owned();
+                    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+                    let player_id_img_key = format!("{player_id:}-img");
+
+                    let get_redis_conn = redis_client.get_async_connection().await;
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_event_img");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* creating the asset folder if it doesn't exist */
+                    tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
+                    let mut player_img_filepath = "".to_string();
+                    
+                    /*  
+                        streaming over incoming img multipart form data to extract the
+                        field object for writing the bytes into the file
+                    */
+                    while let Ok(Some(mut field)) = img.try_next().await{
+
+                        /* getting the content_disposition header which contains the filename */
+                        let content_type = field.content_disposition();
+
+                        /* creating the filename and the filepath */
+                        let filename = content_type.get_filename().unwrap().to_lowercase();
+                        let ext_position_png = filename.find("png");
+                        let ext_position_jpg = filename.find("jpg");
+                        let ext_position_jpeg = filename.find("jpeg");
+
+                        let ext_position = if filename.find("png").is_some(){
+                            ext_position_png.unwrap()
+                        } else if filename.find("jpg").is_some(){
+                            ext_position_jpg.unwrap()
+                        } else if filename.find("jpeg").is_some(){
+                            ext_position_jpeg.unwrap()
+                        } else{
+
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                UNSUPPORTED_IMAGE_TYPE, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            } 
+                        };
+
+                        let player_img_filename = format!("player:{}-img:{}.{}", player_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+                        let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&player_img_filename));
+                        player_img_filepath = filepath.clone();
+
+                        /* 
+                            web::block() executes a blocking function on a actix threadpool
+                            using spawn_blocking method of actix runtime so in here we're 
+                            creating a file inside a actix runtime threadpool to fill it with 
+                            the incoming bytes inside the field object by streaming over field
+                            object to extract the bytes
+                        */
+                        let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+                        
+                        /* 
+                            receiving asyncly by streaming over the field future io object,
+                            getting the some part of the next field future object to extract 
+                            the image bytes from it
+                        */
+                        while let Some(chunk) = field.next().await{
+                            
+                            let data = chunk.unwrap();
+                            
+                            /* writing bytes into the created file with the extracted filepath */
+                            f = web::block(move || f.write_all(&data).map(|_| f))
+                                    .await
+                                    .unwrap()
+                                    .unwrap();
+                        }
+
+                    }
+
+                    /* 
+                        writing the avatar image filename to redis ram, by doing this we can 
+                        retrieve the value from redis in conse hyper mafia server when we call 
+                        the check token api
+                    */
+                    let _: () = redis_conn.set(player_id_img_key.as_str(), player_img_filepath.as_str()).await.unwrap();
+                
+                    resp!{
+                        &[u8], // the date type
+                        &[], // the data itself
+                        EVENT_IMG_UPDATED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                    
+    
+                    // -------------------------------------------------------------------------------------
+                    // -------------------------------------------------------------------------------------
+                    // -------------------------------------------------------------------------------------
+    
+                },
+                false => {
+                    
+                    resp!{
+                        &[u8], // the date type
+                        &[], // the data itself
+                        INVALID_TOKEN, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                }
+            }
+    
+        } else{
+            
+            resp!{
+                &[u8], // the date type
+                &[], // the data itself
+                NOT_AUTH_HEADER, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+
+}
+
+
+
 pub mod exports{
     pub use super::login;
     pub use super::login_with_identifier_and_password;
@@ -4280,6 +4443,7 @@ pub mod exports{
     pub use super::edit_bio;
     pub use super::upload_avatar;
     pub use super::upload_banner;
+    pub use super::update_mafia_player_avatar;
     pub use super::tasks_report;
     pub use super::make_cid;
     pub use super::get_all_user_withdrawals;
@@ -4322,7 +4486,7 @@ pub mod exports{
     pub use super::withdraw; /* gift card money claim */
     pub use super::mint;
     pub use super::burn;
-    pub use super::charge_wallet;
+    pub use super::charge_wallet_request;
     pub use super::create_contract;
     pub use super::add_nft_to_contract;
     pub use super::advertise_contract;

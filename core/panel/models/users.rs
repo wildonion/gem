@@ -1383,6 +1383,7 @@ impl User{
 
         }
 
+        /* update the avatar field in db */
         match diesel::update(users.find(user.id))
             .set(avatar.eq(avatar_img_path))
             .returning(FetchUser::as_returning())
@@ -1482,7 +1483,7 @@ impl User{
 
         /* making banner image from incoming bytes */
         let mut banner_img_path = String::from("");
-        tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
+        tokio::fs::create_dir_all(BANNER_UPLOAD_PATH).await.unwrap();
 
         /*  
             streaming over incoming img multipart form data to extract the
@@ -1549,6 +1550,7 @@ impl User{
 
         }
 
+        /* update the avatar field in db */
         match diesel::update(users.find(user.id))
             .set(banner.eq(banner_img_path))
             .returning(FetchUser::as_returning())
