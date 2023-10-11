@@ -22,7 +22,7 @@
     - advertising contract
     - add comment on and like the nft
     - add/remove friend
-- buy in-app token (charge wallet)
+- buy in-app token (charge wallet and stripe apis)
 
 ### 👑 Admin Access
 - advertise event `<---mafia jwt--->` mafia hyper server
@@ -34,6 +34,7 @@
 - get all withdrawals, deposits, users and twitter tasks
 - verify and get all posts and their comments and likes 
 - create contract
+- fetch all strip products, prices and checkout sessions
 
 ### 👨🏻‍💻 Dev Access
 - get all data of a user `<---mafia jwt--->` mafia hyper server

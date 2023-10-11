@@ -50,6 +50,7 @@ pub static REGION_IS_NONE: &str = "Make Sure You Have Built Crypto Id Already";
 pub const DEV_ACCESS: u8 = 0;
 pub const ADMIN_ACCESS: u8 = 1; // God access
 pub static BUSY_BOT: &str = "Bot Is Busy";
+pub static NOT_IMPLEMENTED: &str = "Not Implemented";
 pub static FETCHED: &str = "Fetched Successfully";
 pub static LOGGEDIN: &str = "Loggedin Successfully";
 pub static REGISTERED: &str = "Registered Successfully";
@@ -106,6 +107,13 @@ pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
+
+
+pub static STRIPE_STARTED_PAYAMENT: &str = "Stripe Payment Process Has Been Started Successfully";
+pub static STRIPE_PRODUCT_OBJECT_ISSUE: &str = "Couldn't Create Stripe Product Object";
+pub static STRIPE_PRICE_OBJECT_ISSUE: &str = "Couldn't Create Stripe Price Object";
+pub static STRIPE_SESSION_OBJECT_ISSUE: &str = "Couldn't Create Stripe Session Object";
+
 
 pub static TWITTER_BOT_RL_DATA_ISSUE: &str = "Rate Limit Data Can't Be Fetched From The Bot Correctly";
 pub static TWITTER_24HOURS_LIMITED: &str = "24 Hours Rate Limited";

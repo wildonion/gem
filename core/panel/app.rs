@@ -1,6 +1,7 @@
 
-
-
+/* -------------------------------------------------- */
+/* ------------ loading externcal crates ------------ */
+/* -------------------------------------------------- */
 use lettre::{
     message::header::ContentType as LettreContentType,
     transport::smtp::authentication::Credentials, 
@@ -101,7 +102,11 @@ use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
-mod wallet;     /* contains crypto wallet signing and verification process */
+
+/* ----------------------------------------- */
+/* ------------ loading modules ------------ */
+/* ----------------------------------------- */
+mod wallet;     /* contains crypto web3 wallet signing and verification process */
 mod apis;       /* contains http routes and model call logics */
 mod misc;       /* contains miscellaneous and utilities methods and modules */
 mod constants;  /* contains constant and static types */
@@ -110,6 +115,10 @@ mod events;     /* contains realtiming event pubsub logics based on ws */
 mod models;     /* contains models, schemas structures and db query calls */
 mod schema;     /* contains diesel db schemas */
 mod error;      /* contains error handler logis */
+mod adapters;   /* contains all third party apis */
+mod s3;         /* contains app storage handler methods and macros */
+mod server;     /* contains server handler methods and macros */
+
 
 
 #[actix_web::main]

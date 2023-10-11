@@ -2,6 +2,7 @@
 
 
 use crate::*;
+use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
 use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -9,7 +10,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -20,7 +21,7 @@ use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
@@ -28,6 +29,7 @@ use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
 use models::users_contracts::{UserContract};
 use wallexerr::Wallet;
+use crate::adapters::nftport::*;
 
 
 
@@ -1339,7 +1341,7 @@ pub async fn tasks_report(
     }
 }
 
-#[get("/cid/wallet/charge")]
+#[post("/cid/wallet/charge")]
 #[passport(user)]
 async fn charge_wallet_request(
     req: HttpRequest,
@@ -1407,32 +1409,32 @@ async fn charge_wallet_request(
                         first we'll try to find the a user with the passed in screen_cid 
                         generated from keccak256 of cid then we'll go for the verification process 
                     */
-                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
-                    let Ok(user_info) = find_user_screen_cid else{
+                    // let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
+                    // let Ok(user_info) = find_user_screen_cid else{
                         
-                        resp!{
-                            String, // the data type
-                            charge_wallet_request_object.buyer_cid, // response data
-                            &USER_SCREEN_CID_NOT_FOUND, // response message
-                            StatusCode::NOT_FOUND, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    };
+                    //     resp!{
+                    //         String, // the data type
+                    //         charge_wallet_request_object.buyer_cid, // response data
+                    //         &USER_SCREEN_CID_NOT_FOUND, // response message
+                    //         StatusCode::NOT_FOUND, // status code
+                    //         None::<Cookie<'_>>, // cookie
+                    //     }
+                    // };
 
-                    let verification_res = wallet::evm::verify_signature(
-                        user_info.screen_cid.unwrap(),
-                        &charge_wallet_request.tx_signature,
-                        &charge_wallet_request_object.hash_data
-                    ).await;
-                    if verification_res.is_err(){
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            &INVALID_SIGNATURE, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    }
+                    // let verification_res = wallet::evm::verify_signature(
+                    //     user_info.screen_cid.unwrap(),
+                    //     &charge_wallet_request.tx_signature,
+                    //     &charge_wallet_request_object.hash_data
+                    // ).await;
+                    // if verification_res.is_err(){
+                    //     resp!{
+                    //         &[u8], // the data type
+                    //         &[], // response data
+                    //         &INVALID_SIGNATURE, // response message
+                    //         StatusCode::NOT_ACCEPTABLE, // status code
+                    //         None::<Cookie<'_>>, // cookie
+                    //     }
+                    // }
 
 
                     if charge_wallet_request_object.tokens < 0 &&
@@ -1462,62 +1464,115 @@ async fn charge_wallet_request(
 
                     let u_region = user.region.unwrap();
                     let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
-                    let usd_token_price = token_price.0 as f64 / 10000.0;  /* converting the usd price back to float */;
 
-                    let gateway_resp = match u_region.as_str(){
+                    match u_region.as_str(){
                         "ir" => {
 
-                            200
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                NOT_IMPLEMENTED, // response message
+                                StatusCode::NOT_IMPLEMENTED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
 
                         },
                         _ => {
 
-                            /* 
-                                stripe apis
-                                    - create price object
-                                    - create checkout session object
-                                    - return response contains created checkout session data (redirect url)
-                                    - insert a new users_checkouts data with the checkout session object data
-                            */
 
-                            200
+                            /* this is the price of the product */
+                            // let usd_token_price = (token_price.0 as f64 / 10000.0).round() as i64;
+                            let usd_token_price = 25 as i64;
 
-                        }
-                    };
+                            /*  -------------------------------------------------------------
+                                note that we don't store the product, price and session data
+                                response came from stripe in db cause later on we can fetch 
+                                a single data of either product, price or checkout session 
+                                using stripe api.
+                                ------------------------------------------------------------- */
+                            let product = create_product(
+                                redis_client.clone(), 
+                                usd_token_price, 
+                                charge_wallet_request.tokens, 
+                                &charge_wallet_request.buyer_cid
+                            ).await;
 
-                    if gateway_resp == 200 || gateway_resp == 201{
-
-                        let new_balance = if user.balance.is_none(){0 + charge_wallet_request.tokens} else{user.balance.unwrap() + charge_wallet_request.tokens};
-                        match User::update_balance(_id, new_balance, connection).await{
-
-                            Ok(updated_user_data) => {
-
+                            if product.id.is_none(){
+                                
                                 resp!{
-                                    UserData, // the data type
-                                    updated_user_data, // response data
-                                    PAID_SUCCESSFULLY, // response message
-                                    StatusCode::OK, // status code
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    STRIPE_PRODUCT_OBJECT_ISSUE, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
-
-                            },
-                            Err(resp) => {
-                                resp
                             }
+
+                            let price_id = create_price(
+                                redis_client.clone(), 
+                                usd_token_price, 
+                                &product.id.unwrap(),
+                            ).await;
+
+                            if price_id.is_empty(){
+
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    STRIPE_PRICE_OBJECT_ISSUE, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
+                            let checkout_session_data = create_session(
+                                redis_client.clone(), 
+                                &price_id, 
+                                charge_wallet_request.tokens
+                            ).await;
+
+                            if checkout_session_data.session_id.is_empty() || 
+                                checkout_session_data.session_url.is_empty() ||
+                                checkout_session_data.expires_at == 0{
+
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    STRIPE_SESSION_OBJECT_ISSUE, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
+                            /* 
+                                store users_checkouts data 
+
+                                    users_checkouts record data:
+                                    - user_id,
+                                    - buyer_cid,
+                                    - tokens,
+                                    - usd_token_price,
+                                    - tx_signature,
+                                    - product_id
+                                    - price_id
+                                    - checkout_session_id
+                                    - checkout_session_url
+                                    - checkout_session_expires_at
+                                    - payment_status
+                                    - requested_at
+                            */
+
+                            resp!{
+                                StripeCreateCheckoutSessionData, // the data type
+                                checkout_session_data, // response data
+                                STRIPE_STARTED_PAYAMENT, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
                         }
-
-
-                    } else{
-
-                        resp!{
-                            i32, // the data type
-                            _id, // response data
-                            CANT_CHARGE_WALLET, // response message
-                            StatusCode::EXPECTATION_FAILED, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
                     }
+
                         
                 },
                 Err(resp) => {
@@ -4486,6 +4541,7 @@ pub mod exports{
     pub use super::mint;
     pub use super::burn;
     pub use super::charge_wallet_request;
+    /* pub use super::sell_token; // send money from stripe to the user bank account */
     pub use super::create_contract;
     pub use super::add_nft_to_contract;
     pub use super::advertise_contract;

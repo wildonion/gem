@@ -854,3 +854,166 @@ code: 65532 | message: {"response":"NOK","error":{"status_code":401,"code":"auth
 code: 65532 | message: {"response":"NOK","error":{"status_code":401,"code":"authorization_missing","message":"Request is missing 'Authorization' header."}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"response\":\"NOK\",\"error\":{\"status_code\":401,\"code\":\"authorization_missing\",\"message\":\"Request is missing 'Authorization' header.\"}}")) | time: 1695842346969 | method name: start_burning_card_process
 code: 65532 | message: {"response":"NOK","error":{"status_code":401,"code":"authorization_missing","message":"Request is missing 'Authorization' header."}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"response\":\"NOK\",\"error\":{\"status_code\":401,\"code\":\"authorization_missing\",\"message\":\"Request is missing 'Authorization' header.\"}}")) | time: 1695842434495 | method name: start_burning_card_process
 code: 65532 | message: {"response":"NOK","error":{"status_code":401,"code":"authorization_missing","message":"Request is missing 'Authorization' header."}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"response\":\"NOK\",\"error\":{\"status_code\":401,\"code\":\"authorization_missing\",\"message\":\"Request is missing 'Authorization' header.\"}}")) | time: 1695842562433 | method name: start_burning_card_process
+code: 65535 | message: duplicate key value violates unique constraint "users_identifier_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_identifier_key\""))) | time: 1697030534417 | method name: User::insert_by_identifier_password
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697031232813 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697032691044 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697032961988 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697033077139 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697039371168 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697040016941 | method name: calculate_token_value
+code: 65532 | message: {"error":{"message":"Invalid array","param":"line_items","request_log_url":"https://dashboard.stripe.com/test/logs/req_5UN9RPHNFPN4UI?t=1697040026","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"message\":\"Invalid array\",\"param\":\"line_items\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_5UN9RPHNFPN4UI?t=1697040026\",\"type\":\"invalid_request_error\"}}")) | time: 1697040026407 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697040172322 | method name: calculate_token_value
+code: 65532 | message: {"error":{"message":"Invalid array","param":"line_items","request_log_url":"https://dashboard.stripe.com/test/logs/req_6j57BwYp6OznyT?t=1697040176","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"message\":\"Invalid array\",\"param\":\"line_items\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_6j57BwYp6OznyT?t=1697040176\",\"type\":\"invalid_request_error\"}}")) | time: 1697040176334 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697040742405 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697041944678 | method name: calculate_token_value
+code: 65532 | message: {"error":{"message":"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.","param":"line_items[0]","request_log_url":"https://dashboard.stripe.com/test/logs/req_zwtEHWtaEfgAI9?t=1697041949","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"message\":\"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.\",\"param\":\"line_items[0]\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_zwtEHWtaEfgAI9?t=1697041949\",\"type\":\"invalid_request_error\"}}")) | time: 1697041949105 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697042026908 | method name: calculate_token_value
+code: 65532 | message: {"error":{"message":"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.","param":"line_items[0]","request_log_url":"https://dashboard.stripe.com/test/logs/req_XJggI0MJhJTZeT?t=1697042031","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"message\":\"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.\",\"param\":\"line_items[0]\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_XJggI0MJhJTZeT?t=1697042031\",\"type\":\"invalid_request_error\"}}")) | time: 1697042031008 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697042090521 | method name: calculate_token_value
+code: 65532 | message: {"error":{"message":"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.","param":"line_items[0]","request_log_url":"https://dashboard.stripe.com/test/logs/req_T7tLJFziJZL9N1?t=1697042095","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"message\":\"Checkout does not currently support usd prices with more than 2 decimal places in payment mode. In `line_items[0]` you passed `5.4` corresponding to `$0.054`, which is not supported. You can round your price and pass in `unit_amount: 5` or `unit_amount: 6` instead.\",\"param\":\"line_items[0]\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_T7tLJFziJZL9N1?t=1697042095\",\"type\":\"invalid_request_error\"}}")) | time: 1697042095116 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697042535149 | method name: calculate_token_value
+code: 65532 | message: {"error":{"code":"stripe_tax_inactive","doc_url":"https://stripe.com/docs/error-codes/stripe-tax-inactive","message":"Stripe Tax has not been activated on your account. Please visit https://stripe.com/docs/tax/set-up to get started.","request_log_url":"https://dashboard.stripe.com/test/logs/req_rGn2vRnVlxlfRF?t=1697042539","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"code\":\"stripe_tax_inactive\",\"doc_url\":\"https://stripe.com/docs/error-codes/stripe-tax-inactive\",\"message\":\"Stripe Tax has not been activated on your account. Please visit https://stripe.com/docs/tax/set-up to get started.\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_rGn2vRnVlxlfRF?t=1697042539\",\"type\":\"invalid_request_error\"}}")) | time: 1697042539647 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697042555077 | method name: calculate_token_value
+code: 65532 | message: {"error":{"code":"stripe_tax_inactive","doc_url":"https://stripe.com/docs/error-codes/stripe-tax-inactive","message":"Stripe Tax has not been activated on your account. Please visit https://stripe.com/docs/tax/set-up to get started.","request_log_url":"https://dashboard.stripe.com/test/logs/req_8c90dSPNkqD49w?t=1697042559","type":"invalid_request_error"}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"error\":{\"code\":\"stripe_tax_inactive\",\"doc_url\":\"https://stripe.com/docs/error-codes/stripe-tax-inactive\",\"message\":\"Stripe Tax has not been activated on your account. Please visit https://stripe.com/docs/tax/set-up to get started.\",\"request_log_url\":\"https://dashboard.stripe.com/test/logs/req_8c90dSPNkqD49w?t=1697042559\",\"type\":\"invalid_request_error\"}}")) | time: 1697042558889 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697042643210 | method name: calculate_token_value
+code: 65532 | message: {"id":"cs_test_a1f6uC9EezMjY1duczvx8NhLzyQeyMlBapabAvJRKmFrmoK5r5JL2siaPA","object":"checkout.session","after_expiration":null,"allow_promotion_codes":null,"amount_subtotal":50,"amount_total":50,"automatic_tax":{"enabled":false,"status":null},"billing_address_collection":null,"cancel_url":"http://localhost:7442/public/stripe/cancel","client_reference_id":null,"consent":null,"consent_collection":null,"created":1697042648,"currency":"usd","currency_conversion":null,"custom_fields":[],"custom_text":{"shipping_address":null,"submit":null,"terms_of_service_acceptance":null},"customer":null,"customer_creation":"if_required","customer_details":null,"customer_email":null,"expires_at":1697129047,"invoice":null,"invoice_creation":{"enabled":false,"invoice_data":{"account_tax_ids":null,"custom_fields":null,"description":null,"footer":null,"metadata":{},"rendering_options":null}},"livemode":false,"locale":null,"metadata":{},"mode":"payment","payment_intent":null,"payment_link":null,"payment_method_collection":"if_required","payment_method_configuration_details":{"id":"pmc_1NoxlJQh40EE7qEcLbUVnDCp","parent":"pmc_1NIuAbH3aTW8zooFFX8dH2BN"},"payment_method_options":{},"payment_method_types":["card"],"payment_status":"unpaid","phone_number_collection":{"enabled":false},"recovered_from":null,"setup_intent":null,"shipping_address_collection":null,"shipping_cost":null,"shipping_details":null,"shipping_options":[],"status":"open","submit_type":null,"subscription":null,"success_url":"http://localhost:7442/public/stripe/success","total_details":{"amount_discount":0,"amount_shipping":0,"amount_tax":0},"url":"https://checkout.stripe.com/c/pay/cs_test_a1f6uC9EezMjY1duczvx8NhLzyQeyMlBapabAvJRKmFrmoK5r5JL2siaPA#fidkdWxOYHwnPyd1blpxYHZxWjA0S2p9aUBUbTE1QEAydEBmRjVEaUpBfVR8f0NiMzZjfEF%2FYnRyUTZHVn9DfUkxTDdqV0NUbldgXDd3VFBSNXRKVn9DNm82cExWbUlON05ubzVHQjJLZFxiNTU3a1JmZjNjNicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"} | due to: ThirdPartyApi(ReqwestTextResponse("{\"id\":\"cs_test_a1f6uC9EezMjY1duczvx8NhLzyQeyMlBapabAvJRKmFrmoK5r5JL2siaPA\",\"object\":\"checkout.session\",\"after_expiration\":null,\"allow_promotion_codes\":null,\"amount_subtotal\":50,\"amount_total\":50,\"automatic_tax\":{\"enabled\":false,\"status\":null},\"billing_address_collection\":null,\"cancel_url\":\"http://localhost:7442/public/stripe/cancel\",\"client_reference_id\":null,\"consent\":null,\"consent_collection\":null,\"created\":1697042648,\"currency\":\"usd\",\"currency_conversion\":null,\"custom_fields\":[],\"custom_text\":{\"shipping_address\":null,\"submit\":null,\"terms_of_service_acceptance\":null},\"customer\":null,\"customer_creation\":\"if_required\",\"customer_details\":null,\"customer_email\":null,\"expires_at\":1697129047,\"invoice\":null,\"invoice_creation\":{\"enabled\":false,\"invoice_data\":{\"account_tax_ids\":null,\"custom_fields\":null,\"description\":null,\"footer\":null,\"metadata\":{},\"rendering_options\":null}},\"livemode\":false,\"locale\":null,\"metadata\":{},\"mode\":\"payment\",\"payment_intent\":null,\"payment_link\":null,\"payment_method_collection\":\"if_required\",\"payment_method_configuration_details\":{\"id\":\"pmc_1NoxlJQh40EE7qEcLbUVnDCp\",\"parent\":\"pmc_1NIuAbH3aTW8zooFFX8dH2BN\"},\"payment_method_options\":{},\"payment_method_types\":[\"card\"],\"payment_status\":\"unpaid\",\"phone_number_collection\":{\"enabled\":false},\"recovered_from\":null,\"setup_intent\":null,\"shipping_address_collection\":null,\"shipping_cost\":null,\"shipping_details\":null,\"shipping_options\":[],\"status\":\"open\",\"submit_type\":null,\"subscription\":null,\"success_url\":\"http://localhost:7442/public/stripe/success\",\"total_details\":{\"amount_discount\":0,\"amount_shipping\":0,\"amount_tax\":0},\"url\":\"https://checkout.stripe.com/c/pay/cs_test_a1f6uC9EezMjY1duczvx8NhLzyQeyMlBapabAvJRKmFrmoK5r5JL2siaPA#fidkdWxOYHwnPyd1blpxYHZxWjA0S2p9aUBUbTE1QEAydEBmRjVEaUpBfVR8f0NiMzZjfEF%2FYnRyUTZHVn9DfUkxTDdqV0NUbldgXDd3VFBSNXRKVn9DNm82cExWbUlON05ubzVHQjJLZFxiNTU3a1JmZjNjNicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl\"}")) | time: 1697042648009 | method name: stripe_create_session
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697044646381 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697044765936 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697044996814 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697045158308 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697045533324 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697046679206 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697047003984 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697048270633 | method name: calculate_token_value

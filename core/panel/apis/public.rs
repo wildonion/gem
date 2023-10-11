@@ -8,11 +8,12 @@ use crate::models::{users::*, tasks::*, users_tasks::*, bot::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
+use crate::adapters::stripe::StripeWebhookPayload;
 
 
 
@@ -321,6 +322,7 @@ async fn get_token_value(
 #[post("/cid/wallet/charge/webhook/fulfill")]
 async fn charge_wallet_webhook(
         req: HttpRequest,
+        payload: web::Json<StripeWebhookPayload>,
         storage: web::Data<Option<Arc<Storage>>>
     ) -> PanelHttpResponse{
 
@@ -343,10 +345,51 @@ async fn charge_wallet_webhook(
 
             let connection = &mut pg_pool.get().unwrap();
 
+            // TODO
             /* update a users_checkouts record */
+            /* update a user balance */
             // ...
 
-            todo!()
+            /* receiving async stripe payment events */
+            let webhook_event = "succ";
+            let _id = 0;
+
+            /* means that the payment process was successfull */
+            if webhook_event == "succ"{
+                
+                /* charge the user balance */
+                // let new_balance = if user.balance.is_none(){0 + charge_wallet_request.tokens} else{user.balance.unwrap() + charge_wallet_request.tokens};
+                // match User::update_balance(_id, new_balance, connection).await{
+
+                //     Ok(updated_user_data) => {
+
+                //         resp!{
+                //             UserData, // the data type
+                //             updated_user_data, // response data
+                //             PAID_SUCCESSFULLY, // response message
+                //             StatusCode::OK, // status code
+                //             None::<Cookie<'_>>, // cookie
+                //         }
+
+                //     },
+                //     Err(resp) => {
+                //         resp
+                //     }
+                // }
+
+                todo!()
+
+            } else{
+
+                resp!{
+                    i32, // the data type
+                    _id, // response data
+                    CANT_CHARGE_WALLET, // response message
+                    StatusCode::EXPECTATION_FAILED, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+
+            }
 
         },
         None => {
@@ -367,7 +410,7 @@ async fn charge_wallet_webhook(
 #[passport(admin, user, dev)]
 async fn commit_webhook(
         req: HttpRequest,
-        event_request: web::Json<CommitWebhookEventRequest>,
+        event_request: web::Json<GithubCommitWebhookEventRequest>,
         storage: web::Data<Option<Arc<Storage>>>
     ) -> PanelHttpResponse{
 

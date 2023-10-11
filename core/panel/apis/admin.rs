@@ -16,7 +16,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -2636,6 +2636,9 @@ pub mod exports{
     pub use super::get_all_post_likes;
     pub use super::update_post_image;
     pub use super::verify_post_comment;
+    pub use super::get_all_stripe_products; /* also: get single product using its id */
+    pub use super::get_all_stripe_prices; /* also: get single price using its id */
+    pub use super::get_all_stripe_checkout_sessions; /* also: get single session using its id */
     -----------------------------------------------------------------------
     https://docs.nftport.xyz/reference/retrieve-nft-collection-contract
     

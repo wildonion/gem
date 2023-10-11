@@ -15,7 +15,7 @@ use crate::*;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use crate::events::{
     subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
     subscribers::notifs::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},

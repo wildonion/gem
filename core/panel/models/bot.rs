@@ -8,7 +8,7 @@ use crate::*;
 use super::{users::User, users_tasks::UserTask, tasks::TaskData};
 use crate::constants::*;
 use crate::misc::*;
-use crate::misc::s3::*;
+use s3::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
 

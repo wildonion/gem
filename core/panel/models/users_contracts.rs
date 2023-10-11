@@ -4,8 +4,6 @@ use crate::*;
 
 
 
-
-
 /* 
 
     diesel migration generate users_contracts ---> create users_contracts migration sql files
@@ -66,75 +64,6 @@ pub struct NewUserAddNftToContractRequest{
     pub amount: i64,
     pub tx_signature: String,
     pub hash_data: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortMintResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-    pub metadata_uri: String,
-    pub mint_to_address: String
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadMetadataRequest{
-    pub name: String,
-    pub description: String,
-    pub file_url: String,
-    pub custom_fields: HashMap<String, String>,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortGetNftResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub token_id: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortTransferNftResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortBurnResponse{
-    pub response: String,
-    pub chain: String,
-    pub contract_address: String,
-    pub transaction_hash: String,
-    pub transaction_external_url: String,
-}
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadMetadataResponse{
-    pub response: String,
-    pub metadata_uri: String,
-    pub name: String,
-    pub description: String,
-    pub file_url: String,
-    pub external_url: Option<String>,
-    pub animation_url: Option<String>,
-    pub custom_fields: Option<HashMap<String, String>>,
-    pub attributes: Option<String>,
-}
-
-
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortUploadFileToIpfsData{
-    pub response: String,
-    pub ipfs_url: String,
-    pub file_name: String,
-    pub content_type: String,
-    pub file_size: i64,
-    pub file_size_mb: f64
 }
 
 
