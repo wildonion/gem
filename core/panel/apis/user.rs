@@ -3,6 +3,7 @@
 
 use crate::*;
 use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
+use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -1341,7 +1342,7 @@ pub async fn tasks_report(
     }
 }
 
-#[post("/cid/wallet/charge")]
+#[post("/cid/wallet/stripe/charge")]
 #[passport(user)]
 async fn charge_wallet_request(
     req: HttpRequest,
@@ -1511,7 +1512,7 @@ async fn charge_wallet_request(
                             let price_id = create_price(
                                 redis_client.clone(), 
                                 usd_token_price, 
-                                &product.id.unwrap(),
+                                &product.id.as_ref().unwrap(),
                             ).await;
 
                             if price_id.is_empty(){
@@ -1544,30 +1545,35 @@ async fn charge_wallet_request(
                                 }
                             }
 
-                            /* 
-                                store users_checkouts data 
+                            /* store users_checkouts data */
+                            let new_user_checkout = NewUserCheckout{
+                                user_cid: charge_wallet_request_object.buyer_cid,
+                                product_id: product.id.unwrap(),
+                                price_id,
+                                payment_status: checkout_session_data.payment_status,
+                                payment_intent: checkout_session_data.payment_intent,
+                                c_status: checkout_session_data.status,
+                                checkout_session_url: checkout_session_data.session_url,
+                                checkout_session_id: checkout_session_data.session_id,
+                                checkout_session_expires_at: checkout_session_data.expires_at,
+                                tokens: charge_wallet_request_object.tokens,
+                                usd_token_price,
+                                tx_signature: charge_wallet_request_object.tx_signature,
+                            };
+                            match UserCheckout::insert(new_user_checkout, connection).await{
+                                Ok(user_checkout_data) => {
 
-                                    users_checkouts record data:
-                                    - user_id,
-                                    - buyer_cid,
-                                    - tokens,
-                                    - usd_token_price,
-                                    - tx_signature,
-                                    - product_id
-                                    - price_id
-                                    - checkout_session_id
-                                    - checkout_session_url
-                                    - checkout_session_expires_at
-                                    - payment_status
-                                    - requested_at
-                            */
-
-                            resp!{
-                                StripeCreateCheckoutSessionData, // the data type
-                                checkout_session_data, // response data
-                                STRIPE_STARTED_PAYAMENT, // response message
-                                StatusCode::OK, // status code
-                                None::<Cookie<'_>>, // cookie
+                                    resp!{
+                                        UserCheckoutData, // the data type
+                                        user_checkout_data, // response data
+                                        STRIPE_STARTED_PAYAMENT, // response message
+                                        StatusCode::OK, // status code
+                                        None::<Cookie<'_>>, // cookie
+                                    }
+                                },
+                                Err(resp) => {
+                                    resp
+                                }
                             }
 
                         }
@@ -2748,6 +2754,237 @@ async fn get_all_user_withdrawals(
 
 }
 
+#[get("/checkout/get/unpaid/user/{cid}")]
+#[passport(user)]
+async fn get_all_user_unpaid_checkouts(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    user_cid: web::Path<String>
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+    
+                    match UserCheckout::get_all_unpaid_for(&user_cid, connection).await{
+                        Ok(user_checkouts) => {
+
+                            resp!{
+                                Vec<UserCheckoutData>, // the data type
+                                user_checkouts, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/checkout/get/paid/user/{cid}")]
+#[passport(user)]
+async fn get_all_user_paid_checkouts(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    user_cid: web::Path<String>
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+    
+                    match UserCheckout::get_all_paid_for(&user_cid, connection).await{
+                        Ok(user_checkouts) => {
+
+                            resp!{
+                                Vec<UserCheckoutData>, // the data type
+                                user_checkouts, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
 
 #[utoipa::path(
     context_path = "/user",
@@ -4503,11 +4740,14 @@ pub mod exports{
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;
+    pub use super::get_all_user_unpaid_checkouts;
+    pub use super::get_all_user_paid_checkouts;
     pub use super::request_mail_code;
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
     /*
+    pub use super::get_all_user_checkouts;
     pub use super::add_post_comment;
     pub use super::like_post;
     pub use super::add_nft_comment;

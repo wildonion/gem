@@ -256,7 +256,7 @@ impl UserDeposit{
         let Ok(deposits) = user_deposits else{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: CID_HAS_NO_DEPOSIT_YET,
+                message: NO_DEPOSITS_YET,
                 status: 404,
             };
             return Err(

@@ -171,7 +171,7 @@ impl UserWithdrawal{
         let Ok(deposits) = user_withdrawals else{
             let resp = Response{
                 data: Some(withdrawer_cid.clone()),
-                message: CID_HAS_NO_DEPOSIT_YET,
+                message: CID_HAS_NO_WITHDRAWAL_YET,
                 status: 404,
             };
             return Err(
@@ -205,7 +205,7 @@ impl UserWithdrawal{
         let Ok(deposits) = user_withdrawals else{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: CID_HAS_NO_DEPOSIT_YET,
+                message: NO_WITHDRAWAL_YET,
                 status: 404,
             };
             return Err(

@@ -62,6 +62,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_checkouts (id) {
+        id -> Int4,
+        user_cid -> Varchar,
+        product_id -> Varchar,
+        price_id -> Varchar,
+        payment_status -> Varchar,
+        payment_intent -> Varchar,
+        c_status -> Varchar,
+        checkout_session_url -> Varchar,
+        checkout_session_id -> Varchar,
+        checkout_session_expires_at -> Int8,
+        tokens -> Int8,
+        usd_token_price -> Int8,
+        tx_signature -> Varchar,
+        iat -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_deposits (id) {
         id -> Int4,
         mint_tx_hash -> Varchar,
@@ -123,6 +142,7 @@ diesel::joinable!(users_tasks -> users (user_id));
 diesel::allow_tables_to_appear_in_same_query!(
     tasks,
     users,
+    users_checkouts,
     users_deposits,
     users_mails,
     users_phones,

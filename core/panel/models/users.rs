@@ -2391,7 +2391,7 @@ impl User{
 
         let otp_token = std::env::var("OTP_API_TOKEN").unwrap();
         let otp_template = std::env::var("OTP_API_TEMPLATE").unwrap();
-        let messagebird_access_key = std::env::var("MESSAGEBIRD_ACCESS_KEY").unwrap();
+        let thesmsworks_JWT = format!("JWT {}", std::env::var("THESMSWORKS_JWT").unwrap());
 
         let get_single_user = User::find_by_id(phone_owner_id, connection).await;
         let Ok(single_user) = get_single_user else{
@@ -2482,18 +2482,18 @@ impl User{
             "ir" => {
                 
                 let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
-                let otp_request = reqwest::Client::new()
+                let otp_response = reqwest::Client::new()
                     .get(otp_endpoint.as_str())
                     .send()
                     .await;
 
-                let res_stat = otp_request
+                let res_stat = otp_response
                     .as_ref()
                     .unwrap()
                     .status()
                     .as_u16();
 
-                let otp_response_data = otp_request
+                let otp_response_data = otp_response
                     .unwrap()
                     /* mapping the streaming of future io bytes into the SMSResponse struct */
                     .json::<SMSResponse>()
@@ -2506,31 +2506,27 @@ impl User{
 
                 let body_content = format!("Use this code to get verified in {}: {}", APP_NAME, random_code);
                 let mut data = HashMap::new();
-                data.insert("recipients", user_phone.clone());
-                data.insert("originator", APP_NAME.to_string());
-                data.insert("body", body_content);
+                data.insert("sender", APP_NAME.to_string());
+                data.insert("destination", user_phone.clone());
+                data.insert("content", body_content);
 
-                let auth_header_key = format!("AccessKey {}", messagebird_access_key);
-                let otp_endpoint = format!("https://rest.messagebird.com/messages");
+                let otp_endpoint = format!("https://api.thesmsworks.co.uk/v1/message/send");
                 
-                let otp_request = reqwest::Client::new()
+                let otp_response = reqwest::Client::new()
                     .post(otp_endpoint.as_str())
-                    .header("Authorization", auth_header_key.as_str())
-                    .form(&data)
+                    .header("Authorization", thesmsworks_JWT.as_str())
+                    .json(&data)
                     .send()
                     .await;
 
-                let res_stat = otp_request
+                let res_stat = otp_response
                     .as_ref()
                     .unwrap()
                     .status()
                     .as_u16();
 
-                let otp_response_data = otp_request
-                    .unwrap()
-                    /* mapping the streaming of future io bytes into the SMSResponse struct */
-                    .json::<MessageBirdSMSResponse>()
-                    .await;
+                 /* accessing json data dynamically without mapping the response bytes into a struct */
+                let otp_response_data = otp_response.unwrap().json::<serde_json::Value>().await.unwrap();
 
                 res_stat    
 
@@ -2538,7 +2534,7 @@ impl User{
         };
 
         /* 
-            we're borrowing the otp_request here to prevent it from moving 
+            we're borrowing the otp_response here to prevent it from moving 
             cause unwrap() takes the ownership of self 
         */
         if otp_res_stat != 200 || otp_res_stat != 201{

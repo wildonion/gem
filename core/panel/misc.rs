@@ -361,15 +361,6 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
         to solve this issue first we get the stream of the response chunk
         then map it to the related struct, after that we can handle logging
         and redis caching process without losing ownership of things!
-
-        streaming over response chunk can also be like streaming over mpsc jobq
-        channel to receive data: while let Some(data) = channel_receiver.recv().await{}
-        tokio::spawn(async move{
-            while let Some(chunk) = res.chunk().await? {
-                // decod chunk
-                // ...
-            }
-        });
     */
     let get_xrl_response = &mut res.unwrap();
     let get_xrl_response_bytes = get_xrl_response.chunk().await.unwrap();

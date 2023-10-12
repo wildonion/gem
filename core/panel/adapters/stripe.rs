@@ -39,6 +39,9 @@ pub struct StripeCreateCheckoutSessionData{
     pub session_url: String,
     pub success_url: String,
     pub cancel_url: String,
+    pub status: String,
+    pub payment_intent: String,
+    pub payment_status: String,
     pub expires_at: i64
 }
 
@@ -228,6 +231,9 @@ pub async fn create_session(
         let succ_url = res_value["success_url"].as_str().unwrap();
         let canc_url = res_value["cancel_url"].as_str().unwrap();
         let expires_at = res_value["expires_at"].as_i64().unwrap();
+        let status = res_value["status"].as_str().unwrap();
+        let payment_intent = res_value["payment_intent"].as_str().unwrap();
+        let payment_status = res_value["payment_status"].as_str().unwrap();
 
         /* log caching using redis */
         info!("🪪 {} Tokens:{}|Session Id:{}|Session Url:{}|Price Id:{}|Log:StripeCreateCheckoutSession|Time:{}", APP_NAME, tokens, session_id, session_url, price_id, chrono::Local::now().to_string());
@@ -236,6 +242,9 @@ pub async fn create_session(
             session_url: session_url.to_string(),
             success_url: succ_url.to_string(),
             cancel_url: canc_url.to_string(),
+            status: status.to_string(),
+            payment_intent: payment_intent.to_string(),
+            payment_status: payment_status.to_string(),
             expires_at
         };
         info!("✅ StripeCreateCheckoutSessionData: {:#?}", checkout_session_data);

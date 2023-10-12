@@ -172,6 +172,8 @@ cargo run --bin argon2test
 
 - **NOTE**: **Regards to conse panel actix APIs**, in order to use twitter APIs you must have a paid developer account and you must use keys and tokens from a twitter developer App that is attached to a project also you can add new keys in `twitter-accounts.json` by calling the `/admin/add-twitter-accounts` API.
 
+- **NOTE**: **Regards to conse panel actix APIs**, admins can update environment variables by calling the `/admin/update-env-vars` API.
+
 - **NOTE**: **Regards to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
 - **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portainer` finally login with dev user to register a new god for the game.

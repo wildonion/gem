@@ -13,7 +13,6 @@ use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
-use crate::adapters::stripe::StripeWebhookPayload;
 
 
 
@@ -319,93 +318,6 @@ async fn get_token_value(
 
 }
 
-#[post("/cid/wallet/charge/webhook/fulfill")]
-async fn charge_wallet_webhook(
-        req: HttpRequest,
-        payload: web::Json<StripeWebhookPayload>,
-        storage: web::Data<Option<Arc<Storage>>>
-    ) -> PanelHttpResponse{
-
-    /* 
-        stripe event handler and webhook subscriber to the checkout payment events 
-        webhook means once an event gets triggered an api call will be invoked to 
-        notify (it's like a notification to the server) server about the event happend 
-        as a result of handling another process in some where like a payment result in 
-        which server subscribes to incoming event type and can publish it to redispubsub 
-        so other app, threads and scopes can also subscribe to it      
-    */
-
-    /* extracting shared state data */
-    let storage = storage.as_ref().to_owned();
-    let redis_client = storage.as_ref().unwrap().get_redis().await.unwrap();
-    let async_redis_client = storage.as_ref().unwrap().get_async_redis_pubsub_conn().await;
-
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-
-            let connection = &mut pg_pool.get().unwrap();
-
-            // TODO
-            /* update a users_checkouts record */
-            /* update a user balance */
-            // ...
-
-            /* receiving async stripe payment events */
-            let webhook_event = "succ";
-            let _id = 0;
-
-            /* means that the payment process was successfull */
-            if webhook_event == "succ"{
-                
-                /* charge the user balance */
-                // let new_balance = if user.balance.is_none(){0 + charge_wallet_request.tokens} else{user.balance.unwrap() + charge_wallet_request.tokens};
-                // match User::update_balance(_id, new_balance, connection).await{
-
-                //     Ok(updated_user_data) => {
-
-                //         resp!{
-                //             UserData, // the data type
-                //             updated_user_data, // response data
-                //             PAID_SUCCESSFULLY, // response message
-                //             StatusCode::OK, // status code
-                //             None::<Cookie<'_>>, // cookie
-                //         }
-
-                //     },
-                //     Err(resp) => {
-                //         resp
-                //     }
-                // }
-
-                todo!()
-
-            } else{
-
-                resp!{
-                    i32, // the data type
-                    _id, // response data
-                    CANT_CHARGE_WALLET, // response message
-                    StatusCode::EXPECTATION_FAILED, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
-
-            }
-
-        },
-        None => {
-            
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        }
-    }
-
-}
-
 #[post("/commit-webhook")]
 #[passport(admin, user, dev)]
 async fn commit_webhook(
@@ -695,7 +607,6 @@ pub mod exports{
     pub use super::check_users_task;
     pub use super::get_token_value;
     pub use super::get_x_requests;
-    pub use super::charge_wallet_webhook;
     pub use super::commit_webhook;
     /* 
     pub use super::get_posts; // /?from=1&to=50

@@ -2,66 +2,6 @@
 
 cd ..
 
-sudo rm .env && sudo mv .env.prod .env
-sudo mv twitter-accounts.prod.json twitter-accounts.json
-echo \t">>> Please fill up the 'twitter-accounts.json' without your twitter dev account keys"
-echo \t"using the conse panel API with admin access"
-
-echo "[?] Enter SMS API Token: "
-read OTP_API_TOKEN
-echo OTP_API_TOKEN=$OTP_API_TOKEN >> .env
-
-echo "[?] Enter SMS API Template: "
-read OTP_API_TEMPLATE
-echo OTP_API_TEMPLATE=$OTP_API_TEMPLATE >> .env
-
-echo "[?] Enter Messagebird Access Key: "
-read MESSAGEBIRD_ACCESS_KEY
-echo MESSAGEBIRD_ACCESS_KEY=$MESSAGEBIRD_ACCESS_KEY >> .env
-
-echo "[?] Enter Ip Info Access Key: "
-read IPINFO_TOKEN
-echo IPINFO_TOKEN=$IPINFO_TOKEN >> .env
-
-echo "[?] Enter Currency Layer Token: "
-read CURRENCY_LAYER_TOKEN
-echo CURRENCY_LAYER_TOKEN=$CURRENCY_LAYER_TOKEN >> .env
-
-echo "[?] Enter PayPal Token: "
-read PAYPAL_TOKEN
-echo PAYPAL_TOKEN=$PAYPAL_TOKEN >> .env
-
-echo "[?] Enter Nft Port Token: "
-read NFTYPORT_TOKEN
-echo NFTYPORT_TOKEN=$NFTYPORT_TOKEN >> .env
-
-echo "[?] Infra WS Polygon: "
-read INFRA_POLYGON_WS_ENDPOINT
-echo INFRA_POLYGON_WS_ENDPOINT=$INFRA_POLYGON_WS_ENDPOINT >> .env
-
-echo "[?] Infra HTTPS Polygon: "
-read INFURA_POLYGON_HTTPS_ENDPOINT
-echo INFURA_POLYGON_HTTPS_ENDPOINT=$INFRA_POLYGON_HTTPS_ENDPOINT >> .env
-
-echo "[?] Enter SMTP Username: "
-read SMTP_USERNAME
-echo SMTP_USERNAME=$SMTP_USERNAME >> .env
-
-echo "[?] Enter SMTP App Password: "
-read SMTP_PASSWORD
-echo SMTP_PASSWORD=$SMTP_PASSWORD >> .env
-
-echo "[?] Enter SMTP Server: "
-read SMTP_SERVER
-echo SMTP_SERVER=$SMTP_SERVER >> .env
-
-echo "[?] Enter Machine Id: "
-read MACHINE_ID
-echo MACHINE_ID=$MACHINE_ID >> .env
-echo "[?] Enter Node Id: "
-read NODE_ID
-echo NODE_ID=$NODE_ID >> .env
-
 sudo chmod 666 /var/run/docker.sock
 export SERVER_IP=$(hostname -I | awk '{print $1}')
 export PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
