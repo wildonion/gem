@@ -1410,33 +1410,32 @@ async fn charge_wallet_request(
                         first we'll try to find the a user with the passed in screen_cid 
                         generated from keccak256 of cid then we'll go for the verification process 
                     */
-                    // let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
-                    // let Ok(user_info) = find_user_screen_cid else{
+                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
+                    let Ok(user_info) = find_user_screen_cid else{
                         
-                    //     resp!{
-                    //         String, // the data type
-                    //         charge_wallet_request_object.buyer_cid, // response data
-                    //         &USER_SCREEN_CID_NOT_FOUND, // response message
-                    //         StatusCode::NOT_FOUND, // status code
-                    //         None::<Cookie<'_>>, // cookie
-                    //     }
-                    // };
+                        resp!{
+                            String, // the data type
+                            charge_wallet_request_object.buyer_cid, // response data
+                            &USER_SCREEN_CID_NOT_FOUND, // response message
+                            StatusCode::NOT_FOUND, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    };
 
-                    // let verification_res = wallet::evm::verify_signature(
-                    //     user_info.screen_cid.unwrap(),
-                    //     &charge_wallet_request.tx_signature,
-                    //     &charge_wallet_request_object.hash_data
-                    // ).await;
-                    // if verification_res.is_err(){
-                    //     resp!{
-                    //         &[u8], // the data type
-                    //         &[], // response data
-                    //         &INVALID_SIGNATURE, // response message
-                    //         StatusCode::NOT_ACCEPTABLE, // status code
-                    //         None::<Cookie<'_>>, // cookie
-                    //     }
-                    // }
-
+                    let verification_res = wallet::evm::verify_signature(
+                        user_info.screen_cid.unwrap(),
+                        &charge_wallet_request.tx_signature,
+                        &charge_wallet_request_object.hash_data
+                    ).await;
+                    if verification_res.is_err(){
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            &INVALID_SIGNATURE, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    }
 
                     if charge_wallet_request_object.tokens < 0 &&
                         charge_wallet_request_object.tokens < 5{
