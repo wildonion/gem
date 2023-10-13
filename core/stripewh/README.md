@@ -5,7 +5,7 @@ Before deploying the docker container:
 
 ## Live production 
 
-> after setting up a DNS record for `https://api.panel.stripewh.conse.app` go to https://dashboard.stripe.com/webhooks/create?endpoint_location=hosted and create a webhook with endpoint `https://api.panel.stripewh.conse.app/webhook` to register checkout webhook events and get the stripe webhook secret, by setting up this webhook all the stripes events will deliver to this endpoint.
+> after setting up a DNS record for `https://api.panel.stripewh.conse.app` go to https://dashboard.stripe.com/webhooks/create?endpoint_location=hosted and create a webhook with endpoint `https://api.panel.stripewh.conse.app/webhook` to register checkout webhook events to get the stripe webhook secret, by setting up this webhook, all the stripes events will deliver to this endpoint.
 
 ## Test Development 
 

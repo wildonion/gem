@@ -61,8 +61,7 @@ def webhook_received():
         session_id = data_object["id"]
         payment_intent = data_object["payment_intent"]
         
-        panel_docker = "https://api.panel.conse.app"
-        url = f"{panel_docker}/{panel_webhook_url}/{session_id}/{payment_intent}"
+        url = f"{panel_webhook_url}/{session_id}/{payment_intent}"
 
         headers = {
             "stripe-signature": webhook_secret,
