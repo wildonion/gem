@@ -3,10 +3,12 @@
 
 use crate::*;
 use crate::adapters::stripe::StripeWebhookPayload;
+use crate::models::users_checkouts::UserCheckout;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use s3::*;
+use wallexerr::Wallet;
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -553,22 +555,14 @@ async fn get_tasks(
 
 }
 
-#[post("/cid/wallet/stripe/charge/webhook")]
+#[post("/cid/wallet/stripe/update/balance/webhook/{session_id}/{payment_intent}")]
 #[passport(admin, user, dev)]
-async fn charge_wallet_webhook(
+async fn update_user_balance_webhook(
         req: HttpRequest,
-        payload: web::Json<StripeWebhookPayload>,
+        params: web::Path<(String, String)>,
         storage: web::Data<Option<Arc<Storage>>>
     ) -> PanelHttpResponse{
 
-    /* 
-        stripe event handler and webhook subscriber to the checkout payment events 
-        webhook means once an event gets triggered an api call will be invoked to 
-        notify (it's like a notification to the server) server about the event happend 
-        as a result of handling another process in some where like a payment result in 
-        which server subscribes to incoming event type and can publish it to redispubsub 
-        so other app, threads and scopes can also subscribe to it      
-    */
 
     /* extracting shared state data */
     let storage = storage.as_ref().to_owned();
@@ -580,53 +574,60 @@ async fn charge_wallet_webhook(
 
             let connection = &mut pg_pool.get().unwrap();
 
-            /* 
-                receiving async stripe payment events, remember to register a webhook
-                in stripe dashboard so stripe knows where to deliver events
-            */
-            let webhook_event = "succ";
-            let _id = 0;
-
-            /* means that the payment process was successfull */
-            if webhook_event == "succ"{
-
-                // TODO
-                /* update a users_checkouts record, payment_status and c_status */
-                /* update a user balance by user_cid */
-                // ...
-                
-                /* charge the user balance */
-                // let new_balance = if user.balance.is_none(){0 + charge_wallet_request.tokens} else{user.balance.unwrap() + charge_wallet_request.tokens};
-                // match User::update_balance(_id, new_balance, connection).await{
-
-                //     Ok(updated_user_data) => {
-
-                //         resp!{
-                //             UserData, // the data type
-                //             updated_user_data, // response data
-                //             PAID_SUCCESSFULLY, // response message
-                //             StatusCode::OK, // status code
-                //             None::<Cookie<'_>>, // cookie
-                //         }
-
-                //     },
-                //     Err(resp) => {
-                //         resp
-                //     }
-                // }
-
-                todo!()
-
-            } else{
+            let session_id = params.clone().0;
+            let payment_intent = params.clone().1;
+            let stripe_webhook_signature = env::var("STRIPE_WEBHOOK_SIGNATURE").unwrap();
+            let webhook_event_signature = req.headers().get("stripe-signature").unwrap().to_str().unwrap();
+            if &stripe_webhook_signature != webhook_event_signature{
 
                 resp!{
-                    i32, // the data type
-                    _id, // response data
-                    CANT_CHARGE_WALLET, // response message
+                    &[u8], // the data type
+                    &[], // response data
+                    STRIPE_INVALID_WEBHOOK_SIGNATURE, // response message
                     StatusCode::EXPECTATION_FAILED, // status code
                     None::<Cookie<'_>>, // cookie
                 }
+            }
 
+            match UserCheckout::update(&session_id, &payment_intent, connection).await{
+                Ok(updated_user_checkout) => {
+                    
+                    /* update the user balance */
+                    let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(updated_user_checkout.user_cid.clone()), connection).await;
+                        let Ok(user_info) = find_user_screen_cid else{
+                            
+                            resp!{
+                                String, // the data type
+                                updated_user_checkout.user_cid, // response data
+                                &USER_SCREEN_CID_NOT_FOUND, // response message
+                                StatusCode::NOT_FOUND, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        };
+
+                    let new_balance = if user_info.balance.is_none(){0 + updated_user_checkout.tokens} else{user_info.balance.unwrap() + updated_user_checkout.tokens};
+                    match User::update_balance(user_info.id, new_balance, connection).await{
+
+                        Ok(updated_user_data) => {
+
+                            resp!{
+                                UserData, // the data type
+                                updated_user_data, // response data
+                                PAID_SUCCESSFULLY, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
             }
 
         },
@@ -651,5 +652,5 @@ pub mod exports{
     pub use super::check_token;
     pub use super::logout;
     pub use super::get_tasks;
-    pub use super::charge_wallet_webhook;
+    pub use super::update_user_balance_webhook;
 }

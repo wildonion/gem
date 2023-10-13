@@ -263,11 +263,75 @@ impl UserCheckout{
 
     }
 
-    pub async fn update_for(user_crypto_id: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-    -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
+    pub async fn update(session_id: &str, new_payment_intent: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCheckoutData, PanelHttpResponse>{
+        
+        let get_user_checkout = users_checkouts
+            .filter(checkout_session_id.eq(session_id))
+            .first::<UserCheckout>(connection);
 
+        let Ok(user_checkout) = get_user_checkout else{
+            let resp = Response{
+                data: Some(session_id),
+                message: NO_CHECKOUT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+        
+        match diesel::update(users_checkouts.find(user_checkout.id))
+            .set((c_status.eq("complete"), payment_intent.eq(new_payment_intent), payment_status.eq("paid")))
+            .returning(UserCheckout::as_returning())
+            .get_result(connection)
+            {
+            
+                Ok(c) => {
+                    Ok(
+                        UserCheckoutData{
+                            id: c.id,
+                            user_cid: c.user_cid,
+                            product_id: c.product_id,
+                            price_id: c.price_id,
+                            payment_status: c.payment_status,
+                            payment_intent: c.payment_intent,
+                            c_status: c.c_status,
+                            checkout_session_url: c.checkout_session_url,
+                            checkout_session_id: c.checkout_session_id,
+                            checkout_session_expires_at: c.checkout_session_expires_at,
+                            tokens: c.tokens,
+                            usd_token_price: c.usd_token_price,
+                            tx_signature: c.tx_signature,
+                            iat: c.iat.to_string(),
+                        }
+                    )
 
-        todo!()
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserCheckout::update");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            
+            }
 
     }
 

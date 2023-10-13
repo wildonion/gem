@@ -232,7 +232,7 @@ pub async fn create_session(
         let canc_url = res_value["cancel_url"].as_str().unwrap();
         let expires_at = res_value["expires_at"].as_i64().unwrap();
         let status = res_value["status"].as_str().unwrap();
-        let payment_intent = res_value["payment_intent"].as_str().unwrap();
+        let payment_intent = res_value["payment_intent"].as_str().unwrap_or("");
         let payment_status = res_value["payment_status"].as_str().unwrap();
 
         /* log caching using redis */

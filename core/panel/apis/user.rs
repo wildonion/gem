@@ -1578,7 +1578,6 @@ async fn charge_wallet_request(
 
                         }
                     }
-
                         
                 },
                 Err(resp) => {

@@ -6,7 +6,7 @@ use redis_async::client::PubsubConnection;
 use secp256k1::ecdsa::Signature;
 use secp256k1::{Secp256k1, All};
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_BOT_ISSUE, TWITTER_24HOURS_LIMITED, TWITTER_BOT_RL_DATA_ISSUE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -33,7 +33,7 @@ pub struct XRlInfo{
     pub x_app_limit_24hour_remaining: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct XAppRlInfo{
     pub bot: Option<String>,
     pub x_app_limit_24hour_reset: Option<String>,
@@ -391,7 +391,7 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
     info!("🚧 rl info coming from bot server {:?}", rl_info);
 
     /* redis caching */
-    let final_data = if !use_redis_data || (redis_data.len() < rl_info.len()){
+    let final_data = if !use_redis_data || (redis_data != rl_info){ /* check that the redis and bot rl data vectors are equal or not, don't check their length cause they have always same length */
         let _: () = redis_conn.set("redis_x_app_rl_info", serde_json::to_string(&rl_info).unwrap()).await.unwrap();
         rl_info
     } else{

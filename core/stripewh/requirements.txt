@@ -1,0 +1,4 @@
+Flask==2.2.3
+python-dotenv==0.21.0
+stripe==5.5.0
+requests

@@ -98,15 +98,20 @@ else
     ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg-*' | awk '{print $1}')
     ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
     ANY_CONSE_MAFIA_CONTAINER_ID=$(docker container ls  | grep 'conse-mafia-*' | awk '{print $1}')
+    ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook-*' | awk '{print $1}')
 
     sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
     sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
     sudo docker stop $ANY_CONSE_MAFIA_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_MAFIA_CONTAINER_ID
+    sudo docker stop $ANY_STRIPE_WEBHOOK_CONTAINER_ID && sudo docker rm -f $ANY_STRIPE_WEBHOOK_CONTAINER_ID
 
     TIMESTAMP=$(date +%s)
 
     sudo docker build -t conse-mafia-$TIMESTAMP -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia-$TIMESTAMP -p 7439:7438 conse-mafia-$TIMESTAMP
+
+    sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache
+    sudo docker run -d --restart unless-stopped --link mongodb --network gem --name stripe-webhook-$TIMESTAMP -p 4243:4242 conse-mafia-$TIMESTAMP
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE

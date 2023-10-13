@@ -1024,3 +1024,73 @@ code: 65532 | message: {
     "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
   }
 } | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697095477848 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697172548972 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697172693580 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697174634955 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697175093259 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697175343908 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697182816725 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697183377683 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697184280083 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697184976861 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697185117153 | method name: calculate_token_value

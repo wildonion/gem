@@ -7,7 +7,7 @@ use redis_async::client::PubsubConnection;
 use secp256k1::ecdsa::Signature;
 use secp256k1::{Secp256k1, All};
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_BOT_ISSUE, TWITTER_24HOURS_LIMITED, TWITTER_BOT_RL_DATA_ISSUE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;

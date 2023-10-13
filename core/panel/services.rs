@@ -144,7 +144,7 @@ pub fn init_health(config: &mut web::ServiceConfig){
     config.service(apis::health::exports::check_token);
     config.service(apis::health::exports::get_tasks);
     config.service(apis::health::exports::logout);
-    config.service(apis::health::exports::charge_wallet_webhook);
+    config.service(apis::health::update_user_balance_webhook);
 
     // other routs maybe ?
     // ...

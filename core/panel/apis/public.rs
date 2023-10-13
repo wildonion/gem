@@ -378,6 +378,10 @@ async fn commit_webhook(
             */
             let event_name = event.to_str().unwrap().to_string();
 
+            /* 
+                receiving async github events, remember to register a webhook
+                in related github repo so github knows where to deliver events
+            */
             let cloned_build_res_sender = build_res_sender.clone();
             tokio::spawn(async move{
 
