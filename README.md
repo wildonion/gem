@@ -12,7 +12,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 > Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline job in jenkins and setup a webhook in **gem** repo to start building automatically on every push through the jenkins pipeline schema, for more info refer to [this](https://www.jenkins.io/doc/tutorials/build-a-node-js-and-react-app-with-npm/) setup.
 
-> Remember to setup a webhook endpoint in the stripe dashbaord to receive checkout webhook events inside the `stripe-webhook-*` container in production or run the `stripe listen --forward-to localhost:4242/webhook` command in localhost, after that fill `STRIPE_WEBHOOK_SIGNATURE` inside the `.env`.
+> Make sure that we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this]()
 
 ```bash
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
@@ -28,8 +28,9 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 🛢️ ADMINER PANEL ==> https://adminer.conse.app
 🛎️ JENKINS PANEL ==> https://jenkins.conse.app
 ⛵ PORTAINER PANEL ==> https://portainer.conse.app
+🏦 STRIPE WEBHOOK ENDPOINT ==> https://api.panel.stripewh.conse.app
 🗞️ PANEL ERROR LOGS ==> https://api.panel.conse.app/logs
-🗞️ PANEL ASSETS FOLDER ==> https://api.panel.conse.app/assets
+🗂️ PANEL ASSETS FOLDER ==> https://api.panel.conse.app/assets
 🎙️ HOSTED ON ==> Digitalocean
 ```
 
@@ -206,6 +207,7 @@ notif.panel.conse.app #---> points to the websocket push notification server API
 adminer.conse.app #---> points to the adminer UI
 jenkins.conse.app #---> points to the jenkins UI
 portainer.conse.app #---> points to the portainer UI
+api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
 ```
 - **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 

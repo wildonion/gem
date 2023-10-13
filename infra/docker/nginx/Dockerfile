@@ -29,6 +29,9 @@ COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
 #portainer.conse.app:
 COPY cert-portainer.conse.app.pem /etc/nginx/cert-portainer.conse.app.pem
 COPY key-portainer.conse.app.pem /etc/nginx/key-portainer.conse.app.pem
+#api.panel.stripewh.conse.app
+COPY cert-api.panel.stripewh.conse.app.pem /etc/nginx/cert-api.panel.stripewh.conse.app.pem
+COPY key-api.panel.stripewh.conse.app.pem /etc/nginx/key-api.panel.stripewh.conse.app.pem
 #jenkins.conse.app:
 COPY cert-jenkins.conse.app.pem /etc/nginx/cert-jenkins.conse.app.pem
 COPY key-jenkins.conse.app.pem /etc/nginx/key-jenkins.conse.app.pem
@@ -54,6 +57,7 @@ COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
 COPY portainer.conse.app.conf /etc/nginx/portainer.conse.app.conf
 COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf
 COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
+COPY api.panel.stripewh.conse.app.conf /etc/nginx/api.panel.stripewh.conse.app
 
 # Start Nginx in the foreground when the Docker container starts
 CMD ["nginx", "-g", "daemon off;"]

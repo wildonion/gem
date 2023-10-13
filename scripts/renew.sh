@@ -8,7 +8,7 @@ REALPTH_GEM=TRUEDIR=$(cd -- "$DIRECTORY" && pwd)
 
 if [[ $is_new_domain == "Y" || $is_new_domain == "y" ]]; then
     echo "creating new SSL certificate and key files for $DOMAIN using certbot,
-    ensure that you have a domain that points to this machine and it can accepts inbound connections 
+    ensure that you have a (sub)domain that points to this machine and it can accepts inbound connections 
     from the internet also make sure that necessary ports like 80 and 443 are opened"
     echo "-> enter domain? "
     read DOMAIN
