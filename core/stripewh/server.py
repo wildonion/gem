@@ -13,7 +13,7 @@ load_dotenv(find_dotenv())
 
 
 stripe.api_version = '2020-08-27'
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+stripe.api_key = os.getenv('STRIPE_TEST_SECRET_KEY')
 app = Flask(__name__, static_url_path="")
 
 
@@ -32,8 +32,8 @@ in stripe dashboard so stripe knows where to deliver events
 def webhook_received():
     # You can use webhooks to receive information about asynchronous payment events.
     # For more about our webhook events check out https://stripe.com/docs/webhooks.
-    webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
-    panel_url = os.getenv('PANEL_URL')
+    webhook_secret = os.getenv('STRIPE_WEBHOOK_SIGNATURE')
+    panel_webhook_url = os.getenv('STRIPE_PANEL_UPDATE_BALANCE_WEBHOOK_URL')
     request_data = json.loads(request.data)
 
     if webhook_secret:
@@ -61,7 +61,9 @@ def webhook_received():
         session_id = data_object["id"]
         payment_intent = data_object["payment_intent"]
         
-        url = f"{panel_url}/{session_id}/{payment_intent}"
+        # panel_docker = os.getenv('PANEL_DOCKER')
+        panel_docker = "localhost"
+        url = f"http://{panel_docker}:7443/{panel_webhook_url}/{session_id}/{payment_intent}"
 
         headers = {
             "stripe-signature": webhook_secret,

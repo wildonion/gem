@@ -95,6 +95,8 @@ if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 else
     echo "> Redeploying Rust Services Only"\n
 
+    sudo rm -r $(pwd)/target
+
     ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg-*' | awk '{print $1}')
     ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
     ANY_CONSE_MAFIA_CONTAINER_ID=$(docker container ls  | grep 'conse-mafia-*' | awk '{print $1}')
@@ -109,9 +111,6 @@ else
 
     sudo docker build -t conse-mafia-$TIMESTAMP -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia-$TIMESTAMP -p 7439:7438 conse-mafia-$TIMESTAMP
-
-    sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache
-    sudo docker run -d --restart unless-stopped --link mongodb --network gem --name stripe-webhook-$TIMESTAMP -p 4243:4242 conse-mafia-$TIMESTAMP
     
     echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
     read CONSE_PANEL_DB_STORAGE
@@ -120,11 +119,17 @@ else
         echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
         sudo docker build -t conse-panel-pg-$TIMESTAMP -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-pg-$TIMESTAMP -p 7443:7442 -v $(pwd)/assets/:/app/assets -v $(pwd)/infra/logs/:/app/logs conse-panel-pg-$TIMESTAMP
+
+        sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --link mongodb --network gem -e PANEL_DOCKER=conse-panel-pg-$TIMESTAMP --name stripe-webhook-$TIMESTAMP -p 4243:4242 stripe-webhook-$TIMESTAMP
     else
         echo \n"> 🛢 Building Conse Panel With mongo Db Storage"
         echo \t"--[make sure you're matching over storage.clone().unwrap().get_mongodb() in your code]--"
         sudo docker build -t conse-panel-mongo-$TIMESTAMP -f $(pwd)/infra/docker/panel/mongodb/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --link postgres --network gem --name conse-panel-mongo-$TIMESTAMP -p 7444:7442 -v $(pwd)/assets/:/app/assets  -v $(pwd)/infra/logs/:/app/logs conse-panel-mongo-$TIMESTAMP
+
+        sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --link mongodb --network gem -e PANEL_DOCKER=conse-panel-mongo-$TIMESTAMP --name stripe-webhook-$TIMESTAMP -p 4243:4242 stripe-webhook-$TIMESTAMP
     fi
 
 fi

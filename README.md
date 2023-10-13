@@ -12,6 +12,8 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 > Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline job in jenkins and setup a webhook in **gem** repo to start building automatically on every push through the jenkins pipeline schema, for more info refer to [this](https://www.jenkins.io/doc/tutorials/build-a-node-js-and-react-app-with-npm/) setup.
 
+> Remember to setup a webhook endpoint in the stripe dashbaord to receive checkout webhook events inside the `stripe-webhook-*` container in production or run the `stripe listen --forward-to localhost:4242/webhook` command in localhost, after that fill `STRIPE_WEBHOOK_SIGNATURE` inside the `.env`.
+
 ```bash
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # conse panel admin username/password            : adminy/4dmin@%$^$3hjsD

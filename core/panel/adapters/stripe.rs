@@ -54,6 +54,7 @@ pub async fn create_product(
     
     let stripe_test_secret_key = env::var("STRIPE_TEST_SECRET_KEY").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let stripe_token_image = env::var("STRIPE_TOKEN_IMAGE_URL").unwrap();
 
     /* create product */
     let mut product_data = HashMap::new();
@@ -61,7 +62,7 @@ pub async fn create_product(
     let product_name = format!("{} Token", APP_NAME);
     product_data.insert("name".to_string(), product_name);
     product_data.insert("description".to_string(), product_desc);
-    // product_data.insert("images[0]".to_string(), "".to_string());
+    product_data.insert("images[0]".to_string(), stripe_token_image);
 
     let stripe_create_prod_endpoint = format!("https://api.stripe.com/v1/products");
     let res = reqwest::Client::new()
@@ -196,6 +197,7 @@ pub async fn create_session(
     let stripe_test_secret_key = env::var("STRIPE_TEST_SECRET_KEY").unwrap();
     let stripe_success_url = env::var("STRIPE_PAYMENT_SUCCESS_URL").unwrap();
     let stripe_cancel_url = env::var("STRIPE_PAYMENT_CANCEL_URL").unwrap();
+    let stripe_automatic_tax = env::var("STRIPE_AUTOMATIC_TAX").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     let mut session_data = HashMap::new();
@@ -208,7 +210,7 @@ pub async fn create_session(
     */
     session_data.insert("line_items[0][price]".to_string(), price_id.to_string());
     session_data.insert("line_items[0][quantity]".to_string(), tokens.to_string());
-    // session_data.insert("automatic_tax[enabled]".to_string(), "true".to_string());
+    session_data.insert("automatic_tax[enabled]".to_string(), stripe_automatic_tax);
 
     let stripe_create_price_endpoint = format!("https://api.stripe.com/v1/checkout/sessions");
     let res = reqwest::Client::new()
