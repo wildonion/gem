@@ -2387,11 +2387,11 @@ impl User{
 
     }
 
-    pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, user_ip: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         let otp_token = std::env::var("OTP_API_TOKEN").unwrap();
         let otp_template = std::env::var("OTP_API_TEMPLATE").unwrap();
-        let thesmsworks_JWT = format!("JWT {}", std::env::var("THESMSWORKS_JWT").unwrap());
+        let thesmsworks_jwt = format!("JWT {}", std::env::var("THESMSWORKS_JWT").unwrap());
 
         let get_single_user = User::find_by_id(phone_owner_id, connection).await;
         let Ok(single_user) = get_single_user else{
@@ -2463,22 +2463,28 @@ impl User{
         let now = Utc::now();
         let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
 
-        
-        /* make sure that the region is not empty to send otp code based on that */
-        if single_user.region.is_none(){
-            let resp = Response{
-                data: Some(phone_owner_id),
-                message: REGION_IS_NONE,
-                status: 406
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            );
-        }
+        /* 
+            the phone verification process is before building crypto id 
+            thus we don't have region in here just make an api call to 
+            get the region.
+        */
+        // if single_user.region.is_none(){
+        //     let resp = Response{
+        //         data: Some(phone_owner_id),
+        //         message: REGION_IS_NONE,
+        //         status: 406
+        //     };
+        //     return Err(
+        //         Ok(HttpResponse::NotAcceptable().json(resp))
+        //     );
+        // }
 
-        let u_region = single_user.region.unwrap();
+        // let u_region = single_user.region.unwrap();
 
-        let otp_res_stat = match u_region.as_str(){
+        /* get the user region using the api call */
+        let u_country = get_ip_data(user_ip.clone()).await.country.as_str().to_lowercase();
+
+        let otp_res_stat = match u_country.as_str(){
             "ir" => {
                 
                 let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
@@ -2514,7 +2520,7 @@ impl User{
                 
                 let otp_response = reqwest::Client::new()
                     .post(otp_endpoint.as_str())
-                    .header("Authorization", thesmsworks_JWT.as_str())
+                    .header("Authorization", thesmsworks_jwt.as_str())
                     .json(&data)
                     .send()
                     .await;

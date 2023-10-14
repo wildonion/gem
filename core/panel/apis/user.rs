@@ -580,7 +580,33 @@ async fn request_phone_code(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-            
+            let mut user_ip = "".to_string();
+
+            /* ---------------------------------------------------------------------------------
+                if we're getting 127.0.0.1 for client ip addr from the incoming request means
+                the address 127.0.0.1 is the loopback address, which means the request is 
+                coming from the same machine where the server is running. if we're running 
+                both the server and the browser on the same computer and we're connecting 
+                to localhost or 127.0.0.1 in the browser, then this behavior is expected.
+                if Actix application is behind a reverse proxy like Nginx or Apache, the proxy 
+                may be forwarding requests to your application in such a way that all client 
+                connections appear to come from the loopback address. to fix this issue and get 
+                the original client's IP address, you can use the X-Forwarded-For or X-Real-IP 
+                headers. These headers are typically set by the reverse proxy to indicate the 
+                original IP address of the client, also we have to make sure that these are set
+                inside the nginx config file:
+
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               ---------------------------------------------------------------------------------
+            */
+            if let Some(header) = req.headers().get("X-Forwarded-For") {
+                if let Ok(ip_str) = header.to_str() {
+                    user_ip = ip_str.to_string();
+                }
+            }
+
 
             /* 
                  ------------------------------------- 
@@ -670,7 +696,7 @@ async fn request_phone_code(
                         };
                         
                       
-                        match User::send_phone_verification_code_to(_id, user_phone.to_owned(), connection).await{
+                        match User::send_phone_verification_code_to(_id, user_phone.to_owned(), user_ip.clone(), connection).await{
                             
                             Ok(updated_user) => {
     

@@ -12,7 +12,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 > Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline job in jenkins and setup a webhook in **gem** repo to start building automatically on every push through the jenkins pipeline schema, for more info refer to [this](https://www.jenkins.io/doc/tutorials/build-a-node-js-and-react-app-with-npm/) setup.
 
-> Make sure that we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this](https://github.com/wildonion/gem/tree/master/core/stripewh) README.
+> Make sure that we're using live stripe keys in `.env` file and we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this](https://github.com/wildonion/gem/tree/master/core/stripewh) README.
 
 ```bash
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD

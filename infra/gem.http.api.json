@@ -3594,6 +3594,40 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Twitter Bot Get App Rate Limit Info",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{twitter-bot}}/get-ratelimit-info",
+									"host": [
+										"{{twitter-bot}}"
+									],
+									"path": [
+										"get-ratelimit-info"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Twitter Bot Rate Limit Info",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{twitter-bot}}/get-app-ratelimit-info",
+									"host": [
+										"{{twitter-bot}}"
+									],
+									"path": [
+										"get-app-ratelimit-info"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				}
@@ -3669,6 +3703,11 @@
 		{
 			"key": "panel-public",
 			"value": "https://api.panel.conse.app/public",
+			"type": "string"
+		},
+		{
+			"key": "twitter-bot",
+			"value": "http://64.226.71.201:7441",
 			"type": "string"
 		}
 	]
