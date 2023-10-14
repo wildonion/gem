@@ -1479,10 +1479,21 @@ async fn charge_wallet_request(
                         },
                         _ => {
 
-
-                            /* this is the price of the product */
-                            // let usd_token_price = (token_price.0 as f64 / 10000.0).round() as i64;
-                            let usd_token_price = 25 as i64;
+                            /* means that the api call can't return prices */
+                            if token_price.0 == 0{
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_GET_TOKEN_VALUE, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+                            /* 
+                                stripe will divide the amount by 100 in checkout page to get the precision 
+                                like if we have 50000 this will show $500 in checkout page as the default price
+                            */
+                            let usd_token_price = token_price.0; 
 
                             /*  -------------------------------------------------------------
                                 note that we don't store the product, price and session data

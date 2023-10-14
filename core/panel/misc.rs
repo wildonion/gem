@@ -516,11 +516,11 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
     let value_of_a_token_usd = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
     
     let final_value = tokens as f64 * value_of_a_token_usd;
-    let scaled_final_value = (final_value * 1000000.0).round(); // scale to keep 4 decimal places (e.g., 1.2345 becomes 12345)
+    let scaled_final_value = (final_value * 100.0).round(); // scale to keep 2 decimal places (e.g., 1.23 becomes 123)
     let final_value_i64: i64 = scaled_final_value as i64;
 
     let irr_price = scaled_final_value * currencies.quotes.USDIRR;
-    let scaled_final_irr_price = (irr_price * 1000000.0).round(); 
+    let scaled_final_irr_price = (irr_price * 100.0).round(); 
     let final_irr_price_i64: i64 = scaled_final_irr_price as i64;
 
 

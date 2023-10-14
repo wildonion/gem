@@ -1,28 +1,17 @@
 
 
-
-Before deploying the docker container:
-
 ## Live production 
 
 > after setting up a DNS record for `https://api.panel.stripewh.conse.app` go to https://dashboard.stripe.com/webhooks/create?endpoint_location=hosted and create a webhook with endpoint `https://api.panel.stripewh.conse.app/webhook` to register checkout webhook events to get the stripe webhook secret, by setting up this webhook, all the stripes events will deliver to this endpoint.
 
 ## Test Development 
 
-> run the following command in a new terminal to get the webhook secret and start listening on incoming stripe webhook events like checkouts in localhost.
+> run the following command in a new terminal to get the webhook secret and start the stripe webhook listener to accept incoming webhook events like checkouts in localhost, make sure you have already setup the docker container for the `stripewh` server and is accepting connection on port `4243`.
 
 ```bash
 cd .. && cd .. && cd scripts
 sudo chmod +x stripe.sh
 stripe login && sudo pm2 start --name stripe-whebook-listener
-```
-
-## Run
-
-> start the webhook server to receive stripe events on checkout payment process events.
-
-```bash
-python3 -m flask run --host=0.0.0.0 --port=4242
 ```
 
 ## Notes

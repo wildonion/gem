@@ -13,7 +13,7 @@ load_dotenv(find_dotenv())
 
 
 stripe.api_version = '2020-08-27'
-stripe.api_key = os.getenv('STRIPE_TEST_SECRET_KEY')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 app = Flask(__name__, static_url_path="")
 
 

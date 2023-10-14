@@ -52,7 +52,7 @@ pub async fn create_product(
     buyer_cid: &str,
 ) -> StripeCreateProductResponse{
     
-    let stripe_test_secret_key = env::var("STRIPE_TEST_SECRET_KEY").unwrap();
+    let stripe_test_secret_key = env::var("STRIPE_SECRET_KEY").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let stripe_token_image = env::var("STRIPE_TOKEN_IMAGE_URL").unwrap();
 
@@ -128,7 +128,7 @@ pub async fn create_price(
 ) -> String{
 
     /* create price */
-    let stripe_test_secret_key = env::var("STRIPE_TEST_SECRET_KEY").unwrap();
+    let stripe_test_secret_key = env::var("STRIPE_SECRET_KEY").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     let mut price_data = HashMap::new();
@@ -194,7 +194,7 @@ pub async fn create_session(
 ) -> StripeCreateCheckoutSessionData{
 
     /* create session */
-    let stripe_test_secret_key = env::var("STRIPE_TEST_SECRET_KEY").unwrap();
+    let stripe_test_secret_key = env::var("STRIPE_SECRET_KEY").unwrap();
     let stripe_success_url = env::var("STRIPE_PAYMENT_SUCCESS_URL").unwrap();
     let stripe_cancel_url = env::var("STRIPE_PAYMENT_CANCEL_URL").unwrap();
     let stripe_automatic_tax = env::var("STRIPE_AUTOMATIC_TAX").unwrap();

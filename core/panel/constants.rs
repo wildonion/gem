@@ -9,6 +9,7 @@ pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 pub static INVALID_SIGNATURE: &str = "Invalid Signature";
 pub static INVALID_TOKEN_AMOUNT: &str = "Minimum Token Amounts Must Be 5";
+pub static CANT_GET_TOKEN_VALUE: &str = "Can't Get Token Value At The Moment";
 pub static PAID_SUCCESSFULLY: &str = "Wallet Has Been Charged Successfully";
 pub static DEPOSITED_SUCCESSFULLY: &str = "Deposited Successfully";
 pub static DEPOSITED_NOT_FOUND: &str = "Deposited Object Not Found";
