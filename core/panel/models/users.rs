@@ -1701,7 +1701,7 @@ impl User{
                 },
                 /* 
                     pswd, username and identifier is of type &str thus by borrowing these 
-                    feilds from new_user instance we can convert them into &str 
+                    field from new_user instance we can convert them into &str 
                 */
                 pswd: &password,
                 username: &_username,

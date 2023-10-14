@@ -2,6 +2,10 @@
 
 cd ..
 
+echo \t"------------------------------------------------------"\n
+echo \t" --[make sure you've filled the .env vars already]--"
+echo \t"------------------------------------------------------"\n
+
 sudo chmod 666 /var/run/docker.sock
 export SERVER_IP=$(hostname -I | awk '{print $1}')
 export PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
