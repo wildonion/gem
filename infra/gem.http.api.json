@@ -3707,7 +3707,7 @@
 		},
 		{
 			"key": "twitter-bot",
-			"value": "http://64.226.71.201:7441",
+			"value": "https://api.xbot.conse.app",
 			"type": "string"
 		}
 	]

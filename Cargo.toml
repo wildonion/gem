@@ -91,8 +91,12 @@ name = "panel"
 path = "core/panel/app.rs"
 
 [[bin]]
-name = "argon2test"
-path = "test/argon2test.rs"
+name = "xdisbot"
+path = "core/xcord/bot.rs"
+
+[[bin]]
+name = "contest"
+path = "test/tests.rs"
 
 [profile.release]
 panic = "abort"

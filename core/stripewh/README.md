@@ -12,7 +12,7 @@ step 2. setup DNS record for `https://api.panel.stripewh.conse.app` in DNS panel
 
 step 3. configure nginx reverse proxy for above subdomain to point to the docker container on the VPS
 
-step 4. register new SSL for the above subdomain suing ```sudo certbo --nginx``` command
+step 4. register new SSL for the above subdomain suing ```sudo certbo --nginx``` command, or you can run `./renew.sh` script to make this work for you
 
 step 5. go to https://dashboard.stripe.com/webhooks/create?endpoint_location=hosted and create a webhook with endpoint `https://api.panel.stripewh.conse.app/webhook` to register checkout webhook events to get the stripe webhook secret, by setting up this webhook, all the stripes events will deliver to this endpoint.
 

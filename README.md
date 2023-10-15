@@ -10,14 +10,10 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ## 🚟 Infra Routes and APIs
 
-> Remember to setup jenkins and portainer panel, for jenkins, we should use the administrator password which can be seen inside `jenkins-blueocean` container logs, after that we can create a pipeline job in jenkins and setup a webhook in **gem** repo to start building automatically on every push through the jenkins pipeline schema, for more info refer to [this](https://www.jenkins.io/doc/tutorials/build-a-node-js-and-react-app-with-npm/) setup.
-
-> Make sure that we're using live stripe keys in `.env` file and we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this](https://github.com/wildonion/gem/tree/master/core/stripewh) README.
-
 ```bash
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # conse panel admin username/password            : adminy/4dmin@%$^$3hjsD
-# postgres adminer username/password/server: postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
+# postgres adminer username/password/server      : postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
 🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> wss://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
@@ -29,7 +25,8 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 🛎️ JENKINS PANEL ==> https://jenkins.conse.app
 ⛵ PORTAINER PANEL ==> https://portainer.conse.app
 🏦 STRIPE WEBHOOK ENDPOINT ==> https://api.panel.stripewh.conse.app
-🗞️ PANEL ERROR LOGS ==> https://api.panel.conse.app/logs
+🤖 X BOT ==> https://api.xbot.conse.app
+🗞️ PANEL AND XCORD ERROR LOGS ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER ==> https://api.panel.conse.app/assets
 🎙️ HOSTED ON ==> Digitalocean
 ```
@@ -75,6 +72,9 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 > Note that to use dev and admin panel APIs Remember to run conse mafia hyper server first.
 
 * `core`: hyper, actix web HTTP and actix WS servers.
+    * `stripewh`: stripe webhook listener for checkout events.
+    * `xbot`: X bot for twitter tasks verification.
+    * `xcord`: discord bot to broadcast new twitter task defined by admin into a discord channel and role assginement based on user points.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
     * `mafia`: mafia game APIs
         * `controllers`: in-game async controllers related to hyper server.
@@ -159,13 +159,15 @@ cargo test --bin mafia
 cargo run --bin mafia #---> cargo build --bin mafia --release
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
 cargo run --bin panel #---> cargo build --bin panel --release
-# 🏃🏿 Run Conse Argon2 Test Codes
-cargo run --bin argon2test
+# 🏃🏿 Run Conse Test Codes
+cargo run --bin contest
 ```
     
 ## 🚀 Production Setup
 
 > Before going for production, read the following notes: 
+
+- **NOTE**: **Regards to conse panel actix APIs**, make sure that we're using live stripe keys in `.env` file and we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this](https://github.com/wildonion/gem/tree/master/core/stripewh) README.
 
 - **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on **https://api.panel.conse.app** and **https://api.panel.conse.app/mongo** respectively.
 
@@ -177,7 +179,7 @@ cargo run --bin argon2test
 
 - **NOTE**: **Regards to conse panel actix APIs**, admins can update environment variables by calling the `/admin/update-env-vars` API.
 
-- **NOTE**: **Regards to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `argon2test.rs` code inside the `tests` folder then run ```cargo run --bin argon2test``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
+- **NOTE**: **Regards to conse panel actix APIs**, to generate a new password for admin and dev users just edit the `tests.rs` code inside the `test` folder then run ```cargo run --bin contest``` to generate those passwords finally update the `up.sql` inside the `migrations/2023-05-22-184005_users` folder to insert a new admin and dev user info into the table when you run ```diesel migration run```. 
 
 - **NOTE**: **Regards to conse mafia hyper APIs**, to update a user access level of the conse mafia hyper server to dev, first signup the user using `/auth/signup` API then update the `access_level` field of the user to `0` manually inside the db in `mongodb` container using `portainer` finally login with dev user to register a new god for the game.
 
@@ -208,6 +210,7 @@ adminer.conse.app #---> points to the adminer UI
 jenkins.conse.app #---> points to the jenkins UI
 portainer.conse.app #---> points to the portainer UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
+api.xbot.conse.app #---> twitter bot to verify twitter tasks 
 ```
 - **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 

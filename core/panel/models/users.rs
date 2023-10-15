@@ -2533,6 +2533,7 @@ impl User{
 
                  /* accessing json data dynamically without mapping the response bytes into a struct */
                 let otp_response_data = otp_response.unwrap().json::<serde_json::Value>().await.unwrap();
+                // let otp_response_data = otp_response.unwrap().text().await.unwrap();
 
                 res_stat    
 

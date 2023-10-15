@@ -4,6 +4,8 @@ cd ..
 
 echo \t"------------------------------------------------------"\n
 echo \t" --[make sure you've filled the .env vars already]--"
+echo \t" --[change the REDIS_HOST to `redis`]"
+echo \t" --[remove DB_HOST var]"
 echo \t"------------------------------------------------------"\n
 
 sudo chmod 666 /var/run/docker.sock
@@ -105,13 +107,23 @@ else
     ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
     ANY_CONSE_MAFIA_CONTAINER_ID=$(docker container ls  | grep 'conse-mafia-*' | awk '{print $1}')
     ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook-*' | awk '{print $1}')
+    ANY_XBOT_CONTAINER_ID=$(docker container ls  | grep 'xbot-*' | awk '{print $1}')
+    ANY_XCORD_CONTAINER_ID=$(docker container ls  | grep 'xcord-*' | awk '{print $1}')
 
     sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
     sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
     sudo docker stop $ANY_CONSE_MAFIA_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_MAFIA_CONTAINER_ID
     sudo docker stop $ANY_STRIPE_WEBHOOK_CONTAINER_ID && sudo docker rm -f $ANY_STRIPE_WEBHOOK_CONTAINER_ID
+    sudo docker stop $ANY_XBOT_CONTAINER_ID && sudo docker rm -f $ANY_XBOT_CONTAINER_ID
+    sudo docker stop $ANY_XCORD_CONTAINER_ID && sudo docker rm -f $ANY_XCORD_CONTAINER_ID
 
     TIMESTAMP=$(date +%s)
+
+    sudo docker build -t xcord -f Dockerfile . --no-cache
+    sudo docker run -d --link redis --network gem --name xcord -v $(pwd)/infra/logs/xcord/:/app/logs xcord
+    
+    sudo docker build --t xbot-$TIMESTAMP -f $(pwd)/infra/docker/xbot/Dockerfile . --no-cache
+    sudo docker run -d --restart unless-stopped --network getm --name xbot-$TIMESTAMP -p 4246:4245 xbot-$TIMESTAMP
 
     sudo docker build -t conse-mafia-$TIMESTAMP -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
     sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia-$TIMESTAMP -p 7439:7438 conse-mafia-$TIMESTAMP
