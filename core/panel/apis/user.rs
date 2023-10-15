@@ -67,6 +67,7 @@ use crate::adapters::nftport::*;
             FetchUserTaskReport,
             UserLoginInfoRequest,
             TaskData,
+            ReportTaskData,
             UserDepositData,
             UserWithdrawalData,
             CheckUserMailVerificationRequest,

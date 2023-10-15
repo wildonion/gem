@@ -9,7 +9,7 @@ use crate::schema::tasks;
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
-use crate::models::{users::{User, UserData, UserRole}, tasks::{Task, TaskData}};
+use crate::models::{users::{User, UserData, UserRole}, tasks::{Task}};
 
 
 
@@ -43,7 +43,24 @@ pub struct NewUserTask{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct FetchUserTaskReport{
     pub total_score: i32,
-    pub done_tasks: Vec<TaskData>,
+    pub done_tasks: Vec<ReportTaskData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct ReportTaskData{
+    pub id: i32,
+    pub task_name: String,
+    pub task_description: Option<String>,
+    pub task_score: i32,
+    pub task_priority: i32,
+    pub hashtag: String,
+    pub tweet_content: String,
+    pub retweet_id: String,
+    pub like_tweet_id: String,
+    pub admin_id: i32, // amdin id who has defined the tasks
+    pub created_at: String,
+    pub updated_at: String,
+    pub done_at: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
@@ -196,7 +213,7 @@ impl UserTask{
                             tasks_info
                                 .clone()
                                 .into_iter()
-                                .map(|t| TaskData{
+                                .map(|t| ReportTaskData{
                                     id: t.id,
                                     task_name: t.task_name,
                                     task_description: t.task_description,
@@ -209,8 +226,22 @@ impl UserTask{
                                     admin_id: t.admin_id,
                                     created_at: t.created_at.to_string(),
                                     updated_at: t.updated_at.to_string(),
+                                    done_at: {
+                                        let single_user_task = users_tasks
+                                            .filter(user_id.eq(doer_id))
+                                            .filter(task_id.eq(t.id))
+                                            .first::<UserTask>(connection);
+
+                                        /* prevent from runtime crashing */
+                                        if single_user_task.is_ok(){
+                                            single_user_task.unwrap().done_at.to_string()
+                                        } else{
+                                            /* no task is done yet */
+                                            String::from("0")
+                                        }
+                                    },
                                 })
-                                .collect::<Vec<TaskData>>()
+                                .collect::<Vec<ReportTaskData>>()
                         },
                     };    
                     

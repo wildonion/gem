@@ -3538,6 +3538,16 @@
 						{
 							"name": "Verify User Task",
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjgyLCJ1c2VybmFtZSI6IkdqbnRNaktkdkx1SDE0QjYzRG9zSmtUcEdlQVhUNFBwczE3dk04UXk0Y2M1Iiwid2FsbGV0IjoiR2pudE1qS2R2THVIMTRCNjNEb3NKa1RwR2VBWFQ0UHBzMTd2TThReTRjYzUiLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5NzM3MTQxMzM0MDM1MzY4MiwiZXhwIjoxNjk5OTYzNDEzLCJpYXQiOjE2OTczNzE0MTN9.S13_FEROpkUKynAhQS7fn8YXlUXwkMpd5gXgdpnB6XPhNGXvhZjC-a-9dRrOUwQxVUDjuGv3HetHJpbspeZ1gQ",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [],
 								"url": {
