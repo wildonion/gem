@@ -820,61 +820,10 @@ macro_rules! verify {
                 let status = data_field.unwrap().get("status");
                 if status.is_some(){
 
-                    /* ---------------------------------------------------------------------------------------------------------------- */
-                    /* --------------------------- logging number of requests sent to twitter every 15 mins --------------------------- */
-                    /* ---------------------------------------------------------------------------------------------------------------- */
-                    /* 
-                        
-                        HashMap<next_15mins_interval, requests_so_far>
-                        
-                        let redis_x_15mins_interval = {1695920136: 200, 1695920158: 400, ......., 1695920167: 890};
-                        
-                        the key is the next interval and the value is the total requests sent 
-                        so far to the X before reaching the next 15 mins interval.
-                    */
-                    let x_15mins_interval = 900_000u64;
-                    let now = chrono::Local::now().timestamp_millis() as u64;
-                    let mut redis_conn = $redis_client.get_async_connection().await.unwrap();
-
-                    let redis_result_x_15mins_interval_request: RedisResult<String> = redis_conn.get("x_15mins_interval_request").await;
-                    let mut redis_x_15mins_interval = match redis_result_x_15mins_interval_request{
-                        Ok(data) => serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap(),
-                        Err(e) => HashMap::new()
-                    };
-
-                    /* updating twitter 15 mins interval rate limit requests  */
-                    if redis_x_15mins_interval.is_empty(){
-                        let next_interval = now + x_15mins_interval;
-                        /* adding new interval requests then update it */
-                        redis_x_15mins_interval.insert(next_interval, 0);
-                        redis_x_15mins_interval
-                            .entry(next_interval)
-                            .and_modify(|reqs| { *reqs+=2 } )
-                            .or_insert(2);
-                    } else{
-                        let last_interval = redis_x_15mins_interval.keys().max().unwrap_or(&now);
-                        if now - last_interval > x_15mins_interval{
-                            /* we have to go for the next interval */
-                            let next_interval = last_interval + x_15mins_interval;
-                            redis_x_15mins_interval.insert(last_interval + x_15mins_interval, 0);
-                            /* updating new interval requests */
-                            redis_x_15mins_interval
-                                .entry(next_interval)
-                                .and_modify(|reqs| { *reqs+=2 } )
-                                .or_insert(2);
-                        } else{
-                            /* updating the old interval requests */
-                            redis_x_15mins_interval
-                            .entry(*last_interval)
-                            .and_modify(|reqs| { *reqs+=2 } )
-                            .or_insert(2);
-                        }
-                    }
-
-                    let rl_data = serde_json::to_string(&redis_x_15mins_interval).unwrap();
-                    let _: () = redis_conn.set("x_15mins_interval_request", rl_data).await.unwrap();
-                    /* ----------------------------------------------------------------------------------------------------------- */
-
+                    // ------------- catching an x request 
+                    catch_x_log($redis_client.clone()).await;
+                    // --------------------------------------
+                    
                     let bool_status = status.unwrap().to_string();
                     if bool_status == "false"{
 
