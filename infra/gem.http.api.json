@@ -3497,45 +3497,6 @@
 					"name": "Public",
 					"item": [
 						{
-							"name": "Get Token Value",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-public}}/get-token-value/5",
-									"host": [
-										"{{panel-public}}"
-									],
-									"path": [
-										"get-token-value",
-										"5"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Crontab Check Users Tasks",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-public}}/bot/check-users-tasks",
-									"host": [
-										"{{panel-public}}"
-									],
-									"path": [
-										"bot",
-										"check-users-tasks"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Verify User Task",
 							"request": {
 								"auth": {
@@ -3586,6 +3547,45 @@
 							"response": []
 						},
 						{
+							"name": "Get Token Value",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-token-value/5",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-token-value",
+										"5"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Crontab Check Users Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/bot/check-users-tasks",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"bot",
+										"check-users-tasks"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get X Requests",
 							"request": {
 								"auth": {
@@ -3611,10 +3611,15 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{twitter-bot}}/get-ratelimit-info",
+									"raw": "http://64.226.71.201:7441/get-ratelimit-info",
+									"protocol": "http",
 									"host": [
-										"{{twitter-bot}}"
+										"64",
+										"226",
+										"71",
+										"201"
 									],
+									"port": "7441",
 									"path": [
 										"get-ratelimit-info"
 									]
