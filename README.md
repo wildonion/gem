@@ -33,8 +33,6 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ### 🗃️ Directory and Structure Explained
 
-> Note that to use dev and admin panel APIs Remember to run conse mafia hyper server first.
-
 * `core`: hyper, actix web HTTP and actix WS servers.
     * `stripewh`: stripe webhook listener for checkout events.
     * `xbot`: X bot for twitter tasks verification.

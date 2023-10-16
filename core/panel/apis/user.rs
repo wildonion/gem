@@ -3320,7 +3320,7 @@ async fn add_nft_to_contract(
 
                             let new_balance = user.balance.unwrap() - add_nft_to_contract_request.amount;
 
-                            // a user can have multiple public and one private room which contains multiple collections
+                            // a user can have one public and one private room which contains multiple collections
                             // it'll link the nft to the private room of the user and upload to ipfs, this doesn't mint it!
                             // ...
                             
