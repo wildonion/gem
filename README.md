@@ -66,11 +66,8 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ## 🛠️ Development Setup
 
-> Before developing, read the following notes: 
+> you can download runtime crashing error logs throught the address `https://api.panel.conse.app/logs` also after setting up the `portainer`, each container logs can be downloaded inside the panel, also makre sure that you've installed the following packages on **MacOS M1**:
 
-- **NOTE**: you can download runtime crashing error logs throught the address `https://api.panel.conse.app/logs` also after setting up the `portainer`, each container logs can be downloaded inside the panel.
-
-- **NOTE**: makre sure that you've installed the following packages on **MacOS M1**:
 ```bash
 brew tap cossacklabs/tap
 brew install libthemis
@@ -83,27 +80,7 @@ brew install libpq && brew link --force libpq
 brew install graphviz
 cargo clean
 ```
-
-- **NOTE**: also make sure that you have a compatible version of `bigdecimal` crate with `diesel` by running `cargo tree -p diesel --depth=1` command to find the version used by `diesel` also add the `numeric` feature to diesel create, an example of running this command on MacOS M1 is (refer to [this](https://stackoverflow.com/questions/55783064/the-trait-dieselexpression-is-not-implemented-for-bigdecimalbigdecimal) issue on stackoverflow): 
-```bash
-diesel v2.1.0
-├── bigdecimal v0.2.2
-├── bitflags v2.3.1
-├── byteorder v1.4.3
-├── chrono v0.4.26
-├── diesel_derives v2.1.0 (proc-macro)
-├── itoa v1.0.6
-├── num-bigint v0.4.3
-│   [build-dependencies]
-├── num-integer v0.1.45
-│   [build-dependencies]
-├── num-traits v0.2.15
-│   [build-dependencies]
-├── pq-sys v0.4.8
-├── r2d2 v0.8.10
-└── uuid v1.3.3
-```
-
+then run:
 
 ```bash
 # 🧪 Test Conse Hyper Server
@@ -118,15 +95,8 @@ cargo run --bin contest
     
 ## 🚀 Production Setup
 
-> Before going for production, read the following notes: 
+> before going for production, make make sure that you have the `conse.app` domain and the following subdomains are enabled in DNS panel and is pointing to the machine where the `gem` services codes are hosted on, note that for every new (sub)domain inside the VPS there must be a new nginx config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name which can be setup by running `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
-- **NOTE**: make sure that you have the `conse.app` domain enabled and is pointing to the machine where the `gem` codes is hosted on.
-
-- **NOTE**: rerun the `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
-
-- **NOTE**: for every new (sub)domain inside the VPS there must be a new config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name.
-
-- **NOTE**: registered (sub)domain records in DNS panel must be:
 ```bash
 conse.app #---> this main domain is related to the home UI of the app
 api.mafia.conse.app #---> points to the conse mafia hyper APIs
@@ -139,9 +109,8 @@ portainer.conse.app #---> points to the portainer UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
 api.xbot.conse.app #---> twitter bot to verify twitter tasks 
 ```
-- **NOTE**: to serve static files using nginx just make sure you copied the `build-{PROJECT-NAME}` folder of JS projects into `infra/docker/nginx/build` folder.   
 
-- **NOTE**: multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
+> keep in mind that multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:
 
 **DNS records of conse.app domain**
 
@@ -159,7 +128,9 @@ A	    wildonion.io           directs to 64.226.71.201	     3600
 A	    api.wildonion.app      directs to 68.183.137.154     3600 
 A	    admin.wildonion.app    directs to 68.183.201.129     3600 
 ```
-in the above records `wildonion.io` and `conse.app` are pointing to a same VPS but their (sub)domains are pointing to different VPS-es. 
+in the above records `wildonion.io` and `conse.app` are pointing to a same VPS but their (sub)domains are pointing to different VPS-es.
+
+finally run the followings: 
 
 ```bash
 # -----------------------
