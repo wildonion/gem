@@ -6,7 +6,7 @@
 Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform, gallery based NFT Marketplace on top of Polygon uses the following engines: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
-- behavioural graph virtual machine (**GVM**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in essence, each player gets rewarded and ranked based on their scores and in-game positions then the `balance` field will be updated based on those attributes, the match making rating (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games based on their past experiences, scores, tokens and rewards earned using **GVM** during the game.
+- behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in essence, each player gets rewarded and ranked based on their scores and in-game positions then the `balance` field will be updated based on those attributes, the match making rating (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games based on their past experiences, scores, tokens and rewards earned using **GVM** during the game.
 
 ## 🚟 Infra Routes and APIs
 
@@ -170,8 +170,6 @@ cargo run --bin contest
 - **NOTE**: **Regards to conse panel actix APIs**, make sure that we're using live stripe keys in `.env` file and we have `https://conse.app/stripe/checkout/success` and `https://conse.app/stripe/checkout/cancel` pages in front-end in order to redirect user to the related page either on a successful stripe checkout payment process or a cancel button event in checkout page, for more see [this](https://github.com/wildonion/gem/tree/master/core/stripewh) README.
 
 - **NOTE**: **Regards to conse panel actix APIs**, two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on **https://api.panel.conse.app** and **https://api.panel.conse.app/mongo** respectively.
-
-- **NOTE**: **Regards to conse panel actix APIs**, there is a env var called `THIRD_PARY_TWITTER_BOT_ENDPOINT` which can be set to an external twitter bot server endpoint to send requests for user task verification, if you want to use a third party bot remember to pass the endpoint to the instance of the `Twitter` struct like `let bot = Twitter::new(Some(bot_endpoint));`.
 
 - **NOTE**: **Regards to conse panel actix APIs**, currently the `/bot/check-users-tasks` API will be called every day at **7 AM** via a setup crontab inside the `jobs` folder to avoid twitter rate limit issue, if you want to change the cron just run `crontab -e` command inside the `jobs` folder and edit the related cron file.
 

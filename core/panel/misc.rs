@@ -297,7 +297,7 @@ pub async fn is_bot_24hours_limited(
 
 pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
 
-    let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+    let bot_endpoint = env::var("XBOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     /* ----------------------------------------------------------------------- */
@@ -342,7 +342,7 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
         }
     };
 
-    let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+    let bot_endpoint = env::var("XBOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
     let get_rl_info_route = format!("http://{}/get-app-ratelimit-info", bot_endpoint);
     let res = reqwest::Client::new()
         .get(get_rl_info_route)
@@ -801,7 +801,7 @@ macro_rules! verify {
 
         { // this is required if we want to import modules and use the let statements
 
-            use crate::models::bot::Twitter;
+            use crate::models::xbot::Twitter;
             use crate::misc::Response;
 
             info!("🤖 sending request to the twitter bot hosted on [{:#?}]", $endpoint);
@@ -823,7 +823,7 @@ macro_rules! verify {
                     // ------------- catching an x request 
                     catch_x_log($redis_client.clone()).await;
                     // --------------------------------------
-                    
+
                     let bool_status = status.unwrap().to_string();
                     if bool_status == "false"{
 
