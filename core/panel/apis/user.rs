@@ -1437,7 +1437,7 @@ async fn charge_wallet_request(
                         first we'll try to find the a user with the passed in screen_cid 
                         generated from keccak256 of cid then we'll go for the verification process 
                     */
-                    let find_user_screen_cid = User::find_by_screen_cid(&charge_wallet_request_object.buyer_cid, connection).await;
+                    let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(charge_wallet_request_object.buyer_cid.clone()), connection).await;
                     let Ok(user_info) = find_user_screen_cid else{
                         
                         resp!{
