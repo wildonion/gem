@@ -15,7 +15,7 @@ use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
-use crate::models::bot::Twitter;
+use crate::models::xbot::Twitter;
 use crate::constants::*;
 use super::users_mails::UserMail;
 use super::users_phones::UserPhone;
@@ -1687,8 +1687,7 @@ impl User{
                 Ok(HttpResponse::NotFound().json(resp))
             );
         };
-
-
+        
         match diesel::update(users.find(new_user.user_id.to_owned()))
             .set(EditUserByAdmin{
                 user_role: {
@@ -2077,14 +2076,23 @@ impl User{
                 );
             };
 
-            // let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
-            // let new_twitter = Twitter::new(Some(bot_endpoint)).await;
-            let new_twitter = Twitter::new(None).await;
+            let bot_endpoint = env::var("XBOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+            let new_twitter = Twitter::new(Some(bot_endpoint)).await;
             let Ok(bot) =  new_twitter else{
                 return Err(new_twitter.unwrap_err());
             };
 
-            let is_user_verified = bot.is_twitter_user_verified(account_name, connection).await;
+            let tusername = if account_name.is_empty(){
+                "".to_string()
+            } else{
+                if account_name.contains("@"){
+                    account_name.replace("@", "")
+                } else{
+                    account_name.to_string()
+                }
+            };
+
+            let is_user_verified = bot.verify_user_with_xbot(&tusername, connection).await;
             let Ok(is_verified) = is_user_verified else{
                 return Err(is_user_verified.unwrap_err());
             };
@@ -2092,7 +2100,7 @@ impl User{
             if is_verified{
                 
                 match diesel::update(users.find(user.id))
-                    .set(twitter_username.eq(account_name.to_lowercase()))
+                    .set(twitter_username.eq(tusername.to_lowercase()))
                     .returning(FetchUser::as_returning())
                     .get_result(connection)
                     {
