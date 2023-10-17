@@ -16,7 +16,6 @@
 use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use borsh::{BorshDeserialize, BorshSerialize};
-use tiny_keccak::keccak256;
 use uuid::Uuid;
 
 

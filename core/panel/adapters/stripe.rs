@@ -4,7 +4,7 @@
 use crate::{*, constants::{APP_NAME, THIRDPARTYAPI_ERROR_CODE}};
 
 
-
+/* stripe api adapter to decode incoming u8 bytes from stripe server */
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema, Default)]
 pub struct StripeWebhookPayload{
@@ -191,6 +191,8 @@ pub async fn create_session(
     redis_client: redis::Client,
     price_id: &str,
     tokens: i64, // this is the quantity
+    user_region: &str,
+    user_mail: &str
 ) -> StripeCreateCheckoutSessionData{
 
     /* create session */
@@ -199,6 +201,11 @@ pub async fn create_session(
     let stripe_cancel_url = env::var("STRIPE_PAYMENT_CANCEL_URL").unwrap();
     let stripe_automatic_tax = env::var("STRIPE_AUTOMATIC_TAX").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    
+    let mut splitted_mail = user_mail.split("@");
+    let local_part = splitted_mail.next().unwrap();
+    let mail_domain = splitted_mail.next().unwrap();
+    let customer_mail = format!("{}+location_{}@{}", local_part, user_region, mail_domain);
 
     let mut session_data = HashMap::new();
     session_data.insert("mode".to_string(), "payment".to_string());
@@ -211,6 +218,7 @@ pub async fn create_session(
     session_data.insert("line_items[0][price]".to_string(), price_id.to_string());
     session_data.insert("line_items[0][quantity]".to_string(), tokens.to_string());
     session_data.insert("automatic_tax[enabled]".to_string(), stripe_automatic_tax);
+    session_data.insert("customer_email".to_string(), customer_mail);
 
     let stripe_create_price_endpoint = format!("https://api.stripe.com/v1/checkout/sessions");
     let res = reqwest::Client::new()

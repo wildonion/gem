@@ -4,14 +4,13 @@
 
 use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
-use borsh::{BorshDeserialize, BorshSerialize};
 
 
 
 //// the following will be used to load all the 
 // nft mint addresses inside the addrs.json into
 // this struct. 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Nft{
     pub mint_addrs: Vec<String>,
 }
@@ -24,7 +23,7 @@ pub struct Nft{
 |
 |
 */
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AddWhitelistInfo{
     pub name: String,
     pub owners: Vec<OwnerData>, // pda addresses (nft burn tx hash + nft owner)
@@ -39,7 +38,7 @@ pub struct AddWhitelistInfo{
 |
 |
 */
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct InsertWhitelistRequest{
     pub owner: String, // nft owner
     pub mint_addrs: Vec<String>, // nft mint addresses that this owner owns
@@ -62,7 +61,7 @@ pub struct InsertWhitelistResponse{
     pub updated_at: Option<i64>,
 }
 
-#[derive(Debug, PartialEq, BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct OwnerData{
     pub mint_addrs: Vec<String>, // number of unique burned nfts for this owner (nft owner + nft burn tx hash)
     pub owner: String, // nft owner

@@ -330,14 +330,14 @@ pub mod otp{
     pub struct OtpSuccess(pub Response<Body>, pub OtpInput); // OtpSuccess is a tuple like struct with two inputs
 
 
-    #[derive(BorshDeserialize, BorshSerialize, Clone, Debug, Default)]
+    #[derive(Clone, Debug, Default)]
     pub struct OtpInput{
         pub id: String, // the stringified of the Uuid
         pub code: Option<String>,
         pub phone: Option<String>,
     }
 
-    #[derive(BorshDeserialize, BorshSerialize, Clone, Debug)]
+    #[derive(Clone, Debug)]
     pub struct Auth{
         token: String,
         template: String,

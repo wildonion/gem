@@ -163,18 +163,18 @@ pub struct UserIdResponse{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct UpdateBioRequest{
     pub bio: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct NewIdRequest{
     pub username: String,
     pub device_id: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, BorshSerialize, BorshDeserialize, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct ChargeWalletRequest{
     pub user_id: i32,
     pub buyer_cid: String,
@@ -277,19 +277,19 @@ pub struct EditUserByAdminRequest{
     pub password: Option<String>
 }
 
-#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SMSResponse{
     pub r#return: SMSResponseReturn, // use r# to escape reserved keywords to use them as identifiers in rust
     pub entries: Vec<SMSResponseEntries>,
 }
 
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SMSResponseReturn{
     pub status: u16,
     pub message: String,
 }
 
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SMSResponseEntries{
     pub messageid: f64,
     pub message: String,
@@ -301,7 +301,7 @@ pub struct SMSResponseEntries{
     pub cost: u16, 
 }
 
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct IpInfoResponse{
     pub ip: String,
     pub city: String,
@@ -313,7 +313,7 @@ pub struct IpInfoResponse{
     
 }
 
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct MessageBirdSMSResponse{
     
     /* 
@@ -2492,7 +2492,7 @@ impl User{
         /* get the user region using the api call */
         let u_country = get_ip_data(user_ip.clone()).await.country.as_str().to_lowercase();
 
-        let otp_res_stat = match u_country.as_str(){
+        let _ = match u_country.as_str(){
             "ir" => {
                 
                 let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
@@ -2513,7 +2513,18 @@ impl User{
                     .json::<SMSResponse>()
                     .await;
 
-                res_stat
+                if res_stat != 200{
+
+                    let resp = Response{
+                        data: Some(phone_owner_id),
+                        message: OTP_PROVIDER_DIDNT_SEND_CODE,
+                        status: 417
+                    };
+                    return Err(
+                        Ok(HttpResponse::ExpectationFailed().json(resp))
+                    );
+
+                }  
 
             },
             _ => {
@@ -2543,27 +2554,22 @@ impl User{
                 let otp_response_data = otp_response.unwrap().json::<serde_json::Value>().await.unwrap();
                 // let otp_response_data = otp_response.unwrap().text().await.unwrap();
 
-                res_stat    
+                if res_stat != 201{
+
+                    let resp = Response{
+                        data: Some(phone_owner_id),
+                        message: OTP_PROVIDER_DIDNT_SEND_CODE,
+                        status: 417
+                    };
+                    return Err(
+                        Ok(HttpResponse::ExpectationFailed().json(resp))
+                    );
+
+                }    
 
             }
         };
 
-        /* 
-            we're borrowing the otp_response here to prevent it from moving 
-            cause unwrap() takes the ownership of self 
-        */
-        if otp_res_stat != 200 || otp_res_stat != 201{
-
-            let resp = Response{
-                data: Some(phone_owner_id),
-                message: OTP_PROVIDER_DIDNT_SEND_CODE,
-                status: 417
-            };
-            return Err(
-                Ok(HttpResponse::ExpectationFailed().json(resp))
-            );
-
-        }
 
         let save_phone_res = UserPhone::save(&user_phone, phone_owner_id, random_code, two_mins_later, connection).await;
         let Ok(_) = save_phone_res else{

@@ -17,7 +17,6 @@ use crate::schema::users;
 use crate::schema::tasks::dsl::*;
 use crate::schema::tasks;
 use futures_util::TryStreamExt;
-use secp256k1::ecdsa::Signature; /* TryStreamExt can be used to call try_next() on future object */
 use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
@@ -1489,7 +1488,7 @@ async fn charge_wallet_request(
 
                     }
 
-                    let u_region = user.region.unwrap();
+                    let u_region = user.region.as_ref().unwrap();
                     let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
 
                     match u_region.as_str(){
@@ -1566,7 +1565,17 @@ async fn charge_wallet_request(
                             let checkout_session_data = create_session(
                                 redis_client.clone(), 
                                 &price_id, 
-                                charge_wallet_request.tokens
+                                charge_wallet_request.tokens,
+                                /*  
+                                    since calling unwrap() takes the ownership of the object
+                                    and the type will be dropped from the ram, thus if the type
+                                    is being used in other scopes it's better to borrow it 
+                                    or clone it which we've used as_ref() to borrow it also if 
+                                    the user is here means that he has definitely the cid cause 
+                                    to build cid we need verified mail
+                                */
+                                user.region.as_ref().unwrap(),
+                                user.mail.as_ref().unwrap() 
                             ).await;
 
                             if checkout_session_data.session_id.is_empty() || 
@@ -4792,6 +4801,7 @@ pub mod exports{
     pub use super::send_invitation_link;
     pub use super::add_user_to_friend;
     pub use super::remove_user_from_friend;
+    pub use super::transfer; /* for buying nft with token */
     -----------------------------------------------------------------------
     https://docs.nftport.xyz/reference/retrieve-nfts-owned-by-account
     https://docs.nftport.xyz/reference/retrieve-contract-nfts
@@ -4817,7 +4827,6 @@ pub mod exports{
     pub use super::mint;
     pub use super::burn;
     pub use super::charge_wallet_request;
-    /* pub use super::sell_token; // send money from stripe to the user bank account */
     pub use super::create_contract;
     pub use super::add_nft_to_contract;
     pub use super::advertise_contract;

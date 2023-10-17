@@ -7,7 +7,6 @@ use serde::{Serialize, Deserialize};
 use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struct itself cause there is a struct called bson inside the bson.rs file
 use argon2::{self, Config};
 use std::{env, collections::HashMap};
-use borsh::{BorshDeserialize, BorshSerialize};
 
 
 
@@ -115,7 +114,7 @@ pub struct UserUpdateResponse{
 |                                             >>>>> NOT IMPORTANT SCHEMA <<<<<
 |
 */
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SMSResponseReturn{
     pub status: u16,
     pub message: String,
@@ -129,7 +128,7 @@ pub struct SMSResponseReturn{
 |                                             >>>>> NOT IMPORTANT SCHEMA <<<<<
 |
 */
-#[derive(Default, Serialize, Deserialize, BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct SMSResponseEntries{
     pub messageid: f64,
     pub message: String,
@@ -163,7 +162,7 @@ pub struct OTPCareerResponse{
 |
 |
 */
-#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Debug, Clone)] // can't implement the Default trait for extra field cause Default is not implemented for Value enum
+#[derive(Serialize, Deserialize, Debug, Clone)] // can't implement the Default trait for extra field cause Default is not implemented for Value enum
 pub struct SMSResponse{
     pub r#return: SMSResponseReturn, // use r# to escape reserved keywords to use them as identifiers 
     pub entries: Vec<SMSResponseEntries>,

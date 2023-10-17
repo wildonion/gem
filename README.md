@@ -33,6 +33,8 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ### 🗃️ Directory and Structure Explained
 
+> both `mafia` and `panel` services inside `core` are just different binaries which are sharing a same `Cargo.toml` setup.
+
 * `core`: hyper, actix web HTTP and actix WS servers.
     * `stripewh`: stripe webhook listener for checkout events.
     * `xbot`: X bot for twitter tasks verification.
@@ -49,8 +51,6 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 * `migrations`: diesel postgres sql files
 * `scripts`: deployment scripts
 * `test`: gem test codes like admin and dev password generator script
-
-**NOTE**: both `mafia` and `panel` services inside `core` are just different binaries which are sharing a same `Cargo.toml` setup.
 
 ## 📘 Docs
 

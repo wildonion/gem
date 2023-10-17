@@ -1,11 +1,13 @@
 
 
 
-discord bot to pull new admin tasks using redispubsub into a discord channel also it has the following features:
+discord bot to pull out new admin tasks using redispubsub into a discord channel also it has the following features:
 
 - auto assigning roles for different points thresholds/task completion rate
 
 - exclusive raffles/giveaways above x number of points
+
+- broadcast new task topic to a discord channel once the admin created a new one
 
 ## How 2?
 

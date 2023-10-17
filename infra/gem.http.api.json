@@ -3199,7 +3199,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/checkout/get/unpaid/user/0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
+									"raw": "{{panel-user}}/checkout/get/unpaid/user/035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3208,7 +3208,7 @@
 										"get",
 										"unpaid",
 										"user",
-										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
+										"035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba"
 									]
 								}
 							},
@@ -3230,7 +3230,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/checkout/get/paid/user/0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
+									"raw": "{{panel-user}}/checkout/get/paid/user/035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3239,7 +3239,7 @@
 										"get",
 										"paid",
 										"user",
-										"0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16"
+										"035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba"
 									]
 								}
 							},
@@ -3606,20 +3606,15 @@
 							"response": []
 						},
 						{
-							"name": "Twitter Bot Get App Rate Limit Info",
+							"name": "X Bot Get App Rate Limit Info",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://64.226.71.201:7441/get-ratelimit-info",
-									"protocol": "http",
+									"raw": "{{twitter-bot}}/get-ratelimit-info",
 									"host": [
-										"64",
-										"226",
-										"71",
-										"201"
+										"{{twitter-bot}}"
 									],
-									"port": "7441",
 									"path": [
 										"get-ratelimit-info"
 									]
@@ -3628,7 +3623,7 @@
 							"response": []
 						},
 						{
-							"name": "Twitter Bot Rate Limit Info",
+							"name": "X Bot Rate Limit Info",
 							"request": {
 								"method": "GET",
 								"header": [],
@@ -3639,6 +3634,50 @@
 									],
 									"path": [
 										"get-app-ratelimit-info"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "X Bot Get User Likes (Test)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{twitter-bot}}/test/likes/of/{8eN~PF=xyqz0s^/alephmykal/1713499818923106632",
+									"host": [
+										"{{twitter-bot}}"
+									],
+									"path": [
+										"test",
+										"likes",
+										"of",
+										"{8eN~PF=xyqz0s^",
+										"alephmykal",
+										"1713499818923106632"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "X Bot Get User Tweets (Test)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{twitter-bot}}/test/retweet/of/{8eN~PF=xyqz0s^/refu8665/1713499818923106632",
+									"host": [
+										"{{twitter-bot}}"
+									],
+									"path": [
+										"test",
+										"retweet",
+										"of",
+										"{8eN~PF=xyqz0s^",
+										"refu8665",
+										"1713499818923106632"
 									]
 								}
 							},

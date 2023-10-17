@@ -5,8 +5,6 @@
 
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
-use secp256k1::ecdsa::Signature;
-use secp256k1::{Secp256k1, All};
 use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
 use crate::events::publishers::role::PlayerRoleInfo;

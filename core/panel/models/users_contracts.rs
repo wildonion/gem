@@ -15,7 +15,9 @@ use crate::*;
 
 pub struct UserContract{
 
-    pub contracts: Vec<String>, // addresses of all contracts
+    pub user_id: i32,
+    pub collection: i32,
+    pub c_address: String, // contract address
 
 }
 
