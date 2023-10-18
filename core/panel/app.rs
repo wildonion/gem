@@ -88,16 +88,7 @@ use once_cell::sync::Lazy;
 use constants::PanelHttpResponse;
 use panel_macros::passport; /* loading from lib.rs which contains proc macros */
 use snowflake::SnowflakeIdGenerator;
-use ring::signature as ring_signature;
-use ring::signature::KeyPair;
-use ring::rand as ring_rand;
 use base64::{engine, alphabet, Engine as _};
-use ring::signature::Ed25519KeyPair;
-use themis::keys as themis_keys;
-use themis::secure_message::{SecureSign, SecureVerify};
-use themis::keygen::gen_ec_key_pair;
-use themis::keys::{EcdsaKeyPair, EcdsaPrivateKey, EcdsaPublicKey};
-use themis::keys::KeyPair as ThemisKeyPair;
 use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};

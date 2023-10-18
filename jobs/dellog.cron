@@ -1,1 +1,1 @@
-*/5 * * * * /root/gem/scripts/dellog.sh
+*/12 * * * * /root/gem/scripts/dellog.sh

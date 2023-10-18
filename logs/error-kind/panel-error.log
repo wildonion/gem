@@ -1094,3 +1094,17 @@ code: 65532 | message: {
     "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
   }
 } | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697185117153 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697622100658 | method name: calculate_token_value
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":104,
+    "info":"Your monthly usage limit has been reached. Please upgrade your Subscription Plan."
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":104,\n    \"info\":\"Your monthly usage limit has been reached. Please upgrade your Subscription Plan.\"\n  }\n}")) | time: 1697622168320 | method name: calculate_token_value

@@ -29,3 +29,33 @@ stripe login && sudo pm2 start --name stripe-whebook-listener
 ```
 
 see the stripe webhook listener logs by running the `sudo pm2 log stripe-whebook-listener` command.
+
+## Flow
+
+```
+charge wallet process in app --
+    |                          |
+    |                           -- create checkout session request --
+    |                                                                |
+    |                             -----------------------------------
+    |                            |
+    checkout session url -- panel server
+                                 |
+                                  -- generate checkout page url request -- stripe server
+
+```
+
+> **user hit the pay button in checkout page** 
+
+```
+stripe in checkout page -- send webhook checkout events --
+                                                          |
+                      ------------------------------------
+                     |
+                      -- stripe webhook event handler server 
+                            |
+                             -- if checkout.session.completed
+                                            |
+                                             -- update user balance request -- panel server
+                                                     
+```
