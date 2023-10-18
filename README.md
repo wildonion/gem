@@ -68,7 +68,6 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ```bash
 brew tap cossacklabs/tap
-brew install libthemis
 brew install openjdk
 brew install pkg-config
 brew install openssl
