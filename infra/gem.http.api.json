@@ -3547,6 +3547,27 @@
 							"response": []
 						},
 						{
+							"name": "Get Tasks Leaderboard",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/tasks/leaderboard",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"tasks",
+										"leaderboard"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get Token Value",
 							"request": {
 								"auth": {
@@ -3611,23 +3632,6 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{twitter-bot}}/get-ratelimit-info",
-									"host": [
-										"{{twitter-bot}}"
-									],
-									"path": [
-										"get-ratelimit-info"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "X Bot Rate Limit Info",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
 									"raw": "{{twitter-bot}}/get-app-ratelimit-info",
 									"host": [
 										"{{twitter-bot}}"
@@ -3640,12 +3644,29 @@
 							"response": []
 						},
 						{
+							"name": "X Bot Rate Limit Info",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{twitter-bot}}/get-ratelimit-info",
+									"host": [
+										"{{twitter-bot}}"
+									],
+									"path": [
+										"get-ratelimit-info"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "X Bot Get User Likes (Test)",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{twitter-bot}}/test/likes/of/{8eN~PF=xyqz0s^/alephmykal/1713499818923106632",
+									"raw": "{{twitter-bot}}/test/likes/of/{8eN~PF=xyqz0s^/_wildonion",
 									"host": [
 										"{{twitter-bot}}"
 									],
@@ -3654,8 +3675,7 @@
 										"likes",
 										"of",
 										"{8eN~PF=xyqz0s^",
-										"alephmykal",
-										"1713499818923106632"
+										"_wildonion"
 									]
 								}
 							},
@@ -3667,17 +3687,16 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{twitter-bot}}/test/retweet/of/{8eN~PF=xyqz0s^/refu8665/1713499818923106632",
+									"raw": "{{twitter-bot}}/test/tweet/of/{8eN~PF=xyqz0s^/_wildonion",
 									"host": [
 										"{{twitter-bot}}"
 									],
 									"path": [
 										"test",
-										"retweet",
+										"tweet",
 										"of",
 										"{8eN~PF=xyqz0s^",
-										"refu8665",
-										"1713499818923106632"
+										"_wildonion"
 									]
 								}
 							},
