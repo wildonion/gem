@@ -30,13 +30,13 @@ use crate::constants::*;
 #[diesel(table_name=tasks)]
 pub struct Task{
     pub id: i32,
-    pub task_name: String, /* username, code, tweet, retweet, hashtag, like */
+    pub task_name: String, /* username, code, tweet, retweet, comment, hashtag, like */
     pub task_description: Option<String>,
     pub task_score: i32,
     pub task_priority: i32,
     pub hashtag: String, /* hashtag that must be inside one of the user tweets */
     pub tweet_content: String, /* content that the user must tweet it */
-    pub retweet_id: String, /* the tweet id that its content must be matched with one of the user tweet content */
+    pub retweet_id: String, /* the tweet id that its content must be matched with one of the user tweet content, or its comment must be checked  */
     pub like_tweet_id: String, /* the tweet id that must be inside user likes */
     pub admin_id: i32, // amdin id who has defined the tasks
     pub created_at: chrono::NaiveDateTime,
@@ -176,7 +176,7 @@ impl Task{
         }
 
         let random_chars = gen_random_chars(5);
-        let random_task_name = format!("{}-{}", new_task.task_name.as_str(), random_chars);
+        let random_task_name = format!("{}::{}", new_task.task_name.as_str(), random_chars);
 
         let task = NewTask{
             task_name: random_task_name.as_str(),

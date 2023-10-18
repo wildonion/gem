@@ -4,7 +4,7 @@
 
 
 use crate::*;
-use crate::models::{users::*, tasks::*, users_tasks::*, bot::*};
+use crate::models::{users::*, tasks::*, users_tasks::*, xbot::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -184,7 +184,7 @@ async fn verify_twitter_task(
                 match UserTask::find(doer_id, job_id, connection).await{
                     false => {
                         
-                        let bot_endpoint = env::var("THIRD_PARY_TWITTER_BOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
+                        let bot_endpoint = env::var("XBOT_ENDPOINT").expect("⚠️ no twitter bot endpoint key variable set");
                         let new_twitter = Twitter::new(Some(bot_endpoint)).await;
                         let Ok(bot) =  new_twitter else{
                             return new_twitter.unwrap_err();
@@ -198,9 +198,35 @@ async fn verify_twitter_task(
                                 let task_type = splitted_name.next().unwrap(); 
                                 
                                 if task_starts_with.starts_with("twitter"){
+
+                                    // ex: hashtag::2023-12-08T12:23:00::VLwQb
+                                    if task_type.contains("::"){
+                                        
+                                        let mut splitted_task_type = task_type.split("::");
+                                        let before_double_colon = splitted_task_type.next().unwrap();
+                                        let after_double_colon = splitted_task_type.next().unwrap();
+                                        let mut splitted_exp_time_rand_char = after_double_colon.split("::");
+                                        
+                                        let exp_time = splitted_exp_time_rand_char.next().unwrap();
+                                        let exp = exp_time.replace(",", ":");
+                                        
+                                        let datetime = chrono::NaiveDateTime::parse_from_str(&exp, "%Y:%m:%dT%H:%M:%S").unwrap().timestamp();
+                                        let now = chrono::Utc::now().timestamp();
+                                        if now > datetime{
+                                            
+                                            resp!{
+                                                &[u8], // the data type
+                                                &[], // response data
+                                                TASK_EXPIRED, // response message
+                                                StatusCode::NOT_ACCEPTABLE, // status code
+                                                None::<Cookie<'_>>, // cookie
+                                            }
+    
+                                        } 
+                                    }
                                     
                                     match task_type{
-                                        "username" | "username-"=> { /* all task names start with username */                                                
+                                        "username" | "username-"=> { /* all task names start with username */                                    
                                             bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
                                         },
                                         "code" | "code-" => { /* all task names start with code */
@@ -218,6 +244,9 @@ async fn verify_twitter_task(
                                         "like" | "like-" => { /* all task names start with like */
                                             bot.verify_like(task, connection, redis_client, doer_id.to_owned()).await
                                         },
+                                        "comment" | "comment-" => { /* all task names start with comment */
+                                            bot.verify_comment(task, connection, redis_client, doer_id.to_owned()).await
+                                        }
                                         _ => {
             
                                             resp!{
@@ -605,6 +634,65 @@ async fn check_users_task(
     }
 }
 
+#[get("/tasks/leaderboard")]
+async fn tasks_leaderboard(
+        req: HttpRequest,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            /* 
+                if we need a mutable version of data to be moved between different scopes we can 
+                use &mut type in a single thread scenarios otherwise Arc<Mutex or RwLock in multiple 
+                thread, by mutating the &mut type in a new scope the actual type will be mutated too, 
+                generally we should pass by value instead of reference cause rust will take care of 
+                the lifetime and reference counting of the type
+            */
+            let connection = &mut pg_pool.get().unwrap();
+
+            match UserTask::all(connection).await{
+                Ok(users_tasks_data) => {
+
+                    let mut leaderboard: Vec<FetchUserTaskReport> = vec![];
+                    if !users_tasks_data.is_empty(){
+                        for utinfo in users_tasks_data{
+                            let get_user_report = UserTask::reports(utinfo.user_id, connection).await;
+                            leaderboard.push(get_user_report.unwrap());
+                        }
+                    }
+
+                    resp!{
+                        Vec<FetchUserTaskReport>, // the data type
+                        leaderboard, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
+            }
+        
+        },
+        None => {
+            
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+}
 
 pub mod exports{
     pub use super::verify_twitter_task;
@@ -612,6 +700,7 @@ pub mod exports{
     pub use super::get_token_value;
     pub use super::get_x_requests;
     pub use super::commit_webhook;
+    pub use super::tasks_leaderboard;
     /* 
     pub use super::get_posts; // /?from=1&to=50
     pub use super::get_all_contracts; // /?from=1&to=50
