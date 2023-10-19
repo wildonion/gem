@@ -16,7 +16,6 @@
 - update bio, avatar and banner
 - transferring in-app tokens by minting (`deposit`) and burning (`withdraw`) nft 
 - get related deposits and withdrawals
-- add comment on and like the post
 - user gallery calls
     - public and private rooms
     - fetch private gallery nfts
@@ -30,9 +29,8 @@
 - publish ecq topic of an event `<---mafia jwt--->` mafia hyper server
 - update event image `<---mafia jwt--->` mafia hyper server
 - add twitter account for the twitter bot
-- register/delete/edit new twitter tasks, posts and users
+- register/delete/edit new twitter tasks and users
 - get all withdrawals, deposits, users and twitter tasks
-- verify and get all posts and their comments and likes 
 - fetch all strip products, prices and checkout sessions
 
 ### 👨🏻‍💻 Dev Access
@@ -42,7 +40,6 @@
 ### 🌎 Public Access
 - user twitter task verification using twitter bot
 - check user twitter task 
-- get posts
 - get token price
 - gallery public calls
     - get nfts of public gallery

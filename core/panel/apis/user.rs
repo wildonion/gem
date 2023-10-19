@@ -3612,8 +3612,6 @@ pub mod exports{
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
     /*
-    pub use super::add_post_comment;
-    pub use super::like_post;
     pub use super::add_nft_comment;
     pub use super::like_nft;
     pub use super::give_stars_to;

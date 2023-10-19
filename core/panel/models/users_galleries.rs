@@ -6,7 +6,7 @@ use crate::*;
 
 // create private romm
 // create public room
-
+// all galleries contain pastel artworks 
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Gallery{
