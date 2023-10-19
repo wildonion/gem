@@ -2777,24 +2777,6 @@ pub mod exports{
     pub use super::get_all_stripe_products; /* /?from=1&to=50 also: get single product using its id */
     pub use super::get_all_stripe_prices; /* /?from=1&to=50 also: get single price using its id */
     pub use super::get_all_stripe_checkout_sessions; /* /?from=1&to=50 also: get single session using its id */
-    -----------------------------------------------------------------------
-    https://docs.nftport.xyz/reference/retrieve-nft-collection-contract
-    
-    >>> following calls require method signing <<<
-    
-    /*
-        https://docs.nftport.xyz/reference/deploy-nft-collection-contract 
-        useful for chatroom and event launchpad (Collection Contracts) + 
-        set secondary sells amount and royalty address in contract 
-    */
-    pub use super::create_limited_nft_contract; 
-    /* 
-        https://docs.nftport.xyz/reference/deploy-nft-product-contract
-        a contract contains unlimted nfts like gift cards and single products + 
-        set secondary sells amount and royalty address in contract 
-    */
-    pub use super::create_unlimited_contract;
-    -----------------------------------------------------------------------
     */
     pub use super::get_all_users_checkouts;
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server

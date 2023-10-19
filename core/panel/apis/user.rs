@@ -3617,9 +3617,11 @@ pub mod exports{
     pub use super::add_nft_comment;
     pub use super::like_nft;
     pub use super::give_stars_to;
-    pub use super::send_invitation_link;
+    pub use super::send_private_room_invitation_link;
     pub use super::add_user_to_friend;
     pub use super::remove_user_from_friend;
+    pub use super::get_private_rooms_of; // /?from=1&to=50
+    pub use super::create_private_room;
     */
     /* ---------------------------------------------------- 
         user must pay token for the following calls since

@@ -18,10 +18,8 @@
 - get related deposits and withdrawals
 - add comment on and like the post
 - user gallery calls
-    - create proposal and event for a collection 
-    - create contract
-    - mint, burn
-    - advertising contract
+    - public and private rooms
+    - fetch private gallery nfts
     - add comment on and like the nft
     - add/remove friend
 - buy in-app token (charge wallet and stripe apis)
@@ -35,7 +33,6 @@
 - register/delete/edit new twitter tasks, posts and users
 - get all withdrawals, deposits, users and twitter tasks
 - verify and get all posts and their comments and likes 
-- create contract
 - fetch all strip products, prices and checkout sessions
 
 ### 👨🏻‍💻 Dev Access
@@ -48,14 +45,15 @@
 - get posts
 - get token price
 - gallery public calls
-    - get contracts
-    - get nfts of a contract 
+    - get nfts of public gallery
 
 ### 🥞 Health Routes
 - check server status
 - check token 
 - logout
 - get all the tasks
+- get tasks leaderboard
+- get ratelimit info of xbot
 
 ## 🔑 Tiny KYC Identity Verification Process
 
