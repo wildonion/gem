@@ -26,6 +26,7 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
     pub id: i32,
     pub mint_tx_hash: String,
     pub nft_id: String,
+    pub nft_img_url: String,
     pub from_cid: String,
     pub recipient_screen_cid: String,
     pub is_claimed: bool,
@@ -42,6 +43,7 @@ pub struct NewUserDeposit{
     pub is_claimed: bool,
     pub amount: i64,
     pub nft_id: String,
+    pub nft_img_url: String,
     pub mint_tx_hash: String,
     pub tx_signature: String,
 }
@@ -51,6 +53,9 @@ pub struct NewUserDepositRequest{
     pub from_cid: String,
     pub recipient: String,
     pub amount: i64,
+    pub nft_img_url: String,
+    pub nft_name: String,
+    pub nft_desc: String,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -61,6 +66,7 @@ pub struct UserDepositData{
     pub from_cid: String,
     pub recipient_screen_cid: String,
     pub nft_id: String,
+    pub nft_img_url: String,
     pub is_claimed: bool,
     pub amount: i64,
     pub mint_tx_hash: String,
@@ -70,7 +76,7 @@ pub struct UserDepositData{
 
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, polygon_recipient_address: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, polygon_recipient_address: String, nft_url: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
@@ -78,6 +84,7 @@ impl UserDeposit{
             is_claimed: false,
             amount: user_deposit_request.amount,
             nft_id: token_id,
+            nft_img_url: nft_url,
             mint_tx_hash: succ_mint_tx_hash,
             tx_signature: user_deposit_request.tx_signature,
         };
@@ -94,6 +101,7 @@ impl UserDeposit{
                         from_cid: user_deposit.from_cid, 
                         recipient_screen_cid: user_deposit.recipient_screen_cid,
                         nft_id: user_deposit.nft_id.to_string(),
+                        nft_img_url: user_deposit.nft_img_url.to_string(),
                         is_claimed: user_deposit.is_claimed,
                         amount: user_deposit.amount, 
                         signature: user_deposit.tx_signature,
@@ -151,6 +159,7 @@ impl UserDeposit{
                 from_cid: deposit.from_cid, 
                 recipient_screen_cid: deposit.recipient_screen_cid, 
                 nft_id: deposit.nft_id.to_string(), 
+                nft_img_url: deposit.nft_img_url.to_string(),
                 is_claimed: deposit.is_claimed,
                 amount: deposit.amount, 
                 mint_tx_hash: deposit.mint_tx_hash, 
@@ -189,6 +198,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
+                        nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),
@@ -216,6 +226,7 @@ impl UserDeposit{
                             is_claimed: d.is_claimed,
                             amount: d.amount,
                             nft_id: d.nft_id.to_string(),
+                            nft_img_url: d.nft_img_url.to_string(),
                             mint_tx_hash: d.mint_tx_hash,
                             signature: d.tx_signature,
                             iat: d.iat.to_string(),
@@ -275,6 +286,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
+                        nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),
@@ -315,6 +327,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
+                        nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),

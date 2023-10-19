@@ -8,7 +8,7 @@ step 0. fill the `STRIPE_*` vars inside the `.env` with your live (test) keys
 
 step 1. deploy the docker container of `stripewh` server
 
-step 2. setup DNS record for `https://api.panel.stripewh.conse.app` in DNS panel
+step 2. setup DNS record for `https://api.panel.stripewh.conse.app` in DNS panel to points where the xbot code is hosted
 
 step 3. configure nginx reverse proxy for above subdomain to point to the docker container on the VPS
 

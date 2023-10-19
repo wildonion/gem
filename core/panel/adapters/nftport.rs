@@ -11,7 +11,6 @@ use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
-use models::users_contracts::*;
 
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -84,20 +83,25 @@ pub struct NftPortUploadFileToIpfsData{
 }
 
 
+/* transfer nft by minting to recipient that has token value behind of it */
 pub async fn start_minting_card_process(
     sender_screen_cid: String,
     deposit_object: NewUserDepositRequest, 
-    recipient_info: User,
     contract_address: String,
     contract_owner: String,
     polygon_recipient_address: String,
+    nft_img_url: String,
+    nft_name: String,
+    nft_desc: String,
     redis_client: redis::Client
 ) -> (String, String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-
+    
     /* upload card to ipfs */
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+
+    /* ---------------------------- we're using the nft_img_url ----------------------------
     let (metadata_uri, res_metadata_uri_status) = upload_file_to_ipfs(&nftport_token, redis_client.clone()).await;
         
     if res_metadata_uri_status == 1{
@@ -108,21 +112,22 @@ pub async fn start_minting_card_process(
     let upload_logs_key = format!("Sender:{}|Log:NftPortUploadFileToIpfsData|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
     let ـ : RedisResult<String> = redis_conn.set(upload_logs_key, serde_json::to_string_pretty(&metadata_uri).unwrap()).await;
     info!("✅ NftPortUploadFileToIpfsData: {:#?}", metadata_uri.clone());
-
     if metadata_uri.response == String::from("OK"){
+    --------------------------------------------------------------------------------------- */
 
-        let metadata_uri = metadata_uri.ipfs_url;
+    if !nft_img_url.is_empty(){
+
+        // let metadata_uri = metadata_uri.ipfs_url;
+        let metadata_uri = nft_img_url; // front has already uploaded the img of nft in ipfs
 
         /* upload metadata to ipfs */
         let mut custom_fields = HashMap::new();
         custom_fields.insert("amount".to_string(), deposit_object.amount.to_string());
         custom_fields.insert("sender".to_string(), sender_screen_cid.clone());
         custom_fields.insert("recipient".to_string(), polygon_recipient_address.clone());
-        let meta_name = format!("{} gift card with value of {} tokens", APP_NAME, deposit_object.amount);
-        let meta_desc = format!("Transferring a {} gift card to {}", APP_NAME, recipient_info.username);
         let upload_data = NftPortUploadMetadataRequest{
-            name: meta_name,
-            description: meta_desc,
+            name: nft_name,
+            description: nft_desc,
             file_url: metadata_uri,
             custom_fields,
         };

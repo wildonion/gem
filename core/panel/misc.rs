@@ -11,7 +11,6 @@ use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
-use models::users_contracts::*;
 use s3::*;
 
 

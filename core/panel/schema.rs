@@ -85,6 +85,7 @@ diesel::table! {
         id -> Int4,
         mint_tx_hash -> Varchar,
         nft_id -> Varchar,
+        nft_img_url -> Varchar,
         from_cid -> Varchar,
         recipient_screen_cid -> Varchar,
         is_claimed -> Bool,

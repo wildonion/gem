@@ -11,7 +11,5 @@ pub mod users_deposits;
 pub mod users_withdrawals;
 pub mod users_mails;
 pub mod users_phones;
-pub mod users_contracts;
 pub mod users_checkouts;
 pub mod users_galleries;
-pub mod users_nfts;
