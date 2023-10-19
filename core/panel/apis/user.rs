@@ -1425,44 +1425,20 @@ async fn charge_wallet_request(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
                     let charge_wallet_request_object = charge_wallet_request.to_owned();
-
-                    let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
-                            return error_resp;
-                    };
-
-                    /* 
-                        first we'll try to find the a user with the passed in screen_cid 
-                        generated from keccak256 of cid then we'll go for the verification process 
-                    */
-                    let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(charge_wallet_request_object.buyer_cid.clone()), connection).await;
-                    let Ok(user_info) = find_user_screen_cid else{
-                        
-                        resp!{
-                            String, // the data type
-                            charge_wallet_request_object.buyer_cid, // response data
-                            &USER_SCREEN_CID_NOT_FOUND, // response message
-                            StatusCode::NOT_FOUND, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    };
-
-                    let verification_res = wallet::evm::verify_signature(
-                        user_info.screen_cid.unwrap(),
-                        &charge_wallet_request.tx_signature,
-                        &charge_wallet_request_object.hash_data
+                    let is_request_verified = verify_requested_data(
+                        _id, 
+                        &charge_wallet_request_object.buyer_cid, 
+                        &charge_wallet_request_object.tx_signature, 
+                        &charge_wallet_request_object.hash_data, 
+                        connection
                     ).await;
-                    if verification_res.is_err(){
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            &INVALID_SIGNATURE, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    }
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp;
+                    };
 
                     if charge_wallet_request_object.tokens < 0 &&
                         charge_wallet_request_object.tokens < 5{
