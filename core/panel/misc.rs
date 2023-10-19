@@ -3,8 +3,9 @@
 
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
+use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -527,6 +528,87 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 }
 
+pub async fn verify_requested_data(the_user_id: i32, from_cid: &str, tx_signature: &str, hash_data: &str, 
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
+
+    /* making sure that the user has a full filled paypal id */
+    let get_user = User::find_by_id(the_user_id, connection).await;
+    let Ok(user) = get_user else{
+        let error_resp = get_user.unwrap_err();
+        return Err(error_resp);
+    };
+
+    /* if the phone wasn't verified user can't deposit */
+    if user.phone_number.is_none() || 
+    !user.is_phone_verified{
+
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: NOT_VERIFIED_PHONE,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+
+    }
+
+    /* if the mail wasn't verified user can't deposit */
+    if user.mail.is_none() || 
+    !user.is_mail_verified{
+
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: NOT_VERIFIED_MAIL,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+
+    }
+
+    /* 
+        first we'll try to find the a user with the passed in screen_cid 
+        generated from keccak256 of cid then we'll go for the verification process 
+    */
+    let find_user_screen_cid = User::find_by_screen_cid(
+        &Wallet::generate_keccak256_from(from_cid.to_string()), connection
+    ).await;
+    let Ok(user_info) = find_user_screen_cid else{
+        
+        let resp = Response{
+            data: Some(from_cid.to_string()),
+            message: USER_SCREEN_CID_NOT_FOUND,
+            status: 404
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+
+    };
+    
+    let verification_res = wallet::evm::verify_signature(
+        user_info.screen_cid.unwrap(),
+        &tx_signature,
+        &hash_data
+    ).await;
+    if verification_res.is_err(){
+
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: INVALID_SIGNATURE,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+
+    }
+
+    Ok(user)
+    
+}
 /* -----------------------------------------------------------------------*/
 /* --------------------------- HELPER METHODS --------------------------- */
 /* -----------------------------------------------------------------------*/

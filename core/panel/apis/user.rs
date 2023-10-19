@@ -5,6 +5,7 @@ use crate::*;
 use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_contracts::{NewUserMintRequest, NewUserAdvertiseRequest, NewUserContractRequest, NewUserAddNftToContractRequest, NewUserNftBurnRequest};
+use crate::models::users_nfts::{NewUserNftRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -2027,25 +2028,6 @@ async fn deposit(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
-                            return error_resp;
-                        };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
                         let deposit_object = deposit.to_owned();
 
                         let find_recipient_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
@@ -2060,42 +2042,23 @@ async fn deposit(
                             }
                         };
 
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_sender_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(deposit_object.from_cid.clone()), connection).await;
-                        let Ok(sender_info) = find_sender_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                deposit_object.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-
-                        let verification_res = wallet::evm::verify_signature(
-                            sender_info.screen_cid.clone().unwrap(), 
-                            deposit_object.tx_signature.as_str(),
-                            &deposit_object.hash_data
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &deposit_object.from_cid, 
+                            &deposit_object.tx_signature, 
+                            &deposit_object.hash_data, 
+                            connection
                         ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-                        
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp;
+                        };
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the deposit_object.amount field in deposit 
                             request body also if a user want to claim the card he gets paid by sending the exact
                             token that depositor has paid for to his wallet
@@ -2144,7 +2107,7 @@ async fn deposit(
                             let contract_owner = "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2".to_string();   
 
                             let (tx_hash, tid, res_burn_status) = start_minting_card_process(
-                                sender_info.screen_cid.unwrap(),
+                                user.screen_cid.unwrap(),
                                 deposit_object.clone(),  
                                 recipient_info.clone(),
                                 contract_address.clone(),
@@ -2507,25 +2470,19 @@ async fn withdraw(
 
                     } else { /* not rate limited, we're ok to go */
 
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
+                        let withdraw_object = withdraw.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &withdraw_object.recipient_cid, 
+                            &withdraw_object.tx_signature, 
+                            &withdraw_object.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
                             return error_resp;
                         };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-                        
-                        let withdraw_object = withdraw.to_owned();
 
                         let get_deposit_info = UserDeposit::find_by_id(withdraw_object.deposit_id, connection).await;
                         let Ok(deposit_info) = get_deposit_info else{
@@ -2534,20 +2491,6 @@ async fn withdraw(
                             return error;
                         };
 
-                        let verification_res = wallet::evm::verify_signature(
-                            deposit_info.recipient_screen_cid.clone(), 
-                            &withdraw_object.tx_signature,
-                            &withdraw_object.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
                         let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
@@ -3263,62 +3206,24 @@ async fn add_nft_to_contract(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
+                        let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &add_nft_to_contract_request.from_cid, 
+                            &add_nft_to_contract_request.tx_signature, 
+                            &add_nft_to_contract_request.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
                             return error_resp;
                         };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        let add_nft_to_contract_request = add_nft_to_contract_request.to_owned();
-
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(add_nft_to_contract_request.from_cid.clone()), connection).await;
-                        let Ok(user_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                add_nft_to_contract_request.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-                        
-                        let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(), 
-                            &add_nft_to_contract_request.tx_signature,
-                            &add_nft_to_contract_request.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the add_nft_to_contract_request.amount field in 
                             request body.
                         
@@ -3331,6 +3236,7 @@ async fn add_nft_to_contract(
 
                             // a user can have one public and one private room which contains multiple collections
                             // it'll link the nft to the private room of the user and upload to ipfs, this doesn't mint it!
+                            // once an nft gets minted the nft will go to the owner public room
                             // ...
                             
                             todo!()
@@ -3482,62 +3388,24 @@ async fn create_contract(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
+                        let create_contract_request = create_contract_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &create_contract_request.from_cid, 
+                            &create_contract_request.tx_signature, 
+                            &create_contract_request.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
                             return error_resp;
                         };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        let create_contract_request = create_contract_request.to_owned();
-
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(create_contract_request.from_cid.clone()), connection).await;
-                        let Ok(user_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                create_contract_request.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-                        
-                        let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(),
-                            &create_contract_request.tx_signature,
-                            &create_contract_request.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the create_contract_request.amount field in 
                             request body.
                         
@@ -3601,6 +3469,187 @@ async fn create_contract(
         }
     }
 
+
+}
+
+#[post("/nft/create")]
+#[passport(user)]
+async fn create_nft(
+    req: HttpRequest,
+    create_nft_request: web::Json<NewUserNftRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-create_nft", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_nft");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        let create_nft_request = create_nft_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &create_nft_request.from_cid, 
+                            &create_nft_request.tx_signature, 
+                            &create_nft_request.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp;
+                        };
+
+                        /* 
+
+                            note that when a user wants to deposit, frontend must call the get token price api 
+                            to get the latest and exact equivalent token of the token price to charge the 
+                            user for paying that price which is the create_nft_request.amount field in 
+                            request body.
+                        
+                        */
+                        if user.balance.is_some() && 
+                            user.balance.unwrap() > 0 && 
+                            user.balance.unwrap() > create_nft_request.amount{
+                            
+                            let new_balance = user.balance.unwrap() - create_nft_request.amount;
+
+                            // this api will store the nft pic in ipfs (don't mint it)
+                            // then store info in nfts table
+                            // add nft to collection
+                            // ...
+
+                            todo!()
+                            
+                            
+                        } else{
+                            resp!{
+                                &[u8], // the date type
+                                &[], // the data itself
+                                INSUFFICIENT_FUNDS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+                    }
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
 
 }
 
@@ -3704,62 +3753,24 @@ async fn advertise_contract(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
+                        let advertise_request = advertise_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &advertise_request.from_cid, 
+                            &advertise_request.tx_signature, 
+                            &advertise_request.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
                             return error_resp;
                         };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        let advertise_request = advertise_request.to_owned();
-
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(advertise_request.from_cid.clone()), connection).await;
-                        let Ok(user_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                advertise_request.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-                        
-                        let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(),
-                            &advertise_request.tx_signature,
-                            &advertise_request.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the advertise_request.amount field in 
                             request body.
                         
@@ -3921,74 +3932,24 @@ async fn mint(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
-                            return error_resp;
-                        };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
                         let mint_request_object = mint_request_object.to_owned();
-
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(mint_request_object.from_cid.clone()), connection).await;
-                        let Ok(user_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                mint_request_object.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-                        
-                        let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(), 
-                            &mint_request_object.tx_signature,
-                            &mint_request_object.hash_data
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &mint_request_object.from_cid, 
+                            &mint_request_object.tx_signature, 
+                            &mint_request_object.hash_data, 
+                            connection
                         ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
-                        let find_user_screen_cid = User::find_by_username(&mint_request_object.recipient, connection).await;
-                        let Ok(recipient_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                mint_request_object.recipient, // response data
-                                &RECIPIENT_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp;
                         };
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the mint_request_object.amount field in 
                             request body.
                         
@@ -4152,62 +4113,24 @@ async fn burn(
 
                     } else {
 
-                        /* making sure that the user has a full filled paypal id */
-                        let get_user = User::find_by_id(_id, connection).await;
-                        let Ok(user) = get_user else{
-                            let error_resp = get_user.unwrap_err();
+                        let nft_burn_request = nft_burn_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &nft_burn_request.from_cid, 
+                            &nft_burn_request.tx_signature, 
+                            &nft_burn_request.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
                             return error_resp;
                         };
-
-                        /* if the phone wasn't verified user can't deposit */
-                        if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                NOT_VERIFIED_PHONE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        let nft_burn_request = nft_burn_request.to_owned();
-
-                        /* 
-                            first we'll try to find the a user with the passed in screen_cid 
-                            generated from keccak256 of cid then we'll go for the verification process 
-                        */
-                        let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(nft_burn_request.from_cid.clone()), connection).await;
-                        let Ok(user_info) = find_user_screen_cid else{
-                            
-                            resp!{
-                                String, // the data type
-                                nft_burn_request.from_cid, // response data
-                                &USER_SCREEN_CID_NOT_FOUND, // response message
-                                StatusCode::NOT_FOUND, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-                        
-                        let verification_res = wallet::evm::verify_signature(
-                            user_info.screen_cid.unwrap(), 
-                            &nft_burn_request.tx_signature,
-                            &nft_burn_request.hash_data
-                        ).await;
-                        if verification_res.is_err(){
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                &INVALID_SIGNATURE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
 
                         /* 
 
                             note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the gift card price to charge the 
+                            to get the latest and exact equivalent token of the token price to charge the 
                             user for paying that price which is the nft_burn_request.amount field in 
                             request body.
                         
@@ -4820,14 +4743,14 @@ pub mod exports{
     pub use super::create_event;
     pub use super::vote_to_proposal;
     pub use super::participate_in_event;
-    pub use super::create_nft; // upload to ipfs only
     */
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
+    pub use super::charge_wallet_request;
+    pub use super::create_contract; /* create collection */
+    pub use super::create_nft; // upload to ipfs only
+    pub use super::advertise_contract;
     pub use super::mint;
     pub use super::burn;
-    pub use super::charge_wallet_request;
-    pub use super::create_contract;
     pub use super::add_nft_to_contract;
-    pub use super::advertise_contract;
 }
