@@ -14,3 +14,4 @@ pub mod users_phones;
 pub mod users_contracts;
 pub mod users_checkouts;
 pub mod users_galleries;
+pub mod users_nfts;
