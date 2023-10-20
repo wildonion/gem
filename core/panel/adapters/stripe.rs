@@ -202,7 +202,8 @@ pub async fn create_session(
     let stripe_automatic_tax = env::var("STRIPE_AUTOMATIC_TAX").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
-    // https://stripe.com/docs/payments/checkout/present-local-currencies?platform=automatic-currency-conversion#supported-currencies-and-integrations
+    /* setup customer mail to enable multi currency feature based on user region */
+    // more info: https://stripe.com/docs/payments/checkout/present-local-currencies?platform=automatic-currency-conversion#supported-currencies-and-integrations
     let mut splitted_mail = user_mail.split("@");
     let local_part = splitted_mail.next().unwrap();
     let mail_domain = splitted_mail.next().unwrap();

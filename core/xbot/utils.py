@@ -334,8 +334,9 @@ def scrape_like(username, tweet_id):
         #either user didnt found or list of users who liked are empty
         return False
 
-def scrape_retweet(username, tweet_id, main_account="ConseGemNFT"):
+def scrape_retweet(username, tweet_id):
     try:
+
         for idx in range(len(clients)):
             try:
                 
@@ -420,19 +421,22 @@ def scrape_retweet(username, tweet_id, main_account="ConseGemNFT"):
                     "x_app_limit_24hour_reset": headers.get('x-app-limit-24hour-reset'),
                 }
 
-                    
-                tweet_text = f"RT @{main_account}: {tweet['text']}"
+                main_tweet_text = tweet['text']
+                search_string = get_search_string(main_tweet_text)
+                print("user tweet must contains", tweet['text'])
+                print("search string", search_string)
+                
                 for tweet in tweets:
                     
-                    if str(tweet['text']).startswith(f"RT @{main_account}"):
+                    print("user pure tweet", tweet['text'])
+                    
+                    if str(tweet['text']).startswith("RT"):
                         slice_user_tweet_text = tweet['text'].replace("…", "")
-                        user_tweet_len = len(slice_user_tweet_text)
-                        slice_tweet_text = tweet_text[:user_tweet_len]
-                        print("current user twee >>>> ", slice_user_tweet_text)
-                        print("must be retweeted >>>> ", slice_tweet_text)
-                        print("==================================")
-                        if slice_user_tweet_text == slice_tweet_text:
+                        print("sliced user tweet: ", slice_user_tweet_text)
+                        if search_string in tweet['text']:
                             return True
+                    else:
+                        print("no retweet found")
                 return False
             except tweepy.errors.TooManyRequests:
                 continue
@@ -442,6 +446,17 @@ def scrape_retweet(username, tweet_id, main_account="ConseGemNFT"):
     except:
         print("error")
         return False
+
+
+def get_search_string(must_contains: str, max_length=70) -> str:
+    # If the text is shorter than max_length, return it as-is
+    if len(must_contains) <= max_length:
+        return must_contains
+
+    # Otherwise, return the first max_length characters, but try to avoid truncating words
+    shortened = must_contains[:max_length]
+    last_space = shortened.rfind(' ')
+    return shortened[:last_space]
 
 
 def scrape_tweet(username, text):
@@ -519,6 +534,58 @@ def scrape_tweet(username, text):
         print("time is up")
         return "403"
         
+    except:
+        print("error")
+        return False
+    
+def test_like(username):
+    try:
+
+        for idx in range(len(clients)):
+            try:
+                
+                
+                resp = clients[idx].get_user(username=username)
+                headers = resp.headers
+                user = resp.json().get('data')['id']
+    
+                print("before get liked tweets")
+                resp1 = clients[idx].get_liked_tweets(id=int(user))
+                headers = resp1.headers
+                user_likings = resp1.json().get('data')
+                
+                print("before user_likings")
+                
+                return user_likings
+            except tweepy.errors.TooManyRequests:
+                continue
+        print("time is up")
+        return "403"
+    except:
+        print("didnt found any user")
+        #either user didnt found or list of users who liked are empty
+        return False
+    
+    
+def test_tweet(username):
+    try:
+        for idx in range(len(clients)):
+            try:
+                
+                resp = clients[idx].get_user(username=username)
+                headers = resp.headers
+                user = resp.json().get('data')['id']
+                
+                resp1 = clients[idx].get_users_tweets(id=int(user))
+                headers = resp1.headers
+                tweets = resp1.json().get('data')
+
+                return tweets
+            except tweepy.errors.TooManyRequests:
+                continue
+        print("time is up")
+        return "403"
+    
     except:
         print("error")
         return False

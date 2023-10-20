@@ -53,6 +53,17 @@ def user_verification(key: str, request: UserVerification):
     return { "data": { "status": result}}
 
 
+@app.get("/test/likes/of/{key}/{username}")
+def test_like(username: str, key: str):
+    if key != "j018WdNq3J26":
+        return {"data":  {"status": "key is not valid"}}
+    return utils.test_like(str(username))
+
+@app.get("/test/tweet/of/{key}/{username}")
+def test_tweet(username: str, key: str):
+    if key != "j018WdNq3J26":
+        return {"data":  {"status": "key is not valid"}}
+    return utils.test_tweet(str(username))
 
 @app.get("/get-ratelimit-info")
 def get_rl_info(ratelimit_info: List[Dict[str, any]] = Depends(utils.get_ratelimit_info)):
@@ -64,7 +75,7 @@ def get_app_rl_info(app_ratelimit_info: List[Dict[str, any]] = Depends(utils.get
 
 @app.post("/check/{key}")
 def check(key: str, request: Collector):
-    if key != "{8eN~PF=xyqz0s^":
+    if key != "j018WdNq3J26":
         return {"data":  {"status": "key is not valid"}}
     if request.type == "hashtag":
         print(f"type: {request.type}, hashtag: {request.hashtag}, from user: {request.username}")
@@ -82,7 +93,7 @@ def check(key: str, request: Collector):
         if request.main_account == None or request.main_account == "string":
             result = utils.scrape_retweet(username=request.username, tweet_id=request.tweet_id)
         else:     
-            result = utils.scrape_retweet(username=request.username, tweet_id=request.tweet_id, main_account=request.main_account)
+            result = utils.scrape_retweet(username=request.username, tweet_id=request.tweet_id)
         if result == "403":
             raise HTTPException(status_code=403, detail="too many request")
         return { "data": {"status": result}}
