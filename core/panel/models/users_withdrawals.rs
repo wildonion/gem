@@ -1,7 +1,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::{users_withdrawals, users_deposits::dsl::users_deposits, users_deposits::id as users_deposits_id};
 use crate::constants::*;
@@ -162,9 +162,26 @@ impl UserWithdrawal{
 
     }
 
-    pub async fn get_all_for(withdrawer_cid: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+    pub async fn get_all_for(withdrawer_cid: String, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_withdrawals = users_withdrawals
+            .offset(from)
+            .limit((to - from) + 1)
             .filter(recipient_cid.eq(withdrawer_cid.clone()))
             .load::<UserWithdrawal>(connection);
             
@@ -197,9 +214,26 @@ impl UserWithdrawal{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+    pub async fn get_all(limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_withdrawals = users_withdrawals
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserWithdrawal>(connection);
             
         let Ok(deposits) = user_withdrawals else{

@@ -447,10 +447,11 @@ async fn logout(
         ("jwt" = [])
     )
 )]
-#[get("/get-tasks")]
+#[get("/get-tasks/")]
 #[passport(admin, user, dev)]
 async fn get_tasks(
         req: HttpRequest,  
+        limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -500,7 +501,7 @@ async fn get_tasks(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match Task::get_all(connection).await{
+                    match Task::get_all(limit, connection).await{
                         Ok(all_tasks) => {
 
                             resp!{

@@ -48,10 +48,8 @@ pub static NO_PHONE_FOR_THIS_USER: &str = "There Is No Verification Process For 
 pub static ALREADY_VERIFIED_PHONE: &str = "Phone Is Already Verified";
 pub static OTP_PROVIDER_DIDNT_SEND_CODE: &str = "Otp Provider Didn't Send The Code";
 pub static REGION_IS_NONE: &str = "Make Sure You Have Built Crypto Id Already";
+pub static INVALID_QUERY_LIMIT: &str = "Invalid Query Limit";
 
-pub const DEV_ACCESS: u8 = 0;
-pub const ADMIN_ACCESS: u8 = 1; // God access
-pub static BUSY_BOT: &str = "Bot Is Busy";
 pub static NOT_IMPLEMENTED: &str = "Not Implemented";
 pub static FETCHED: &str = "Fetched Successfully";
 pub static LOGGEDIN: &str = "Loggedin Successfully";
@@ -70,15 +68,13 @@ pub static INVALID_TOKEN: &str = "Invalid Token Or Mafia Server Is Down";
 pub static EVENT_IMG_UPDATED: &str = "Event Image Updated Successfully";
 pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg or .jpeg]";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
-pub static ACCESS_GRANTED: &str = "Access Granted";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static DO_LOGIN: &str = "Invalid Token Time, Please Login To Generate New JWT";
 pub static USER_NOT_FOUND: &str = "User Not Found";
 pub static INSUFFICIENT_FUNDS: &str = "Insufficient Balance";
 pub static RECIPIENT_NOT_FOUND: &str = "No Recipient Found With This Username";
-pub static SENDER_NOT_FOUND: &str = "No Sender Found With This Id";
-pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This Recipient";
-pub static USER_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypt Id Found For This User";
+pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypto Id Found For This Recipient";
+pub static USER_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypto Id Found For This User";
 pub static SENDER_CANT_BE_RECEIVER: &str = "Sender Can't Be The Recipient";
 pub static USERNAME_CANT_BE_EMPTY: &str = "Username Can't Be Empty";
 pub static WALLET_CANT_BE_EMPTY: &str = "Wallet Can't Be Empty";
@@ -122,25 +118,16 @@ pub static STRIPE_INVALID_WEBHOOK_SIGNATURE: &str = "Invalid Webhook Signature";
 pub static TWITTER_24HOURS_LIMITED: &str = "24 Hours Rate Limited";
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
 pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";
-pub static TWITTER_CODE_IS_NOT_VALID: &str = "Twitter Code Task Is Not Done";
 pub static TWITTER_VERIFIED_CODE: &str = "Twitter Code Task Is Done";
 pub static TWITTER_VERIFIED_USERNAME: &str = "Twitter Username Is Verified";
-pub static TWITTER_USER_DATA_NOT_FOUND: &str = "Twitter User Data Followers Not Found";
-pub static TWITTER_USER_FOLLOWERS_NOT_FOUND: &str = "Twitter User Followers Not Found";
-pub static TWITTER_USER_TWEETS_NOT_FOUND: &str = "Twitter User Tweets Not Found";
 pub static TWITTER_VERIFIED_TWEET: &str = "Twitter Tweet Content Task Is Done";
 pub static TWITTER_VERIFIED_COMMENT: &str = "Twitter Comment Task Is Done";
-pub static TWITTER_NOT_VERIFIED_TWEET_CONTENT: &str = "Twitter Tweet Content Task Is Not Done";
 pub static TWITTER_VERIFIED_LIKE: &str = "Twitter Like Task Is Done";
-pub static TWITTER_NOT_VERIFIED_LIKE: &str = "Twitter Like Task Is Not Done";
-pub static TWITTER_TWEET_NOT_FOUND: &str = "Twitter Tweet Not Found For The Given Id";
 pub static TWITTER_VERIFIED_RETWEET: &str = "Twitter Retweet Task Is Done";
-pub static TWITTER_NOT_VERIFIED_RETWEET: &str = "Twitter Retweet Task Is Not Done";
 pub static TWITTER_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Done";
-pub static TWITTER_NOT_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Not Done";
-pub static TWITTER_CANT_LOOP_OVER_ACCOUNTS: &str = "Can't Loop Over Twitter Accounts";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
+pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
 
 pub static GITHUB_WEBHOOK_ACCEPTED: &str = "Accepted";
 pub static GITHUB_WEBHOOK_EVENT_HEADER_ISSUE: &str = "Can't Get Github Event Header";
@@ -149,6 +136,8 @@ pub static GITHUB_WEBHOOK_EVENT_HEADER_ISSUE: &str = "Can't Get Github Event Hea
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 
     u8 bits is 1 byte which is 2 chars in hex 
+    the representation of error code is in u16
+    which requires 4 chars of hex
 */
 pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE; // 65534
 pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 65535

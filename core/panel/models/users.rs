@@ -12,7 +12,7 @@ use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
 use wallexerr::Wallet;
 use crate::*;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data};
+use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
@@ -1837,9 +1837,108 @@ impl User{
     
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, PanelHttpResponse>{
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) -> Result<Vec<UserData>, PanelHttpResponse>{
 
-        match users.load::<User>(connection)
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+        
+        match users
+            .offset(from)
+            .limit((to - from) + 1)
+            .load::<User>(connection)
+        {
+            Ok(all_users) => {
+                Ok(
+                    all_users
+                        .into_iter()
+                        .map(|u| UserData { 
+                            id: u.id, 
+                            region: u.region.clone(),
+                            username: u.clone().username, 
+                            bio: u.bio.clone(),
+                            avatar: u.avatar.clone(),
+                            banner: u.banner.clone(),
+                            activity_code: u.clone().activity_code, 
+                            twitter_username: u.clone().twitter_username, 
+                            facebook_username: u.clone().facebook_username, 
+                            discord_username: u.clone().discord_username, 
+                            identifier: u.clone().identifier, 
+                            user_role: {
+                                match u.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: u.token_time,
+                            balance: u.balance,
+                            last_login: { 
+                                if u.last_login.is_some(){
+                                    Some(u.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: u.created_at.to_string(),
+                            updated_at: u.updated_at.to_string(),
+                            mail: u.clone().mail,
+                            is_mail_verified: u.clone().is_mail_verified,
+                            is_phone_verified: u.clone().is_phone_verified,
+                            phone_number: u.clone().phone_number,
+                            paypal_id: u.clone().paypal_id,
+                            account_number: u.clone().account_number,
+                            device_id: u.clone().device_id,
+                            social_id: u.clone().social_id,
+                            cid: u.clone().cid,
+                            screen_cid: u.clone().screen_cid,
+                            snowflake_id: u.snowflake_id,
+                            stars: u.stars
+                        })
+                        .collect::<Vec<UserData>>()
+                )
+            },
+            Err(e) => {
+
+                let resp_err = &e.to_string();
+
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                 
+                let error_content = &e.to_string();
+                let error_content = error_content.as_bytes().to_vec();  
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::get_all");
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: resp_err,
+                    status: 500
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
+
+    }
+
+    pub async fn get_all_without_limit(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, PanelHttpResponse>{
+        
+        match users
+            .load::<User>(connection)
         {
             Ok(all_users) => {
                 Ok(

@@ -1141,21 +1141,21 @@ async fn verify_twitter_account(
                     let now = chrono::Local::now().timestamp_millis() as u64;
                     let mut is_rate_limited = false;
                     
-                    let redis_result_rate_limiter: RedisResult<String> = redis_conn.get("rate_limiter").await;
-                    let mut redis_rate_limiter = match redis_result_rate_limiter{
+                    let redis_result_verify_username_rate_limiter: RedisResult<String> = redis_conn.get("verify_username_rate_limiter").await;
+                    let mut redis_verify_username_rate_limiter = match redis_result_verify_username_rate_limiter{
                         Ok(data) => {
                             let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
                             rl_data
                         },
                         Err(e) => {
-                            let empty_rate_limiter = HashMap::<u64, u64>::new();
-                            let rl_data = serde_json::to_string(&empty_rate_limiter).unwrap();
-                            let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap();
+                            let empty_verify_username_rate_limiter = HashMap::<u64, u64>::new();
+                            let rl_data = serde_json::to_string(&empty_verify_username_rate_limiter).unwrap();
+                            let _: () = redis_conn.set("verify_username_rate_limiter", rl_data).await.unwrap();
                             HashMap::new()
                         }
                     };
 
-                    if let Some(last_used) = redis_rate_limiter.get(&(_id as u64)){
+                    if let Some(last_used) = redis_verify_username_rate_limiter.get(&(_id as u64)){
                         if now - *last_used < chill_zone_duration{
                             is_rate_limited = true;
                         }
@@ -1175,9 +1175,9 @@ async fn verify_twitter_account(
 
                         /* updating the last rquest time */
                         //// this will be used to handle shared state between clusters
-                        redis_rate_limiter.insert(_id as u64, now); //// updating the redis rate limiter map
-                        let rl_data = serde_json::to_string(&redis_rate_limiter).unwrap();
-                        let _: () = redis_conn.set("rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+                        redis_verify_username_rate_limiter.insert(_id as u64, now); //// updating the redis rate limiter map
+                        let rl_data = serde_json::to_string(&redis_verify_username_rate_limiter).unwrap();
+                        let _: () = redis_conn.set("verify_username_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
 
                         /* we can pass usernmae by reference or its slice form instead of cloning it */
@@ -1259,10 +1259,11 @@ async fn verify_twitter_account(
         ("jwt" = [])
     )
 )]
-#[get("/report-tasks/{user_id}")]
+#[get("/report-tasks/{user_id}/")]
 #[passport(user)]
 pub async fn tasks_report(
         req: HttpRequest,
+        limit: web::Query<Limit>,
         user_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -1312,7 +1313,7 @@ pub async fn tasks_report(
                     let role = token_data.user_role;
 
 
-                    match UserTask::reports(user_id.to_owned(), connection).await{
+                    match UserTask::reports(user_id.to_owned(), limit, connection).await{
                         Ok(user_stask_reports) => {
 
                             resp!{
@@ -1423,180 +1424,227 @@ async fn charge_wallet_request(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let charge_wallet_request_object = charge_wallet_request.to_owned();
-                    let is_request_verified = verify_requested_data(
-                        _id, 
-                        &charge_wallet_request_object.buyer_cid, 
-                        &charge_wallet_request_object.tx_signature, 
-                        &charge_wallet_request_object.hash_data, 
-                        connection
-                    ).await;
+                    let identifier_key = format!("{}-charge-wallet-request", _id);
 
-                    let Ok(user) = is_request_verified else{
-                        let error_resp = is_request_verified.unwrap_err();
-                        return error_resp;
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "make_cid");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
                     };
 
-                    if charge_wallet_request_object.tokens < 0 &&
-                        charge_wallet_request_object.tokens < 5{
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+
+                        let charge_wallet_request_object = charge_wallet_request.to_owned();
+                        let is_request_verified = verify_requested_data(
+                            _id, 
+                            &charge_wallet_request_object.buyer_cid, 
+                            &charge_wallet_request_object.tx_signature, 
+                            &charge_wallet_request_object.hash_data, 
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp;
+                        };
+
+                        if charge_wallet_request_object.tokens < 0 &&
+                            charge_wallet_request_object.tokens < 5{
+
+                                resp!{
+                                    i32, // the data type
+                                    _id, // response data
+                                    INVALID_TOKEN_AMOUNT, // response message
+                                    StatusCode::NOT_ACCEPTABLE, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+
+                            }
+
+                        if user.region.is_none(){
 
                             resp!{
                                 i32, // the data type
                                 _id, // response data
-                                INVALID_TOKEN_AMOUNT, // response message
+                                REGION_IS_NONE, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
 
                         }
 
-                    if user.region.is_none(){
+                        let u_region = user.region.as_ref().unwrap();
+                        let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
 
-                        resp!{
-                            i32, // the data type
-                            _id, // response data
-                            REGION_IS_NONE, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    }
-
-                    let u_region = user.region.as_ref().unwrap();
-                    let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
-
-                    match u_region.as_str(){
-                        "ir" => {
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                NOT_IMPLEMENTED, // response message
-                                StatusCode::NOT_IMPLEMENTED, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-
-                        },
-                        _ => {
-
-                            /* means that the api call can't return prices */
-                            if token_price.0 == 0{
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    CANT_GET_TOKEN_VALUE, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-                            /* 
-                                stripe will divide the amount by 100 in checkout page to get the precision 
-                                like if we have 50000 this will show $500 in checkout page as the default price
-                            */
-                            let usd_token_price = token_price.0; 
-
-                            /*  -------------------------------------------------------------
-                                note that we don't store the product, price and session data
-                                response came from stripe in db cause later on we can fetch 
-                                a single data of either product, price or checkout session 
-                                using stripe api.
-                                ------------------------------------------------------------- */
-                            let product = create_product(
-                                redis_client.clone(), 
-                                usd_token_price, 
-                                charge_wallet_request.tokens, 
-                                &charge_wallet_request.buyer_cid
-                            ).await;
-
-                            if product.id.is_none(){
-                                
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    STRIPE_PRODUCT_OBJECT_ISSUE, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            let price_id = create_price(
-                                redis_client.clone(), 
-                                usd_token_price, 
-                                &product.id.as_ref().unwrap(),
-                            ).await;
-
-                            if price_id.is_empty(){
+                        match u_region.as_str(){
+                            "ir" => {
 
                                 resp!{
                                     &[u8], // the data type
                                     &[], // response data
-                                    STRIPE_PRICE_OBJECT_ISSUE, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    NOT_IMPLEMENTED, // response message
+                                    StatusCode::NOT_IMPLEMENTED, // status code
                                     None::<Cookie<'_>>, // cookie
                                 }
-                            }
 
-                            let checkout_session_data = create_session(
-                                redis_client.clone(), 
-                                &price_id, 
-                                charge_wallet_request.tokens,
-                                /*  
-                                    since calling unwrap() takes the ownership of the object
-                                    and the type will be dropped from the ram, thus if the type
-                                    is being used in other scopes it's better to borrow it 
-                                    or clone it which we've used as_ref() to borrow it also if 
-                                    the user is here means that he has definitely the cid cause 
-                                    to build cid we need verified mail
-                                */
-                                user.region.as_ref().unwrap(),
-                                user.mail.as_ref().unwrap() 
-                            ).await;
+                            },
+                            _ => {
 
-                            if checkout_session_data.session_id.is_empty() || 
-                                checkout_session_data.session_url.is_empty() ||
-                                checkout_session_data.expires_at == 0{
-
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    STRIPE_SESSION_OBJECT_ISSUE, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            /* store users_checkouts data */
-                            let new_user_checkout = NewUserCheckout{
-                                user_cid: charge_wallet_request_object.buyer_cid,
-                                product_id: product.id.unwrap(),
-                                price_id,
-                                payment_status: checkout_session_data.payment_status,
-                                payment_intent: checkout_session_data.payment_intent,
-                                c_status: checkout_session_data.status,
-                                checkout_session_url: checkout_session_data.session_url,
-                                checkout_session_id: checkout_session_data.session_id,
-                                checkout_session_expires_at: checkout_session_data.expires_at,
-                                tokens: charge_wallet_request_object.tokens,
-                                usd_token_price,
-                                tx_signature: charge_wallet_request_object.tx_signature,
-                            };
-                            match UserCheckout::insert(new_user_checkout, connection).await{
-                                Ok(user_checkout_data) => {
-
+                                /* means that the api call can't return prices */
+                                if token_price.0 == 0{
                                     resp!{
-                                        UserCheckoutData, // the data type
-                                        user_checkout_data, // response data
-                                        STRIPE_STARTED_PAYAMENT, // response message
-                                        StatusCode::OK, // status code
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        CANT_GET_TOKEN_VALUE, // response message
+                                        StatusCode::EXPECTATION_FAILED, // status code
                                         None::<Cookie<'_>>, // cookie
                                     }
-                                },
-                                Err(resp) => {
-                                    resp
                                 }
-                            }
+                                /* 
+                                    stripe will divide the amount by 100 in checkout page to get the precision 
+                                    like if we have 50000 this will show $500 in checkout page as the default price
+                                */
+                                let usd_token_price = token_price.0; 
 
+                                /*  -------------------------------------------------------------
+                                    note that we don't store the product, price and session data
+                                    response came from stripe in db cause later on we can fetch 
+                                    a single data of either product, price or checkout session 
+                                    using stripe api.
+                                    ------------------------------------------------------------- */
+                                let product = create_product(
+                                    redis_client.clone(), 
+                                    usd_token_price, 
+                                    charge_wallet_request.tokens, 
+                                    &charge_wallet_request.buyer_cid
+                                ).await;
+
+                                if product.id.is_none(){
+                                    
+                                    resp!{
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        STRIPE_PRODUCT_OBJECT_ISSUE, // response message
+                                        StatusCode::EXPECTATION_FAILED, // status code
+                                        None::<Cookie<'_>>, // cookie
+                                    }
+                                }
+
+                                let price_id = create_price(
+                                    redis_client.clone(), 
+                                    usd_token_price, 
+                                    &product.id.as_ref().unwrap(),
+                                ).await;
+
+                                if price_id.is_empty(){
+
+                                    resp!{
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        STRIPE_PRICE_OBJECT_ISSUE, // response message
+                                        StatusCode::EXPECTATION_FAILED, // status code
+                                        None::<Cookie<'_>>, // cookie
+                                    }
+                                }
+
+                                let checkout_session_data = create_session(
+                                    redis_client.clone(), 
+                                    &price_id, 
+                                    charge_wallet_request.tokens,
+                                    /*  
+                                        since calling unwrap() takes the ownership of the object
+                                        and the type will be dropped from the ram, thus if the type
+                                        is being used in other scopes it's better to borrow it 
+                                        or clone it which we've used as_ref() to borrow it also if 
+                                        the user is here means that he has definitely the cid cause 
+                                        to build cid we need verified mail
+                                    */
+                                    user.region.as_ref().unwrap(),
+                                    user.mail.as_ref().unwrap() 
+                                ).await;
+
+                                if checkout_session_data.session_id.is_empty() || 
+                                    checkout_session_data.session_url.is_empty() ||
+                                    checkout_session_data.expires_at == 0{
+
+                                    resp!{
+                                        &[u8], // the data type
+                                        &[], // response data
+                                        STRIPE_SESSION_OBJECT_ISSUE, // response message
+                                        StatusCode::EXPECTATION_FAILED, // status code
+                                        None::<Cookie<'_>>, // cookie
+                                    }
+                                }
+
+                                /* store users_checkouts data */
+                                let new_user_checkout = NewUserCheckout{
+                                    user_cid: charge_wallet_request_object.buyer_cid,
+                                    product_id: product.id.unwrap(),
+                                    price_id,
+                                    payment_status: checkout_session_data.payment_status,
+                                    payment_intent: checkout_session_data.payment_intent,
+                                    c_status: checkout_session_data.status,
+                                    checkout_session_url: checkout_session_data.session_url,
+                                    checkout_session_id: checkout_session_data.session_id,
+                                    checkout_session_expires_at: checkout_session_data.expires_at,
+                                    tokens: charge_wallet_request_object.tokens,
+                                    usd_token_price,
+                                    tx_signature: charge_wallet_request_object.tx_signature,
+                                };
+                                match UserCheckout::insert(new_user_checkout, connection).await{
+                                    Ok(user_checkout_data) => {
+
+                                        resp!{
+                                            UserCheckoutData, // the data type
+                                            user_checkout_data, // response data
+                                            STRIPE_STARTED_PAYAMENT, // response message
+                                            StatusCode::OK, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        }
+                                    },
+                                    Err(resp) => {
+                                        resp
+                                    }
+                                }
+
+                            }
                         }
+
+
                     }
                         
                 },
@@ -2221,10 +2269,11 @@ async fn deposit(
         ("jwt" = [])
     )
 )]
-#[get("/deposit/get/user/{cid}")]
+#[get("/deposit/get/user/{cid}/")]
 #[passport(user)]
 async fn get_all_user_deposits(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     user_cid: web::Path<String>
 ) -> PanelHttpResponse{
@@ -2278,7 +2327,7 @@ async fn get_all_user_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match UserDeposit::get_all_for(user_cid.to_string(), connection).await{
+                    match UserDeposit::get_all_for(user_cid.to_string(), limit, connection).await{
                         Ok(user_deposits) => {
 
                             resp!{
@@ -2610,10 +2659,11 @@ async fn withdraw(
         ("jwt" = [])
     )
 )]
-#[get("/withdraw/get/user/{cid}")]
+#[get("/withdraw/get/user/{cid}/")]
 #[passport(user)]
 async fn get_all_user_withdrawals(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     user_cid: web::Path<String>
 ) -> PanelHttpResponse{
@@ -2667,7 +2717,7 @@ async fn get_all_user_withdrawals(
                     let _id = token_data._id;
                     let role = token_data.user_role;
     
-                    match UserWithdrawal::get_all_for(user_cid.to_string(), connection).await{
+                    match UserWithdrawal::get_all_for(user_cid.to_string(), limit, connection).await{
                         Ok(user_withdrawals) => {
 
                             resp!{
@@ -2726,10 +2776,11 @@ async fn get_all_user_withdrawals(
 
 }
 
-#[get("/checkout/get/unpaid/user/{cid}")]
+#[get("/checkout/get/unpaid/user/{cid}/")]
 #[passport(user)]
 async fn get_all_user_unpaid_checkouts(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     user_cid: web::Path<String>
 ) -> PanelHttpResponse{
@@ -2783,7 +2834,7 @@ async fn get_all_user_unpaid_checkouts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
     
-                    match UserCheckout::get_all_unpaid_for(&user_cid, connection).await{
+                    match UserCheckout::get_all_unpaid_for(&user_cid, limit, connection).await{
                         Ok(user_checkouts) => {
 
                             resp!{
@@ -2842,10 +2893,11 @@ async fn get_all_user_unpaid_checkouts(
 
 }
 
-#[get("/checkout/get/paid/user/{cid}")]
+#[get("/checkout/get/paid/user/{cid}/")]
 #[passport(user)]
 async fn get_all_user_paid_checkouts(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     user_cid: web::Path<String>
 ) -> PanelHttpResponse{
@@ -2899,7 +2951,7 @@ async fn get_all_user_paid_checkouts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
     
-                    match UserCheckout::get_all_paid_for(&user_cid, connection).await{
+                    match UserCheckout::get_all_paid_for(&user_cid, limit, connection).await{
                         Ok(user_checkouts) => {
 
                             resp!{
@@ -2972,10 +3024,11 @@ async fn get_all_user_paid_checkouts(
         ("jwt" = [])
     )
 )]
-#[get("/deposit/get/unclaimed/recipient/{recipient_cid}")]
+#[get("/deposit/get/unclaimed/recipient/{recipient_cid}/")]
 #[passport(user)]
 async fn get_recipient_unclaimed_deposits(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     recipient_cid: web::Path<String>
 ) -> PanelHttpResponse{
@@ -3032,7 +3085,7 @@ async fn get_recipient_unclaimed_deposits(
                     /* generate keccak256 from recipient_cid to mint nft to */
                     let polygon_recipient_address = Wallet::generate_keccak256_from(recipient_cid.to_owned().clone());
 
-                    match UserDeposit::get_unclaimeds_for(polygon_recipient_address, connection).await{
+                    match UserDeposit::get_unclaimeds_for(polygon_recipient_address, limit, connection).await{
                         Ok(user_unclaimeds) => {
 
                             resp!{
@@ -3600,17 +3653,17 @@ pub mod exports{
     pub use super::upload_avatar;
     pub use super::upload_banner;
     pub use super::update_mafia_player_avatar;
-    pub use super::tasks_report;
     pub use super::make_cid;
+    pub use super::request_mail_code;
+    pub use super::verify_mail_code;
+    pub use super::request_phone_code;
+    pub use super::verify_phone_code;
+    pub use super::tasks_report;
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::get_all_user_unpaid_checkouts;
     pub use super::get_all_user_paid_checkouts;
-    pub use super::request_mail_code;
-    pub use super::verify_mail_code;
-    pub use super::request_phone_code;
-    pub use super::verify_phone_code;
     /*
     pub use super::add_nft_comment;
     pub use super::like_nft;
@@ -3619,7 +3672,6 @@ pub mod exports{
     pub use super::add_user_to_friend;
     pub use super::remove_user_from_friend;
     pub use super::get_private_rooms_of; // /?from=1&to=50
-    pub use super::create_private_room;
     */
     /* ---------------------------------------------------- 
         user must pay token for the following calls since
@@ -3627,6 +3679,7 @@ pub mod exports{
         calls also invoking the followings need CID signature 
         and user must sign the calls with his private key
     ------------------------------------------------------- */
+    // pub use super::create_private_room;
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
     pub use super::charge_wallet_request;

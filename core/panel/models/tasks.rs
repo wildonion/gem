@@ -8,7 +8,7 @@
 use crate::*;
 use crate::models::users::User;
 use super::users_tasks::UserTask;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number};
+use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, Limit};
 use crate::schema::{tasks, users, users_tasks};
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -342,8 +342,114 @@ impl Task{
                     
     }
 
-    pub async fn get_all_admin(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
+    pub async fn get_all_admin(owner_id: i32, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
 
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+        
+        /* get the passed in admin info by its id */
+        let user = match users::table
+            .filter(users::id.eq(owner_id))
+            .select(User::as_select())
+            .offset(from)
+            .limit((to - from) + 1)
+            .get_result::<User>(connection)
+            {
+                Ok(single_user) => single_user,
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Task::get_all_admin");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            };
+
+        /* get all tasks belonging to the passed in admin id */
+        match Task::belonging_to(&user)
+            .select(Task::as_select())
+            .load(connection)
+            {
+                Ok(admin_tasks) => {
+                    Ok(
+                        admin_tasks
+                            .clone()
+                            .into_iter()
+                            .map(|t| TaskData{
+                                id: t.id,
+                                task_name: t.task_name,
+                                task_description: t.task_description,
+                                task_score: t.task_score,
+                                task_priority: t.task_priority,
+                                hashtag: t.hashtag,
+                                tweet_content: t.tweet_content,
+                                retweet_id: t.retweet_id,
+                                like_tweet_id: t.like_tweet_id,
+                                admin_id: t.admin_id,
+                                created_at: t.created_at.to_string(),
+                                updated_at: t.updated_at.to_string(),
+                            })
+                            .collect::<Vec<TaskData>>()
+                    )
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Task::get_all_admin");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn get_all_admin_without_limit(owner_id: i32,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
+        
         /* get the passed in admin info by its id */
         let user = match users::table
             .filter(users::id.eq(owner_id))
@@ -430,9 +536,27 @@ impl Task{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
+    pub async fn get_all(limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<TaskData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
 
-        match tasks.load::<Task>(connection)
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        match tasks
+            .offset(from)
+            .limit((to - from) + 1)
+            .load::<Task>(connection)
         {
             Ok(all_tasks) => {
                 Ok(

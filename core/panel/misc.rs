@@ -204,6 +204,12 @@ pub struct GithubCommitWebhookEventRequest{
 
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct Limit{
+    pub from: Option<i64>,
+    pub to: Option<i64>
+}
+
 pub async fn is_bot_24hours_limited(
     connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
     rl_data: Vec<XAppRlInfo>

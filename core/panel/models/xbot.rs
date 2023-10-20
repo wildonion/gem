@@ -146,107 +146,6 @@ impl Twitter{
 
     }
 
-    pub async fn is_twitter_user_verified(&self, account_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, PanelHttpResponse>{
-
-        let tusername = if account_name.is_empty(){
-            "".to_string()
-        } else{
-            if account_name.contains("@"){
-                account_name.replace("@", "")
-            } else{
-                account_name.to_string()
-            }
-        };
-            
-        let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-        let Ok(twitter_user_data) = get_user_twitter_data else{
-            return Err(get_user_twitter_data.unwrap_err());
-        };
-
-
-        for api in self.apis.clone(){
-            match api
-                .get_user_followers(twitter_user_data.id)
-                .send()
-                .await
-                {
-                    Ok(res) =>{
-
-                        match res.into_data(){
-                            Some(followers) => {
-
-                                let account_creation_day = twitter_user_data.created_at.unwrap().day();
-                                let now_day = OffsetDateTime::now_utc().day();
-
-                                if now_day - account_creation_day > 7
-                                    && followers.len() > 10{
-
-                                    return Ok(true);
-
-                                } else{
-
-                                    let resp = Response{
-                                        data: Some(tusername),
-                                        message: TWITTER_USER_IS_NOT_VALID,
-                                        status: 406
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::NotAcceptable().json(resp))
-                                    );
-                                }
-            
-                            },
-                            None => {
-
-                                let resp = Response{
-                                    data: Some(tusername),
-                                    message: TWITTER_USER_FOLLOWERS_NOT_FOUND,
-                                    status: 404
-                                };
-                                return Err(
-                                    Ok(HttpResponse::NotFound().json(resp))
-                                );
-
-                            }
-                        }
-                    },
-                    Err(e) => {
-
-                        if e.to_string().contains("[429 Too Many Requests]"){
-                            continue;
-                        } else{
-
-                            let resp = Response{
-                                data: Some(tusername),
-                                message: &e.to_string(),
-                                status: 500
-                            };
-                            return Err(
-                                Ok(HttpResponse::InternalServerError().json(resp))
-                            );
-                            
-
-                        }
-
-                    }
-                }
-
-        }
-
-        let resp = Response{
-            data: Some(tusername),
-            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
-            status: 500
-        };
-        return Err(
-            Ok(HttpResponse::InternalServerError().json(resp))
-        );
-
-
-    }
-
-
-
     /* VERIFY THE GIVEN TWITTER USERNAME  */
 
     pub async fn verify_username(&self, 
@@ -285,90 +184,13 @@ impl Twitter{
             
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-
-            for api in self.apis.clone(){
-                match api
-                    .get_user_followers(twitter_user_data.id)
-                    .send()
-                    .await
-                    {
-                        Ok(res) =>{
-    
-                            match res.into_data(){
-                                Some(followers) => {
-    
-                                    let account_creation_day = twitter_user_data.created_at.unwrap().day();
-                                    let now_day = OffsetDateTime::now_utc().day();
-    
-                                    if now_day - account_creation_day > 7
-                                        && followers.len() > 10{
-    
-                                        /* try to insert into users_tasks since it's done */
-                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-
-                                        return res;
-    
-                                    } else{
-                
-                                        resp!{
-                                            String, // the data type
-                                            tusername, // response data
-                                            TWITTER_USER_IS_NOT_VALID, // response message
-                                            StatusCode::NOT_ACCEPTABLE, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        }
-                                    }
-                
-                                },
-                                None => {
-    
-                                    resp!{
-                                        String, // the data type
-                                        tusername, // response data
-                                        TWITTER_USER_FOLLOWERS_NOT_FOUND, // response message
-                                        StatusCode::NOT_FOUND, // status code
-                                        None::<Cookie<'_>>, // cookie
-                                    }
-    
-                                }
-                            }
-                        },
-                        Err(e) => {
-    
-                            if e.to_string().contains("[429 Too Many Requests]"){
-                                continue;
-                            } else{
-                                
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &e.to_string(), // response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-                            }
-    
-                        }
-                    }
-
-            }
-
             resp!{
                 &[u8], // the data type
                 &[], // response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
                 None::<Cookie<'_>>, // cookie
             }
-
 
         }
 
@@ -413,46 +235,12 @@ impl Twitter{
 
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            let user_activity_code = user.activity_code;
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-
-            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
-            let Ok(user_tweets) =  get_user_tweets else{
-                return get_user_tweets.unwrap_err();
-            };
-
-            let mut is_verified = false;
-
-            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-                if tweet.text.contains(&user_activity_code){
-                    
-                    is_verified = true;
-                    
-                }
-            }
-
-            if is_verified{
-
-                /* try to insert into users_tasks since it's done */
-                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-                
-                res
-
-                
-            } else{
-                resp!{
-                    String, // the data type
-                    tusername, // response data
-                    TWITTER_CODE_IS_NOT_VALID, // response message
-                    StatusCode::NOT_ACCEPTABLE, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
         }
@@ -501,49 +289,12 @@ impl Twitter{
 
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            let tweet_content = task.tweet_content;
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-
-            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
-            let Ok(user_tweets) =  get_user_tweets else{
-                return get_user_tweets.unwrap_err();
-            };
-
-
-            let mut is_verified = false;
-            let mut link = String::from("");
-
-            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-                if tweet.text.contains(&tweet_content) && tweet.text.len() == tweet_content.len(){
-                    let tweet_id = tweet.id;
-                    link = format!("https://twitter.com/{tusername:}/status/{tweet_id:}");
-                    is_verified = true;
-                    
-                }
-            }
-
-            if is_verified{
-
-                /* try to insert into users_tasks since it's done */
-                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), Some(link.as_str()), connection).await;
-                
-                res
-
-                
-            } else{
-                resp!{
-                    String, // the data type
-                    tusername, // response data
-                    TWITTER_NOT_VERIFIED_TWEET_CONTENT, // response message
-                    StatusCode::NOT_ACCEPTABLE, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
             }
         
         }
@@ -591,92 +342,11 @@ impl Twitter{
 
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            let like_tweet_id = task.like_tweet_id;
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-            for api in self.apis.clone(){
-                match api
-                    .get_user_liked_tweets(twitter_user_data.id)
-                    .send()
-                    .await
-                    {
-                        Ok(res) => {
-    
-                            match res.into_data(){
-                                Some(tweets) => {
-    
-                                    let mut is_verified = false;
-    
-                                    for tweet in tweets{
-                                        if tweet.id.to_string() == like_tweet_id{
-                                            
-                                            is_verified = true;
-                                            
-                                        }
-                                    }
-    
-                                    if is_verified{
-    
-                                        /* try to insert into users_tasks since it's done */
-                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-
-                                        return res;
-    
-                                        
-                                    } else{
-                                        resp!{
-                                            String, // the data type
-                                            tusername, // response data
-                                            TWITTER_NOT_VERIFIED_LIKE, // response message
-                                            StatusCode::NOT_ACCEPTABLE, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        }
-                                    }
-    
-                                },
-                                None => {
-    
-                                    resp!{
-                                        String, // the data type
-                                        tusername, // response data
-                                        TWITTER_USER_TWEETS_NOT_FOUND, // response message
-                                        StatusCode::NOT_FOUND, // status code
-                                        None::<Cookie<'_>>, // cookie
-                                    }
-                                }
-                            }
-    
-                        },
-                        Err(e) => {
-    
-                            if e.to_string().contains("[429 Too Many Requests]"){
-                                continue;
-                            } else{
-                                
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &e.to_string(), // response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-                            }
-                        }
-                    }
-
-            }
-
             resp!{
                 &[u8], // the data type
                 &[], // response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
                 None::<Cookie<'_>>, // cookie
             }
 
@@ -724,7 +394,13 @@ impl Twitter{
         } else{
 
             
-            todo!()
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
+            }
 
         }
 
@@ -771,109 +447,13 @@ impl Twitter{
 
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            let retweet_id = task.retweet_id.parse::<u64>().unwrap();
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-
-            let mut is_verified = false;
-
-            
-            for api in self.apis.clone(){
-                match api
-                    .get_tweet(NumericId::new(retweet_id))
-                    .tweet_fields([TweetField::Text])
-                    .send()
-                    .await
-                    
-                    {
-                        Ok(res) => {
-
-                            match res.into_data(){
-                                Some(tweet_data) => {
-
-                                    let tweet_text = tweet_data.text;
-
-                                    let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
-                                    let Ok(user_tweets) =  get_user_tweets else{
-                                        return get_user_tweets.unwrap_err();
-                                    };
-
-                                    /* if the user tweet contains the specified tweet then the task is verified */
-                                    for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-                                        let sliced_user_tweet_text = tweet.text.as_str().replace("…", "");
-                                        let sliced_tweet_text = &tweet_text[0..sliced_user_tweet_text.as_str().len()];
-                                        if sliced_user_tweet_text.as_str() == sliced_tweet_text{
-                                            is_verified = true;
-                                        }
-                                    }
-
-
-                                    if is_verified{
-
-                                        /* try to insert into users_tasks since it's done */
-                                        let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-
-                                        return res;
-
-                                        
-                                    } else{
-                                        resp!{
-                                            String, // the data type
-                                            tusername, // response data
-                                            TWITTER_NOT_VERIFIED_RETWEET, // response message
-                                            StatusCode::NOT_ACCEPTABLE, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        }
-                                    }
-
-                                },
-                                None => {
-
-                                    resp!{
-                                        u64, // the data type
-                                        retweet_id, // response data
-                                        TWITTER_TWEET_NOT_FOUND, // response message
-                                        StatusCode::NOT_FOUND, // status code
-                                        None::<Cookie<'_>>, // cookie
-                                    }
-
-                                }
-                            }
-                        
-                        },
-                        Err(e) => {
-
-                            if e.to_string().contains("[429 Too Many Requests]"){
-                                continue;
-                            } else{
-                                
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    &e.to_string(), // response message
-                                    StatusCode::INTERNAL_SERVER_ERROR, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-
-                            }
-                        }
-                    }
-
-            }
-        
             resp!{
                 &[u8], // the data type
                 &[], // response data
-                TWITTER_CANT_LOOP_OVER_ACCOUNTS, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
                 None::<Cookie<'_>>, // cookie
             }
-
         }
     }
 
@@ -919,198 +499,16 @@ impl Twitter{
 
         } else{
 
-            let tusername = user.twitter_username.unwrap_or("".to_string());
-            let hastag = task.hashtag;
-            
-            let get_user_twitter_data = self.get_twitter_user_info(&tusername).await;
-            let Ok(twitter_user_data) = get_user_twitter_data else{
-                return get_user_twitter_data.unwrap_err()
-            };
-
-
-            let get_user_tweets = self.get_twitter_user_tweets(twitter_user_data.id, tusername.clone()).await;
-            let Ok(user_tweets) =  get_user_tweets else{
-                return get_user_tweets.unwrap_err();
-            };
-
-            let mut is_verified = true;
-            for tweet in user_tweets{ /* the scope of user_tweets in here is accessible */
-
-                if tweet.text.contains(&hastag){
-                    is_verified = true;
-                }
-                
-            }
-
-            if is_verified{
-
-                /* try to insert into users_tasks since it's done */
-                let res = Twitter::do_task(doer_id, task.id, "username", &tusername.clone(), None, connection).await;
-
-                res
-
-                
-            } else{
-                resp!{
-                    String, // the data type
-                    tusername, // response data
-                    TWITTER_NOT_VERIFIED_HASHTAG, // response message
-                    StatusCode::NOT_ACCEPTABLE, // status code
-                    None::<Cookie<'_>>, // cookie
-                }
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                TWITTER_INVALID_BOT_ENDPOINT, // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
             }
 
         }
 
-
-    }
-
-    async fn get_twitter_user_info(&self, tusername: &str) -> Result<TwitterUser, PanelHttpResponse>{
-
-        for api in self.apis.clone(){
-            match api
-                .get_user_by_username(tusername.clone())
-                .user_fields([UserField::Id, UserField::Username, UserField::CreatedAt, UserField::Verified, UserField::Entities])
-                .send()
-                .await
-                {
-                    Ok(res) => {
-    
-                        match res.into_data(){
-                            Some(user_data) => {
-    
-                                return Ok(
-                                    user_data
-                                );
-                                
-                            },
-                            None => {
-    
-                                let resp = Response{
-                                    data: Some(tusername.to_string()),
-                                    message: TWITTER_USER_DATA_NOT_FOUND,
-                                    status: 404
-                                };
-                                return Err(
-                                    Ok(HttpResponse::NotFound().json(resp))
-                                );
-    
-                            }
-                        }   
-                    },
-                    Err(e) => {
-    
-                        /* 
-                            since the return type is [u8] which is not sized 
-                            thus we must put it behind a pointer or return 
-                            its slice form which is &[u8] which requires a
-                            valid lifetime to be passed in Response struct
-                            signature, also the type of the response data 
-                            must be specified
-                        */
-
-                        if e.to_string().contains("[429 Too Many Requests]"){
-                            continue;
-                        } else{
-                            
-                            let resp = Response::<'_, &[u8]>{
-                                data: Some(&[]),
-                                message: &e.to_string(),
-                                status: 500
-                            };
-                            return Err(
-                                Ok(HttpResponse::InternalServerError().json(resp))
-                            );
-    
-                        }
-    
-                    }
-                }
-        
-        }
-
-        let resp = Response::<'_, &[u8]>{
-            data: Some(&[]),
-            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
-            status: 500
-        };
-        return Err(
-            Ok(HttpResponse::InternalServerError().json(resp))
-        );
-
-    }
-
-    async fn get_twitter_user_tweets(&self, twitter_user_id: NumericId, user_twitter_username: String) -> Result<Vec<Tweet>, PanelHttpResponse>{
-
-        for api in self.apis.clone(){
-            match api
-                .get_user_tweets(twitter_user_id)
-                .send()
-                .await
-                {
-                    Ok(res) => {
-    
-                        match res.into_data(){
-                            Some(tweets) => {
-    
-                                return Ok(tweets);
-    
-                            },
-                            None => {
-    
-                                let resp = Response{
-                                    data: Some(user_twitter_username),
-                                    message: TWITTER_USER_TWEETS_NOT_FOUND,
-                                    status: 404
-                                };
-                                return Err(
-                                    Ok(HttpResponse::NotFound().json(resp))
-                                );
-                            }
-                        }
-    
-                    },
-                    Err(e) => {
-    
-                        /* 
-                            since the return type is [u8] which is not sized 
-                            thus we must put it behind a pointer or return 
-                            its slice form which is &[u8] which requires a
-                            valid lifetime to be passed in Response struct
-                            signature, also the type of the response data 
-                            must be specified
-                        */
-    
-                        if e.to_string().contains("[429 Too Many Requests]"){
-                            continue;
-                        } else{
-                            
-                            let resp = Response::<'_, &[u8]>{
-                                data: Some(&[]),
-                                message: &e.to_string(),
-                                status: 500
-                            };
-                            return Err(
-                                Ok(HttpResponse::InternalServerError().json(resp))
-                            );
-    
-                        }
-    
-                        
-                    }
-                }
-
-        }
-
-        let resp = Response::<'_, &[u8]>{
-            data: Some(&[]),
-            message: TWITTER_CANT_LOOP_OVER_ACCOUNTS,
-            status: 500
-        };
-        return Err(
-            Ok(HttpResponse::InternalServerError().json(resp))
-        );
-            
 
     }
 

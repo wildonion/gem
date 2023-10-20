@@ -634,9 +634,10 @@ async fn check_users_task(
     }
 }
 
-#[get("/tasks/leaderboard")]
+#[get("/tasks/leaderboard/")]
 async fn tasks_leaderboard(
         req: HttpRequest,
+        limit: web::Path<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -661,14 +662,29 @@ async fn tasks_leaderboard(
                     let mut leaderboard: Vec<FetchUserTaskReport> = vec![];
                     if !users_tasks_data.is_empty(){
                         for utinfo in users_tasks_data{
-                            let get_user_report = UserTask::reports(utinfo.user_id, connection).await;
+                            let get_user_report = UserTask::reports_without_limit(utinfo.user_id, connection).await;
                             leaderboard.push(get_user_report.unwrap());
                         }
                     }
 
+                    let from = limit.from.unwrap_or(0) as usize;
+                    let to = limit.to.unwrap_or(10) as usize;
+
+                    if to < from {
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: INVALID_QUERY_LIMIT,
+                            status: 406,
+                        };
+                        return Ok(HttpResponse::NotAcceptable().json(resp));
+                        
+                    }
+
+                    let limited_leaderboard = &leaderboard[from..to].to_vec();
+
                     resp!{
                         Vec<FetchUserTaskReport>, // the data type
-                        leaderboard, // response data
+                        limited_leaderboard.to_owned(), // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie

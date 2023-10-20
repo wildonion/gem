@@ -2469,7 +2469,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
 											"type": "string"
 										}
 									]
@@ -2477,14 +2477,24 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/deposit/get/all",
+									"raw": "{{panel-user}}/deposit/get/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
 										"deposit",
 										"get",
-										"all"
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2498,7 +2508,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
 											"type": "string"
 										}
 									]
@@ -2506,14 +2516,24 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/withdraw/get/all",
+									"raw": "{{panel-user}}/withdraw/get/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
 										"withdraw",
 										"get",
-										"all"
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2535,14 +2555,24 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/checkouts/get/all",
+									"raw": "{{panel-user}}/checkouts/get/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
 										"checkouts",
 										"get",
-										"all"
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2556,7 +2586,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
 											"type": "string"
 										}
 									]
@@ -2564,12 +2594,23 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-admin}}/get-users",
+									"raw": "{{panel-admin}}/get-users/?from=0&to=10",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
-										"get-users"
+										"get-users",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2579,18 +2620,36 @@
 							"name": "Get Admin Tasks",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
+											"type": "string"
+										}
+									]
 								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-admin}}/get-admin-tasks/2",
+									"raw": "{{panel-admin}}/get-admin-tasks/2/?from=0&to=10",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
 										"get-admin-tasks",
-										"2"
+										"2",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2605,12 +2664,23 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-admin}}/get-users-tasks",
+									"raw": "{{panel-admin}}/get-users-tasks/?from=0&to=10",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
-										"get-users-tasks"
+										"get-users-tasks",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3139,7 +3209,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/deposit/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/deposit/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3147,7 +3217,18 @@
 										"deposit",
 										"get",
 										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3169,7 +3250,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/withdraw/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/withdraw/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3177,7 +3258,18 @@
 										"withdraw",
 										"get",
 										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3199,7 +3291,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/checkout/get/unpaid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/checkout/get/unpaid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3208,7 +3300,18 @@
 										"get",
 										"unpaid",
 										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3230,7 +3333,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/checkout/get/paid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/checkout/get/paid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3239,7 +3342,18 @@
 										"get",
 										"paid",
 										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3261,7 +3375,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
@@ -3270,7 +3384,18 @@
 										"get",
 										"unclaimed",
 										"recipient",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d"
+										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3285,13 +3410,24 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-user}}/report-tasks/2",
+									"raw": "{{panel-user}}/report-tasks/2/?from=0&to=10",
 									"host": [
 										"{{panel-user}}"
 									],
 									"path": [
 										"report-tasks",
-										"2"
+										"2",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3318,7 +3454,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-dev}}/mafia/get/admin/64b817de361f2c1b45dfb460/data",
+									"raw": "{{panel-dev}}/mafia/get/admin/64b817de361f2c1b45dfb460/data/?from=0&to=10",
 									"host": [
 										"{{panel-dev}}"
 									],
@@ -3327,7 +3463,18 @@
 										"get",
 										"admin",
 										"64b817de361f2c1b45dfb460",
-										"data"
+										"data",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3480,12 +3627,23 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-health}}/get-tasks",
+									"raw": "{{panel-health}}/get-tasks/?from=0&to=10",
 									"host": [
 										"{{panel-health}}"
 									],
 									"path": [
-										"get-tasks"
+										"get-tasks",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -3555,13 +3713,24 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-public}}/tasks/leaderboard",
+									"raw": "{{panel-public}}/tasks/leaderboard/?from=0&to=10",
 									"host": [
 										"{{panel-public}}"
 									],
 									"path": [
 										"tasks",
-										"leaderboard"
+										"leaderboard",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},

@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::users_checkouts;
 use crate::constants::*;
@@ -132,11 +132,28 @@ impl UserCheckout{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        limit: web::Query<Limit>) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
 
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let users_checkouts_data = users_checkouts
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserCheckout>(connection);
             
         let Ok(checkouts) = users_checkouts_data else{
@@ -175,12 +192,29 @@ impl UserCheckout{
 
     }
 
-    pub async fn get_all_unpaid_for(user_crypto_id: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_unpaid_for(user_crypto_id: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let users_checkouts_data = users_checkouts
             .filter(user_cid.eq(user_crypto_id))
             .filter(payment_status.eq("unpaid"))
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserCheckout>(connection);
             
         let Ok(checkouts) = users_checkouts_data else{
@@ -219,12 +253,29 @@ impl UserCheckout{
 
     }
 
-    pub async fn get_all_paid_for(user_crypto_id: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_paid_for(user_crypto_id: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let users_checkouts_data = users_checkouts
             .filter(user_cid.eq(user_crypto_id))
             .filter(payment_status.eq("paid"))
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserCheckout>(connection);
             
         let Ok(checkouts) = users_checkouts_data else{

@@ -707,16 +707,11 @@ async fn register_new_user(
                         Ok(_) => {
 
                             /* fetch all users again to get the newly one */
-                            let get_all_users = User::get_all(connection).await;
+                            let get_all_users = User::get_all_without_limit(connection).await;
                             let Ok(all_users) = get_all_users else{
                                 let resp = get_all_users.unwrap_err();
                                 return resp;
                             };
-
-                            /* update redis cacher with the new user */
-                            let rc_data = serde_json::to_string(&all_users).unwrap();
-                            let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
-
 
                             resp!{
                                 &[u8], // the data type
@@ -1070,10 +1065,11 @@ async fn delete_user(
         ("jwt" = [])
     )
 )]
-#[get("/get-users")]
+#[get("/get-users/")]
 #[passport(admin)]
 async fn get_users(
         req: HttpRequest,  
+        limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -1121,63 +1117,24 @@ async fn get_users(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* create a response cacher using redis */
-                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-                    let get_all_users_key = format!("get_all_users");
-                    let redis_result_check_token: RedisResult<String> = redis_conn.get(get_all_users_key.as_str()).await;
-                    let mut redis_get_users = match redis_result_check_token{
-                        Ok(data) => {
-                            let rc_data = serde_json::from_str::<Vec<UserData>>(data.as_str()).unwrap();
-                            Some(rc_data)
-                        },
-                        Err(e) => {
-                            let empty_get_users: Option<Vec<UserData>> = None;
-                            let rc_data = serde_json::to_string(&empty_get_users).unwrap();
-                            let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
-                            None
-                        }
-                    };
-                    
-                    /* no caching is in redis we must fetch from pg */
-                    if redis_get_users.is_none(){
+                    match User::get_all(connection, limit).await{
+                        Ok(all_users) => {
 
-                        match User::get_all(connection).await{
-                            Ok(all_users) => {
-
-                                /* chache the response for the next request */
-                                let rc_data = serde_json::to_string(&all_users).unwrap();
-                                let _: () = redis_conn.set("get_all_users", rc_data).await.unwrap();
-
-                                resp!{
-                                    Vec<UserData>, // the data type
-                                    all_users, // response data
-                                    FETCHED, // response message
-                                    StatusCode::OK, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            },
-                            Err(resp) => {
-    
-                                /* DIESEL FETCH ERROR RESPONSE */
-                                resp
+                            resp!{
+                                Vec<UserData>, // the data type
+                                all_users, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
-                        
-                        }
+                        },
+                        Err(resp) => {
 
-                    /* return redis cache */
-                    } else{
-
-                        resp!{
-                            Vec<UserData>, // the data type
-                            redis_get_users.unwrap(), // response data
-                            FETCHED, // response message
-                            StatusCode::OK, // status code
-                            None::<Cookie<'_>>, // cookie
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
                         }
-                        
-                    }
                     
-                    
+                    }  
 
                 },
                 Err(resp) => {
@@ -1295,17 +1252,11 @@ async fn register_new_task(
                         Ok(_) => {
 
                             /* fetch all admin tasks again to get the newly one */
-                            let get_all_admin_tasks = Task::get_all_admin(new_task.admin_id, connection).await;
+                            let get_all_admin_tasks = Task::get_all_admin_without_limit(new_task.admin_id, connection).await;
                             let Ok(all_admin_tasks) = get_all_admin_tasks else{
                                 let resp = get_all_admin_tasks.unwrap_err();
                                 return resp;
                             };
-
-                            /* update redis cacher with the new task */
-                            let rc_data = serde_json::to_string(&all_admin_tasks).unwrap();
-                            let get_admin_tasks_key = format!("get_admin_tasks_{:?}", new_task.admin_id);
-                            let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
-
 
                             resp!{
                                 &[u8], // the data type
@@ -1675,11 +1626,12 @@ async fn edit_task(
         ("jwt" = [])
     )
 )]
-#[get("/get-admin-tasks/{owner_id}")]
+#[get("/get-admin-tasks/{owner_id}/")]
 #[passport(admin)]
 async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
+        limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -1728,62 +1680,25 @@ async fn get_admin_tasks(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-
-                    /* create a response cacher using redis */
-                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-                    let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
-                    let redis_result_admin_tasks: RedisResult<String> = redis_conn.get(get_admin_tasks_key.as_str()).await;
-                    let mut redis_get_admin_tasks = match redis_result_admin_tasks{
-                        Ok(data) => {
-                            let rc_data = serde_json::from_str::<Vec<TaskData>>(data.as_str()).unwrap();
-                            Some(rc_data)
-                        },
-                        Err(e) => {
-                            let empty_admin_tasks: Option<Vec<TaskData>> = None;
-                            let rc_data = serde_json::to_string(&empty_admin_tasks).unwrap();
-                            let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
-                            let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
-                            None
-                        }
-                    };
-
-                    if redis_get_admin_tasks.is_none(){
-
-                        match Task::get_all_admin(owner_id.to_owned(), connection).await{
-                            Ok(admin_tasks) => {
-    
-                                /* chache the response for the next request */
-                                let rc_data = serde_json::to_string(&admin_tasks).unwrap();
-                                let get_admin_tasks_key = format!("get_admin_tasks_{:?}", owner_id.to_owned());
-                                let _: () = redis_conn.set(get_admin_tasks_key.as_str(), rc_data).await.unwrap();
-    
-                                resp!{
-                                    Vec<TaskData>, // the data type
-                                    admin_tasks, // response data
-                                    FETCHED, // response message
-                                    StatusCode::OK, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-    
-                            },
-                            Err(resp) => {
-    
-                                /* DIESEL FETCH ERROR RESPONSE */
-                                resp
+                    match Task::get_all_admin(owner_id.to_owned(), limit, connection).await{
+                        Ok(admin_tasks) => {
+                            
+                            resp!{
+                                Vec<TaskData>, // the data type
+                                admin_tasks, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
                             }
+
+                        },
+                        Err(resp) => {
+
+                            /* DIESEL FETCH ERROR RESPONSE */
+                            resp
                         }
-
-                    } else{
-
-                        resp!{
-                            Vec<TaskData>, // the data type
-                            redis_get_admin_tasks.unwrap(), // response data
-                            FETCHED, // response message
-                            StatusCode::OK, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
                     }
+
                     
                 },
                 Err(resp) => {
@@ -1842,10 +1757,11 @@ async fn get_admin_tasks(
         ("jwt" = [])
     )
 )]
-#[get("/get-users-tasks")]
+#[get("/get-users-tasks/")]
 #[passport(admin)]
 async fn get_users_tasks(
-        req: HttpRequest,   
+        req: HttpRequest,
+        limit: web::Query<Limit>,   
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -1894,7 +1810,7 @@ async fn get_users_tasks(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match UserTask::tasks_per_user(connection).await{
+                    match UserTask::tasks_per_user(limit, connection).await{
                         Ok(all_users_tasks) => {
 
                             resp!{
@@ -2146,12 +2062,12 @@ async fn add_twitter_account(
         ("jwt" = [])
     )
 )]
-#[get("/deposit/get/all")]
+#[get("/deposit/get/")]
 #[passport(admin)]
 async fn get_all_users_deposits(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2203,29 +2119,7 @@ async fn get_all_users_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "get_all_users_deposits");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-
-                    match UserDeposit::get_all(connection).await{
+                    match UserDeposit::get_all(limit, connection).await{
                         Ok(user_deposits) => {
 
                             resp!{
@@ -2296,12 +2190,12 @@ async fn get_all_users_deposits(
         ("jwt" = [])
     )
 )]
-#[get("/withdraw/get/all")]
+#[get("/withdraw/get/")]
 #[passport(admin)]
 async fn get_all_users_withdrawals(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2353,29 +2247,7 @@ async fn get_all_users_withdrawals(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "get_all_users_withdrawals");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-
-                    match UserWithdrawal::get_all(connection).await{
+                    match UserWithdrawal::get_all(limit, connection).await{
                         Ok(all_users_withdrawals) => {
 
                             resp!{
@@ -2435,10 +2307,11 @@ async fn get_all_users_withdrawals(
 
 }
 
-#[get("/checkouts/get/all")]
+#[get("/checkouts/get/")]
 #[passport(admin)]
 async fn get_all_users_checkouts(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -2491,28 +2364,7 @@ async fn get_all_users_checkouts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "get_all_users_withdrawals");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
-                    };
-
-                    match UserCheckout::get_all(connection).await{
+                    match UserCheckout::get_all(connection, limit).await{
                         Ok(all_users_checkouts) => {
 
                             resp!{
@@ -2778,7 +2630,6 @@ pub mod exports{
     pub use super::get_all_stripe_prices; /* /?from=1&to=50 also: get single price using its id */
     pub use super::get_all_stripe_checkout_sessions; /* /?from=1&to=50 also: get single session using its id */
     */
-    pub use super::get_all_users_checkouts;
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;
     pub use super::register_new_user;
@@ -2787,12 +2638,13 @@ pub mod exports{
     pub use super::edit_task;
     pub use super::edit_user;
     pub use super::delete_user;
+    pub use super::add_twitter_account;
+    pub use super::update_mafia_event_img; // `<---mafia jwt--->` mafia hyper server
+    pub use super::start_tcp_server;
+    pub use super::get_all_users_checkouts;
     pub use super::get_users;
     pub use super::get_admin_tasks;
     pub use super::get_users_tasks;
-    pub use super::add_twitter_account;
-    pub use super::update_mafia_event_img; // `<---mafia jwt--->` mafia hyper server
     pub use super::get_all_users_withdrawals;
     pub use super::get_all_users_deposits;
-    pub use super::start_tcp_server;
 }

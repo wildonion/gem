@@ -85,10 +85,11 @@ impl Modify for SecurityAddon {
         ("jwt" = [])
     )
 )]
-#[get("/mafia/get/admin/{admin_id}/data")]
+#[get("/mafia/get/admin/{admin_id}/data/")]
 async fn get_admin_data(
         req: HttpRequest, 
-        admin_id: web::Path<String>, // mongodb object id of admin or god  
+        admin_id: web::Path<String>, // mongodb object id of admin or god
+        limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -167,9 +168,25 @@ async fn get_admin_data(
                                 None::<Cookie<'_>>, // cookie
                             }
                         } else{
+
+                            let from = limit.from.unwrap_or(0) as usize;
+                            let to = limit.to.unwrap_or(10) as usize;
+
+                            if to < from {
+                                let resp = Response::<'_, &[u8]>{
+                                    data: Some(&[]),
+                                    message: INVALID_QUERY_LIMIT,
+                                    status: 406,
+                                };
+                                return Ok(HttpResponse::NotAcceptable().json(resp));
+                                
+                            }
+
+                            let limited_all_god_events = &all_god_events[from..to].to_vec();
+
                             resp!{
                                 Vec<EventInfo>, // the data type
-                                all_god_events, // response data
+                                limited_all_god_events.to_owned(), // response data
                                 FETCHED, // response message
                                 StatusCode::OK, // status code
                                 None::<Cookie<'_>>, // cookie
@@ -234,9 +251,10 @@ async fn get_admin_data(
         ("jwt" = [])
     )
 )]
-#[get("/mafia/get/user/{user_id}/data")]
+#[get("/mafia/get/user/{user_id}/data/")]
 async fn get_user_data(
         req: HttpRequest, 
+        limit: web::Query<Limit>,
         user_id: web::Path<String>, // mongodb object id of user or player  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -315,9 +333,25 @@ async fn get_user_data(
                                 None::<Cookie<'_>>, // cookie
                             }
                         } else{
+
+                            let from = limit.from.unwrap_or(0) as usize;
+                            let to = limit.to.unwrap_or(10) as usize;
+
+                            if to < from {
+                                let resp = Response::<'_, &[u8]>{
+                                    data: Some(&[]),
+                                    message: INVALID_QUERY_LIMIT,
+                                    status: 406,
+                                };
+                                return Ok(HttpResponse::NotAcceptable().json(resp));
+                                
+                            }
+
+                            let limited_player_events = &player_events[from..to].to_vec();
+
                             resp!{
                                 Vec<PlayerEventInfo>, // the data type
-                                player_events, // response data
+                                limited_player_events.to_owned(), // response data
                                 FETCHED, // response message
                                 StatusCode::OK, // status code
                                 None::<Cookie<'_>>, // cookie

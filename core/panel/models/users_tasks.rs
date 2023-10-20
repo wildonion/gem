@@ -1,7 +1,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::misc::{Response, Limit};
 use crate::schema::users;
 use crate::schema::users::dsl::*;
 use crate::constants::*;
@@ -158,10 +158,28 @@ impl UserTask{
 
     }
 
-    pub async fn reports(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
+    pub async fn reports(doer_id: i32, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
+        
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user = match users::table
             .filter(users::id.eq(doer_id))
+            .offset(from)
+            .limit((to - from) + 1)
             .select(User::as_select())
             .get_result(connection)
             {
@@ -274,10 +292,143 @@ impl UserTask{
 
     }
 
-    pub async fn tasks_per_user(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, PanelHttpResponse>{
+    pub async fn reports_without_limit(doer_id: i32,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
+
+        let user = match users::table
+            .filter(users::id.eq(doer_id))
+            .select(User::as_select())
+            .get_result(connection)
+            {
+                Ok(fetched_user) => fetched_user,
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            };
+
+        /* get all found user tasks which are done already since users_tasks are done tasks by the user */
+        match UserTask::belonging_to(&user)
+            .inner_join(tasks::table)
+            .select(Task::as_select())
+            .load(connection)
+            {
+                Ok(tasks_info) => {
+
+                    let report = FetchUserTaskReport{
+                        total_score: {
+                            tasks_info
+                                .clone()
+                                .into_iter()
+                                .map(|task| task.task_score)
+                                .collect::<Vec<i32>>()
+                                .into_iter()
+                                .sum()
+                        },
+                        done_tasks: {
+                            tasks_info
+                                .clone()
+                                .into_iter()
+                                .map(|t| ReportTaskData{
+                                    id: t.id,
+                                    task_name: t.task_name,
+                                    task_description: t.task_description,
+                                    task_score: t.task_score,
+                                    task_priority: t.task_priority,
+                                    hashtag: t.hashtag,
+                                    tweet_content: t.tweet_content,
+                                    retweet_id: t.retweet_id,
+                                    like_tweet_id: t.like_tweet_id,
+                                    admin_id: t.admin_id,
+                                    created_at: t.created_at.to_string(),
+                                    updated_at: t.updated_at.to_string(),
+                                    done_at: {
+                                        let single_user_task = users_tasks
+                                            .filter(user_id.eq(doer_id))
+                                            .filter(task_id.eq(t.id))
+                                            .first::<UserTask>(connection);
+
+                                        /* prevent from runtime crashing */
+                                        if single_user_task.is_ok(){
+                                            single_user_task.unwrap().done_at.to_string()
+                                        } else{
+                                            /* no task is done yet */
+                                            String::from("0")
+                                        }
+                                    },
+                                })
+                                .collect::<Vec<ReportTaskData>>()
+                        },
+                    };    
+                    
+                    Ok(report)
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            } 
+
+    }
+
+    pub async fn tasks_per_user(limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let all_users: Vec<User> = match users::table
             .select(User::as_select())
+            .offset(from)
+            .limit((to - from) + 1)
             .load(connection)
             {
                 Ok(fetched_users) => fetched_users,

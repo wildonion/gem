@@ -1,7 +1,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::users_deposits;
 use crate::constants::*;
@@ -170,10 +170,27 @@ impl UserDeposit{
 
     }
 
-    pub async fn get_all_for(user_cid: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+    pub async fn get_all_for(user_cid: String, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_deposits = users_deposits
             .filter(from_cid.eq(user_cid.clone()))
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserDeposit>(connection);
             
         let Ok(deposits) = user_deposits else{
@@ -259,9 +276,26 @@ impl UserDeposit{
             }
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+    pub async fn get_all(limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_deposits = users_deposits
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserDeposit>(connection);
             
         let Ok(deposits) = user_deposits else{
@@ -298,11 +332,28 @@ impl UserDeposit{
     }
 
 
-    pub async fn get_unclaimeds_for(user_screen_cid: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+    pub async fn get_unclaimeds_for(user_screen_cid: String, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_deposits = users_deposits
             .filter(users_deposits::recipient_screen_cid.eq(user_screen_cid))
             .filter(users_deposits::is_claimed.eq(false))
+            .offset(from)
+            .limit((to - from) + 1)
             .load::<UserDeposit>(connection);
             
         let Ok(deposits) = user_deposits else{
