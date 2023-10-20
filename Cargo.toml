@@ -87,7 +87,7 @@ name = "panel"
 path = "core/panel/app.rs"
 
 [[bin]]
-name = "xdisbot"
+name = "xcord"
 path = "core/xcord/bot.rs"
 
 [[bin]]

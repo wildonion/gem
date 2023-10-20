@@ -1469,11 +1469,12 @@ async fn charge_wallet_request(
                     } else {
 
                         let charge_wallet_request_object = charge_wallet_request.to_owned();
-                        let is_request_verified = verify_requested_data(
+                        let is_request_verified = is_kyced(
                             _id, 
                             &charge_wallet_request_object.buyer_cid, 
                             &charge_wallet_request_object.tx_signature, 
                             &charge_wallet_request_object.hash_data, 
+                            None,
                             connection
                         ).await;
 
@@ -2063,11 +2064,12 @@ async fn deposit(
                             }
                         };
 
-                        let is_request_verified = verify_requested_data(
+                        let is_request_verified = is_kyced(
                             _id, 
                             &deposit_object.from_cid, 
                             &deposit_object.tx_signature, 
                             &deposit_object.hash_data, 
+                            Some(deposit_object.amount), 
                             connection
                         ).await;
 
@@ -2076,145 +2078,125 @@ async fn deposit(
                             return error_resp;
                         };
 
-                        /* 
 
-                            note that when a user wants to deposit, frontend must call the get token price api 
-                            to get the latest and exact equivalent token of the token price to charge the 
-                            user for paying that price which is the deposit_object.amount field in deposit 
-                            request body also if a user want to claim the card he gets paid by sending the exact
-                            token that depositor has paid for to his wallet
+
+                        let new_balance = user.balance.unwrap() - deposit_object.amount;
+                        let mut mint_tx_hash = String::from("");
+                        let mut token_id = String::from("");
                         
+                        /* 
+                            simd ops on u256 bits can be represented as an slice with 4 elements 
+                            each of type 64 bits or 8 bytes, also 256 bits is 64 chars in hex 
+                            and 32 bytes of utf8 and  rust doesn't have u256
                         */
-                        if user.balance.is_some() && 
-                            user.balance.unwrap() > 0 && 
-                            user.balance.unwrap() > deposit_object.amount{
+                        let u256 = web3::types::U256::from_str("0").unwrap().0;
 
-                            let new_balance = user.balance.unwrap() - deposit_object.amount;
-                            let mut mint_tx_hash = String::from("");
-                            let mut token_id = String::from("");
-                            
-                            /* 
-                                simd ops on u256 bits can be represented as an slice with 4 elements 
-                                each of type 64 bits or 8 bytes, also 256 bits is 64 chars in hex 
-                                and 32 bytes of utf8 and  rust doesn't have u256
-                            */
-                            let u256 = web3::types::U256::from_str("0").unwrap().0;
-
-                            /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
-                            if recipient_info.screen_cid.is_none(){
-                                resp!{
-                                    String, // the date type
-                                    deposit_object.recipient, // the data itself
-                                    RECIPIENT_SCREEN_CID_NOT_FOUND, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            if recipient_info.cid.clone().unwrap() == deposit_object.from_cid{
-
-                                resp!{
-                                    String, // the date type
-                                    deposit_object.from_cid, // the data itself
-                                    SENDER_CANT_BE_RECEIVER, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
-                            let contract_owner = env::var("GIFT_NFT_OWNER_ADDRESS").unwrap();
-                            let contract_address_env = env::var("GIFT_NFT_CONTRACT_ADDRESS").unwrap();
-
-                            if contract_address.to_owned() != contract_address_env{
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    INVALID_CONTRACT_ADDRESS, // response message
-                                    StatusCode::NOT_ACCEPTABLE, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            let (tx_hash, tid, res_burn_status) = start_minting_card_process(
-                                user.screen_cid.unwrap(),
-                                deposit_object.clone(),  
-                                contract_address.clone(),
-                                contract_owner.clone(),
-                                polygon_recipient_address.clone(),
-                                deposit_object.nft_img_url.clone(),
-                                deposit_object.nft_name,
-                                deposit_object.nft_desc,
-                                redis_client.clone()
-                            ).await;
-                            
-                            if res_burn_status == 1{
-
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    CANT_MINT_CARD, // response message
-                                    StatusCode::EXPECTATION_FAILED, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-
-                            mint_tx_hash = tx_hash; // moving into another type
-                            token_id = tid;
-                            
-                            if !mint_tx_hash.is_empty(){
-                                
-                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, connection).await{
-                                    Ok(user_deposit_data) => {
-
-                                        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
-                                        let Ok(updated_user_data) = update_user_balance else{
-
-                                            let err_resp = update_user_balance.unwrap_err();
-                                            return err_resp;
-                                            
-                                        };
-
-                                        resp!{
-                                            UserDepositData, // the data type
-                                            user_deposit_data, // response data
-                                            DEPOSITED_SUCCESSFULLY, // response message
-                                            StatusCode::CREATED, // status code
-                                            None::<Cookie<'_>>, // cookie
-                                        }
-
-                                    },
-                                    Err(resp) => {
-                                        /* 
-                                            🥝 response can be one of the following:
-                                            
-                                            - DIESEL INSERT ERROR RESPONSE
-                                        */
-                                        resp
-                                    }
-                                }                                    
-
-                                
-                            } else{
-
-                                resp!{
-                                    &[u8], // the data type
-                                    &[], // response data
-                                    CANT_MINT_CARD, // response message
-                                    StatusCode::FAILED_DEPENDENCY, // status code
-                                    None::<Cookie<'_>>, // cookie
-                                }
-                            }
-                            
-                        } else{
+                        /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
+                        if recipient_info.screen_cid.is_none(){
                             resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                INSUFFICIENT_FUNDS, // response message
+                                String, // the date type
+                                deposit_object.recipient, // the data itself
+                                RECIPIENT_SCREEN_CID_NOT_FOUND, // response message
                                 StatusCode::NOT_ACCEPTABLE, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }
+
+                        if recipient_info.cid.clone().unwrap() == deposit_object.from_cid{
+
+                            resp!{
+                                String, // the date type
+                                deposit_object.from_cid, // the data itself
+                                SENDER_CANT_BE_RECEIVER, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
+                        let contract_owner = env::var("GIFT_NFT_OWNER_ADDRESS").unwrap();
+                        let contract_address_env = env::var("GIFT_NFT_CONTRACT_ADDRESS").unwrap();
+
+                        if contract_address.to_owned() != contract_address_env{
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                INVALID_CONTRACT_ADDRESS, // response message
+                                StatusCode::NOT_ACCEPTABLE, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        let (tx_hash, tid, res_burn_status) = start_minting_card_process(
+                            user.screen_cid.unwrap(),
+                            deposit_object.clone(),  
+                            contract_address.clone(),
+                            contract_owner.clone(),
+                            polygon_recipient_address.clone(),
+                            deposit_object.nft_img_url.clone(),
+                            deposit_object.nft_name,
+                            deposit_object.nft_desc,
+                            redis_client.clone()
+                        ).await;
+                        
+                        if res_burn_status == 1{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                CANT_MINT_CARD, // response message
+                                StatusCode::EXPECTATION_FAILED, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+
+                        mint_tx_hash = tx_hash; // moving into another type
+                        token_id = tid;
+                        
+                        if !mint_tx_hash.is_empty(){
+                            
+                            match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, connection).await{
+                                Ok(user_deposit_data) => {
+
+                                    let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                                    let Ok(updated_user_data) = update_user_balance else{
+
+                                        let err_resp = update_user_balance.unwrap_err();
+                                        return err_resp;
+                                        
+                                    };
+
+                                    resp!{
+                                        UserDepositData, // the data type
+                                        user_deposit_data, // response data
+                                        DEPOSITED_SUCCESSFULLY, // response message
+                                        StatusCode::CREATED, // status code
+                                        None::<Cookie<'_>>, // cookie
+                                    }
+
+                                },
+                                Err(resp) => {
+                                    /* 
+                                        🥝 response can be one of the following:
+                                        
+                                        - DIESEL INSERT ERROR RESPONSE
+                                    */
+                                    resp
+                                }
+                            }                                    
+
+                            
+                        } else{
+
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                CANT_MINT_CARD, // response message
+                                StatusCode::FAILED_DEPENDENCY, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        }
+     
                     
                     }
 
@@ -2504,11 +2486,12 @@ async fn withdraw(
                     } else { /* not rate limited, we're ok to go */
 
                         let withdraw_object = withdraw.to_owned();
-                        let is_request_verified = verify_requested_data(
+                        let is_request_verified = is_kyced(
                             _id, 
                             &withdraw_object.recipient_cid, 
                             &withdraw_object.tx_signature, 
                             &withdraw_object.hash_data, 
+                            None,
                             connection
                         ).await;
 
@@ -3673,12 +3656,10 @@ pub mod exports{
     pub use super::remove_user_from_friend;
     pub use super::get_private_rooms_of; // /?from=1&to=50
     */
-    /* ---------------------------------------------------- 
-        user must pay token for the following calls since
-        backend pay the gas fee with matic through nftport 
-        calls also invoking the followings need CID signature 
-        and user must sign the calls with his private key
-    ------------------------------------------------------- */
+
+    // ------------------------------------------------------
+    /* users must be kyced and need to sign following calls */
+    // ------------------------------------------------------
     // pub use super::create_private_room;
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
