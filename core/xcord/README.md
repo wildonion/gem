@@ -11,6 +11,8 @@ discord bot to pull out new admin tasks using redispubsub into a discord channel
 
 ## How 2?
 
+> note that you have to setup an application in your discord development account to get the key
+
 step 0. fill the `XCORD_*` vars inside the `.env` with your token and channel id
 
 step 1. deploy the redis docker container

@@ -5,7 +5,7 @@ use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -533,10 +533,10 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 }
 
-pub async fn verify_requested_data(the_user_id: i32, from_cid: &str, tx_signature: &str, hash_data: &str, 
+pub async fn is_kyced(the_user_id: i32, from_cid: &str, tx_signature: &str, hash_data: &str, deposited_amount: Option<i64>,
     connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
 
-    /* making sure that the user has a full filled paypal id */
+    /* find user info with this id */
     let get_user = User::find_by_id(the_user_id, connection).await;
     let Ok(user) = get_user else{
         let error_resp = get_user.unwrap_err();
@@ -573,9 +573,27 @@ pub async fn verify_requested_data(the_user_id: i32, from_cid: &str, tx_signatur
 
     }
 
+    /* check that the user has enough balance */
+    if deposited_amount.is_some() 
+        && (user.balance.is_none() || 
+            user.balance.unwrap() < 0 || 
+            user.balance.unwrap() < deposited_amount.unwrap()){
+
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: INSUFFICIENT_FUNDS,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+    }
+
+
     /* 
         first we'll try to find the a user with the passed in screen_cid 
-        generated from keccak256 of cid then we'll go for the verification process 
+        generated from keccak256 of cid then we'll go for the signature 
+        verification process 
     */
     let find_user_screen_cid = User::find_by_screen_cid(
         &Wallet::generate_keccak256_from(from_cid.to_string()), connection
