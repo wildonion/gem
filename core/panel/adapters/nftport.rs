@@ -50,7 +50,7 @@ pub struct NftPortTransferNftResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftPortBurnResponse{
+pub struct NftPortTransferResponse{
     pub response: String,
     pub chain: String,
     pub contract_address: String,
@@ -350,28 +350,34 @@ pub async fn start_minting_card_process(
 
 }
 
-pub async fn start_burning_card_process( 
+pub async fn start_transferring_card_process( 
     contract_address: String,
     token_id: String,
+    polygon_recipient_address: String,
     redis_client: redis::Client
 ) -> (String, u8){
     
+    /* 
+        Note: transferring is possible only if the token is owned by the contract owner and 
+        the token has not been transferred/sold yet and that's why we're not burning nft in
+        here because nft owner must be the contract owner to burn it and we want to make the
+        user the owner of the nft once he claimed the tokens which allows user to sell his nft 
+        on polygon markeplaces later 
+    */
+
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    /* 
-        nft owner must be the contract owner to burn it that's why we minted the nft
-        to our app wallet to be able to burn it later
-    */
-    let mut burn_data = HashMap::new();
-    burn_data.insert("chain", "polygon");
-    burn_data.insert("contract_address", &contract_address);
-    burn_data.insert("token_id", &token_id);
-    let nftport_burn_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+    let mut transfer_data = HashMap::new();
+    transfer_data.insert("chain", "polygon");
+    transfer_data.insert("contract_address", &contract_address);
+    transfer_data.insert("token_id", &token_id);
+    transfer_data.insert("transfer_to_address", &polygon_recipient_address);
+    let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/mints/transfers");
     let res = reqwest::Client::new()
-        .delete(nftport_burn_endpoint.as_str())
+        .post(nftport_transfer_endpoint.as_str())
         .header("Authorization", nftport_token.as_str())
-        .json(&burn_data)
+        .json(&transfer_data)
         .send()
         .await;
 
@@ -387,25 +393,25 @@ pub async fn start_burning_card_process(
         then map it to the related struct, after that we can handle logging
         and redis caching process without losing ownership of things!
     */
-    let get_burn_response = &mut res.unwrap();
-    let get_burn_response_bytes = get_burn_response.chunk().await.unwrap();
-    let err_resp_vec = get_burn_response_bytes.unwrap().to_vec();
-    let get_burn_response_json = serde_json::from_slice::<NftPortBurnResponse>(&err_resp_vec);
+    let get_transfer_response = &mut res.unwrap();
+    let get_transfer_response_bytes = get_transfer_response.chunk().await.unwrap();
+    let err_resp_vec = get_transfer_response_bytes.unwrap().to_vec();
+    let get_transfer_response_json = serde_json::from_slice::<NftPortTransferResponse>(&err_resp_vec);
     /* 
-        if we're here means that we couldn't map the bytes into the NftPortBurnResponse 
+        if we're here means that we couldn't map the bytes into the NftPortTransferResponse 
         and perhaps we have errors in response from the nftport service
     */
-    if get_burn_response_json.is_err(){
+    if get_transfer_response_json.is_err(){
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
         let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
-        let burn_nft_logs_key_err = format!("ERROR=>NftPortBurnResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(burn_nft_logs_key_err, err_resp_str).await;
+        let transfer_nft_logs_key_err = format!("ERROR=>NftPortTransferResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_burning_card_process");
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_transferring_card_process");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
         return (String::from(""), 1);
@@ -413,18 +419,18 @@ pub async fn start_burning_card_process(
     }
 
     /* log caching using redis */
-    let burn_response = get_burn_response_json.unwrap();
-    info!("✅ NftPortBurnResponse: {:#?}", burn_response.clone());
-    let burn_nft_logs_key = format!("TokenId:{}|Log:NftPortBurnResponse|Time:{}", token_id.clone(), chrono::Local::now().to_string());
-    let _: RedisResult<String> = redis_conn.set(burn_nft_logs_key, serde_json::to_string_pretty(&burn_response).unwrap()).await;
+    let transfer_response = get_transfer_response_json.unwrap();
+    info!("✅ NftPortTransferResponse: {:#?}", transfer_response.clone());
+    let transfer_nft_logs_key = format!("TokenId:{}|Log:NftPortTransferResponse|Time:{}", token_id.clone(), chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(transfer_nft_logs_key, serde_json::to_string_pretty(&transfer_response).unwrap()).await;
 
 
-    if burn_response.response == String::from("OK"){
+    if transfer_response.response == String::from("OK"){
 
-        let burn_tx_hash = burn_response.transaction_hash;
+        let transfer_tx_hash = transfer_response.transaction_hash;
 
-        if burn_tx_hash.starts_with("0x"){
-            return (burn_tx_hash, 0);
+        if transfer_tx_hash.starts_with("0x"){
+            return (transfer_tx_hash, 0);
         } else{
             return (String::from(""), 1);
         }

@@ -1469,7 +1469,19 @@ async fn charge_wallet_request(
                     } else {
 
                         let charge_wallet_request_object = charge_wallet_request.to_owned();
-                        let is_request_verified = is_kyced(
+                        
+                        /* ----------------------------
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced_request(
                             _id, 
                             &charge_wallet_request_object.buyer_cid, 
                             &charge_wallet_request_object.tx_signature, 
@@ -2064,7 +2076,18 @@ async fn deposit(
                             }
                         };
 
-                        let is_request_verified = is_kyced(
+                        /* ----------------------------
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced_request(
                             _id, 
                             &deposit_object.from_cid, 
                             &deposit_object.tx_signature, 
@@ -2127,7 +2150,7 @@ async fn deposit(
                             }
                         }
 
-                        let (tx_hash, tid, res_burn_status) = start_minting_card_process(
+                        let (tx_hash, tid, res_mint_status) = start_minting_card_process(
                             user.screen_cid.unwrap(),
                             deposit_object.clone(),  
                             contract_address.clone(),
@@ -2139,7 +2162,7 @@ async fn deposit(
                             redis_client.clone()
                         ).await;
                         
-                        if res_burn_status == 1{
+                        if res_mint_status == 1{
 
                             resp!{
                                 &[u8], // the data type
@@ -2486,7 +2509,19 @@ async fn withdraw(
                     } else { /* not rate limited, we're ok to go */
 
                         let withdraw_object = withdraw.to_owned();
-                        let is_request_verified = is_kyced(
+                    
+                        /* ----------------------------
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced_request(
                             _id, 
                             &withdraw_object.recipient_cid, 
                             &withdraw_object.tx_signature, 
@@ -2522,30 +2557,31 @@ async fn withdraw(
                         }
 
                         let token_id = deposit_info.nft_id;
-                        let mut burn_tx_hash = String::from("");
+                        let mut transfer_tx_hash = String::from("");
                         
-                        let res_burn = start_burning_card_process(
+                        let res_transfer = start_transferring_card_process(
                             contract_address.to_owned(), 
                             token_id,
+                            polygon_recipient_address,
                             redis_client.clone()
                         ).await;
 
-                        if res_burn.1 == 1{
+                        if res_transfer.1 == 1{
 
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                CANT_BURN_CARD, // response message
+                                CANT_TRANSFER_CARD, // response message
                                 StatusCode::EXPECTATION_FAILED, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
                         }
 
-                        burn_tx_hash = res_burn.0; // moving into another type
+                        transfer_tx_hash = res_transfer.0; // moving into another type
                         
-                        if !burn_tx_hash.is_empty(){
+                        if !transfer_tx_hash.is_empty(){
 
-                            match UserWithdrawal::insert(withdraw.to_owned(), burn_tx_hash, connection).await{
+                            match UserWithdrawal::insert(withdraw.to_owned(), transfer_tx_hash, connection).await{
                                 Ok(user_withdrawal_data) => {
                                     
                                     let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
@@ -2584,7 +2620,7 @@ async fn withdraw(
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                CANT_BURN_CARD, // response message
+                                CANT_TRANSFER_CARD, // response message
                                 StatusCode::EXPECTATION_FAILED, // status code
                                 None::<Cookie<'_>>, // cookie
                             }

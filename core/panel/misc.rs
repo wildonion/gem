@@ -533,8 +533,11 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 }
 
-pub async fn is_kyced(the_user_id: i32, from_cid: &str, tx_signature: &str, hash_data: &str, deposited_amount: Option<i64>,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
+pub async fn kyced_request(
+    the_user_id: i32, from_cid: &str, tx_signature: &str, 
+    hash_data: &str, deposited_amount: Option<i64>,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+) -> Result<User, PanelHttpResponse>{
 
     /* find user info with this id */
     let get_user = User::find_by_id(the_user_id, connection).await;
@@ -611,12 +614,12 @@ pub async fn is_kyced(the_user_id: i32, from_cid: &str, tx_signature: &str, hash
 
     };
     
-    let verification_res = wallet::evm::verify_signature(
+    let verification_sig_res = wallet::evm::verify_signature(
         user_info.screen_cid.unwrap(),
         &tx_signature,
         &hash_data
     ).await;
-    if verification_res.is_err(){
+    if verification_sig_res.is_err(){
 
         let resp = Response::<&[u8]>{
             data: Some(&[]),

@@ -14,7 +14,7 @@
 - building crypto wallet
 - do and get related twitter tasks
 - update bio, avatar and banner
-- transferring in-app tokens by minting (`deposit`) and burning (`withdraw`) nft 
+- transferring in-app tokens by minting (`deposit`) and transfering (`withdraw`) nft 
 - get related deposits and withdrawals
 - user gallery calls
     - public and private rooms
@@ -67,7 +67,7 @@
 - crypto id (username)
 - charge wallet for in-app transactions
 - depositor can call `deposit` API to mint nft by spending in-app tokens from his wallet
-- withdrawer can call `withdraw` API to burn nft to update his in-app token balance
+- withdrawer can call `withdraw` API to transfer nft to recipient to update his in-app token balance
 
 ## 🎢 Development Wrapups
 

@@ -129,7 +129,7 @@ diesel::table! {
     users_withdrawals (id) {
         id -> Int4,
         deposit_id -> Int4,
-        burn_tx_hash -> Varchar,
+        transfer_tx_hash -> Varchar,
         recipient_cid -> Varchar,
         tx_signature -> Varchar,
         wat -> Timestamptz,
