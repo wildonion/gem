@@ -2137,8 +2137,8 @@ async fn deposit(
                         }
 
                         let polygon_recipient_address = recipient_info.clone().screen_cid.unwrap();
-                        let contract_owner = env::var("GIFT_NFT_OWNER_ADDRESS").unwrap();
-                        let contract_address_env = env::var("GIFT_NFT_CONTRACT_ADDRESS").unwrap();
+                        let contract_owner = env::var("GIFT_CARD_POLYGON_NFT_OWNER_ADDRESS").unwrap();
+                        let contract_address_env = env::var("GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS").unwrap();
 
                         if contract_address.to_owned() != contract_address_env{
                             resp!{

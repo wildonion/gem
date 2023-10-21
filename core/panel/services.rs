@@ -73,6 +73,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::edit_task);
     config.service(apis::admin::exports::edit_user);
     config.service(apis::admin::exports::delete_user);
+    config.service(apis::admin::exports::start_tcp_server);
     config.service(apis::admin::exports::get_users);
     config.service(apis::admin::exports::get_admin_tasks);
     config.service(apis::admin::exports::get_users_tasks);
@@ -80,7 +81,6 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_deposits);
     config.service(apis::admin::exports::get_all_users_checkouts);
     config.service(apis::admin::exports::get_all_users_withdrawals);
-    config.service(apis::admin::exports::start_tcp_server);
 
     // other routs maybe ?
     // ...

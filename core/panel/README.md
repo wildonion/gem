@@ -24,7 +24,6 @@
 - buy in-app token (charge wallet and stripe apis)
 
 ### 👑 Admin Access
-- advertise event `<---mafia jwt--->` mafia hyper server
 - publish reveal role topic of an event `<---mafia jwt--->` mafia hyper server
 - publish ecq topic of an event `<---mafia jwt--->` mafia hyper server
 - update event image `<---mafia jwt--->` mafia hyper server

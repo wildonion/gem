@@ -2755,7 +2755,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
+									"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2931,7 +2931,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3MDMwNTY5MTExMTc1MDAwLCJleHAiOjE2OTk2MjI1NjksImlhdCI6MTY5NzAzMDU2OX0.46ROGqcyhwVeSZGHy-3VBRVREdU96Esgab9YWEmuPzFfdgKkQMFhnW9KwdiDvkKCpz1oZvr0oXdpUur5CUHnZg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODY5NjQyMzM4Mzc0MDAwLCJleHAiOjE3MDA0NjE2NDIsImlhdCI6MTY5Nzg2OTY0Mn0.AKpg7bZxrftscYM8XGP-JCKmld9YuAm9RJW25A_VlqE4bYR3YyYHKsPfJTZM8R0X5sWDoIjcgE_hnjzMtxVvlg",
 											"type": "string"
 										}
 									]
@@ -2940,7 +2940,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"000\"\n}",
+									"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"111\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2968,7 +2968,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODY5Nzc2Nzc1NTk4MDAwLCJleHAiOjE3MDA0NjE3NzYsImlhdCI6MTY5Nzg2OTc3Nn0.YslWPHjEHWxD7Cz6Fy5GBTQmHbtjiD_WSB-QpggO3g6T4mE5lLTHJshZRPWdOJNFS1Q3A1GRA83gItpBubjFog",
 											"type": "string"
 										}
 									]
@@ -2977,7 +2977,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient\": \"deadkings\",\n    \"from_cid\": \"030d1a3f12b47529bb8af0dc05743d5bb400317d1fc5e0e05235f15f77031fd14e\",\n    \"amount\": 5,\n    \"nft_img_url\": \"\",\n    \"nft_name\": \"\",\n    \"nft_desc\": \"\",\n    \"tx_signature\": \"aede504470927253a7a2e93984acc1bb1cd101d47336c36e58af6e8ee75647a66fdd2ebece740573d59b36158fb755969f8e646de88e7d341ffa68f318aa30671c\",\n    \"hash_data\": \"68d742a61697de41d6548feac1f59b93a5fcfc8b328acdeed3ebd9bf5becd94f\"\n}",
+									"raw": "{\n    \"recipient\": \"deadkings\",\n    \"from_cid\": \"03d241ab17ca5e7a85f7cb007b8ffe55e4a8f57366f2e6fa507eb70d338d160545\",\n    \"amount\": 5,\n    \"nft_img_url\": \"https://bafkreihuqmuw3enahucfbwyej2fat6m33bew6cyaurfi4gtwxtvm5ldmla.ipfs.nftstorage.link\",\n    \"nft_name\": \"onion gift\",\n    \"nft_desc\": \"an onion gift for my friend\",\n    \"tx_signature\": \"aede504470927253a7a2e93984acc1bb1cd101d47336c36e58af6e8ee75647a66fdd2ebece740573d59b36158fb755969f8e646de88e7d341ffa68f318aa30671c\",\n    \"hash_data\": \"68d742a61697de41d6548feac1f59b93a5fcfc8b328acdeed3ebd9bf5becd94f\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3006,7 +3006,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjYsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1NzI2Nzc5NjcxNDMxMDAwLCJleHAiOjE2OTgzMTg3NzksImlhdCI6MTY5NTcyNjc3OX0.4H5Mdbzx-YNytBvFhb6tmXQEncfRF0XZWuPp0UaoIgy2_0KTeZ8vjN6zbNO6pzbUDWmpmEHlAhl6pbxBrPghig",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODcwNDQwMzE3ODE3MDAwLCJleHAiOjE3MDA0NjI0NDAsImlhdCI6MTY5Nzg3MDQ0MH0.luS5h1yBiLA-YUfpr6kF-GqF6LC9dN7UD5r6gOIYgou8O3EpLmk0l4GepoTr4CTKFKLRQnIl2Darl0_Hy9Y9Hg",
 											"type": "string"
 										}
 									]
@@ -3015,7 +3015,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"recipient_cid\": \"03a0fda1f23de4063fd5f9f0b2b75fe8868dae38d51f5ca411be3f72159adba6e0\",\n    \"deposit_id\": 23,\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
+									"raw": "{\n    \"recipient_cid\": \"02ce059e999a6ffdb0432eee9fa0cbf8eecf642f04b8cc60faa4ea82198e861e9b\",\n    \"deposit_id\": 2,\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"

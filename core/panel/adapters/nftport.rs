@@ -459,7 +459,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
             .arg("-H")
             .arg(&auth_header)
             .arg("-F")
-            .arg("file=@assets/card.png")
+            .arg("file=@assets/conse.png")
             .arg("https://api.nftport.xyz/v0/files")
             .output();
 

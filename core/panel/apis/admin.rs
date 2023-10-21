@@ -2617,18 +2617,7 @@ async fn start_tcp_server(
 
 pub mod exports{
     /*
-    pub use super::advertise_event; // `<---mafia jwt--->` mafia hyper server
     pub use super::request_ecq;  // `<---mafia jwt--->` mafia hyper server
-    pub use super::register_new_post;
-    pub use super::delete_post;
-    pub use super::get_admin_posts;
-    pub use super::get_all_post_comments;
-    pub use super::get_all_post_likes;
-    pub use super::update_post_image;
-    pub use super::verify_post_comment;
-    pub use super::get_all_stripe_products; /* /?from=1&to=50 also: get single product using its id */
-    pub use super::get_all_stripe_prices; /* /?from=1&to=50 also: get single price using its id */
-    pub use super::get_all_stripe_checkout_sessions; /* /?from=1&to=50 also: get single session using its id */
     */
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;
