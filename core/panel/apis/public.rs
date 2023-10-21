@@ -199,7 +199,7 @@ async fn verify_twitter_task(
                                 
                                 if task_starts_with.starts_with("twitter"){
 
-                                    // ex: hashtag::2023-12-08T12:23:00::VLwQb
+                                    // ex: hashtag::2023,12,08T12,23,00::VLwQb
                                     if task_type.contains("::"){
                                         
                                         let mut splitted_task_type = task_type.split("::");
@@ -226,27 +226,24 @@ async fn verify_twitter_task(
                                     }
                                     
                                     match task_type{
-                                        "username" | "username-"=> { /* all task names start with username */                                    
+                                        "username" | "username::"=> { /* all task names start with username */                                    
                                             bot.verify_username(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "code" | "code-" => { /* all task names start with code */
+                                        "code" | "code::" => { /* all task names start with code */
                                             bot.verify_activity_code(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "tweet" | "tweet-" => { /* all task names start with tweet */
+                                        "tweet" | "tweet::" => { /* all task names start with tweet */
                                             bot.verify_tweet(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "retweet" | "retweet-" => { /* all task names start with retweet */
+                                        "retweet" | "retweet::" => { /* all task names start with retweet */
                                             bot.verify_retweet(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "hashtag" | "hashtag-" => { /* all task names start with hashtag */
+                                        "hashtag" | "hashtag::" => { /* all task names start with hashtag */
                                             bot.verify_hashtag(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "like" | "like-" => { /* all task names start with like */
+                                        "like" | "like::" => { /* all task names start with like */
                                             bot.verify_like(task, connection, redis_client, doer_id.to_owned()).await
                                         },
-                                        "comment" | "comment-" => { /* all task names start with comment */
-                                            bot.verify_comment(task, connection, redis_client, doer_id.to_owned()).await
-                                        }
                                         _ => {
             
                                             resp!{

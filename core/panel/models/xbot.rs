@@ -353,58 +353,6 @@ impl Twitter{
         }
 
     }
-
-    pub async fn verify_comment(&self, 
-        task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
-        redis_client: &RedisClient, 
-        doer_id: i32) -> PanelHttpResponse{
-
-        let res_user_find = User::find_by_id(doer_id, connection).await;
-        let Ok(user) = res_user_find else{
-            return res_user_find.unwrap_err();
-        };
-        
-        /* ------------------------ */
-        /* THIRD PARTY TWITTER BOT  */
-        /* ------------------------ */
-        if self.endpoint.is_some(){
-
-            let key = env::var("XBOT_KEY").unwrap();
-            let comment_endpoint = format!("{}/check/{}", self.endpoint.as_ref().unwrap(), key);
-            let mut map = HashMap::new();
-            map.insert("username", user.clone().twitter_username.unwrap_or("".to_string()));
-            map.insert("tweet_id", task.like_tweet_id); /* for like, comment and retweet  */
-            map.insert("type", "comment".to_string()); /* type of verification  */
-            map.insert("text", task.tweet_content); /* tweet text to check that the user has tweet the text or not  */
-            map.insert("hashtag", task.hashtag); /* hashtag to check that the user tweet contains it or not  */
-            
-            verify!{
-                comment_endpoint.as_str(), 
-                map,
-                task.id,
-                doer_id,
-                connection,
-                redis_client,
-                &user.twitter_username.unwrap_or("".to_string()),
-                "comment", /* task type */
-                None
-            }
-
-        } else{
-
-            
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                TWITTER_INVALID_BOT_ENDPOINT, // response message
-                StatusCode::NOT_ACCEPTABLE, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-
-        }
-
-    }
     
     /* VERIFY THAT USER HAS RETWEETED AN SPECIFIC TWEET OR NOT */
 
@@ -578,18 +526,6 @@ impl Twitter{
                             &resp_content, // response message
                             StatusCode::CREATED, // status code
                             None::<Cookie<'_>>, // cookie
-                        }
-
-                    },
-                    "comment" => {
-
-                        let resp_content = format!("{}, {task_type:} Task Is Done By {tusername:}", TWITTER_VERIFIED_COMMENT);
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            &resp_content, //// response message
-                            StatusCode::CREATED, //// status code
-                            None::<Cookie<'_>>, //// cookie
                         }
 
                     },
