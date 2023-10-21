@@ -80,6 +80,11 @@ def webhook_received():
     if event_type == 'checkout.session.async_payment_failed':
         print('🔔 Async Payment failed!')
 
+    """
+        respond to indicate that the delivery was successfully received,
+        our server should respond with a success response to where this 
+        api gets called which is inside the stripe server
+    """
     return jsonify({'status': 'success'})
 
 if __name__ == '__main__':

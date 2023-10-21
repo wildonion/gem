@@ -564,6 +564,14 @@ async fn update_user_balance_webhook(
         storage: web::Data<Option<Arc<Storage>>>
     ) -> PanelHttpResponse{
 
+    /* 
+        stripe event handler and webhook subscriber to the new success checkout session event
+        webhook means once an event gets triggered an api call will be invoked to notify (it's 
+        like a notification to the server) server about the event happend as a result of handling 
+        another process in some where like a payment result in which server subscribes to incoming 
+        event type and can publish it to redispubsub so other app, threads and scopes can also 
+        subscribe to it or charge an in-app token balance of a user like the following logic
+    */
 
     /* extracting shared state data */
     let storage = storage.as_ref().to_owned();

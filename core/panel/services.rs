@@ -162,7 +162,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::check_users_task);
     config.service(apis::public::exports::get_token_value);
     config.service(apis::public::exports::get_x_requests);
-    config.service(apis::public::exports::commit_webhook);
     config.service(apis::public::tasks_leaderboard);
 
     // other routs maybe ?
