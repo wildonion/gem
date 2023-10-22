@@ -51,7 +51,7 @@ pub struct NewUserDeposit{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct NewUserDepositRequest{
     pub from_cid: String,
-    pub recipient: String,
+    pub recipient: String, // useranem, mail
     pub amount: i64,
     pub nft_img_url: String,
     pub nft_name: String,

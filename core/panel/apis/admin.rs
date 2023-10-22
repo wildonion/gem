@@ -1957,7 +1957,7 @@ async fn add_twitter_account(
                     };
 
                    
-                    let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
+                    let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap(); /* converting the file buffer into serde Value to build the struct from its String */
                     let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
                     let mut twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
                     let twitter_accounts = &mut twitter.keys;

@@ -90,7 +90,7 @@ macro_rules! server {
                 not the App instance itself. This is because each worker thread needs to have 
                 its own App instance.
             */
-            info!("➔ 🚀 {} panel server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
+            info!("➔ 🚀 {} panel HTTP+WebSocket server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
             let s = match HttpServer::new(move ||{
                 App::new()
                     /* 

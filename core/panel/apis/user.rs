@@ -2064,7 +2064,7 @@ async fn deposit(
 
                         let deposit_object = deposit.to_owned();
 
-                        let find_recipient_screen_cid = User::find_by_username(&deposit_object.recipient, connection).await;
+                        let find_recipient_screen_cid = User::find_by_username_or_mail_or_scid(&deposit_object.recipient, connection).await;
                         let Ok(recipient_info) = find_recipient_screen_cid else{
                             
                             resp!{
@@ -3691,12 +3691,17 @@ pub mod exports{
     pub use super::add_user_to_friend;
     pub use super::remove_user_from_friend;
     pub use super::get_private_rooms_of; // /?from=1&to=50
-    */
+    pub use super::create_nft;
+    
+    /* pastel network apis */
+    // ...
 
+    */
     // ------------------------------------------------------
     /* users must be kyced and need to sign following calls */
     // ------------------------------------------------------
     // pub use super::create_private_room;
+    // pub use super::sell_token; /* update account_number and paypal_id fields */
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
     pub use super::charge_wallet_request;

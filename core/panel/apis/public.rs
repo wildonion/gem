@@ -199,14 +199,16 @@ async fn verify_twitter_task(
                                 
                                 if task_starts_with.starts_with("twitter"){
 
-                                    // ex: hashtag::2023,12,08T12,23,00::VLwQb
+                                    // ex: task_type => hashtag::2023,12,08T12,23,00-VLwQb
                                     if task_type.contains("::"){
                                         
+                                        // now we have : 2023,12,08T12,23,00-VLwQb
                                         let mut splitted_task_type = task_type.split("::");
                                         let before_double_colon = splitted_task_type.next().unwrap();
                                         let after_double_colon = splitted_task_type.next().unwrap();
-                                        let mut splitted_exp_time_rand_char = after_double_colon.split("::");
+                                        let mut splitted_exp_time_rand_char = after_double_colon.split("-");
                                         
+                                        // now we have : 2023,12,08T12,23,00
                                         let exp_time = splitted_exp_time_rand_char.next().unwrap();
                                         let exp = exp_time.replace(",", ":");
                                         
@@ -567,10 +569,64 @@ async fn tasks_leaderboard(
     }
 }
 
+#[get("/get-user-wallet-info/{identifier}")]
+async fn get_user_wallet_info(
+        req: HttpRequest,   
+        identifier: web::Path<String>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+            match User::fetch_wallet_by_username_or_mail_or_scid(&identifier, connection).await{
+
+                Ok(user_info) => {
+
+                    resp!{
+                        UserWalletInfoResponse, // the data type
+                        user_info, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
+            }
+            
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
+
+
 pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_task;
     pub use super::get_token_value;
     pub use super::get_x_requests;
     pub use super::tasks_leaderboard;
+    pub use super::get_user_wallet_info;
 }

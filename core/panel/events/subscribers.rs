@@ -10,3 +10,4 @@
 
 pub mod notifs;
 pub mod session;
+pub mod chatroomlp;

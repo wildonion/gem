@@ -176,7 +176,7 @@ impl Task{
         }
 
         let random_chars = gen_random_chars(5);
-        let random_task_name = format!("{}::{}", new_task.task_name.as_str(), random_chars);
+        let random_task_name = format!("{}-{}", new_task.task_name.as_str(), random_chars);
 
         let task = NewTask{
             task_name: random_task_name.as_str(),

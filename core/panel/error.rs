@@ -46,7 +46,11 @@ pub enum ErrorKind{
     ThirdPartyApi(ThirdPartyApiError) // reqwest response text
 }
 
-/* make it senable to be shared between threads */
+/* 
+    make it senable to be shared between threads also note that 
+    Send and Sync can only be implement for a type that is inside 
+    the current crate thus can't be implemented for actix_web::HttpResponse
+*/
 unsafe impl Send for PanelError{}
 unsafe impl Sync for PanelError{}
 

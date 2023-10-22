@@ -25,6 +25,10 @@ impl CollaborationQueue{
 
     }
 
+    fn broadcast_event_time_hash(&self){
+
+    }
+
 }
 
 // fire/emit/publish UserNotif events through the ws channels
@@ -37,6 +41,8 @@ pub struct UserNotif{
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct NotifData{
+    id: String,
+    event_id: String, // event_id is the id of an entity that caused this notif happened
     fired_at: Option<i64>,
     seen: bool,
     topic: String, // json string contains the actual data like fireing the player status (role and state changing) during the game 

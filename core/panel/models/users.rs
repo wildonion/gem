@@ -132,6 +132,14 @@ pub struct UserData{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+pub struct UserWalletInfoResponse{
+    pub username: String,
+    pub mail: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* keccak256 */
+    pub stars: Option<i64>,
+    pub created_at: String,
+}
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserIdResponse{
     pub id: i32,
     pub region: String,
@@ -772,6 +780,65 @@ impl User{
         };
 
         Ok(user)
+
+    }
+
+    pub async fn find_by_username_or_mail_or_scid(recipient_info: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(
+                username.eq(recipient_info.to_string())
+                .or(mail.eq(recipient_info.to_string()))
+                .or(screen_cid.eq(recipient_info.to_string()))
+            )
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(recipient_info),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
+    pub async fn fetch_wallet_by_username_or_mail_or_scid(user_info: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWalletInfoResponse, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(
+                username.eq(user_info.to_string())
+                .or(mail.eq(user_info.to_string()))
+                .or(screen_cid.eq(user_info.to_string()))
+            )
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_info),
+                message: USER_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(
+            UserWalletInfoResponse{ 
+                username: user.username, 
+                mail: user.mail, 
+                screen_cid: user.screen_cid, 
+                stars: user.stars, 
+                created_at: user.created_at.to_string() 
+            }
+        )
 
     }
 
