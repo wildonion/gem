@@ -165,7 +165,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/panel) Architecture Diagram
+### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/panel) Push Notif Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">

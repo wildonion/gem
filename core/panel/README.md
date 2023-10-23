@@ -20,7 +20,7 @@
     - public and private rooms
     - fetch private gallery nfts
     - add comment on and like the nft
-    - trade nft
+    - pastel trade nft calls
     - add/remove friend
 - buy and sell in-app token (charge wallet and stripe apis)
 
