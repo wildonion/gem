@@ -1395,6 +1395,35 @@ impl User{
             let avatar_img_filename = format!("walletback:{}-img:{}.{}", avatar_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
             let filepath = format!("{}/{}", WALLET_BACK_UPLOAD_PATH, sanitize_filename::sanitize(&avatar_img_filename));
             avatar_img_path = filepath.clone();
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it
+            */
+            let mut file_buffer = vec![];
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+
+                /* getting the size of the file */
+                file_buffer.extend_from_slice(&data);
+                
+            }
+
+            /* if the file size was greater than 1 MB reject the request */
+            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: TOO_LARGE_FILE_SIZE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            }
 
             /* 
                 web::block() executes a blocking function on a actix threadpool
@@ -1404,38 +1433,12 @@ impl User{
                 object to extract the bytes
             */
             let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_size = 0;
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
 
-                /* getting the size of the file */
-                file_size += data.len();
-                if file_size > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: TOO_LARGE_FILE_SIZE,
-                        status: 406
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    );
-                }
-                
-                /* writing bytes into the created file with the extracted filepath */
-                f = web::block(move || f.write_all(&data).map(|_| f))
-                        .await
-                        .unwrap()
-                        .unwrap();
-            }
+            /* writing bytes into the created file with the extracted filepath */
+            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
+            .await
+            .unwrap()
+            .unwrap();
 
         }
 
@@ -1577,6 +1580,35 @@ impl User{
             let avatar_img_filename = format!("avatar:{}-img:{}.{}", avatar_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
             let filepath = format!("{}/{}", AVATAR_UPLOAD_PATH, sanitize_filename::sanitize(&avatar_img_filename));
             avatar_img_path = filepath.clone();
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it
+            */
+            let mut file_buffer = vec![];
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+
+                /* getting the size of the file */
+                file_buffer.extend_from_slice(&data);
+                
+            }
+
+            /* if the file size was greater than 1 MB reject the request */
+            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: TOO_LARGE_FILE_SIZE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            }
 
             /* 
                 web::block() executes a blocking function on a actix threadpool
@@ -1586,38 +1618,12 @@ impl User{
                 object to extract the bytes
             */
             let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_size = 0;
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
 
-                /* getting the size of the file */
-                file_size += data.len();
-                if file_size > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: TOO_LARGE_FILE_SIZE,
-                        status: 406
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    );
-                }
-                
-                /* writing bytes into the created file with the extracted filepath */
-                f = web::block(move || f.write_all(&data).map(|_| f))
-                        .await
-                        .unwrap()
-                        .unwrap();
-            }
+            /* writing bytes into the created file with the extracted filepath */
+            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
+            .await
+            .unwrap()
+            .unwrap();
 
         }
 
@@ -1758,8 +1764,38 @@ impl User{
             };
 
             let banner_img_filename = format!("banner:{}-img:{}.{}", banner_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-            let filepath = format!("{}/{}", AVATAR_UPLOAD_PATH, sanitize_filename::sanitize(&banner_img_filename));
+            let filepath = format!("{}/{}", BANNER_UPLOAD_PATH, sanitize_filename::sanitize(&banner_img_filename));
             banner_img_path = filepath.clone();
+
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it
+            */
+            let mut file_buffer = vec![];
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+
+                /* getting the size of the file */
+                file_buffer.extend_from_slice(&data);
+                
+            }
+
+            /* if the file size was greater than 1 MB reject the request */
+            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: TOO_LARGE_FILE_SIZE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            }
 
             /* 
                 web::block() executes a blocking function on a actix threadpool
@@ -1769,38 +1805,12 @@ impl User{
                 object to extract the bytes
             */
             let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_size = 0;
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
 
-                /* getting the size of the file */
-                file_size += data.len();
-                if file_size > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: TOO_LARGE_FILE_SIZE,
-                        status: 406
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    );
-                }
-                
-                /* writing bytes into the created file with the extracted filepath */
-                f = web::block(move || f.write_all(&data).map(|_| f))
-                        .await
-                        .unwrap()
-                        .unwrap();
-            }
+            /* writing bytes into the created file with the extracted filepath */
+            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
+            .await
+            .unwrap()
+            .unwrap();
 
         }
 
