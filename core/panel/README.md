@@ -10,18 +10,19 @@
 ### 👤 User Access
 - push notif subscriptions (mmr ranking, ecq and reveal role) `<---mafia jwt--->` mafia hyper server
 - twitter account, otp, mail, identity and bank accounts verification process
-- new login and check token flow
-- building crypto wallet
-- do and get related twitter tasks
-- update bio, avatar and banner
+- new login and check token flow based on cookie time hash
+- building secp256k1 crypto wallet
+- twitter tasks report
+- update bio, wallet background, avatar and banner
 - transferring in-app tokens by minting (`deposit`) and transfering (`withdraw`) nft 
 - get related deposits and withdrawals
-- user gallery calls
+- user gallery pastel calls
     - public and private rooms
     - fetch private gallery nfts
     - add comment on and like the nft
+    - trade nft
     - add/remove friend
-- buy in-app token (charge wallet and stripe apis)
+- buy and sell in-app token (charge wallet and stripe apis)
 
 ### 👑 Admin Access
 - publish reveal role topic of an event `<---mafia jwt--->` mafia hyper server
@@ -29,8 +30,7 @@
 - update event image `<---mafia jwt--->` mafia hyper server
 - add twitter account for the twitter bot
 - register/delete/edit new twitter tasks and users
-- get all withdrawals, deposits, users and twitter tasks
-- fetch all strip products, prices and checkout sessions
+- get all withdrawals, deposits, checkouts, users, users tasks and twitter tasks
 
 ### 👨🏻‍💻 Dev Access
 - get all data of a user `<---mafia jwt--->` mafia hyper server
@@ -42,14 +42,16 @@
 - get token price
 - gallery public calls
     - get nfts of public gallery
+- tasks leaderboard
+- get ratelimit info of xbot
+- get user wallet info
 
 ### 🥞 Health Routes
 - check server status
 - check token 
 - logout
 - get all the tasks
-- get tasks leaderboard
-- get ratelimit info of xbot
+- stripe update user balance webhook
 
 ## 🔑 Tiny KYC Identity Verification Process Before Creating CID
 

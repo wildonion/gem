@@ -4,6 +4,8 @@
 
 > note that live (test) webhooks only work in a live (test) environment, so make sure you're creating a webhook based on your environment which can be switched in stripe dashboard panel.
 
+> each time you change the `STRIPE_*` vars with new keys you need to redeploy the container. 
+
 step 0. fill the `STRIPE_*` vars inside the `.env` with your live (test) keys
 
 step 1. deploy the docker container of `stripewh` server

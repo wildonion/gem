@@ -572,7 +572,7 @@ async fn tasks_leaderboard(
 #[get("/get-user-wallet-info/{identifier}")]
 async fn get_user_wallet_info(
         req: HttpRequest,   
-        identifier: web::Path<String>,
+        user_identifier: web::Path<String>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -582,10 +582,10 @@ async fn get_user_wallet_info(
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
         
-            let connection = pg_pool.get().unwrap();
+            let connection = &mut pg_pool.get().unwrap();
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-            match User::fetch_wallet_by_username_or_mail_or_scid(&identifier, connection).await{
+            match User::fetch_wallet_by_username_or_mail_or_scid(&user_identifier.to_owned(), connection).await{
 
                 Ok(user_info) => {
 

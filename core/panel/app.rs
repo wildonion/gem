@@ -21,9 +21,6 @@ Coded by
 
 */
 
-/* -------------------------------------------------- */
-/* ------------ loading externcal crates ------------ */
-/* -------------------------------------------------- */
 use lettre::{
     message::header::ContentType as LettreContentType,
     transport::smtp::authentication::Credentials, 

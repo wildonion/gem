@@ -3665,6 +3665,9 @@ async fn update_mafia_player_avatar(
 
 
 pub mod exports{
+    // --------------------------------
+    /* verifications and report apis */
+    // --------------------------------
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
@@ -3683,23 +3686,25 @@ pub mod exports{
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::get_all_user_unpaid_checkouts;
     pub use super::get_all_user_paid_checkouts;
-    /*
-    pub use super::add_nft_comment;
-    pub use super::like_nft;
-    pub use super::give_stars_to;
-    pub use super::send_private_room_invitation_link;
-    pub use super::add_user_to_friend;
-    pub use super::remove_user_from_friend;
-    pub use super::get_private_rooms_of; // /?from=1&to=50
-    pub use super::create_nft;
-    
-    /* pastel network apis */
+    // --------------------------------
+    /*      pastel network apis       */
+    // --------------------------------
+    // pub use super::add_nft_comment;
+    // pub use super::like_nft;
+    // pub use super::give_stars_to;
+    // pub use super::send_private_room_invitation_link;
+    // pub use super::add_user_to_friend;
+    // pub use super::remove_user_from_friend;
+    // pub use super::get_private_rooms_of; // /?from=1&to=50
+    // pub use super::create_nft;
+    // --------------------------------
+    /*      chatroom launchpad apis   */
+    // --------------------------------
     // ...
-
-    */
-    // ------------------------------------------------------
-    /* users must be kyced and need to sign following calls */
-    // ------------------------------------------------------
+    
+    // --------------------------------
+    /*          user kyced apis       */
+    // --------------------------------
     // pub use super::create_private_room;
     // pub use super::sell_token; /* update account_number and paypal_id fields */
     pub use super::deposit; /* gift card money transfer */
