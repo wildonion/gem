@@ -180,6 +180,7 @@ impl UserWithdrawal{
         }
 
         let user_withdrawals = users_withdrawals
+            .order(wat.desc())
             .offset(from)
             .limit((to - from) + 1)
             .filter(recipient_cid.eq(withdrawer_cid.clone()))
@@ -232,6 +233,7 @@ impl UserWithdrawal{
         }
 
         let user_withdrawals = users_withdrawals
+            .order(wat.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<UserWithdrawal>(connection);

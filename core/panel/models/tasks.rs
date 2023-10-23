@@ -361,6 +361,7 @@ impl Task{
         
         /* get the passed in admin info by its id */
         let user = match users::table
+            .order(users::created_at.desc())
             .filter(users::id.eq(owner_id))
             .select(User::as_select())
             .offset(from)

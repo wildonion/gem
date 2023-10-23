@@ -152,6 +152,7 @@ impl UserCheckout{
         }
 
         let users_checkouts_data = users_checkouts
+            .order(iat.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<UserCheckout>(connection);
@@ -211,6 +212,7 @@ impl UserCheckout{
         }
 
         let users_checkouts_data = users_checkouts
+            .order(iat.desc())
             .filter(user_cid.eq(user_crypto_id))
             .filter(payment_status.eq("unpaid"))
             .offset(from)
@@ -272,6 +274,7 @@ impl UserCheckout{
         }
 
         let users_checkouts_data = users_checkouts
+            .order(iat.desc())
             .filter(user_cid.eq(user_crypto_id))
             .filter(payment_status.eq("paid"))
             .offset(from)

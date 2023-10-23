@@ -73,7 +73,9 @@ impl UserTask{
 
     pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, PanelHttpResponse>{
 
-        match users_tasks.load::<UserTask>(connection)
+        match users_tasks
+            .order(done_at.desc())
+            .load::<UserTask>(connection)
             {
                 Ok(users_task_data) => Ok(users_task_data),
                 Err(e) => {
@@ -180,6 +182,7 @@ impl UserTask{
             .filter(users::id.eq(doer_id))
             .offset(from)
             .limit((to - from) + 1)
+            .order(users::created_at.desc())
             .select(User::as_select())
             .get_result(connection)
             {
@@ -213,6 +216,7 @@ impl UserTask{
         match UserTask::belonging_to(&user)
             .inner_join(tasks::table)
             .select(Task::as_select())
+            .order(tasks::created_at.desc())
             .load(connection)
             {
                 Ok(tasks_info) => {
@@ -296,8 +300,10 @@ impl UserTask{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
 
         let user = match users::table
+            .order(users::created_at.desc())
             .filter(users::id.eq(doer_id))
             .select(User::as_select())
+            .order(users::created_at.desc())
             .get_result(connection)
             {
                 Ok(fetched_user) => fetched_user,
@@ -329,6 +335,7 @@ impl UserTask{
         match UserTask::belonging_to(&user)
             .inner_join(tasks::table)
             .select(Task::as_select())
+            .order(tasks::created_at.desc())
             .load(connection)
             {
                 Ok(tasks_info) => {
@@ -426,6 +433,7 @@ impl UserTask{
         }
 
         let all_users: Vec<User> = match users::table
+            .order(users::created_at.desc())
             .select(User::as_select())
             .offset(from)
             .limit((to - from) + 1)
@@ -461,6 +469,7 @@ impl UserTask{
         /* get all users tasks belong to all users by joining on UserTask and Task tables */
         let users_jobs: Vec<(UserTask, Task)> = match UserTask::belonging_to(&all_users)
             .inner_join(tasks::table)
+            .order(users_tasks::done_at.desc())
             .select((UserTask::as_select(), Task::as_select()))
             .load(connection)
             {

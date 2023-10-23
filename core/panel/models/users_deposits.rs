@@ -188,6 +188,7 @@ impl UserDeposit{
         }
 
         let user_deposits = users_deposits
+            .order(iat.desc())
             .filter(from_cid.eq(user_cid.clone()))
             .offset(from)
             .limit((to - from) + 1)
@@ -294,6 +295,7 @@ impl UserDeposit{
         }
 
         let user_deposits = users_deposits
+            .order(iat.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<UserDeposit>(connection);
@@ -350,6 +352,7 @@ impl UserDeposit{
         }
 
         let user_deposits = users_deposits
+            .order(iat.desc())
             .filter(users_deposits::recipient_screen_cid.eq(user_screen_cid))
             .filter(users_deposits::is_claimed.eq(false))
             .offset(from)

@@ -1921,6 +1921,7 @@ impl User{
         }
         
         match users
+            .order(created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<User>(connection)
