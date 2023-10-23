@@ -107,6 +107,7 @@ pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
+pub const TOO_LARGE_FILE_SIZE: &str = "File Is Too Large";
 
 
 pub static STRIPE_STARTED_PAYAMENT: &str = "Stripe Payment Process Has Been Started Successfully";
