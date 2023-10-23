@@ -540,6 +540,7 @@ async fn login(
                                 bio: user.bio.clone(),
                                 avatar: user.avatar.clone(),
                                 banner: user.banner.clone(),
+                                wallet_background: user.wallet_background.clone(),
                                 activity_code: user.activity_code.clone(),
                                 twitter_username: user.twitter_username.clone(),
                                 facebook_username: user.facebook_username.clone(),

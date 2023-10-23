@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   bio VARCHAR DEFAULT NULL,
   avatar VARCHAR DEFAULT NULL,
   banner VARCHAR DEFAULT NULL,
+  wallet_background VARCHAR DEFAULT NULL,
   activity_code VARCHAR NOT NULL,
   twitter_username VARCHAR DEFAULT NULL UNIQUE,
   facebook_username VARCHAR DEFAULT NULL UNIQUE,

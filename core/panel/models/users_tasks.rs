@@ -316,7 +316,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports_without_limit");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -398,7 +398,7 @@ impl UserTask{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserTask::reports_without_limit");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -515,6 +515,7 @@ impl UserTask{
                         bio: user.bio.clone(),
                         avatar: user.avatar.clone(),
                         banner: user.banner.clone(),
+                        wallet_background: user.wallet_background.clone(),
                         activity_code: user.activity_code,
                         twitter_username: user.twitter_username, 
                         facebook_username: user.facebook_username, 

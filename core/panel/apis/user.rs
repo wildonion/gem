@@ -155,6 +155,7 @@ async fn login(
                         bio: user.bio.clone(),
                         avatar: user.avatar.clone(),
                         banner: user.banner.clone(),
+                        wallet_background: user.wallet_background.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
@@ -962,6 +963,7 @@ async fn login_with_identifier_and_password(
                         bio: user.bio.clone(),
                         avatar: user.avatar.clone(),
                         banner: user.banner.clone(),
+                        wallet_background: user.wallet_background.clone(),
                         activity_code: user.activity_code.clone(),
                         twitter_username: user.twitter_username.clone(),
                         facebook_username: user.facebook_username.clone(),
@@ -1433,7 +1435,7 @@ async fn charge_wallet_request(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "make_cid");
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "charge_wallet_request");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -3272,6 +3274,118 @@ async fn edit_bio(
     }
 }
 
+#[post("/profile/update/wallet-back")]
+#[passport(user)]
+async fn upload_wallet_back(
+    req: HttpRequest,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+    /* extracting shared storage data */
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+        match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+            Some(pg_pool) => {
+    
+                let connection = &mut pg_pool.get().unwrap();
+    
+    
+                /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+                match User::passport(req, granted_role, connection).await{
+                    Ok(token_data) => {
+                        
+                        let _id = token_data._id;
+                        let role = token_data.user_role;
+    
+                        
+                        match User::update_wallet_back(_id, img, connection).await{
+                            Ok(updated_user) => {
+                                
+                                resp!{
+                                    UserData, // the data type
+                                    updated_user, // response data
+                                    UPDATED, // response message
+                                    StatusCode::OK, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            },
+                            Err(resp) => {
+                                
+                                /* USER NOT FOUND response */
+                                resp
+                            }
+                        }
+    
+    
+                    },
+                    Err(resp) => {
+                    
+                        /* 
+                            🥝 response can be one of the following:
+                            
+                            - NOT_FOUND_COOKIE_VALUE
+                            - NOT_FOUND_TOKEN
+                            - INVALID_COOKIE_TIME_HASH
+                            - INVALID_COOKIE_FORMAT
+                            - EXPIRED_COOKIE
+                            - USER_NOT_FOUND
+                            - NOT_FOUND_COOKIE_TIME_HASH
+                            - ACCESS_DENIED, 
+                            - NOT_FOUND_COOKIE_EXP
+                            - INTERNAL_SERVER_ERROR 
+                        */
+                        resp
+                    }
+                }
+            },
+            None => {
+    
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    STORAGE_ISSUE, // response message
+                    StatusCode::INTERNAL_SERVER_ERROR, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
+            }
+        }
+
+
+}
+
 #[post("/profile/update/avatar")]
 #[passport(user)]
 async fn upload_avatar(
@@ -3674,6 +3788,7 @@ pub mod exports{
     pub use super::edit_bio;
     pub use super::upload_avatar;
     pub use super::upload_banner;
+    pub use super::upload_wallet_back;
     pub use super::update_mafia_player_avatar;
     pub use super::make_cid;
     pub use super::request_mail_code;

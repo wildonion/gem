@@ -34,6 +34,7 @@ diesel::table! {
         bio -> Nullable<Varchar>,
         avatar -> Nullable<Varchar>,
         banner -> Nullable<Varchar>,
+        wallet_background -> Nullable<Varchar>,
         activity_code -> Varchar,
         twitter_username -> Nullable<Varchar>,
         facebook_username -> Nullable<Varchar>,

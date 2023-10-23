@@ -118,6 +118,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::edit_bio);
     config.service(apis::user::exports::upload_avatar);
     config.service(apis::user::exports::upload_banner);
+    config.service(apis::user::exports::upload_wallet_back);
     config.service(apis::user::exports::update_mafia_player_avatar);
     
     // other routs maybe ?

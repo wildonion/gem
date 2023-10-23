@@ -102,6 +102,7 @@ pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
+pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";

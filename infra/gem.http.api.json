@@ -4,7 +4,7 @@
 		"name": "gem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
-		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?action=share&source=collection_link&creator=22927035"
+		"_collection_link": "https://web.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?source=collection_link"
 	},
 	"item": [
 		{
@@ -3153,6 +3153,45 @@
 							"response": []
 						},
 						{
+							"name": "Upload Wallet Background",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "img",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-user}}/profile/update/wallet-back",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"profile",
+										"update",
+										"wallet-back"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Upload Mafia Player Avatar",
 							"request": {
 								"auth": {
@@ -3731,6 +3770,27 @@
 											"key": "to",
 											"value": "10"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Wallet Info",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-user-wallet-info/wildonion",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-user-wallet-info",
+										"wildonion"
 									]
 								}
 							},
