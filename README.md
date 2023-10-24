@@ -177,9 +177,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
     - step 1: ```bash docker cp run.sql postgres:run.sql```
     - step 2: ```bash docker exec -it postgres psql -U postgres -d conse -f /run.sql```
 
-* front-end can access the image of an event through the address `https://api.panel.conse.app/assets/images/events/{image_path}` like so: `https://api.panel.conse.app/assets/images/events/event64c93cc7d19645f57fd9f98d-img1692289627686439.jpg`
-
-* front-end can access the avatar and banner of a user through the address `https://api.panel.conse.app/assets/images/avatars/{image_path}` like so: `https://api.panel.conse.app/assets/images/avatars/avatar12-img1692289627686439.jpg` and `https://api.panel.conse.app/assets/images/banners/banner12-img1692289627686439.jpg`
+* front-end can access the image of an event through the address `https://api.panel.conse.app/assets/images/events/{image_path}` like so: `https://api.panel.conse.app/assets/images/events/event64c93cc7d19645f57fd9f98d-img1692289627686439.jpg` and banner of a user through the address `https://api.panel.conse.app/assets/images/avatars/{image_path}` like so: `https://api.panel.conse.app/assets/images/avatars/avatar12-img1692289627686439.jpg` and `https://api.panel.conse.app/assets/images/banners/banner12-img1692289627686439.jpg`
 
 * we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
 ```bash

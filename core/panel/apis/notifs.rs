@@ -28,9 +28,11 @@ use actix::prelude::*;
 
 /* 
 
-    this route will be used to receive push notif from admin reveal roles, mmr 
-    and ecq engines, here is the example connect address and make sure that client
-    is passing the mafia server JWT to the header request like `Bearer JWT`:
+    an specific user can join an specific event room to subscribe to what ws actors 
+    will be sent in different parts of the app so this route will be used to receive 
+    push notif from admin reveal roles, mmr and ecq engines, here is the example connect 
+    address and make sure that client is passing the mafia server JWT to the header 
+    request like `Bearer JWT`:
 
         localhost: ws://localhost:7442/subscribe/
 
@@ -55,7 +57,7 @@ use actix::prelude::*;
     the subscribed redis topics to the channel that contains event peers
 
 */
-#[get("/{user_id}/{notif_room}")] /* an specific user can join an specific event */
+#[get("/{user_id}/{notif_room}")]
 async fn notif_subs(
     req: HttpRequest, 
     stream: web::Payload, 

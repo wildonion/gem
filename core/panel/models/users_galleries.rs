@@ -11,6 +11,6 @@ use crate::*;
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Gallery{
     pub id: i32,
-    pub collections: Vec<i32>,
-    pub is_private: bool
+    pub nfts: Vec<String>, // sql field: TEXT[] DEFAULT ARRAY[]::TEXT[]
+    pub is_private: bool,
 }

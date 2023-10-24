@@ -118,5 +118,22 @@ pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
 
 
+
+    tokio::spawn(async move{
+
+        loop{
+
+            // subscribe to redis pubsub channel
+            // send the subscribed data to mpsc jobq channel
+
+            // inside misc.rs in discord task handler we'll
+            // receive the data from mpsc jobq channel and 
+            // broadcast it to discord channel using serenity ws
+             
+        }
+
+    });
+
+
     Ok(())
 }
