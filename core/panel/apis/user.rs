@@ -3722,6 +3722,7 @@ async fn update_mafia_player_avatar(
                         /* if the file size was greater than 1 MB reject the request */
                         if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
 
+                            /* terminate the method and respond the caller */
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: TOO_LARGE_FILE_SIZE,
@@ -3741,9 +3742,9 @@ async fn update_mafia_player_avatar(
 
                         /* writing bytes into the created file with the extracted filepath */
                         f = web::block(move || f.write_all(&file_buffer).map(|_| f))
-                        .await
-                        .unwrap()
-                        .unwrap();
+                            .await
+                            .unwrap()
+                            .unwrap();
 
                     }
 

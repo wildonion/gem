@@ -8,11 +8,6 @@ use crate::*;
 /* 
     chatroom launchpad peer subscribers 
     https://github.com/actix/examples/tree/master/websockets
-    stream/wh/event handler/loop using actix-ws-web/tokio stuffs/rpc/libp2p
-
-    actor execute streaming of async tasks in their threadpool
-    and we can send results between different parts of the app
-    and other actors by pre defined message passing logic 
 
     chat session actor: 
          an actor that will handle ws streams from client
