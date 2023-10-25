@@ -1483,7 +1483,7 @@ async fn charge_wallet_request(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced_request(
+                        let is_request_verified = kyced::verify_request(
                             _id, 
                             &charge_wallet_request_object.buyer_cid, 
                             &charge_wallet_request_object.tx_signature, 
@@ -2089,7 +2089,7 @@ async fn deposit(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced_request(
+                        let is_request_verified = kyced::verify_request(
                             _id, 
                             &deposit_object.from_cid, 
                             &deposit_object.tx_signature, 
@@ -2523,7 +2523,7 @@ async fn withdraw(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced_request(
+                        let is_request_verified = kyced::verify_request(
                             _id, 
                             &withdraw_object.recipient_cid, 
                             &withdraw_object.tx_signature, 

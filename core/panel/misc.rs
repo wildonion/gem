@@ -14,6 +14,11 @@ use actix::Addr;
 use s3::*;
 
 
+
+
+/* ------------------------------------------------------------------------- */
+/* --------------------------- HELPER STRUCTURES --------------------------- */
+/* ------------------------------------------------------------------------- */
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct TotalXRlInfo{
     pub app_rate_limit_info: Vec<XAppRlInfo>,
@@ -210,6 +215,32 @@ pub struct Limit{
     pub to: Option<i64>
 }
 
+/*
+    can't bound the T to ?Sized since 
+    T is inside the Option which the size
+    of the Option depends on the T at 
+    compile time hence the T must be 
+    Sized, also we're using a lifetime 
+    to use the str slices in message
+
+    in the case of passing &[] data we must 
+    specify the type of T and pass the type to 
+    the Response signature like Response::<&[Type]>{} 
+    since the size of &[] can't be known 
+    at compile time hence we must specify the exact
+    type of T inside &[]    
+
+*/
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Response<'m, T>{
+    pub data: Option<T>,
+    pub message: &'m str, // &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
+    pub status: u16,
+}
+
+/* ----------------------------------------------------------------------- */
+/* --------------------------- HELPER METHODS ---------------------------- */
+/* ----------------------------------------------------------------------- */
 pub async fn is_bot_24hours_limited(
     connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
     rl_data: Vec<XAppRlInfo>
@@ -533,111 +564,6 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 }
 
-pub async fn kyced_request(
-    the_user_id: i32, from_cid: &str, tx_signature: &str, 
-    hash_data: &str, deposited_amount: Option<i64>,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
-) -> Result<User, PanelHttpResponse>{
-
-    /* find user info with this id */
-    let get_user = User::find_by_id(the_user_id, connection).await;
-    let Ok(user) = get_user else{
-        let error_resp = get_user.unwrap_err();
-        return Err(error_resp);
-    };
-
-    /* if the phone wasn't verified user can't deposit */
-    if user.phone_number.is_none() || 
-    !user.is_phone_verified{
-
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: NOT_VERIFIED_PHONE,
-            status: 406
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-
-    }
-
-    /* if the mail wasn't verified user can't deposit */
-    if user.mail.is_none() || 
-    !user.is_mail_verified{
-
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: NOT_VERIFIED_MAIL,
-            status: 406
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-
-    }
-
-    /* check that the user has enough balance */
-    if deposited_amount.is_some() 
-        && (user.balance.is_none() || 
-            user.balance.unwrap() < 0 || 
-            user.balance.unwrap() < deposited_amount.unwrap()){
-
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: INSUFFICIENT_FUNDS,
-            status: 406
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-    }
-
-
-    /* 
-        first we'll try to find the a user with the passed in screen_cid 
-        generated from keccak256 of cid then we'll go for the signature 
-        verification process 
-    */
-    let find_user_screen_cid = User::find_by_screen_cid(
-        &Wallet::generate_keccak256_from(from_cid.to_string()), connection
-    ).await;
-    let Ok(user_info) = find_user_screen_cid else{
-        
-        let resp = Response{
-            data: Some(from_cid.to_string()),
-            message: USER_SCREEN_CID_NOT_FOUND,
-            status: 404
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-
-    };
-    
-    let verification_sig_res = wallet::evm::verify_signature(
-        user_info.screen_cid.unwrap(),
-        &tx_signature,
-        &hash_data
-    ).await;
-    if verification_sig_res.is_err(){
-
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: INVALID_SIGNATURE,
-            status: 406
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
-
-    }
-
-    Ok(user)
-    
-}
-/* -----------------------------------------------------------------------*/
-/* --------------------------- HELPER METHODS --------------------------- */
-/* -----------------------------------------------------------------------*/
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
@@ -713,31 +639,6 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
         for the remainder of the program. Use this sparingly
     */
     Box::leak(s.into_boxed_slice()) 
-}
-/* -----------------------------------------------------------------------*/
-
-
-/*
-    can't bound the T to ?Sized since 
-    T is inside the Option which the size
-    of the Option depends on the T at 
-    compile time hence the T must be 
-    Sized, also we're using a lifetime 
-    to use the str slices in message
-
-    in the case of passing &[] data we must 
-    specify the type of T and pass the type to 
-    the Response signature like Response::<&[Type]>{} 
-    since the size of &[] can't be known 
-    at compile time hence we must specify the exact
-    type of T inside &[]    
-
-*/
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Response<'m, T>{
-    pub data: Option<T>,
-    pub message: &'m str, // &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
-    pub status: u16,
 }
 
 

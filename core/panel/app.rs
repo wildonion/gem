@@ -128,7 +128,7 @@ mod error;      /* contains error handler logis */
 mod adapters;   /* contains all third party apis */
 mod s3;         /* contains app storage handler methods and macros */
 mod server;     /* contains server handler methods and macros */
-
+mod kyced;      /* contains kyc process of the api body */
 
 
 #[actix_web::main]
