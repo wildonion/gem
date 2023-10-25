@@ -253,10 +253,23 @@ async fn notif_subs(
 
 }
 
+#[get("/{user_cid}/{notif_room}")]
+async fn chatroomlp(
+    req: HttpRequest, 
+    stream: web::Payload, 
+    route_paths: web::Path<(String, String)>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse {
 
+    todo!()
 
-
+}
 
 pub mod exports{
+    /* 
+        all of the following routes accept payload which is an streamer
+        will be used to extract the utf8 bytes payload 
+    */
     pub use super::notif_subs;
+    pub use super::chatroomlp;
 }
