@@ -4,8 +4,8 @@
 
 /*   ---------------------------------------------------------------------------------------------
     | third party api handler including nftport, stripe and pastel used for transferring nft 
-    | gift cards and chatroom launchpad, payment and charging in-app tokens and gallery based
-    | marketplace on top of pastel blockchain.
+    | gift cards, gallery based marketplace, chatroom launchpad, payment and charging in-app tokens
+    | and uploading nft artworks on pastel blockchain.
     |
 */
 pub mod nftport;

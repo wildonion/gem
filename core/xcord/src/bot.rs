@@ -118,7 +118,7 @@ pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
 
 
-
+    /* start subscribing in a separate threadpool rather than using the main's threads */
     tokio::spawn(async move{
 
         loop{

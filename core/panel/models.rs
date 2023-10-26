@@ -14,8 +14,9 @@
     |   users_phones      ---> methods of postgres users_phones table
     |   users_checkouts   ---> methods of postgres users_checkouts table
     |   users_galleries   ---> methods of postgres users_galleries table
-    |   users_fans        ---> methods of postgres users_fans table
     |   users_nfts        ---> methods of postgres users_nfts table
+    |   users_collections ---> methods of postgres users_collections table
+    |   users_fans        ---> methods of postgres users_fans table
     |
 */
 
@@ -29,5 +30,6 @@ pub mod users_mails;
 pub mod users_phones;
 pub mod users_checkouts;
 pub mod users_galleries;
-pub mod users_fans;
 pub mod users_nfts;
+pub mod users_collections;
+pub mod users_fans;

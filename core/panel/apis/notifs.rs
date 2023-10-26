@@ -261,14 +261,18 @@ async fn chatroomlp(
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse {
 
+    // only authenticated and kyced user can chat
+    // ...
+    
     todo!()
 
 }
 
 pub mod exports{
     /* 
-        all of the following routes accept payload which is an streamer
-        will be used to extract the utf8 bytes payload 
+        all of the following routes accept a payload streamer
+        which will be used to extract the utf8 bytes from the 
+        payload asyncly
     */
     pub use super::notif_subs;
     pub use super::chatroomlp;

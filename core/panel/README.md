@@ -16,12 +16,17 @@
 - update bio, wallet background, avatar and banner
 - transferring in-app tokens by minting (`deposit`) and transfering (`withdraw`) nft 
 - get related deposits and withdrawals
-- user gallery pastel calls
-    - public and private rooms
-    - fetch private gallery nfts
+- user gallery based markeplace calls
+    - public and private galleries
+    - fetch private and public gallery nfts and collections
+    - nfts of a collection
     - add comment on and like the nft
-    - pastel trade nft calls
+    - polygon trade nft calls
     - add/remove friend
+    - create nfts and upload their artworkds on pastel network storage using sense and cascade technologies
+    - mint, buy and transfer nfts on polygon network in the platform
+    - have gallery based collections in their private and public galleries 
+    - they can load their collection in opensea for future trading operations like auction and offers
 - buy and sell in-app token (charge wallet and stripe apis)
 
 ### 👑 Admin Access

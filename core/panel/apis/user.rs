@@ -3797,9 +3797,9 @@ async fn update_mafia_player_avatar(
 
 
 pub mod exports{
-    // --------------------------------
-    /* verifications and report apis */
-    // --------------------------------
+    // -----------------------------------------------
+    /*         verifications and report apis         */
+    // -----------------------------------------------
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
@@ -3819,26 +3819,49 @@ pub mod exports{
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::get_all_user_unpaid_checkouts;
     pub use super::get_all_user_paid_checkouts;
-    // --------------------------------
-    /*      pastel network apis       */
-    // --------------------------------
     // pub use super::add_nft_comment;
     // pub use super::like_nft;
     // pub use super::give_stars_to;
-    // pub use super::send_private_room_invitation_link;
     // pub use super::add_user_to_friend;
     // pub use super::remove_user_from_friend;
-    // pub use super::get_private_rooms_of; // /?from=1&to=50
-    // pub use super::create_nft;
-    // --------------------------------
-    /*      chatroom launchpad apis   */
-    // --------------------------------
+    // -----------------------------------------------
+    /*                  gallery apis                 */
+    // -----------------------------------------------
+    // pub use super::send_private_gallery_invitation_link;
+    // pub use super::create_private_gallery;
+    // pub use super::get_all_private_galleries_of; // /?from=1&to=50 | UserPrivateGallery::get_all_for()
+    // pub use super::get_all_nfts_of_collection; // /?from=1&to=50 | UserCollection::get_none_minted_nfts_for()
+    // pub use super::get_all_private_collections_of; // /?from=1&to=50 | UserCollection::get_all_private_collections_for()
+    // pub use super::get_all_public_collections_of; // /?from=1&to=50 | UserCollection::get_all_public_collections_for()
+    // -----------------------------------------------
+    /*             chatroom launchpad apis           */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+    // https://docs.nftport.xyz/reference/deploy-nft-product-contract
+    // https://docs.nftport.xyz/reference/transfer-minted-nft
+    // https://docs.nftport.xyz/reference/customizable-minting
     // ...
-    
-    // --------------------------------
-    /*          user kyced apis       */
-    // --------------------------------
-    // pub use super::create_private_room;
+    // -----------------------------------------------
+    /*             polygon marketplace apis          */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    // pub use super::create_collection;
+    // pub use super::create_nft; /* upload on pastel using sense and cascade apis */
+    // pub use super::mint_nft;
+    // pub use super::sell_nft;
+    // pub use super::buy_nft;
+    // pub use super::transfer_nft;
+    // -----------------------------------------------
+    /*                in-app token apis              */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // pub use super::sell_token; /* update account_number and paypal_id fields */
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */

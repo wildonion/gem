@@ -69,6 +69,11 @@ pub struct UserTaskData{
     pub tasks: Vec<Task>
 }
 
+/* 
+    the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
+    since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
+    and pass its encoded form (utf8 bytes) directly through the socket to the client 
+*/
 impl UserTask{
 
     pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, PanelHttpResponse>{
