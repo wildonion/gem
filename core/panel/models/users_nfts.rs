@@ -57,21 +57,7 @@ impl UserNft{
 
     }
 
-    pub async fn update_price(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        Ok(())
-
-    }
-
-    pub async fn update_metadata(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        Ok(())
-
-    }
-
-    pub async fn update_listing(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn update(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
         Ok(())

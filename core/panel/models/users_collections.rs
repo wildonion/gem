@@ -27,6 +27,25 @@ pub struct UserCollection{
     pub updated_at: chrono::NaiveDateTime,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UserCollectionData{
+    pub id: i32,
+    pub contract_address: String,
+    pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub name: String,
+    pub symbol: String,
+    pub owner_address: String, // user screen_cid of the collection owner and on chain contract
+    pub metadata_updatable: bool,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address: String,
+    pub collection_background: String,
+    pub metadata: String, // json stringified data
+    pub description: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -101,7 +120,7 @@ impl UserCollection{
 
     }
 
-    pub async fn add_nf_to(col_name: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn update(col_info: UserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
         Ok(())
