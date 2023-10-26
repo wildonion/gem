@@ -8,7 +8,7 @@ use crate::*;
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserNft{
     pub id: i32,
-    pub contract_address: String,
+    pub contract_address: String, // contract address contains the collection info
     pub current_owner: String, // the screen_cid of current owner of this nft
     pub metadata: String, // json stringified like statistical data
     pub img_url: String,
@@ -60,6 +60,9 @@ impl UserNft{
     pub async fn update(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
+        // spend token for gas fee and update listings
+        // ...
+        
         Ok(())
 
     }
