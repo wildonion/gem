@@ -18,8 +18,24 @@ pub struct UserNft{
     pub description: String,
     pub current_price: Option<i64>,
     pub is_listed: bool,
+    pub comments: Vec<NftComment>,
+    pub likes: Vec<NftLike>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NftComment{
+    pub nft_onchain_id: String,
+    pub content: String,
+    pub owner_screen_cid: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NftLike{
+    pub nft_onchain_id: String,
+    pub upvoter_screen_cids: Vec<String>,
+    pub downvoter_screen_cids: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -35,6 +51,8 @@ pub struct UserNftData{
     pub description: String,
     pub current_price: Option<i64>,
     pub is_listed: bool,
+    pub comments: Vec<NftComment>,
+    pub likes: Vec<NftLike>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -79,6 +97,9 @@ impl UserNft{
         - update_nft         ---- https://docs.nftport.xyz/reference/update-minted-nft
         - sell_nft
         - buy_nft
+        - add_nft_comment
+        - like_nft
+        - dilike_nft
     */
     pub async fn update(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{

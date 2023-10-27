@@ -6,6 +6,8 @@
 
 use crate::*;
 
+use super::users_nfts::UserNftData;
+
 
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -31,7 +33,7 @@ pub struct UserCollection{
 pub struct UserCollectionData{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub nfts: Vec<UserNftData>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
     pub name: String,
     pub symbol: String,
     pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
@@ -53,19 +55,31 @@ pub struct UserCollectionData{
 */
 impl UserCollection{
 
-    pub async fn get_none_minted_nfts_for(screen_cid: &str, collection_name: &str,
+    pub async fn get_all_none_minted_nfts_for(screen_cid: &str, collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        Ok(())
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+        
+        // get all collections that their nfts are not minted yet and 
+        // are belong to the passed in screen_cid
+        // ...
+        
+        Ok(
+            vec![UserCollectionData::default()]
+        )
 
     }
 
-    pub async fn get_minted_nfts_for(screen_cid: &str, collection_name: &str,
+    pub async fn get_all_minted_nfts_for(screen_cid: &str, collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        Ok(())
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+        
+        // get all collections that their nfts are minted and
+        // are belong to the passed in screen_cid
+        // ...
+        
+        Ok(
+            vec![UserCollectionData::default()]
+        )
 
     }
 
@@ -84,24 +98,28 @@ impl UserCollection{
     }
 
     pub async fn get_all_private_collections_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
         
         // retrieve collections that their nfts are not minted yet on contract
         // retrieve collections that their nfts' owner == screen_cid
         // ...
 
-        Ok(())
+        Ok(
+            vec![UserCollectionData::default()]
+        )
 
     }
 
     pub async fn get_all_public_collections_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
         // retrieve collections that their nfts are minted on contract
         // retrieve collections that their nfts' owner == screen_cid
         // ...
 
-        Ok(())
+        Ok(
+            vec![UserCollectionData::default()]
+        )
 
     }
 

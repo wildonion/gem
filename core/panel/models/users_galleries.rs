@@ -3,6 +3,8 @@
 
 use crate::*;
 
+use super::users_collections::{UserCollection, UserCollectionData};
+
 
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -22,7 +24,7 @@ pub struct UserPrivateGallery{
 pub struct UserPrivateGalleryData{
     pub id: i32,
     pub owner_screen_cid: String, // the screen_cid of the gallery owner
-    pub collections: Vec<i32>,
+    pub collections: Vec<UserCollectionData>,
     pub name: String,
     pub description: String,
     pub invited_friends: Vec<String>,
@@ -39,13 +41,21 @@ pub struct UserPrivateGalleryData{
 impl UserPrivateGallery{
 
     pub async fn get_all_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
 
-        Ok(())
+        // if the caller is a friend of the gallery owner and is inside the invited_friends vector
+        // then he can see all his galleries' collections contain none minted nfts
+        // ...
+
+        // let user_collection_data = UserCollectionData::get_all_private_collections_for()
+
+        Ok(
+            vec![UserPrivateGalleryData::default()]
+        )
 
     }
 
-    pub async fn get_friends_of(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_invited_friends_of(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<(), PanelHttpResponse>{
 
         Ok(())
@@ -69,13 +79,14 @@ impl UserPrivateGallery{
             
         // check that a user with the passed in screen_cid is the caller's friend or not
         // update invited_friends field with the passed in screen_cid
+        // call UserFan::push_invitation_request_for()
         // ...
 
         Ok(())
 
     }
 
-    pub async fn remove_friend_from(screen_cid: &str, gallery_id: &str,
+    pub async fn remove_invited_friend_from(screen_cid: &str, gallery_id: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
             

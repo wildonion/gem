@@ -3819,21 +3819,18 @@ pub mod exports{
     pub use super::get_recipient_unclaimed_deposits;
     pub use super::get_all_user_unpaid_checkouts;
     pub use super::get_all_user_paid_checkouts;
-    // pub use super::add_nft_comment;
-    // pub use super::like_nft;
-    // pub use super::give_stars_to;
-    // pub use super::add_user_to_friend;
-    // pub use super::remove_user_from_friend;
     // -----------------------------------------------
     /*                  gallery apis                 */
     // -----------------------------------------------
     // pub use super::create_private_gallery;
     // pub use super::update_private_gallery;
     // pub use super::get_all_private_galleries_of; // /?from=1&to=50 | UserPrivateGallery::get_all_for()
-    // pub use super::get_all_nfts_of_collection; // /?from=1&to=50 | UserCollection::get_none_minted_nfts_for()
-    // pub use super::get_all_private_collections_of; // /?from=1&to=50 | UserCollection::get_all_private_collections_for()
+    // pub use super::get_all_nfts_of_private_collection; // /?from=1&to=50 | UserCollection::get_all_none_minted_nfts_for()
+    // pub use super::get_all_nfts_of_public_collection; // /?from=1&to=50 | UserCollection::get_all_minted_nfts_for()
     // pub use super::get_all_public_collections_of; // /?from=1&to=50 | UserCollection::get_all_public_collections_for()
     // pub use super::send_private_gallery_invitation_request; // UserPrivateGallery::send_invitation_request_to()
+    // pub use super::add_user_to_friend;
+    // pub use super::remove_user_from_friend;
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------
@@ -3866,6 +3863,9 @@ pub mod exports{
     // pub use super::buy_nft;
     // pub use super::transfer_nft;
     // pub use super::update_nft;
+    // pub use super::add_nft_comment;
+    // pub use super::like_nft;
+    // pub use super::dislike_nft;
     // -----------------------------------------------
     /*                in-app token apis              */
     // -----------------------------------------------
