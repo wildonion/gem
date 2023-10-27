@@ -8,13 +8,13 @@ use crate::*;
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserNft{
     pub id: i32,
-    pub contract_address: String, // contract address contains the collection info
-    pub current_owner_screen_cid: String, // the screen_cid of current owner of this nft
+    pub contract_address: String,
+    pub current_owner_screen_cid: String,
     pub metadata: String, // json stringified like statistical data like nft statistics
     pub img_url: String,
-    pub onchain_id: Option<String>, // fulfilled after minting
+    pub onchain_id: Option<String>,
     pub name: String,
-    pub is_minted: bool, // if it's false means that is not stored on contract yet
+    pub is_minted: bool,
     pub description: String,
     pub current_price: Option<i64>,
     pub is_listed: bool,
@@ -42,12 +42,12 @@ pub struct NftLike{
 pub struct UserNftData{
     pub id: i32,
     pub contract_address: String,
-    pub current_owner_screen_cid: String, // the screen_cid of current owner of this nft
-    pub metadata: String, // json stringified like statistical data like nft statistics
+    pub current_owner_screen_cid: String,
+    pub metadata: String,
     pub img_url: String,
-    pub onchain_id: Option<String>, // fulfilled after minting
+    pub onchain_id: Option<String>,
     pub name: String,
-    pub is_minted: bool, // if it's false means that is not stored on contract yet
+    pub is_minted: bool,
     pub description: String,
     pub current_price: Option<i64>,
     pub is_listed: bool,
@@ -62,12 +62,12 @@ pub struct UpdateUserNftData{
     pub id: i32,
     pub contract_address: String,
     pub buyer_screen_cid: Option<String>,
-    pub current_owner_screen_cid: String, // the screen_cid of current owner of this nft
-    pub metadata: String, // json stringified like statistical data like nft statistics
+    pub current_owner_screen_cid: String,
+    pub metadata: String,
     pub img_url: String,
-    pub onchain_id: Option<String>, // fulfilled after minting
+    pub onchain_id: Option<String>, 
     pub name: String,
-    pub is_minted: bool, // if it's false means that is not stored on contract yet
+    pub is_minted: bool,
     pub description: String,
     pub current_price: Option<i64>,
     pub is_listed: bool,
@@ -97,7 +97,8 @@ impl UserNft{
 
     pub async fn insert(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
-        
+            
+        // if asset_info.is_minted is set to false means that is not stored on contract yet
         // upload on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
         // spend token for gas fee and update listings
         // by default is_listed will be set to true since an nft goes to private collection by default 
@@ -125,6 +126,7 @@ impl UserNft{
         asset_info: UpdateUserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
         
+        // asset_info.onchain_id will be fulfilled after minting
         // condition: caller_screen_cid == asset_info.current_owner_screen_cid
         // if the nft is_listed field was set to true the nft can be sold to the user
         // if sell api gets called the is_listed will be set to false automatically

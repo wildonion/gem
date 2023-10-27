@@ -226,6 +226,10 @@ impl Task{
                 }
             }
 
+        // TODO -
+        // publish new task to redis pubsub channel
+        // ...
+
     }
 
     pub async fn delete(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{

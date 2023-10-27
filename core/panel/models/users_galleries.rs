@@ -9,9 +9,9 @@ use super::users_collections::{UserCollection, UserCollectionData};
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserPrivateGallery{
     pub id: i32,
-    pub owner_screen_cid: String, // the screen_cid of the gallery owner
+    pub owner_screen_cid: String,
     pub collections: Vec<i32>,
-    pub name: String, // ------ this is not unique ------
+    pub name: String,
     pub description: String,
     pub invited_friends: Vec<String>,
     pub metadata: String, // json stringified data like gallery statistics
@@ -22,12 +22,12 @@ pub struct UserPrivateGallery{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserPrivateGalleryData{
     pub id: i32,
-    pub owner_screen_cid: String, // the screen_cid of the gallery owner
+    pub owner_screen_cid: String,
     pub collections: Vec<UserCollectionData>,
     pub name: String,
     pub description: String,
     pub invited_friends: Vec<String>,
-    pub metadata: String, // json stringified data like gallery statistics
+    pub metadata: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -35,12 +35,12 @@ pub struct UserPrivateGalleryData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserPrivateGalleryData{
     pub id: i32,
-    pub owner_screen_cid: String, // the screen_cid of the gallery owner
+    pub owner_screen_cid: String,
     pub collections: Vec<i32>,
     pub name: String,
     pub description: String,
     pub invited_friends: Vec<String>,
-    pub metadata: String, // json stringified data like gallery statistics
+    pub metadata: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -81,6 +81,9 @@ impl UserPrivateGallery{
     pub async fn insert(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
+        // name is not unique
+        // ...
+        
         Ok(())
 
     }

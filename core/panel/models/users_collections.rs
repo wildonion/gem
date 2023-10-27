@@ -14,14 +14,14 @@ use super::users_nfts::UserNftData;
 pub struct UserCollection{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub nfts: Vec<i32>,
     pub name: String,
     pub symbol: String,
-    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
+    pub owner_screen_cid: String,
     pub metadata_updatable: bool,
     pub base_uri: String,
-    pub royalties_share: i32, // update balance field of user in each nft sell
-    pub royalties_address: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
     pub collection_background: String,
     pub metadata: String, // json stringified data like collection statistics
     pub description: String,
@@ -36,13 +36,13 @@ pub struct UserCollectionData{
     pub nfts: Vec<UserNftData>,
     pub name: String,
     pub symbol: String,
-    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
+    pub owner_screen_cid: String,
     pub metadata_updatable: bool,
     pub base_uri: String,
-    pub royalties_share: i32, // update balance feild of user in each nft sell
-    pub royalties_address: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: String, // json stringified data
+    pub metadata: String,
     pub description: String,
     pub created_at: String,
     pub updated_at: String,
@@ -52,16 +52,16 @@ pub struct UserCollectionData{
 pub struct UpdateUserCollectionData{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub nfts: Vec<i32>,
     pub name: String,
     pub symbol: String,
-    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
+    pub owner_screen_cid: String,
     pub metadata_updatable: bool,
     pub base_uri: String,
-    pub royalties_share: i32, // update balance feild of user in each nft sell
-    pub royalties_address: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: String, // json stringified data
+    pub metadata: String,
     pub description: String,
     pub created_at: String,
     pub updated_at: String,
@@ -198,7 +198,8 @@ impl UserCollection{
     pub async fn update(caller_screen_cid: &str,
         col_info: UpdateUserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
-            
+        
+        // update balance field of royalties_address_screen_cid in each nft sell
         // condition: caller_screen_cid == col_info.owner_screen_cid
 
         Ok(
