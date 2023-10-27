@@ -15,13 +15,13 @@ pub struct UserCollection{
     pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
     pub name: String,
     pub symbol: String,
-    pub owner_address: String, // user screen_cid of the collection owner and on chain contract
+    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
     pub metadata_updatable: bool,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address: String,
     pub collection_background: String,
-    pub metadata: String, // json stringified data
+    pub metadata: String, // json stringified data like collection statistics
     pub description: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -34,7 +34,7 @@ pub struct UserCollectionData{
     pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
     pub name: String,
     pub symbol: String,
-    pub owner_address: String, // user screen_cid of the collection owner and on chain contract
+    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
     pub metadata_updatable: bool,
     pub base_uri: String,
     pub royalties_share: i32,
@@ -52,14 +52,6 @@ pub struct UserCollectionData{
     and pass its encoded form (utf8 bytes) directly through the socket to the client 
 */
 impl UserCollection{
-
-    pub async fn insert(private_gallery_id: i32){
-
-        // call this api https://docs.nftport.xyz/reference/deploy-nft-product-contract
-        // insert the collection id into the user private gallery related to the passed in id
-        // ...
-
-    }
 
     pub async fn get_none_minted_nfts_for(screen_cid: &str, collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -120,13 +112,6 @@ impl UserCollection{
 
     }
 
-    pub async fn update(col_info: UserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        Ok(())
-
-    }
-
     pub async fn get_nfts_of(col_name: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
@@ -139,6 +124,36 @@ impl UserCollection{
         //         nft_data
         //     })
         //     .collect::<UserNftData>();
+
+        Ok(())
+
+    }
+
+}
+
+impl UserCollection{
+
+    pub async fn insert(private_gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(), PanelHttpResponse>{
+
+        // call this api https://docs.nftport.xyz/reference/deploy-nft-product-contract
+        // insert the collection id into the user private gallery related to the passed in id
+        // ...
+
+        Ok(())
+
+    }
+
+    /* ---------------------------------------------------------------------------- */
+    /* this method can be called to update an collection status like royalties info */
+    /* ---------------------------------------------------------------------------- */
+    /* supported apis (spend token for gas fee like update royalties info):
+        - update_collection ---- https://docs.nftport.xyz/reference/update-nft-product-contract
+    */
+    pub async fn update(col_info: UserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(), PanelHttpResponse>{
+            
+        // ...
 
         Ok(())
 

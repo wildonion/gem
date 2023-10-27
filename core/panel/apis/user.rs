@@ -3827,13 +3827,13 @@ pub mod exports{
     // -----------------------------------------------
     /*                  gallery apis                 */
     // -----------------------------------------------
-    // pub use super::send_private_gallery_invitation_link;
     // pub use super::create_private_gallery;
     // pub use super::update_private_gallery;
     // pub use super::get_all_private_galleries_of; // /?from=1&to=50 | UserPrivateGallery::get_all_for()
     // pub use super::get_all_nfts_of_collection; // /?from=1&to=50 | UserCollection::get_none_minted_nfts_for()
     // pub use super::get_all_private_collections_of; // /?from=1&to=50 | UserCollection::get_all_private_collections_for()
     // pub use super::get_all_public_collections_of; // /?from=1&to=50 | UserCollection::get_all_public_collections_for()
+    // pub use super::send_private_gallery_invitation_request; // UserPrivateGallery::send_invitation_request_to()
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------
@@ -3846,19 +3846,26 @@ pub mod exports{
     // https://docs.nftport.xyz/reference/customizable-minting
     // ...
     // -----------------------------------------------
-    /*             polygon marketplace apis          */
+    /*             collection advieh apis            */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    // ...
+    // -----------------------------------------------
+    /*              polygon gallery apis             */
     // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // pub use super::create_collection;
     // pub use super::update_collection;
-    // pub use super::create_nft; /* upload on pastel using sense and cascade apis */
-    // pub use super::mint_nft; /* ----spend token---- */
+    // pub use super::create_nft;
+    // pub use super::mint_nft;
     // pub use super::sell_nft; 
-    // pub use super::buy_nft; /* ----spend token---- */
-    // pub use super::transfer_nft; /* ----spend token---- */
-    // pub use super::update_nft; /* ----spend token---- */
+    // pub use super::buy_nft;
+    // pub use super::transfer_nft;
+    // pub use super::update_nft;
     // -----------------------------------------------
     /*                in-app token apis              */
     // -----------------------------------------------
