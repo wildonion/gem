@@ -3610,9 +3610,9 @@ async fn upload_banner(
 #[post("/mafia/player/{player_id}/upload/avatar")]
 async fn update_mafia_player_avatar(
     req: HttpRequest, 
-        player_id: web::Path<String>, // mongodb objectid
-        storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-        mut img: Multipart, /* form-data implementation to receive stream of byte fields */
+    player_id: web::Path<String>, // mongodb objectid
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart, /* form-data implementation to receive stream of byte fields */
     ) -> PanelHttpResponse{
 
 
@@ -3825,9 +3825,9 @@ pub mod exports{
     // pub use super::create_private_gallery;
     // pub use super::update_private_gallery;
     // pub use super::get_all_private_galleries_of; // /?from=1&to=50 | UserPrivateGallery::get_all_for()
+    // pub use super::get_all_public_collections_of; // /?from=1&to=50 | UserCollection::get_all_public_collections_for()
     // pub use super::get_all_nfts_of_private_collection; // /?from=1&to=50 | UserCollection::get_all_none_minted_nfts_for()
     // pub use super::get_all_nfts_of_public_collection; // /?from=1&to=50 | UserCollection::get_all_minted_nfts_for()
-    // pub use super::get_all_public_collections_of; // /?from=1&to=50 | UserCollection::get_all_public_collections_for()
     // pub use super::send_private_gallery_invitation_request; // UserPrivateGallery::send_invitation_request_to()
     // pub use super::add_user_to_friend;
     // pub use super::remove_user_from_friend;
@@ -3850,7 +3850,7 @@ pub mod exports{
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // ...
     // -----------------------------------------------
-    /*              polygon gallery apis             */
+    /*              polygon marketplace apis         */
     // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
@@ -3867,7 +3867,7 @@ pub mod exports{
     // pub use super::like_nft;
     // pub use super::dislike_nft;
     // -----------------------------------------------
-    /*                in-app token apis              */
+    /*        deposit/withdraw in-app token apis     */
     // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */

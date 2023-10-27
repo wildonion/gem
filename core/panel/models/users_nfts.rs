@@ -57,6 +57,26 @@ pub struct UserNftData{
     pub updated_at: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateUserNftData{
+    pub id: i32,
+    pub contract_address: String,
+    pub buyer_screen_cid: Option<String>,
+    pub current_owner_screen_cid: String, // the screen_cid of current owner of this nft
+    pub metadata: String, // json stringified like statistical data like nft statistics
+    pub img_url: String,
+    pub onchain_id: Option<String>, // fulfilled after minting
+    pub name: String,
+    pub is_minted: bool, // if it's false means that is not stored on contract yet
+    pub description: String,
+    pub current_price: Option<i64>,
+    pub is_listed: bool,
+    pub comments: Vec<NftComment>,
+    pub likes: Vec<NftLike>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -101,9 +121,13 @@ impl UserNft{
         - like_nft
         - dilike_nft
     */
-    pub async fn update(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn update(caller_screen_cid: &str, 
+        asset_info: UpdateUserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
-
+        
+        // condition: caller_screen_cid == asset_info.current_owner_screen_cid
+        // if the nft is_listed field was set to true the nft can be sold to the user
+        // if sell api gets called the is_listed will be set to false automatically
         // ...
 
         Ok(())

@@ -20,7 +20,7 @@ pub struct UserCollection{
     pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
     pub metadata_updatable: bool,
     pub base_uri: String,
-    pub royalties_share: i32,
+    pub royalties_share: i32, // update balance field of user in each nft sell
     pub royalties_address: String,
     pub collection_background: String,
     pub metadata: String, // json stringified data like collection statistics
@@ -33,13 +33,32 @@ pub struct UserCollection{
 pub struct UserCollectionData{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: Vec<UserNftData>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub nfts: Vec<UserNftData>,
     pub name: String,
     pub symbol: String,
     pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
     pub metadata_updatable: bool,
     pub base_uri: String,
-    pub royalties_share: i32,
+    pub royalties_share: i32, // update balance feild of user in each nft sell
+    pub royalties_address: String,
+    pub collection_background: String,
+    pub metadata: String, // json stringified data
+    pub description: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateUserCollectionData{
+    pub id: i32,
+    pub contract_address: String,
+    pub nfts: Vec<i32>, // sql field: INTEGER[] DEFAULT ARRAY[]::INTEGER[]
+    pub name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String, // user screen_cid of the collection owner and on chain contract
+    pub metadata_updatable: bool,
+    pub base_uri: String,
+    pub royalties_share: i32, // update balance feild of user in each nft sell
     pub royalties_address: String,
     pub collection_background: String,
     pub metadata: String, // json stringified data
@@ -57,43 +76,49 @@ impl UserCollection{
 
     pub async fn get_all_none_minted_nfts_for(screen_cid: &str, collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
         
         // get all collections that their nfts are not minted yet and 
-        // are belong to the passed in screen_cid
+        // are belong to the passed in screen_cid and are related 
+        // to the passed in collection name
         // ...
         
         Ok(
-            vec![UserCollectionData::default()]
+            vec![UserNftData::default()]
         )
 
     }
 
     pub async fn get_all_minted_nfts_for(screen_cid: &str, collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
         
         // get all collections that their nfts are minted and
-        // are belong to the passed in screen_cid
+        // are belong to the passed in screen_cid and are related 
+        // to the passed in collection name
         // ...
         
         Ok(
-            vec![UserCollectionData::default()]
+            vec![UserNftData::default()]
         )
 
     }
 
     pub async fn get_info_by_name(col_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<UserCollectionData, PanelHttpResponse>{
 
-        Ok(())
+        Ok(
+            UserCollectionData::default()
+        )
 
     }
 
     pub async fn get_info_by_screen_cid(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<UserCollectionData, PanelHttpResponse>{
 
-        Ok(())
+        Ok(
+            UserCollectionData::default()
+        )
 
     }
 
@@ -101,7 +126,7 @@ impl UserCollection{
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
         
         // retrieve collections that their nfts are not minted yet on contract
-        // retrieve collections that their nfts' owner == screen_cid
+        // and their nfts' current_owner_screen_cid == screen_cid
         // ...
 
         Ok(
@@ -114,7 +139,7 @@ impl UserCollection{
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
         // retrieve collections that their nfts are minted on contract
-        // retrieve collections that their nfts' owner == screen_cid
+        // and their nfts' owner == screen_cid
         // ...
 
         Ok(
@@ -124,9 +149,11 @@ impl UserCollection{
     }
 
     pub async fn get_info_of(col_name: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+        -> Result<UserCollectionData, PanelHttpResponse>{
 
-        Ok(())
+        Ok(
+            UserCollectionData::default()
+        )
 
     }
 
@@ -168,12 +195,15 @@ impl UserCollection{
     /* supported apis (spend token for gas fee like update royalties info):
         - update_collection ---- https://docs.nftport.xyz/reference/update-nft-product-contract
     */
-    pub async fn update(col_info: UserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+    pub async fn update(caller_screen_cid: &str,
+        col_info: UpdateUserCollectionData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCollectionData, PanelHttpResponse>{
             
-        // ...
+        // condition: caller_screen_cid == col_info.owner_screen_cid
 
-        Ok(())
+        Ok(
+            UserCollectionData::default()
+        )
 
     }
 

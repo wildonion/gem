@@ -19,6 +19,7 @@ pub struct UserFan{
 pub struct UserFanData{
     pub id: i32,
     pub friends: Vec<FriendData>,
+    pub invitation_requests: Vec<InvitationRequestData>,
     pub created_at: String,
     pub updated_at: String,
 }

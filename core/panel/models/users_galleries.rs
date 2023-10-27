@@ -2,7 +2,6 @@
 
 
 use crate::*;
-
 use super::users_collections::{UserCollection, UserCollectionData};
 
 
@@ -25,6 +24,19 @@ pub struct UserPrivateGalleryData{
     pub id: i32,
     pub owner_screen_cid: String, // the screen_cid of the gallery owner
     pub collections: Vec<UserCollectionData>,
+    pub name: String,
+    pub description: String,
+    pub invited_friends: Vec<String>,
+    pub metadata: String, // json stringified data like gallery statistics
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UpdateUserPrivateGalleryData{
+    pub id: i32,
+    pub owner_screen_cid: String, // the screen_cid of the gallery owner
+    pub collections: Vec<i32>,
     pub name: String,
     pub description: String,
     pub invited_friends: Vec<String>,
@@ -104,8 +116,11 @@ impl UserPrivateGallery{
     /* supported apis:
         - update_private_gallery
     */
-    pub async fn update(gallery_info: UserPrivateGalleryData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn update(caller_screen_cid: &str, 
+        gallery_info: UpdateUserPrivateGalleryData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
+        
+        // condition: caller_screen_cid == gallery_info.owner_screen_cid
 
         Ok(())
 

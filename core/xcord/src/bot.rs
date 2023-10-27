@@ -116,7 +116,12 @@ pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
 
 
-    /* start subscribing in a separate threadpool rather than using the main's threads */
+    /* 
+        start subscribing in a separate threadpool rather than using the main's threads 
+        which is the default tokio runtime thread cause we have tokio::main macro on 
+        top of the main function which means this method will be executed inside tokio
+        runtime
+    */
     tokio::spawn(async move{
 
         loop{
