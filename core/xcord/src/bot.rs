@@ -103,12 +103,10 @@ use serenity::{prelude::*,
 mod misc;
 
 
-
+/* a global mutex that must be in RwLock in order to be mutable safely in threadpool */
 pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
     HashMap::new()
 });
-
-
 
 
 
@@ -122,6 +120,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     tokio::spawn(async move{
 
         loop{
+
+            // remember to publish tasks in Task::insert() method
 
             // subscribe to redis pubsub channel
             // send the subscribed data to mpsc jobq channel
