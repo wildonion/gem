@@ -1,25 +1,32 @@
 
 
 
-use crate::*;
+use crate::{*, schema::users_nfts};
 
 
+/* 
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+    diesel migration generate users_nfts ---> create users_nfts migration sql files
+    diesel migration run                 ---> apply sql files to db 
+    diesel migration redo                ---> drop tables 
+
+*/
+#[derive(Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, Debug, PartialEq, Clone)]
+#[diesel(table_name=users_nfts)]
 pub struct UserNft{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata: String, // json stringified like statistical data like nft statistics
     pub img_url: String,
     pub onchain_id: Option<String>,
-    pub name: String,
+    pub nft_name: String,
     pub is_minted: bool,
-    pub description: String,
-    pub current_price: Option<i64>,
+    pub nft_description: String,
+    pub current_price: i64,
     pub is_listed: bool,
-    pub comments: Vec<NftComment>,
-    pub likes: Vec<NftLike>,
+    pub metadata: serde_json::Value, /* pg key, value based json binary object */
+    pub comments: serde_json::Value, /* pg key, value based json binary object */
+    pub likes: serde_json::Value, /* pg key, value based json binary object */
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -43,38 +50,46 @@ pub struct UserNftData{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata: String,
+    pub metadata: serde_json::Value,
     pub img_url: String,
     pub onchain_id: Option<String>,
-    pub name: String,
+    pub nft_name: String,
     pub is_minted: bool,
-    pub description: String,
-    pub current_price: Option<i64>,
+    pub nft_description: String,
+    pub current_price: i64,
     pub is_listed: bool,
-    pub comments: Vec<NftComment>,
-    pub likes: Vec<NftLike>,
+    pub comments: serde_json::Value,
+    pub likes: serde_json::Value,
     pub created_at: String,
     pub updated_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct UpdateUserNftData{
-    pub id: i32,
+pub struct UpdateUserNftRequest{
     pub contract_address: String,
     pub buyer_screen_cid: Option<String>,
     pub current_owner_screen_cid: String,
-    pub metadata: String,
+    pub metadata: serde_json::Value,
     pub img_url: String,
     pub onchain_id: Option<String>, 
-    pub name: String,
+    pub nft_name: String,
     pub is_minted: bool,
-    pub description: String,
-    pub current_price: Option<i64>,
+    pub nft_description: String,
+    pub current_price: i64,
     pub is_listed: bool,
-    pub comments: Vec<NftComment>,
-    pub likes: Vec<NftLike>,
-    pub created_at: String,
-    pub updated_at: String,
+    pub comments: serde_json::Value,
+    pub likes: serde_json::Value,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NewUserNftRequest{
+    pub collection_id: i32,
+    pub contract_address: String,
+    pub current_owner_screen_cid: String,
+    pub nft_name: String,
+    pub nft_description: String,
+    pub current_price: i64,
+    pub metadata: serde_json::Value, /* pg key, value based json binary object */
 }
 
 /* 
@@ -95,7 +110,8 @@ impl UserNft{
 
 impl UserNft{
 
-    pub async fn insert(asset_info: UserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn insert(asset_info: NewUserNftRequest, mut img: Multipart,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
             
         // if asset_info.is_minted is set to false means that is not stored on contract yet
@@ -103,6 +119,7 @@ impl UserNft{
         // spend token for gas fee and update listings
         // by default is_listed will be set to true since an nft goes to private collection by default 
         // which must be listed to be sold to friends have been invited by the gallery owner
+        
         // ...
 
         Ok(())
@@ -123,7 +140,7 @@ impl UserNft{
         - dilike_nft
     */
     pub async fn update(caller_screen_cid: &str, 
-        asset_info: UpdateUserNftData, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        asset_info: UpdateUserNftRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
         
         // asset_info.onchain_id will be fulfilled after minting
@@ -131,6 +148,9 @@ impl UserNft{
         // if the nft is_listed field was set to true the nft can be sold to the user
         // if sell api gets called the is_listed will be set to false automatically
         // ...
+
+        // let nft_comments = serde_json::from_value::<NftComment>(asset_info.comments).unwrap();
+        // let nft_likes = serde_json::from_value::<NftLike>(asset_info.comments).unwrap();
 
         Ok(())
 

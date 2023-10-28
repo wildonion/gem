@@ -1,0 +1,10 @@
+-- Your SQL goes here
+
+CREATE TABLE IF NOT EXISTS users_fans (
+  id SERIAL PRIMARY KEY,
+  user_screen_cid VARCHAR NOT NULL,
+  friends JSONB,
+  invitation_requests JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);

@@ -53,11 +53,14 @@ is a websocket handler
 */
 
 
+use futures_util::StreamExt;
+use misc::NewTask;
 use redis::FromRedisValue;
 use redis::JsonAsyncCommands;
 use redis::cluster::ClusterClient;
 use redis::AsyncCommands; // this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
+use redis_async::resp::FromResp;
 use serde::{Serialize, Deserialize};
 use std::{rc::Rc, cell::RefCell};
 use std::collections::{HashSet, HashMap};
@@ -72,6 +75,7 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex; // async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use chrono::{TimeZone, Timelike, Datelike, Utc}; // this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
 use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; // methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
+use redis_async::client::ConnectionBuilder;
 use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
                 interaction::application_command::{CommandDataOption, CommandDataOptionValue}, command::CommandOption}, 
                 framework::standard::{macros::{help, hook}, 
@@ -103,17 +107,36 @@ use serenity::{prelude::*,
 mod misc;
 
 
-/* a global mutex that must be in RwLock in order to be mutable safely in threadpool */
-pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
-    HashMap::new()
-});
-
-
-
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+
+    env::set_var("RUST_LOG", "trace");
+    pretty_env_logger::init();
+    dotenv().expect("⚠️ .env file not found");
+    let discord_token = env::var("XCORD_TOKEN").expect("⚠️ no discord token variable set");
+    let serenity_shards = env::var("SERENITY_SHARDS").expect("⚠️ no shards variable set");
+    let buffer_size = env::var("IO_BUFFER_SIZE").unwrap().parse::<usize>().unwrap();
+    let redis_password = env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+    let redis_username = env::var("REDIS_USERNAME").unwrap_or("".to_string());
+    let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
+    let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+    let mut redis_conn_builder = ConnectionBuilder::new(redis_host, redis_port as u16).unwrap();
+    redis_conn_builder.password(redis_password);
+    let redis_async_pubsub_connection = redis_conn_builder.pubsub_connect().await.unwrap();
+    
+
+    let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = 
+        tokio::sync::mpsc::channel::<bool>(buffer_size);
+    let (new_task_sender, mut new_task_receiver) = 
+        tokio::sync::mpsc::channel::<NewTask>(buffer_size);
+
+
+    /* sending true flag to start the bot, this can be done any where inside the app using the mpsc sender */
+    if let Err(why) = discord_bot_flag_sender.send(true).await{
+        error!("can't send true flag to start the bot because: {}", why);
+    }
 
 
     /* 
@@ -124,21 +147,62 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
     */
     tokio::spawn(async move{
 
+        let cloned_sender = new_task_sender.clone();
+
         loop{
 
-            // remember to publish tasks in Task::insert() method
+            /*  
+                subscribing asyncly and constantly using async redis crate to 
+                XTASK redis pubsub channel by streaming over the incoming future 
+                tasks topics to decode the published topics
+            */
+            let get_stream_messages = redis_async_pubsub_connection
+                .subscribe(misc::TASK_TOPIC_CHANNEL)
+                .await;
 
-            // subscribe to redis pubsub channel
-            // send the subscribed data to mpsc jobq channel
+            let Ok(mut pubsubstreamer) = get_stream_messages else{
+                panic!("can't get pubsub stream");
+            };
 
-            // inside misc.rs in discord task handler we'll
-            // receive the data from mpsc jobq channel and 
-            // broadcast it to discord channel using serenity ws
+            while let Some(message) = pubsubstreamer.next().await{
+
+                let resp_val = message.unwrap();
+                let json_stringified_new_task = String::from_resp(resp_val).unwrap();
+                let new_task_data = serde_json::from_str::<NewTask>(&json_stringified_new_task).unwrap();
+                
+                if let Err(why) = cloned_sender.send(new_task_data.clone()).await{
+                    error!("can't send into mpsc channel cause {}", why.to_string());
+                }
+
+            }
              
         }
 
     });
 
 
+    /* 
+        we're using tokio event loop handler to activate the discord bot in such
+        a way that once we received the flag from the mpsc channel inside the event
+        loop, other branches will be cancelled
+    */
+    tokio::select!{
+        bot_flag = discord_bot_flag_receiver.recv() => {
+            if let Some(flag) = bot_flag{
+                if flag == true{
+                    info!("🏳️ receiving discord bot true flag");
+                    misc::daemon::activate_bot(
+                        discord_token.as_str(), 
+                        serenity_shards.parse::<u64>().unwrap(), 
+                        new_task_receiver
+                    ).await; 
+                }
+            }    
+        }
+    }
+
+
     Ok(())
+
+
 }

@@ -30,7 +30,7 @@ actix-multipart = "0.6"
 actix-web-actors = "4.2.0"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
-diesel = { version = "2", features = ["postgres", "r2d2", "uuid", "chrono"] }
+diesel = { version = "2", features = ["postgres", "r2d2", "uuid", "chrono", "serde_json"] }
 diesel-derive-enum = { version = "2", features = ["postgres"] }
 redis = { version = "0.23", features = ["tokio-comp", "cluster-async", "json"] }
 redis-async = "0.16.1"
@@ -71,6 +71,7 @@ proc-macro2 = "*"
 libloading = "0.8.0"
 lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
 wallexerr = "0.2.2"
+serenity = "0.11.7"
 
 
 [lib]
@@ -88,7 +89,7 @@ path = "core/panel/app.rs"
 
 [[bin]]
 name = "xcord"
-path = "core/xcord/bot.rs"
+path = "core/xcord/src/bot.rs"
 
 [[bin]]
 name = "contest"

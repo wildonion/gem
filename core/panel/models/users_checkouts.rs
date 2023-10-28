@@ -16,8 +16,8 @@ use crate::schema::users_checkouts::dsl::*;
 /* 
 
     diesel migration generate users_checkouts ---> create users_checkouts migration sql files
-    diesel migration run                     ---> apply sql files to db 
-    diesel migration redo                    ---> drop tables 
+    diesel migration run                      ---> apply sql files to db 
+    diesel migration redo                     ---> drop tables 
 
 */
 

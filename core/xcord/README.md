@@ -21,18 +21,20 @@ step 2. deploy the docker container of `xcord` bot
 
 ## Flow
 
-> basically this bot subscribes to new task topic constantly using redis then it'll broadcast the task into the discord channel.
+> basically this bot subscribes to new task topic constantly coming from redis pubsub channel then it'll broadcast the task into the discord channels.
 
 ```
 in panel server 
     |
-    |------ once a new task is created
+    |------ once a new task is created by adming
     | 
-     ------ publish new task topic to redis pubsub channel
+     ------ the task will be published to redis pubsub channel
 
 in discord ws/http client 
     |
     |------ subscribe to the published new task topic inside the event listener (loop {})
     |
-     ------ send them to all discord channel(s) of all guilds that this bot is inside
+    |------ decod the subscribed topic into `NewTask` struct then send the new task object to mpsc channel
+    |
+     ------ receive new task object from mpsc channel then send them to all discord channel(s) of all guilds that this bot is inside of
 ```

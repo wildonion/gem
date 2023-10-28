@@ -99,7 +99,7 @@ pub struct EditTask<'t>{
     pub task_score: i32,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Serialize, Deserialize)]
 #[diesel(table_name=tasks)]
 pub struct NewTask<'t>{
     pub task_name: &'t str,
@@ -195,6 +195,19 @@ impl Task{
             admin_id: new_task.admin_id,
         };
 
+        /* ---------------------------------------- */
+        // publish new task to redis pubsub channel
+        /* ---------------------------------------- */
+        /* 
+            we're publishing asyncly to the redis pubsub XTASK channel,
+            the topic data will be subscribed to in xord bot and broadcasted 
+            to a discord channel later
+        */
+        let mut con = redis_client.get_async_connection().await.unwrap();
+        let json_stringified_new_task = serde_json::to_string_pretty(&task).unwrap();
+        let _: () = con.publish("XTASKS", json_stringified_new_task).await.unwrap();
+
+
         match diesel::insert_into(tasks::table)
             .values(&task)
             .execute(connection)
@@ -225,10 +238,6 @@ impl Task{
 
                 }
             }
-
-        // TODO -
-        // publish new task to redis pubsub channel
-        // ...
 
     }
 

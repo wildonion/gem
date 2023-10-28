@@ -82,6 +82,26 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_collections (id) {
+        id -> Int4,
+        contract_address -> Varchar,
+        nfts -> Nullable<Jsonb>,
+        col_name -> Varchar,
+        symbol -> Varchar,
+        owner_screen_cid -> Varchar,
+        metadata_updatable -> Nullable<Bool>,
+        base_uri -> Varchar,
+        royalties_share -> Int4,
+        royalties_address_screen_cid -> Varchar,
+        collection_background -> Varchar,
+        metadata -> Nullable<Jsonb>,
+        col_description -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_deposits (id) {
         id -> Int4,
         mint_tx_hash -> Varchar,
@@ -97,6 +117,31 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_fans (id) {
+        id -> Int4,
+        user_screen_cid -> Varchar,
+        friends -> Nullable<Jsonb>,
+        invitation_requests -> Nullable<Jsonb>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    users_galleries (id) {
+        id -> Int4,
+        owner_screen_cid -> Varchar,
+        collections -> Nullable<Jsonb>,
+        gal_name -> Varchar,
+        gal_description -> Varchar,
+        invited_friends -> Nullable<Array<Nullable<Text>>>,
+        metadata -> Nullable<Jsonb>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_mails (id) {
         id -> Int4,
         user_id -> Int4,
@@ -104,6 +149,26 @@ diesel::table! {
         code -> Varchar,
         exp -> Int8,
         vat -> Int8,
+    }
+}
+
+diesel::table! {
+    users_nfts (id) {
+        id -> Int4,
+        contract_address -> Varchar,
+        current_owner_screen_cid -> Varchar,
+        img_url -> Varchar,
+        onchain_id -> Nullable<Varchar>,
+        nft_name -> Varchar,
+        nft_description -> Varchar,
+        is_minted -> Nullable<Bool>,
+        current_price -> Nullable<Int8>,
+        is_listed -> Nullable<Bool>,
+        metadata -> Nullable<Jsonb>,
+        comments -> Nullable<Jsonb>,
+        likes -> Nullable<Jsonb>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -145,8 +210,12 @@ diesel::allow_tables_to_appear_in_same_query!(
     tasks,
     users,
     users_checkouts,
+    users_collections,
     users_deposits,
+    users_fans,
+    users_galleries,
     users_mails,
+    users_nfts,
     users_phones,
     users_tasks,
     users_withdrawals,

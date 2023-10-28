@@ -3831,6 +3831,7 @@ pub mod exports{
     // pub use super::send_private_gallery_invitation_request; // UserPrivateGallery::send_invitation_request_to()
     // pub use super::add_user_to_friend;
     // pub use super::remove_user_from_friend;
+    // pub use super::send_friend_request_to;
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------
@@ -3857,7 +3858,7 @@ pub mod exports{
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // pub use super::create_collection;
     // pub use super::update_collection;
-    // pub use super::create_nft;
+    // pub use super::create_nft; /* add img Multipart data for img url */
     // pub use super::mint_nft;
     // pub use super::sell_nft; 
     // pub use super::buy_nft;
