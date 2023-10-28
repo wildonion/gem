@@ -27,8 +27,8 @@ pub struct UserFan{
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FriendData{
     pub screen_cid: String,
-    pub added_at: i64,
-    pub is_accepted: bool
+    pub requested_at: i64,
+    pub is_accepted: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ pub struct UserFanData{
 
 impl UserFan{
 
-    pub async fn add_user_to_friend(user_screen_cid: &str,
+    pub async fn add_user_to_friend(user_screen_cid: &str, friend_screen_cid: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<(), PanelHttpResponse>{
         
@@ -59,8 +59,15 @@ impl UserFan{
         // update the is_accepted field to accept the friend request
         // ...
 
-        // let mut decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_info.nfts).unwrap();
-        // decoded_nfts.push(serde_json::to_value(&new_nft_data));
+        // fetched_user_fans
+        // let mut decoded_friends = serde_json::from_value::<Vec<UserNftData>>(fetched_user_fans.friends).unwrap();
+        // decoded_friends.push(FriendData{
+        //      screen_cid: friend_screen_cid,
+        //      requested_at: ....,
+        //      is_accepted: true
+        // });
+        // update user_fan record
+        
 
         Ok(())
 
