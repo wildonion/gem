@@ -1,9 +1,13 @@
 
 
 
-use crate::{*, schema::users_galleries};
+use wallexerr::Wallet;
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND, INVALID_QUERY_LIMIT};
+use crate::misc::Limit;
+use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
 use super::users_collections::{UserCollection, UserCollectionData};
-
+use crate::schema::users_galleries::dsl::*;
+use crate::schema::users_galleries;
 
 
 /* 
@@ -13,16 +17,16 @@ use super::users_collections::{UserCollection, UserCollectionData};
     diesel migration redo                     ---> drop tables 
 
 */
-#[derive(Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, Debug, PartialEq, Clone)]
+#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=users_galleries)]
 pub struct UserPrivateGallery{
     pub id: i32,
     pub owner_screen_cid: String,
-    pub collections: serde_json::Value, /* pg key, value based json binary object */
+    pub collections: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub gal_name: String,
     pub gal_description: String,
-    pub invited_friends: Vec<String>,
-    pub metadata: serde_json::Value, /* pg key, value based json binary object */
+    pub invited_friends: Option<Vec<Option<String>>>,
+    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -31,31 +35,55 @@ pub struct UserPrivateGallery{
 pub struct UserPrivateGalleryData{
     pub id: i32,
     pub owner_screen_cid: String,
-    pub collections: serde_json::Value,
+    pub collections: Option<serde_json::Value>,
     pub gal_name: String,
     pub gal_description: String,
-    pub invited_friends: Vec<String>,
-    pub metadata: serde_json::Value,
+    pub invited_friends: Option<Vec<Option<String>>>,
+    pub metadata: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserPrivateGalleryRequest{
-    pub owner_screen_cid: String,
-    pub collections: serde_json::Value,
+    pub owner_cid: String,
+    pub collections: Option<serde_json::Value>,
     pub gal_name: String,
     pub gal_description: String,
-    pub invited_friends: Vec<String>,
-    pub metadata: serde_json::Value,
+    pub invited_friends: Option<Vec<Option<String>>>,
+    pub metadata: Option<serde_json::Value>,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, AsChangeset)]
+#[diesel(table_name=users_galleries)]
+pub struct UpdateUserPrivateGallery{
+    pub owner_screen_cid: String,
+    pub collections: Option<serde_json::Value>,
+    pub gal_name: String,
+    pub gal_description: String,
+    pub invited_friends: Option<Vec<Option<String>>>,
+    pub metadata: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NewUserPrivateGalleryRequest{
+    pub owner_cid: String,
+    pub gal_name: String,
+    pub gal_description: String,
+    pub metadata: Option<serde_json::Value>,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=users_galleries)]
+pub struct InsertNewUserPrivateGalleryRequest{
     pub owner_screen_cid: String,
     pub gal_name: String,
     pub gal_description: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
 }
 
 /* 
@@ -65,17 +93,161 @@ pub struct NewUserPrivateGalleryRequest{
 */
 impl UserPrivateGallery{
 
-    pub async fn get_all_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_for(screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
 
-        // if the caller is a friend of the gallery owner and is inside the invited_friends vector
-        // then he can see all his galleries' collections contain none minted nfts
-        // ...
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
-        // let user_collection_data = UserCollectionData::get_all_private_collections_for()
+        /* fetch all owner galleries */
+        let user_galleries = users_galleries
+            .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .filter(owner_screen_cid.eq(screen_cid.clone()))
+            .load::<UserPrivateGallery>(connection);
+            
+        let Ok(galleries) = user_galleries else{
+            let resp = Response{
+                data: Some(screen_cid.clone()),
+                message: GALLERY_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+
+        let get_user_private_cols = UserCollection::get_all_private_collections_for(
+            screen_cid,
+            connection
+        ).await;
+
+        let Ok(prv_cols) = get_user_private_cols else{
+
+            let resp = get_user_private_cols.unwrap_err();
+            return Err(resp);
+        };
 
         Ok(
-            vec![UserPrivateGalleryData::default()]
+            galleries
+                .into_iter()
+                /* 
+                    map takes an FnMut closure so it captures env vars mutably and 
+                    and since the prv_cols is moving into the closure we have to 
+                    clone it in each iteration to not to lose ownership
+                */
+                .map(|g| {
+            
+                    UserPrivateGalleryData{
+                        id: g.id,
+                        owner_screen_cid: g.owner_screen_cid,
+                        collections: Some(serde_json::to_value(prv_cols.clone()).unwrap()),
+                        gal_name: g.gal_name,
+                        gal_description: g.gal_description,
+                        invited_friends: g.invited_friends,
+                        metadata: g.metadata,
+                        created_at: g.created_at.to_string(),
+                        updated_at: g.updated_at.to_string(),
+                    }
+        
+                }).collect::<Vec<UserPrivateGalleryData>>()
+        )
+
+    }
+
+    pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, gal_owner_screen_cid: &str, 
+        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<Option<UserPrivateGalleryData>>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        /* fetch all owner galleries */
+        let user_galleries = users_galleries
+            .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .filter(owner_screen_cid.eq(gal_owner_screen_cid.clone()))
+            .load::<UserPrivateGallery>(connection);
+            
+        let Ok(galleries) = user_galleries else{
+            let resp = Response{
+                data: Some(gal_owner_screen_cid.clone()),
+                message: GALLERY_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+
+        let get_user_private_cols = UserCollection::get_all_private_collections_for(
+            gal_owner_screen_cid,
+            connection
+        ).await;
+
+        let Ok(prv_cols) = get_user_private_cols else{
+
+            let resp = get_user_private_cols.unwrap_err();
+            return Err(resp);
+        };
+
+        Ok(
+            galleries
+                .into_iter()
+                .map(|g|{
+
+                    let inv_frds = g.invited_friends;
+                    if inv_frds.is_some(){
+                        let friends = inv_frds.as_ref().unwrap();
+                        if friends.contains(&Some(caller_screen_cid.to_string())){
+                            /* caller has invited to this gallery before */
+                            Some(
+                                UserPrivateGalleryData{
+                                    id: g.id,
+                                    owner_screen_cid: g.owner_screen_cid,
+                                    collections: g.collections,
+                                    gal_name: g.gal_name,
+                                    gal_description: g.gal_description,
+                                    invited_friends: inv_frds.clone(),
+                                    metadata: g.metadata,
+                                    created_at: g.created_at.to_string(),
+                                    updated_at: g.updated_at.to_string(),
+                                }
+                            ) 
+                        } else{
+                            None
+                        }
+                    } else{
+                        None
+                    }
+
+                })
+                .collect::<Vec<Option<UserPrivateGalleryData>>>()
         )
 
     }
@@ -87,15 +259,105 @@ impl UserPrivateGallery{
 
     }
 
+    pub async fn find_by_id(gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let user_gallery = users_galleries
+            .filter(users_galleries::id.eq(gallery_id))
+            .first::<UserPrivateGallery>(connection);
+
+        let Ok(gallery_info) = user_gallery else{
+
+            let resp = Response{
+                data: Some(gallery_id),
+                message: GALLERY_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserPrivateGalleryData{ 
+                id: gallery_info.id, 
+                owner_screen_cid: gallery_info.owner_screen_cid, 
+                collections: gallery_info.collections, 
+                gal_name: gallery_info.gal_name, 
+                gal_description: gallery_info.gal_description, 
+                invited_friends: gallery_info.invited_friends, 
+                metadata: gallery_info.metadata, 
+                created_at: gallery_info.created_at.to_string(), 
+                updated_at: gallery_info.updated_at.to_string() 
+            }
+        )
+
+    }
+
 }
 
 impl UserPrivateGallery{
 
-    pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+    pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
+
+            let new_gal_info = InsertNewUserPrivateGalleryRequest{
+                owner_screen_cid: Wallet::generate_keccak256_from(new_gallery_info.owner_cid),
+                gal_name: new_gallery_info.gal_name,
+                gal_description: new_gallery_info.gal_description,
+                metadata: new_gallery_info.metadata,
+            };
         
-        Ok(())
+            match diesel::insert_into(users_galleries)
+            .values(&new_gal_info)
+            .returning(UserPrivateGallery::as_returning())
+            .get_result::<UserPrivateGallery>(connection)
+            {
+                Ok(fetched_gallery_data) => {
+
+                    let user_private_gallery_data = UserPrivateGalleryData{
+                        id: fetched_gallery_data.id,
+                        owner_screen_cid: fetched_gallery_data.owner_screen_cid,
+                        collections: fetched_gallery_data.collections,
+                        gal_name: fetched_gallery_data.gal_name,
+                        gal_description: fetched_gallery_data.gal_description,
+                        invited_friends: fetched_gallery_data.invited_friends,
+                        metadata: fetched_gallery_data.metadata,
+                        created_at: fetched_gallery_data.created_at.to_string(),
+                        updated_at: fetched_gallery_data.updated_at.to_string(),
+                    };
+
+                    Ok(user_private_gallery_data)
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserGallery::insert");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
 
     }
 
@@ -131,22 +393,86 @@ impl UserPrivateGallery{
     /* supported apis:
         - update_private_gallery
     */
-    pub async fn update(caller_screen_cid: &str, new_collection_data: Option<serde_json::Value>,
-        gallery_info: UpdateUserPrivateGalleryRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
+    pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
+        gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
-        // condition: caller_screen_cid == gallery_info.owner_screen_cid
+        let get_gallery_info = Self::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_info else{
+            let error_resp = get_gallery_info.unwrap_err();
+            return Err(error_resp);
+        };
 
-        // insert new collection data into the user gallery
-        // check that new_collection_data.owner_screen_cid is equals to the gallery_info.owner_screen_cid
-        // if new_collection_data.is_some(){
-        // let mut decoded_cols = serde_json::from_value::<Vec<UserCollectionData>>(gallery_info.collections).unwrap();
-        // decoded_cols.push(serde_json::to_value(&new_collection_data.unwrap()));
-        // update gal record
-        // }
-        // ...
+        if gallery_data.owner_screen_cid == caller_screen_cid{
 
-        Ok(())
+            let update_gal_data = UpdateUserPrivateGallery{
+                owner_screen_cid: caller_screen_cid.to_string(),
+                collections: new_gallery_info.collections,
+                gal_name: new_gallery_info.gal_name,
+                gal_description: new_gallery_info.gal_description,
+                invited_friends: new_gallery_info.invited_friends,
+                metadata: new_gallery_info.metadata,
+            };
+            
+            match diesel::update(users_galleries.find(gallery_data.id))
+                .set(&update_gal_data)
+                .returning(UserPrivateGallery::as_returning())
+                .get_result(connection)
+                {
+                
+                    Ok(g) => {
+                        Ok(
+                            UserPrivateGalleryData{
+                                id: g.id,
+                                owner_screen_cid: g.owner_screen_cid,
+                                collections: g.collections,
+                                gal_name: g.gal_name,
+                                gal_description: g.gal_description,
+                                invited_friends: g.invited_friends,
+                                metadata: g.metadata,
+                                created_at: g.created_at.to_string(),
+                                updated_at: g.updated_at.to_string(),
+                            }
+                        )
+
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserGallery::update");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+                    }
+                
+                }
+            
+        } else{
+
+            let resp = Response::<'_, &str>{
+                data: Some(caller_screen_cid),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 404,
+            };
+
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        }
 
     }
+
 }

@@ -4,9 +4,11 @@
 
 
 
-use crate::{*, schema::users_collections};
-
+use crate::misc::{Response, Limit};
+use crate::{*, constants::COLLECTION_NOT_FOUND};
 use super::users_nfts::UserNftData;
+use crate::schema::users_collections::dsl::*;
+use crate::schema::users_collections;
 
 
 /* 
@@ -16,21 +18,21 @@ use super::users_nfts::UserNftData;
     diesel migration redo                       ---> drop tables 
 
 */
-#[derive(Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, Debug, PartialEq, Clone)]
+#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=users_collections)]
 pub struct UserCollection{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: serde_json::Value, /* pg key, value based json binary object */
+    pub nfts: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub col_name: String,
     pub symbol: String,
     pub owner_screen_cid: String,
-    pub metadata_updatable: bool,
+    pub metadata_updatable: Option<bool>,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: serde_json::Value, /* pg key, value based json binary object */
+    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub col_description: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -40,16 +42,16 @@ pub struct UserCollection{
 pub struct UserCollectionData{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: serde_json::Value,
+    pub nfts: Option<serde_json::Value>,
     pub col_name: String,
     pub symbol: String,
     pub owner_screen_cid: String,
-    pub metadata_updatable: bool,
+    pub metadata_updatable: Option<bool>,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
     pub col_description: String,
     pub created_at: String,
     pub updated_at: String,
@@ -58,16 +60,35 @@ pub struct UserCollectionData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserCollectionRequest{
     pub contract_address: String,
-    pub nfts: serde_json::Value,
+    pub nfts: Option<serde_json::Value>,
     pub col_name: String,
     pub symbol: String,
     pub owner_screen_cid: String,
-    pub metadata_updatable: bool,
+    pub metadata_updatable: Option<bool>,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
+    pub col_description: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, AsChangeset)]
+#[diesel(table_name=users_collections)]
+pub struct UpdateUserCollection{
+    pub contract_address: String,
+    pub nfts: Option<serde_json::Value>,
+    pub col_name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String,
+    pub metadata_updatable: Option<bool>,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
+    pub collection_background: String,
+    pub metadata: Option<serde_json::Value>,
     pub col_description: String,
 }
 
@@ -77,12 +98,29 @@ pub struct NewUserCollectionRequest{
     pub col_name: String,
     pub symbol: String,
     pub owner_screen_cid: String,
-    pub metadata_updatable: bool,
+    pub metadata_updatable: Option<bool>,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
     pub collection_background: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
+    pub col_description: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=users_collections)]
+pub struct InsertNewUserPrivateGalleryRequest{
+    pub col_name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String,
+    pub metadata_updatable: Option<bool>,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
+    pub collection_background: String,
+    pub metadata: Option<serde_json::Value>,
     pub col_description: String,
 }
 
@@ -123,7 +161,7 @@ impl UserCollection{
 
     }
 
-    pub async fn get_info_by_name(col_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_info_by_name(col_name_: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         Ok(
@@ -144,30 +182,149 @@ impl UserCollection{
     pub async fn get_all_private_collections_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
         
-        // retrieve collections that their nfts are not minted yet on contract
-        // and their nfts' current_owner_screen_cid == screen_cid
-        // ...
+        let user_collections = users_collections
+            .order(created_at.desc())
+            .filter(owner_screen_cid.eq(screen_cid))
+            .load::<UserCollection>(connection);
+        
+        
+        let Ok(collections) = user_collections else{
+            let resp = Response{
+                data: Some(screen_cid),
+                message: COLLECTION_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
 
         Ok(
-            vec![UserCollectionData::default()]
+            
+            collections
+                .into_iter()
+                .map(|c|{
+
+                    UserCollectionData{
+                        id: c.id,
+                        contract_address: c.contract_address,
+                        nfts: {
+                            /* return those none minted ones */
+                            if c.nfts.is_some(){
+                                let col_nfts = c.nfts.unwrap();
+                                let decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_nfts).unwrap();
+                                
+                                let none_minted_nfts = decoded_nfts
+                                    .into_iter()
+                                    .map(|nft|{
+                                        if nft.is_minted == false{
+                                            Some(nft)
+                                        } else{
+                                            None
+                                        }
+                                    }).collect::<Vec<Option<UserNftData>>>();
+                                
+                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
+                                Some(encoded_nfts)
+        
+                            } else{
+                                c.nfts
+                            }
+                        },
+                        col_name: c.col_name,
+                        symbol: c.symbol,
+                        owner_screen_cid: c.owner_screen_cid,
+                        metadata_updatable: c.metadata_updatable,
+                        base_uri: c.base_uri,
+                        royalties_share: c.royalties_share,
+                        royalties_address_screen_cid: c.royalties_address_screen_cid,
+                        collection_background: c.collection_background,
+                        metadata: c.metadata,
+                        col_description: c.col_description,
+                        created_at: c.created_at.to_string(),
+                        updated_at: c.updated_at.to_string(),
+                    }
+
+                })
+                .collect::<Vec<UserCollectionData>>()
         )
 
     }
 
-    pub async fn get_all_public_collections_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
-        // retrieve collections that their nfts are minted on contract
-        // and their nfts' owner == screen_cid
-        // ...
+
+        let user_collections = users_collections
+            .order(created_at.desc())
+            .filter(owner_screen_cid.eq(screen_cid))
+            .load::<UserCollection>(connection);
+        
+        let Ok(collections) = user_collections else{
+            let resp = Response{
+                data: Some(screen_cid),
+                message: COLLECTION_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
 
         Ok(
-            vec![UserCollectionData::default()]
+            
+            collections
+                .into_iter()
+                .map(|c|{
+
+                    UserCollectionData{
+                        id: c.id,
+                        contract_address: c.contract_address,
+                        nfts: {
+                            /* return those none minted ones */
+                            if c.nfts.is_some(){
+                                let col_nfts = c.nfts.unwrap();
+                                let decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_nfts).unwrap();
+                                
+                                let none_minted_nfts = decoded_nfts
+                                    .into_iter()
+                                    .map(|nft|{
+                                        if nft.is_minted == true{
+                                            Some(nft)
+                                        } else{
+                                            None
+                                        }
+                                    }).collect::<Vec<Option<UserNftData>>>();
+                                
+                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
+                                Some(encoded_nfts)
+        
+                            } else{
+                                c.nfts
+                            }
+                        },
+                        col_name: c.col_name,
+                        symbol: c.symbol,
+                        owner_screen_cid: c.owner_screen_cid,
+                        metadata_updatable: c.metadata_updatable,
+                        base_uri: c.base_uri,
+                        royalties_share: c.royalties_share,
+                        royalties_address_screen_cid: c.royalties_address_screen_cid,
+                        collection_background: c.collection_background,
+                        metadata: c.metadata,
+                        col_description: c.col_description,
+                        created_at: c.created_at.to_string(),
+                        updated_at: c.updated_at.to_string(),
+                    }
+
+                })
+                .collect::<Vec<UserCollectionData>>()
         )
 
     }
 
-    pub async fn get_info_of(col_name: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_info_of(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         Ok(
@@ -176,7 +333,7 @@ impl UserCollection{
 
     }
 
-    pub async fn get_nfts_of(col_name: &str, 
+    pub async fn get_nfts_of(col_id: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
@@ -197,7 +354,7 @@ impl UserCollection{
 
 impl UserCollection{
 
-    pub async fn insert(new_col_info: NewUserCollectionRequest, 
+    pub async fn insert(new_col_info: NewUserCollectionRequest, mut img: Multipart,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
@@ -206,6 +363,40 @@ impl UserCollection{
         
         
         // UserPrivateGallery::update(new_col_info.owner_screen_cid, new_col_info, fetched_gallery_info, connection).await;
+        // ...
+
+        /*
+            let new_col_data = new_collection_data.unwrap();
+            let new_col_data_owners_screen_cid = new_col_data["owner_screen_cid"].as_str().unwrap();
+            
+            if new_col_data_owners_screen_cid != &gallery_data.owner_screen_cid{
+                
+                let resp = Response::<'_, &str>{
+                    data: Some(&gallery_data.owner_screen_cid),
+                    message: COLLECTION_NOT_OWNED_BY,
+                    status: 404,
+                };
+    
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+            }
+
+
+            if new_gallery_info.collections.is_some(){
+                
+                let new_col_data = new_gallery_info.collections.unwrap();
+                let mut decoded_cols = serde_json::from_value::<Vec<UserCollectionData>>(
+                    new_gallery_info.collections.unwrap()
+                ).unwrap();
+
+                decoded_cols.push(serde_json::from_value::<UserCollectionData>(new_col_data).unwrap());
+                let encoded_cols = serde_json::to_value(decoded_cols).unwrap();
+                new_gallery_info.collections = Some(encoded_cols);
+            }
+        */
+
+        // update gal record 
         // ...
 
         Ok(())
@@ -231,6 +422,8 @@ impl UserCollection{
         // decoded_nfts.push(serde_json::to_value(&new_nft_data));
         // update col record
         // }
+
+        // update gal record
 
         Ok(
             UserCollectionData::default()

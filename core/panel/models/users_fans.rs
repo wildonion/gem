@@ -107,5 +107,16 @@ impl UserFan{
         Ok(())
 
     }
+    
+    pub async fn accept_invitation_request(user_screen_cid: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<(), PanelHttpResponse>{
+
+        // update invited_friends field in user gallery
+        // ...
+
+        Ok(())
+        
+    }
 
 }

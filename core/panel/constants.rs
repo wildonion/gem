@@ -100,6 +100,10 @@ pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
 pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
+pub static GALLERY_NOT_FOUND: &str = "No Gallery Found For This User";
+pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
+pub static COLLECTION_NOT_FOUND: &str = "No Collection Found For This User";
+
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";

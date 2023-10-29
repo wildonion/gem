@@ -1,8 +1,9 @@
 
 
 
-use crate::{*, schema::users_nfts};
-
+use crate::*;
+use crate::schema::users_nfts::dsl::*;
+use crate::schema::users_nfts;
 
 /* 
 
@@ -11,7 +12,7 @@ use crate::{*, schema::users_nfts};
     diesel migration redo                ---> drop tables 
 
 */
-#[derive(Queryable, Selectable, Serialize, Deserialize, Insertable, Identifiable, Debug, PartialEq, Clone)]
+#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=users_nfts)]
 pub struct UserNft{
     pub id: i32,
@@ -50,7 +51,7 @@ pub struct UserNftData{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
     pub img_url: String,
     pub onchain_id: Option<String>,
     pub nft_name: String,
@@ -58,18 +59,19 @@ pub struct UserNftData{
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
-    pub comments: serde_json::Value,
-    pub likes: serde_json::Value,
+    pub comments: Option<serde_json::Value>,
+    pub likes: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserNftRequest{
+    pub nft_id: i32,
     pub contract_address: String,
     pub buyer_screen_cid: Option<String>,
     pub current_owner_screen_cid: String,
-    pub metadata: serde_json::Value,
+    pub metadata: Option<serde_json::Value>,
     pub img_url: String,
     pub onchain_id: Option<String>, 
     pub nft_name: String,
@@ -77,8 +79,27 @@ pub struct UpdateUserNftRequest{
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
-    pub comments: serde_json::Value,
-    pub likes: serde_json::Value,
+    pub comments: Option<serde_json::Value>,
+    pub likes: Option<serde_json::Value>,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, AsChangeset)]
+#[diesel(table_name=users_nfts)]
+pub struct UpdateUserNft{
+    pub contract_address: String,
+    pub current_owner_screen_cid: String,
+    pub metadata: Option<serde_json::Value>,
+    pub img_url: String,
+    pub onchain_id: Option<String>, 
+    pub nft_name: String,
+    pub is_minted: bool,
+    pub nft_description: String,
+    pub current_price: i64,
+    pub is_listed: bool,
+    pub comments: Option<serde_json::Value>,
+    pub likes: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -89,7 +110,20 @@ pub struct NewUserNftRequest{
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
-    pub metadata: serde_json::Value, /* pg key, value based json binary object */
+    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=users_nfts)]
+pub struct InsertNewUserPrivateGalleryRequest{
+    pub contract_address: String,
+    pub current_owner_screen_cid: String,
+    pub nft_name: String,
+    pub nft_description: String,
+    pub current_price: i64,
+    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
 }
 
 /* 
@@ -122,6 +156,8 @@ impl UserNft{
         
         // ...
 
+        // update col record (gal recrod contains the collection will be updated in update col record method)
+
         Ok(())
 
     }
@@ -151,6 +187,8 @@ impl UserNft{
 
         // let nft_comments = serde_json::from_value::<NftComment>(asset_info.comments).unwrap();
         // let nft_likes = serde_json::from_value::<NftLike>(asset_info.comments).unwrap();
+
+        // update col record (gal recrod contains the collection will be updated in update col record method)
 
         Ok(())
 
