@@ -120,6 +120,14 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::upload_banner);
     config.service(apis::user::exports::upload_wallet_back);
     config.service(apis::user::exports::update_mafia_player_avatar);
+    config.service(apis::user::exports::create_private_gallery);
+    config.service(apis::user::exports::update_private_gallery);
+    config.service(apis::user::exports::get_all_private_galleries_for);
+    config.service(apis::user::exports::get_all_galleries_invited_to);
+    config.service(apis::user::exports::get_all_public_collections_for);
+    config.service(apis::user::exports::get_invited_friends_wallet_data_of_gallery);
+    config.service(apis::user::exports::send_private_gallery_invitation_request_to);
+    config.service(apis::user::exports::remove_invited_friend_from_gallery);
     
     // other routs maybe ?
     // ...

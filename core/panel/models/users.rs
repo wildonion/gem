@@ -923,6 +923,27 @@ impl User{
 
     }
 
+    pub fn find_by_screen_cid_none_async(user_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(users::screen_cid.eq(user_screen_cid))
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_screen_cid),
+                message: RECIPIENT_NOT_FOUND,
+                status: 404
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(user)
+
+    }
+
     pub async fn insert(identifier_login: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_random_chars(gen_random_number(5, 11));

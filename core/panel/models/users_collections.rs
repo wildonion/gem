@@ -131,22 +131,8 @@ pub struct InsertNewUserPrivateGalleryRequest{
 */
 impl UserCollection{
 
-    pub async fn get_all_none_minted_nfts_for(screen_cid: &str, collection_name: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserNftData>, PanelHttpResponse>{
-        
-        // get all collections that their nfts are not minted yet and 
-        // are belong to the passed in screen_cid and are related 
-        // to the passed in collection name
-        // ...
-        
-        Ok(
-            vec![UserNftData::default()]
-        )
 
-    }
-
-    pub async fn get_all_minted_nfts_for(screen_cid: &str, collection_name: &str,
+    pub async fn get_all_minted_nfts_of(collection_name: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{
         
@@ -161,16 +147,7 @@ impl UserCollection{
 
     }
 
-    pub async fn get_info_by_name(col_name_: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserCollectionData, PanelHttpResponse>{
-
-        Ok(
-            UserCollectionData::default()
-        )
-
-    }
-
-    pub async fn get_info_by_screen_cid(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn find_by_id(col_id: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         Ok(
@@ -211,8 +188,12 @@ impl UserCollection{
                         nfts: {
                             /* return those none minted ones */
                             if c.nfts.is_some(){
-                                let col_nfts = c.nfts.unwrap();
-                                let decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_nfts).unwrap();
+                                let col_nfts = c.nfts;
+                                let decoded_nfts = if col_nfts.is_some(){
+                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
                                 
                                 let none_minted_nfts = decoded_nfts
                                     .into_iter()
@@ -284,8 +265,12 @@ impl UserCollection{
                         nfts: {
                             /* return those none minted ones */
                             if c.nfts.is_some(){
-                                let col_nfts = c.nfts.unwrap();
-                                let decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_nfts).unwrap();
+                                let col_nfts = c.nfts;
+                                let decoded_nfts = if col_nfts.is_some(){
+                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
                                 
                                 let none_minted_nfts = decoded_nfts
                                     .into_iter()
@@ -324,31 +309,6 @@ impl UserCollection{
 
     }
 
-    pub async fn get_info_of(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserCollectionData, PanelHttpResponse>{
-
-        Ok(
-            UserCollectionData::default()
-        )
-
-    }
-
-    pub async fn get_nfts_of(col_id: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-
-        // let collection_data = Self::get(col_name).await;
-        // let nfts = collection_data.nfts
-        //     .into_iter()
-        //     .map(|nft_id| {
-        //         let nft_data = UserNft::get(nft_id).await;
-        //         nft_data
-        //     })
-        //     .collect::<UserNftData>();
-
-        Ok(())
-
-    }
 
 }
 

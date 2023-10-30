@@ -4,10 +4,14 @@
 use wallexerr::Wallet;
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND, INVALID_QUERY_LIMIT};
 use crate::misc::Limit;
+use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
+use super::users::UserWalletInfoResponse;
 use super::users_collections::{UserCollection, UserCollectionData};
+use super::users_fans::{InvitationRequestData, UserFan, InvitationRequestDataResponse};
 use crate::schema::users_galleries::dsl::*;
 use crate::schema::users_galleries;
+use crate::models::users::User;
 
 
 /* 
@@ -86,6 +90,24 @@ pub struct InsertNewUserPrivateGalleryRequest{
     pub metadata: Option<serde_json::Value>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct RemoveInvitedFriendFromPrivateGalleryRequest{
+    pub gal_id: i32,
+    pub caller_cid: String,
+    pub friend_screen_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct SendInvitationRequest{
+    pub gal_id: i32,
+    pub gallery_owner_cid: String,
+    pub to_screen_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -93,6 +115,9 @@ pub struct InsertNewUserPrivateGalleryRequest{
 */
 impl UserPrivateGallery{
 
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_all_for(screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
@@ -116,17 +141,17 @@ impl UserPrivateGallery{
             .order(created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
-            .filter(owner_screen_cid.eq(screen_cid.clone()))
+            .filter(owner_screen_cid.eq(screen_cid))
             .load::<UserPrivateGallery>(connection);
             
         let Ok(galleries) = user_galleries else{
             let resp = Response{
                 data: Some(screen_cid.clone()),
-                message: GALLERY_NOT_FOUND,
-                status: 404,
+                message: GALLERY_NOT_OWNED_BY,
+                status: 406,
             };
             return Err(
-                Ok(HttpResponse::NotFound().json(resp))
+                Ok(HttpResponse::NotAcceptable().json(resp))
             )
         };
 
@@ -191,17 +216,17 @@ impl UserPrivateGallery{
             .order(created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
-            .filter(owner_screen_cid.eq(gal_owner_screen_cid.clone()))
+            .filter(owner_screen_cid.eq(gal_owner_screen_cid))
             .load::<UserPrivateGallery>(connection);
             
         let Ok(galleries) = user_galleries else{
             let resp = Response{
-                data: Some(gal_owner_screen_cid.clone()),
-                message: GALLERY_NOT_FOUND,
-                status: 404,
+                data: Some(gal_owner_screen_cid),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 406,
             };
             return Err(
-                Ok(HttpResponse::NotFound().json(resp))
+                Ok(HttpResponse::NotAcceptable().json(resp))
             )
         };
 
@@ -223,14 +248,14 @@ impl UserPrivateGallery{
 
                     let inv_frds = g.invited_friends;
                     if inv_frds.is_some(){
-                        let friends = inv_frds.as_ref().unwrap();
-                        if friends.contains(&Some(caller_screen_cid.to_string())){
+                        let friends_scid = inv_frds.as_ref().unwrap();
+                        if friends_scid.contains(&Some(caller_screen_cid.to_string())){
                             /* caller has invited to this gallery before */
                             Some(
                                 UserPrivateGalleryData{
                                     id: g.id,
                                     owner_screen_cid: g.owner_screen_cid,
-                                    collections: g.collections,
+                                    collections: Some(serde_json::to_value(prv_cols.clone()).unwrap()),
                                     gal_name: g.gal_name,
                                     gal_description: g.gal_description,
                                     invited_friends: inv_frds.clone(),
@@ -252,10 +277,80 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn get_invited_friends_of(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
-        -> Result<(), PanelHttpResponse>{
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
 
-        Ok(())
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        let get_gallery_info = Self::find_by_id(gal_id, connection).await;
+        let Ok(gallery) = get_gallery_info else{
+            let resp_err = get_gallery_info.unwrap_err();
+            return Err(resp_err);
+        };
+
+        if caller_screen_cid != gallery.owner_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+
+        }
+
+        let inv_frds = gallery.invited_friends;
+        let friends_wallet_data = if inv_frds.is_some(){
+            let friends_ = inv_frds.unwrap();
+            friends_
+                .into_iter()
+                .map(|f_scid|{
+                    
+                    if f_scid.is_some(){
+                        let user_data = User::find_by_screen_cid_none_async(&f_scid.unwrap(), connection).unwrap();
+                        Some(
+                            UserWalletInfoResponse{
+                                username: user_data.username,
+                                mail: user_data.mail,
+                                screen_cid: user_data.screen_cid,
+                                stars: user_data.stars,
+                                created_at: user_data.created_at.to_string(),
+                            }
+                        )
+                    } else{
+                        None
+                    }
+
+                })
+                .collect::<Vec<Option<UserWalletInfoResponse>>>()
+
+        } else{
+            vec![]
+        };
+
+        Ok(
+            friends_wallet_data
+        )
+
 
     }
 
@@ -361,38 +456,125 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn send_invitation_request_to(screen_cid: &str,
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-            
-        // check that a user with the passed in screen_cid is the caller's friend or not
-        // also check that the passed in screen_cid has accepted the friend request of the caller
-        // update invited_friends field with the passed in screen_cid
-        // call UserFan::push_invitation_request_for()
-        // ...
+        -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
+        
+        let SendInvitationRequest{ gal_id, gallery_owner_cid, to_screen_cid, tx_signature, hash_data } = 
+            send_invitation_request;
 
-        Ok(())
+        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+            let error_resp = get_gallery_data.unwrap_err();
+            return Err(error_resp);
+        };
+
+        let gallery_owner_screen_cid = Wallet::generate_keccak256_from(gallery_owner_cid);
+        if gallery_data.owner_screen_cid != gallery_owner_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+
+        let invitation_request_data = InvitationRequestData{
+            from_screen_cid: gallery_owner_screen_cid,
+            requested_at: chrono::Local::now().timestamp(),
+            gallery_id: gal_id,
+            is_accepted: false,
+        };
+
+        UserFan::push_invitation_request_for(&to_screen_cid, invitation_request_data, connection).await
+
 
     }
 
-    pub async fn remove_invited_friend_from(screen_cid: &str, gallery_id: &str,
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    pub async fn remove_invited_friend_from(remove_invited_friend_request: RemoveInvitedFriendFromPrivateGalleryRequest,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(), PanelHttpResponse>{
-            
-        // check that a user with the passed in screen_cid is the caller's friend or not
-        // remove from invited_friends field with the passed in screen_cid
-        // ...
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
-        Ok(())
+        let RemoveInvitedFriendFromPrivateGalleryRequest{ gal_id, caller_cid, friend_screen_cid, tx_signature, hash_data } = 
+            remove_invited_friend_request;
+        
+        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+            let error_resp = get_gallery_data.unwrap_err();
+            return Err(error_resp);
+        };
+
+        let caller_screen_cid = Wallet::generate_keccak256_from(caller_cid.clone());
+        if gallery_data.owner_screen_cid != caller_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        /* 
+            since we've moved the gallery_data.invited_friends into inv_frds 
+            thus to return the old data we'll use inv_frds 
+        */
+        let inv_frds = gallery_data.invited_friends;
+        if inv_frds.is_some(){
+            let mut friends_ = inv_frds.unwrap();
+            if friends_.contains(&Some(friend_screen_cid.to_string())){
+                let scid_idx = friends_.iter().position(|scid| *scid == Some(friend_screen_cid.to_string())).unwrap();
+                friends_.remove(scid_idx);
+            }
+
+            let updated_gal_data = UpdateUserPrivateGalleryRequest{
+                owner_cid: caller_cid,
+                collections: gallery_data.collections,
+                gal_name: gallery_data.gal_name,
+                gal_description: gallery_data.gal_description,
+                invited_friends: Some(friends_), /* updated */
+                metadata: gallery_data.metadata,
+                tx_signature,
+                hash_data,
+            };
+
+            Self::update(&caller_screen_cid, updated_gal_data, gal_id, connection).await
+
+        } else{
+
+            /* just return the old one */
+            Ok(
+                UserPrivateGalleryData{ 
+                    id: gallery_data.id, 
+                    owner_screen_cid: gallery_data.owner_screen_cid, 
+                    collections: gallery_data.collections, 
+                    gal_name: gallery_data.gal_name, 
+                    gal_description: gallery_data.gal_description, 
+                    invited_friends: inv_frds, 
+                    metadata: gallery_data.metadata, 
+                    created_at: gallery_data.created_at.to_string(), 
+                    updated_at: gallery_data.updated_at.to_string() 
+                }
+            )
+        }
 
     }
 
-    /* ------------------------------------------------------------------------------- */
-    /* this method can be called to update an gallery status like name and description */
-    /* ------------------------------------------------------------------------------- */
-    /* supported apis:
-        - update_private_gallery
-    */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
         gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
@@ -465,11 +647,11 @@ impl UserPrivateGallery{
             let resp = Response::<'_, &str>{
                 data: Some(caller_screen_cid),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 404,
+                status: 406,
             };
 
             return Err(
-                Ok(HttpResponse::NotFound().json(resp))
+                Ok(HttpResponse::NotAcceptable().json(resp))
             )
         }
 

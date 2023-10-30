@@ -117,7 +117,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    users_fans (id) {
+    users_fans (id, user_screen_cid) {
         id -> Int4,
         user_screen_cid -> Varchar,
         friends -> Nullable<Jsonb>,
