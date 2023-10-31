@@ -2,13 +2,14 @@
 
 
 use wallexerr::Wallet;
-use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND, INVALID_QUERY_LIMIT};
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT};
 use crate::misc::Limit;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
 use super::users::UserWalletInfoResponse;
 use super::users_collections::{UserCollection, UserCollectionData};
 use super::users_fans::{InvitationRequestData, UserFan, InvitationRequestDataResponse};
+use super::users_nfts::UserNftData;
 use crate::schema::users_galleries::dsl::*;
 use crate::schema::users_galleries;
 use crate::models::users::User;
@@ -148,22 +149,11 @@ impl UserPrivateGallery{
             let resp = Response{
                 data: Some(screen_cid.clone()),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
-        };
-
-        let get_user_private_cols = UserCollection::get_all_private_collections_for(
-            screen_cid,
-            connection
-        ).await;
-
-        let Ok(prv_cols) = get_user_private_cols else{
-
-            let resp = get_user_private_cols.unwrap_err();
-            return Err(resp);
         };
 
         Ok(
@@ -179,7 +169,50 @@ impl UserPrivateGallery{
                     UserPrivateGalleryData{
                         id: g.id,
                         owner_screen_cid: g.owner_screen_cid,
-                        collections: Some(serde_json::to_value(prv_cols.clone()).unwrap()),
+                        collections: {
+                            let cols = g.collections;
+                            let decoded_cols = if cols.is_some(){
+                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+                            
+                            let none_minted_cols = decoded_cols
+                                .into_iter()
+                                .map(|mut c|{
+                                    
+                                    /* return those none minted ones */
+                                    if c.nfts.is_some(){
+                                        let col_nfts = c.nfts;
+                                        let decoded_nfts = if col_nfts.is_some(){
+                                            serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                        } else{
+                                            vec![]
+                                        };
+                                        
+                                        let none_minted_nfts = decoded_nfts
+                                            .into_iter()
+                                            .map(|nft|{
+                                                if nft.is_minted == false{
+                                                    Some(nft)
+                                                } else{
+                                                    None
+                                                }
+                                            }).collect::<Vec<Option<UserNftData>>>();
+                                        
+                                        c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
+                                        
+                                        c
+                
+                                    } else{
+                                        c
+                                    }
+                                })
+                                .collect::<Vec<UserCollectionData>>();
+
+                            Some(serde_json::to_value(none_minted_cols).unwrap())
+
+                        },
                         gal_name: g.gal_name,
                         gal_description: g.gal_description,
                         invited_friends: g.invited_friends,
@@ -223,22 +256,11 @@ impl UserPrivateGallery{
             let resp = Response{
                 data: Some(gal_owner_screen_cid),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
-        };
-
-        let get_user_private_cols = UserCollection::get_all_private_collections_for(
-            gal_owner_screen_cid,
-            connection
-        ).await;
-
-        let Ok(prv_cols) = get_user_private_cols else{
-
-            let resp = get_user_private_cols.unwrap_err();
-            return Err(resp);
         };
 
         Ok(
@@ -250,12 +272,55 @@ impl UserPrivateGallery{
                     if inv_frds.is_some(){
                         let friends_scid = inv_frds.as_ref().unwrap();
                         if friends_scid.contains(&Some(caller_screen_cid.to_string())){
-                            /* caller has invited to this gallery before */
+                            /* caller must be invited to this gallery before */
                             Some(
                                 UserPrivateGalleryData{
                                     id: g.id,
                                     owner_screen_cid: g.owner_screen_cid,
-                                    collections: Some(serde_json::to_value(prv_cols.clone()).unwrap()),
+                                    collections: {
+                                        let cols = g.collections;
+                                        let decoded_cols = if cols.is_some(){
+                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                        } else{
+                                            vec![]
+                                        };
+                                        
+                                        let none_minted_cols = decoded_cols
+                                            .into_iter()
+                                            .map(|mut c|{
+                                                
+                                                /* return those none minted ones */
+                                                if c.nfts.is_some(){
+                                                    let col_nfts = c.nfts;
+                                                    let decoded_nfts = if col_nfts.is_some(){
+                                                        serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                                    } else{
+                                                        vec![]
+                                                    };
+                                                    
+                                                    let none_minted_nfts = decoded_nfts
+                                                        .into_iter()
+                                                        .map(|nft|{
+                                                            if nft.is_minted == false{
+                                                                Some(nft)
+                                                            } else{
+                                                                None
+                                                            }
+                                                        }).collect::<Vec<Option<UserNftData>>>();
+                                                    
+                                                    c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
+                                                    
+                                                    c
+                            
+                                                } else{
+                                                    c
+                                                }
+                                            })
+                                            .collect::<Vec<UserCollectionData>>();
+            
+                                        Some(serde_json::to_value(none_minted_cols).unwrap())
+            
+                                    },
                                     gal_name: g.gal_name,
                                     gal_description: g.gal_description,
                                     invited_friends: inv_frds.clone(),
@@ -280,13 +345,13 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, 
+        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
 
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -310,10 +375,10 @@ impl UserPrivateGallery{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
 
         }
@@ -347,8 +412,9 @@ impl UserPrivateGallery{
             vec![]
         };
 
+        let sliced = &friends_wallet_data[from..to+1].to_vec();
         Ok(
-            friends_wallet_data
+            sliced.to_owned()
         )
 
 
@@ -478,10 +544,10 @@ impl UserPrivateGallery{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
         }
 
@@ -520,10 +586,10 @@ impl UserPrivateGallery{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
         }
 
@@ -647,11 +713,11 @@ impl UserPrivateGallery{
             let resp = Response::<'_, &str>{
                 data: Some(caller_screen_cid),
                 message: GALLERY_NOT_OWNED_BY,
-                status: 406,
+                status: 403,
             };
 
             return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
+                Ok(HttpResponse::Forbidden().json(resp))
             )
         }
 

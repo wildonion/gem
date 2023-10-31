@@ -102,8 +102,10 @@ pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
-pub static COLLECTION_NOT_FOUND: &str = "No Collection Found For This User";
+pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen CID Has No Fans Yet";
+pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
+pub static NO_FRIEND_FOUND: &str = "No Friend Found With This CID";
 
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */

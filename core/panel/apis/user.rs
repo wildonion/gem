@@ -6,8 +6,9 @@ use crate::adapters::stripe::{create_product, create_price, create_session, Stri
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_collections::{UserCollection, UserCollectionData};
 use crate::models::users_deposits::UserDepositData;
-use crate::models::users_fans::InvitationRequestDataResponse;
+use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData};
 use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest};
+use crate::models::users_nfts::UserNftData;
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
@@ -4442,7 +4443,7 @@ async fn send_private_gallery_invitation_request_to(
 #[passport(user)]
 async fn get_all_private_galleries_for(
     req: HttpRequest,
-    who: web::Path<String>,
+    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4495,7 +4496,7 @@ async fn get_all_private_galleries_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match UserPrivateGallery::get_all_for(&Wallet::generate_keccak256_from(who.to_owned()), limit, connection).await{
+                    match UserPrivateGallery::get_all_for(&Wallet::generate_keccak256_from(who_cid.to_owned()), limit, connection).await{
                         
                         Ok(galleries) => {
 
@@ -4553,7 +4554,7 @@ async fn get_all_private_galleries_for(
 #[passport(user)]
 async fn get_all_galleries_invited_to(
     req: HttpRequest,
-    who_and_caller: web::Path<(String, String)>,
+    who_and_caller_cid: web::Path<(String, String)>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4606,7 +4607,7 @@ async fn get_all_galleries_invited_to(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (who, caller) = who_and_caller.to_owned();
+                    let (who, caller) = who_and_caller_cid.to_owned();
                     match UserPrivateGallery::get_all_galleries_invited_to(
                         &Wallet::generate_keccak256_from(caller),
                         &Wallet::generate_keccak256_from(who), 
@@ -4668,7 +4669,7 @@ async fn get_all_galleries_invited_to(
 #[passport(user)]
 async fn get_invited_friends_wallet_data_of_gallery(
     req: HttpRequest,
-    gal_id_and_caller: web::Path<(i32, String)>,
+    gal_id_and_caller_cid: web::Path<(i32, String)>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4721,7 +4722,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (gal_id, caller) = gal_id_and_caller.to_owned();
+                    let (gal_id, caller) = gal_id_and_caller_cid.to_owned();
                     match UserPrivateGallery::get_invited_friends_wallet_data_of_gallery(
                         &Wallet::generate_keccak256_from(caller),
                         gal_id.to_owned(),
@@ -4779,11 +4780,894 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 }
 
+#[post("/collection/get/unaccepted/invitation-requests/for/{who}/")]
+#[passport(user)]
+async fn get_user_unaccpeted_invitation_requests(
+    req: HttpRequest,
+    who_cid: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match UserFan::get_user_unaccpeted_invitation_requests(
+                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        limit, connection).await{
+                        
+                        Ok(unaccepted_requests) => {
+
+                            resp!{
+                                Vec<Option<InvitationRequestData>>, //// the data type
+                                unaccepted_requests, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/collection/get/unaccepted/friend-requests/for/{who}/")]
+#[passport(user)]
+async fn get_user_unaccpeted_friend_requests(
+    req: HttpRequest,
+    who_cid: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match UserFan::get_user_unaccpeted_friend_requests(
+                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        limit, connection).await{
+                        
+                        Ok(unaccepted_requests) => {
+
+                            resp!{
+                                Vec<Option<FriendData>>, //// the data type
+                                unaccepted_requests, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/gallery/accept/invitation-request")]
+#[passport(user)]
+async fn accept_invitation_request(
+    req: HttpRequest,
+    accept_invitation_request: web::Json<AcceptInvitationRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let accept_invitation_request = accept_invitation_request.to_owned();
+                    
+                    /* ----------------------------
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &accept_invitation_request.owner_cid, 
+                        &accept_invitation_request.tx_signature, 
+                        &accept_invitation_request.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::accept_invitation_request(accept_invitation_request, connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/fan/accept/friend-request")]
+#[passport(user)]
+async fn accept_friend_request(
+    req: HttpRequest,
+    accept_friend_request: web::Json<AcceptFriendRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let accept_friend_request = accept_friend_request.to_owned();
+                    
+                    /* ----------------------------
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &accept_friend_request.owner_cid, 
+                        &accept_friend_request.tx_signature, 
+                        &accept_friend_request.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::accept_friend_request(accept_friend_request, connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/fan/send/friend-request")]
+#[passport(user)]
+async fn send_friend_request_to(
+    req: HttpRequest,
+    send_friend_request_to: web::Json<SendFriendRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let send_friend_request_to = send_friend_request_to.to_owned();
+                    
+                    /* ----------------------------
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &send_friend_request_to.owner_cid, 
+                        &send_friend_request_to.tx_signature, 
+                        &send_friend_request_to.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::send_friend_request_to(send_friend_request_to, connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/fan/remove/friend")]
+#[passport(user)]
+async fn remove_user_from_friend(
+    req: HttpRequest,
+    remove_friend_request: web::Json<RemoveFriend>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let remove_friend_request = remove_friend_request.to_owned();
+                    
+                    /* ----------------------------
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &remove_friend_request.owner_cid, 
+                        &remove_friend_request.tx_signature, 
+                        &remove_friend_request.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::remove_user_from_friend(remove_friend_request, connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/fan/get/all/for/{who}/")]
+#[passport(user)]
+async fn get_all_user_fans_data_for(
+    req: HttpRequest,
+    who_cid: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+
+                    match UserFan::get_all_user_fans_data_for(
+                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        limit, connection).await{
+                        Ok(user_fans_data) => {
+
+                            resp!{
+                                Vec<UserFanData>, //// the data type
+                                user_fans_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[post("/collection/get/all/for/{who}/")]
 #[passport(user)]
 async fn get_all_public_collections_for(
     req: HttpRequest,
-    who: web::Path<String>,
+    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4837,7 +5721,235 @@ async fn get_all_public_collections_for(
                     let role = token_data.user_role;
 
                     match UserCollection::get_all_public_collections_for(
-                        &Wallet::generate_keccak256_from(who.to_owned()), 
+                        &Wallet::generate_keccak256_from(who_cid.to_owned()), 
+                        limit, connection).await{
+                        
+                        Ok(collections) => {
+
+                            resp!{
+                                Vec<UserCollectionData>, //// the data type
+                                collections, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/collection/{col_id}/get/all/minted-nfts/")]
+#[passport(user)]
+async fn get_all_public_collection_nfts(
+    req: HttpRequest,
+    col_id: web::Path<i32>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match UserCollection::get_all_minted_nfts_of_collection(
+                        col_id.to_owned(), 
+                        limit, connection).await{
+                        
+                        Ok(nfts) => {
+
+                            resp!{
+                                Vec<Option<UserNftData>>, //// the data type
+                                nfts, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/collection/get/all/private/for/{caller}/")]
+#[passport(user)]
+async fn get_all_private_collections_for(
+    req: HttpRequest,
+    gal_id_and_caller_cid: web::Path<(i32, String)>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let (gal_id, caller_cid) = gal_id_and_caller_cid.to_owned();
+                    match UserCollection::get_all_private_collections_for(
+                        &Wallet::generate_keccak256_from(caller_cid.to_owned()),
+                        gal_id,
                         limit, connection).await{
                         
                         Ok(collections) => {
@@ -4923,14 +6035,45 @@ pub mod exports{
     pub use super::get_all_private_galleries_for;
     pub use super::get_all_galleries_invited_to;
     pub use super::get_all_public_collections_for;
+    pub use super::get_all_private_collections_for;
+    pub use super::get_all_public_collection_nfts;
     pub use super::get_invited_friends_wallet_data_of_gallery;
     pub use super::send_private_gallery_invitation_request_to;
     pub use super::remove_invited_friend_from_gallery;
-    // pub use super::add_user_to_friend;
-    // pub use super::remove_user_from_friend;
-    // pub use super::send_friend_request_to;
-    // pub use super::get_user_unaccpeted_invitation_requests;
-    // pub use super::accept_invitation_request;
+    pub use super::accept_invitation_request;
+    pub use super::accept_friend_request;
+    pub use super::send_friend_request_to;
+    pub use super::remove_user_from_friend;
+    pub use super::get_user_unaccpeted_invitation_requests;
+    pub use super::get_user_unaccpeted_friend_requests;
+    pub use super::get_all_user_fans_data_for;
+    // -----------------------------------------------
+    /*                marketplace apis               */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    // pub use super::create_collection;
+    // pub use super::update_collection;
+    // pub use super::create_nft; /* add img Multipart data for img url */
+    // pub use super::update_nft;
+    // pub use super::mint_nft;
+    // pub use super::sell_nft; 
+    // pub use super::buy_nft;
+    // pub use super::transfer_nft;
+    // pub use super::add_nft_comment;
+    // pub use super::like_nft;
+    // pub use super::dislike_nft;
+    // -----------------------------------------------
+    /*        deposit/withdraw in-app token apis     */
+    // -----------------------------------------------
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+    // pub use super::sell_token; /* update account_number and paypal_id fields */
+    pub use super::deposit; /* gift card money transfer */
+    pub use super::withdraw; /* gift card money claim */
+    pub use super::charge_wallet_request;
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------
@@ -4949,31 +6092,4 @@ pub mod exports{
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // ...
-    // -----------------------------------------------
-    /*              polygon marketplace apis         */
-    // -----------------------------------------------
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    // pub use super::create_collection;
-    // pub use super::update_collection;
-    // pub use super::create_nft; /* add img Multipart data for img url */
-    // pub use super::mint_nft;
-    // pub use super::sell_nft; 
-    // pub use super::buy_nft;
-    // pub use super::transfer_nft;
-    // pub use super::update_nft;
-    // pub use super::add_nft_comment;
-    // pub use super::like_nft;
-    // pub use super::dislike_nft;
-    // -----------------------------------------------
-    /*        deposit/withdraw in-app token apis     */
-    // -----------------------------------------------
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    // pub use super::sell_token; /* update account_number and paypal_id fields */
-    pub use super::deposit; /* gift card money transfer */
-    pub use super::withdraw; /* gift card money claim */
-    pub use super::charge_wallet_request;
 }

@@ -125,9 +125,18 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_private_galleries_for);
     config.service(apis::user::exports::get_all_galleries_invited_to);
     config.service(apis::user::exports::get_all_public_collections_for);
+    config.service(apis::user::exports::get_all_private_collections_for);
     config.service(apis::user::exports::get_invited_friends_wallet_data_of_gallery);
     config.service(apis::user::exports::send_private_gallery_invitation_request_to);
     config.service(apis::user::exports::remove_invited_friend_from_gallery);
+    config.service(apis::user::exports::get_all_public_collection_nfts);
+    config.service(apis::user::exports::accept_invitation_request);
+    config.service(apis::user::exports::get_user_unaccpeted_invitation_requests);
+    config.service(apis::user::exports::get_user_unaccpeted_friend_requests);
+    config.service(apis::user::exports::accept_friend_request);
+    config.service(apis::user::exports::send_friend_request_to);
+    config.service(apis::user::exports::remove_user_from_friend);
+    config.service(apis::user::exports::get_all_user_fans_data_for);
     
     // other routs maybe ?
     // ...

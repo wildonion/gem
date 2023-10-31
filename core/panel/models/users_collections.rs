@@ -4,8 +4,10 @@
 
 
 
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY};
 use crate::misc::{Response, Limit};
-use crate::{*, constants::COLLECTION_NOT_FOUND};
+use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
+use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery};
 use super::users_nfts::UserNftData;
 use crate::schema::users_collections::dsl::*;
 use crate::schema::users_collections;
@@ -132,50 +134,159 @@ pub struct InsertNewUserPrivateGalleryRequest{
 impl UserCollection{
 
 
-    pub async fn get_all_minted_nfts_of(collection_name: &str,
+    pub async fn get_all_minted_nfts_of_collection(col_id: i32, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+        -> Result<Vec<Option<UserNftData>>, PanelHttpResponse>{
+
+
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        let get_collection = Self::find_by_id(col_id, connection).await;
+        let Ok(collection) = get_collection else{
+            let error_resp = get_collection.unwrap_err();
+            return Err(error_resp);
+        };
+
+        let nfts_ = collection.clone().nfts;
+        let decoded_nfts = if nfts_.is_some(){
+            serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+
+        let minted_ones = decoded_nfts
+            .into_iter()
+            .map(|nft|{
+                if nft.is_minted == true{
+                    Some(nft)
+                } else{
+                    None
+                }
+            })
+            .collect::<Vec<Option<UserNftData>>>();
         
-        // get all collections that their nfts are minted and
-        // are belong to the passed in screen_cid and are related 
-        // to the passed in collection name
-        // ...
+        let sliced = &minted_ones[from..to+1].to_vec();
         
         Ok(
-            vec![UserNftData::default()]
+            sliced.to_owned()
         )
 
     }
 
-    pub async fn find_by_id(col_id: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn find_by_id(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
+        let user_collection = users_collections
+            .filter(users_collections::id.eq(col_id))
+            .first::<UserCollection>(connection);
+
+        let Ok(collection) = user_collection else{
+
+            let resp = Response{
+                data: Some(col_id),
+                message: COLLECTION_NOT_FOUND_OF,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
         Ok(
-            UserCollectionData::default()
+            UserCollectionData{
+                id: collection.id,
+                contract_address: collection.contract_address,
+                nfts: collection.nfts,
+                col_name: collection.col_name,
+                symbol: collection.symbol,
+                owner_screen_cid: collection.owner_screen_cid,
+                metadata_updatable: collection.metadata_updatable,
+                base_uri: collection.base_uri,
+                royalties_share: collection.royalties_share,
+                royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                collection_background: collection.collection_background,
+                metadata: collection.metadata,
+                col_description: collection.col_description,
+                created_at: collection.created_at.to_string(),
+                updated_at: collection.updated_at.to_string(),
+            }
         )
 
     }
 
-    pub async fn get_all_private_collections_for(screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    pub async fn get_all_private_collections_for(caller_screen_cid: &str, gal_id: i32,
+        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
-        
+            
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+            let error_resp = get_gallery_data.unwrap_err();
+            return Err(error_resp);
+        };
+
+        if gallery_data.owner_screen_cid != caller_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
         let user_collections = users_collections
             .order(created_at.desc())
-            .filter(owner_screen_cid.eq(screen_cid))
+            .offset(from)
+            .limit((to - from) + 1)
+            .filter(owner_screen_cid.eq(caller_screen_cid))
             .load::<UserCollection>(connection);
         
         
         let Ok(collections) = user_collections else{
-            let resp = Response{
-                data: Some(screen_cid),
-                message: COLLECTION_NOT_FOUND,
+            let resp = Response::<String>{
+                data: Some(caller_screen_cid.to_string()),
+                message: COLLECTION_NOT_FOUND_FOR,
                 status: 404,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
             )
         };
-
+        
         Ok(
             
             collections
@@ -236,16 +347,31 @@ impl UserCollection{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
 
         let user_collections = users_collections
             .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(screen_cid))
             .load::<UserCollection>(connection);
         
         let Ok(collections) = user_collections else{
             let resp = Response{
                 data: Some(screen_cid),
-                message: COLLECTION_NOT_FOUND,
+                message: COLLECTION_NOT_FOUND_FOR,
                 status: 404,
             };
             return Err(
