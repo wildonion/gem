@@ -19,14 +19,12 @@
 - user gallery based markeplace calls
     - public and private galleries
     - fetch private and public gallery nfts and collections
-    - nfts of a collection
     - add comment on and like the nft
     - polygon trade nft calls
-    - add/remove friend
+    - add/remove/accept friend requests
+    - add/remove/accept gallery friend requests
     - create nfts and upload their artworkds on pastel network storage using sense and cascade technologies
     - mint, buy and transfer nfts on polygon network in the platform
-    - have gallery based collections in their private and public galleries 
-    - they can load their collection in opensea for future trading operations like auction and offers
 - buy and sell in-app token (charge wallet and stripe apis)
 
 ### 👑 Admin Access

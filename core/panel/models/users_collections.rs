@@ -446,41 +446,7 @@ impl UserCollection{
 
         // call this api https://docs.nftport.xyz/reference/deploy-nft-product-contract
         // insert the collection id into the user private gallery related to the passed in id
-        
-        
-        // UserPrivateGallery::update(new_col_info.owner_screen_cid, new_col_info, fetched_gallery_info, connection).await;
-        // ...
-
-        /*
-            let new_col_data = new_collection_data.unwrap();
-            let new_col_data_owners_screen_cid = new_col_data["owner_screen_cid"].as_str().unwrap();
-            
-            if new_col_data_owners_screen_cid != &gallery_data.owner_screen_cid{
-                
-                let resp = Response::<'_, &str>{
-                    data: Some(&gallery_data.owner_screen_cid),
-                    message: COLLECTION_NOT_OWNED_BY,
-                    status: 404,
-                };
-    
-                return Err(
-                    Ok(HttpResponse::NotFound().json(resp))
-                )
-            }
-
-
-            if new_gallery_info.collections.is_some(){
-                
-                let new_col_data = new_gallery_info.collections.unwrap();
-                let mut decoded_cols = serde_json::from_value::<Vec<UserCollectionData>>(
-                    new_gallery_info.collections.unwrap()
-                ).unwrap();
-
-                decoded_cols.push(serde_json::from_value::<UserCollectionData>(new_col_data).unwrap());
-                let encoded_cols = serde_json::to_value(decoded_cols).unwrap();
-                new_gallery_info.collections = Some(encoded_cols);
-            }
-        */
+        // first ceate on chain contract and if it was successful then save in db
 
         // update gal record 
         // ...
