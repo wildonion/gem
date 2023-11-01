@@ -4,7 +4,7 @@
 use crate::*;
 use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
-use crate::models::users_collections::{UserCollection, UserCollectionData};
+use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData};
 use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest};
@@ -3667,91 +3667,17 @@ async fn update_mafia_player_avatar(
 
                     };
 
-                    /* creating the asset folder if it doesn't exist */
-                    tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
-                    let mut player_img_filepath = "".to_string();
+                    let get_player_img_path = misc::upload_img(
+                        AVATAR_UPLOAD_PATH, &format!("{}", player_id), 
+                        "player", 
+                        img).await;
+                    let Ok(player_img_filepath) = get_player_img_path else{
+            
+                        let err_res = get_player_img_path.unwrap_err();
+                        return err_res;
+                    };
+
                     
-                    /*  
-                        streaming over incoming img multipart form data to extract the
-                        field object for writing the bytes into the file
-                    */
-                    while let Ok(Some(mut field)) = img.try_next().await{
-
-                        /* getting the content_disposition header which contains the filename */
-                        let content_type = field.content_disposition();
-
-                        /* creating the filename and the filepath */
-                        let filename = content_type.get_filename().unwrap().to_lowercase();
-                        let ext_position_png = filename.find("png");
-                        let ext_position_jpg = filename.find("jpg");
-                        let ext_position_jpeg = filename.find("jpeg");
-
-                        let ext_position = if filename.find("png").is_some(){
-                            ext_position_png.unwrap()
-                        } else if filename.find("jpg").is_some(){
-                            ext_position_jpg.unwrap()
-                        } else if filename.find("jpeg").is_some(){
-                            ext_position_jpeg.unwrap()
-                        } else{
-
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                UNSUPPORTED_IMAGE_TYPE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            } 
-                        };
-
-                        let player_img_filename = format!("player:{}-img:{}.{}", player_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-                        let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&player_img_filename));
-                        player_img_filepath = filepath.clone();
-
-                        /* 
-                            receiving asyncly by streaming over the field future io object,
-                            getting the some part of the next field future object to extract 
-                            the image bytes from it
-                        */
-                        let mut file_buffer = vec![];
-                        while let Some(chunk) = field.next().await{
-                            
-                            /* chunk is a Bytes object that can be used to be written into a buffer */
-                            let data = chunk.unwrap();
-
-                            /* getting the size of the file */
-                            file_buffer.extend_from_slice(&data);
-                            
-                        }
-
-                        /* if the file size was greater than 1 MB reject the request */
-                        if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                            /* terminate the method and respond the caller */
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: TOO_LARGE_FILE_SIZE,
-                                status: 406
-                            };
-                            return Ok(HttpResponse::NotAcceptable().json(resp));
-                        }
-
-                        /* 
-                            web::block() executes a blocking function on a actix threadpool
-                            using spawn_blocking method of actix runtime so in here we're 
-                            creating a file inside a actix runtime threadpool to fill it with 
-                            the incoming bytes inside the field object by streaming over field
-                            object to extract the bytes
-                        */
-                        let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-
-                        /* writing bytes into the created file with the extracted filepath */
-                        f = web::block(move || f.write_all(&file_buffer).map(|_| f))
-                            .await
-                            .unwrap()
-                            .unwrap();
-
-                    }
-
                     /* 
                         writing the avatar image filename to redis ram, by doing this we can 
                         retrieve the value from redis in conse hyper mafia server when we call 
@@ -3862,7 +3788,7 @@ async fn create_private_gallery(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_mail_code");
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_private_gallery");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -4045,7 +3971,7 @@ async fn update_private_gallery(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_mail_code");
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_private_gallery");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -6004,6 +5930,380 @@ async fn get_all_private_collections_for(
 
 }
 
+#[post("/collection/create")]
+#[passport(user)]
+async fn create_collection(
+    req: HttpRequest,
+    new_user_collection_request: web::Json<NewUserCollectionRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-create-collection", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_collection");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        
+                        let new_user_collection_request = new_user_collection_request.to_owned();
+                        
+                        /* ----------------------------
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &new_user_collection_request.owner_cid, 
+                            &new_user_collection_request.tx_signature, 
+                            &new_user_collection_request.hash_data, 
+                            Some(new_user_collection_request.amount),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+
+                        match UserCollection::insert(
+                            new_user_collection_request, 
+                            img,
+                            redis_client.clone(), 
+                            connection).await{
+                            Ok(user_collection_data) => {
+
+                                resp!{
+                                    UserCollectionData, //// the data type
+                                    user_collection_data, //// response data
+                                    CREATED, //// response message
+                                    StatusCode::CREATED, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+                    
+                    
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/collection/update")]
+#[passport(user)]
+async fn update_collection(
+    req: HttpRequest,
+    update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-update-collection", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "updated_collection");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        
+                        let update_user_collection_request = update_user_collection_request.to_owned();
+                        
+                        /* ----------------------------
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &update_user_collection_request.owner_cid, 
+                            &update_user_collection_request.tx_signature, 
+                            &update_user_collection_request.hash_data, 
+                            Some(update_user_collection_request.amount),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+
+                        match UserCollection::update(
+                            update_user_collection_request,
+                            img,
+                            redis_client.clone(), 
+                            connection).await{
+                            Ok(user_collection_data) => {
+
+                                resp!{
+                                    UserCollectionData, //// the data type
+                                    user_collection_data, //// response data
+                                    UPDATED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+                    
+                    
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 pub mod exports{
     // -----------------------------------------------
     /*         verifications and report apis         */
@@ -6047,18 +6347,18 @@ pub mod exports{
     pub use super::get_user_unaccpeted_invitation_requests;
     pub use super::get_user_unaccpeted_friend_requests;
     pub use super::get_all_user_fans_data_for;
+    pub use super::create_collection;
+    pub use super::update_collection;
     // -----------------------------------------------
     /*                marketplace apis               */
     // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    // pub use super::create_collection;
-    // pub use super::update_collection;
-    // pub use super::create_nft; /* add img Multipart data for img url */
-    // pub use super::update_nft;
+    // pub use super::create_nft;
+    // pub use super::update_nft; 
     // pub use super::mint_nft;
-    // pub use super::sell_nft; 
+    // pub use super::sell_nft;
     // pub use super::buy_nft;
     // pub use super::transfer_nft;
     // pub use super::add_nft_comment;

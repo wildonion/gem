@@ -2,8 +2,10 @@
 
 
 use crate::*;
+use crate::models::users_collections::NewUserCollectionRequest;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
+use wallexerr::Wallet;
 use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
 use crate::events::publishers::role::PlayerRoleInfo;
@@ -56,6 +58,18 @@ pub struct NftPortTransferResponse{
     pub contract_address: String,
     pub transaction_hash: String,
     pub transaction_external_url: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftPortCreateCollectionContractResponse{
+    pub response: String,
+    pub chain: String,
+    pub transaction_hash: String,
+    pub transaction_external_url: String,
+    pub owner_address: String,
+    pub r#type: String,
+    pub name: String,
+    pub symbol: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -514,5 +528,135 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
     };
 
     upload_ipfs_response
+
+}
+
+pub async fn create_collection(
+    redis_client: redis::Client,
+    new_collection_request: NewUserCollectionRequest,
+) -> (String, u8){
+
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let NewUserCollectionRequest{ 
+        gallery_id, 
+        amount,
+        col_name, 
+        symbol, 
+        owner_cid, 
+        metadata_updatable, 
+        base_uri, 
+        royalties_share, 
+        royalties_address_screen_cid, 
+        collection_background, 
+        metadata, 
+        col_description, 
+        tx_signature, 
+        hash_data 
+    } = new_collection_request;
+
+    let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
+    let mut collection_data = HashMap::new();
+    collection_data.insert("chain", "polygon");
+    collection_data.insert("name", &col_name);
+    collection_data.insert("symbol", &symbol);
+    collection_data.insert("owner_address", owner_screen_cid);
+    
+    if metadata_updatable.is_some(){
+        let mu = format!("{}", metadata_updatable.unwrap());
+        collection_data.clone().insert("metadata_updatable", mu.as_str());
+    }
+    
+    let rs = format!("{}", royalties_share);
+    collection_data.insert("base_uri", &base_uri);
+    collection_data.insert("royalties_share", rs.as_str());
+    collection_data.insert("royalties_address", &royalties_address_screen_cid);
+    let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/contracts");
+    let res = reqwest::Client::new()
+        .post(nftport_transfer_endpoint.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .json(&collection_data)
+        .send()
+        .await;
+
+    /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_collection_creation_response = &mut res.unwrap();
+    let get_collection_creation_response_bytes = get_collection_creation_response.chunk().await.unwrap();
+    let err_resp_vec = get_collection_creation_response_bytes.unwrap().to_vec();
+    let get_collection_creation_response_json = serde_json::from_slice::<NftPortCreateCollectionContractResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortCreateCollectionContractResponse 
+        and perhaps we have errors in response from the nftport service
+    */
+    if get_collection_creation_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let collection_creation_logs_key_err = format!("ERROR=>NftPortCreateCollectionContractResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(collection_creation_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "create_collection");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+        
+        return (String::from(""), 1);
+
+    }
+
+    /* log caching using redis */
+    let collection_creation = get_collection_creation_response_json.unwrap();
+    info!("✅ NftPortCreateCollectionContractResponse: {:#?}", collection_creation.clone());
+    let collection_creation_logs_key = format!("OwnerAddress:{}|Log:NftPortCreateCollectionContractResponse|Time:{}", collection_creation.owner_address.clone(), chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(collection_creation_logs_key, serde_json::to_string_pretty(&collection_creation).unwrap()).await;
+
+
+    if collection_creation.response == String::from("OK"){
+
+        /* getting the deployed contract address */
+        let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);
+        let res: serde_json::Value = reqwest::Client::new()
+            .get(nftport_transfer_endpoint.as_str())
+            .header("Authorization", nftport_token.as_str())
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+            
+
+        let res = serde_json::to_value(res).unwrap();
+        let collection_contract_address = if res.get("contract_address").is_some(){
+            res.get("contract_address").unwrap().as_str().unwrap().to_string()
+        } else{
+            String::from("")
+        };
+
+        if collection_contract_address.starts_with("0x"){
+            return (collection_contract_address, 0);
+        } else{
+            return (String::from("CONFIRMATION_IS_REQUIRED"), 1);
+        }
+
+    } else{
+        
+        return (String::from(""), 1);
+
+    }
+
+
 
 }

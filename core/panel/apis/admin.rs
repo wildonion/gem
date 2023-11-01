@@ -344,73 +344,16 @@ async fn update_mafia_event_img(
 
                     };
 
+                    let get_event_img_path = misc::upload_img(
+                        EVENT_UPLOAD_PATH, &format!("{}", event_id), 
+                        "event", 
+                        img).await;
+                    let Ok(event_img_filepath) = get_event_img_path else{
+            
+                        let err_res = get_event_img_path.unwrap_err();
+                        return err_res;
+                    };
 
-                    /* creating the asset folder if it doesn't exist */
-                    tokio::fs::create_dir_all(EVENT_UPLOAD_PATH).await.unwrap();
-                    let mut event_img_filepath = "".to_string();
-                    
-                    /*  
-                        streaming over incoming img multipart form data to extract the
-                        field object for writing the bytes into the file
-                    */
-                    while let Ok(Some(mut field)) = img.try_next().await{
-
-                        /* getting the content_disposition header which contains the filename */
-                        let content_type = field.content_disposition();
-
-                        /* creating the filename and the filepath */
-                        let filename = content_type.get_filename().unwrap().to_lowercase();
-                        let ext_position_png = filename.find("png");
-                        let ext_position_jpg = filename.find("jpg");
-                        let ext_position_jpeg = filename.find("jpeg");
-
-                        let ext_position = if filename.find("png").is_some(){
-                            ext_position_png.unwrap()
-                        } else if filename.find("jpg").is_some(){
-                            ext_position_jpg.unwrap()
-                        } else if filename.find("jpeg").is_some(){
-                            ext_position_jpeg.unwrap()
-                        } else{
-
-                            resp!{
-                                &[u8], // the date type
-                                &[], // the data itself
-                                UNSUPPORTED_IMAGE_TYPE, // response message
-                                StatusCode::NOT_ACCEPTABLE, // status code
-                                None::<Cookie<'_>>, // cookie
-                            } 
-                        };
-
-                        let event_img_filename = format!("event:{}-img:{}.{}", event_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-                        let filepath = format!("{}/{}", EVENT_UPLOAD_PATH, sanitize_filename::sanitize(&event_img_filename));
-                        event_img_filepath = filepath.clone();
-
-                        /* 
-                            web::block() executes a blocking function on a actix threadpool
-                            using spawn_blocking method of actix runtime so in here we're 
-                            creating a file inside a actix runtime threadpool to fill it with 
-                            the incoming bytes inside the field object by streaming over field
-                            object to extract the bytes
-                        */
-                        let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-                        
-                        /* 
-                            receiving asyncly by streaming over the field future io object,
-                            getting the some part of the next field future object to extract 
-                            the image bytes from it
-                        */
-                        while let Some(chunk) = field.next().await{
-                            
-                            let data = chunk.unwrap();
-                            
-                            /* writing bytes into the created file with the extracted filepath */
-                            f = web::block(move || f.write_all(&data).map(|_| f))
-                                    .await
-                                    .unwrap()
-                                    .unwrap();
-                        }
-
-                    }
 
                     /* 
                         writing the event image filename to redis ram, by doing this we can 

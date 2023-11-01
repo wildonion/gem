@@ -1365,14 +1365,14 @@ impl User{
     }
 
     pub async fn update_wallet_back(
-        avatar_owner_id: i32, 
+        wallet_owner_id: i32, 
         mut img: Multipart, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
         
             
-        let Ok(user) = User::find_by_id(avatar_owner_id, connection).await else{
+        let Ok(user) = User::find_by_id(wallet_owner_id, connection).await else{
             let resp = Response{
-                data: Some(avatar_owner_id),
+                data: Some(wallet_owner_id),
                 message: USER_NOT_FOUND,
                 status: 404
             };
@@ -1381,97 +1381,19 @@ impl User{
             );
         };
 
-        /* making avatar image from incoming bytes */
-        let mut avatar_img_path = String::from("");
-        tokio::fs::create_dir_all(WALLET_BACK_UPLOAD_PATH).await.unwrap();
+        let get_wallet_img_path = misc::upload_img(
+            WALLET_BACK_UPLOAD_PATH, &format!("{}", wallet_owner_id), 
+            "walletback", 
+            img).await;
+        let Ok(wallet_img_path) = get_wallet_img_path else{
 
-        /*  
-            streaming over incoming img multipart form data to extract the
-            field object for writing the bytes into the file
-        */
-        while let Ok(Some(mut field)) = img.try_next().await{
-            
-            /* getting the content_disposition header which contains the filename */
-            let content_type = field.content_disposition();
-
-            /* creating the filename and the filepath */
-            let filename = content_type.get_filename().unwrap().to_lowercase();
-            let ext_position_png = filename.find("png");
-            let ext_position_jpg = filename.find("jpg");
-            let ext_position_jpeg = filename.find("jpeg");
-
-            let ext_position = if filename.find("png").is_some(){
-                ext_position_png.unwrap()
-            } else if filename.find("jpg").is_some(){
-                ext_position_jpg.unwrap()
-            } else if filename.find("jpeg").is_some(){
-                ext_position_jpeg.unwrap()
-            } else{
-
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: UNSUPPORTED_IMAGE_TYPE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            };
-
-            let avatar_img_filename = format!("walletback:{}-img:{}.{}", avatar_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-            let filepath = format!("{}/{}", WALLET_BACK_UPLOAD_PATH, sanitize_filename::sanitize(&avatar_img_filename));
-            avatar_img_path = filepath.clone();
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_buffer = vec![];
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
-
-                /* getting the size of the file */
-                file_buffer.extend_from_slice(&data);
-                
-            }
-
-            /* if the file size was greater than 1 MB reject the request */
-            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                /* terminate the method and respond the caller */
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: TOO_LARGE_FILE_SIZE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            }
-
-            /* 
-                web::block() executes a blocking function on a actix threadpool
-                using spawn_blocking method of actix runtime so in here we're 
-                creating a file inside a actix runtime threadpool to fill it with 
-                the incoming bytes inside the field object by streaming over field
-                object to extract the bytes
-            */
-            let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-
-            /* writing bytes into the created file with the extracted filepath */
-            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
-                .await
-                .unwrap()
-                .unwrap();
-
-        }
+            let err_res = get_wallet_img_path.unwrap_err();
+            return Err(err_res);
+        };
 
         /* update the avatar field in db */
         match diesel::update(users.find(user.id))
-            .set(avatar.eq(avatar_img_path))
+            .set(wallet_background.eq(wallet_img_path))
             .returning(FetchUser::as_returning())
             .get_result(connection)
             {
@@ -1567,93 +1489,15 @@ impl User{
             );
         };
 
-        /* making avatar image from incoming bytes */
-        let mut avatar_img_path = String::from("");
-        tokio::fs::create_dir_all(AVATAR_UPLOAD_PATH).await.unwrap();
+        let get_avatar_img_path = misc::upload_img(
+            AVATAR_UPLOAD_PATH, &format!("{}", avatar_owner_id), 
+            "avatar", 
+            img).await;
+        let Ok(avatar_img_path) = get_avatar_img_path else{
 
-        /*  
-            streaming over incoming img multipart form data to extract the
-            field object for writing the bytes into the file
-        */
-        while let Ok(Some(mut field)) = img.try_next().await{
-            
-            /* getting the content_disposition header which contains the filename */
-            let content_type = field.content_disposition();
-
-            /* creating the filename and the filepath */
-            let filename = content_type.get_filename().unwrap().to_lowercase();
-            let ext_position_png = filename.find("png");
-            let ext_position_jpg = filename.find("jpg");
-            let ext_position_jpeg = filename.find("jpeg");
-
-            let ext_position = if filename.find("png").is_some(){
-                ext_position_png.unwrap()
-            } else if filename.find("jpg").is_some(){
-                ext_position_jpg.unwrap()
-            } else if filename.find("jpeg").is_some(){
-                ext_position_jpeg.unwrap()
-            } else{
-
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: UNSUPPORTED_IMAGE_TYPE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            };
-
-            let avatar_img_filename = format!("avatar:{}-img:{}.{}", avatar_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-            let filepath = format!("{}/{}", AVATAR_UPLOAD_PATH, sanitize_filename::sanitize(&avatar_img_filename));
-            avatar_img_path = filepath.clone();
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_buffer = vec![];
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
-
-                /* getting the size of the file */
-                file_buffer.extend_from_slice(&data);
-                
-            }
-
-            /* if the file size was greater than 1 MB reject the request */
-            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                /* terminate the method and respond the caller */
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: TOO_LARGE_FILE_SIZE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            }
-
-            /* 
-                web::block() executes a blocking function on a actix threadpool
-                using spawn_blocking method of actix runtime so in here we're 
-                creating a file inside a actix runtime threadpool to fill it with 
-                the incoming bytes inside the field object by streaming over field
-                object to extract the bytes
-            */
-            let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-
-            /* writing bytes into the created file with the extracted filepath */
-            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
-                .await
-                .unwrap()
-                .unwrap();
-
-        }
+            let err_res = get_avatar_img_path.unwrap_err();
+            return Err(err_res);
+        };
 
         /* update the avatar field in db */
         match diesel::update(users.find(user.id))
@@ -1753,95 +1597,15 @@ impl User{
             );
         };
 
+        let get_banner_img_path = misc::upload_img(
+            BANNER_UPLOAD_PATH, &format!("{}", banner_owner_id), 
+            "banner", 
+            img).await;
+        let Ok(banner_img_path) = get_banner_img_path else{
 
-        /* making banner image from incoming bytes */
-        let mut banner_img_path = String::from("");
-        tokio::fs::create_dir_all(BANNER_UPLOAD_PATH).await.unwrap();
-
-        /*  
-            streaming over incoming img multipart form data to extract the
-            field object for writing the bytes into the file
-        */
-        while let Ok(Some(mut field)) = img.try_next().await{
-            
-            /* getting the content_disposition header which contains the filename */
-            let content_type = field.content_disposition();
-
-            /* creating the filename and the filepath */
-            let filename = content_type.get_filename().unwrap().to_lowercase();
-            let ext_position_png = filename.find("png");
-            let ext_position_jpg = filename.find("jpg");
-            let ext_position_jpeg = filename.find("jpeg");
-
-            let ext_position = if filename.find("png").is_some(){
-                ext_position_png.unwrap()
-            } else if filename.find("jpg").is_some(){
-                ext_position_jpg.unwrap()
-            } else if filename.find("jpeg").is_some(){
-                ext_position_jpeg.unwrap()
-            } else{
-
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: UNSUPPORTED_IMAGE_TYPE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            };
-
-            let banner_img_filename = format!("banner:{}-img:{}.{}", banner_owner_id, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
-            let filepath = format!("{}/{}", BANNER_UPLOAD_PATH, sanitize_filename::sanitize(&banner_img_filename));
-            banner_img_path = filepath.clone();
-
-            
-            /* 
-                receiving asyncly by streaming over the field future io object,
-                getting the some part of the next field future object to extract 
-                the image bytes from it
-            */
-            let mut file_buffer = vec![];
-            while let Some(chunk) = field.next().await{
-                
-                /* chunk is a Bytes object that can be used to be written into a buffer */
-                let data = chunk.unwrap();
-
-                /* getting the size of the file */
-                file_buffer.extend_from_slice(&data);
-                
-            }
-
-            /* if the file size was greater than 1 MB reject the request */
-            if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
-
-                /* terminate the method and respond the caller */
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: TOO_LARGE_FILE_SIZE,
-                    status: 406
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            }
-
-            /* 
-                web::block() executes a blocking function on a actix threadpool
-                using spawn_blocking method of actix runtime so in here we're 
-                creating a file inside a actix runtime threadpool to fill it with 
-                the incoming bytes inside the field object by streaming over field
-                object to extract the bytes
-            */
-            let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
-
-            /* writing bytes into the created file with the extracted filepath */
-            f = web::block(move || f.write_all(&file_buffer).map(|_| f))
-                .await
-                .unwrap()
-                .unwrap();
-
-        }
+            let err_res = get_banner_img_path.unwrap_err();
+            return Err(err_res);
+        };
 
         /* update the avatar field in db */
         match diesel::update(users.find(user.id))

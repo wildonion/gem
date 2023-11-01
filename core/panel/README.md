@@ -16,6 +16,7 @@
 - update bio, wallet background, avatar and banner
 - transferring in-app tokens by minting (`deposit`) and transfering (`withdraw`) nft 
 - get related deposits and withdrawals
+- chatroom launchpad calls to chat and mint nft 
 - user gallery based markeplace calls
     - public and private galleries
     - fetch private and public gallery nfts and collections
@@ -34,6 +35,8 @@
 - add twitter account for the twitter bot
 - register/delete/edit new twitter tasks and users
 - get all withdrawals, deposits, checkouts, users, users tasks and twitter tasks
+- create a new chatroom launchpad (generate `N` number of nfts using AI for future mintings)
+- get a chatroom launchpad statistics info 
 
 ### 👨🏻‍💻 Dev Access
 - get all data of a user `<---mafia jwt--->` mafia hyper server

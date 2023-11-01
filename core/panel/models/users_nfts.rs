@@ -175,16 +175,23 @@ impl UserNft{
         - like_nft
         - dilike_nft
     */
-    pub async fn update(caller_screen_cid: &str, 
-        asset_info: UpdateUserNftRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn update(caller_screen_cid: &str, asset_info: UpdateUserNftRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
         
+        // update balance field of royalties_address_screen_cid in each nft sell
+        /* consider royalties process of the contract based on in-app token */
         // asset_info.onchain_id will be fulfilled after minting
         // condition: caller_screen_cid == asset_info.current_owner_screen_cid
         // if the nft is_listed field was set to true the nft can be sold to the user
         // if sell api gets called the is_listed will be set to false automatically
         // ...
 
+        // if new_nft_data.is_some(){
+        // let mut decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_info.nfts).unwrap();
+        // decoded_nfts.push(serde_json::to_value(&new_nft_data));
+        // update col record
+        // }
         // let nft_comments = serde_json::from_value::<NftComment>(asset_info.comments).unwrap();
         // let nft_likes = serde_json::from_value::<NftLike>(asset_info.comments).unwrap();
 
