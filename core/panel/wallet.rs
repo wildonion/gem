@@ -29,10 +29,18 @@ pub mod evm{
 
     pub fn get_wallet() -> Wallet{
         /* 
-            ECDSA with secp256k1 curve keypairs 
+            generaring new ECDSA keypair with secp256k1 curve 
             (compatible with all evm based chains) 
         */
-        Wallet::new_secp256k1("")
+        Wallet::new_secp256k1("", None)
+
+        /* 
+            generaring ECDSA keypair with secp256k1 curve from
+            an existing mnemonic (compatible with all evm based chains) 
+        */
+        // let existing_mnemonic_sample = Some("obot glare amazing hip saddle habit soft barrel sell fine document february");
+        // Wallet::new_secp256k1("", existing_mnemonic_sample)
+
     }
     
     pub async fn sign(wallet: Wallet, data: &str) -> (SignedData, String){
