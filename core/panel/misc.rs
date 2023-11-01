@@ -1,11 +1,15 @@
 
 
 
+use std::io::Write;
+use std::time::{UNIX_EPOCH, SystemTime};
+
+use futures_util::TryStreamExt;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, UNSUPPORTED_IMAGE_TYPE, TOO_LARGE_FILE_SIZE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -641,6 +645,101 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
     Box::leak(s.into_boxed_slice()) 
 }
 
+pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, mut img: Multipart) -> Result<String, PanelHttpResponse>{
+
+    /* making collection image from incoming bytes */
+    let mut img_path = String::from("");
+    tokio::fs::create_dir_all(upload_path).await.unwrap();
+
+    /*  
+        streaming over incoming img multipart form data to extract the
+        field object for writing the bytes into the file
+    */
+    while let Ok(Some(mut field)) = img.try_next().await{
+        
+        /* getting the content_disposition header which contains the filename */
+        let content_type = field.content_disposition();
+
+        /* creating the filename and the filepath */
+        let filename = content_type.get_filename().unwrap().to_lowercase();
+        let ext_position_png = filename.find("png");
+        let ext_position_jpg = filename.find("jpg");
+        let ext_position_jpeg = filename.find("jpeg");
+
+        let ext_position = if filename.find("png").is_some(){
+            ext_position_png.unwrap()
+        } else if filename.find("jpg").is_some(){
+            ext_position_jpg.unwrap()
+        } else if filename.find("jpeg").is_some(){
+            ext_position_jpeg.unwrap()
+        } else{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: UNSUPPORTED_IMAGE_TYPE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        };
+
+        let img_filename = format!("{}:{}-img:{}.{}", path_prefix, identifier, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+        let filepath = format!("{}/{}", upload_path, sanitize_filename::sanitize(&img_filename));
+        img_path = filepath.clone();
+        
+        /* 
+            receiving asyncly by streaming over the field future io object,
+            getting the some part of the next field future object to extract 
+            the image bytes from it
+        */
+        let mut file_buffer = vec![];
+        while let Some(chunk) = field.next().await{
+            
+            /* chunk is a Bytes object that can be used to be written into a buffer */
+            let data = chunk.unwrap();
+
+            /* getting the size of the file */
+            file_buffer.extend_from_slice(&data);
+            
+        }
+
+        /* if the file size was greater than 1 MB reject the request */
+        if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+
+            /* terminate the method and respond the caller */
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: TOO_LARGE_FILE_SIZE,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+        /* 
+            web::block() executes a blocking function on a actix threadpool
+            using spawn_blocking method of actix runtime so in here we're 
+            creating a file inside a actix runtime threadpool to fill it with 
+            the incoming bytes inside the field object by streaming over field
+            object to extract the bytes
+        */
+        let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+
+        /* writing bytes into the created file with the extracted filepath */
+        f = web::block(move || f.write_all(&file_buffer).map(|_| f))
+            .await
+            .unwrap()
+            .unwrap();
+
+    }
+
+
+    Ok(img_path)
+
+
+}
 
 /* -------------------------------------------------------------- */
 /* --------------------------- MACROS --------------------------- */
