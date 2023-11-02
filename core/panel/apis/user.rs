@@ -6123,7 +6123,7 @@ async fn update_collection(
     req: HttpRequest,
     update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
+    mut img: Option<Multipart>,
 ) -> PanelHttpResponse{
 
 
@@ -6370,10 +6370,10 @@ pub mod exports{
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    // pub use super::sell_token; /* update account_number and paypal_id fields */
+    // pub use super::sell_token_request; /* cache in-app token */
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
-    pub use super::charge_wallet_request;
+    pub use super::charge_wallet_request; /* buy in-app token */
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------

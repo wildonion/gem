@@ -31,7 +31,7 @@ pub struct UserPrivateGallery{
     pub gal_name: String,
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
-    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -44,7 +44,7 @@ pub struct UserPrivateGalleryData{
     pub gal_name: String,
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
-    pub metadata: Option<serde_json::Value>,
+    pub extra: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -56,7 +56,7 @@ pub struct UpdateUserPrivateGalleryRequest{
     pub gal_name: String,
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
-    pub metadata: Option<serde_json::Value>,
+    pub extra: Option<serde_json::Value>,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -69,7 +69,7 @@ pub struct UpdateUserPrivateGallery{
     pub gal_name: String,
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
-    pub metadata: Option<serde_json::Value>,
+    pub extra: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -77,7 +77,7 @@ pub struct NewUserPrivateGalleryRequest{
     pub owner_cid: String,
     pub gal_name: String,
     pub gal_description: String,
-    pub metadata: Option<serde_json::Value>,
+    pub extra: Option<serde_json::Value>,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -88,7 +88,7 @@ pub struct InsertNewUserPrivateGalleryRequest{
     pub owner_screen_cid: String,
     pub gal_name: String,
     pub gal_description: String,
-    pub metadata: Option<serde_json::Value>,
+    pub extra: Option<serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -216,7 +216,7 @@ impl UserPrivateGallery{
                         gal_name: g.gal_name,
                         gal_description: g.gal_description,
                         invited_friends: g.invited_friends,
-                        metadata: g.metadata,
+                        extra: g.extra,
                         created_at: g.created_at.to_string(),
                         updated_at: g.updated_at.to_string(),
                     }
@@ -324,7 +324,7 @@ impl UserPrivateGallery{
                                     gal_name: g.gal_name,
                                     gal_description: g.gal_description,
                                     invited_friends: inv_frds.clone(),
-                                    metadata: g.metadata,
+                                    extra: g.extra,
                                     created_at: g.created_at.to_string(),
                                     updated_at: g.updated_at.to_string(),
                                 }
@@ -449,7 +449,7 @@ impl UserPrivateGallery{
                 gal_name: gallery_info.gal_name, 
                 gal_description: gallery_info.gal_description, 
                 invited_friends: gallery_info.invited_friends, 
-                metadata: gallery_info.metadata, 
+                extra: gallery_info.extra, 
                 created_at: gallery_info.created_at.to_string(), 
                 updated_at: gallery_info.updated_at.to_string() 
             }
@@ -470,7 +470,7 @@ impl UserPrivateGallery{
                 owner_screen_cid: Wallet::generate_keccak256_from(new_gallery_info.owner_cid),
                 gal_name: new_gallery_info.gal_name,
                 gal_description: new_gallery_info.gal_description,
-                metadata: new_gallery_info.metadata,
+                extra: new_gallery_info.extra,
             };
         
             match diesel::insert_into(users_galleries)
@@ -487,7 +487,7 @@ impl UserPrivateGallery{
                         gal_name: fetched_gallery_data.gal_name,
                         gal_description: fetched_gallery_data.gal_description,
                         invited_friends: fetched_gallery_data.invited_friends,
-                        metadata: fetched_gallery_data.metadata,
+                        extra: fetched_gallery_data.extra,
                         created_at: fetched_gallery_data.created_at.to_string(),
                         updated_at: fetched_gallery_data.updated_at.to_string(),
                     };
@@ -611,7 +611,7 @@ impl UserPrivateGallery{
                 gal_name: gallery_data.gal_name,
                 gal_description: gallery_data.gal_description,
                 invited_friends: Some(friends_), /* updated */
-                metadata: gallery_data.metadata,
+                extra: gallery_data.extra,
                 tx_signature,
                 hash_data,
             };
@@ -629,7 +629,7 @@ impl UserPrivateGallery{
                     gal_name: gallery_data.gal_name, 
                     gal_description: gallery_data.gal_description, 
                     invited_friends: inv_frds, 
-                    metadata: gallery_data.metadata, 
+                    extra: gallery_data.extra, 
                     created_at: gallery_data.created_at.to_string(), 
                     updated_at: gallery_data.updated_at.to_string() 
                 }
@@ -659,7 +659,7 @@ impl UserPrivateGallery{
                 gal_name: new_gallery_info.gal_name,
                 gal_description: new_gallery_info.gal_description,
                 invited_friends: new_gallery_info.invited_friends,
-                metadata: new_gallery_info.metadata,
+                extra: new_gallery_info.extra,
             };
             
             match diesel::update(users_galleries.find(gallery_data.id))
@@ -677,7 +677,7 @@ impl UserPrivateGallery{
                                 gal_name: g.gal_name,
                                 gal_description: g.gal_description,
                                 invited_friends: g.invited_friends,
-                                metadata: g.metadata,
+                                extra: g.extra,
                                 created_at: g.created_at.to_string(),
                                 updated_at: g.updated_at.to_string(),
                             }

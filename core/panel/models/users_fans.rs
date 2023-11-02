@@ -702,7 +702,7 @@ impl UserFan{
                         gal_name: gallery.gal_name,
                         gal_description: gallery.gal_description,
                         invited_friends: Some(invited_friends),
-                        metadata: gallery.metadata,
+                        extra: gallery.extra,
                         tx_signature,
                         hash_data,
                     }, gal_id, connection).await{

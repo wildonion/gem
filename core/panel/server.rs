@@ -92,6 +92,10 @@ macro_rules! server {
             */
             info!("➔ 🚀 {} panel HTTP+WebSocket server has launched from [{}:{}] at {}", APP_NAME, host, port, chrono::Local::now().naive_local());
             let s = match HttpServer::new(move ||{
+                /* 
+                    each thread of the HttpServer instance needs its own app factory
+                    so its routes can be executed and handled in actix threadpool
+                */
                 App::new()
                     /* 
                         SHARED STATE DATA
@@ -170,7 +174,7 @@ macro_rules! server {
                             apis::public::PublicApiDoc::openapi(),
                         )
                     ]))
-                }) // each thread of the HttpServer instance needs its own app factory 
+                }) 
                 .bind((host.as_str(), port)){
                     Ok(server) => {
                         server

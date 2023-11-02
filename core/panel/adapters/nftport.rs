@@ -2,7 +2,7 @@
 
 
 use crate::*;
-use crate::models::users_collections::NewUserCollectionRequest;
+use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
@@ -73,6 +73,15 @@ pub struct NftPortCreateCollectionContractResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftPortUpdateCollectionContractResponse{
+    pub response: String,
+    pub chain: String,
+    pub transaction_hash: String,
+    pub transaction_external_url: String,
+    pub freeze_metadata: bool
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUploadMetadataResponse{
     pub response: String,
     pub metadata_uri: String,
@@ -115,7 +124,7 @@ pub async fn start_minting_card_process(
     /* upload card to ipfs */
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    /* ---------------------------- we're using the nft_img_url ----------------------------
+    /* ---------------------------- we're using the ifps nft_img_url ----------------------------
     let (metadata_uri, res_metadata_uri_status) = upload_file_to_ipfs(&nftport_token, redis_client.clone()).await;
         
     if res_metadata_uri_status == 1{
@@ -184,7 +193,7 @@ pub async fn start_minting_card_process(
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
             return (String::from(""), String::from(""), 1);
@@ -245,7 +254,7 @@ pub async fn start_minting_card_process(
 
                 /* custom error handler */
                 use error::{ErrorKind, ThirdPartyApiError, PanelError};
-                let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
+                let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                 return (String::from(""), String::from(""), 1);
@@ -307,7 +316,7 @@ pub async fn start_minting_card_process(
 
                         /* custom error handler */
                         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-                        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_minting_card_process");
+                        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         return (String::from(""), String::from(""), 1);
@@ -425,7 +434,7 @@ pub async fn start_transferring_card_process(
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "start_transferring_card_process");
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_transferring_card_process");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
         return (String::from(""), 1);
@@ -484,7 +493,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
             let process_cmd_error_content = get_upload_output.as_ref().unwrap_err().to_string();
             let process_cmd_error_content_vec = process_cmd_error_content.as_bytes().to_vec();
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, process_cmd_error_content_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(process_cmd_error_content.clone())), "upload_file_to_ipfs");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, process_cmd_error_content_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(process_cmd_error_content.clone())), "nftport::upload_file_to_ipfs");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
             
             /* log caching using redis */
@@ -514,7 +523,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
-            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "upload_file_to_ipfs");
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::upload_file_to_ipfs");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
             error!("serde decoding Nftport response error: {}", err_resp_str);
@@ -534,13 +543,11 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
 pub async fn create_collection(
     redis_client: redis::Client,
     new_collection_request: NewUserCollectionRequest,
-) -> (String, u8){
+) -> (String, String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
     let NewUserCollectionRequest{ 
-        gallery_id, 
-        amount,
         col_name, 
         symbol, 
         owner_cid, 
@@ -548,11 +555,7 @@ pub async fn create_collection(
         base_uri, 
         royalties_share, 
         royalties_address_screen_cid, 
-        collection_background, 
-        metadata, 
-        col_description, 
-        tx_signature, 
-        hash_data 
+        .. /* don't care about the rest of the fields */ 
     } = new_collection_request;
 
     let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
@@ -571,9 +574,9 @@ pub async fn create_collection(
     collection_data.insert("base_uri", &base_uri);
     collection_data.insert("royalties_share", rs.as_str());
     collection_data.insert("royalties_address", &royalties_address_screen_cid);
-    let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/contracts");
+    let nftport_create_collection_endpoint = format!("https://api.nftport.xyz/v0/contracts");
     let res = reqwest::Client::new()
-        .post(nftport_transfer_endpoint.as_str())
+        .post(nftport_create_collection_endpoint.as_str())
         .header("Authorization", nftport_token.as_str())
         .json(&collection_data)
         .send()
@@ -609,10 +612,10 @@ pub async fn create_collection(
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
-        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "create_collection");
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::create_collection");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
-        return (String::from(""), 1);
+        return (String::from(""), String::from(""), 1);
 
     }
 
@@ -625,10 +628,13 @@ pub async fn create_collection(
 
     if collection_creation.response == String::from("OK"){
 
+        /* sleep till the transaction gets confirmed on blockchain */
+        tokio::time::sleep(tokio::time::Duration::from_secs(15)).await;
+
         /* getting the deployed contract address */
         let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);
         let res: serde_json::Value = reqwest::Client::new()
-            .get(nftport_transfer_endpoint.as_str())
+            .get(get_tx_hash_info.as_str())
             .header("Authorization", nftport_token.as_str())
             .send()
             .await
@@ -646,9 +652,111 @@ pub async fn create_collection(
         };
 
         if collection_contract_address.starts_with("0x"){
-            return (collection_contract_address, 0);
+            return (collection_contract_address, collection_creation.transaction_hash, 0);
         } else{
-            return (String::from("CONFIRMATION_IS_REQUIRED"), 1);
+            /* can't get contract onchain info */
+            return (String::from(""), collection_creation.transaction_hash, 1);
+        }
+
+    } else{
+        
+        return (String::from(""), String::from(""), 1);
+
+    }
+
+
+
+}
+
+pub async fn update_collection(
+    redis_client: redis::Client,
+    update_collection_request: UpdateUserCollectionRequest,
+    contract_address: String,
+) -> (String, u8){
+
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let UpdateUserCollectionRequest{ 
+        owner_cid, 
+        base_uri, 
+        royalties_share, 
+        royalties_address_screen_cid, 
+        .. /* don't care about the rest of the fields */
+    } = update_collection_request;
+
+    let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
+    let mut collection_data = HashMap::new();
+    collection_data.insert("chain", "polygon");
+    collection_data.insert("contract_address", &contract_address);
+
+    let fzm = &format!("{}", update_collection_request.freeze_metadata);
+    collection_data.insert("freeze_metadata", fzm);
+    
+    let rs = format!("{}", royalties_share);
+    collection_data.insert("owner_address", owner_screen_cid);
+
+    collection_data.insert("base_uri", &base_uri);
+    collection_data.insert("royalties_share", rs.as_str());
+    collection_data.insert("royalties_address", &royalties_address_screen_cid);
+    let nftport_update_collection_endpoint = format!("https://api.nftport.xyz/v0/contracts");
+    let res = reqwest::Client::new()
+        .put(nftport_update_collection_endpoint.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .json(&collection_data)
+        .send()
+        .await;
+
+    /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_collection_update_response = &mut res.unwrap();
+    let get_collection_update_response_bytes = get_collection_update_response.chunk().await.unwrap();
+    let err_resp_vec = get_collection_update_response_bytes.unwrap().to_vec();
+    let get_collection_update_response_json = serde_json::from_slice::<NftPortUpdateCollectionContractResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortUpdateCollectionContractResponse 
+        and perhaps we have errors in response from the nftport service
+    */
+    if get_collection_update_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let collection_update_logs_key_err = format!("ERROR=>NftPortUpdateCollectionContractResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(collection_update_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::update_collection");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+        
+        return (String::from(""), 1);
+
+    }
+
+    /* log caching using redis */
+    let collection_update = get_collection_update_response_json.unwrap();
+    info!("✅ NftPortUpdateCollectionContractResponse: {:#?}", collection_update.clone());
+    let collection_update_logs_key = format!("OwnerAddress:{}|Log:NftPortUpdateCollectionContractResponse|Time:{}", owner_screen_cid, chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(collection_update_logs_key, serde_json::to_string_pretty(&collection_update).unwrap()).await;
+
+
+    if collection_update.response == String::from("OK"){
+
+        if collection_update.transaction_hash.starts_with("0x"){
+            return (collection_update.transaction_hash, 0);
+        } else{
+            /* can't get contract onchain info */
+            return (String::from(""), 1);
         }
 
     } else{

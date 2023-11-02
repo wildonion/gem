@@ -18,16 +18,18 @@ pub struct UserNft{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub img_url: String,
+    pub metadata_uri: String,
     pub onchain_id: Option<String>,
     pub nft_name: String,
     pub is_minted: bool,
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
-    pub metadata: serde_json::Value, /* pg key, value based json binary object */
-    pub comments: serde_json::Value, /* pg key, value based json binary object */
-    pub likes: serde_json::Value, /* pg key, value based json binary object */
+    pub freeze_metadata: Option<bool>,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub comments: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub likes: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub tx_hash: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -51,16 +53,18 @@ pub struct UserNftData{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata: Option<serde_json::Value>,
-    pub img_url: String,
+    pub metadata_uri: String,
+    pub extra: Option<serde_json::Value>,
     pub onchain_id: Option<String>,
     pub nft_name: String,
     pub is_minted: bool,
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
+    pub freeze_metadata: Option<bool>,
     pub comments: Option<serde_json::Value>,
     pub likes: Option<serde_json::Value>,
+    pub tx_hash: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -68,17 +72,19 @@ pub struct UserNftData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserNftRequest{
     pub nft_id: i32,
+    pub collection_id: i32,
     pub contract_address: String,
     pub buyer_screen_cid: Option<String>,
     pub current_owner_screen_cid: String,
-    pub metadata: Option<serde_json::Value>,
-    pub img_url: String,
+    pub metadata_uri: String,
+    pub extra: Option<serde_json::Value>,
     pub onchain_id: Option<String>, 
     pub nft_name: String,
     pub is_minted: bool,
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
+    pub freeze_metadata: Option<bool>,
     pub comments: Option<serde_json::Value>,
     pub likes: Option<serde_json::Value>,
     pub tx_signature: String,
@@ -90,40 +96,45 @@ pub struct UpdateUserNftRequest{
 pub struct UpdateUserNft{
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata: Option<serde_json::Value>,
-    pub img_url: String,
+    pub metadata_uri: String,
+    pub extra: Option<serde_json::Value>,
     pub onchain_id: Option<String>, 
     pub nft_name: String,
     pub is_minted: bool,
     pub nft_description: String,
     pub current_price: i64,
     pub is_listed: bool,
+    pub freeze_metadata: Option<bool>,
     pub comments: Option<serde_json::Value>,
     pub likes: Option<serde_json::Value>,
+    pub tx_hash: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NewUserNftRequest{
     pub collection_id: i32,
     pub contract_address: String,
+    pub metadata_uri: String,
     pub current_owner_screen_cid: String,
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
-    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub freeze_metadata: Option<bool>,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub tx_signature: String,
     pub hash_data: String,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name=users_nfts)]
-pub struct InsertNewUserPrivateGalleryRequest{
+pub struct InsertNewUserNftRequest{
     pub contract_address: String,
     pub current_owner_screen_cid: String,
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
-    pub metadata: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub freeze_metadata: Option<bool>,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
 }
 
 /* 
@@ -133,7 +144,7 @@ pub struct InsertNewUserPrivateGalleryRequest{
 */
 impl UserNft{
 
-    pub async fn get_info_of(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_public_info_of(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
         Ok(())
@@ -156,25 +167,16 @@ impl UserNft{
         
         // ...
 
-        // update col record (gal recrod contains the collection will be updated in update col record method)
+        // update col record nfts
+        // then update gal record with updated col
 
         Ok(())
 
     }
 
-    /* -------------------------------------------------------------------------- */
-    /* this method can be called to update an nft status like minting and listing */
-    /* -------------------------------------------------------------------------- */
-    /* supported apis (spend token for gas fee like update listings):
-        - mint_nft           ---- https://docs.nftport.xyz/reference/customizable-minting
-        - transfer_nft       ---- https://docs.nftport.xyz/reference/transfer-minted-nft
-        - update_nft         ---- https://docs.nftport.xyz/reference/update-minted-nft
-        - sell_nft
-        - buy_nft
-        - add_nft_comment
-        - like_nft
-        - dilike_nft
-    */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(caller_screen_cid: &str, asset_info: UpdateUserNftRequest, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
@@ -195,7 +197,23 @@ impl UserNft{
         // let nft_comments = serde_json::from_value::<NftComment>(asset_info.comments).unwrap();
         // let nft_likes = serde_json::from_value::<NftLike>(asset_info.comments).unwrap();
 
-        // update col record (gal recrod contains the collection will be updated in update col record method)
+        // update col record nfts
+        // then update gal record with updated col
+
+        // onchain updates (fill the tx hash field) | https://docs.nftport.xyz/reference/update-minted-nft
+        // - metadata_uri : contains json includes nft img url and extra json
+        // - freeze_metadata
+
+        /* supported apis (spend token for gas fee like update listings):
+            - mint_nft           ---- https://docs.nftport.xyz/reference/customizable-minting
+            - transfer_nft       ---- https://docs.nftport.xyz/reference/transfer-minted-nft
+            - update_nft         ---- https://docs.nftport.xyz/reference/update-minted-nft
+            - sell_nft
+            - buy_nft
+            - add_nft_comment
+            - like_nft
+            - dilike_nft
+        */
 
         Ok(())
 

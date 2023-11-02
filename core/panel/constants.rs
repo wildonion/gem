@@ -18,8 +18,10 @@ pub static WITHDRAWN_SUCCESSFULLY: &str = "Withdrawn Successfully";
 pub static CANT_MINT_CARD: &str = "Can't Mint The Card At The Moment";
 pub static INVALID_CONTRACT_ADDRESS: &str = "Invalid Contract Address";
 pub static CANT_TRANSFER_CARD: &str = "Can't Transfer The Card At The Moment, We're Getting Blockchain Confirmation, Try Later";
-pub static CANT_GET_CONTRACT_ADDRESS: &str = "Can't Get Contract Address At The Moment, We're Getting Blockchain Confirmation, Try Later";
-pub static CANT_CREAT_COLLECTION_ONCHAIN: &str = "Can't Create Collection Contract Address At The Moment, Try Later";
+pub static CANT_GET_CONTRACT_ADDRESS: &str = "Can't Get Contract Address At The Moment, We're Getting Blockchain Confirmation, Contact Administrator";
+pub static INVALID_CONTRACT_TX_HASH: &str = "Invalid Onchain Contract Tx Hash";
+pub static CANT_CREATE_COLLECTION_ONCHAIN: &str = "Can't Create Collection Contract Address At The Moment, Try Later";
+pub static CANT_UPDATE_COLLECTION_ONCHAIN: &str = "Can't Update Collection Contract Address At The Moment, Try Later";
 pub static ID_BUILT: &str = "New Crypto Id Built Successfully, Remember To Save Your `singer` and `mnemonic` Fields";
 pub static RATE_LIMITED: &str = "Rate Limited, Chill 30 Seconds";
 pub static CID_RECORD_UPDATED: &str = "Crypto Id Record Updated Successfully";
@@ -107,6 +109,7 @@ pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of T
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
+pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Caller Of This Method";
 pub static NO_FRIEND_FOUND: &str = "No Friend Found With This Crypto Id";
 
 

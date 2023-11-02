@@ -137,6 +137,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::send_friend_request_to);
     config.service(apis::user::exports::remove_user_from_friend);
     config.service(apis::user::exports::get_all_user_fans_data_for);
+    config.service(apis::user::exports::create_collection);
+    config.service(apis::user::exports::update_collection);
     
     // other routs maybe ?
     // ...
