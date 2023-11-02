@@ -4,7 +4,7 @@
 		"name": "gem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
-		"_collection_link": "https://web.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?source=collection_link"
+		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?action=share&source=collection_link&creator=22927035"
 	},
 	"item": [
 		{
@@ -962,7 +962,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjIxOThhYTI2MmZhMmQwMmEzZmM5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzE1Njg2Nzk3LCJpYXQiOjE2ODQxNTA3OTd9.Szsp7TQq6anI5-64p_CGiQVXv-uODTgv7AZ3_s2Ejkdp7CbEVlkXYUw0S394CXPApYwRhSymBlkmOcRCzGiI6Q",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwMTQzNjUwNywiaWF0IjoxNjk4ODQ0NTA3fQ.mcKT8MPTid5iLjvVze3cQJr7s6FaM7B3PNjOFWN0uvtsHEr5gAy6P3HL_zTfeXyLls4Byj57SKaIaocqeyVIQw",
 											"type": "string"
 										}
 									]
@@ -1263,7 +1263,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYyZmJlYTVkMjY3NmMyMzQyNmJhMjlhYiJ9LCJ1c2VybmFtZSI6ImJsdWVhc2giLCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5MjQzNzQzOSwiaWF0IjoxNjYwOTAxNDM5fQ.C9oufsytGlMEOmM-j455lN_xjE5oBwjaKmRBuqebI5GuGX8pNluKUyxWykfkAEPpQXFmKRCHiLZu5UBrxa-sgg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwMTQzNjUwNywiaWF0IjoxNjk4ODQ0NTA3fQ.mcKT8MPTid5iLjvVze3cQJr7s6FaM7B3PNjOFWN0uvtsHEr5gAy6P3HL_zTfeXyLls4Byj57SKaIaocqeyVIQw",
 											"type": "string"
 										}
 									]
@@ -1272,7 +1272,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"name\": \"gardan koloft\",\r\n    \"rate\": 1,\r\n    \"desc\": \"\",\r\n    \"side_id\": \"62ff5f1a94474205d5992116\",\r\n    \"abilities\": 0\r\n}",
+									"raw": "{\r\n    \"name\": \"جان سخت\",\r\n    \"rate\": 1,\r\n    \"desc\": \"\",\r\n    \"side_id\": \"630a35978c198e0d655c8adf\",\r\n    \"abilities\": 0\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2692,785 +2692,1338 @@
 					"name": "User APIs",
 					"item": [
 						{
-							"name": "Stripe Charge Wallet",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3NjIyMDA2OTA3MTgzMDAwLCJleHAiOjE3MDAyMTQwMDYsImlhdCI6MTY5NzYyMjAwNn0.7qoeUZRsrkai1wIpEpOj1rD2OAwIzHdbhJksjwDMPQwJYY0N2yMOWKy82kPjah6XKJQ2CGzUT5FTUU5_T6cFDA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"user_id\": 3,\n    \"buyer_cid\": \"035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba\",\n    \"tokens\": 10,\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/cid/wallet/stripe/charge",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"cid",
-										"wallet",
-										"stripe",
-										"charge"
-									]
+							"name": "Task",
+							"item": [
+								{
+									"name": "Report User Tasks",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
 								}
-							},
-							"response": []
+							]
 						},
 						{
-							"name": "Login With Identifier",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/login/8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"login",
-										"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Login With Identifier and Password",
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
+							"name": "KYC",
+							"item": [
+								{
+									"name": "Login With Identifier",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/login/8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"login",
+												"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
+											]
 										}
-									}
+									},
+									"response": []
 								},
-								"url": {
-									"raw": "{{panel-user}}/login",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"login"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Verify Twitter Username",
-							"request": {
-								"auth": {
-									"type": "bearer"
-								},
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/verify-twitter-account/_wildonion",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"verify-twitter-account",
-										"_wildonion"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Request Phone Code",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQyMzIxMTUzNDk2MDAwLCJleHAiOjE2OTc2MzQzMjEsImlhdCI6MTY5NTA0MjMyMX0.39asKGaWOB5GvUjveQ-psKp8MOPHRwtwRRyFNN_Q_qHoZZU3DpEaKRFKIMNGM3EvSa4qc8RDsh1_YepXHik3Dg",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/request-phone-code/+989211686115",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"request-phone-code",
-										"+989211686115"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Verify Phone Code",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"user_phone\": \"+989211686115\",\n    \"verification_code\": \"900867\",\n    \"vat\": 1694589917858 // milliseconds\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/verify-phone-code",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"verify-phone-code"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Request Mail Code",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjMxMTc5ODQyMjI4MDAwLCJleHAiOjE2OTc4MjMxNzksImlhdCI6MTY5NTIzMTE3OX0.YtYpBOX1W9GwUME11ZP0g5nZes4-vCOJTzGJOrfREF3JxsWcvUlTdL1GBlafcUCOULVLtDbaghDIlO5sv3eOPw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/request-mail-code/abarmardeatashyne@gmail.com",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"request-mail-code",
-										"abarmardeatashyne@gmail.com"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Verify Mail Code",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjMxMTc5ODQyMjI4MDAwLCJleHAiOjE2OTc4MjMxNzksImlhdCI6MTY5NTIzMTE3OX0.YtYpBOX1W9GwUME11ZP0g5nZes4-vCOJTzGJOrfREF3JxsWcvUlTdL1GBlafcUCOULVLtDbaghDIlO5sv3eOPw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"29682991\",\n    \"vat\": 1694770105129 // milliseconds\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/verify-mail-code",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"verify-mail-code"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Build Crypto Id",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODY5NjQyMzM4Mzc0MDAwLCJleHAiOjE3MDA0NjE2NDIsImlhdCI6MTY5Nzg2OTY0Mn0.AKpg7bZxrftscYM8XGP-JCKmld9YuAm9RJW25A_VlqE4bYR3YyYHKsPfJTZM8R0X5sWDoIjcgE_hnjzMtxVvlg",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"111\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/cid/build",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"cid",
-										"build"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Deposit",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODY5Nzc2Nzc1NTk4MDAwLCJleHAiOjE3MDA0NjE3NzYsImlhdCI6MTY5Nzg2OTc3Nn0.YslWPHjEHWxD7Cz6Fy5GBTQmHbtjiD_WSB-QpggO3g6T4mE5lLTHJshZRPWdOJNFS1Q3A1GRA83gItpBubjFog",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"recipient\": \"deadkings\",\n    \"from_cid\": \"03d241ab17ca5e7a85f7cb007b8ffe55e4a8f57366f2e6fa507eb70d338d160545\",\n    \"amount\": 5,\n    \"nft_img_url\": \"https://bafkreihuqmuw3enahucfbwyej2fat6m33bew6cyaurfi4gtwxtvm5ldmla.ipfs.nftstorage.link\",\n    \"nft_name\": \"onion gift\",\n    \"nft_desc\": \"an onion gift for my friend\",\n    \"tx_signature\": \"aede504470927253a7a2e93984acc1bb1cd101d47336c36e58af6e8ee75647a66fdd2ebece740573d59b36158fb755969f8e646de88e7d341ffa68f318aa30671c\",\n    \"hash_data\": \"68d742a61697de41d6548feac1f59b93a5fcfc8b328acdeed3ebd9bf5becd94f\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/deposit/to/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"deposit",
-										"to",
-										"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Withdraw",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk3ODcwNDQwMzE3ODE3MDAwLCJleHAiOjE3MDA0NjI0NDAsImlhdCI6MTY5Nzg3MDQ0MH0.luS5h1yBiLA-YUfpr6kF-GqF6LC9dN7UD5r6gOIYgou8O3EpLmk0l4GepoTr4CTKFKLRQnIl2Darl0_Hy9Y9Hg",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"recipient_cid\": \"02ce059e999a6ffdb0432eee9fa0cbf8eecf642f04b8cc60faa4ea82198e861e9b\",\n    \"deposit_id\": 2,\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/withdraw/from/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"withdraw",
-										"from",
-										"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Update Bio",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"bio\": \"the wildest one\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/profile/update/bio",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"profile",
-										"update",
-										"bio"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Upload Avatar",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "img",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{panel-user}}/profile/update/avatar",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"profile",
-										"update",
-										"avatar"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Upload Banner",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "img",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{panel-user}}/profile/update/banner",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"profile",
-										"update",
-										"banner"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Upload Wallet Background",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "img",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{panel-user}}/profile/update/wallet-back",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"profile",
-										"update",
-										"wallet-back"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Upload Mafia Player Avatar",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "img",
-											"type": "file",
-											"src": []
-										}
-									]
-								},
-								"url": {
-									"raw": "{{panel-user}}/mafia/player/64c939bfd19645f57fd9f98a/upload/avatar",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"mafia",
-										"player",
-										"64c939bfd19645f57fd9f98a",
-										"upload",
-										"avatar"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get User Deposits",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/deposit/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"deposit",
-										"get",
-										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
+								{
+									"name": "Login With Identifier and Password",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
 										},
-										{
-											"key": "to",
-											"value": "10"
+										"url": {
+											"raw": "{{panel-user}}/login",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"login"
+											]
 										}
-									]
+									},
+									"response": []
+								},
+								{
+									"name": "Verify Twitter Username",
+									"request": {
+										"auth": {
+											"type": "bearer"
+										},
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/verify-twitter-account/_wildonion",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"verify-twitter-account",
+												"_wildonion"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Request Phone Code",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQyMzIxMTUzNDk2MDAwLCJleHAiOjE2OTc2MzQzMjEsImlhdCI6MTY5NTA0MjMyMX0.39asKGaWOB5GvUjveQ-psKp8MOPHRwtwRRyFNN_Q_qHoZZU3DpEaKRFKIMNGM3EvSa4qc8RDsh1_YepXHik3Dg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/request-phone-code/+989211686115",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"request-phone-code",
+												"+989211686115"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Verify Phone Code",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk0NzcwMDA0NDk0MDA1MDAwLCJleHAiOjE2OTczNjIwMDQsImlhdCI6MTY5NDc3MDAwNH0.Md2kFpCcSzJr5x03qlFic7pRuF0dKFRv2-ZokJjZVX7Rx26yWQdcrC9-uQwXtzzM3iZkG81Kvph_9-pgcwev0w",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"user_phone\": \"+989211686115\",\n    \"verification_code\": \"900867\",\n    \"vat\": 1694589917858 // milliseconds\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/verify-phone-code",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"verify-phone-code"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Request Mail Code",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNTg4ODE3MDU3MDAwLCJleHAiOjE3MDE1MzI1ODgsImlhdCI6MTY5ODk0MDU4OH0.8QDS8BRFaE6ca9bEVBl8702OJ8t1Ew90hyb6rtXLMjQBOZem-Or1gmluh8OfMELtPYblGwey8ucmXI0kYtReKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/request-mail-code/abarmardeatashyne@gmail.com",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"request-mail-code",
+												"abarmardeatashyne@gmail.com"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Verify Mail Code",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNTg4ODE3MDU3MDAwLCJleHAiOjE3MDE1MzI1ODgsImlhdCI6MTY5ODk0MDU4OH0.8QDS8BRFaE6ca9bEVBl8702OJ8t1Ew90hyb6rtXLMjQBOZem-Or1gmluh8OfMELtPYblGwey8ucmXI0kYtReKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"81498674\",\n    \"vat\": 1698940835 // milliseconds\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/verify-mail-code",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"verify-mail-code"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Build Crypto Id",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MDc4ODM1ODQwMDAwLCJleHAiOjE3MDE1MzYwNzgsImlhdCI6MTY5ODk0NDA3OH0.w8d4asAPOY7Vaoaf4CR6ioSAZnPB70TIcdkGwYsDY5mEowA699-K2E1kaWNeFhemQMQxkozeNxjnWYWnToJotQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\": \"dewo\",\n    \"device_id\": \"010111\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/cid/build",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"cid",
+												"build"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Bio",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"bio\": \"the wildest one!\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/bio",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"bio"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Upload Avatar",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNTg4ODE3MDU3MDAwLCJleHAiOjE3MDE1MzI1ODgsImlhdCI6MTY5ODk0MDU4OH0.8QDS8BRFaE6ca9bEVBl8702OJ8t1Ew90hyb6rtXLMjQBOZem-Or1gmluh8OfMELtPYblGwey8ucmXI0kYtReKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": "/Users/wildonion/Desktop/onion.jpeg"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/avatar",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"avatar"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Upload Banner",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": []
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/banner",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"banner"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Upload Wallet Background",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": []
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/wallet-back",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"wallet-back"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Upload Mafia Player Avatar",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": []
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/mafia/player/64c939bfd19645f57fd9f98a/upload/avatar",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"mafia",
+												"player",
+												"64c939bfd19645f57fd9f98a",
+												"upload",
+												"avatar"
+											]
+										}
+									},
+									"response": []
 								}
-							},
-							"response": []
+							]
 						},
 						{
-							"name": "Get User Withdrawals",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
-											"type": "string"
-										}
-									]
+							"name": "Wallet",
+							"item": [
+								{
+									"name": "Stripe Charge Wallet",
+									"request": {
+										"method": "POST",
+										"header": []
+									},
+									"response": []
 								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/withdraw/get/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"withdraw",
-										"get",
-										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
-										},
-										{
-											"key": "to",
-											"value": "10"
-										}
-									]
+								{
+									"name": "Deposit",
+									"request": {
+										"method": "POST",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Withdraw",
+									"request": {
+										"method": "POST",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Get User Deposits",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Get User Withdrawals",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Get User Unpaid Checkouts",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Get User Paid Checkouts",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
+								},
+								{
+									"name": "Get Recipient Unclaimed Deposits",
+									"request": {
+										"method": "GET",
+										"header": []
+									},
+									"response": []
 								}
-							},
-							"response": []
+							]
 						},
 						{
-							"name": "Get User Unpaid Checkouts",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/checkout/get/unpaid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"checkout",
-										"get",
-										"unpaid",
-										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
+							"name": "Gallery",
+							"item": [
+								{
+									"name": "Create Private Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
 										},
-										{
-											"key": "to",
-											"value": "10"
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"gal_name\": \"oniontori\",\n    \"gal_description\": \"this is an oniontori gallery\",\n    \"extra\": {},\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/create",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"create"
+											]
 										}
-									]
+									},
+									"response": []
+								},
+								{
+									"name": "Update Private Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"collections\": {},\n    \"gal_name\": \"oniontori!\",\n    \"gal_description\": \"this is an oniontori gallery\",\n    \"extra\": {},\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/1/update",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"1",
+												"update"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove Invited Friend From Private Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"gal_id\": 1,\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"friend_screen_cid\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/remove/invited-friend",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"remove",
+												"invited-friend"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Send Private Gallery Invitation Request",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"gal_id\": 1,\n    \"gallery_owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"to_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/send/invitation-request",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"send",
+												"invitation-request"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Send Friend Request To",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    // from_screen_cid wants to send friend request to owner_cid\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"from_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/fan/send/friend-request",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"send",
+												"friend-request"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Accept Friend Request",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    // owner_cid wants to accept friend_screen_cid request\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"friend_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/fan/accept/friend-request",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"accept",
+												"friend-request"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Accept Private Gallery Invitation Request",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ5NTU2NDU4NDQ2MDAwLCJleHAiOjE3MDE1NDE1NTYsImlhdCI6MTY5ODk0OTU1Nn0.Ks9bvArg8RpTvefUrHGCH8nzwGA4DYowhOLS0cTcHsCSOxnWBHQrswVLSjMYo05QGYMwcw4Gvt_U3Rz2TseBMQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    // owner_cid wants to accept invitation request from_screen_cid\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"from_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"gal_id\": 1,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/accept/invitation-request",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"accept",
+												"invitation-request"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove Invited Friend From Private Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"friend_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"gal_id\": 1,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/remove/invited-friend",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"remove",
+												"invited-friend"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove User From Friends",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"friend_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/fan/remove/friend",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"remove",
+												"friend"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/create",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/update",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"update"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get My Private Galleries",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"get",
+												"all",
+												"for",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get My Private Collections",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/get/all/private/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/in-gallery/1/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"get",
+												"all",
+												"private",
+												"for",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												"in-gallery",
+												"1",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All Public Collections For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"get",
+												"all",
+												"for",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All Public Collection NFTs",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/1/get/all/minted-nfts/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"1",
+												"get",
+												"all",
+												"minted-nfts",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All Galleries I Invited To",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/get/all/i/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/invited/to/owned-by/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"get",
+												"all",
+												"i",
+												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
+												"invited",
+												"to",
+												"owned-by",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Invited Friends Wallet Data Of My Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfcaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/get/invited-friends/of/1/caller/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"get",
+												"invited-friends",
+												"of",
+												"1",
+												"caller",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get My Unaccepted Invitation Requests",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/get/unaccepted/invitation-requests/for/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"get",
+												"unaccepted",
+												"invitation-requests",
+												"for",
+												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get My Unaccepted Friend Requests",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/get/unaccepted/friend-requests/for/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"get",
+												"unaccepted",
+												"friend-requests",
+												"for",
+												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All My Fans Data",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"all",
+												"for",
+												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
 								}
-							},
-							"response": []
+							]
 						},
 						{
-							"name": "Get User Paid Checkouts",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/checkout/get/paid/user/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"checkout",
-										"get",
-										"paid",
-										"user",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
-										},
-										{
-											"key": "to",
-											"value": "10"
-										}
-									]
-								}
-							},
-							"response": []
+							"name": "Marketplace",
+							"item": []
 						},
 						{
-							"name": "Get Recipient Unclaimed Deposits",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJuYW1lIjoiZWFfcGFpbkB5YWhvby5jb20iLCJpZGVudGlmaWVyIjoiZWFfcGFpbkB5YWhvby5jb20iLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTY5MTQyNjY2MzQ4MzY3MTAwMCwiZXhwIjoxNjk0MDE4NjYzLCJpYXQiOjE2OTE0MjY2NjN9.lgkswXrPMcFWkrsXbRfT1HFwOKfxyVTZFubqsfqZfNWkWhkiQXNtjc8uDXl92R26qG5nkwrqAP0-klJK6BsEGA",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/deposit/get/unclaimed/recipient/03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"deposit",
-										"get",
-										"unclaimed",
-										"recipient",
-										"03b5eb1521ad141c17bce72be6047bd1c87f2cc5cd822d7fc41c6c7a55beca0d7d",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
-										},
-										{
-											"key": "to",
-											"value": "10"
-										}
-									]
-								}
-							},
-							"response": []
+							"name": "Chatroom Launchpad",
+							"item": []
 						},
 						{
-							"name": "Report User Tasks",
-							"request": {
-								"auth": {
-									"type": "bearer"
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-user}}/report-tasks/2/?from=0&to=10",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"report-tasks",
-										"2",
-										""
-									],
-									"query": [
-										{
-											"key": "from",
-											"value": "0"
-										},
-										{
-											"key": "to",
-											"value": "10"
-										}
-									]
-								}
-							},
-							"response": []
+							"name": "Advieh",
+							"item": []
 						}
 					]
 				},

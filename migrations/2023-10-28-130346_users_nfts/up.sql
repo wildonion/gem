@@ -18,3 +18,5 @@ CREATE TABLE IF NOT EXISTS users_nfts (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+
+SELECT diesel_manage_updated_at('users_nfts');

@@ -344,7 +344,7 @@ async fn update_mafia_event_img(
 
                     };
 
-                    let get_event_img_path = misc::upload_img(
+                    let get_event_img_path = misc::store_file(
                         EVENT_UPLOAD_PATH, &format!("{}", event_id), 
                         "event", 
                         img).await;

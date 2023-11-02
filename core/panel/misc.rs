@@ -645,7 +645,7 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
     Box::leak(s.into_boxed_slice()) 
 }
 
-pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, mut img: Multipart) -> Result<String, PanelHttpResponse>{
+pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, mut asset: Multipart) -> Result<String, PanelHttpResponse>{
 
     /* making collection image from incoming bytes */
     let mut img_path = String::from("");
@@ -655,7 +655,7 @@ pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, 
         streaming over incoming img multipart form data to extract the
         field object for writing the bytes into the file
     */
-    while let Ok(Some(mut field)) = img.try_next().await{
+    while let Ok(Some(mut field)) = asset.try_next().await{
         
         /* getting the content_disposition header which contains the filename */
         let content_type = field.content_disposition();
@@ -665,14 +665,26 @@ pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, 
         let ext_position_png = filename.find("png");
         let ext_position_jpg = filename.find("jpg");
         let ext_position_jpeg = filename.find("jpeg");
+        let ext_position_pdf = filename.find("pdf");
+        let ext_position_mp4 = filename.find("mp4");
+        let ext_position_mp3 = filename.find("mp3");
+        let ext_position_gif = filename.find("gif");
 
-        let ext_position = if filename.find("png").is_some(){
-            ext_position_png.unwrap()
+        let (ext_position, file_kind) = if filename.find("png").is_some(){
+            (ext_position_png.unwrap(), "img")
         } else if filename.find("jpg").is_some(){
-            ext_position_jpg.unwrap()
+            (ext_position_jpg.unwrap(), "img")
         } else if filename.find("jpeg").is_some(){
-            ext_position_jpeg.unwrap()
-        } else{
+            (ext_position_jpeg.unwrap(), "img")
+        } else if filename.find("pdf").is_some(){
+            (ext_position_pdf.unwrap(), "pdf")
+        } else if filename.find("mp4").is_some(){
+            (ext_position_mp4.unwrap(), "mp4")
+        } else if filename.find("mp3").is_some(){
+            (ext_position_mp3.unwrap(), "mp3")
+        } else if filename.find("gif").is_some(){
+            (ext_position_gif.unwrap(), "gif")
+        }else{
 
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
@@ -684,7 +696,7 @@ pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, 
             );
         };
 
-        let img_filename = format!("{}:{}-img:{}.{}", path_prefix, identifier, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+        let img_filename = format!("{}:{}-{}:{}.{}", path_prefix, identifier, file_kind, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
         let filepath = format!("{}/{}", upload_path, sanitize_filename::sanitize(&img_filename));
         img_path = filepath.clone();
         
@@ -699,13 +711,16 @@ pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, 
             /* chunk is a Bytes object that can be used to be written into a buffer */
             let data = chunk.unwrap();
 
-            /* getting the size of the file */
+            /* 
+                getting the size of the file, data can be coerced 
+                to &[u8] by taking a reference to the underlying data
+            */
             file_buffer.extend_from_slice(&data);
             
         }
 
-        /* if the file size was greater than 1 MB reject the request */
-        if file_buffer.len() > env::var("IMG_FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+        /* if the file size was greater than 200 MB reject the request */
+        if file_buffer.len() > env::var("FILE_SIZE").unwrap().parse::<usize>().unwrap(){
 
             /* terminate the method and respond the caller */
             let resp = Response::<&[u8]>{
@@ -727,7 +742,7 @@ pub async fn upload_img(upload_path: &str, identifier: &str, path_prefix: &str, 
         */
         let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
 
-        /* writing bytes into the created file with the extracted filepath */
+        /* writing fulfilled buffer bytes into the created file with the extracted filepath */
         f = web::block(move || f.write_all(&file_buffer).map(|_| f))
             .await
             .unwrap()

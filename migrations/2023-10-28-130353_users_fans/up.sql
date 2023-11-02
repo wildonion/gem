@@ -9,3 +9,5 @@ CREATE TABLE IF NOT EXISTS users_fans (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   PRIMARY KEY(id, user_screen_cid)
 );
+
+SELECT diesel_manage_updated_at('users_fans');

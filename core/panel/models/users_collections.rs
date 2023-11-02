@@ -181,10 +181,20 @@ impl UserCollection{
             })
             .collect::<Vec<Option<UserNftData>>>();
         
-        let sliced = &minted_ones[from..to+1].to_vec();
-        
+        let sliced = if minted_ones.len() > to{
+            let data = &minted_ones[from..to+1];
+            data.to_vec()
+        } else{
+            let data = &minted_ones[from..minted_ones.len()];
+            data.to_vec()
+        };
+
         Ok(
-            sliced.to_owned()
+            if sliced.contains(&None){
+                vec![]
+            } else{
+                sliced.to_owned()
+            }
         )
 
     }
@@ -449,6 +459,16 @@ impl UserCollection{
 
 impl UserCollection{
 
+    /*  ------------- nftport request body -------------
+        onchian updates:
+            - name
+            - symbol
+            - owner_address
+            - metadata_updatable
+            - royalties_share
+            - royalties_address
+            - base_uri
+    */
     pub async fn insert(new_col_info: NewUserCollectionRequest, mut img: Multipart,
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
@@ -530,7 +550,7 @@ impl UserCollection{
         }   
     
         /* uploading collection image */
-        let get_collection_img_path = misc::upload_img(
+        let get_collection_img_path = misc::store_file(
             COLLECTION_UPLOAD_PATH, &contract_onchain_address, 
             "collection", 
             img).await;
@@ -667,6 +687,15 @@ impl UserCollection{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+    /*  ------------- nftport request body -------------
+        onchian updates:
+            - contract_address
+            - freeze_metadata
+            - owner_address
+            - royalties_share
+            - royalties_address
+            - base_uri
+    */
     pub async fn update(col_info: UpdateUserCollectionRequest, mut img: Option<Multipart>, 
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
@@ -765,7 +794,7 @@ impl UserCollection{
     
         /* uploading collection image */
         let fill_me_with_col_img_path = if img.is_some(){
-            let get_collection_img_path = misc::upload_img(
+            let get_collection_img_path = misc::store_file(
                 COLLECTION_UPLOAD_PATH, &collection_data.contract_address, 
                 "collection", 
                 img.unwrap()).await;
@@ -813,7 +842,7 @@ impl UserCollection{
             freeze_metadata: Some(col_info.clone().freeze_metadata),
         };
     
-        match diesel::update(users_collections)
+        match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
             .set(&new_col_data)
             .returning(UserCollection::as_returning())
             .get_result::<UserCollection>(connection)

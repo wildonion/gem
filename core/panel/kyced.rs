@@ -1,7 +1,7 @@
 
 
 use wallexerr::Wallet;
-use crate::{*, models::users::User, misc::Response, constants::{NOT_VERIFIED_PHONE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE}};
+use crate::{*, models::users::User, misc::Response, constants::{NOT_VERIFIED_PHONE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, CALLER_IS_NOT_THE_OWNER, EMPTY_CRYPTO_DATA}};
 
 
 /*   ------------------------------------------------------------------------------------------------
@@ -28,6 +28,21 @@ pub async fn verify_request(
         let error_resp = get_user.unwrap_err();
         return Err(error_resp);
     };
+
+    /* crypto data the signature, cid and hash data must not be empty */
+    if tx_signature == "" || 
+        from_cid == "" ||
+        hash_data == ""{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: EMPTY_CRYPTO_DATA,
+                status: 406
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
 
     /* if the phone wasn't verified user can't deposit */
     if user.phone_number.is_none() || 
@@ -95,6 +110,19 @@ pub async fn verify_request(
         );
 
     };
+
+    /* caller of the method must owns the crypto id */
+    if user.clone().cid.unwrap() != from_cid.to_string(){
+        
+        let resp = Response{
+            data: Some(from_cid.to_string()),
+            message: CALLER_IS_NOT_THE_OWNER,
+            status: 403
+        };
+        return Err(
+            Ok(HttpResponse::Forbidden().json(resp))
+        );
+    }
     
     /* verifying signature */
     let verification_sig_res = wallet::evm::verify_signature(

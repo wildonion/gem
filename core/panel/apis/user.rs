@@ -1147,21 +1147,21 @@ async fn verify_twitter_account(
                     let now = chrono::Local::now().timestamp_millis() as u64;
                     let mut is_rate_limited = false;
                     
-                    let redis_result_verify_username_rate_limiter: RedisResult<String> = redis_conn.get("verify_username_rate_limiter").await;
-                    let mut redis_verify_username_rate_limiter = match redis_result_verify_username_rate_limiter{
+                    let redis_result_verify_x_username_rate_limiter: RedisResult<String> = redis_conn.get("verify_x_username_rate_limiter").await;
+                    let mut redis_verify_x_username_rate_limiter = match redis_result_verify_x_username_rate_limiter{
                         Ok(data) => {
                             let rl_data = serde_json::from_str::<HashMap<u64, u64>>(data.as_str()).unwrap();
                             rl_data
                         },
                         Err(e) => {
-                            let empty_verify_username_rate_limiter = HashMap::<u64, u64>::new();
-                            let rl_data = serde_json::to_string(&empty_verify_username_rate_limiter).unwrap();
-                            let _: () = redis_conn.set("verify_username_rate_limiter", rl_data).await.unwrap();
+                            let empty_verify_x_username_rate_limiter = HashMap::<u64, u64>::new();
+                            let rl_data = serde_json::to_string(&empty_verify_x_username_rate_limiter).unwrap();
+                            let _: () = redis_conn.set("verify_x_username_rate_limiter", rl_data).await.unwrap();
                             HashMap::new()
                         }
                     };
 
-                    if let Some(last_used) = redis_verify_username_rate_limiter.get(&(_id as u64)){
+                    if let Some(last_used) = redis_verify_x_username_rate_limiter.get(&(_id as u64)){
                         if now - *last_used < chill_zone_duration{
                             is_rate_limited = true;
                         }
@@ -1181,9 +1181,9 @@ async fn verify_twitter_account(
 
                         /* updating the last rquest time */
                         //// this will be used to handle shared state between clusters
-                        redis_verify_username_rate_limiter.insert(_id as u64, now); //// updating the redis rate limiter map
-                        let rl_data = serde_json::to_string(&redis_verify_username_rate_limiter).unwrap();
-                        let _: () = redis_conn.set("verify_username_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
+                        redis_verify_x_username_rate_limiter.insert(_id as u64, now); //// updating the redis rate limiter map
+                        let rl_data = serde_json::to_string(&redis_verify_x_username_rate_limiter).unwrap();
+                        let _: () = redis_conn.set("verify_x_username_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
 
                         /* we can pass usernmae by reference or its slice form instead of cloning it */
@@ -3667,7 +3667,7 @@ async fn update_mafia_player_avatar(
 
                     };
 
-                    let get_player_img_path = misc::upload_img(
+                    let get_player_img_path = misc::store_file(
                         AVATAR_UPLOAD_PATH, &format!("{}", player_id), 
                         "player", 
                         img).await;
@@ -3906,7 +3906,7 @@ async fn create_private_gallery(
 
 }
 
-#[post("/gallery/update/{gal_id}")]
+#[post("/gallery/{gal_id}/update")]
 #[passport(user)]
 async fn update_private_gallery(
     req: HttpRequest,
@@ -4365,7 +4365,7 @@ async fn send_private_gallery_invitation_request_to(
 
 }
 
-#[post("/gallery/get/all/for/{who}/")]
+#[get("/gallery/get/all/for/{who}/")]
 #[passport(user)]
 async fn get_all_private_galleries_for(
     req: HttpRequest,
@@ -4476,7 +4476,7 @@ async fn get_all_private_galleries_for(
 
 }
 
-#[post("/gallery/get/all/for/{who}/caller/{caller}/")]
+#[get("/gallery/get/all/i/{me}/invited/to/owned-by/{owner}/")]
 #[passport(user)]
 async fn get_all_galleries_invited_to(
     req: HttpRequest,
@@ -4533,7 +4533,7 @@ async fn get_all_galleries_invited_to(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (who, caller) = who_and_caller_cid.to_owned();
+                    let (caller, who) = who_and_caller_cid.to_owned();
                     match UserPrivateGallery::get_all_galleries_invited_to(
                         &Wallet::generate_keccak256_from(caller),
                         &Wallet::generate_keccak256_from(who), 
@@ -4591,7 +4591,7 @@ async fn get_all_galleries_invited_to(
 
 }
 
-#[post("/gallery/get/invited-friends/of/{gal_id}/caller/{caller}/")]
+#[get("/gallery/get/invited-friends/of/{gal_id}/caller/{caller}/")]
 #[passport(user)]
 async fn get_invited_friends_wallet_data_of_gallery(
     req: HttpRequest,
@@ -4706,7 +4706,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 }
 
-#[post("/collection/get/unaccepted/invitation-requests/for/{who}/")]
+#[get("/collection/get/unaccepted/invitation-requests/for/{who}/")]
 #[passport(user)]
 async fn get_user_unaccpeted_invitation_requests(
     req: HttpRequest,
@@ -4819,7 +4819,7 @@ async fn get_user_unaccpeted_invitation_requests(
 
 }
 
-#[post("/collection/get/unaccepted/friend-requests/for/{who}/")]
+#[get("/collection/get/unaccepted/friend-requests/for/{who}/")]
 #[passport(user)]
 async fn get_user_unaccpeted_friend_requests(
     req: HttpRequest,
@@ -5476,7 +5476,7 @@ async fn remove_user_from_friend(
 
 }
 
-#[post("/fan/get/all/for/{who}/")]
+#[get("/fan/get/all/for/{who}/")]
 #[passport(user)]
 async fn get_all_user_fans_data_for(
     req: HttpRequest,
@@ -5589,7 +5589,7 @@ async fn get_all_user_fans_data_for(
 
 }
 
-#[post("/collection/get/all/for/{who}/")]
+#[get("/collection/get/all/for/{who}/")]
 #[passport(user)]
 async fn get_all_public_collections_for(
     req: HttpRequest,
@@ -5702,7 +5702,7 @@ async fn get_all_public_collections_for(
 
 }
 
-#[post("/collection/{col_id}/get/all/minted-nfts/")]
+#[get("/collection/{col_id}/get/all/minted-nfts/")]
 #[passport(user)]
 async fn get_all_public_collection_nfts(
     req: HttpRequest,
@@ -5815,11 +5815,11 @@ async fn get_all_public_collection_nfts(
 
 }
 
-#[post("/collection/get/all/private/for/{caller}/")]
+#[get("/collection/get/all/private/for/{caller}/in-gallery/{gal_id}/")]
 #[passport(user)]
 async fn get_all_private_collections_for(
     req: HttpRequest,
-    gal_id_and_caller_cid: web::Path<(i32, String)>,
+    caller_cid_and_gal_id: web::Path<(String, i32)>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -5872,7 +5872,7 @@ async fn get_all_private_collections_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (gal_id, caller_cid) = gal_id_and_caller_cid.to_owned();
+                    let (caller_cid, gal_id) = caller_cid_and_gal_id.to_owned();
                     match UserCollection::get_all_private_collections_for(
                         &Wallet::generate_keccak256_from(caller_cid.to_owned()),
                         gal_id,
@@ -6330,23 +6330,23 @@ pub mod exports{
     // -----------------------------------------------
     /*                  gallery apis                 */
     // -----------------------------------------------
-    pub use super::create_private_gallery;
-    pub use super::update_private_gallery;
     pub use super::get_all_private_galleries_for;
-    pub use super::get_all_galleries_invited_to;
-    pub use super::get_all_public_collections_for;
     pub use super::get_all_private_collections_for;
+    pub use super::get_all_public_collections_for;
     pub use super::get_all_public_collection_nfts;
+    pub use super::get_all_galleries_invited_to;
     pub use super::get_invited_friends_wallet_data_of_gallery;
-    pub use super::send_private_gallery_invitation_request_to;
-    pub use super::remove_invited_friend_from_gallery;
-    pub use super::accept_invitation_request;
-    pub use super::accept_friend_request;
-    pub use super::send_friend_request_to;
-    pub use super::remove_user_from_friend;
     pub use super::get_user_unaccpeted_invitation_requests;
     pub use super::get_user_unaccpeted_friend_requests;
     pub use super::get_all_user_fans_data_for;
+    pub use super::send_private_gallery_invitation_request_to;
+    pub use super::send_friend_request_to;
+    pub use super::accept_invitation_request;
+    pub use super::accept_friend_request;
+    pub use super::remove_user_from_friend;
+    pub use super::remove_invited_friend_from_gallery;
+    pub use super::create_private_gallery;
+    pub use super::update_private_gallery;
     pub use super::create_collection;
     pub use super::update_collection;
     // -----------------------------------------------
@@ -6364,6 +6364,7 @@ pub mod exports{
     // pub use super::add_nft_comment;
     // pub use super::like_nft;
     // pub use super::dislike_nft;
+    // pub use super::get_user_reactions;
     // -----------------------------------------------
     /*        deposit/withdraw in-app token apis     */
     // -----------------------------------------------

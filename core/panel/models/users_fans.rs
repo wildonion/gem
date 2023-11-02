@@ -144,9 +144,8 @@ impl UserFan{
         'updatefrienddata: for frn_req in &mut decoded_friends_data{
 
             if frn_req.is_accepted == false && 
-                frn_req.screen_cid == friend_screen_cid
-                {
-            
+                frn_req.screen_cid == friend_screen_cid{
+                    
                 frn_req.is_accepted = true;
                 break 'updatefrienddata;
 
@@ -212,10 +211,20 @@ impl UserFan{
             })
             .collect::<Vec<Option<InvitationRequestData>>>();
 
-        let sliced = &unaccepted_ones[from..to+1].to_vec();
+        let sliced = if unaccepted_ones.len() > to{
+            let data = &unaccepted_ones[from..to+1];
+            data.to_vec()
+        } else{
+            let data = &unaccepted_ones[from..unaccepted_ones.len()];
+            data.to_vec()
+        };
 
         Ok(
-            sliced.to_owned()
+            if sliced.contains(&None){
+                vec![]
+            } else{
+                sliced.to_owned()
+            }
         )
 
     }
@@ -246,7 +255,7 @@ impl UserFan{
         };
 
 
-        let user_friends_data = user_fan_data.invitation_requests;
+        let user_friends_data = user_fan_data.friends;
         let decoded_friends_data = if user_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
         } else{
@@ -266,10 +275,20 @@ impl UserFan{
             })
             .collect::<Vec<Option<FriendData>>>();
 
-        let sliced = &unaccepted_ones[from..to+1].to_vec();
+        let sliced = if unaccepted_ones.len() > to{
+            let data = &unaccepted_ones[from..to+1];
+            data.to_vec()
+        } else{
+            let data = &unaccepted_ones[from..unaccepted_ones.len()];
+            data.to_vec()
+        };
 
         Ok(
-            sliced.to_owned()
+            if sliced.contains(&None){
+                vec![]
+            } else{
+                sliced.to_owned()
+            }
         )
 
     }
@@ -585,7 +604,7 @@ impl UserFan{
             
             let user_invitation_request_data = user_fan_data.invitation_requests;
             let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
-                serde_json::from_value::<Vec<InvitationRequestData>>(friends_data.unwrap()).unwrap()
+                serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
             } else{
                 vec![]
             };

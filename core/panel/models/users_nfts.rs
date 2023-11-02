@@ -48,7 +48,7 @@ pub struct NftLike{
     pub downvoter_screen_cids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct UserNftData{
     pub id: i32,
     pub contract_address: String,
@@ -113,6 +113,7 @@ pub struct UpdateUserNft{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NewUserNftRequest{
     pub collection_id: i32,
+    pub gallery_id: i32,
     pub contract_address: String,
     pub metadata_uri: String,
     pub current_owner_screen_cid: String,
@@ -166,6 +167,8 @@ impl UserNft{
         // which must be listed to be sold to friends have been invited by the gallery owner
         
         // ...
+
+        // the caller of this method must be the collection and gallery owner 
 
         // update col record nfts
         // then update gal record with updated col

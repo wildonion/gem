@@ -565,14 +565,13 @@ pub async fn create_collection(
     collection_data.insert("symbol", &symbol);
     collection_data.insert("owner_address", owner_screen_cid);
     
-    if metadata_updatable.is_some(){
-        let mu = format!("{}", metadata_updatable.unwrap());
-        collection_data.clone().insert("metadata_updatable", mu.as_str());
-    }
+    let mu = format!("{}", metadata_updatable.unwrap());
+    collection_data.clone().insert("metadata_updatable", mu.as_str());
     
     let rs = format!("{}", royalties_share);
-    collection_data.insert("base_uri", &base_uri);
     collection_data.insert("royalties_share", rs.as_str());
+    
+    collection_data.insert("base_uri", &base_uri);
     collection_data.insert("royalties_address", &royalties_address_screen_cid);
     let nftport_create_collection_endpoint = format!("https://api.nftport.xyz/v0/contracts");
     let res = reqwest::Client::new()

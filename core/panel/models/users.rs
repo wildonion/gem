@@ -134,7 +134,7 @@ pub struct UserData{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
 pub struct UserWalletInfoResponse{
     pub username: String,
     pub mail: Option<String>, /* unique */
@@ -1381,7 +1381,7 @@ impl User{
             );
         };
 
-        let get_wallet_img_path = misc::upload_img(
+        let get_wallet_img_path = misc::store_file(
             WALLET_BACK_UPLOAD_PATH, &format!("{}", wallet_owner_id), 
             "walletback", 
             img).await;
@@ -1489,7 +1489,7 @@ impl User{
             );
         };
 
-        let get_avatar_img_path = misc::upload_img(
+        let get_avatar_img_path = misc::store_file(
             AVATAR_UPLOAD_PATH, &format!("{}", avatar_owner_id), 
             "avatar", 
             img).await;
@@ -1597,7 +1597,7 @@ impl User{
             );
         };
 
-        let get_banner_img_path = misc::upload_img(
+        let get_banner_img_path = misc::store_file(
             BANNER_UPLOAD_PATH, &format!("{}", banner_owner_id), 
             "banner", 
             img).await;

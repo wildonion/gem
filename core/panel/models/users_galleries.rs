@@ -36,7 +36,7 @@ pub struct UserPrivateGallery{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct UserPrivateGalleryData{
     pub id: i32,
     pub owner_screen_cid: String,
@@ -144,10 +144,15 @@ impl UserPrivateGallery{
             .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(screen_cid))
             .load::<UserPrivateGallery>(connection);
-            
+        
+        /* 
+            the first process of verifying the galler owner is the process
+            of matching the JWT id and the caller screen cid and the second 
+            step is to find all those galleries belong to the caller
+        */
         let Ok(galleries) = user_galleries else{
             let resp = Response{
-                data: Some(screen_cid.clone()),
+                data: Some(screen_cid),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
             };
@@ -263,81 +268,89 @@ impl UserPrivateGallery{
             )
         };
 
-        Ok(
-            galleries
-                .into_iter()
-                .map(|g|{
+        let gals = galleries
+            .into_iter()
+            .map(|g|{
 
-                    let inv_frds = g.invited_friends;
-                    if inv_frds.is_some(){
-                        let friends_scid = inv_frds.as_ref().unwrap();
-                        if friends_scid.contains(&Some(caller_screen_cid.to_string())){
-                            /* caller must be invited to this gallery before */
-                            Some(
-                                UserPrivateGalleryData{
-                                    id: g.id,
-                                    owner_screen_cid: g.owner_screen_cid,
-                                    collections: {
-                                        let cols = g.collections;
-                                        let decoded_cols = if cols.is_some(){
-                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                        } else{
-                                            vec![]
-                                        };
-                                        
-                                        let none_minted_cols = decoded_cols
-                                            .into_iter()
-                                            .map(|mut c|{
-                                                
-                                                /* return those none minted ones */
-                                                if c.nfts.is_some(){
-                                                    let col_nfts = c.nfts;
-                                                    let decoded_nfts = if col_nfts.is_some(){
-                                                        serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
-                                                    } else{
-                                                        vec![]
-                                                    };
-                                                    
-                                                    let none_minted_nfts = decoded_nfts
-                                                        .into_iter()
-                                                        .map(|nft|{
-                                                            if nft.is_minted == false{
-                                                                Some(nft)
-                                                            } else{
-                                                                None
-                                                            }
-                                                        }).collect::<Vec<Option<UserNftData>>>();
-                                                    
-                                                    c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
-                                                    
-                                                    c
-                            
+                let inv_frds = g.invited_friends;
+                if inv_frds.is_some(){
+                    let friends_scid = inv_frds.as_ref().unwrap();
+                    if friends_scid.contains(&Some(caller_screen_cid.to_string())){
+                        /* caller must be invited to this gallery before */
+                        Some(
+                            UserPrivateGalleryData{
+                                id: g.id,
+                                owner_screen_cid: g.owner_screen_cid,
+                                collections: {
+                                    let cols = g.collections;
+                                    let decoded_cols = if cols.is_some(){
+                                        serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                    } else{
+                                        vec![]
+                                    };
+                                    
+                                    let none_minted_cols = decoded_cols
+                                        .into_iter()
+                                        .map(|mut c|{
+                                            
+                                            /* return those none minted ones */
+                                            if c.nfts.is_some(){
+                                                let col_nfts = c.nfts;
+                                                let decoded_nfts = if col_nfts.is_some(){
+                                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
                                                 } else{
-                                                    c
-                                                }
-                                            })
-                                            .collect::<Vec<UserCollectionData>>();
-            
-                                        Some(serde_json::to_value(none_minted_cols).unwrap())
-            
-                                    },
-                                    gal_name: g.gal_name,
-                                    gal_description: g.gal_description,
-                                    invited_friends: inv_frds.clone(),
-                                    extra: g.extra,
-                                    created_at: g.created_at.to_string(),
-                                    updated_at: g.updated_at.to_string(),
-                                }
-                            ) 
-                        } else{
-                            None
-                        }
+                                                    vec![]
+                                                };
+                                                
+                                                let none_minted_nfts = decoded_nfts
+                                                    .into_iter()
+                                                    .map(|nft|{
+                                                        if nft.is_minted == false{
+                                                            Some(nft)
+                                                        } else{
+                                                            None
+                                                        }
+                                                    }).collect::<Vec<Option<UserNftData>>>();
+                                                
+                                                c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
+                                                
+                                                c
+                        
+                                            } else{
+                                                c
+                                            }
+                                        })
+                                        .collect::<Vec<UserCollectionData>>();
+        
+                                    Some(serde_json::to_value(none_minted_cols).unwrap())
+        
+                                },
+                                gal_name: g.gal_name,
+                                gal_description: g.gal_description,
+                                invited_friends: inv_frds.clone(),
+                                extra: g.extra,
+                                created_at: g.created_at.to_string(),
+                                updated_at: g.updated_at.to_string(),
+                            }
+                        ) 
                     } else{
                         None
                     }
+                } else{
+                    None
+                }
 
-                })
-                .collect::<Vec<Option<UserPrivateGalleryData>>>()
+            })
+            .collect::<Vec<Option<UserPrivateGalleryData>>>();
+        
+        
+
+        Ok(
+            if gals.contains(&None){
+                vec![]
+            } else{
+                gals
+            }
         )
 
     }
@@ -412,9 +425,20 @@ impl UserPrivateGallery{
             vec![]
         };
 
-        let sliced = &friends_wallet_data[from..to+1].to_vec();
+        let sliced = if friends_wallet_data.len() > to{
+            let data = &friends_wallet_data[from..to+1];
+            data.to_vec()
+        } else{
+            let data = &friends_wallet_data[from..friends_wallet_data.len()];
+            data.to_vec()
+        };
+        
         Ok(
-            sliced.to_owned()
+            if sliced.contains(&None){
+                vec![]
+            } else{
+                sliced.to_owned()
+            }
         )
 
 
@@ -559,6 +583,7 @@ impl UserPrivateGallery{
             is_accepted: false,
         };
 
+        /* note that gallery_owner_screen_cid and to_screen_cid must be each other's friends */
         UserFan::push_invitation_request_for(&to_screen_cid, invitation_request_data, connection).await
 
 
