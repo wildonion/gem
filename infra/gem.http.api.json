@@ -3582,80 +3582,6 @@
 									"response": []
 								},
 								{
-									"name": "Create Collection",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/collection/create",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"collection",
-												"create"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Update Collection",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/collection/update",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"collection",
-												"update"
-											]
-										}
-									},
-									"response": []
-								},
-								{
 									"name": "Get My Private Galleries",
 									"request": {
 										"auth": {
@@ -4021,6 +3947,80 @@
 													"key": "to",
 													"value": "10"
 												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"gallery_id\": 1,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"Degods Collection\",\n    \"symbol\": \"DGC\",\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 100, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": null,\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/create",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 1,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": [{\n        \"price_history\": [100, 200, 250]\n    }],\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/update",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"update"
 											]
 										}
 									},

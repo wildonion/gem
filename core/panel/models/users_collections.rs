@@ -74,7 +74,6 @@ pub struct UpdateUserCollectionRequest{
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
-    pub collection_background: String,
     pub extra: Option<serde_json::Value>,
     pub col_description: String,
     pub tx_signature: String,
@@ -91,6 +90,7 @@ pub struct UpdateUserCollection{
     pub royalties_address_screen_cid: String,
     pub collection_background: String,
     pub extra: Option<serde_json::Value>,
+    pub contract_tx_hash: String,
     pub col_description: String,
 }
 
@@ -105,7 +105,6 @@ pub struct NewUserCollectionRequest{
     pub base_uri: String,
     pub royalties_share: i32, // in-app token amount
     pub royalties_address_screen_cid: String,
-    pub collection_background: String,
     pub extra: Option<serde_json::Value>,
     pub col_description: String,
     pub tx_signature: String,
@@ -696,14 +695,13 @@ impl UserCollection{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /*  ------------- nftport request body -------------
         onchian updates:
-            - contract_address
             - freeze_metadata
             - owner_address
             - royalties_share
             - royalties_address
             - base_uri
     */
-    pub async fn update(col_info: UpdateUserCollectionRequest, mut img: Option<Multipart>, 
+    pub async fn update(mut col_info: UpdateUserCollectionRequest, mut img: Multipart, 
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
@@ -766,7 +764,25 @@ impl UserCollection{
                 Ok(HttpResponse::Forbidden().json(resp))
             )
         }
+        
+        col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
+            collection_data.freeze_metadata.unwrap() == true &&
+            collection_data.metadata_updatable.is_some() || 
+            collection_data.metadata_updatable.unwrap() != true{
+            
+            /* 
+                just ignore the base_uri, can't update base_uri since contract is frozen 
+                and metadata_updatable is false
+            */
+            String::from("") 
 
+        } else{
+            /* 
+                contract is not frozen and metadata_updatable is true 
+                hence we can update base_uri 
+            */
+            col_info.base_uri 
+        };
 
         /* updating onchain contract information */
         let (contract_update_tx_hash, status) = nftport::update_collection(
@@ -800,21 +816,14 @@ impl UserCollection{
 
     
         /* uploading collection image */
-        let fill_me_with_col_img_path = if img.is_some(){
-            let get_collection_img_path = misc::store_file(
-                COLLECTION_UPLOAD_PATH, &collection_data.contract_address, 
-                "collection", 
-                img.unwrap()).await;
-            let Ok(collection_img_path) = get_collection_img_path else{
-                
-                let err_res = get_collection_img_path.unwrap_err();
-                return Err(err_res);
-            };
+        let get_collection_img_path = misc::store_file(
+            COLLECTION_UPLOAD_PATH, &collection_data.contract_address, 
+            "collection", 
+            img).await;
+        let Ok(collection_img_path) = get_collection_img_path else{
 
-            collection_img_path
-
-        } else{
-            String::from("")
+            let err_res = get_collection_img_path.unwrap_err();
+            return Err(err_res);
         };
 
 
@@ -839,14 +848,15 @@ impl UserCollection{
             base_uri: col_info.clone().base_uri,
             royalties_share: col_info.clone().royalties_share,
             royalties_address_screen_cid: col_info.clone().royalties_address_screen_cid,
-            collection_background: if fill_me_with_col_img_path.is_empty(){
+            collection_background: if collection_img_path.is_empty(){
                 collection_data.collection_background
             } else{
-                fill_me_with_col_img_path
+                collection_img_path
             },
             extra: col_info.clone().extra,
             col_description: col_info.clone().col_description,
             freeze_metadata: Some(col_info.clone().freeze_metadata),
+            contract_tx_hash: contract_update_tx_hash,
         };
     
         match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))

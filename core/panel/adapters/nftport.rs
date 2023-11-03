@@ -680,6 +680,7 @@ pub async fn update_collection(
         base_uri, 
         royalties_share, 
         royalties_address_screen_cid, 
+        freeze_metadata,
         .. /* don't care about the rest of the fields */
     } = update_collection_request;
 
@@ -688,13 +689,18 @@ pub async fn update_collection(
     collection_data.insert("chain", "polygon");
     collection_data.insert("contract_address", &contract_address);
 
-    let fzm = &format!("{}", update_collection_request.freeze_metadata);
+    let fzm = &format!("{}", freeze_metadata);
     collection_data.insert("freeze_metadata", fzm);
     
-    let rs = format!("{}", royalties_share);
-    collection_data.insert("owner_address", owner_screen_cid);
+    /* 
+        if the contract is not already frozen and the metadata_updatable 
+        is not false we can update the base_uri 
+    */
+    if !base_uri.is_empty(){
+        collection_data.insert("base_uri", &base_uri);
+    }
 
-    collection_data.insert("base_uri", &base_uri);
+    let rs = format!("{}", royalties_share);
     collection_data.insert("royalties_share", rs.as_str());
     collection_data.insert("royalties_address", &royalties_address_screen_cid);
     let nftport_update_collection_endpoint = format!("https://api.nftport.xyz/v0/contracts");

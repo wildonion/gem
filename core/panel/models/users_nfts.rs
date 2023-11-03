@@ -169,6 +169,7 @@ impl UserNft{
         
         // ...
 
+
         // the caller of this method must be the collection and gallery owner 
 
         // update col record nfts

@@ -1476,7 +1476,10 @@ async fn charge_wallet_request(
 
                         let charge_wallet_request_object = charge_wallet_request.to_owned();
                         
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -2082,7 +2085,10 @@ async fn deposit(
                             }
                         };
 
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -2527,7 +2533,10 @@ async fn withdraw(
 
                         let withdraw_object = withdraw.to_owned();
                     
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -3881,7 +3890,10 @@ async fn create_private_gallery(
                         
                         let create_private_gallery_request_object = new_private_gallery_request.to_owned();
                         
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -4063,7 +4075,10 @@ async fn update_private_gallery(
                     
                         let update_private_gallery_request_object = update_private_gallery_request.to_owned();
                         
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -4206,7 +4221,10 @@ async fn remove_invited_friend_from_gallery(
 
                     let remove_invited_friend_request = remove_invited_friend_request.to_owned();
                     
-                    /* ----------------------------
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /* 
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -4341,8 +4359,11 @@ async fn send_private_gallery_invitation_request_to(
                     let role = token_data.user_role;
 
                     let send_invitation_request = send_invitation_request.to_owned();
-                    
-                    /* ----------------------------
+
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -5098,7 +5119,10 @@ async fn accept_invitation_request(
 
                     let accept_invitation_request = accept_invitation_request.to_owned();
                     
-                    /* ----------------------------
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -5234,7 +5258,10 @@ async fn accept_friend_request(
 
                     let accept_friend_request = accept_friend_request.to_owned();
                     
-                    /* ----------------------------
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -5370,7 +5397,10 @@ async fn send_friend_request_to(
 
                     let send_friend_request_to = send_friend_request_to.to_owned();
                     
-                    /* ----------------------------
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -5506,7 +5536,10 @@ async fn remove_user_from_friend(
 
                     let remove_friend_request = remove_friend_request.to_owned();
                     
-                    /* ----------------------------
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
                         followings are the param 
                         must be passed to do the 
                         kyc process on request data
@@ -6187,7 +6220,10 @@ async fn create_collection(
                         
                         let new_user_collection_request = new_user_collection_request.to_owned();
                         
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -6277,7 +6313,7 @@ async fn update_collection(
     req: HttpRequest,
     update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Option<Multipart>,
+    mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6374,7 +6410,10 @@ async fn update_collection(
                         
                         let update_user_collection_request = update_user_collection_request.to_owned();
                         
-                        /* ----------------------------
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
                             followings are the param 
                             must be passed to do the 
                             kyc process on request data
@@ -6385,19 +6424,19 @@ async fn update_collection(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
-                            _id, 
-                            &update_user_collection_request.owner_cid, 
-                            &update_user_collection_request.tx_signature, 
-                            &update_user_collection_request.hash_data, 
-                            Some(update_user_collection_request.amount),
-                            connection
-                        ).await;
+                        // let is_request_verified = kyced::verify_request(
+                        //     _id, 
+                        //     &update_user_collection_request.owner_cid, 
+                        //     &update_user_collection_request.tx_signature, 
+                        //     &update_user_collection_request.hash_data, 
+                        //     Some(update_user_collection_request.amount),
+                        //     connection
+                        // ).await;
 
-                        let Ok(user) = is_request_verified else{
-                            let error_resp = is_request_verified.unwrap_err();
-                            return error_resp; /* terminate the caller with an actix http response object */
-                        };
+                        // let Ok(user) = is_request_verified else{
+                        //     let error_resp = is_request_verified.unwrap_err();
+                        //     return error_resp; /* terminate the caller with an actix http response object */
+                        // };
 
                         match UserCollection::update(
                             update_user_collection_request,
@@ -6497,9 +6536,6 @@ pub mod exports{
     pub use super::update_private_gallery;
     pub use super::create_collection;
     pub use super::update_collection;
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // pub use super::create_nft;
     // pub use super::update_nft; 
     // pub use super::mint_nft;
@@ -6510,29 +6546,16 @@ pub mod exports{
     // pub use super::like_nft;
     // pub use super::dislike_nft;
     // pub use super::get_user_reactions;
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    // pub use super::sell_token_request; /* cache in-app token */
+    // pub use super::sell_token_request; /**** cache in-app token ****/
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */
-    pub use super::charge_wallet_request; /* buy in-app token */
+    pub use super::charge_wallet_request; /**** buy in-app token ****/
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     // https://docs.nftport.xyz/reference/deploy-nft-product-contract
     // https://docs.nftport.xyz/reference/transfer-minted-nft
     // https://docs.nftport.xyz/reference/customizable-minting
-    // ...
-    // -----------------------------------------------
-    /*             collection advieh apis            */
-    // -----------------------------------------------
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     // ...
 }
