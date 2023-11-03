@@ -3179,6 +3179,47 @@
 									"response": []
 								},
 								{
+									"name": "Get Recipient Unclaimed Deposits",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ5NTU2NDU4NDQ2MDAwLCJleHAiOjE3MDE1NDE1NTYsImlhdCI6MTY5ODk0OTU1Nn0.Ks9bvArg8RpTvefUrHGCH8nzwGA4DYowhOLS0cTcHsCSOxnWBHQrswVLSjMYo05QGYMwcw4Gvt_U3Rz2TseBMQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/deposit/get/all/unclaimed/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"deposit",
+												"get",
+												"all",
+												"unclaimed",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Get User Unpaid Checkouts",
 									"request": {
 										"method": "GET",
@@ -3188,14 +3229,6 @@
 								},
 								{
 									"name": "Get User Paid Checkouts",
-									"request": {
-										"method": "GET",
-										"header": []
-									},
-									"response": []
-								},
-								{
-									"name": "Get Recipient Unclaimed Deposits",
 									"request": {
 										"method": "GET",
 										"header": []
@@ -3638,7 +3671,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/gallery/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"raw": "{{panel-user}}/gallery/get/all/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3646,8 +3679,6 @@
 												"gallery",
 												"get",
 												"all",
-												"for",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
 												""
 											],
 											"query": [
@@ -3680,7 +3711,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/collection/get/all/private/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/in-gallery/1/?from=0&to=10",
+											"raw": "{{panel-user}}/collection/get/all/private/in-gallery/1/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3689,8 +3720,6 @@
 												"get",
 												"all",
 												"private",
-												"for",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
 												"in-gallery",
 												"1",
 												""
@@ -3809,7 +3838,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/gallery/get/all/i/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/invited/to/owned-by/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"raw": "{{panel-user}}/gallery/get/all/i-invited-to/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3817,12 +3846,7 @@
 												"gallery",
 												"get",
 												"all",
-												"i",
-												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
-												"invited",
-												"to",
-												"owned-by",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												"i-invited-to",
 												""
 											],
 											"query": [
@@ -3847,7 +3871,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfcaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
 													"type": "string"
 												}
 											]
@@ -3855,18 +3879,15 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/gallery/get/invited-friends/of/1/caller/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"raw": "{{panel-user}}/gallery/1/get/invited-friends/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
 												"gallery",
+												"1",
 												"get",
 												"invited-friends",
-												"of",
-												"1",
-												"caller",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
 												""
 											],
 											"query": [
@@ -3891,7 +3912,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ5NTU2NDU4NDQ2MDAwLCJleHAiOjE3MDE1NDE1NTYsImlhdCI6MTY5ODk0OTU1Nn0.Ks9bvArg8RpTvefUrHGCH8nzwGA4DYowhOLS0cTcHsCSOxnWBHQrswVLSjMYo05QGYMwcw4Gvt_U3Rz2TseBMQ",
 													"type": "string"
 												}
 											]
@@ -3899,17 +3920,15 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/collection/get/unaccepted/invitation-requests/for/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/?from=0&to=10",
+											"raw": "{{panel-user}}/gallery/get/unaccepted/invitation-requests/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
-												"collection",
+												"gallery",
 												"get",
 												"unaccepted",
 												"invitation-requests",
-												"for",
-												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
 												""
 											],
 											"query": [
@@ -3934,7 +3953,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ5NTU2NDU4NDQ2MDAwLCJleHAiOjE3MDE1NDE1NTYsImlhdCI6MTY5ODk0OTU1Nn0.Ks9bvArg8RpTvefUrHGCH8nzwGA4DYowhOLS0cTcHsCSOxnWBHQrswVLSjMYo05QGYMwcw4Gvt_U3Rz2TseBMQ",
 													"type": "string"
 												}
 											]
@@ -3942,17 +3961,15 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/collection/get/unaccepted/friend-requests/for/03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054/?from=0&to=10",
+											"raw": "{{panel-user}}/gallery/get/unaccepted/friend-requests/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
-												"collection",
+												"gallery",
 												"get",
 												"unaccepted",
 												"friend-requests",
-												"for",
-												"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054",
 												""
 											],
 											"query": [
@@ -3985,7 +4002,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/all/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3993,8 +4010,6 @@
 												"fan",
 												"get",
 												"all",
-												"for",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
 												""
 											],
 											"query": [
@@ -4011,11 +4026,8 @@
 									},
 									"response": []
 								}
-							]
-						},
-						{
-							"name": "Marketplace",
-							"item": []
+							],
+							"description": "Note that **POST** requests must be KYC-ed and callers of all **GET** requests must have Crypto Id."
 						},
 						{
 							"name": "Chatroom Launchpad",
