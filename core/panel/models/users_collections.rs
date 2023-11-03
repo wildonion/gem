@@ -3,7 +3,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use wallexerr::Wallet;
 use crate::adapters::nftport;
-use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_IMAGE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN};
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_IMAGE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::User;
@@ -200,6 +200,51 @@ impl UserCollection{
                 vec![]
             } else{
                 sliced.to_owned()
+            }
+        )
+
+    }
+
+    pub async fn find_by_contract_address(col_contract_address: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCollectionData, PanelHttpResponse>{
+
+        let user_collection = users_collections
+            .filter(users_collections::contract_address.eq(col_contract_address))
+            .first::<UserCollection>(connection);
+
+        let Ok(collection) = user_collection else{
+
+            let resp = Response{
+                data: Some(col_contract_address),
+                message: COLLECTION_NOT_FOUND_FOR_CONTRACT,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserCollectionData{
+                id: collection.id,
+                contract_address: collection.contract_address,
+                nfts: collection.nfts,
+                col_name: collection.col_name,
+                symbol: collection.symbol,
+                owner_screen_cid: collection.owner_screen_cid,
+                metadata_updatable: collection.metadata_updatable,
+                base_uri: collection.base_uri,
+                royalties_share: collection.royalties_share,
+                royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                collection_background: collection.collection_background,
+                extra: collection.extra,
+                col_description: collection.col_description,
+                created_at: collection.created_at.to_string(),
+                updated_at: collection.updated_at.to_string(),
+                freeze_metadata: collection.freeze_metadata,
+                contract_tx_hash: collection.contract_tx_hash,
             }
         )
 

@@ -109,9 +109,11 @@ pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
 pub static NO_GALLERY_FOUND: &str = "No Gallery Found";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
+pub static NO_GALLERY_FOUND_FOR: &str = "No Gallery Found For This User";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
+pub static COLLECTION_NOT_FOUND_FOR_CONTRACT: &str = "No Collection Found With This Contract Address";
 pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Caller Of This Method";
 pub static NO_FRIEND_FOUND: &str = "No Friend Found With This Crypto Id";
 

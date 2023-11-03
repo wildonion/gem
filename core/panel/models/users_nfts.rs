@@ -71,9 +71,9 @@ pub struct UserNftData{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserNftRequest{
-    pub nft_id: i32,
-    pub collection_id: i32,
-    pub contract_address: String,
+    pub caller_screen_cid: String,
+    pub contract_address: i32,
+    pub event_type: String,
     pub buyer_screen_cid: Option<String>,
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
@@ -94,7 +94,6 @@ pub struct UpdateUserNftRequest{
 #[derive(Clone, Debug, Serialize, Deserialize, Default, AsChangeset)]
 #[diesel(table_name=users_nfts)]
 pub struct UpdateUserNft{
-    pub contract_address: String,
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
     pub extra: Option<serde_json::Value>,
@@ -112,8 +111,7 @@ pub struct UpdateUserNft{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NewUserNftRequest{
-    pub collection_id: i32,
-    pub gallery_id: i32,
+    pub caller_screen_cid: String,
     pub contract_address: String,
     pub metadata_uri: String,
     pub current_owner_screen_cid: String,
@@ -131,6 +129,7 @@ pub struct NewUserNftRequest{
 pub struct InsertNewUserNftRequest{
     pub contract_address: String,
     pub current_owner_screen_cid: String,
+    pub metadata_uri: String,
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
@@ -145,13 +144,22 @@ pub struct InsertNewUserNftRequest{
 */
 impl UserNft{
 
-    pub async fn get_public_info_of(asset_id: i32, 
+    pub async fn find_by_current_owner(current_owner: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
         Ok(())
 
     }
+
+    pub async fn find_by_id(asset_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(), PanelHttpResponse>{
+
+        Ok(())
+
+    }
+    
 
 }
 
@@ -166,14 +174,22 @@ impl UserNft{
         // spend token for gas fee and update listings
         // by default is_listed will be set to true since an nft goes to private collection by default 
         // which must be listed to be sold to friends have been invited by the gallery owner
+
         
-        // ...
+        /* 
+        
+            // let col_info = UserCollection::find_by_contract_address(asset_info.contract_address).await.unwrap();
+            // let gal_info = UserPrivateGallery::find_by_owner(col_info.owner_screen_cid).await.unwrap();
+            if gal_info.owner_screen_cid != asset_info.caller_screen_cid{
+                // can't put nft in a collection not owned by you
+                // ...
+            }
+        
+        */
 
 
-        // the caller of this method must be the collection and gallery owner 
-
-        // update col record nfts
-        // then update gal record with updated col
+        // update col 
+        // update gal
 
         Ok(())
 
@@ -182,45 +198,78 @@ impl UserNft{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn update(caller_screen_cid: &str, asset_info: UpdateUserNftRequest, 
+    pub async fn update(asset_info: UpdateUserNftRequest, mut img: Multipart,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
+
+        /* 
         
-        // update balance field of royalties_address_screen_cid in each nft sell
-        /* consider royalties process of the contract based on in-app token */
-        // asset_info.onchain_id will be fulfilled after minting
-        // condition: caller_screen_cid == asset_info.current_owner_screen_cid
-        // if the nft is_listed field was set to true the nft can be sold to the user
-        // if sell api gets called the is_listed will be set to false automatically
-        // ...
+            // let nft_info = UserCollection::find_by_current_owner(asset_info.caller_screen_cid).await.unwrap();
+            // if didn't find any nft matches with caller_screen_cid means 
+            // that the caller is not current nft owner cause only owner 
+            // can update the nft 
 
-        // if new_nft_data.is_some(){
-        // let mut decoded_nfts = serde_json::from_value::<Vec<UserNftData>>(col_info.nfts).unwrap();
-        // decoded_nfts.push(serde_json::to_value(&new_nft_data));
-        // update col record
-        // }
-        // let nft_comments = serde_json::from_value::<NftComment>(asset_info.comments).unwrap();
-        // let nft_likes = serde_json::from_value::<NftLike>(asset_info.comments).unwrap();
+            // let col_info = UserCollection::find_by_contract_address(nft_info.contract_address).await.unwrap();
+            // let gal_info = UserPrivateGallery::find_by_owner(col_info.owner_screen_cid).await.unwrap();
+        
+            // update col 
+            // update gal 
 
-        // update col record nfts
-        // then update gal record with updated col
-
-        // onchain updates (fill the tx hash field) | https://docs.nftport.xyz/reference/update-minted-nft
-        // - metadata_uri : contains json includes nft img url and extra json
-        // - freeze_metadata
-
-        /* supported apis (spend token for gas fee like update listings):
-            - mint_nft           ---- https://docs.nftport.xyz/reference/customizable-minting
-            - transfer_nft       ---- https://docs.nftport.xyz/reference/transfer-minted-nft
-            - update_nft         ---- https://docs.nftport.xyz/reference/update-minted-nft
-            - sell_nft
-            - buy_nft
-            - add_nft_comment
-            - like_nft
-            - dilike_nft
         */
 
-        Ok(())
+
+        match asset_info.event_type.as_str(){
+            "mint" => {
+
+                // https://docs.nftport.xyz/reference/customizable-minting
+                // asset_info.onchain_id will be fulfilled after minting
+                // call nftport::mint_nft()
+                todo!()
+            },
+            "transfer" => {
+
+                // https://docs.nftport.xyz/reference/transfer-minted-nft
+                // call nftport::transfer_nft()
+                todo!()
+            },
+            "sell" => {
+
+                // update is_listed field
+                todo!()
+            },
+            "buy" => {
+                
+                // update balance field of royalties_address_screen_cid in each nft sell
+                // if the nft is_listed field was set to true then nft can be sold out to the asset_info.buyer_screen_cid
+                // transfer nft ownership to the asset_info.buyer_screen_cid
+                /* consider royalties process of the contract based on in-app token */
+                // call nftport::mint_nft()
+                todo!()
+            },
+            "like" => {
+                todo!()
+            },
+            "dislike" => {
+                todo!()
+            },
+            "comment" => {
+                todo!()
+            },
+            "onchain-update" => {
+
+                // upload on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
+                // onchain updates (fill the tx hash field) | https://docs.nftport.xyz/reference/update-minted-nft
+                // - metadata_uri : contains json includes nft img url and extra json
+                // - freeze_metadata
+                // call nftport::update_nft()
+                todo!()
+
+            },
+            _ => {
+                todo!() // invalid event_type
+            }
+        }
+        
 
     }
 

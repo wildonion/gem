@@ -2,7 +2,7 @@
 
 
 use wallexerr::Wallet;
-use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND};
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR};
 use crate::misc::Limit;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
@@ -462,6 +462,43 @@ impl UserPrivateGallery{
             let resp = Response{
                 data: Some(gallery_id),
                 message: GALLERY_NOT_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserPrivateGalleryData{ 
+                id: gallery_info.id, 
+                owner_screen_cid: gallery_info.owner_screen_cid, 
+                collections: gallery_info.collections, 
+                gal_name: gallery_info.gal_name, 
+                gal_description: gallery_info.gal_description, 
+                invited_friends: gallery_info.invited_friends, 
+                extra: gallery_info.extra, 
+                created_at: gallery_info.created_at.to_string(), 
+                updated_at: gallery_info.updated_at.to_string() 
+            }
+        )
+
+    }
+
+    pub async fn find_by_owner(gallery_owner: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let user_gallery = users_galleries
+            .filter(users_galleries::owner_screen_cid.eq(gallery_owner))
+            .first::<UserPrivateGallery>(connection);
+
+        let Ok(gallery_info) = user_gallery else{
+
+            let resp = Response{
+                data: Some(gallery_owner),
+                message: NO_GALLERY_FOUND_FOR,
                 status: 404,
             };
             return Err(

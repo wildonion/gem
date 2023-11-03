@@ -6538,14 +6538,8 @@ pub mod exports{
     pub use super::update_collection;
     // pub use super::create_nft;
     // pub use super::update_nft; 
-    // pub use super::mint_nft;
-    // pub use super::sell_nft;
-    // pub use super::buy_nft;
-    // pub use super::transfer_nft;
-    // pub use super::add_nft_comment;
-    // pub use super::like_nft;
-    // pub use super::dislike_nft;
     // pub use super::get_user_reactions;
+    // pub use super::get_nft_reactions; /**** comments, likes and dislikes ****/
     // pub use super::sell_token_request; /**** cache in-app token ****/
     pub use super::deposit; /* gift card money transfer */
     pub use super::withdraw; /* gift card money claim */

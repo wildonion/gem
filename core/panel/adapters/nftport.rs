@@ -770,6 +770,35 @@ pub async fn update_collection(
 
     }
 
+}
 
+pub async fn mint_nft(
+    redis_client: redis::Client
+) -> (String, u8){
+
+
+    todo!()
+
+}
+
+pub async fn transfer_nft(
+    redis_client: redis::Client
+) -> (String, u8){
+
+
+    todo!()
+
+}
+
+pub async fn update_nft(
+    redis_client: redis::Client
+) -> (String, u8){
+
+
+    // metadata_uri
+    // freeze_metadata
+    // ...
+
+    todo!()
 
 }
