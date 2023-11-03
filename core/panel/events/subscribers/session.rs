@@ -456,7 +456,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             */
                             if !self.is_subscription_interval_started{
                                 
-                                info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
+                                info!("💡 --- starting ecq subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
                                 
                                 /* 
                                     start subscription interval for this joined session, since ctx is not Send 
@@ -509,7 +509,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                             */
                             if !self.is_subscription_interval_started{
                                 
-                                info!("💡 --- starting role subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
+                                info!("💡 --- starting mmr subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
                                 
                                 /* 
                                     start subscription interval for this joined session, since ctx is not Send 
@@ -532,10 +532,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
         
 
                                         /* 
-                                            mmq and ranking setup:
-                                            select 1 random player from the self.notif_room room
-                                            from the role notif server except self.peer_name 
-
+                                            mmq and match ranking setup:
+                                            player requested an mmr, we have to match him with 
+                                            someone who his rank is close to the one who enter 
+                                            the command so everytime we select select 1 random player 
+                                            from the self.notif_room room except self.peer_name  
+                                            and check his rank
                                         */
 
 

@@ -18,7 +18,7 @@ pub struct UserNft{
     pub id: i32,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata_uri: String,
+    pub metadata_uri: String, /* an ipfs link contains metadata json file */
     pub onchain_id: Option<String>,
     pub nft_name: String,
     pub is_minted: bool,
@@ -170,7 +170,7 @@ impl UserNft{
         -> Result<(), PanelHttpResponse>{
             
         // if asset_info.is_minted is set to false means that is not stored on contract yet
-        // upload on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
+        // upload img on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
         // spend token for gas fee and update listings
         // by default is_listed will be set to true since an nft goes to private collection by default 
         // which must be listed to be sold to friends have been invited by the gallery owner
@@ -221,6 +221,7 @@ impl UserNft{
         match asset_info.event_type.as_str(){
             "mint" => {
 
+                /* ------- charge user balance for gas fee ------- */
                 // https://docs.nftport.xyz/reference/customizable-minting
                 // asset_info.onchain_id will be fulfilled after minting
                 // call nftport::mint_nft()
@@ -228,17 +229,19 @@ impl UserNft{
             },
             "transfer" => {
 
+                /* ------- charge user balance for gas fee ------- */
                 // https://docs.nftport.xyz/reference/transfer-minted-nft
                 // call nftport::transfer_nft()
                 todo!()
             },
             "sell" => {
-
+                
                 // update is_listed field
                 todo!()
             },
             "buy" => {
                 
+                /* ------- charge user balance for gas fee ------- */
                 // update balance field of royalties_address_screen_cid in each nft sell
                 // if the nft is_listed field was set to true then nft can be sold out to the asset_info.buyer_screen_cid
                 // transfer nft ownership to the asset_info.buyer_screen_cid
@@ -257,7 +260,8 @@ impl UserNft{
             },
             "onchain-update" => {
 
-                // upload on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
+                /* ------- charge user balance for gas fee ------- */
+                // upload img on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
                 // onchain updates (fill the tx hash field) | https://docs.nftport.xyz/reference/update-minted-nft
                 // - metadata_uri : contains json includes nft img url and extra json
                 // - freeze_metadata

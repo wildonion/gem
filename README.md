@@ -3,10 +3,10 @@
 
 # 🤏 Conse Rust Backend and Engines
 
-Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform, gallery based NFT Marketplace on top of **Polygon** and **Patel Near-duplicate image detection APIs** uses the following engines: 
+Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** and **Patel Near-duplicate image detection APIs** uses the following engines: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
-- event collaboration queue (**ECQ**) system in which admins can share their registered events and collaborate with other admins.
-- behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to suggests them the tips and tricks for a new game and reward them based on their game scores using an AI based coin generation model in essence, each player gets rewarded and ranked based on their scores and in-game positions then the `balance` field will be updated based on those attributes, the match making rating (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games based on their past experiences, scores, tokens and rewards earned using **GVM** during the game.
+- event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.
+- behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
 
 ## 🚟 Infra Routes and APIs
 
