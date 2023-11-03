@@ -182,6 +182,10 @@ impl UserFan{
             )
         }
         
+        /* 
+            owner_screen_cid is taken from the _id inside the JWT so the caller 
+            can only call this method for his own
+        */
         let get_user_fan_data = Self::get_user_fans_data_for(owner_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan_data else{
 
@@ -211,6 +215,13 @@ impl UserFan{
             })
             .collect::<Vec<Option<InvitationRequestData>>>();
 
+        /*  
+            first we need to slice the current vector convert that type into 
+            another vector, the reason behind doing this is becasue we can't
+            call to_vec() on the slice directly since the lifetime fo the slice
+            will be dropped while is getting used we have to create a longer 
+            lifetime then call to_vec() on that type
+        */
         let sliced = if unaccepted_ones.len() > to{
             let data = &unaccepted_ones[from..to+1];
             data.to_vec()
@@ -274,7 +285,14 @@ impl UserFan{
 
             })
             .collect::<Vec<Option<FriendData>>>();
-
+        
+        /*  
+            first we need to slice the current vector convert that type into 
+            another vector, the reason behind doing this is becasue we can't
+            call to_vec() on the slice directly since the lifetime fo the slice
+            will be dropped while is getting used we have to create a longer 
+            lifetime then call to_vec() on that type
+        */
         let sliced = if unaccepted_ones.len() > to{
             let data = &unaccepted_ones[from..to+1];
             data.to_vec()

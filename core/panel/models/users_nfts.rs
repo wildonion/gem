@@ -145,7 +145,8 @@ pub struct InsertNewUserNftRequest{
 */
 impl UserNft{
 
-    pub async fn get_public_info_of(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_public_info_of(asset_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
         Ok(())

@@ -107,6 +107,7 @@ pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Compl
 pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
 pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
+pub static NO_GALLERY_FOUND: &str = "No Gallery Found";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
@@ -138,16 +139,12 @@ pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";
 pub static TWITTER_VERIFIED_CODE: &str = "Twitter Code Task Is Done";
 pub static TWITTER_VERIFIED_USERNAME: &str = "Twitter Username Is Verified";
 pub static TWITTER_VERIFIED_TWEET: &str = "Twitter Tweet Content Task Is Done";
-pub static TWITTER_VERIFIED_COMMENT: &str = "Twitter Comment Task Is Done";
 pub static TWITTER_VERIFIED_LIKE: &str = "Twitter Like Task Is Done";
 pub static TWITTER_VERIFIED_RETWEET: &str = "Twitter Retweet Task Is Done";
 pub static TWITTER_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Done";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
 pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
-
-pub static GITHUB_WEBHOOK_ACCEPTED: &str = "Accepted";
-pub static GITHUB_WEBHOOK_EVENT_HEADER_ISSUE: &str = "Can't Get Github Event Header";
 
 
 /* 

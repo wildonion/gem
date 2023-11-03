@@ -2,7 +2,7 @@
 
 
 use wallexerr::Wallet;
-use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT};
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND};
 use crate::misc::Limit;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
@@ -231,7 +231,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, gal_owner_screen_cid: &str, 
+    pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, 
         limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserPrivateGalleryData>>, PanelHttpResponse>{
 
@@ -254,17 +254,16 @@ impl UserPrivateGallery{
             .order(created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
-            .filter(owner_screen_cid.eq(gal_owner_screen_cid))
             .load::<UserPrivateGallery>(connection);
             
         let Ok(galleries) = user_galleries else{
-            let resp = Response{
-                data: Some(gal_owner_screen_cid),
-                message: GALLERY_NOT_OWNED_BY,
-                status: 403,
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: NO_GALLERY_FOUND,
+                status: 404,
             };
             return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
+                Ok(HttpResponse::NotFound().json(resp))
             )
         };
 
@@ -425,6 +424,13 @@ impl UserPrivateGallery{
             vec![]
         };
 
+        /*  
+            first we need to slice the current vector convert that type into 
+            another vector, the reason behind doing this is becasue we can't
+            call to_vec() on the slice directly since the lifetime fo the slice
+            will be dropped while is getting used we have to create a longer 
+            lifetime then call to_vec() on that type
+        */
         let sliced = if friends_wallet_data.len() > to{
             let data = &friends_wallet_data[from..to+1];
             data.to_vec()

@@ -181,6 +181,13 @@ impl UserCollection{
             })
             .collect::<Vec<Option<UserNftData>>>();
         
+        /*  
+            first we need to slice the current vector convert that type into 
+            another vector, the reason behind doing this is becasue we can't
+            call to_vec() on the slice directly since the lifetime fo the slice
+            will be dropped while is getting used we have to create a longer 
+            lifetime then call to_vec() on that type
+        */
         let sliced = if minted_ones.len() > to{
             let data = &minted_ones[from..to+1];
             data.to_vec()

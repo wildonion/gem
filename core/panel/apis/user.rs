@@ -2280,13 +2280,12 @@ async fn deposit(
         ("jwt" = [])
     )
 )]
-#[get("/deposit/get/user/{cid}/")]
+#[get("/deposit/get/all/")]
 #[passport(user)]
 async fn get_all_user_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2338,7 +2337,19 @@ async fn get_all_user_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match UserDeposit::get_all_for(user_cid.to_string(), limit, connection).await{
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserDeposit::get_all_for(user.cid.unwrap().to_string(), limit, connection).await{
                         Ok(user_deposits) => {
 
                             resp!{
@@ -2684,13 +2695,12 @@ async fn withdraw(
         ("jwt" = [])
     )
 )]
-#[get("/withdraw/get/user/{cid}/")]
+#[get("/withdraw/get/all/")]
 #[passport(user)]
 async fn get_all_user_withdrawals(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2741,8 +2751,20 @@ async fn get_all_user_withdrawals(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
     
-                    match UserWithdrawal::get_all_for(user_cid.to_string(), limit, connection).await{
+                    match UserWithdrawal::get_all_for(user.cid.unwrap().to_string(), limit, connection).await{
                         Ok(user_withdrawals) => {
 
                             resp!{
@@ -2801,13 +2823,12 @@ async fn get_all_user_withdrawals(
 
 }
 
-#[get("/checkout/get/unpaid/user/{cid}/")]
+#[get("/checkout/get/all/unpaid/")]
 #[passport(user)]
 async fn get_all_user_unpaid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2858,8 +2879,20 @@ async fn get_all_user_unpaid_checkouts(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
     
-                    match UserCheckout::get_all_unpaid_for(&user_cid, limit, connection).await{
+                    match UserCheckout::get_all_unpaid_for(&user.cid.unwrap(), limit, connection).await{
                         Ok(user_checkouts) => {
 
                             resp!{
@@ -2918,13 +2951,12 @@ async fn get_all_user_unpaid_checkouts(
 
 }
 
-#[get("/checkout/get/paid/user/{cid}/")]
+#[get("/checkout/get/all/paid/")]
 #[passport(user)]
 async fn get_all_user_paid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    user_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -2975,8 +3007,20 @@ async fn get_all_user_paid_checkouts(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
     
-                    match UserCheckout::get_all_paid_for(&user_cid, limit, connection).await{
+                    match UserCheckout::get_all_paid_for(&user.cid.unwrap(), limit, connection).await{
                         Ok(user_checkouts) => {
 
                             resp!{
@@ -3049,13 +3093,12 @@ async fn get_all_user_paid_checkouts(
         ("jwt" = [])
     )
 )]
-#[get("/deposit/get/unclaimed/recipient/{recipient_cid}/")]
+#[get("/deposit/get/all/unclaimed/")]
 #[passport(user)]
 async fn get_recipient_unclaimed_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    recipient_cid: web::Path<String>
 ) -> PanelHttpResponse{
 
 
@@ -3107,8 +3150,20 @@ async fn get_recipient_unclaimed_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     /* generate keccak256 from recipient_cid to mint nft to */
-                    let polygon_recipient_address = Wallet::generate_keccak256_from(recipient_cid.to_owned().clone());
+                    let polygon_recipient_address = Wallet::generate_keccak256_from(user.cid.unwrap().to_owned().clone());
 
                     match UserDeposit::get_unclaimeds_for(polygon_recipient_address, limit, connection).await{
                         Ok(user_unclaimeds) => {
@@ -4365,11 +4420,10 @@ async fn send_private_gallery_invitation_request_to(
 
 }
 
-#[get("/gallery/get/all/for/{who}/")]
+#[get("/gallery/get/all/")]
 #[passport(user)]
 async fn get_all_private_galleries_for(
     req: HttpRequest,
-    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4422,7 +4476,19 @@ async fn get_all_private_galleries_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match UserPrivateGallery::get_all_for(&Wallet::generate_keccak256_from(who_cid.to_owned()), limit, connection).await{
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserPrivateGallery::get_all_for(&user.screen_cid.unwrap(), limit, connection).await{
                         
                         Ok(galleries) => {
 
@@ -4476,11 +4542,10 @@ async fn get_all_private_galleries_for(
 
 }
 
-#[get("/gallery/get/all/i/{me}/invited/to/owned-by/{owner}/")]
+#[get("/gallery/get/all/i-invited-to/")]
 #[passport(user)]
 async fn get_all_galleries_invited_to(
     req: HttpRequest,
-    who_and_caller_cid: web::Path<(String, String)>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4533,10 +4598,20 @@ async fn get_all_galleries_invited_to(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (caller, who) = who_and_caller_cid.to_owned();
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     match UserPrivateGallery::get_all_galleries_invited_to(
-                        &Wallet::generate_keccak256_from(caller),
-                        &Wallet::generate_keccak256_from(who), 
+                        &user.screen_cid.unwrap(), 
                         limit, connection).await{
                         
                         Ok(galleries) => {
@@ -4591,11 +4666,11 @@ async fn get_all_galleries_invited_to(
 
 }
 
-#[get("/gallery/get/invited-friends/of/{gal_id}/caller/{caller}/")]
+#[get("/gallery/{gal_id}/get/invited-friends/")]
 #[passport(user)]
 async fn get_invited_friends_wallet_data_of_gallery(
     req: HttpRequest,
-    gal_id_and_caller_cid: web::Path<(i32, String)>,
+    gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4648,9 +4723,20 @@ async fn get_invited_friends_wallet_data_of_gallery(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (gal_id, caller) = gal_id_and_caller_cid.to_owned();
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     match UserPrivateGallery::get_invited_friends_wallet_data_of_gallery(
-                        &Wallet::generate_keccak256_from(caller),
+                        &user.screen_cid.unwrap(),
                         gal_id.to_owned(),
                         limit, connection).await{
                         
@@ -4706,11 +4792,10 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 }
 
-#[get("/collection/get/unaccepted/invitation-requests/for/{who}/")]
+#[get("/gallery/get/unaccepted/invitation-requests/")]
 #[passport(user)]
 async fn get_user_unaccpeted_invitation_requests(
     req: HttpRequest,
-    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4763,8 +4848,20 @@ async fn get_user_unaccpeted_invitation_requests(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     match UserFan::get_user_unaccpeted_invitation_requests(
-                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        &user.screen_cid.unwrap(),
                         limit, connection).await{
                         
                         Ok(unaccepted_requests) => {
@@ -4819,11 +4916,10 @@ async fn get_user_unaccpeted_invitation_requests(
 
 }
 
-#[get("/collection/get/unaccepted/friend-requests/for/{who}/")]
+#[get("/gallery/get/unaccepted/friend-requests/")]
 #[passport(user)]
 async fn get_user_unaccpeted_friend_requests(
     req: HttpRequest,
-    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -4876,8 +4972,20 @@ async fn get_user_unaccpeted_friend_requests(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     match UserFan::get_user_unaccpeted_friend_requests(
-                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        &user.screen_cid.unwrap(),
                         limit, connection).await{
                         
                         Ok(unaccepted_requests) => {
@@ -5476,11 +5584,10 @@ async fn remove_user_from_friend(
 
 }
 
-#[get("/fan/get/all/for/{who}/")]
+#[get("/fan/get/all/")]
 #[passport(user)]
 async fn get_all_user_fans_data_for(
     req: HttpRequest,
-    who_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -5533,9 +5640,20 @@ async fn get_all_user_fans_data_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
 
                     match UserFan::get_all_user_fans_data_for(
-                        &Wallet::generate_keccak256_from(who_cid.to_owned()),
+                        &user.screen_cid.unwrap(),
                         limit, connection).await{
                         Ok(user_fans_data) => {
 
@@ -5645,6 +5763,18 @@ async fn get_all_public_collections_for(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
 
                     match UserCollection::get_all_public_collections_for(
                         &Wallet::generate_keccak256_from(who_cid.to_owned()), 
@@ -5759,6 +5889,18 @@ async fn get_all_public_collection_nfts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
                     match UserCollection::get_all_minted_nfts_of_collection(
                         col_id.to_owned(), 
                         limit, connection).await{
@@ -5815,11 +5957,11 @@ async fn get_all_public_collection_nfts(
 
 }
 
-#[get("/collection/get/all/private/for/{caller}/in-gallery/{gal_id}/")]
+#[get("/collection/get/all/private/in-gallery/{gal_id}/")]
 #[passport(user)]
 async fn get_all_private_collections_for(
     req: HttpRequest,
-    caller_cid_and_gal_id: web::Path<(String, i32)>,
+    gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -5872,9 +6014,21 @@ async fn get_all_private_collections_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let (caller_cid, gal_id) = caller_cid_and_gal_id.to_owned();
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    let gal_id = gal_id.to_owned();
                     match UserCollection::get_all_private_collections_for(
-                        &Wallet::generate_keccak256_from(caller_cid.to_owned()),
+                        &user.screen_cid.unwrap(),
                         gal_id,
                         limit, connection).await{
                         
@@ -6305,9 +6459,21 @@ async fn update_collection(
 }
 
 pub mod exports{
-    // -----------------------------------------------
-    /*         verifications and report apis         */
-    // -----------------------------------------------
+    pub use super::tasks_report;
+    pub use super::get_all_user_withdrawals;
+    pub use super::get_all_user_deposits;
+    pub use super::get_recipient_unclaimed_deposits;
+    pub use super::get_all_user_unpaid_checkouts;
+    pub use super::get_all_user_paid_checkouts;
+    pub use super::get_all_private_galleries_for;
+    pub use super::get_all_private_collections_for;
+    pub use super::get_all_public_collections_for;
+    pub use super::get_all_public_collection_nfts;
+    pub use super::get_all_galleries_invited_to;
+    pub use super::get_invited_friends_wallet_data_of_gallery;
+    pub use super::get_user_unaccpeted_invitation_requests;
+    pub use super::get_user_unaccpeted_friend_requests;
+    pub use super::get_all_user_fans_data_for;
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
@@ -6321,24 +6487,6 @@ pub mod exports{
     pub use super::verify_mail_code;
     pub use super::request_phone_code;
     pub use super::verify_phone_code;
-    pub use super::tasks_report;
-    pub use super::get_all_user_withdrawals;
-    pub use super::get_all_user_deposits;
-    pub use super::get_recipient_unclaimed_deposits;
-    pub use super::get_all_user_unpaid_checkouts;
-    pub use super::get_all_user_paid_checkouts;
-    // -----------------------------------------------
-    /*                  gallery apis                 */
-    // -----------------------------------------------
-    pub use super::get_all_private_galleries_for;
-    pub use super::get_all_private_collections_for;
-    pub use super::get_all_public_collections_for;
-    pub use super::get_all_public_collection_nfts;
-    pub use super::get_all_galleries_invited_to;
-    pub use super::get_invited_friends_wallet_data_of_gallery;
-    pub use super::get_user_unaccpeted_invitation_requests;
-    pub use super::get_user_unaccpeted_friend_requests;
-    pub use super::get_all_user_fans_data_for;
     pub use super::send_private_gallery_invitation_request_to;
     pub use super::send_friend_request_to;
     pub use super::accept_invitation_request;
@@ -6349,9 +6497,6 @@ pub mod exports{
     pub use super::update_private_gallery;
     pub use super::create_collection;
     pub use super::update_collection;
-    // -----------------------------------------------
-    /*                marketplace apis               */
-    // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
@@ -6365,9 +6510,6 @@ pub mod exports{
     // pub use super::like_nft;
     // pub use super::dislike_nft;
     // pub use super::get_user_reactions;
-    // -----------------------------------------------
-    /*        deposit/withdraw in-app token apis     */
-    // -----------------------------------------------
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
