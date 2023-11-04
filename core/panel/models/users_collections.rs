@@ -172,7 +172,8 @@ impl UserCollection{
         let minted_ones = decoded_nfts
             .into_iter()
             .map(|nft|{
-                if nft.is_minted == true{
+                /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                if nft.is_minted.unwrap_or(false) == true{
                     Some(nft)
                 } else{
                     None
@@ -375,7 +376,8 @@ impl UserCollection{
                                 let none_minted_nfts = decoded_nfts
                                     .into_iter()
                                     .map(|nft|{
-                                        if nft.is_minted == false{
+                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                        if nft.is_minted.unwrap_or(false) == false{
                                             Some(nft)
                                         } else{
                                             None
@@ -469,7 +471,8 @@ impl UserCollection{
                                 let none_minted_nfts = decoded_nfts
                                     .into_iter()
                                     .map(|nft|{
-                                        if nft.is_minted == true{
+                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                        if nft.is_minted.unwrap_or(false) == true{
                                             Some(nft)
                                         } else{
                                             None

@@ -8,7 +8,7 @@ use crate::models::users_collections::{UserCollection, UserCollectionData, NewUs
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData};
 use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest};
-use crate::models::users_nfts::UserNftData;
+use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
@@ -3674,7 +3674,10 @@ async fn upload_banner(
 
 }
 
-/* this api must gets called by player with his JWT passed in to the request header */
+/* 
+    this api must gets called by player with his conse mafia hyper server JWT 
+    passed in to the request header 
+*/
 #[post("/mafia/player/{player_id}/upload/avatar")]
 async fn update_mafia_player_avatar(
     req: HttpRequest, 
@@ -3752,7 +3755,7 @@ async fn update_mafia_player_avatar(
                     resp!{
                         &[u8], // the date type
                         &[], // the data itself
-                        EVENT_IMG_UPDATED, // response message
+                        MAFIA_PLAYER_AVATAR_IMG_UPDATED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }
@@ -6424,19 +6427,19 @@ async fn update_collection(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        // let is_request_verified = kyced::verify_request(
-                        //     _id, 
-                        //     &update_user_collection_request.owner_cid, 
-                        //     &update_user_collection_request.tx_signature, 
-                        //     &update_user_collection_request.hash_data, 
-                        //     Some(update_user_collection_request.amount),
-                        //     connection
-                        // ).await;
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &update_user_collection_request.owner_cid, 
+                            &update_user_collection_request.tx_signature, 
+                            &update_user_collection_request.hash_data, 
+                            Some(update_user_collection_request.amount),
+                            connection
+                        ).await;
 
-                        // let Ok(user) = is_request_verified else{
-                        //     let error_resp = is_request_verified.unwrap_err();
-                        //     return error_resp; /* terminate the caller with an actix http response object */
-                        // };
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
 
                         match UserCollection::update(
                             update_user_collection_request,
@@ -6461,6 +6464,634 @@ async fn update_collection(
                     
                     
                     }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/nft/create")]
+#[passport(user)]
+async fn create_nft(
+    req: HttpRequest,
+    new_user_nft_request: web::Json<NewUserNftRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-create-nft", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_nft");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        
+                        let new_user_nft_request = new_user_nft_request.to_owned();
+                        
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &new_user_nft_request.caller_cid, 
+                            &new_user_nft_request.tx_signature, 
+                            &new_user_nft_request.hash_data, 
+                            Some(new_user_nft_request.amount),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+
+                        match UserNft::insert(
+                            new_user_nft_request, 
+                            img,
+                            redis_client.clone(), 
+                            connection).await{
+                            Ok(user_nft_data) => {
+
+                                resp!{
+                                    UserNftData, //// the data type
+                                    user_nft_data, //// response data
+                                    CREATED, //// response message
+                                    StatusCode::CREATED, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+                    
+                    
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/nft/update")]
+#[passport(user)]
+async fn update_nft(
+    req: HttpRequest,
+    update_user_nft_request: web::Json<UpdateUserNftRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let identifier_key = format!("{}-update-nft", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
+
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "updated_nft");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                    
+                        
+                        let update_user_nft_request = update_user_nft_request.to_owned();
+                        
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &update_user_nft_request.caller_cid, 
+                            &update_user_nft_request.tx_signature, 
+                            &update_user_nft_request.hash_data, 
+                            Some(update_user_nft_request.amount),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+
+                        match UserNft::update(
+                            update_user_nft_request,
+                            img,
+                            redis_client.clone(), 
+                            connection).await{
+                            Ok(user_nft_data) => {
+
+                                resp!{
+                                    UserNftData, //// the data type
+                                    user_nft_data, //// response data
+                                    UPDATED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+                    
+                    
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/reaction/get/all/")]
+#[passport(user)]
+async fn get_all_user_reactions(
+    req: HttpRequest,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserNft::get_all_user_reactions(
+                        &user.screen_cid.unwrap(),
+                        limit, connection).await{
+                        Ok(user_reaction_data) => {
+
+                            resp!{
+                                Vec<UserReactionData>, //// the data type
+                                user_reaction_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/nft/{nft_onchain_id}/reaction/get/all/")]
+#[passport(user)]
+async fn get_all_nft_reactions(
+    req: HttpRequest,
+    nft_onchain_id: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    let nft_onchain_id = nft_onchain_id.to_owned();
+                    match UserNft::get_all_nft_reactions(
+                        &nft_onchain_id,
+                        limit, connection).await{
+                        Ok(nft_reaction_data) => {
+
+                            resp!{
+                                NftReactionData, //// the data type
+                                nft_reaction_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
 
                 },
                 Err(resp) => {
@@ -6536,14 +7167,14 @@ pub mod exports{
     pub use super::update_private_gallery;
     pub use super::create_collection;
     pub use super::update_collection;
-    // pub use super::create_nft;
-    // pub use super::update_nft; 
-    // pub use super::get_user_reactions;
-    // pub use super::get_nft_reactions; /**** comments, likes and dislikes ****/
-    // pub use super::sell_token_request; /**** cache in-app token ****/
-    pub use super::deposit; /* gift card money transfer */
-    pub use super::withdraw; /* gift card money claim */
+    pub use super::create_nft;
+    pub use super::update_nft; 
+    pub use super::get_all_user_reactions; /**** all user comments, likes and dislikes ****/
+    pub use super::get_all_nft_reactions; /**** all nft comments, likes and dislikes ****/
+    pub use super::deposit; /**** gift card money transfer ****/
+    pub use super::withdraw; /**** gift card money claim ****/
     pub use super::charge_wallet_request; /**** buy in-app token ****/
+    // pub use super::sell_token_request; /**** cache in-app token ****/
     // -----------------------------------------------
     /*             chatroom launchpad apis           */
     // -----------------------------------------------

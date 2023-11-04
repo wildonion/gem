@@ -11,7 +11,7 @@
 			"name": "mafia",
 			"item": [
 				{
-					"name": "Auth Service",
+					"name": "Auth APIs",
 					"item": [
 						{
 							"name": "Welcome",
@@ -281,7 +281,7 @@
 					]
 				},
 				{
-					"name": "Event Service",
+					"name": "Event APIs",
 					"item": [
 						{
 							"name": "Upsert Event",
@@ -816,13 +816,13 @@
 									}
 								},
 								"url": {
-									"raw": "{{event}}/event/set-lock",
+									"raw": "{{event}}/event/cancel",
 									"host": [
 										"{{event}}"
 									],
 									"path": [
 										"event",
-										"set-lock"
+										"cancel"
 									]
 								},
 								"description": "⚠️ ***This API needs Player, God or Dev Access Level.***"
@@ -913,7 +913,7 @@
 					]
 				},
 				{
-					"name": "Game Service",
+					"name": "Game APIs",
 					"item": [
 						{
 							"name": "Upsert Deck",
@@ -1968,134 +1968,6 @@
 							"response": []
 						}
 					]
-				},
-				{
-					"name": "Whitelist Service",
-					"item": [
-						{
-							"name": "Upsert Whitelist",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0MDcyZjEyMjhmNWFmMDE5NTI0OWU5ZiJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNzA5NzI4NzI4LCJpYXQiOjE2NzgxOTI3Mjh9.FMxy65Ed28vaNCGZzmCpZiNV157HzF7I8SeWbR4siVKX-uh021kRmFFzLOMuC-vzvFNgnV_PQj57QQrmjjqlIQ",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "API_KEY",
-										"value": "{{API_KEY}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"mint_addrs\": [\"4goQEoJ3jNbVFGmuHAqMrYpuyNx1s2woEPrjHfEeUixw\"],\n    \"owner\": \"dev\",\n    \"name\": \"another-free-mint\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{whitelist}}/whitelist/add/mint-addrs",
-									"host": [
-										"{{whitelist}}"
-									],
-									"path": [
-										"whitelist",
-										"add",
-										"mint-addrs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get Whitelist By Name",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{whitelist}}/whitelist/get/another-free-mint",
-									"host": [
-										"{{whitelist}}"
-									],
-									"path": [
-										"whitelist",
-										"get",
-										"another-free-mint"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Load NFT Mint Addresses",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{whitelist}}/whitelist/load/nft/mint-addrs",
-									"host": [
-										"{{whitelist}}"
-									],
-									"path": [
-										"whitelist",
-										"load",
-										"nft",
-										"mint-addrs"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get All Whitelists",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{whitelist}}/whitelist/all",
-									"host": [
-										"{{whitelist}}"
-									],
-									"path": [
-										"whitelist",
-										"all"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get Owner Whitelist Score",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{whitelist}}/whitelist/another-free-mint/get/score/of/mY82DecoKnDMj1YqNxpikSKutiErhacy566KdP3Rfkh",
-									"host": [
-										"{{whitelist}}"
-									],
-									"path": [
-										"whitelist",
-										"another-free-mint",
-										"get",
-										"score",
-										"of",
-										"mY82DecoKnDMj1YqNxpikSKutiErhacy566KdP3Rfkh"
-									]
-								}
-							},
-							"response": []
-						}
-					]
 				}
 			]
 		},
@@ -2169,7 +2041,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjQ3NDgwMWIzNDE4YjgwNWE3NDI1NCJ9LCJ1c2VybmFtZSI6ImNvbnNlIiwiYWNjZXNzX2xldmVsIjoxLCJleHAiOjE2OTQ3MTAwNzcsImlhdCI6MTY5MjExODA3N30.gyhdoiE59cts9duA6snNtNt5ee6thuRFfqkRfNtZ_XIDZrTjkQeXG5h0pwaq8_SflA1pEDufGVwZLttJC5ANaw",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJhY2Nlc3NfbGV2ZWwiOjEsImV4cCI6MTcwMTcwMjM3MiwiaWF0IjoxNjk5MTEwMzcyfQ.juIplv75RZlYXHzYoHgodQS8uLQxLd9iS6Oxbx5RCrw1XDYDbl-LDPlTyYz-5fpBE20y0mT9DpDBaiP05XSCtQ",
 											"type": "string"
 										}
 									]
@@ -2182,7 +2054,7 @@
 										{
 											"key": "img",
 											"type": "file",
-											"src": "/Users/wildonion/Downloads/images.jpeg"
+											"src": "/Users/wildonion/Desktop/deadkings.jpeg"
 										}
 									]
 								},
@@ -3985,7 +3857,8 @@
 												"collection",
 												"create"
 											]
-										}
+										},
+										"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
 									},
 									"response": []
 								},
@@ -4022,7 +3895,8 @@
 												"collection",
 												"update"
 											]
-										}
+										},
+										"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
 									},
 									"response": []
 								},
@@ -4043,7 +3917,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\",\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4080,7 +3954,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false, // backend will update this\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\",\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4117,14 +3991,16 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/nft/get/reactions/?from=0&to=10",
+											"raw": "{{panel-user}}/nft/4695224979303015/reaction/get/all/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
 												"nft",
+												"4695224979303015",
+												"reaction",
 												"get",
-												"reactions",
+												"all",
 												""
 											],
 											"query": [
@@ -4653,7 +4529,8 @@
 						}
 					]
 				}
-			]
+			],
+			"description": "# WebSocket Push Notif Subscription\n\nan specific user can join an specific event room to subscribe to what ws actors will be sent in different parts of the app so this route will be used to receive push notif from admin reveal roles, mmr and ecq engines, here is the example connect address and make sure that client is passing the **mafia server JWT** to the header request like \\`Bearer JWT\\`:\n\n**local API:**\n\n`ws://localhost:7442/subscribe/`\n\n**production APIs:**\n\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`\n    \n\n**NOTE:** _we just have to make sure that the user is already inside the event and did the reservation process for the event._\n\nclient must be connect to this route then we have a full duplex communication channel also there is a path in this route which is the event room that must be connected to and is the name of the notification room which can be one of the following:\n\n- `ecq-{event_id}`, ----- /join-ecq\n    \n- `mmr-{event_id}`, ----- /join-mmr\n    \n- `reveal-role-{event_id}` ----- /join-roles\n    \n\nusers after participating in an event we'll redirect them to the event page after that the client must call this route with the passed in event id like so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection will be stablished to this server which will send the subscribed redis topics to the channel that contains event peers."
 		}
 	],
 	"event": [

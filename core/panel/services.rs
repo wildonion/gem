@@ -139,6 +139,10 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_user_fans_data_for);
     config.service(apis::user::exports::create_collection);
     config.service(apis::user::exports::update_collection);
+    config.service(apis::user::exports::create_nft);
+    config.service(apis::user::exports::update_nft);
+    config.service(apis::user::exports::get_all_user_reactions);
+    config.service(apis::user::exports::get_all_nft_reactions);
     
     // other routs maybe ?
     // ...

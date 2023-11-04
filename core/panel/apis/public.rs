@@ -539,11 +539,17 @@ async fn tasks_leaderboard(
                         
                     }
 
-                    let limited_leaderboard = &leaderboard[from..to].to_vec();
+                    let sliced = if leaderboard.len() > to{
+                        let data = &leaderboard[from..to+1];
+                        data.to_vec()
+                    } else{
+                        let data = &leaderboard[from..leaderboard.len()];
+                        data.to_vec()
+                    };
 
                     resp!{
                         Vec<FetchUserTaskReport>, // the data type
-                        limited_leaderboard.to_owned(), // response data
+                        sliced.to_owned(), // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie

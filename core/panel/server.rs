@@ -61,6 +61,11 @@ macro_rules! server {
                 and pass the actor isntance to the routers' threadpool in order to move them between different
                 apis, otherwise each actor will be started each time by calling the related websocket route and
                 the their last state will be lost.
+
+                following servers need to be started globally so we can share them between actix threads 
+                and push new ws session actor inside subscription routes into their sessions field, also 
+                each server is an actor which allow us to communicate with them asyncly and concurrently 
+                within the different parts of the app by message sending logic  
             */
             let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
             let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());

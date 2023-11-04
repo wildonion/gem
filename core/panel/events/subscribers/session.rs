@@ -385,7 +385,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
                         },
                         /* ------------------------------- */
-                        /*    JOIN TO RECEIVE PUSH NOTIF   */
+                        /* JOIN TO RECEIVE ROLE PUSH NOTIF */
                         /* ------------------------------- */
                         /* join the event notif room to subscribe to redis topics */
                         "/join-roles" => {

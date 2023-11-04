@@ -70,7 +70,8 @@ pub static IAM_HEALTHY: &str = "Ok";
 pub static INVALID_PASSPORT_DATA: &str = "Invalid Passport Data";
 pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static INVALID_TOKEN: &str = "Invalid Token Or Mafia Server Is Down";
-pub static EVENT_IMG_UPDATED: &str = "Event Image Updated Successfully";
+pub static MAFIA_EVENT_IMG_UPDATED: &str = "Mafia Event Image Updated Successfully";
+pub static MAFIA_PLAYER_AVATAR_IMG_UPDATED: &str = "Mafia Player Avatar Image Updated Successfully";
 pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg or .jpeg]";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_DENIED: &str = "Access Denied";
@@ -115,6 +116,8 @@ pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Ye
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
 pub static COLLECTION_NOT_FOUND_FOR_CONTRACT: &str = "No Collection Found With This Contract Address";
 pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Caller Of This Method";
+pub static NFT_NOT_OWNED_BY: &str = "NFT Is Not Owned By The Caller Of This Method";
+pub static NFT_ONCHAINID_NOT_FOUND: &str = "NFT With This Onchain Id Not Found, Perhaps Is Not Minted Yet";
 pub static NO_FRIEND_FOUND: &str = "No Friend Found With This Crypto Id";
 
 
@@ -124,6 +127,7 @@ pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const COLLECTION_UPLOAD_PATH: &str = "assets/images/collections";
+pub const NFT_UPLOAD_PATH: &str = "assets/images/nfts";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 pub const TOO_LARGE_FILE_SIZE: &str = "File Is Too Large";
 

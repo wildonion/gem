@@ -365,7 +365,7 @@ async fn update_mafia_event_img(
                     resp!{
                         &[u8], // the date type
                         &[], // the data itself
-                        EVENT_IMG_UPDATED, // response message
+                        MAFIA_EVENT_IMG_UPDATED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }

@@ -26,35 +26,40 @@ use actix::prelude::*;
 
 
 
-/* 
+/*          ------------------------- README -------------------------
 
+                        WebSocket Push Notif Subscription
+    
     an specific user can join an specific event room to subscribe to what ws actors 
     will be sent in different parts of the app so this route will be used to receive 
     push notif from admin reveal roles, mmr and ecq engines, here is the example connect 
     address and make sure that client is passing the mafia server JWT to the header 
     request like `Bearer JWT`:
-
-        localhost: ws://localhost:7442/subscribe/
-
-        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488
-        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488
-        wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488
+    
+    local API:
+        ws://localhost:7442/subscribe/
+    
+    production APIs:
+        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
+        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
+        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
 
     NOTE: we just have to make sure that the user is already inside the event 
-          and did the reservation process for the event. 
+            and did the reservation process for the event.
 
     client must be connect to this route then we have a full duplex communication channel 
     also there is a path in this route which is the event room that must be connected to 
     and is the name of the notification room which can be one of the following:
     
-        `ecq-{event_id}`,        ----- /join-ecq
-        `mmr-{event_id}`,        ----- /join-mmr
-        `reveal-role-{event_id}` ----- /join-roles
+    `ecq-{event_id}`,        ----- /join-ecq
+    `mmr-{event_id}`,        ----- /join-mmr
+    `reveal-role-{event_id}` ----- /join-roles
 
-    users after participating in an event we'll redirect them to the event page after that 
-    the client must call this route with the passed in event id like so: /{user_id}/reveal-role-{notif_room}
-    in which a new full duplex ws connection will be stablished to this server which will send 
-    the subscribed redis topics to the channel that contains event peers
+    users after participating in an event we'll redirect them to the event page 
+    after that the client must call this route with the passed in event id like 
+    so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection 
+    will be stablished to this server which will send the subscribed redis topics 
+    to the channel that contains event peers.
 
 */
 #[get("/{user_id}/{notif_room}")]
@@ -71,8 +76,8 @@ async fn notif_subs(
 
     /*
         this route requires conse mafia hyper server JWT since the user that wants to receive push notif
-        is the user of mafia server thus its JWT is needed to authorize it to be able to use this route, hence
-        the header must contains the Bearer key to extract the JWT from it
+        is the user of mafia server thus his JWT is needed to authorize him to be able to use this route, 
+        hence the header must contains the Bearer key to extract the JWT from it 
     */
     if let Some(header_value) = req.headers().get("Bearer"){
 
@@ -178,7 +183,14 @@ async fn notif_subs(
                                 if notif_room.clone().starts_with("reveal-role-") || 
                                 notif_room.starts_with("ecq-") ||
                                 notif_room.starts_with("mmr-") {
-                                /* starting ws connection for the passed in peer and the notif room */
+                                /* 
+                                    starting an actor based ws connection for the passed in peer 
+                                    and the notif room, by doing this we're handling every incoming
+                                    session connection asyncly and concurrently inside actor threadpool 
+                                    with this pattern different parts of the app can communicate with
+                                    WsNotifSession structure asyncly and concurrently also the server
+                                    actor contains all of the session actors' addresses.
+                                */
                                 ws::start(
                                     WsNotifSession{
                                         id: 0,
