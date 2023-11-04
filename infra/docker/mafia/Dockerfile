@@ -60,7 +60,6 @@ RUN USER=root chown -R root:root /app
 
 # we must copy necessary runtime files into this stage for ./mafia
 COPY ./.env /app/.env
-COPY ./addrs.json /app/addrs.json
 COPY assets /app/assets
 
 USER root

@@ -243,7 +243,6 @@ async fn main() -> MainResult<(), Box<dyn std::error::Error + Send + Sync + 'sta
         .scope("/auth", routers::auth::register().await)
         .scope("/event", routers::event::register().await)
         .scope("/game", routers::game::register().await)
-        .scope("/whitelist", routers::whitelist::register().await)
         .build()
         .unwrap();
 

@@ -1350,16 +1350,27 @@ pub async fn get_single(req: Request<Body>) -> MafiaResult<hyper::Response<Body>
                                                 Some(event_doc) => {
                                                     if misc::event_belongs_to_god(_id.unwrap(), event_doc._id.unwrap(), db_to_pass.clone()).await || user_doc._id.unwrap() == _id.unwrap() || access_level == DEV_ACCESS{
                                                         let mut player_role_name: Option<String> = None;
+                                                        let mut player_username = String::from("");
                                                         let event_players = event_doc.players.unwrap();
                                                         for p in event_players{ // finding the role_name of the passed in player, we must make sure that the client has called upsert event after every role, side and status update to update the players vector inside the event
                                                             if p._id == player_id{
                                                                 player_role_name = p.role_name;
+                                                                /* 
+                                                                    using the username player has reserved the event with which 
+                                                                    contains index number assigned during event reservation, we're
+                                                                    doing this because player may update his username after reservation
+                                                                    but the only thing god sees is the old username in his panel since
+                                                                    we're showing players inside the event in god panel, so with this
+                                                                    we're making sure that the event username of the player is 
+                                                                    being shown.
+                                                                */
+                                                                player_username = p.username; 
                                                                 break;
                                                             }
                                                         }
                                                         let player_info = schemas::game::ReservePlayerInfoResponseWithRoleName{
                                                             _id: user_doc._id.unwrap(),
-                                                            username: user_doc.username,
+                                                            username: player_username,
                                                             role_name: player_role_name,
                                                             status: user_doc.status,
                                                             role_id: user_doc.role_id,

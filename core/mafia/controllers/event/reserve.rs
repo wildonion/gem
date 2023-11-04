@@ -89,8 +89,15 @@ pub async fn mock_reservation(req: Request<Body>) -> MafiaResult<hyper::Response
                                             let init_player_info = schemas::game::ReservePlayerInfoResponseWithRoleName{
                                                 _id: _id.unwrap(),
                                                 username: {
+                                                    let nplayers = (1..event_doc.clone().players.unwrap().len()+1)
+                                                        .into_iter()
+                                                        .map(|idx| idx)
+                                                        .collect::<Vec<usize>>();
+                                                    let pidentifier = nplayers.iter().max().unwrap_or(&0) + 1;
                                                     let users = db.database(&db_name).collection::<schemas::auth::UserInfo>("users");
-                                                    users.find_one(doc!{"_id": _id}, None).await.unwrap().unwrap().username
+                                                    let username_only = users.find_one(doc!{"_id": _id}, None).await.unwrap().unwrap().username;
+                                                    let username_with_number = format!("{}::{}", username_only, pidentifier);
+                                                    username_with_number
                                                 },
                                                 status: DEFAULT_STATUS,
                                                 role_name: None,
