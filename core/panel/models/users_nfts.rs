@@ -1,14 +1,13 @@
 
 
 
-use diesel::sql_types::Text;
 use wallexerr::Wallet;
-
 use crate::*;
 use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
+use super::users::User;
 use super::users_collections::UserCollection;
 use super::users_galleries::UserPrivateGallery;
 
@@ -46,6 +45,7 @@ pub struct NftComment{
     pub nft_onchain_id: String,
     pub content: String,
     pub owner_screen_cid: String,
+    pub published_at: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -133,7 +133,6 @@ pub struct NewUserNftRequest{
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
-    pub freeze_metadata: Option<bool>,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub tx_signature: String,
     pub hash_data: String,
@@ -148,7 +147,6 @@ pub struct InsertNewUserNftRequest{
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
-    pub freeze_metadata: Option<bool>,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
 }
 
@@ -454,6 +452,13 @@ impl UserNft{
             );
         }
 
+        let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
         /* uploading nft image */
         let get_nft_img_path = misc::store_file(
             NFT_UPLOAD_PATH, &asset_info.contract_address, 
@@ -465,12 +470,41 @@ impl UserNft{
             return Err(err_res);
         };
 
-        // - set asset_info.is_minted to false which means that is not stored on contract yet
-        // - by default is_listed will be set to true since an nft goes to private collection by default 
-        // - set current price to what it has been passed to the call
-        // upload img on pastel using sense and cascade apis: paste::sense::detect(), paste::cascade::upload()
-        // spend token for gas fee and update listings
-        // which must be listed to be sold to friends have been invited by the gallery owner
+        /* 
+            update user balance frist, if anything goes wrong they can call us 
+            to pay them back, actually this is the gas fee that they must be 
+            charged for since we already have paid the fee when we did the 
+            onchain process
+        */
+        let new_balance = user.balance.unwrap() - asset_info.amount;
+        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+
+        // upload img on pastel using sense and cascade apis: 
+        // paste::sense::detect(), paste::cascade::upload()
+
+
+        /*
+            default values:
+                - is_minted       :‌ false
+                - is_listed       : true
+                - freeze_metadata : false
+        */
+        let new_insert_nft = InsertNewUserNftRequest{
+            contract_address: collection_data.contract_address,
+            current_owner_screen_cid: caller_screen_cid,
+            metadata_uri: asset_info.metadata_uri,
+            nft_name: asset_info.nft_name,
+            nft_description: asset_info.nft_description,
+            current_price: asset_info.current_price,
+            extra: asset_info.extra,
+        };
 
         // update col 
         // update gal
@@ -513,9 +547,31 @@ impl UserNft{
             return Err(err_resp);
         };
 
+        let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+
+        /* 
+            update user balance frist, if anything goes wrong they can call us 
+            to pay them back, actually this is the gas fee that they must be 
+            charged for since we already have paid the fee when we did the 
+            onchain process
+        */
+        let new_balance = user.balance.unwrap() - asset_info.amount;
+        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
 
         // update col 
-        // update gal 
+        // update gal
 
 
         match asset_info.event_type.as_str(){
