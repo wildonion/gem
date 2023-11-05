@@ -4,6 +4,7 @@
 use wallexerr::Wallet;
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR};
 use crate::misc::Limit;
+use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
 use super::users::UserWalletInfoResponse;
@@ -489,14 +490,15 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn find_by_owner(gallery_owner: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn find_by_owner_and_contract_address(gallery_owner: &str, col_contract_address: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
-        let user_gallery = users_galleries
+        let user_galleries_data = users_galleries
             .filter(users_galleries::owner_screen_cid.eq(gallery_owner))
-            .first::<UserPrivateGallery>(connection);
+            .load::<UserPrivateGallery>(connection);
 
-        let Ok(gallery_info) = user_gallery else{
+        let Ok(galleries_info) = user_galleries_data else{
 
             let resp = Response{
                 data: Some(gallery_owner),
@@ -510,19 +512,37 @@ impl UserPrivateGallery{
         };
 
 
-        Ok(
-            UserPrivateGalleryData{ 
-                id: gallery_info.id, 
-                owner_screen_cid: gallery_info.owner_screen_cid, 
-                collections: gallery_info.collections, 
-                gal_name: gallery_info.gal_name, 
-                gal_description: gallery_info.gal_description, 
-                invited_friends: gallery_info.invited_friends, 
-                extra: gallery_info.extra, 
-                created_at: gallery_info.created_at.to_string(), 
-                updated_at: gallery_info.updated_at.to_string() 
+        for gallery in galleries_info{
+            
+            let cols = gallery.collections.clone();
+            let decoded_cols = if cols.is_some(){
+                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+            } else{
+                vec![]
+            };
+
+            for col in decoded_cols{
+                if col.contract_address == col_contract_address.to_string(){
+
+                    return Ok(
+                        UserPrivateGalleryData{ 
+                            id: gallery.id, 
+                            owner_screen_cid: gallery.owner_screen_cid, 
+                            collections: gallery.collections, 
+                            gal_name: gallery.gal_name, 
+                            gal_description: gallery.gal_description, 
+                            invited_friends: gallery.invited_friends, 
+                            extra: gallery.extra, 
+                            created_at: gallery.created_at.to_string(), 
+                            updated_at: gallery.updated_at.to_string() 
+                        }
+                    )
+                }
             }
-        )
+
+        }
+
+        Ok(UserPrivateGalleryData::default())
 
     }
 

@@ -682,6 +682,7 @@ impl UserCollection{
                                 vec![]
                             };
 
+                            /* since this is new collection we have to push */
                             decoded_cols.push(user_collection_data.clone());
 
                             Some(
@@ -945,7 +946,12 @@ impl UserCollection{
                                 vec![]
                             };
 
-                            decoded_cols.push(user_collection_data.clone());
+                            
+                            /* since there is no new collection we should update the old one in vector */
+                            let collection_position = decoded_cols.iter().position(|c| c.contract_address == user_collection_data.clone().contract_address);
+                            if collection_position.is_some(){
+                                decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
+                            }
 
                             Some(
                                 serde_json::to_value(decoded_cols).unwrap()

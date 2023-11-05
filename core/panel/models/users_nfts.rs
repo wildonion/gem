@@ -8,8 +8,10 @@ use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
 use super::users::User;
-use super::users_collections::UserCollection;
-use super::users_galleries::UserPrivateGallery;
+use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
+use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest};
+use crate::schema::users_collections::dsl::*;
+use crate::schema::users_collections;
 
 /* 
 
@@ -22,7 +24,7 @@ use super::users_galleries::UserPrivateGallery;
 #[diesel(table_name=users_nfts)]
 pub struct UserNft{
     pub id: i32,
-    pub contract_address: String,
+    pub contract_address: String, /* this can be used to fetch the collection info cause every collection is a contract on the chain */
     pub current_owner_screen_cid: String,
     pub metadata_uri: String, /* an ipfs link contains metadata json file */
     pub onchain_id: Option<String>,
@@ -128,7 +130,6 @@ pub struct NewUserNftRequest{
     pub caller_cid: String,
     pub amount: i64,
     pub contract_address: String,
-    pub metadata_uri: String,
     pub current_owner_screen_cid: String,
     pub nft_name: String,
     pub nft_description: String,
@@ -194,11 +195,11 @@ impl UserNft{
             .limit((to - from) + 1)
             .load::<UserNft>(connection)
             {
-                Ok(nfts) => {
+                Ok(nfts_) => {
 
                     
                     let mut user_reactions = vec![];
-                    for nft in nfts{
+                    for nft in nfts_{
 
                         let nft_comments = nft.comments;
                         let decoded_comments = if nft_comments.is_some(){
@@ -433,13 +434,13 @@ impl UserNft{
         };
 
         /* find a gallery data with the passed in owner screen address of the found collection */
-        let get_gallery = UserPrivateGallery::find_by_owner(&collection_data.owner_screen_cid, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &collection_data.contract_address, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
         };
         
-        let caller_screen_cid = Wallet::generate_keccak256_from(asset_info.caller_cid);
+        let caller_screen_cid = Wallet::generate_keccak256_from(asset_info.clone().caller_cid);
         if gallery_data.owner_screen_cid != caller_screen_cid{
 
             let resp = Response::<'_, &[u8]>{
@@ -486,9 +487,38 @@ impl UserNft{
         };
 
 
-        // upload img on pastel using sense and cascade apis: 
-        // paste::sense::detect(), paste::cascade::upload()
+        /* 
+            run in the background inside tokio green threadpool and the data
+            must be shared between outside of the threadpool and tokio spawn
+            using mpsc jobq channel
+        */
+        let mut nft_metadata_uri = String::from("");
+        let (metadata_uri_sender, mut metadata_uri_receiver)
+            = tokio::sync::mpsc::channel::<String>(1024);
+        tokio::spawn(async move{
+            
+            let metadata_uri_ = {
+    
+                // step1
+                // upload nft_img_path on pastel using sense and cascade apis: 
+                // paste::sense::detect(), paste::cascade::upload()
+    
+                // step2
+                // upload the pastel image url in nftport ipfs
+    
+                String::from("")
+            };
 
+            if let Err(why) = metadata_uri_sender.clone().send(metadata_uri_).await{
+                error!("can't send `metadata_uri` to the mpsc channel because: {}", why.to_string());
+            }
+
+        });
+
+        /* receiving asyncly from the channel in outside of the tokio spawn */
+        while let Some(uri) = metadata_uri_receiver.recv().await{
+            nft_metadata_uri = uri;
+        }
 
         /*
             default values:
@@ -497,21 +527,192 @@ impl UserNft{
                 - freeze_metadata : false
         */
         let new_insert_nft = InsertNewUserNftRequest{
-            contract_address: collection_data.contract_address,
+            contract_address: collection_data.clone().contract_address,
             current_owner_screen_cid: caller_screen_cid,
-            metadata_uri: asset_info.metadata_uri,
+            metadata_uri: nft_metadata_uri,
             nft_name: asset_info.nft_name,
             nft_description: asset_info.nft_description,
             current_price: asset_info.current_price,
             extra: asset_info.extra,
         };
 
-        // update col 
-        // update gal
+        /* inserting new nft */
+        match diesel::insert_into(users_nfts)
+            .values(&new_insert_nft)
+            .returning(UserNft::as_returning())
+            .get_result::<UserNft>(connection)
+            {
+                Ok(fetched_nft_data) => {
+                    
+                    let user_nft_data = UserNftData{
+                        id: fetched_nft_data.clone().id,
+                        contract_address: fetched_nft_data.clone().contract_address,
+                        current_owner_screen_cid: fetched_nft_data.clone().current_owner_screen_cid,
+                        metadata_uri: fetched_nft_data.clone().metadata_uri,
+                        extra: fetched_nft_data.clone().extra,
+                        onchain_id: fetched_nft_data.clone().onchain_id,
+                        nft_name: fetched_nft_data.clone().nft_name,
+                        is_minted: fetched_nft_data.clone().is_minted,
+                        nft_description: fetched_nft_data.clone().nft_description,
+                        current_price: fetched_nft_data.clone().current_price,
+                        is_listed: fetched_nft_data.clone().is_listed,
+                        freeze_metadata: fetched_nft_data.clone().freeze_metadata,
+                        comments: fetched_nft_data.clone().comments,
+                        likes: fetched_nft_data.clone().likes,
+                        tx_hash: fetched_nft_data.clone().tx_hash,
+                        created_at: fetched_nft_data.clone().created_at.to_string(),
+                        updated_at: fetched_nft_data.clone().updated_at.to_string(),
+                    };
 
-        Ok(
-            UserNftData::default()
-        )
+                    /* updating collection data with newly nft */
+                    let new_collection_data = UpdateUserCollection{
+                        nfts: {
+                            let nfts_ = collection_data.clone().nfts;
+                            let mut decoded_nfts = if nfts_.is_some(){
+                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            /* since this is new nft we have to push */
+                            decoded_nfts.push(user_nft_data.clone());
+
+                            Some(
+                                serde_json::to_value(decoded_nfts).unwrap()
+                            )
+                        },
+                        freeze_metadata: collection_data.clone().freeze_metadata,
+                        base_uri: collection_data.clone().base_uri,
+                        royalties_share: collection_data.clone().royalties_share,
+                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
+                        collection_background: collection_data.clone().collection_background,
+                        extra: collection_data.clone().extra,
+                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap(),
+                        col_description: collection_data.clone().col_description,
+                    };
+
+                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
+                        .set(&new_collection_data)
+                        .returning(UserCollection::as_returning())
+                        .get_result::<UserCollection>(connection)
+                        {
+                            Ok(fetched_collection_data) => {
+                                
+                                let user_collection_data = UserCollectionData{
+                                    id: fetched_collection_data.clone().id,
+                                    contract_address: fetched_collection_data.clone().contract_address,
+                                    nfts: fetched_collection_data.clone().nfts,
+                                    col_name: fetched_collection_data.clone().col_name,
+                                    symbol: fetched_collection_data.clone().symbol,
+                                    owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
+                                    metadata_updatable: fetched_collection_data.clone().metadata_updatable,
+                                    freeze_metadata: fetched_collection_data.clone().freeze_metadata,
+                                    base_uri: fetched_collection_data.clone().base_uri,
+                                    royalties_share: fetched_collection_data.clone().royalties_share,
+                                    royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
+                                    collection_background: fetched_collection_data.clone().collection_background,
+                                    extra: fetched_collection_data.clone().extra,
+                                    col_description: fetched_collection_data.clone().col_description,
+                                    contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
+                                    created_at: fetched_collection_data.clone().created_at.to_string(),
+                                    updated_at: fetched_collection_data.clone().updated_at.to_string(),
+                                };
+
+                                /* updating gallery data with the updated collection */
+                                let new_gal_data = UpdateUserPrivateGalleryRequest{
+                                    collections: {
+                                        let cols = gallery_data.collections;
+                                        let mut decoded_cols = if cols.is_some(){
+                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                        } else{
+                                            vec![]
+                                        };
+
+                                        /* since there is no new collection we should update the old one in vector */
+                                        let collection_position = decoded_cols.iter().position(|c| c.contract_address == collection_data.clone().contract_address);
+                                        if collection_position.is_some(){
+                                            decoded_cols[collection_position.unwrap()] = user_collection_data;
+                                        }
+
+                                        Some(
+                                            serde_json::to_value(decoded_cols).unwrap()
+                                        )
+                                    },
+                                    gal_name: gallery_data.gal_name,
+                                    gal_description: gallery_data.gal_description,
+                                    invited_friends: gallery_data.invited_friends,
+                                    extra: gallery_data.extra,
+                                    owner_cid: asset_info.caller_cid,
+                                    tx_signature: String::from(""),
+                                    hash_data: String::from(""),
+                                };
+
+                                /* update gallery with new collection */
+                                match UserPrivateGallery::update(
+                                    &fetched_collection_data.owner_screen_cid, 
+                                    new_gal_data, 
+                                    gallery_data.id, 
+                                    connection
+                                ).await{
+
+                                    Ok(updated_gal) => Ok(user_nft_data),
+                                    Err(resp) => Err(resp)
+                                }
+                            },
+                            Err(e) => {
+
+                                let resp_err = &e.to_string();
+            
+            
+                                /* custom error handler */
+                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                
+                                let error_content = &e.to_string();
+                                let error_content = error_content.as_bytes().to_vec();  
+                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::insert_update_collection");
+                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+            
+                                let resp = Response::<&[u8]>{
+                                    data: Some(&[]),
+                                    message: resp_err,
+                                    status: 500
+                                };
+                                return Err(
+                                    Ok(HttpResponse::InternalServerError().json(resp))
+                                );
+            
+                            }
+                        }
+
+                    
+
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::insert_insert_nft");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
 
     }
 
@@ -541,7 +742,7 @@ impl UserNft{
         };
 
         /* find a gallery data with the passed in owner screen address of the found collection */
-        let get_gallery = UserPrivateGallery::find_by_owner(&collection_data.owner_screen_cid, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &nft_data.contract_address, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -570,6 +771,7 @@ impl UserNft{
             
         };
 
+        // remember to update nft in collections and update collection in gallery not push
         // update col 
         // update gal
 
