@@ -2041,7 +2041,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YjgxN2RlMzYxZjJjMWI0NWRmYjQ2MCJ9LCJhY2Nlc3NfbGV2ZWwiOjEsImV4cCI6MTcwMTcwMjM3MiwiaWF0IjoxNjk5MTEwMzcyfQ.juIplv75RZlYXHzYoHgodQS8uLQxLd9iS6Oxbx5RCrw1XDYDbl-LDPlTyYz-5fpBE20y0mT9DpDBaiP05XSCtQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjQ3NDgwMWIzNDE4YjgwNWE3NDI1NCJ9LCJhY2Nlc3NfbGV2ZWwiOjEsImV4cCI6MTcwMTUzOTMxMiwiaWF0IjoxNjk4OTQ3MzEyfQ.UKsIDBCFr8v-kIXai6Ustq59kaM8ttz0zU-FArIe_IblX9kMyHAV0snPmdoiN3JeqGaFE2zrt-ZqM59bPqqYSQ",
 											"type": "string"
 										}
 									]
@@ -3917,7 +3917,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\",\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
