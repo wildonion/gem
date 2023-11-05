@@ -1,7 +1,8 @@
 
 
+<img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-# 🤏 Conse Rust Backend and Engines
+# 🛞 Rust Backend and Engines
 
 Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** and **Patel Near-duplicate image detection APIs** with the following engines as its core backend: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
