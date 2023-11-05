@@ -111,7 +111,7 @@ pub async fn role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                     p.role_id = Some(random_role_id.clone()); // assigning the role_id to the player role_id in this event
                                                     p.side_id = Some(random_side_id.clone()); // assigning the side_id to the player side_id in this event
                                                     p.role_name = Some(first_role_info.clone().name); // assigning the role_name to the player role_name in this event
-                                                    let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                                    let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                                     
                                                     // ------------------------------ UPDATING USERS COLLECTION ------------------------------
                                                     // 
@@ -119,7 +119,7 @@ pub async fn role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                     let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                                     match users.find_one_and_update(doc! { "_id": p._id }, doc!{"$set": {"role_id": random_role_id, "side_id": random_side_id, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){ // finding user based on _id
                                                         Some(user_doc) => { // we updated the users collection successfully now we have to update each player inside the current event  
-                                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                                             let player_role_ability_info = schemas::game::InsertPlayerRoleAbilityRequest{
                                                                 user_id: user_doc._id.unwrap().to_string(), // converting the Option<ObjectId> to ObjectId then into String
                                                                 role_id: random_role_id.to_string(), // converting the ObjectId into String
@@ -151,7 +151,7 @@ pub async fn role(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                 let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                                 let updated_player_roles = updated_players; // getting the updated players
                                                 let serialized_updated_player_roles = bson::to_bson(&updated_player_roles).unwrap(); // serializing the players field into the BSON to insert into the events collection
-                                                let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                                let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                                 let updated_event = match events.find_one_and_update(doc!{"_id": event_doc._id}, doc!{"$set": {"players": serialized_updated_player_roles, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){ // finding event based on event id
                                                     Some(event_doc) => Some(event_doc), // deserializing BSON (the record type fetched from mongodb) into the EventInfo struct
                                                     None => None, // means we didn't find any document related to this title and we have to tell the user to create a new event                                                        

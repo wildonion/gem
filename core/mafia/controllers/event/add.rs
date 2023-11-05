@@ -78,7 +78,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                     
                                         let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                         let events = db.clone().database(&db_name).collection::<schemas::event::EventInfo>("events"); // selecting events collection to fetch all event infos into the EventInfo struct
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                         match events.find_one_and_update(doc!{"title": event_info.clone().title}, doc!{
                                             "$set": {
                                                 "title": bson::to_bson(&event_info.title).unwrap(),
@@ -111,7 +111,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                             }, 
                                             None => { // means we didn't find any document related to this title and we have to create a new event
                                                 let events = db.clone().database(&db_name).collection::<schemas::event::AddEventRequest>("events");
-                                                let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                                let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                                 let exp_time = now + env::var("EVENT_EXPIRATION").expect("⚠️ found no event expiration time").parse::<i64>().unwrap();
                                                 let new_event = schemas::event::AddEventRequest{
                                                     title: event_info.title,

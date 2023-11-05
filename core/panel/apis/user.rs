@@ -7176,8 +7176,9 @@ pub mod exports{
     pub use super::charge_wallet_request; /**** buy in-app token ****/
     // pub use super::sell_token_request; /**** cache in-app token ****/
     // -----------------------------------------------
-    /*             chatroom launchpad apis           */
+    /*          chatroom launchpad http+ws apis       */
     // -----------------------------------------------
+    // mint ai generated pictures to users screen_cids
     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     // https://docs.nftport.xyz/reference/deploy-nft-product-contract
     // https://docs.nftport.xyz/reference/transfer-minted-nft

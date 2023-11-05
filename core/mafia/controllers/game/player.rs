@@ -91,7 +91,7 @@ pub async fn update_role(req: Request<Body>) -> MafiaResult<hyper::Response<Body
                                         let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                         let user_id = ObjectId::parse_str(update_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                         let role_id = ObjectId::parse_str(update_info.role_id.as_str()).unwrap(); // generating mongodb object id from the id string
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let users = db.clone().database(&db_name).collection::<schemas::auth::UserInfo>("users"); // connecting to users collection to update the role_id field - we want to deserialize all user bsons into the UserInfo struct
                                         match users.find_one_and_update(doc!{"_id": user_id}, doc!{"$set": {"role_id": role_id, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){
                                             Some(user_doc) => {
@@ -291,7 +291,7 @@ pub async fn update_side(req: Request<Body>) -> MafiaResult<hyper::Response<Body
                                         let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                         let user_id = ObjectId::parse_str(update_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                         let side_id = ObjectId::parse_str(update_info.side_id.as_str()).unwrap(); // generating mongodb object id from the id string
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let users = db.clone().database(&db_name).collection::<schemas::auth::UserInfo>("users"); // connecting to users collection to update the side_id field - we want to deserialize all user bsons into the UserInfo struct
                                         match users.find_one_and_update(doc!{"_id": user_id}, doc!{"$set": {"side_id": side_id, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){
                                             Some(user_doc) => {
@@ -491,7 +491,7 @@ pub async fn update_status(req: Request<Body>) -> MafiaResult<hyper::Response<Bo
                                         let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                         let user_id = ObjectId::parse_str(update_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                         let status = bson::to_bson(&update_info.status).unwrap(); // we have to serialize the status to BSON Document object in order to update the mentioned field inside the collection
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let users = db.clone().database(&db_name).collection::<schemas::auth::UserInfo>("users"); // connecting to users collection to update the status field - we want to deserialize all user bsons into the UserInfo struct
                                         match users.find_one_and_update(doc!{"_id": user_id}, doc!{"$set": {"status": status, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){
                                             Some(user_doc) => {
@@ -694,7 +694,7 @@ pub async fn update_role_ability(req: Request<Body>) -> MafiaResult<hyper::Respo
                                         let user_id = ObjectId::parse_str(update_info.user_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                         let event_id = ObjectId::parse_str(update_info.event_id.as_str()).unwrap(); // generating mongodb object id from the id string
                                         let role_id = ObjectId::parse_str(update_info.role_id.as_str()).unwrap(); // generating mongodb object id from the id string
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let current_ability = bson::to_bson(&update_info.current_ability).unwrap(); // we have to serialize the current_ability to BSON Document object in order to update the mentioned field inside the collection
                                         let player_roles_info = db.clone().database(&db_name).collection::<schemas::game::PlayerRoleAbilityInfo>("player_role_ability_info"); // connecting to player_role_ability_info collection to update the current_ability field - we want to deserialize all user bsons into the PlayerRoleAbilityInfo struct
                                         match player_roles_info.find_one_and_update(doc!{"user_id": user_id.to_string(), "event_id": event_id.to_string(), "role_id": role_id.to_string()}, doc!{"$set": {"current_ability": Some(current_ability), "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){
@@ -923,7 +923,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> MafiaResult<hyper::Respo
                                                         },
                                                         None => { // inserting new vote info
                                                             let god_votes_on_players = db.clone().database(&db_name).collection::<schemas::game::InsertGodVoteOnPlayerInfoRequest>("god_votes_on_players");
-                                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                                             let vote_info = schemas::game::InsertGodVoteOnPlayerInfoRequest{
                                                                 user_id: user_id.to_string(), 
                                                                 event_id: event_id.to_string(),
@@ -1153,7 +1153,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> MafiaResult<hyper::R
 
                                         ////////////////// DB Ops
 
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let player_chain_info = db.clone().database(&db_name).collection::<schemas::game::InsertPlayerChainToRequest>("player_chain_info"); // connecting to player_chain_info collection to insert a new document - we want to deserialize player chain info into the InsertPlayerChainToRequest struct
                                         let player_chain_doc = schemas::game::InsertPlayerChainToRequest{
                                             from_id: update_info.from_id,

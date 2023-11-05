@@ -102,7 +102,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                 match misc::jwt::construct(jwt_payload).await{
                                                     Ok(token) => {
                                                         users.update_one(doc!{"username": user_info.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();
-                                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                                         let user_response = schemas::auth::LoginResponse{
                                                             _id: user_info._id,
                                                             access_token: token,
@@ -167,7 +167,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                     /* we'll simply insert a new user with a default access and status */
                                     None => {
                                         
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                         let user_doc = schemas::auth::RegisterRequest{
                                             username: otp_info_doc.phone.clone(),
                                             phone: otp_info_doc.phone.clone(),
@@ -204,7 +204,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                                         match misc::jwt::construct(jwt_payload).await{
                                                             Ok(token) => {
                                                                 users.update_one(doc!{"username": user_doc.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();
-                                                                let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                                                let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                                                 let user_response = schemas::auth::LoginResponse{
                                                                     _id: insert_result.inserted_id.as_object_id(),
                                                                     access_token: token,

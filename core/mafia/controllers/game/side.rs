@@ -87,7 +87,7 @@ pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
                                             )        
                                         }, 
                                         None => { // no document found with this name thus we must insert a new one into the databse
-                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                             let sides = db.clone().database(&db_name).collection::<schemas::game::AddSideRequest>("sides"); // using AddSideRequest struct to insert a side info into sides collection 
                                             let side_doc = schemas::game::AddSideRequest{
                                                 name,

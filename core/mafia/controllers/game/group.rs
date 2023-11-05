@@ -88,7 +88,7 @@ pub async fn create(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
 
                                     let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                     let groups = db.clone().database(&db_name).collection::<schemas::game::GroupInfo>("groups"); // selecting groups collection to fetch all event infos into the EventInfo struct
-                                    let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                    let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                     match groups.find_one(doc!{"name": group_info.clone().name}, None).await.unwrap(){
                                         Some(group_info) => {
                                             if group_info.clone().god_id.unwrap() == _id.unwrap().to_string(){
@@ -146,7 +146,7 @@ pub async fn create(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hy
                                                 }
                                         },
                                         None => { // no document found with this name thus we must insert a new one into the databse
-                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                             let groups = db.clone().database(&db_name).collection::<schemas::game::AddGroupRequest>("groups"); // using AddGroupRequest struct to insert a deck info into groups collection 
                                             let group_doc = schemas::game::AddGroupRequest{
                                                 name: group_name,

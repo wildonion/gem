@@ -164,7 +164,7 @@ async fn reveal_role(
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
                         
-                        info!("📥 sending reveal role request to the conse mafia hyper server at {} for event [{}]", chrono::Local::now().timestamp_nanos(), event_id);
+                        info!("📥 sending reveal role request to the conse mafia hyper server at {} for event [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap(), event_id);
 
                         /* calling rveal role API of the mafia hyper server to get the players' roles */
                         let get_response_value = reqwest::Client::new()

@@ -101,7 +101,7 @@ impl WsNotifSession{
         */
         tokio::spawn(async move{
 
-            info!("💡 --- peer [{}] is subscribing to event room: [{}] at time [{}]", peer_name, notif_room, chrono::Local::now().timestamp_nanos());
+            info!("💡 --- peer [{}] is subscribing to event room: [{}] at time [{}]", peer_name, notif_room, chrono::Local::now().timestamp_nanos_opt().unwrap());
 
             /* 🚨 !!! 
                 we must receive asyncly from the redis subscription streaming 
@@ -138,7 +138,7 @@ impl WsNotifSession{
             */
             while let Some(message) = get_stream_messages.next().await{ 
 
-                info!("💡 --- received revealed roles notif from admin at time: [{}]", chrono::Local::now().timestamp_nanos());
+                info!("💡 --- received revealed roles notif from admin at time: [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap());
                 
                 /* 
                     since we've stored the Vec<PlayerRoleInfo> as a string in redis thus we'll 
@@ -412,7 +412,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
                                     
                                     actor.is_subscription_interval_started = true;
-                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap());
                                     
                                     /* cloning the types that they need to be captured inside tokio::spawn() */
                                     let notif_room = actor.notif_room;
@@ -465,7 +465,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
                                     
                                     actor.is_subscription_interval_started = true;
-                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap());
                                     
                                     /* cloning the types that they need to be captured inside tokio::spawn() */
                                     let notif_room = actor.notif_room;
@@ -518,7 +518,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                                 ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
                                     
                                     actor.is_subscription_interval_started = true;
-                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos());
+                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap());
                                     
                                     /* cloning the types that they need to be captured inside tokio::spawn() */
                                     let notif_room = actor.notif_room;

@@ -92,7 +92,7 @@ pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
 
                                         let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                         let decks = db.clone().database(&db_name).collection::<schemas::game::DeckInfo>("decks");
-                                        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                         let deck_name = deck_info.clone().deck_name; // cloning to prevent ownership moving
                                         let roles = deck_info.clone().roles; // roles of this deck - cloning to prevent ownership moving
 
@@ -120,7 +120,7 @@ pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
 
 
                                         } else{ // there is no deck with this id and name thus we must insert a new one into the collection
-                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                             let decks = db.clone().database(&db_name).collection::<schemas::game::AddDeckRequest>("decks"); // using AddDeckRequest struct to insert a deck info into decks collection 
                                             let deck_doc = schemas::game::AddDeckRequest{
                                                 deck_name,

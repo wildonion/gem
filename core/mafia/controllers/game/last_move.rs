@@ -94,7 +94,7 @@ pub async fn add(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hyper
                                             )        
                                         }, 
                                         None => { // no document found with this name thus we must insert a new one into the databse
-                                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                             let last_moves = db.clone().database(&db_name).collection::<schemas::game::AddLastMoveRequest>("last_moves"); // using AddLastMoveRequest struct to insert a last move info into last_moves collection 
                                             let last_move_doc = schemas::game::AddLastMoveRequest{
                                                 name,

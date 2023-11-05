@@ -307,7 +307,7 @@ pub mod jwt{
     }
 
     pub async fn gen_times() -> (i64, i64){
-        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
         let exp_time = now + env::var("JWT_EXPIRATION").expect("⚠️ found no jwt expiration time").parse::<i64>().unwrap();
         (now, exp_time)
     }

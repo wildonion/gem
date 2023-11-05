@@ -629,7 +629,7 @@ impl User{
 
     fn generate_token(&self, _token_time: i64) -> Result<String, jsonwebtoken::errors::Error>{
         
-        let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
         let exp_time = now + env::var("JWT_EXPIRATION").expect("⚠️ found no jwt expiration time").parse::<i64>().unwrap();
         
         let payload = JWTClaims{
@@ -667,7 +667,7 @@ impl User{
             every user can be every user in which they can see other peer's jwt info inside their browser
             which allows them to be inside each other panel!
         */
-        let time_hash_now = chrono::Local::now().timestamp_nanos();
+        let time_hash_now = chrono::Local::now().timestamp_nanos_opt().unwrap();
         let time_hash_now_now_str = format!("{}", time_hash_now);
         let mut hasher = Sha256::new();
         hasher.update(time_hash_now_now_str.as_str());
@@ -1089,7 +1089,7 @@ impl User{
                 creating the cid, cause we don't check the username and cid
                 against the new incomng request in cid api.
             */
-            username: &chrono::Local::now().timestamp_nanos().to_string(),
+            username: &chrono::Local::now().timestamp_nanos_opt().unwrap().to_string(),
             activity_code: &random_code,
             identifier: &identifier_login.to_lowercase(),
             user_role: UserRole::User,
@@ -1211,7 +1211,7 @@ impl User{
         let u_name = user.username.as_str();
         let identifier_login = user.identifier.as_str();
         let uname = if u_name == ""{
-            chrono::Local::now().timestamp_nanos().to_string()
+            chrono::Local::now().timestamp_nanos_opt().unwrap().to_string()
         } else{
             u_name.to_string()
         };

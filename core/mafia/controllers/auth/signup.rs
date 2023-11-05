@@ -67,7 +67,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
    
                         }, 
                         None => { // no document found with this username thus we must insert a new one into the databse
-                            let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                            let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                             let users = db.clone().database(&db_name).collection::<schemas::auth::RegisterRequest>("users");
                             match schemas::auth::RegisterRequest::hash_pwd(user_info.pwd).await{
                                 Ok(hash) => {
@@ -206,7 +206,7 @@ pub async fn register_god(req: Request<Body>) -> MafiaResult<hyper::Response<Bod
                                     let update_option = FindOneAndUpdateOptions::builder().return_document(Some(ReturnDocument::After)).build();
                                     let user_id = ObjectId::parse_str(user_info._id.as_str()).unwrap(); // generating mongodb object id from the id string
                                     let users = db.clone().database(&db_name).collection::<schemas::auth::RegisterResponse>("users");
-                                    let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec 
+                                    let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec 
                                     match users.find_one_and_update(doc! { "_id": user_id }, doc!{"$set": {"access_level": 1, "updated_at": Some(now)}}, Some(update_option)).await.unwrap(){ // finding user based on _id
                                         Some(user_doc) => {
                                             let user_info = schemas::auth::UserUpdateResponse{

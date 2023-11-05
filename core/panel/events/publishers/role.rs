@@ -48,7 +48,7 @@ impl Reveal{
 
 
         if redis_auth_resp.is_err(){
-          error!("🚨 --- redis actix actor mailbox error at {} due to: {}", chrono::Local::now().timestamp_nanos(), redis_auth_resp.unwrap_err());
+          error!("🚨 --- redis actix actor mailbox error at {} due to: {}", chrono::Local::now().timestamp_nanos_opt().unwrap(), redis_auth_resp.unwrap_err());
         }
 
 

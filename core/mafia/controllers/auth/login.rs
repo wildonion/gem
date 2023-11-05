@@ -59,7 +59,7 @@ pub async fn main(req: Request<Body>) -> MafiaResult<hyper::Response<Body>, hype
                                         match misc::jwt::construct(jwt_payload).await{
                                             Ok(token) => {
                                                 users.update_one(doc!{"username": user_doc.clone().username}, doc!{"$set": {"last_login_time": Some(Utc::now().timestamp())}}, None).await.unwrap();
-                                                let now = Utc::now().timestamp_nanos() / 1_000_000_000; // nano to sec
+                                                let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                                 let user_response = schemas::auth::LoginResponse{
                                                     _id: user_doc._id,
                                                     access_token: token,
