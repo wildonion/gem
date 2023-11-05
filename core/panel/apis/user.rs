@@ -7178,7 +7178,10 @@ pub mod exports{
     // -----------------------------------------------
     /*          chatroom launchpad http+ws apis       */
     // -----------------------------------------------
-    // mint ai generated pictures to users screen_cids
+    // 1 - mint ai generated pictures to users screen_cids
+    // 2 - users can 
+    //      - sell their nfts in the platform 
+    //      - use their nfts as an entry card in different parts of the platform
     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     // https://docs.nftport.xyz/reference/deploy-nft-product-contract
     // https://docs.nftport.xyz/reference/transfer-minted-nft

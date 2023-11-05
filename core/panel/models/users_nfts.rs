@@ -684,9 +684,6 @@ impl UserNft{
                             }
                         }
 
-                    
-
-
                 },
                 Err(e) => {
 
@@ -803,8 +800,8 @@ impl UserNft{
                 // update balance field of royalties_address_screen_cid in each nft sell
                 // if the nft is_listed field was set to true then nft can be sold out to the asset_info.buyer_screen_cid
                 // transfer nft ownership to the asset_info.buyer_screen_cid
-                /* consider royalties process of the contract based on in-app token */
-                // call nftport::mint_nft()
+                /* consider royalties process of the contract based on in-app token using royalties_share amounts */
+                // call nftport::transfer_nft()
                 todo!()
             },
             "like" => {
