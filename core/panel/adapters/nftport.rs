@@ -772,6 +772,15 @@ pub async fn update_collection(
 
 }
 
+pub async fn upload_nft_to_ipfs(
+    redis_client: redis::Client,
+    nft_img_path_on_server: String,
+) -> (String, u8){
+
+    todo!()
+    
+}
+
 pub async fn mint_nft(
     redis_client: redis::Client
 ) -> (String, u8){

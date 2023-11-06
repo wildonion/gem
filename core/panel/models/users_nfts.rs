@@ -458,7 +458,7 @@ impl UserNft{
 
         /* uploading nft image */
         let get_nft_img_path = misc::store_file(
-            NFT_UPLOAD_PATH, &asset_info.contract_address, 
+            NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.nft_name, asset_info.contract_address, asset_info.current_owner_screen_cid), 
             "nft", 
             img).await;
         let Ok(nft_img_path) = get_nft_img_path else{
@@ -817,11 +817,11 @@ impl UserNft{
 
                 /* uploading nft image */
                 let get_nft_img_path = misc::store_file(
-                    NFT_UPLOAD_PATH, &asset_info.contract_address, 
+                    NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.nft_name, asset_info.contract_address, asset_info.current_owner_screen_cid), 
                     "nft", 
                     img).await;
                 let Ok(nft_img_path) = get_nft_img_path else{
-
+        
                     let err_res = get_nft_img_path.unwrap_err();
                     return Err(err_res);
                 };
