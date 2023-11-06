@@ -573,6 +573,7 @@ impl Task{
         }
 
         match tasks
+            .order(tasks::created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<Task>(connection)

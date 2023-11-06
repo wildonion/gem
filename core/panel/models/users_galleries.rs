@@ -1,6 +1,7 @@
 
 
 
+use chrono::NaiveDateTime;
 use wallexerr::Wallet;
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR};
 use crate::misc::Limit;
@@ -401,7 +402,7 @@ impl UserPrivateGallery{
         let inv_frds = gallery.invited_friends;
         let friends_wallet_data = if inv_frds.is_some(){
             let friends_ = inv_frds.unwrap();
-            friends_
+            let mut friends_wallets = friends_
                 .into_iter()
                 .map(|f_scid|{
                     
@@ -421,7 +422,38 @@ impl UserPrivateGallery{
                     }
 
                 })
-                .collect::<Vec<Option<UserWalletInfoResponse>>>()
+                .collect::<Vec<Option<UserWalletInfoResponse>>>();
+
+            /* sorting wallet data in desc order */
+            friends_wallets.sort_by(|fw1, fw2|{
+                /* 
+                    cannot move out of `*fw1` which is behind a shared reference
+                    move occurs because `*fw1` has type `std::option::Option<UserNftData>`, 
+                    which does not implement the `Copy` trait and unwrap() takes the 
+                    ownership of the instance.
+                    also we must create a longer lifetime for `UserNftData::default()` by 
+                    putting it inside a type so we can take a reference to it and pass the 
+                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                */
+                let fw1_default = UserWalletInfoResponse::default();
+                let fw2_default = UserWalletInfoResponse::default();
+                let fw1 = fw1.as_ref().unwrap_or(&fw1_default);
+                let fw2 = fw2.as_ref().unwrap_or(&fw2_default);
+
+                let fw1_created_at = NaiveDateTime
+                    ::parse_from_str(&fw1.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    .unwrap();
+
+                let fw2_created_at = NaiveDateTime
+                    ::parse_from_str(&fw2.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    .unwrap();
+
+                fw2_created_at.cmp(&fw1_created_at)
+
+            });
+
+            friends_wallets // sorted
 
         } else{
             vec![]

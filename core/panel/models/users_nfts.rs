@@ -153,12 +153,17 @@ pub struct InsertNewUserNftRequest{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserReactionData{
+    pub nft_metadata_uri: String,
+    pub nft_onchain_addres: Option<String>,
     pub comments: Vec<NftComment>,
     pub likes: Vec<UserLikeStat>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NftReactionData{
+    pub nft_metadata_uri: String,
+    pub nft_onchain_addres: Option<String>,
+    pub nft_created_at: String,
     pub comments: Vec<NftComment>,
     pub likes: Vec<NftLike>,
 }
@@ -191,6 +196,7 @@ impl UserNft{
 
 
         match users_nfts
+            .order(users_nfts::created_at.desc())
             .offset(from)
             .limit((to - from) + 1)
             .load::<UserNft>(connection)
@@ -257,12 +263,13 @@ impl UserNft{
                             UserReactionData{
                                 comments: owner_comments,
                                 likes: owner_likes,
+                                nft_metadata_uri: nft.metadata_uri,
+                                nft_onchain_addres: nft.onchain_id,
                             }
                         )
                     
     
                     }
-
                      
                     Ok(user_reactions)
 
@@ -297,23 +304,9 @@ impl UserNft{
 
     }
 
-    pub async fn get_all_nft_reactions(nft_onchain_id: &str, limit: web::Query<Limit>, 
+    pub async fn get_all_nft_reactions(nft_onchain_id: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<NftReactionData, PanelHttpResponse>{
-        
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
-
-        if to < from {
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: INVALID_QUERY_LIMIT,
-                status: 406,
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            )
-        }
         
         let get_nft = users_nfts
             .filter(users_nfts::onchain_id.eq(nft_onchain_id))
@@ -365,7 +358,10 @@ impl UserNft{
         Ok(
             NftReactionData{ 
                 comments: this_nft_comments, 
-                likes: this_nft_likes 
+                likes: this_nft_likes,
+                nft_metadata_uri: nft.metadata_uri,
+                nft_onchain_addres: nft.onchain_id,
+                nft_created_at: nft.created_at.to_string(),
             }
         )
 
@@ -505,6 +501,7 @@ impl UserNft{
     
                 // step2
                 // upload the pastel image url in nftport ipfs
+                // then return the ipfs url as the final metadata_uri
     
                 String::from("")
             };
@@ -789,7 +786,7 @@ impl UserNft{
                 // call nftport::transfer_nft()
                 todo!()
             },
-            "sell" => {
+            "sell" => { // update listing
                 
                 // update is_listed field
                 todo!()

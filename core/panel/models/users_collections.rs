@@ -1,6 +1,7 @@
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::NaiveDateTime;
 use wallexerr::Wallet;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_IMAGE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT};
@@ -169,7 +170,7 @@ impl UserCollection{
         };
 
 
-        let minted_ones = decoded_nfts
+        let mut minted_ones = decoded_nfts
             .into_iter()
             .map(|nft|{
                 /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -180,6 +181,35 @@ impl UserCollection{
                 }
             })
             .collect::<Vec<Option<UserNftData>>>();
+        
+        /* sorting nfts in desc order */
+        minted_ones.sort_by(|nft1, nft2|{
+                /* 
+                    cannot move out of `*nft1` which is behind a shared reference
+                    move occurs because `*nft1` has type `std::option::Option<UserNftData>`, 
+                    which does not implement the `Copy` trait and unwrap() takes the 
+                    ownership of the instance.
+                    also we must create a longer lifetime for `UserNftData::default()` by 
+                    putting it inside a type so we can take a reference to it and pass the 
+                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                */
+                let nft1_default = UserNftData::default();
+                let nft2_default = UserNftData::default();
+                let nft1 = nft1.as_ref().unwrap_or(&nft1_default);
+                let nft2 = nft2.as_ref().unwrap_or(&nft2_default);
+
+                let nft1_created_at = NaiveDateTime
+                    ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    .unwrap();
+
+                let nft2_created_at = NaiveDateTime
+                    ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    .unwrap();
+
+                nft2_created_at.cmp(&nft1_created_at)
+
+            });
         
         /*  
             first we need to slice the current vector convert that type into 

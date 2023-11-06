@@ -202,7 +202,7 @@ impl UserFan{
         };        
 
 
-        let unaccepted_ones = decoded_invitation_request_data
+        let mut unaccepted_ones = decoded_invitation_request_data
             .into_iter()
             .map(|inv|{
 
@@ -214,6 +214,30 @@ impl UserFan{
 
             })
             .collect::<Vec<Option<InvitationRequestData>>>();
+
+        /* sorting invitation requests in desc order */
+        unaccepted_ones.sort_by(|inv1, inv2|{
+            /* 
+                cannot move out of `*inv1` which is behind a shared reference
+                move occurs because `*inv1` has type `std::option::Option<UserNftData>`, 
+                which does not implement the `Copy` trait and unwrap() takes the 
+                ownership of the instance.
+                also we must create a longer lifetime for `UserNftData::default()` by 
+                putting it inside a type so we can take a reference to it and pass the 
+                reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                at the end of the `unwrap_or()` statement while we're borrowing it.
+            */
+            let inv1_default = InvitationRequestData::default();
+            let inv2_default = InvitationRequestData::default();
+            let inv1 = inv1.as_ref().unwrap_or(&inv1_default);
+            let inv2 = inv2.as_ref().unwrap_or(&inv2_default);
+
+            let inv1_requested_at = inv1.requested_at;
+            let inv2_requested_at = inv2.requested_at;
+
+            inv2_requested_at.cmp(&inv1_requested_at)
+
+        });
 
         /*  
             first we need to slice the current vector convert that type into 
@@ -273,7 +297,7 @@ impl UserFan{
             vec![]
         };        
 
-        let unaccepted_ones = decoded_friends_data
+        let mut unaccepted_ones = decoded_friends_data
             .into_iter()
             .map(|frd|{
 
@@ -285,6 +309,30 @@ impl UserFan{
 
             })
             .collect::<Vec<Option<FriendData>>>();
+
+        /* sorting friend requests in desc order */
+        unaccepted_ones.sort_by(|frd1, frd2|{
+            /* 
+                cannot move out of `*frd1` which is behind a shared reference
+                move occurs because `*frd1` has type `std::option::Option<UserNftData>`, 
+                which does not implement the `Copy` trait and unwrap() takes the 
+                ownership of the instance.
+                also we must create a longer lifetime for `UserNftData::default()` by 
+                putting it inside a type so we can take a reference to it and pass the 
+                reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                at the end of the `unwrap_or()` statement while we're borrowing it.
+            */
+            let frd1_default = FriendData::default();
+            let frd2_default = FriendData::default();
+            let frd1 = frd1.as_ref().unwrap_or(&frd1_default);
+            let frd2 = frd2.as_ref().unwrap_or(&frd2_default);
+
+            let frd1_requested_at = frd1.requested_at;
+            let frd2_requested_at = frd2.requested_at;
+
+            frd2_requested_at.cmp(&frd1_requested_at)
+
+        });
         
         /*  
             first we need to slice the current vector convert that type into 

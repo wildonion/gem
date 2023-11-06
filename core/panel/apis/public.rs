@@ -496,7 +496,7 @@ async fn check_users_task(
 #[get("/tasks/leaderboard/")]
 async fn tasks_leaderboard(
         req: HttpRequest,
-        limit: web::Path<Limit>,
+        limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
@@ -515,7 +515,7 @@ async fn tasks_leaderboard(
             */
             let connection = &mut pg_pool.get().unwrap();
 
-            match UserTask::all(connection).await{
+            match UserTask::all_with_limit(limit, connection).await{
                 Ok(users_tasks_data) => {
 
                     let mut leaderboard: Vec<FetchUserTaskReport> = vec![];
@@ -526,30 +526,9 @@ async fn tasks_leaderboard(
                         }
                     }
 
-                    let from = limit.from.unwrap_or(0) as usize;
-                    let to = limit.to.unwrap_or(10) as usize;
-
-                    if to < from {
-                        let resp = Response::<'_, &[u8]>{
-                            data: Some(&[]),
-                            message: INVALID_QUERY_LIMIT,
-                            status: 406,
-                        };
-                        return Ok(HttpResponse::NotAcceptable().json(resp));
-                        
-                    }
-
-                    let sliced = if leaderboard.len() > to{
-                        let data = &leaderboard[from..to+1];
-                        data.to_vec()
-                    } else{
-                        let data = &leaderboard[from..leaderboard.len()];
-                        data.to_vec()
-                    };
-
                     resp!{
                         Vec<FetchUserTaskReport>, // the data type
-                        sliced.to_owned(), // response data
+                        leaderboard, // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie

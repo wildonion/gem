@@ -134,7 +134,7 @@ pub struct UserData{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct UserWalletInfoResponse{
     pub username: String,
     pub mail: Option<String>, /* unique */
