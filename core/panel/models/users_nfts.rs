@@ -3,7 +3,8 @@
 
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND};
+use crate::adapters::nftport;
+use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
@@ -87,10 +88,10 @@ pub struct UserNftData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserNftRequest{
     pub caller_cid: String,
-    pub contract_address: String,
-    pub event_type: String,
-    pub amount: i64,
     pub buyer_screen_cid: Option<String>,
+    pub amount: i64, // amount of gas fee for this call
+    pub event_type: String,
+    pub contract_address: String,
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
     pub extra: Option<serde_json::Value>,
@@ -456,7 +457,7 @@ impl UserNft{
             return Err(err_resp);
         };
 
-        /* uploading nft image */
+        /* uploading nft image on server */
         let get_nft_img_path = misc::store_file(
             NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.nft_name, asset_info.contract_address, asset_info.current_owner_screen_cid), 
             "nft", 
@@ -466,6 +467,48 @@ impl UserNft{
             let err_res = get_nft_img_path.unwrap_err();
             return Err(err_res);
         };
+
+
+        /* 
+            upload nft in the background inside tokio green threadpool, the metadata uri
+            must be shared between outside of the threadpool and tokio spawn using 
+            mpsc jobq channel
+        */
+        let mut nft_metadata_uri = String::from("");
+        let (metadata_uri_sender, mut metadata_uri_receiver)
+            = tokio::sync::mpsc::channel::<String>(1024);
+        let asset_data = asset_info.clone();
+        tokio::spawn(async move{
+  
+            let final_metadata_uri = nftport::upload_nft_to_ipfs(
+                redis_client.clone(), 
+                nft_img_path,
+                asset_data
+            ).await;
+
+            if let Err(why) = metadata_uri_sender.clone().send(final_metadata_uri).await{
+                error!("can't send `final_metadata_uri` to the mpsc channel because: {}", why.to_string());
+            }
+
+        });
+
+        /* receiving asyncly from the channel in outside of the tokio spawn */
+        while let Some(uri) = metadata_uri_receiver.recv().await{
+            nft_metadata_uri = uri;
+        }
+
+        if nft_metadata_uri.is_empty(){
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: NFT_UPLOAD_ISSUE,
+                status: 417,
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            );
+
+        }
 
         /* 
             update user balance frist, if anything goes wrong they can call us 
@@ -482,49 +525,11 @@ impl UserNft{
             
         };
 
-        /* 
-            run in the background inside tokio green threadpool and the data
-            must be shared between outside of the threadpool and tokio spawn
-            using mpsc jobq channel
-        */
-        let mut nft_metadata_uri = String::from("");
-        let (metadata_uri_sender, mut metadata_uri_receiver)
-            = tokio::sync::mpsc::channel::<String>(1024);
-        tokio::spawn(async move{
-            
-            let metadata_uri_ = {
-    
-                // step1
-                // upload nft_img_path on pastel using sense and cascade apis: 
-                // paste::sense::detect(), paste::cascade::upload()
-    
-                // step2
-                // upload the pastel image url in nftport ipfs
-                // then return the ipfs url as the final metadata_uri
-
-
-
-                
-    
-                String::from("")
-            };
-
-            if let Err(why) = metadata_uri_sender.clone().send(metadata_uri_).await{
-                error!("can't send `metadata_uri` to the mpsc channel because: {}", why.to_string());
-            }
-
-        });
-
-        /* receiving asyncly from the channel in outside of the tokio spawn */
-        while let Some(uri) = metadata_uri_receiver.recv().await{
-            nft_metadata_uri = uri;
-        }
-
-        /*
-            default values:
-                - is_minted       :‌ false
-                - is_listed       : true
-                - freeze_metadata : false
+        /*  ---------------------------------
+            default values will be stored as:
+                - is_minted       :‌ false ----- by default nft goes to private gallery
+                - is_listed       : true  ----- by default nft is listed and some who has invited to the gallery can mint and buy it
+                - freeze_metadata : false ----- by default nft metadata must not be frozen onchain 
         */
         let new_insert_nft = InsertNewUserNftRequest{
             contract_address: collection_data.clone().contract_address,
@@ -714,7 +719,7 @@ impl UserNft{
     }
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+    /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= NFT OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(asset_info: UpdateUserNftRequest, mut img: Multipart,
         redis_client: redis::Client,
@@ -778,7 +783,9 @@ impl UserNft{
 
                 /* ------- charge user balance for gas fee ------- */
                 // https://docs.nftport.xyz/reference/customizable-minting
+                // use asset_info.metadata_uri as the nft url 
                 // asset_info.onchain_id will be fulfilled after minting
+                // set asset_info.is_minted to true
                 // call nftport::mint_nft()
                 todo!()
             },
@@ -815,7 +822,7 @@ impl UserNft{
             },
             "onchain-update" => {
 
-                /* uploading nft image */
+                /* uploading nft image on server */
                 let get_nft_img_path = misc::store_file(
                     NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.nft_name, asset_info.contract_address, asset_info.current_owner_screen_cid), 
                     "nft", 

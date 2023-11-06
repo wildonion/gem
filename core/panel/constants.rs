@@ -72,7 +72,7 @@ pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static INVALID_TOKEN: &str = "Invalid Token Or Mafia Server Is Down";
 pub static MAFIA_EVENT_IMG_UPDATED: &str = "Mafia Event Image Updated Successfully";
 pub static MAFIA_PLAYER_AVATAR_IMG_UPDATED: &str = "Mafia Player Avatar Image Updated Successfully";
-pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg or .jpeg]";
+pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg, .pdf, .mp4, .mp3, .gif or .jpeg]";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static DO_LOGIN: &str = "Invalid Token Time, Please Login To Generate New JWT";
@@ -119,6 +119,7 @@ pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Calle
 pub static NFT_NOT_OWNED_BY: &str = "NFT Is Not Owned By The Caller Of This Method";
 pub static NFT_ONCHAINID_NOT_FOUND: &str = "NFT With This Onchain Id Not Found, Perhaps Is Not Minted Yet";
 pub static NO_FRIEND_FOUND: &str = "No Friend Found With This Crypto Id";
+pub static NFT_UPLOAD_ISSUE: &str = "Can't Upload Nft Onchain At The Moment, Try Later";
 
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */

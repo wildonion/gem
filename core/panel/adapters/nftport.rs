@@ -3,6 +3,7 @@
 
 use crate::*;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
+use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
@@ -775,14 +776,31 @@ pub async fn update_collection(
 pub async fn upload_nft_to_ipfs(
     redis_client: redis::Client,
     nft_img_path_on_server: String,
-) -> (String, u8){
+    asset_info: NewUserNftRequest
+) -> String{
 
-    todo!()
-    
+    // step1
+    // upload nft_img_path_on_server on pastel using sense and cascade apis: 
+    // paste::sense::detect(), paste::cascade::upload()
+    // --- alternative 
+    // use the https://docs.nftport.xyz/reference/upload-file-to-ipfs to upload the nft_img_path_on_server
+    // on ipfs and get the ipfs_url to fill the file_url
+
+    // step2
+    // fill the name, description, file_url, attributes
+    // put the pastel image url in file_url in https://docs.nftport.xyz/reference/upload-metadata-to-ipfs
+    // use the metadata_uri inside the response as the final uri
+
+    // step 3
+    // return metadata_uri 
+
+    String::from("")
+
 }
 
 pub async fn mint_nft(
-    redis_client: redis::Client
+    redis_client: redis::Client,
+    asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
 
@@ -791,7 +809,8 @@ pub async fn mint_nft(
 }
 
 pub async fn transfer_nft(
-    redis_client: redis::Client
+    redis_client: redis::Client,
+    asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
 
@@ -800,10 +819,12 @@ pub async fn transfer_nft(
 }
 
 pub async fn update_nft(
-    redis_client: redis::Client
+    redis_client: redis::Client,
+    asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
 
+    // update only:
     // metadata_uri
     // freeze_metadata
     // ...

@@ -24,7 +24,10 @@ pub static USER_RATELIMIT: Lazy<HashMap<u64, u64>> = Lazy::new(||{
 
 pub const TASK_TOPIC_CHANNEL: &str = "XTASK";
 
-
+/* 
+    the new task structure that will be used to map the bytes 
+    coming from the redispubsub into this
+*/
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NewTask{
     pub task_name: String,
