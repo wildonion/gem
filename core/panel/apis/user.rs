@@ -7177,13 +7177,12 @@ pub mod exports{
     // -----------------------------------------------
     /*          chatroom launchpad http+ws apis       */
     // -----------------------------------------------
-    // 1 - mint ai generated pictures to users screen_cids
-    // 2 - users can 
+    // 0 - summerize users' chats and generate n titles
+    // 1 - generate n images using ai based on those titles
+    // 2 - mint ai generated pictures to users screen_cids
+    // 3 - users can 
     //      - sell their nfts in the platform 
     //      - use their nfts as an entry card in different parts of the platform
     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
-    // https://docs.nftport.xyz/reference/deploy-nft-product-contract
-    // https://docs.nftport.xyz/reference/transfer-minted-nft
-    // https://docs.nftport.xyz/reference/customizable-minting
     // ...
 }

@@ -190,7 +190,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         bot_flag = discord_bot_flag_receiver.recv() => {
             if let Some(flag) = bot_flag{
                 if flag == true{
-                    info!("🏳️ receiving discord bot true flag");
+                    info!("🏳️ receiving discord bot true flag in tokio event loop");
                     misc::daemon::activate_bot(
                         discord_token.as_str(), 
                         serenity_shards.parse::<u64>().unwrap(), 

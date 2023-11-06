@@ -2,7 +2,7 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-# 🛞 Rust Backend and Engines
+# 🛞 Rust Core Backend Services APIs and Engines
 
 Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** and **Patel Near-duplicate image detection APIs** with the following engines as its core backend: 
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
@@ -15,21 +15,21 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # conse panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server      : postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
-🥛 WEBSOCKET PUSH NOTIFICATION ROUTE ==> wss://notif.panel.conse.app/subscribe/
-🌍 MAIN SITE ==> https://conse.app/
-👨🏻‍⚖️ ADMIN PANEL ==> https://panel.conse.app/
+🥛 WEBSOCKET PUSH NOTIFICATION ROUTE            ==> wss://notif.panel.conse.app/subscribe/
+🌍 MAIN SITE                                    ==> https://conse.app/
+👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/
-🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE ==> https://api.panel.conse.app/mongo
-🗺️ MAFIA API ROUTE ==> https://api.mafia.conse.app/
-📡 SWAGGER DOC ==> https://api.panel.conse.app/swagger/
-🛢️ ADMINER PANEL ==> https://adminer.conse.app
-🛎️ JENKINS PANEL ==> https://jenkins.conse.app
-⛵ PORTAINER PANEL ==> https://portainer.conse.app
-🏦 STRIPE WEBHOOK ENDPOINT ==> https://api.panel.stripewh.conse.app
-🤖 X BOT ==> https://api.xbot.conse.app
-🗞️ PANEL AND XCORD ERROR LOGS ==> https://api.panel.conse.app/logs
-🗂️ PANEL ASSETS FOLDER ==> https://api.panel.conse.app/assets
-🎙️ HOSTED ON ==> Digitalocean
+🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE    ==> https://api.panel.conse.app/mongo
+🗺️ MAFIA API ROUTE                              ==> https://api.mafia.conse.app/
+📡 SWAGGER DOC                                  ==> https://api.panel.conse.app/swagger/
+🛢️ ADMINER PANEL                                ==> https://adminer.conse.app
+🛎️ JENKINS PANEL                                ==> https://jenkins.conse.app
+⛵ PORTAINER PANEL                              ==> https://portainer.conse.app
+🏦 STRIPE WEBHOOK ENDPOINT                      ==> https://api.panel.stripewh.conse.app
+🤖 X BOT                                        ==> https://api.xbot.conse.app
+🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
+🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
+🎙️ HOSTED ON                                    ==> Digitalocean
 ```
 
 ### 🗃️ Directory and Structure Explained

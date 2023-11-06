@@ -203,6 +203,7 @@ macro_rules! storage {
                 format!("redis://{}:{}", redis_host, redis_port)
             };
 
+            /* redis async, none async and actor setup */
             let none_async_redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
             let redis_actor = RedisActor::start(redis_actor_conn_url.as_str());
             let mut redis_conn_builder = ConnectionBuilder::new(redis_host, redis_port as u16).unwrap();

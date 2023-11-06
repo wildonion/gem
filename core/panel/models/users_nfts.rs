@@ -482,7 +482,6 @@ impl UserNft{
             
         };
 
-
         /* 
             run in the background inside tokio green threadpool and the data
             must be shared between outside of the threadpool and tokio spawn
@@ -502,6 +501,10 @@ impl UserNft{
                 // step2
                 // upload the pastel image url in nftport ipfs
                 // then return the ipfs url as the final metadata_uri
+
+
+
+                
     
                 String::from("")
             };
