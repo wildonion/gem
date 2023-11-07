@@ -168,6 +168,7 @@ diesel::table! {
         is_listed -> Nullable<Bool>,
         freeze_metadata -> Nullable<Bool>,
         extra -> Nullable<Jsonb>,
+        attributes -> Nullable<Jsonb>,
         comments -> Nullable<Jsonb>,
         likes -> Nullable<Jsonb>,
         tx_hash -> Nullable<Varchar>,

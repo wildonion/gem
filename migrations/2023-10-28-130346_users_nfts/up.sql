@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users_nfts (
   is_listed BOOLEAN DEFAULT false,
   freeze_metadata BOOLEAN DEFAULT false,
   extra JSONB,
+  attributes JSONB,
   comments JSONB,
   likes JSONB,
   tx_hash VARCHAR DEFAULT NULL,

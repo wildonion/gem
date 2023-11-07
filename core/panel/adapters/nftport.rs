@@ -782,6 +782,7 @@ pub trait NftExt{
     fn get_nft_contract_address(&self) -> String;
     fn get_nft_current_owner_address(&self) -> String;
     fn get_nft_extra(&self) -> Option<serde_json::Value>;
+    fn get_nft_attribute(&self) -> Option<serde_json::Value>;
     fn get_self(self) -> Self::AssetInfo;
 }
 
@@ -794,7 +795,7 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let nft_name_ = asset_info.get_nft_name();
     let nft_description_ = asset_info.get_nft_description();
-    let nft_attributes = asset_info.get_nft_extra();
+    let nft_attributes = serde_json::to_string_pretty(&asset_info.get_nft_attribute().unwrap()).unwrap();
 
     let asset_info = asset_info.get_self();
 

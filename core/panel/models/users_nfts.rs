@@ -36,6 +36,7 @@ pub struct UserNft{
     pub is_listed: Option<bool>,
     pub freeze_metadata: Option<bool>,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub comments: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub likes: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub tx_hash: Option<String>,
@@ -71,6 +72,7 @@ pub struct UserNftData{
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
     pub extra: Option<serde_json::Value>,
+    pub attributes: Option<serde_json::Value>,
     pub onchain_id: Option<String>,
     pub nft_name: String,
     pub is_minted: Option<bool>,
@@ -96,6 +98,7 @@ pub struct UpdateUserNftRequest{
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
     pub extra: Option<serde_json::Value>,
+    pub attributes: Option<serde_json::Value>,
     pub onchain_id: Option<String>, 
     pub nft_name: String,
     pub is_minted: Option<bool>,
@@ -116,7 +119,8 @@ pub struct UpdateUserNft{
     pub current_owner_screen_cid: String,
     pub metadata_uri: String,
     pub extra: Option<serde_json::Value>,
-    pub onchain_id: Option<String>, 
+    pub attributes: Option<serde_json::Value>,
+    pub onchain_id: Option<String>,
     pub nft_name: String,
     pub is_minted: Option<bool>,
     pub nft_description: String,
@@ -138,6 +142,7 @@ pub struct NewUserNftRequest{
     pub nft_description: String,
     pub current_price: i64,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -170,6 +175,10 @@ impl NftExt for NewUserNftRequest{
         self
     }
 
+    fn get_nft_attribute(&self) -> Option<serde_json::Value> {
+        self.attributes.clone()
+    }
+
 }
 
 impl NftExt for UpdateUserNftRequest{
@@ -198,6 +207,10 @@ impl NftExt for UpdateUserNftRequest{
     fn get_self(self) -> Self::AssetInfo {
         self
     }
+
+    fn get_nft_attribute(&self) -> Option<serde_json::Value> {
+        self.attributes.clone()
+    }
     
 }
 
@@ -211,6 +224,7 @@ pub struct InsertNewUserNftRequest{
     pub nft_description: String,
     pub current_price: i64,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -480,7 +494,8 @@ impl UserNft{
                 likes: nft.likes, 
                 tx_hash: nft.tx_hash, 
                 created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string() 
+                updated_at: nft.updated_at.to_string(),
+                attributes: nft.attributes, 
             }
         )
 
@@ -525,7 +540,8 @@ impl UserNft{
                 likes: nft.likes, 
                 tx_hash: nft.tx_hash, 
                 created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string() 
+                updated_at: nft.updated_at.to_string(),
+                attributes: nft.attributes, 
             }
         )
 
@@ -619,6 +635,7 @@ impl UserNft{
             nft_description: asset_info.nft_description,
             current_price: asset_info.current_price,
             extra: asset_info.extra,
+            attributes: asset_info.attributes,
         };
 
         /* inserting new nft */
@@ -647,6 +664,7 @@ impl UserNft{
                         tx_hash: fetched_nft_data.clone().tx_hash,
                         created_at: fetched_nft_data.clone().created_at.to_string(),
                         updated_at: fetched_nft_data.clone().updated_at.to_string(),
+                        attributes: fetched_nft_data.attributes,
                     };
 
                     /* updating collection data with newly nft */
@@ -820,6 +838,7 @@ impl UserNft{
             comments: udpate_nft_request.comments,
             likes: udpate_nft_request.likes,
             tx_hash: udpate_nft_request.tx_hash,
+            attributes: udpate_nft_request.attributes,
         };
         
         /* inserting new nft */
@@ -848,6 +867,7 @@ impl UserNft{
                         tx_hash: fetched_nft_data.clone().tx_hash,
                         created_at: fetched_nft_data.clone().created_at.to_string(),
                         updated_at: fetched_nft_data.clone().updated_at.to_string(),
+                        attributes: fetched_nft_data.attributes,
                     };
 
                     /* updating collection data with newly nft */
@@ -1079,7 +1099,7 @@ impl UserNft{
             likes: {
 
                 let nft_likes = nft_data.likes;
-                let mut decoded_likes = if nft_likes.is_some(){
+                let decoded_likes = if nft_likes.is_some(){
                     serde_json::from_value::<Vec<NftLike>>(nft_likes.unwrap()).unwrap()
                 } else{
                     vec![]
@@ -1153,6 +1173,7 @@ impl UserNft{
             tx_hash: nft_data.tx_hash,
             tx_signature: String::from(""),
             hash_data: String::from(""),
+            attributes: nft_data.attributes,
         };
 
 
