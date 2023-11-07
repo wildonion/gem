@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users_nfts (
   nft_description VARCHAR NOT NULL,
   is_minted BOOLEAN DEFAULT false,
   current_price BIGINT DEFAULT 0,
-  is_listed BOOLEAN DEFAULT true,
+  is_listed BOOLEAN DEFAULT false,
   freeze_metadata BOOLEAN DEFAULT false,
   extra JSONB,
   comments JSONB,

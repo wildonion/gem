@@ -3954,7 +3954,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false, // backend will update this\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\",\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3971,7 +3971,84 @@
 												"update"
 											]
 										},
-										"description": "**Event Type:**\n\n- mint\n    \n- transfer\n    \n- sell\n    \n- buy\n    \n- comment\n    \n- like\n    \n- dislike\n    \n- onchain-update"
+										"description": "**Event Type (NFT Owner & Creator Only):**\n\n- mint\n- transfer\n- sell\n- update"
+									},
+									"response": []
+								},
+								{
+									"name": "Buy NFT",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 10,\n    \"event_type\": \"buy\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/nft/buy",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"nft",
+												"buy"
+											]
+										},
+										"description": "**Event Type:**\n\n- buy"
+									},
+									"response": []
+								},
+								{
+									"name": "Add Reaction To NFT",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"nft_onchain_id\": \"\",\n    \"reaction_type\": \"comment\",\n    \"comment_content\": \"a very wild comment\",\n    \"is_like_upvote\": null,\n    \"is_like_downvote\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/nft/add/reaction",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"nft",
+												"add",
+												"reaction"
+											]
+										},
+										"description": "**Reaction Type:**\n\n- comment\n    \n- like\n    \n- dislike"
 									},
 									"response": []
 								},

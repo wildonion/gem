@@ -3,7 +3,7 @@
 
 use chrono::NaiveDateTime;
 use wallexerr::Wallet;
-use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR};
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER};
 use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
@@ -534,7 +534,7 @@ impl UserPrivateGallery{
 
             let resp = Response{
                 data: Some(gallery_owner),
-                message: NO_GALLERY_FOUND_FOR,
+                message: NO_GALLERY_FOUND_FOR_COL_OWNER,
                 status: 404,
             };
             return Err(
@@ -543,6 +543,60 @@ impl UserPrivateGallery{
 
         };
 
+
+        for gallery in galleries_info{
+            
+            let cols = gallery.collections.clone();
+            let decoded_cols = if cols.is_some(){
+                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+            } else{
+                vec![]
+            };
+
+            for col in decoded_cols{
+                if col.contract_address == col_contract_address.to_string(){
+
+                    return Ok(
+                        UserPrivateGalleryData{ 
+                            id: gallery.id, 
+                            owner_screen_cid: gallery.owner_screen_cid, 
+                            collections: gallery.collections, 
+                            gal_name: gallery.gal_name, 
+                            gal_description: gallery.gal_description, 
+                            invited_friends: gallery.invited_friends, 
+                            extra: gallery.extra, 
+                            created_at: gallery.created_at.to_string(), 
+                            updated_at: gallery.updated_at.to_string() 
+                        }
+                    )
+                }
+            }
+
+        }
+
+        Ok(UserPrivateGalleryData::default())
+
+    }
+
+    pub async fn find_by_contract_address(col_contract_address: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let galleries_data = users_galleries
+            .load::<UserPrivateGallery>(connection);
+
+        let Ok(galleries_info) = galleries_data else{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: NO_GALLERY_FOUND,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
 
         for gallery in galleries_info{
             

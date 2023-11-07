@@ -96,16 +96,16 @@ cargo run --bin contest
 > before going for production, make make sure that you have the `conse.app` domain and the following subdomains are enabled in DNS panel and is pointing to the machine where the `gem` services codes are hosted on, note that for every new (sub)domain inside the VPS there must be a new nginx config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name which can be setup by running `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
 ```bash
-conse.app #---> this main domain is related to the home UI of the app
-api.mafia.conse.app #---> points to the conse mafia hyper APIs
-api.panel.conse.app #----> points to the conse actix APIs
-panel.conse.app #---> points to the panel UI
-notif.panel.conse.app #---> points to the websocket push notification server APIs
-adminer.conse.app #---> points to the adminer UI
-jenkins.conse.app #---> points to the jenkins UI
-portainer.conse.app #---> points to the portainer UI
+conse.app                    #---> this main domain is related to the home UI of the app
+api.mafia.conse.app          #---> points to the conse mafia hyper APIs
+api.panel.conse.app          #----> points to the conse actix APIs
+panel.conse.app              #---> points to the panel UI
+notif.panel.conse.app        #---> points to the websocket push notification server APIs
+adminer.conse.app            #---> points to the adminer UI
+jenkins.conse.app            #---> points to the jenkins UI
+portainer.conse.app          #---> points to the portainer UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
-api.xbot.conse.app #---> twitter bot to verify twitter tasks 
+api.xbot.conse.app           #---> twitter bot to verify twitter tasks 
 ```
 
 > keep in mind that multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:

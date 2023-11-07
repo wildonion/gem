@@ -111,16 +111,25 @@ pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
 pub static NO_GALLERY_FOUND: &str = "No Gallery Found";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
 pub static NO_GALLERY_FOUND_FOR: &str = "No Gallery Found For This User";
+pub static NO_GALLERY_FOUND_FOR_COL_OWNER: &str = "No Gallery Found For This Collection Owner";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
+pub static NFT_NOT_FOUND_OF: &str = "No Nft Found With This Onchain Id";
 pub static COLLECTION_NOT_FOUND_FOR_CONTRACT: &str = "No Collection Found With This Contract Address";
 pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Caller Of This Method";
 pub static NFT_NOT_OWNED_BY: &str = "NFT Is Not Owned By The Caller Of This Method";
 pub static NFT_ONCHAINID_NOT_FOUND: &str = "NFT With This Onchain Id Not Found, Perhaps Is Not Minted Yet";
 pub static NO_FRIEND_FOUND: &str = "No Friend Found With This Crypto Id";
 pub static NFT_UPLOAD_ISSUE: &str = "Can't Upload Nft Onchain At The Moment, Try Later";
-
+pub static CANT_MINT_NFT: &str = "Can't Mint The Nft At The Moment, Try Later";
+pub static CANT_TRANSFER_NFT: &str = "Can't Transfer The Nft At The Moment, Try Later";
+pub static CANT_UPDATE_NFT: &str = "Can't Update Nft At The Moment, Try Later";
+pub static INVALID_NFT_EVENT_TYPE: &str = "Invalid Nft Event Type";
+pub static NFT_IS_NOT_MINTED_YET: &str = "Nft Must Be Minted First";
+pub static NFT_IS_ALREADY_LISTED: &str = "Nft Is Already Listed";
+pub static NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED: &str = "This Event Type Requires Valid `transfer_to_screen_cid` Field To Be Filled Up";
+pub static NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED: &str = "This Event Type Requires Valid `metadata_uri` Field To Be Filled Up";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";

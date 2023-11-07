@@ -2,13 +2,15 @@
 
 
 use crate::*;
+use crate::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
+use crate::schema::users_nfts::nft_description;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -773,11 +775,28 @@ pub async fn update_collection(
 
 }
 
-pub async fn upload_nft_to_ipfs(
+pub trait NftExt{
+    type AssetInfo;
+    fn get_nft_name(&self) -> String;
+    fn get_nft_description(&self) -> String;
+    fn get_nft_contract_address(&self) -> String;
+    fn get_nft_current_owner_address(&self) -> String;
+    fn get_nft_extra(&self) -> Option<serde_json::Value>;
+    fn get_self(self) -> Self::AssetInfo;
+}
+
+pub async fn upload_nft_to_ipfs<N>(
     redis_client: redis::Client,
     nft_img_path_on_server: String,
-    asset_info: NewUserNftRequest
-) -> String{
+    asset_info: N
+) -> String where N: NftExt + Clone + Send + Sync + 'static{
+
+
+    let nft_name_ = asset_info.get_nft_name();
+    let nft_description_ = asset_info.get_nft_description();
+    let nft_attributes = asset_info.get_nft_extra();
+
+    let asset_info = asset_info.get_self();
 
     // step1
     // upload nft_img_path_on_server on pastel using sense and cascade apis: 
@@ -801,10 +820,12 @@ pub async fn upload_nft_to_ipfs(
 pub async fn mint_nft(
     redis_client: redis::Client,
     asset_info: UpdateUserNftRequest
-) -> (String, u8){
+) -> (String, String, u8){
 
+    // https://docs.nftport.xyz/reference/customizable-minting
 
-    todo!()
+    // mint tx hash, token id, status
+    (String::from(""), String::from(""), 1)
 
 }
 
@@ -813,8 +834,10 @@ pub async fn transfer_nft(
     asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
+    // https://docs.nftport.xyz/reference/transfer-minted-nft
 
-    todo!()
+    // transfer tx hash, status
+    (String::from(""), 1)
 
 }
 
@@ -823,12 +846,80 @@ pub async fn update_nft(
     asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
+    // https://docs.nftport.xyz/reference/update-minted-nft
 
+    // update tx hash, status
     // update only:
     // metadata_uri
     // freeze_metadata
     // ...
 
-    todo!()
+    (String::from(""), 1)
+
+}
+
+/* 
+    we've defined the asset_info as a generic type and bound it to NftExt trait to get those
+    data fields that we need to store nft image onchain by calling trait methods on either 
+    NewUserNftRequest (insert new nft) or UpdateUserNftRequest (update nft) instances
+*/
+pub async fn get_nft_onchain_metadata_uri<N>(
+    img: Multipart, redis_client: redis::Client, 
+    asset_info: N) -> Result<String, PanelHttpResponse>
+    where N: NftExt + Clone + Send + Sync + 'static{
+
+    /* uploading nft image on server */
+    let get_nft_img_path = misc::store_file(
+        NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.get_nft_name(), asset_info.get_nft_contract_address(), asset_info.get_nft_current_owner_address()), 
+        "nft", 
+        img).await;
+    let Ok(nft_img_path) = get_nft_img_path else{
+
+        let err_res = get_nft_img_path.unwrap_err();
+        return Err(err_res);
+    };
+
+    /* 
+        upload nft in the background inside tokio green threadpool, the metadata uri
+        must be shared between outside of the threadpool and tokio spawn using 
+        mpsc jobq channel
+    */
+    let mut nft_metadata_uri = String::from("");
+    let (metadata_uri_sender, mut metadata_uri_receiver)
+        = tokio::sync::mpsc::channel::<String>(1024);
+    let asset_data = asset_info.clone();
+    tokio::spawn(async move{
+
+        let final_metadata_uri = self::upload_nft_to_ipfs(
+            redis_client.clone(), 
+            nft_img_path,
+            asset_data
+        ).await;
+
+        if let Err(why) = metadata_uri_sender.clone().send(final_metadata_uri).await{
+            error!("can't send `final_metadata_uri` to the mpsc channel because: {}", why.to_string());
+        }
+
+    });
+
+    /* receiving asyncly from the channel in outside of the tokio spawn */
+    while let Some(uri) = metadata_uri_receiver.recv().await{
+        nft_metadata_uri = uri;
+    }
+
+    if nft_metadata_uri.is_empty(){
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: NFT_UPLOAD_ISSUE,
+            status: 417,
+        };
+        return Err(
+            Ok(HttpResponse::ExpectationFailed().json(resp))
+        );
+
+    }
+
+    Ok(nft_metadata_uri)
 
 }
