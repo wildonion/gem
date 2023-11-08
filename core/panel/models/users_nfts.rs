@@ -1269,9 +1269,9 @@ impl UserNft{
                         
                     }
                     
-                    /* ----------------------------------------------------------------------------- */
-                    /* transferring the ownership of the nft to the buy_nft_request.buyer_screen_cid */
-                    /* ----------------------------------------------------------------------------- */
+                    /* ----------------------------------------------------- */
+                    /* ------- transferring the ownership of the nft ------- */
+                    /* ----------------------------------------------------- */
                     let (new_tx_hash, status) = 
                         nftport::transfer_nft(
                             redis_client.clone(), 
@@ -1309,10 +1309,12 @@ impl UserNft{
                         return Err(err_resp);
                     };
                     
+                    /* ---------------------------------------------------------------------------- */
                     /*                  calculating royalty for collection
                         since royalties_address_screen_cid is heap data thus by getting this field 
                         the collection_data instance will be moved, we should clone it 
                     */
+                    /* ---------------------------------------------------------------------------- */
                     let nft_price = get_nft_price.unwrap() as f64;
                     let royalty_bps = (royalty as f64 / 100.0) as f64;
                     let percent = percentage::Percentage::from_decimal(royalty_bps);

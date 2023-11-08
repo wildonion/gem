@@ -1566,7 +1566,7 @@ async fn charge_wallet_request(
                                     note that we don't store the product, price and session data
                                     response came from stripe in db cause later on we can fetch 
                                     a single data of either product, price or checkout session 
-                                    using stripe api.
+                                    using stripe api or can be viewable in stripe dashboard
                                     ------------------------------------------------------------- */
                                 let product = create_product(
                                     redis_client.clone(), 
