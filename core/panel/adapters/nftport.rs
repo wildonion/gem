@@ -825,19 +825,20 @@ pub async fn mint_nft(
 
     // https://docs.nftport.xyz/reference/customizable-minting
 
-    // mint tx hash, token id, status
+    // return mint tx hash, token id, status
     (String::from(""), String::from(""), 1)
 
 }
 
 pub async fn transfer_nft(
     redis_client: redis::Client,
-    asset_info: UpdateUserNftRequest
+    asset_info: UpdateUserNftRequest,
+    transfer_to_screen: String,
 ) -> (String, u8){
 
     // https://docs.nftport.xyz/reference/transfer-minted-nft
 
-    // transfer tx hash, status
+    // return transfer tx hash, status
     (String::from(""), 1)
 
 }
@@ -849,7 +850,7 @@ pub async fn update_nft(
 
     // https://docs.nftport.xyz/reference/update-minted-nft
 
-    // update tx hash, status
+    // return update tx hash, status
     // update only:
     // metadata_uri
     // freeze_metadata
@@ -859,7 +860,7 @@ pub async fn update_nft(
 
 }
 
-/* 
+/*  -----------------------------------------------------------------------------------------
     we've defined the asset_info as a generic type and bound it to NftExt trait to get those
     data fields that we need to store nft image onchain by calling trait methods on either 
     NewUserNftRequest (insert new nft) or UpdateUserNftRequest (update nft) instances
@@ -897,6 +898,10 @@ pub async fn get_nft_onchain_metadata_uri<N>(
             asset_data
         ).await;
 
+        /* 
+            sending the final_metadata_uri into the mpsc channel so we can receive it 
+            in other scopes outside of tokio::spawn green threadpool
+        */
         if let Err(why) = metadata_uri_sender.clone().send(final_metadata_uri).await{
             error!("can't send `final_metadata_uri` to the mpsc channel because: {}", why.to_string());
         }

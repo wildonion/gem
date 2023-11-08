@@ -7199,6 +7199,7 @@ async fn buy_nft(
 
                         match UserNft::buy_nft(
                             user_buy_nft_request,
+                            redis_client.clone(),
                             connection).await{
                             Ok(user_nft_data) => {
 

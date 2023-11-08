@@ -68,6 +68,18 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 > you can download runtime crashing error logs throught the address `https://api.panel.conse.app/logs` also after setting up the `portainer`, each container logs can be downloaded inside the panel, also makre sure that you've installed the following packages on **MacOS M1**:
 
 ```bash
+wget https://github.com/pastelnetwork/pastelup/releases/download/v1.1.3/pastelup-linux-amd64
+chmod 755 pastelup-linux-amd64
+./pastelup-linux-amd64 install node latest
+./pastelup-linux-amd64 start node
+cd pastel && ./pastel-cli getconnectioncount
+./pastel-cli getnewaddress
+./pastel-cli dumpprivkey <address you just printed>
+./pastel-cli importprivkey <private key you just printed>
+./pastel-cli pastelid newkey "<passphrase>"
+./pastelup-linux-amd64 install walletnode latest
+./pastelup-linux-amd64 start walletnode
+./pastel-cli tickets register id personal <pastelid> <passphrase> <address>
 brew tap cossacklabs/tap
 brew install openjdk
 brew install pkg-config
