@@ -7708,6 +7708,10 @@ pub mod exports{
     pub use super::get_all_user_fans_data_for;
     pub use super::get_all_user_reactions; /**** all user comments, likes and dislikes ****/
     pub use super::get_all_nft_reactions; /**** all nft comments, likes and dislikes ****/
+    pub use super::get_all_nfts_owned_by; // https://docs.nftport.xyz/reference/retrieve-nfts-owned-by-account
+    pub use super::get_all_contracts_owned_by; // https://docs.nftport.xyz/reference/retrieve-contracts-owned-by-account
+    pub use super::get_all_transactions_for_nft; // https://docs.nftport.xyz/reference/retrieve-transactions-owned-by-nft
+    pub use super::get_all_transactions_for_contract; // https://docs.nftport.xyz/reference/retrieve-transactions-owned-by-account 
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::verify_twitter_account;
