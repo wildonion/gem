@@ -64,6 +64,15 @@ pub struct NftPortTransferResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftPortUpdateNftResponse{
+    pub response: String,
+    pub chain: String,
+    pub contract_address: String,
+    pub transaction_hash: String,
+    pub transaction_external_url: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortCreateCollectionContractResponse{
     pub response: String,
     pub chain: String,
@@ -783,6 +792,7 @@ pub trait NftExt{
     fn get_nft_current_owner_address(&self) -> String;
     fn get_nft_extra(&self) -> Option<serde_json::Value>;
     fn get_nft_attribute(&self) -> Option<serde_json::Value>;
+    fn get_recipient_screen_cid(&self) -> String;
     fn get_self(self) -> Self::AssetInfo;
 }
 
@@ -799,6 +809,8 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let asset_info = asset_info.get_self();
 
+
+    
     // step1
     // upload nft_img_path_on_server on pastel using sense and cascade apis: 
     // paste::sense::detect(), paste::cascade::upload()
@@ -814,6 +826,8 @@ pub async fn upload_nft_to_ipfs<N>(
     // step 3
     // return metadata_uri 
 
+
+
     String::from("")
 
 }
@@ -823,23 +837,261 @@ pub async fn mint_nft(
     asset_info: UpdateUserNftRequest
 ) -> (String, String, u8){
 
-    // https://docs.nftport.xyz/reference/customizable-minting
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    
+    /* upload card to ipfs */
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    // return mint tx hash, token id, status
-    (String::from(""), String::from(""), 1)
+    if !asset_info.metadata_uri.is_empty(){
+
+        let metadata_uri = asset_info.metadata_uri;
+
+        /* mint request */
+        let mut mint_data = HashMap::new();
+        mint_data.insert("chain", "polygon");
+        mint_data.insert("contract_address", &asset_info.contract_address);
+        mint_data.insert("metadata_uri", &metadata_uri);
+        mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
+        let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+        let res = reqwest::Client::new()
+            .post(nftport_mint_endpoint.as_str())
+            .header("Authorization", nftport_token.as_str())
+            .json(&mint_data)
+            .send()
+            .await;
+
+
+        /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+            since text() and json() method take the ownership of the instance
+            thus can't call text() method on ref_resp which is behind a shared ref 
+            cause it'll be moved.
+            
+            let ref_resp = res.as_ref().unwrap();
+            let text_resp = ref_resp.text().await.unwrap();
+
+            to solve this issue first we get the stream of the response chunk
+            then map it to the related struct, after that we can handle logging
+            and redis caching process without losing ownership of things!
+        */
+        let get_mint_response = &mut res.unwrap();
+        let get_mint_response_bytes = get_mint_response.chunk().await.unwrap();
+        let err_resp_vec = get_mint_response_bytes.unwrap().to_vec();
+        let get_mint_response_json = serde_json::from_slice::<NftPortMintResponse>(&err_resp_vec);
+        /* 
+            if we're here means that we couldn't map the bytes into the NftPortMintResponse 
+            and perhaps we have errors in response from the nftport service
+        */
+        if get_mint_response_json.is_err(){
+                
+            /* log caching using redis */
+            let cloned_err_resp_vec = err_resp_vec.clone();
+            let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+            let mint_logs_key_err = format!("ERROR=>NftPortMintResponse|Time:{}", chrono::Local::now().to_string());
+            let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str).await;
+
+            /* custom error handler */
+            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::mint_nft");
+            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+            return (String::from(""), String::from(""), 1);
+
+        }
+
+        /* log caching using redis */
+        let mint_response = get_mint_response_json.unwrap();
+        info!("✅ NftPortMintResponse: {:#?}", mint_response.clone());
+        let mint_logs_key = format!("Minter:{}|Log:NftPortMintResponse|Time:{}", asset_info.current_owner_screen_cid.clone(), chrono::Local::now().to_string());
+        let _: RedisResult<String> = redis_conn.set(mint_logs_key, serde_json::to_string_pretty(&mint_response).unwrap()).await;
+        
+
+        if mint_response.response == String::from("OK"){
+
+            let mint_tx_hash = mint_response.transaction_hash;
+
+            /* sleep till the transaction gets confirmed on blockchain */
+            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+
+            let token_id_string = {
+    
+                /* get minted nft info */
+                let nftport_get_nft_endpoint = format!("https://api.nftport.xyz/v0/mints/{}?chain=polygon", mint_tx_hash);
+                let res = reqwest::Client::new()
+                    .get(nftport_get_nft_endpoint.as_str())
+                    .header("Authorization", nftport_token.as_str())
+                    .send()
+                    .await;
+
+
+                /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+                    since text() and json() method take the ownership of the instance
+                    thus can't call text() method on ref_resp which is behind a shared ref 
+                    cause it'll be moved.
+                    
+                    let ref_resp = res.as_ref().unwrap();
+                    let text_resp = ref_resp.text().await.unwrap();
+
+                    to solve this issue first we get the stream of the response chunk
+                    then map it to the related struct, after that we can handle logging
+                    and redis caching process without losing ownership of things!
+                */
+                let get_nft_response = &mut res.unwrap();
+                let get_nft_response_bytes = get_nft_response.chunk().await.unwrap();
+                let err_resp_vec = get_nft_response_bytes.unwrap().to_vec();
+                let get_nft_response_json = serde_json::from_slice::<NftPortGetNftResponse>(&err_resp_vec);
+                /* 
+                    if we're here means that we couldn't map the bytes into the NftPortGetNftResponse 
+                    and perhaps we have errors in response from the nftport service
+                */
+                if get_nft_response_json.is_err(){
+                        
+                    /* log caching using redis */
+                    let cloned_err_resp_vec = err_resp_vec.clone();
+                    let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+                    let get_nft_logs_key_err = format!("ERROR=>NftPortGetNftResponse|Time:{}", chrono::Local::now().to_string());
+                    let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
+
+                    /* custom error handler */
+                    use error::{ErrorKind, ThirdPartyApiError, PanelError};
+                    let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::mint_nft");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    return (String::from(""), String::from(""), 1);
+
+                }
+
+                /* log caching using redis */
+                let get_nft_response = get_nft_response_json.unwrap();
+                info!("✅ NftPortGetNftResponse: {:#?}", get_nft_response.clone());
+                let get_nft_logs_key = format!("Minter:{}|Log:NftPortGetNftResponse|Time:{}", asset_info.current_owner_screen_cid.clone(), chrono::Local::now().to_string());
+                let _: RedisResult<String> = redis_conn.set(get_nft_logs_key, serde_json::to_string_pretty(&get_nft_response).unwrap()).await;
+
+
+                if get_nft_response.response == String::from("OK"){
+
+                    let token_id = get_nft_response.token_id;
+                    info!("✅ Nft Minted With Id: {}", token_id.clone());
+                    info!("✅ Nft Is Inside Contract: {}", asset_info.contract_address.clone());
+
+                    token_id
+                    
+
+                } else{
+                    String::from("")
+                }
+            
+            };
+            
+            if mint_tx_hash.starts_with("0x"){
+                return (mint_tx_hash, token_id_string, 0);
+            } else{
+                return (String::from(""), String::from(""), 1);
+            }
+
+        } else{
+
+            /* mint wasn't ok */
+            return (String::from(""), String::from(""), 1);
+        }
+
+    } else{
+
+        /* upload in ipfs wasn't ok */
+        return (String::from(""), String::from(""), 1);
+
+    }
 
 }
 
 pub async fn transfer_nft(
     redis_client: redis::Client,
     asset_info: UpdateUserNftRequest,
-    transfer_to_screen: String,
 ) -> (String, u8){
 
-    // https://docs.nftport.xyz/reference/transfer-minted-nft
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    // return transfer tx hash, status
-    (String::from(""), 1)
+    let transfer_to = asset_info.get_recipient_screen_cid();
+
+    if transfer_to.is_empty(){
+        return (String::from(""), 1);
+    }
+
+    let contract_address = asset_info.clone().contract_address;
+    let token_id = asset_info.clone().onchain_id.unwrap();
+
+    let mut transfer_data = HashMap::new();
+    transfer_data.insert("chain", "polygon");
+    transfer_data.insert("contract_address", &contract_address);
+    transfer_data.insert("token_id", &token_id);
+    transfer_data.insert("transfer_to_address", &transfer_to);
+    let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/mints/transfers");
+    let res = reqwest::Client::new()
+        .post(nftport_transfer_endpoint.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .json(&transfer_data)
+        .send()
+        .await;
+
+    /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_transfer_response = &mut res.unwrap();
+    let get_transfer_response_bytes = get_transfer_response.chunk().await.unwrap();
+    let err_resp_vec = get_transfer_response_bytes.unwrap().to_vec();
+    let get_transfer_response_json = serde_json::from_slice::<NftPortTransferResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortTransferResponse 
+        and perhaps we have errors in response from the nftport service
+    */
+    if get_transfer_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let transfer_nft_logs_key_err = format!("ERROR=>NftPortTransferResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::transfer_nft");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+        
+        return (String::from(""), 1);
+
+    }
+
+    /* log caching using redis */
+    let transfer_response = get_transfer_response_json.unwrap();
+    info!("✅ NftPortTransferResponse: {:#?}", transfer_response.clone());
+    let transfer_nft_logs_key = format!("TokenId:{}|Log:NftPortTransferResponse|Time:{}", token_id, chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(transfer_nft_logs_key, serde_json::to_string_pretty(&transfer_response).unwrap()).await;
+
+
+    if transfer_response.response == String::from("OK"){
+
+        let transfer_tx_hash = transfer_response.transaction_hash;
+
+        if transfer_tx_hash.starts_with("0x"){
+            return (transfer_tx_hash, 0);
+        } else{
+            return (String::from(""), 1);
+        }
+
+    } else{
+        
+        return (String::from(""), 1);
+
+    }
 
 }
 
@@ -848,22 +1100,97 @@ pub async fn update_nft(
     asset_info: UpdateUserNftRequest
 ) -> (String, u8){
 
-    // https://docs.nftport.xyz/reference/update-minted-nft
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    // return update tx hash, status
-    // update only:
-    // metadata_uri
-    // freeze_metadata
-    // ...
+    let contract_address = asset_info.clone().contract_address;
+    let token_id = asset_info.clone().onchain_id.unwrap();
+    let metadata_uri = asset_info.clone().metadata_uri;
+    let freeze_metadata = format!("{}", asset_info.clone().freeze_metadata.unwrap());
 
-    (String::from(""), 1)
+    let mut update_data = HashMap::new();
+    update_data.insert("chain", "polygon");
+    update_data.insert("contract_address", &contract_address);
+    update_data.insert("token_id", &token_id);
+    update_data.insert("metadata_uri", &metadata_uri);
+    update_data.insert("freeze_metadata", &freeze_metadata);
+    let nftport_update_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
+    let res = reqwest::Client::new()
+        .put(nftport_update_endpoint.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .json(&update_data)
+        .send()
+        .await;
+
+    /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_update_response = &mut res.unwrap();
+    let get_update_response_bytes = get_update_response.chunk().await.unwrap();
+    let err_resp_vec = get_update_response_bytes.unwrap().to_vec();
+    let get_update_response_json = serde_json::from_slice::<NftPortUpdateNftResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortUpdateNftResponse 
+        and perhaps we have errors in response from the nftport service
+    */
+    if get_update_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let update_nft_logs_key_err = format!("ERROR=>NftPortUpdateNftResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(update_nft_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::update_nft");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+        
+        return (String::from(""), 1);
+
+    }
+
+    /* log caching using redis */
+    let update_response = get_update_response_json.unwrap();
+    info!("✅ NftPortUpdateNftResponse: {:#?}", update_response.clone());
+    let update_nft_logs_key = format!("TokenId:{}|Log:NftPortUpdateNftResponse|Time:{}", token_id, chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(update_nft_logs_key, serde_json::to_string_pretty(&update_response).unwrap()).await;
+
+
+    if update_response.response == String::from("OK"){
+
+        let update_tx_hash = update_response.transaction_hash;
+
+        if update_tx_hash.starts_with("0x"){
+            return (update_tx_hash, 0);
+        } else{
+            return (String::from(""), 1);
+        }
+
+    } else{
+        
+        return (String::from(""), 1);
+
+    }
+
 
 }
 
 /*  -----------------------------------------------------------------------------------------
     we've defined the asset_info as a generic type and bound it to NftExt trait to get those
     data fields that we need to store nft image onchain by calling trait methods on either 
-    NewUserNftRequest (insert new nft) or UpdateUserNftRequest (update nft) instances
+    NewUserNftRequest (insert new nft) or UpdateUserNftRequest (update nft) instances cause
+    both of these two structures have the fields that we want it but don't know which one is
+    going to be passed to the method!
 */
 pub async fn get_nft_onchain_metadata_uri<N>(
     img: Multipart, redis_client: redis::Client, 

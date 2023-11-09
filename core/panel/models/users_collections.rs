@@ -592,6 +592,17 @@ impl UserCollection{
             )
         }
 
+        /* uploading collection image */
+        let get_collection_img_path = misc::store_file(
+            COLLECTION_UPLOAD_PATH, &caller_screen_cid, 
+            "collection", 
+            img).await;
+        let Ok(collection_img_path) = get_collection_img_path else{
+
+            let err_res = get_collection_img_path.unwrap_err();
+            return Err(err_res);
+        };
+
         /* getting onchain contract information */
         let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client, new_col_info.clone()).await;
         
@@ -633,16 +644,6 @@ impl UserCollection{
             )
         }   
     
-        /* uploading collection image */
-        let get_collection_img_path = misc::store_file(
-            COLLECTION_UPLOAD_PATH, &contract_onchain_address, 
-            "collection", 
-            img).await;
-        let Ok(collection_img_path) = get_collection_img_path else{
-
-            let err_res = get_collection_img_path.unwrap_err();
-            return Err(err_res);
-        };
         
         /* 
             update user balance frist, if anything goes wrong they can call us 
@@ -863,6 +864,17 @@ impl UserCollection{
             col_info.base_uri 
         };
 
+        /* uploading collection image */
+        let get_collection_img_path = misc::store_file(
+            COLLECTION_UPLOAD_PATH, &collection_data.owner_screen_cid, 
+            "collection", 
+            img).await;
+        let Ok(collection_img_path) = get_collection_img_path else{
+
+            let err_res = get_collection_img_path.unwrap_err();
+            return Err(err_res);
+        };
+
         /* updating onchain contract information */
         let (contract_update_tx_hash, status) = nftport::update_collection(
             redis_client, 
@@ -892,18 +904,6 @@ impl UserCollection{
                 Ok(HttpResponse::ExpectationFailed().json(resp))
             )
         }
-
-    
-        /* uploading collection image */
-        let get_collection_img_path = misc::store_file(
-            COLLECTION_UPLOAD_PATH, &collection_data.contract_address, 
-            "collection", 
-            img).await;
-        let Ok(collection_img_path) = get_collection_img_path else{
-
-            let err_res = get_collection_img_path.unwrap_err();
-            return Err(err_res);
-        };
 
 
         /* 
