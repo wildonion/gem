@@ -785,7 +785,7 @@ pub async fn update_collection(
 }
 
 pub trait NftExt{
-    type AssetInfo;
+    type AssetInfo; /* type of asset, either NewUserNftRequest or UpdateUserNftRequest */
     fn get_nft_name(&self) -> String;
     fn get_nft_description(&self) -> String;
     fn get_nft_contract_address(&self) -> String;
@@ -809,24 +809,21 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let asset_info = asset_info.get_self();
 
-
-    
     // step1
     // upload nft_img_path_on_server on pastel using sense and cascade apis: 
     // paste::sense::detect(), paste::cascade::upload()
-    // --- alternative 
+    // ------
+    //   OR
+    // ------
     // use the https://docs.nftport.xyz/reference/upload-file-to-ipfs to upload the nft_img_path_on_server
     // on ipfs and get the ipfs_url to fill the file_url
 
     // step2
     // fill the name, description, file_url, attributes
     // put the pastel image url in file_url in https://docs.nftport.xyz/reference/upload-metadata-to-ipfs
-    // use the metadata_uri inside the response as the final uri
 
     // step 3
     // return metadata_uri 
-
-
 
     String::from("")
 

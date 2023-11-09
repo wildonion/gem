@@ -149,7 +149,7 @@ pub struct NewUserNftRequest{
 
 
 impl NftExt for NewUserNftRequest{
-    type AssetInfo = Self;
+    type AssetInfo = NewUserNftRequest;
 
     fn get_nft_name(&self) -> String {
         self.nft_name.clone()
@@ -172,7 +172,7 @@ impl NftExt for NewUserNftRequest{
     }
 
     fn get_self(self) -> Self::AssetInfo {
-        self
+        self as NewUserNftRequest
     }
 
     fn get_recipient_screen_cid(&self) -> String {
@@ -186,7 +186,7 @@ impl NftExt for NewUserNftRequest{
 }
 
 impl NftExt for UpdateUserNftRequest{
-    type AssetInfo = Self;
+    type AssetInfo = UpdateUserNftRequest;
     
     fn get_nft_description(&self) -> String{
         self.nft_description.clone()
@@ -209,7 +209,7 @@ impl NftExt for UpdateUserNftRequest{
     }
 
     fn get_self(self) -> Self::AssetInfo {
-        self
+        self as UpdateUserNftRequest
     }
 
     fn get_recipient_screen_cid(&self) -> String {
