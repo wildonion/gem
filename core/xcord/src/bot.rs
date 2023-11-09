@@ -105,8 +105,7 @@ use serenity::{prelude::*,
 
 
 mod misc;
-
-
+mod handlers;
 
 
 #[tokio::main]
@@ -129,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
     let (discord_bot_flag_sender, mut discord_bot_flag_receiver) = 
         tokio::sync::mpsc::channel::<bool>(buffer_size);
-    let (new_task_sender, mut new_task_receiver) = 
+    let (new_task_sender, new_task_receiver) = 
         tokio::sync::mpsc::channel::<NewTask>(buffer_size);
 
 
@@ -152,9 +151,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         loop{
 
             /*  
-                subscribing asyncly and constantly using async redis crate to 
-                XTASK redis pubsub channel by streaming over the incoming future 
-                tasks topics to decode the published topics
+                subscribing to XTASK pubsub channel asyncly and constantly using async redis
+                by streaming over the incoming future tasks topics to decode the published topics
             */
             let get_stream_messages = redis_async_pubsub_connection
                 .subscribe(misc::TASK_TOPIC_CHANNEL)
