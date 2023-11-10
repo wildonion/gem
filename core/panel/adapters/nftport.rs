@@ -6,6 +6,7 @@ use crate::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
 use crate::schema::users_nfts::nft_description;
+use actix_web::web::Query;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
@@ -85,6 +86,11 @@ pub struct NftPortCreateCollectionContractResponse{
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct OnchainNfts{
+    pub data: Option<serde_json::Value>
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUpdateCollectionContractResponse{
     pub response: String,
     pub chain: String,
@@ -106,6 +112,14 @@ pub struct NftPortUploadMetadataResponse{
     pub attributes: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftPortUploadMetadataToIpfsResponse{
+    pub response: String,
+    pub metadata_uri: String,
+    pub name: String,
+    pub description: String,
+    pub file_url: String,
+}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUploadFileToIpfsData{
@@ -479,13 +493,14 @@ pub async fn start_transferring_card_process(
 
 }
 
-pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Client) -> (NftPortUploadFileToIpfsData, u8){
+pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Client, img_path: &str) -> (NftPortUploadFileToIpfsData, u8){
 
     let upload_ipfs_response = {
 
         let mut redis_conn = redis_client.get_async_connection().await.unwrap();
         let auth_header = format!("Authorization: {}", nftport_token);
-
+        let pic_path = format!("file=@{}", img_path);
+        
         let get_upload_output = std::process::Command::new("curl")
             .arg("-X")
             .arg("POST")
@@ -494,7 +509,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
             .arg("-H")
             .arg(&auth_header)
             .arg("-F")
-            .arg("file=@assets/conse.png")
+            .arg(pic_path)
             .arg("https://api.nftport.xyz/v0/files")
             .output();
 
@@ -805,30 +820,94 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let nft_name_ = asset_info.get_nft_name();
     let nft_description_ = asset_info.get_nft_description();
-    let nft_attributes = serde_json::to_string_pretty(&asset_info.get_nft_attribute().unwrap()).unwrap();
+    let nft_attributes = serde_json::to_string_pretty(
+        &asset_info
+            .get_nft_attribute()
+            .unwrap()
+    ).unwrap();
 
     let asset_info = asset_info.get_self();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
 
-    /* 
-        step1
-            upload nft_img_path_on_server on pastel using sense and cascade apis: 
-            paste::sense::detect(), paste::cascade::upload()
-            ------
-            OR
-            ------
-            use the https://docs.nftport.xyz/reference/upload-file-to-ipfs to upload the nft_img_path_on_server
-            on ipfs and get the ipfs_url to fill the file_url
-
-        step2
-            fill the name, description, file_url, attributes
-            put the pastel image url in file_url in https://docs.nftport.xyz/reference/upload-metadata-to-ipfs
-
-        step 3
-            return metadata_uri 
+    let (upload_ipfs_response, status) = self::upload_file_to_ipfs(&nftport_token, redis_client, &nft_img_path_on_server).await;
     
-    */
+    if status == 1{
+        return String::from("");
+    }
 
-    String::from("")
+    let file_url = upload_ipfs_response.ipfs_url;
+
+    /* upload request */
+    let mut upload_data = HashMap::new();
+    upload_data.insert("name", &nft_name_);
+    upload_data.insert("description", &nft_description_);
+    upload_data.insert("file_url", &file_url);
+    upload_data.insert("attributes", &nft_attributes);
+    let nftport_upload2ipfs_endpoint = format!("https://api.nftport.xyz/v0/metadata");
+    let res = reqwest::Client::new()
+        .post(nftport_upload2ipfs_endpoint.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .json(&upload_data)
+        .send()
+        .await;
+
+
+    /* ------------------- NFTPORT RESPONSE HANDLING PROCESS -------------------
+        since text() and json() method take the ownership of the instance
+        thus can't call text() method on ref_resp which is behind a shared ref 
+        cause it'll be moved.
+        
+        let ref_resp = res.as_ref().unwrap();
+        let text_resp = ref_resp.text().await.unwrap();
+
+        to solve this issue first we get the stream of the response chunk
+        then map it to the related struct, after that we can handle logging
+        and redis caching process without losing ownership of things!
+    */
+    let get_upload_response = &mut res.unwrap();
+    let get_upload_response_bytes = get_upload_response.chunk().await.unwrap();
+    let err_resp_vec = get_upload_response_bytes.unwrap().to_vec();
+    let get_upload_response_json = serde_json::from_slice::<NftPortUploadMetadataToIpfsResponse>(&err_resp_vec);
+    /* 
+        if we're here means that we couldn't map the bytes into the NftPortUploadMetadataToIpfsResponse 
+        and perhaps we have errors in response from the nftport service
+    */
+    if get_upload_response_json.is_err(){
+            
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let upload_logs_key_err = format!("ERROR=>NftPortUploadMetadataToIpfsResponse|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str).await;
+
+        /* custom error handler */
+        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::upload_nft_to_ipfs");
+        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+        return String::from("");
+
+    }
+
+    /* log caching using redis */
+    let upload_response = get_upload_response_json.unwrap();
+    info!("✅ NftPortUploadMetadataToIpfsResponse: {:#?}", upload_response.clone());
+    let upload_logs_key = format!("NftName:{}|Log:NftPortUploadMetadataToIpfsResponse|Time:{}", nft_name_, chrono::Local::now().to_string());
+    let _: RedisResult<String> = redis_conn.set(upload_logs_key, serde_json::to_string_pretty(&upload_response).unwrap()).await;
+    
+
+    if upload_response.response == String::from("OK"){
+    
+        if upload_response.metadata_uri.starts_with("ipfs"){
+            return upload_response.metadata_uri;
+        } else{
+            return String::from("");
+        }
+    
+    } else{
+        return String::from("");
+    }
 
 }
 
@@ -1195,7 +1274,8 @@ pub async fn update_nft(
 pub async fn get_nft_onchain_metadata_uri<N>(
     img: Multipart, redis_client: redis::Client, 
     asset_info: N) -> Result<String, PanelHttpResponse>
-    where N: NftExt + Clone + Send + Sync + 'static{
+    where N: NftExt + Clone + Send + Sync + 'static, 
+        <N as NftExt>::AssetInfo: Send + Sync + 'static{ /* also the AssetInfo type in trait must be bounded to Send Sync 'static */
 
     /* uploading nft image on server */
     let get_nft_img_path = misc::store_file(
@@ -1209,8 +1289,8 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     };
 
     /* 
-        upload nft in the background inside tokio green threadpool, the metadata uri
-        must be shared between outside of the threadpool and tokio spawn using 
+        start uploading nft in the background inside tokio green threadpool, the metadata 
+        uri will be shared between outside of the threadpool and tokio spawn using 
         mpsc jobq channel
     */
     let mut nft_metadata_uri = String::from("");
@@ -1254,5 +1334,26 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     }
 
     Ok(nft_metadata_uri)
+
+}
+
+pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> OnchainNfts{
+
+    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_get_nfts = format!("https://api.nftport.xyz/v0/accounts/{}?chain=polygon&page_size={}&continuation={}&include=metadata", caller_screen_cid, to, from);
+    let res_value: serde_json::Value = reqwest::Client::new()
+        .get(nftport_get_nfts.as_str())
+        .header("Authorization", nftport_token.as_str())
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+
+    OnchainNfts{
+        data: Some(res_value)
+    }
+
 
 }
