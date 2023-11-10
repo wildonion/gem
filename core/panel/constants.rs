@@ -132,6 +132,7 @@ pub static NFT_IS_NOT_MINTED_YET: &str = "Nft Must Be Minted First";
 pub static NFT_PRICE_IS_EMPTY: &str = "Nft Price Is Empty";
 pub static INVALID_NFT_PRICE: &str = "Invalid Nft Price";
 pub static INVALID_NFT_ROYALTY: &str = "Invalid Nft Royalty, Royalty Amount Is Greater Than Nft Current Price";
+pub static EMPTY_NFT_IMG: &str = "Nft Image Can't Be Empty";
 pub static NFT_IS_ALREADY_MINTED: &str = "Nft Is Already Minted";
 pub static NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED: &str = "This Event Type Requires Valid `transfer_to_screen_cid` Field To Be Filled Up";
 pub static NFT_EVENT_TYPE_BUYER_IS_NEEDED: &str = "This Event Type Requires Valid `buyer_screen_cid` Field To Be Filled Up";

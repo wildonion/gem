@@ -11,7 +11,7 @@ use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -1287,6 +1287,18 @@ pub async fn get_nft_onchain_metadata_uri<N>(
         let err_res = get_nft_img_path.unwrap_err();
         return Err(err_res);
     };
+
+    if nft_img_path.is_empty(){
+            
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: EMPTY_NFT_IMG,
+            status: 406,
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
+    }
 
     /* 
         start uploading nft in the background inside tokio green threadpool, the metadata 
