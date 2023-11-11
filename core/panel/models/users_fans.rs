@@ -34,6 +34,8 @@ pub struct UserFan{
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[derive(PartialEq)]
 pub struct FriendData{
+    pub username: String,
+    pub user_avatar: Option<String>,
     pub screen_cid: String,
     pub requested_at: i64,
     pub is_accepted: bool,
@@ -51,6 +53,8 @@ pub struct SendFriendRequest{
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[derive(PartialEq)]
 pub struct InvitationRequestData{
+    pub username: String,
+    pub user_avatar: Option<String>,
     pub from_screen_cid: String,
     pub requested_at: i64,
     pub gallery_id: i32,
@@ -63,7 +67,9 @@ pub struct InvitationRequestDataResponse{
     pub from_screen_cid: String,
     pub requested_at: i64,
     pub gallery_id: i32,
-    pub is_accepted: bool
+    pub is_accepted: bool,
+    pub username: String,
+    pub user_avatar: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -522,6 +528,13 @@ impl UserFan{
             return Err(resp_err);
         };
 
+        let get_friend = User::find_by_screen_cid(&from_screen_cid.clone(), connection).await;
+        let Ok(friend_info) = get_friend else{
+
+            let resp_err = get_friend.unwrap_err();
+            return Err(resp_err);
+        };
+
         let user_screen_cid_ = user.screen_cid.unwrap();
         match Self::get_user_fans_data_for(&user_screen_cid_, connection).await{
 
@@ -538,7 +551,9 @@ impl UserFan{
                 let friend_data = FriendData{ 
                     screen_cid: from_screen_cid.clone(), 
                     requested_at: chrono::Local::now().timestamp(), 
-                    is_accepted: false 
+                    is_accepted: false,
+                    username: friend_info.username,
+                    user_avatar: friend_info.avatar, 
                 };
                 
                 /* 
@@ -560,14 +575,15 @@ impl UserFan{
             /* insert new record */
             Err(resp) => {
                 
-
                 let new_fan_data = InsertNewUserFanRequest{
                     user_screen_cid: owner_screen_cid.to_owned(),
                     friends: {
                         let friend_data = FriendData{ 
                             screen_cid: from_screen_cid, 
                             requested_at: chrono::Local::now().timestamp(), 
-                            is_accepted: false 
+                            is_accepted: false,
+                            username: friend_info.username,
+                            user_avatar: friend_info.avatar, 
                         };
 
                         Some(serde_json::to_value(vec![friend_data]).unwrap())
@@ -696,6 +712,8 @@ impl UserFan{
                     requested_at: invitation_request_data.requested_at,
                     gallery_id: invitation_request_data.gallery_id,
                     is_accepted: invitation_request_data.is_accepted,
+                    username: invitation_request_data.username,
+                    user_avatar: invitation_request_data.user_avatar
                 }
             )
 

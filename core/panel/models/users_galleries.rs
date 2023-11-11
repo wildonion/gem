@@ -726,12 +726,22 @@ impl UserPrivateGallery{
             )
         }
 
+        
+        let get_user = User::find_by_screen_cid(&gallery_owner_screen_cid.clone(), connection).await;
+        let Ok(user) = get_user else{
+
+            let resp_err = get_user.unwrap_err();
+            return Err(resp_err);
+        };
+
 
         let invitation_request_data = InvitationRequestData{
             from_screen_cid: gallery_owner_screen_cid,
             requested_at: chrono::Local::now().timestamp(),
             gallery_id: gal_id,
             is_accepted: false,
+            username: user.username,
+            user_avatar: user.avatar,
         };
 
         /* note that gallery_owner_screen_cid and to_screen_cid must be each other's friends */

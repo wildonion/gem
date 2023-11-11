@@ -87,7 +87,7 @@ pub struct NftPortCreateCollectionContractResponse{
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct OnchainNfts{
-    pub data: Option<serde_json::Value>
+    pub onchain_nfts: Option<serde_json::Value>
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -1275,7 +1275,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     img: Multipart, redis_client: redis::Client, 
     asset_info: N) -> Result<String, PanelHttpResponse>
     where N: NftExt + Clone + Send + Sync + 'static, 
-        <N as NftExt>::AssetInfo: Send + Sync + 'static{ /* also the AssetInfo type in trait must be bounded to Send Sync 'static */
+        <N as NftExt>::AssetInfo: Send + Sync + 'static{ /* also the AssetInfo, the dynamic type, in trait must be bounded to Send Sync 'static */
 
     /* uploading nft image on server */
     let get_nft_img_path = misc::store_file(
@@ -1364,7 +1364,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> O
         .unwrap();
 
     OnchainNfts{
-        data: Some(res_value)
+        onchain_nfts: Some(res_value)
     }
 
 

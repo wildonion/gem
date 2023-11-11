@@ -2894,7 +2894,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjcsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MjgwMjQwMjM3OTYwMDAwLCJleHAiOjE2OTc4NzIyNDAsImlhdCI6MTY5NTI4MDI0MH0.M6ADzWBy78QWDMVdnqpGTzXxGt0SpHuod20dUeZJvSmuxP-zmWRCZZq8cGqLAhybdPAEpcXPqMXhmmSg0aJ8Gw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
 													"type": "string"
 												}
 											]
@@ -2907,7 +2907,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": []
+													"src": "/Users/wildonion/Desktop/consep.jpeg"
 												}
 											]
 										},
@@ -3182,44 +3182,6 @@
 												"gallery",
 												"1",
 												"update"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Remove Invited Friend From Private Gallery",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"gal_id\": 1,\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"friend_screen_cid\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/gallery/remove/invited-friend",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"gallery",
-												"remove",
-												"invited-friend"
 											]
 										}
 									},
@@ -3863,6 +3825,46 @@
 									"response": []
 								},
 								{
+									"name": "Upload Collection Background",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": "/Users/wildonion/Desktop/deadkings.jpeg"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/1/upload/background",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"1",
+												"upload",
+												"background"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Update Collection",
 									"request": {
 										"auth": {
@@ -3879,7 +3881,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 1,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": [{\n        \"price_history\": [100, 200, 250]\n    }],\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 1,\n    \"freeze_metadata\": true,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": [{\n        \"price_history\": [100, 200, 250]\n    }],\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3896,7 +3898,7 @@
 												"update"
 											]
 										},
-										"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
+										"description": "**onchain updates**\n\n- freeze_metadata\n    \n- owner_address\n    \n- royalties_address\n    \n- royalties_share\n    \n- base_uri"
 									},
 									"response": []
 								},
@@ -3917,7 +3919,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": null, // must fill this \n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3932,6 +3934,46 @@
 											"path": [
 												"nft",
 												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create NFT Metadata URI",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": "/Users/wildonion/Desktop/deadkings.jpeg"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/nft/1/create/metadata-uri",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"nft",
+												"1",
+												"create",
+												"metadata-uri"
 											]
 										}
 									},
@@ -3954,7 +3996,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"event_type\": \"transfer\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 1,\n    \"event_type\": \"transfer\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false, // onchain\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3971,7 +4013,7 @@
 												"update"
 											]
 										},
-										"description": "**Event Type (NFT Owner & Creator Only):**\n\n- transfer\n- sell\n- update ( `freeze_metadata` and `metadata_uri)`\n    \n\n> Note that extra field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it."
+										"description": "**Event Type (NFT Owner & Creator Only):**\n\n- transfer\n- sell\n- onchain ( `freeze_metadata` and `metadata_uri)`\n    \n\n> Note that extra field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it.  \nNFT must be minted in order to sell and transfer it."
 									},
 									"response": []
 								},
@@ -3992,7 +4034,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 10,\n    \"event_type\": \"buy\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 10,\n    \"nft_id\": 1,\n    \"event_type\": \"buy\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4009,7 +4051,7 @@
 												"buy"
 											]
 										},
-										"description": "**Event Type:**\n\n- buy\n    \n\n> Note that extra field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it."
+										"description": "**Event Type:**\n\n- buy\n    \n\n> Note that extra field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it.  \nNFT must be minted in order to sell and transfer it."
 									},
 									"response": []
 								},
@@ -4030,7 +4072,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 10,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 10, // mint with primary price of 10 tokens\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"nft_id\": 1,\n    \"amount\": 10,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"\", // must fill this\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 10, // mint with primary price of 10 tokens\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": null,\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4047,7 +4089,7 @@
 												"mint"
 											]
 										},
-										"description": "**Event Type:**\n\n- mint\n    \n\n> Note that `extra` field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it."
+										"description": "**Event Type:**\n\n- mint\n    \n\n> Note that `extra` field can be a JSON with any format or even an IPFS link to a JSON file of NFT events. \n  \n> NFT must be listed in order to mint, buy and transfer it.  \nNFT must be minted in order to sell and transfer it."
 									},
 									"response": []
 								},
@@ -4177,7 +4219,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/nft/get/all/?from=0&to=10",
+											"raw": "{{panel-user}}/nft/get/all/onchain/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -4185,6 +4227,7 @@
 												"nft",
 												"get",
 												"all",
+												"onchain",
 												""
 											],
 											"query": [

@@ -123,7 +123,6 @@ pub struct InsertNewUserCollectionRequest{
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
-    pub collection_background: String,
     pub extra: Option<serde_json::Value>,
     pub contract_tx_hash: String,
     pub col_description: String,
@@ -443,6 +442,193 @@ impl UserCollection{
 
     }
 
+    pub async fn upload_collection_img(
+        col_id: i32,
+        caller_screen_cid: &str,
+        mut img: Multipart, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCollectionData, PanelHttpResponse>{
+
+        let get_collection = Self::find_by_id(col_id, connection).await;
+        let Ok(collection_data) = get_collection else{
+            
+            let err_resp = get_collection.unwrap_err();
+            return Err(err_resp);
+        };
+
+
+        let get_user = User::find_by_screen_cid(caller_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+            
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+
+        /* caller must be the collection and gallery owner */
+        if caller_screen_cid.to_string() != collection_data.owner_screen_cid{
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: COLLECTION_NOT_OWNED_BY,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+                
+        }
+
+        /* getting gallery data */        
+        let get_gallery_data = UserPrivateGallery::find_by_owner_and_contract_address(&caller_screen_cid, &collection_data.contract_address, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+
+            let err_resp = get_gallery_data.unwrap_err();
+            return Err(err_resp);
+        };
+
+        /* caller must be the gallery owner */
+        if gallery_data.owner_screen_cid != collection_data.owner_screen_cid{
+    
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
+
+        /* uploading collection image */
+        let get_collection_img_path = misc::store_file(
+            COLLECTION_UPLOAD_PATH, &collection_data.owner_screen_cid, 
+            "collection", 
+            img).await;
+        let Ok(collection_img_path) = get_collection_img_path else{
+
+            let err_res = get_collection_img_path.unwrap_err();
+            return Err(err_res);
+        };
+
+
+        /* if the onchain data was ok we simply update the record based on the data updated onchain */
+        let new_col_data = UpdateUserCollection{
+            nfts: collection_data.clone().nfts,
+            base_uri: collection_data.clone().base_uri,
+            royalties_share: collection_data.clone().royalties_share,
+            royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
+            collection_background: if collection_img_path.is_empty(){
+                collection_data.clone().collection_background
+            } else{
+                collection_img_path
+            },
+            extra: collection_data.clone().extra,
+            col_description: collection_data.clone().col_description,
+            freeze_metadata: collection_data.clone().freeze_metadata,
+            contract_tx_hash: collection_data.contract_tx_hash.unwrap(),
+        };
+    
+        match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
+            .set(&new_col_data)
+            .returning(UserCollection::as_returning())
+            .get_result::<UserCollection>(connection)
+            {
+                Ok(fetched_collection_data) => {
+                    
+                    let user_collection_data = UserCollectionData{
+
+                        extra: fetched_collection_data.clone().extra,
+                        id: fetched_collection_data.clone().id,
+                        contract_address: fetched_collection_data.clone().contract_address,
+                        nfts: fetched_collection_data.clone().nfts,
+                        col_name: fetched_collection_data.clone().col_name,
+                        symbol: fetched_collection_data.clone().symbol,
+                        owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
+                        metadata_updatable: fetched_collection_data.clone().metadata_updatable,
+                        base_uri: fetched_collection_data.clone().base_uri,
+                        royalties_share: fetched_collection_data.clone().royalties_share,
+                        royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
+                        collection_background: fetched_collection_data.clone().collection_background,
+                        col_description: fetched_collection_data.clone().col_description,
+                        created_at: fetched_collection_data.clone().created_at.to_string(),
+                        updated_at: fetched_collection_data.clone().updated_at.to_string(),
+                        freeze_metadata: fetched_collection_data.clone().freeze_metadata,
+                        contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
+                    };
+
+                    /* updating gallery data */
+                    let new_gal_data = UpdateUserPrivateGalleryRequest{
+                        collections: {
+                            let cols = gallery_data.collections;
+                            let mut decoded_cols = if cols.is_some(){
+                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            
+                            /* since there is no new collection we should update the old one in vector */
+                            let collection_position = decoded_cols.iter().position(|c| c.contract_address == user_collection_data.clone().contract_address);
+                            if collection_position.is_some(){
+                                decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
+                            }
+
+                            Some(
+                                serde_json::to_value(decoded_cols).unwrap()
+                            )
+                        },
+                        gal_name: gallery_data.gal_name,
+                        gal_description: gallery_data.gal_description,
+                        invited_friends: gallery_data.invited_friends,
+                        extra: gallery_data.extra,
+                        owner_cid: user.cid.unwrap(),
+                        tx_signature: String::from(""),
+                        hash_data: String::from(""),
+                    };
+
+                    /* update gallery with new collection */
+                    match UserPrivateGallery::update(
+                        &fetched_collection_data.owner_screen_cid, 
+                        new_gal_data, 
+                        gallery_data.id, 
+                        connection
+                    ).await{
+
+                        Ok(updated_gal) => Ok(user_collection_data),
+                        Err(resp) => Err(resp)
+                    }
+
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserCollection::upload_collection_img");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+        
+
+    }
+
     pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
@@ -553,7 +739,7 @@ impl UserCollection{
             - royalties_address
             - base_uri
     */
-    pub async fn insert(new_col_info: NewUserCollectionRequest, mut img: Multipart,
+    pub async fn insert(new_col_info: NewUserCollectionRequest,
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
@@ -591,17 +777,6 @@ impl UserCollection{
                 Ok(HttpResponse::Forbidden().json(resp))
             )
         }
-
-        /* uploading collection image */
-        let get_collection_img_path = misc::store_file(
-            COLLECTION_UPLOAD_PATH, &caller_screen_cid, 
-            "collection", 
-            img).await;
-        let Ok(collection_img_path) = get_collection_img_path else{
-
-            let err_res = get_collection_img_path.unwrap_err();
-            return Err(err_res);
-        };
 
         /* getting onchain contract information */
         let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client, new_col_info.clone()).await;
@@ -669,7 +844,6 @@ impl UserCollection{
             base_uri: new_col_info.clone().base_uri,
             royalties_share: new_col_info.clone().royalties_share,
             royalties_address_screen_cid: new_col_info.clone().royalties_address_screen_cid,
-            collection_background: collection_img_path, /* NEW */
             extra: new_col_info.clone().extra,
             col_description: new_col_info.clone().col_description,
             contract_tx_hash: contract_create_tx_hash
@@ -781,7 +955,7 @@ impl UserCollection{
             - royalties_address
             - base_uri
     */
-    pub async fn update(mut col_info: UpdateUserCollectionRequest, mut img: Multipart, 
+    pub async fn update(mut col_info: UpdateUserCollectionRequest, 
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
@@ -864,17 +1038,6 @@ impl UserCollection{
             col_info.base_uri 
         };
 
-        /* uploading collection image */
-        let get_collection_img_path = misc::store_file(
-            COLLECTION_UPLOAD_PATH, &collection_data.owner_screen_cid, 
-            "collection", 
-            img).await;
-        let Ok(collection_img_path) = get_collection_img_path else{
-
-            let err_res = get_collection_img_path.unwrap_err();
-            return Err(err_res);
-        };
-
         /* updating onchain contract information */
         let (contract_update_tx_hash, status) = nftport::update_collection(
             redis_client, 
@@ -927,11 +1090,7 @@ impl UserCollection{
             base_uri: col_info.clone().base_uri,
             royalties_share: col_info.clone().royalties_share,
             royalties_address_screen_cid: col_info.clone().royalties_address_screen_cid,
-            collection_background: if collection_img_path.is_empty(){
-                collection_data.collection_background
-            } else{
-                collection_img_path
-            },
+            collection_background: collection_data.collection_background,
             extra: col_info.clone().extra,
             col_description: col_info.clone().col_description,
             freeze_metadata: Some(col_info.clone().freeze_metadata),

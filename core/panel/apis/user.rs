@@ -6126,7 +6126,6 @@ async fn create_collection(
     req: HttpRequest,
     new_user_collection_request: web::Json<NewUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6253,7 +6252,6 @@ async fn create_collection(
 
                         match UserCollection::insert(
                             new_user_collection_request, 
-                            img,
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_collection_data) => {
@@ -6316,7 +6314,6 @@ async fn update_collection(
     req: HttpRequest,
     update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6443,7 +6440,6 @@ async fn update_collection(
 
                         match UserCollection::update(
                             update_user_collection_request,
-                            img,
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_collection_data) => {
@@ -6506,7 +6502,6 @@ async fn create_nft(
     req: HttpRequest,
     new_user_nft_request: web::Json<NewUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6633,7 +6628,6 @@ async fn create_nft(
 
                         match UserNft::insert(
                             new_user_nft_request, 
-                            img,
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_nft_data) => {
@@ -6690,13 +6684,251 @@ async fn create_nft(
 
 }
 
+#[post("/nft/{asset_id}/create/metadata-uri")]
+#[passport(user)]
+async fn create_nft_metadata_uri(
+    req: HttpRequest,
+    asset_id: web::Path<i32>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match UserNft::create_nft_metadata_uri(
+                        _id, 
+                        asset_id.to_owned(),
+                        img,
+                        redis_client.clone(), 
+                        connection).await{
+                        Ok(user_nft_data) => {
+
+                            resp!{
+                                UserNftData, //// the data type
+                                user_nft_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/collection/{col_id}/upload/background")]
+#[passport(user)]
+async fn upload_collection_banner(
+    req: HttpRequest,
+    col_id: web::Path<i32>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    mut img: Multipart,
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserCollection::upload_collection_img(
+                        col_id.to_owned(), 
+                        &user.screen_cid.unwrap(),
+                        img,
+                        connection).await{
+                        Ok(user_collection_data) => {
+
+                            resp!{
+                                UserCollectionData, //// the data type
+                                user_collection_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[post("/nft/update")]
 #[passport(user)]
 async fn update_nft(
     req: HttpRequest,
     update_user_nft_request: web::Json<UpdateUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6823,7 +7055,6 @@ async fn update_nft(
 
                         match UserNft::update(
                             update_user_nft_request,
-                            img,
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_nft_data) => {
@@ -7123,7 +7354,7 @@ async fn buy_nft(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}-add-reaction-to-nft", _id);
+                    let identifier_key = format!("{}-buy-nft", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
 
                         /* handling the redis connection error using PanelError */
@@ -7131,7 +7362,7 @@ async fn buy_nft(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "add_reaction_to_nft");
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "buy_nft");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -7311,7 +7542,7 @@ async fn mint_nft(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let identifier_key = format!("{}-add-reaction-to-nft", _id);
+                    let identifier_key = format!("{}-mint-nft", _id);
                     let Ok(mut redis_conn) = get_redis_conn else{
 
                         /* handling the redis connection error using PanelError */
@@ -7319,7 +7550,7 @@ async fn mint_nft(
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
                         use error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "add_reaction_to_nft");
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "mint_nft");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                         resp!{
@@ -7566,15 +7797,14 @@ async fn get_all_user_reactions(
 
 }
 
-#[get("/nft/get/all/")]
+#[get("/nft/get/all/onchain/")]
 #[passport(user)]
 async fn get_all_nfts_owned_by(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
-
-
+    
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
@@ -7839,6 +8069,7 @@ pub mod exports{
     pub use super::upload_avatar;
     pub use super::upload_banner;
     pub use super::upload_wallet_back;
+    pub use super::upload_collection_banner;
     pub use super::update_mafia_player_avatar;
     pub use super::make_cid;
     pub use super::request_mail_code;
@@ -7857,6 +8088,7 @@ pub mod exports{
     pub use super::update_collection;
     pub use super::create_nft;
     pub use super::update_nft; 
+    pub use super::create_nft_metadata_uri;
     pub use super::buy_nft; 
     pub use super::mint_nft; 
     pub use super::add_reaction_to_nft;

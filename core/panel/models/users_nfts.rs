@@ -4,7 +4,7 @@
 use wallexerr::Wallet;
 use crate::*;
 use crate::adapters::nftport::{self, NftExt, OnchainNfts};
-use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG};
+use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
@@ -93,6 +93,7 @@ pub struct UpdateUserNftRequest{
     pub buyer_screen_cid: Option<String>,
     pub transfer_to_screen_cid: Option<String>,
     pub amount: i64, // amount of gas fee for this call
+    pub nft_id: i32,
     pub event_type: String,
     pub contract_address: String,
     pub current_owner_screen_cid: String,
@@ -137,7 +138,6 @@ pub struct NewUserNftRequest{
     pub caller_cid: String,
     pub amount: i64,
     pub contract_address: String,
-    pub current_owner_screen_cid: String,
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
@@ -164,7 +164,7 @@ impl NftExt for NewUserNftRequest{
     }
 
     fn get_nft_current_owner_address(&self) -> String {
-        self.current_owner_screen_cid.clone()
+        Wallet::generate_keccak256_from(self.caller_cid.clone())
     }
 
     fn get_nft_extra(&self) -> Option<serde_json::Value>{
@@ -242,7 +242,6 @@ impl NftExt for UpdateUserNftRequest{
 pub struct InsertNewUserNftRequest{
     pub contract_address: String,
     pub current_owner_screen_cid: String,
-    pub metadata_uri: String,
     pub nft_name: String,
     pub nft_description: String,
     pub current_price: i64,
@@ -606,13 +605,186 @@ impl UserNft{
         )
 
     }
+
+    pub async fn create_nft_metadata_uri(
+        nft_owner_id: i32, 
+        asset_id: i32,
+        mut img: Multipart, 
+        redis_client: redis::Client,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserNftData, PanelHttpResponse>{
+
+
+        let get_user = User::find_by_id(nft_owner_id, connection).await;
+        let Ok(user) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let get_nft = UserNft::find_by_id(asset_id, connection).await;
+        let Ok(nft_info) = get_nft else{
+            let err_resp = get_nft.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let caller_screen_cid = user.screen_cid;
+        if caller_screen_cid.is_none(){
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: USER_SCREEN_CID_NOT_FOUND,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            );
+
+        }
+
+        if caller_screen_cid.clone().unwrap() != nft_info.current_owner_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: NFT_NOT_OWNED_BY,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            );
+        }
+
+        /* find a collection data with the passed in contract address */
+        let get_collection = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await;
+        let Ok(collection_data) = get_collection else{
+            let err_resp = get_collection.unwrap_err();
+            return Err(err_resp);
+        };
+
+        /* find a gallery data with the passed in owner screen address */
+        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &collection_data.contract_address, connection).await;
+        let Ok(gallery_data) = get_gallery else{
+            let err_resp = get_gallery.unwrap_err();
+            return Err(err_resp);
+        };
+        
+
+        if gallery_data.owner_screen_cid != caller_screen_cid.unwrap(){
+
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            );
+        }
+
+
+        let mut udpate_nft_request = UpdateUserNftRequest{ 
+            caller_cid: user.cid.unwrap(), 
+            buyer_screen_cid: Some(String::from("")), 
+            transfer_to_screen_cid: Some(String::from("")), 
+            amount: 0, 
+            event_type: String::from(""), 
+            contract_address: nft_info.contract_address, 
+            current_owner_screen_cid: nft_info.current_owner_screen_cid, 
+            metadata_uri: nft_info.metadata_uri, 
+            extra: nft_info.extra, 
+            attributes: nft_info.attributes, 
+            onchain_id: nft_info.onchain_id, 
+            nft_name: nft_info.nft_name, 
+            is_minted: nft_info.is_minted, 
+            nft_description: nft_info.nft_description, 
+            current_price: nft_info.current_price, 
+            is_listed: nft_info.is_listed, 
+            freeze_metadata: nft_info.freeze_metadata, 
+            comments: nft_info.comments, 
+            likes: nft_info.likes, 
+            tx_hash: nft_info.tx_hash, 
+            tx_signature: String::from(""), 
+            hash_data: String::from(""),
+            nft_id: nft_info.id, 
+        };
+
+        /* start uploading nft onchain */
+        let get_nft_metadata_uri = 
+            nftport::get_nft_onchain_metadata_uri(
+                img,
+                redis_client.clone(),
+                udpate_nft_request.clone()
+            ).await;
+        
+        let Ok(nft_metadata_uri) = get_nft_metadata_uri else{
+
+            let err_resp = get_nft_metadata_uri.unwrap_err();
+            return Err(err_resp);
+        };
+
+        udpate_nft_request.metadata_uri = nft_metadata_uri;
+
+        Self::update_nft_col_gal(
+            collection_data, 
+            gallery_data, 
+            udpate_nft_request, 
+            connection
+        ).await
+        
+
+    }
+
+    pub async fn find_by_id(asset_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserNftData, PanelHttpResponse>{
+
+        let user_nft = users_nfts
+            .filter(users_nfts::id.eq(asset_id))
+            .first::<UserNft>(connection);
+
+        let Ok(nft) = user_nft else{
+
+            let resp = Response{
+                data: Some(asset_id),
+                message: NFT_NOT_FOUND_OF_ID,
+                status: 404,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        Ok(
+            UserNftData{ 
+                id: nft.id, 
+                contract_address: nft.contract_address, 
+                current_owner_screen_cid: nft.current_owner_screen_cid, 
+                metadata_uri: nft.metadata_uri, 
+                extra: nft.extra, 
+                onchain_id: nft.onchain_id, 
+                nft_name: nft.nft_name, 
+                is_minted: nft.is_minted, 
+                nft_description: nft.nft_description, 
+                current_price: nft.current_price, 
+                is_listed: nft.is_listed, 
+                freeze_metadata: nft.freeze_metadata, 
+                comments: nft.comments, 
+                likes: nft.likes, 
+                tx_hash: nft.tx_hash, 
+                created_at: nft.created_at.to_string(), 
+                updated_at: nft.updated_at.to_string(),
+                attributes: nft.attributes, 
+            }
+        )
+
+    }
     
 
 }
 
 impl UserNft{
 
-    pub async fn insert(asset_info: NewUserNftRequest, mut img: Multipart,
+    pub async fn insert(asset_info: NewUserNftRequest,
         redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
@@ -651,21 +823,6 @@ impl UserNft{
             return Err(err_resp);
         };
 
-
-        /* start uploading nft onchain */
-        let get_nft_metadata_uri = 
-            nftport::get_nft_onchain_metadata_uri(
-                img,
-                redis_client.clone(),
-                asset_info.clone()
-            ).await;
-        
-        let Ok(nft_metadata_uri) = get_nft_metadata_uri else{
-
-            let err_resp = get_nft_metadata_uri.unwrap_err();
-            return Err(err_resp);
-        };
-
         /* 
             update user balance frist, if anything goes wrong they can call us 
             to pay them back, actually this is the gas fee that they must be 
@@ -680,7 +837,7 @@ impl UserNft{
             return Err(err_resp);
             
         };
-
+        
         /*  ---------------------------------
             default values will be stored as:
                 - is_minted       :‌ false ----- by default nft goes to private gallery
@@ -690,7 +847,6 @@ impl UserNft{
         let new_insert_nft = InsertNewUserNftRequest{
             contract_address: collection_data.clone().contract_address,
             current_owner_screen_cid: caller_screen_cid,
-            metadata_uri: nft_metadata_uri,
             nft_name: asset_info.nft_name,
             nft_description: asset_info.nft_description,
             current_price: asset_info.current_price,
@@ -1234,6 +1390,7 @@ impl UserNft{
             tx_signature: String::from(""),
             hash_data: String::from(""),
             attributes: nft_data.attributes,
+            nft_id: nft_data.id,
         };
 
 
@@ -1492,7 +1649,7 @@ impl UserNft{
                 return Err(err_resp);
             };
 
-            let get_nft = UserNft::find_by_current_owner(&mint_nft_request.clone().current_owner_screen_cid, connection).await;
+            let get_nft = UserNft::find_by_id(mint_nft_request.nft_id, connection).await;
             let Ok(nft_data) = get_nft else{
                 let err_resp = get_nft.unwrap_err();
                 return Err(err_resp);
@@ -1627,7 +1784,7 @@ impl UserNft{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= NFT OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn update(mut asset_info: UpdateUserNftRequest, mut img: Multipart,
+    pub async fn update(mut asset_info: UpdateUserNftRequest,
         redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
@@ -1635,7 +1792,7 @@ impl UserNft{
         let caller_screen_cid = Wallet::generate_keccak256_from(asset_info.clone().caller_cid);
         
         /* find an nft data with the passed in owner address cause only owner can call this method */
-        let get_nft = UserNft::find_by_current_owner(&caller_screen_cid, connection).await;
+        let get_nft = UserNft::find_by_id(asset_info.nft_id, connection).await;
         let Ok(nft_data) = get_nft else{
             let err_resp = get_nft.unwrap_err();
             return Err(err_resp);
@@ -1760,7 +1917,7 @@ impl UserNft{
                     of the nft and the nft must be minted already
                 */ 
                 
-                if nft_data.is_minted.is_none(){
+                if nft_data.is_minted.is_none() && nft_data.onchain_id.is_none(){
 
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
@@ -1808,7 +1965,20 @@ impl UserNft{
                     connection).await
 
             },
-            "update" => { // only freeze_metadata and metadata_uri
+            "onchain" => { // only freeze_metadata and metadata_uri
+
+                if asset_info.metadata_uri.is_empty(){
+
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: NFT_METADATA_URI_IS_EMPTY,
+                        status: 406,
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    ); 
+
+                }
 
                 asset_info.metadata_uri = if nft_data.freeze_metadata.is_some() &&
                     nft_data.freeze_metadata.unwrap() == true{
@@ -1818,21 +1988,7 @@ impl UserNft{
 
                     } else{
 
-                        /* start uploading new nft metdata onchain */
-                        let get_nft_metadata_uri = 
-                        nftport::get_nft_onchain_metadata_uri(
-                            img,
-                            redis_client.clone(),
-                            asset_info.clone()
-                        ).await;
-                    
-                        let Ok(nft_metadata_uri) = get_nft_metadata_uri else{
-
-                            let err_resp = get_nft_metadata_uri.unwrap_err();
-                            return Err(err_resp);
-                        };
-
-                    nft_metadata_uri
+                    asset_info.metadata_uri
                 };
 
                 /* updating freeze_metadata field */
