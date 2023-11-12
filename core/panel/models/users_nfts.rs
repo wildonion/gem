@@ -4,11 +4,11 @@
 use wallexerr::Wallet;
 use crate::*;
 use crate::adapters::nftport::{self, NftExt, OnchainNfts};
-use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY};
+use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY, NFT_IS_NOT_LISTED};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
-use super::users::User;
+use super::users::{User, UserData};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest, UserPrivateGalleryData};
 use crate::schema::users_collections::dsl::*;
@@ -147,6 +147,19 @@ pub struct NewUserNftRequest{
     pub hash_data: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CreateNftMetadataUriRequest{
+    pub caller_cid: String,
+    pub amount: String,
+    pub nft_id: String,
+    pub nft_new_attributes: String,
+    pub nft_new_extra: String,
+    pub nft_new_name: String,
+    pub nft_new_description: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 
 impl NftExt for NewUserNftRequest{
     type AssetInfo = NewUserNftRequest;
@@ -244,6 +257,7 @@ pub struct InsertNewUserNftRequest{
     pub current_owner_screen_cid: String,
     pub nft_name: String,
     pub nft_description: String,
+    pub metadata_uri: String,
     pub current_price: i64,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
@@ -607,41 +621,36 @@ impl UserNft{
     }
 
     pub async fn create_nft_metadata_uri(
-        nft_owner_id: i32, 
-        asset_id: i32,
-        mut img: Multipart, 
+        asset_info: CreateNftMetadataUriRequest,
+        files: HashMap<String, Vec<u8>>, 
         redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
+        let CreateNftMetadataUriRequest{ caller_cid, amount, nft_id, nft_new_attributes, nft_new_extra, nft_new_name, nft_new_description, tx_signature, hash_data }
+            = asset_info;
 
-        let get_user = User::find_by_id(nft_owner_id, connection).await;
+        /* parse the string fields to desire type */
+        let amount = amount.parse::<i64>().unwrap();
+        let nft_id = nft_id.parse::<i32>().unwrap();
+        let nft_new_attributes = Some(serde_json::from_str::<serde_json::Value>(&nft_new_attributes).unwrap());
+        let nft_new_extra = Some(serde_json::from_str::<serde_json::Value>(&nft_new_extra).unwrap());
+
+
+        let caller_screen_cid = Wallet::generate_keccak256_from(caller_cid);
+        let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
         let Ok(user) = get_user else{
             let err_resp = get_user.unwrap_err();
             return Err(err_resp);
         };
 
-        let get_nft = UserNft::find_by_id(asset_id, connection).await;
+        let get_nft = UserNft::find_by_id(nft_id, connection).await;
         let Ok(nft_info) = get_nft else{
             let err_resp = get_nft.unwrap_err();
             return Err(err_resp);
         };
 
-        let caller_screen_cid = user.screen_cid;
-        if caller_screen_cid.is_none(){
-
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: USER_SCREEN_CID_NOT_FOUND,
-                status: 403,
-            };
-            return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
-            );
-
-        }
-
-        if caller_screen_cid.clone().unwrap() != nft_info.current_owner_screen_cid{
+        if caller_screen_cid.clone() != nft_info.current_owner_screen_cid{
             
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
@@ -668,7 +677,7 @@ impl UserNft{
         };
         
 
-        if gallery_data.owner_screen_cid != caller_screen_cid.unwrap(){
+        if gallery_data.owner_screen_cid != caller_screen_cid{
 
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
@@ -683,34 +692,37 @@ impl UserNft{
 
         let mut udpate_nft_request = UpdateUserNftRequest{ 
             caller_cid: user.cid.unwrap(), 
-            buyer_screen_cid: Some(String::from("")), 
-            transfer_to_screen_cid: Some(String::from("")), 
-            amount: 0, 
+            buyer_screen_cid: None, 
+            transfer_to_screen_cid: None, 
+            amount, 
             event_type: String::from(""), 
             contract_address: nft_info.contract_address, 
             current_owner_screen_cid: nft_info.current_owner_screen_cid, 
             metadata_uri: nft_info.metadata_uri, 
-            extra: nft_info.extra, 
-            attributes: nft_info.attributes, 
+            extra: nft_new_extra, 
+            attributes: nft_new_attributes, 
             onchain_id: nft_info.onchain_id, 
-            nft_name: nft_info.nft_name, 
+            nft_name: nft_new_name, 
             is_minted: nft_info.is_minted, 
-            nft_description: nft_info.nft_description, 
+            nft_description: nft_new_description, 
             current_price: nft_info.current_price, 
             is_listed: nft_info.is_listed, 
             freeze_metadata: nft_info.freeze_metadata, 
             comments: nft_info.comments, 
             likes: nft_info.likes, 
             tx_hash: nft_info.tx_hash, 
-            tx_signature: String::from(""), 
-            hash_data: String::from(""),
-            nft_id: nft_info.id, 
+            tx_signature, 
+            hash_data,
+            nft_id, 
         };
 
         /* start uploading nft onchain */
+        let first_map = files.iter().next().unwrap();
+        let filename = first_map.0.to_owned();
+        let img_bytes = first_map.1.to_owned();
         let get_nft_metadata_uri = 
             nftport::get_nft_onchain_metadata_uri(
-                img,
+                (filename, img_bytes),
                 redis_client.clone(),
                 udpate_nft_request.clone()
             ).await;
@@ -850,6 +862,7 @@ impl UserNft{
             nft_name: asset_info.nft_name,
             nft_description: asset_info.nft_description,
             current_price: asset_info.current_price,
+            metadata_uri: String::from(""), /* will update in create nft metadata uri api */
             extra: asset_info.extra,
             attributes: asset_info.attributes,
         };
@@ -1058,7 +1071,7 @@ impl UserNft{
         };
         
         /* inserting new nft */
-        match diesel::update(users_nfts)
+        match diesel::update(users_nfts.find(udpate_nft_request.nft_id))
             .set(&update_nft_data)
             .returning(UserNft::as_returning())
             .get_result::<UserNft>(connection)
@@ -1297,7 +1310,7 @@ impl UserNft{
                     vec![]
                 };
 
-                if add_reaction_request.comment_content.is_some(){
+                if add_reaction_request.comment_content.is_some() && add_reaction_request.reaction_type == "comment"{
 
                     decoded_comments.push(
                         NftComment{ 
@@ -1315,29 +1328,39 @@ impl UserNft{
             likes: {
 
                 let nft_likes = nft_data.likes;
-                let decoded_likes = if nft_likes.is_some(){
+                let mut decoded_likes = if nft_likes.is_some(){
                     serde_json::from_value::<Vec<NftLike>>(nft_likes.unwrap()).unwrap()
                 } else{
                     vec![]
                 };
 
-                let this_nft_position = decoded_likes
+                let mutable_decoded_likes = &mut decoded_likes;
+
+                let this_nft_position = mutable_decoded_likes
                     .iter()
                     .position(|nft| nft.nft_onchain_id == add_reaction_request.nft_onchain_id);
 
-                if add_reaction_request.is_like_upvote.is_some(){
+                if add_reaction_request.is_like_upvote.is_some() && 
+                    add_reaction_request.is_like_upvote.unwrap() == true &&
+                    add_reaction_request.reaction_type == "like"{
 
                     if this_nft_position.is_some(){
                         /* 
-                            getting a mutable pointer to the found NftLike instance inside decoded_likes
+                            getting a mutable pointer to the found NftLike instance inside mutable_decoded_likes
                             means that if we mutate the instance in other scopes the actual type inside 
                             the vector will be mutated too
                         */
-                        let this_nft_likes = &mut decoded_likes[this_nft_position.unwrap()].clone();
+                        
+                        let mut this_nft_likes = mutable_decoded_likes[this_nft_position.unwrap()].clone();
+                        
+                        let caller = caller_screen_cid.clone();
+                        if this_nft_likes.clone().upvoter_screen_cids.is_empty(){
+                            this_nft_likes.upvoter_screen_cids.push(caller.clone());
+                        }
+                        
                         for upvote in this_nft_likes.clone().upvoter_screen_cids{
-                            let caller = caller_screen_cid.clone();
                             if upvote != caller{
-                                this_nft_likes.upvoter_screen_cids.push(caller);
+                                this_nft_likes.upvoter_screen_cids.push(caller.clone());
                             }
                         }
 
@@ -1351,23 +1374,42 @@ impl UserNft{
                                     this_nft_likes.downvoter_screen_cids.remove(downvoter_position_scid.unwrap());
                                 }
                             }
+
+                        mutable_decoded_likes[this_nft_position.unwrap()] = this_nft_likes;
+
+                    } else{
+
+                        mutable_decoded_likes.push(
+                            NftLike{ 
+                                nft_onchain_id: add_reaction_request.clone().nft_onchain_id, 
+                                upvoter_screen_cids: vec![caller_screen_cid.clone()],
+                                downvoter_screen_cids: vec![]
+                            }
+                        )
                     }
         
                 }
         
-                if add_reaction_request.is_like_downvote.is_some(){
+                if add_reaction_request.is_like_downvote.is_some() && 
+                    add_reaction_request.is_like_downvote.unwrap() == true &&
+                    add_reaction_request.reaction_type == "dislike"{
         
                     if this_nft_position.is_some(){
                         /* 
-                            getting a mutable pointer to the found NftLike instance inside decoded_likes
+                            getting a mutable pointer to the found NftLike instance inside mutable_decoded_likes
                             means that if we mutate the instance in other scopes the actual type inside 
                             the vector will be mutated too
                         */
-                        let this_nft_likes = &mut decoded_likes[this_nft_position.unwrap()].clone();
+                        let mut this_nft_likes = mutable_decoded_likes[this_nft_position.unwrap()].clone();
+
+                        let caller = caller_screen_cid.clone();
+                        if this_nft_likes.clone().downvoter_screen_cids.is_empty(){
+                            this_nft_likes.downvoter_screen_cids.push(caller.clone());
+                        }
+
                         for downvote in this_nft_likes.clone().downvoter_screen_cids{
-                            let caller = caller_screen_cid.clone();
                             if downvote != caller{
-                                this_nft_likes.downvoter_screen_cids.push(caller);
+                                this_nft_likes.downvoter_screen_cids.push(caller.clone());
                             }
                         }
 
@@ -1381,10 +1423,22 @@ impl UserNft{
                                     this_nft_likes.upvoter_screen_cids.remove(upvoter_position_scid.unwrap());
                                 }
                             }
+
+                        
+                        mutable_decoded_likes[this_nft_position.unwrap()] = this_nft_likes;
+
+                    } else{
+                        mutable_decoded_likes.push(
+                            NftLike{ 
+                                nft_onchain_id: add_reaction_request.nft_onchain_id, 
+                                upvoter_screen_cids: vec![],
+                                downvoter_screen_cids: vec![caller_screen_cid.clone()]
+                            }
+                        )
                     }
                 }
 
-                Some(serde_json::to_value(decoded_likes).unwrap())
+                Some(serde_json::to_value(mutable_decoded_likes).unwrap())
             },
             tx_hash: nft_data.tx_hash,
             tx_signature: String::from(""),
@@ -1403,6 +1457,12 @@ impl UserNft{
 
     }
 
+    /*  --------------------------------------------------------------------------------
+        Note: Transferring is possible only if the token is owned by the contract owner 
+        and the token has not been transferred/sold yet, so the following operation can 
+        only be done once.
+        --------------------------------------------------------------------------------
+    */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
@@ -1440,7 +1500,10 @@ impl UserNft{
             };
 
             /* if the onchain id wasn't found we simply terminate the caller */
-            if nft_data.is_minted.is_none() && nft_data.onchain_id.is_none(){
+            if nft_data.is_minted.is_none() || 
+                (nft_data.is_minted.is_some() && nft_data.is_minted.unwrap() == false) &&  
+                nft_data.onchain_id.is_none() || 
+                (nft_data.onchain_id.is_some() && nft_data.onchain_id.unwrap().is_empty()){
 
                 let resp = Response::<'_, &[u8]>{
                     data: Some(&[]),
@@ -1485,6 +1548,20 @@ impl UserNft{
                         
                     }
 
+                    if get_nft_price.is_some() && get_nft_price.unwrap() < 0 || get_nft_price.unwrap() == 0 ||
+                        (nft_data.current_price.is_some() && nft_data.current_price.unwrap() != get_nft_price.unwrap()){
+
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: INVALID_NFT_PRICE,
+                            status: 406,
+                        };
+                        return Err(
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        ); 
+
+                    }
+
                     let royalty = collection_data.royalties_share;
                     let royalty_owner = collection_data.clone().royalties_address_screen_cid;
                     let seller = buy_nft_request.clone().current_owner_screen_cid;
@@ -1510,10 +1587,10 @@ impl UserNft{
                     */
                     /* ---------------------------------------------------------------------------- */
                     let nft_price = get_nft_price.unwrap() as f64;
-                    let royalty_bps = (royalty as f64 / 100.0) as f64;
+                    let royalty_bps = (royalty as f64 / 10000.0) as f64; // 100 basis points equal 1%
                     let percent = percentage::Percentage::from_decimal(royalty_bps);
                     let royalty_amount = percent.apply_to(nft_price);
-                    
+
                     if royalty_amount > nft_price{
 
                         let resp = Response::<'_, &[u8]>{
@@ -1529,38 +1606,23 @@ impl UserNft{
 
                     let pay_to_seller = (nft_price - royalty_amount.round()) as i64;
 
-                    /* --------------------------------------------- */
-                    /* -------------- update balances -------------- */
-                    /* --------------------------------------------- */
-                    /* update buyer balance (nft price + onchain gas fee) */
-                    let new_balance = user.balance.unwrap() - (nft_price as i64 + buy_nft_request.amount);
-                    let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
-                    let Ok(updated_user_data) = update_user_balance else{
+                    /* distribute shares */
+                    let get_updated_user = Self::distributed_shares(
+                        user.clone(),
+                        seller_info.clone(),
+                        royalty_owner_info.clone(),
+                        buy_nft_request.amount,
+                        nft_price as i64,
+                        pay_to_seller as i64,
+                        royalty_amount as i64,
+                        connection
+                    ).await;
+                    let Ok(updated_user) = get_updated_user else{
 
-                        let err_resp = update_user_balance.unwrap_err();
+                        let err_resp = get_updated_user.unwrap_err();
                         return Err(err_resp);
-                        
                     };
 
-                    /* update seller balance */
-                    let new_balance = user.balance.unwrap() + pay_to_seller as i64;
-                    let update_user_balance = User::update_balance(seller_info.id, new_balance, connection).await;
-                    let Ok(updated_user_data) = update_user_balance else{
-
-                        let err_resp = update_user_balance.unwrap_err();
-                        return Err(err_resp);
-                        
-                    };
-
-                    /* update royalty owner balance */
-                    let new_balance = user.balance.unwrap() + royalty_amount as i64;
-                    let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, connection).await;
-                    let Ok(updated_user_data) = update_user_balance else{
-
-                        let err_resp = update_user_balance.unwrap_err();
-                        return Err(err_resp);
-                        
-                    };
 
                     /* ----------------------------------------------------- */
                     /* ------- transferring the ownership of the nft ------- */
@@ -1572,7 +1634,23 @@ impl UserNft{
                         ).await;
 
                     if status == 1{
-                        
+
+                        /* revert shares */
+                        let get_updated_user = Self::revert_shares(
+                            user,
+                            seller_info,
+                            royalty_owner_info,
+                            nft_price as i64,
+                            pay_to_seller as i64,
+                            royalty_amount as i64,
+                            connection
+                        ).await;
+                        let Ok(updated_user) = get_updated_user else{
+    
+                            let err_resp = get_updated_user.unwrap_err();
+                            return Err(err_resp);
+                        };
+
                         let resp = Response::<'_, &[u8]>{
                             data: Some(&[]),
                             message: CANT_TRANSFER_NFT,
@@ -1581,12 +1659,14 @@ impl UserNft{
                         return Err(
                             Ok(HttpResponse::ExpectationFailed().json(resp))
                         );
+
                     }
 
                     buy_nft_request.tx_hash = Some(new_tx_hash);
                     buy_nft_request.current_owner_screen_cid = buyer_screen_cid;
                     buy_nft_request.is_listed = Some(false);
                     buy_nft_request.current_price = Some(0);
+
 
                     Self::update_nft_col_gal(
                         collection_data, 
@@ -1630,6 +1710,101 @@ impl UserNft{
                 Ok(HttpResponse::NotAcceptable().json(resp))
             );
         }
+
+    }
+
+    pub async fn distributed_shares(
+        user: User, 
+        seller_info: User, 
+        royalty_owner_info: User,
+        gas_fee: i64,
+        nft_price: i64,
+        pay_to_seller: i64,
+        royalty_amount: i64,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(), PanelHttpResponse>{
+
+        /* --------------------------------------------- */
+        /* -------------- update balances -------------- */
+        /* --------------------------------------------- */
+        /* update buyer balance (nft price + onchain gas fee) */
+        let new_balance = user.balance.unwrap() - (nft_price as i64 + gas_fee);
+        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        /* update seller balance */
+        let new_balance = seller_info.balance.unwrap() + pay_to_seller as i64;
+        let update_user_balance = User::update_balance(seller_info.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        /* update royalty owner balance */
+        let new_balance = royalty_owner_info.balance.unwrap() + royalty_amount as i64;
+        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        Ok(())
+
+    }
+
+    pub async fn revert_shares(
+        user: User, 
+        seller_info: User, 
+        royalty_owner_info: User,
+        nft_price: i64,
+        pay_to_seller: i64,
+        royalty_amount: i64,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(), PanelHttpResponse>{
+
+        /* --------------------------------------------- */
+        /* -------------- update balances -------------- */
+        /* --------------------------------------------- */
+        /* update buyer balance (nft price + onchain gas fee) */
+        let new_balance = user.balance.unwrap() + nft_price as i64;
+        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        /* update seller balance */
+        let new_balance = seller_info.balance.unwrap() - pay_to_seller as i64;
+        let update_user_balance = User::update_balance(seller_info.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        /* update royalty owner balance */
+        let new_balance = royalty_owner_info.balance.unwrap() - royalty_amount as i64;
+        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, connection).await;
+        let Ok(updated_user_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
+
+        Ok(())
 
     }
 
@@ -1723,6 +1898,20 @@ impl UserNft{
                         Ok(HttpResponse::NotAcceptable().json(resp))
                     );
                     
+                }
+
+                if get_nft_price.is_some() && get_nft_price.unwrap() < 0 || get_nft_price.unwrap() == 0 ||
+                    (nft_data.current_price.is_some() && nft_data.current_price.unwrap() != get_nft_price.unwrap()){
+
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: INVALID_NFT_PRICE,
+                        status: 406,
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    ); 
+
                 }
                 let nft_price = get_nft_price.unwrap();
 
@@ -1833,9 +2022,23 @@ impl UserNft{
         }
 
         let res = match asset_info.event_type.as_str(){
-            "transfer" => {                
-                
-                if nft_data.is_minted.is_none() && nft_data.onchain_id.is_none(){
+
+            /*  --------------------------------------------------------------------------------
+                Note: Transferring is possible only if the token is owned by the contract owner 
+                and the token has not been transferred/sold yet, so the following operation can 
+                only be done once.
+                --------------------------------------------------------------------------------
+            */
+            "transfer" => {
+
+                /* 
+                    in order to update nft freeze_metadata, metadata_uri or transfer it 
+                    or list it, nft must be minted first and have an onchain id already
+                */
+                if nft_data.is_minted.is_none() || 
+                    (nft_data.is_minted.is_some() && nft_data.is_minted.unwrap() == false) &&  
+                    nft_data.onchain_id.is_none() || 
+                    (nft_data.onchain_id.is_some() && nft_data.onchain_id.unwrap().is_empty()){
 
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
@@ -1846,7 +2049,7 @@ impl UserNft{
                         Ok(HttpResponse::NotAcceptable().json(resp))
                     ); 
 
-                }
+                }      
                 
                 if asset_info.transfer_to_screen_cid.is_none(){
 
@@ -1910,18 +2113,13 @@ impl UserNft{
 
 
             },
-            "sell" => { 
-                
-                /* 
-                    the only way to update price is by update listing 
-                    of the nft and the nft must be minted already
-                */ 
-                
-                if nft_data.is_minted.is_none() && nft_data.onchain_id.is_none(){
+            "delist" => { 
+
+                if nft_data.is_listed.is_some() && nft_data.is_listed.unwrap() == false{
 
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
-                        message: NFT_IS_NOT_MINTED_YET,
+                        message: NFT_IS_NOT_LISTED,
                         status: 406,
                     };
                     return Err(
@@ -1929,6 +2127,17 @@ impl UserNft{
                     ); 
 
                 }
+
+                asset_info.is_listed = Some(false);
+
+                Self::update_nft_col_gal(
+                    collection_data, 
+                    gallery_data, 
+                    asset_info.clone(), 
+                    connection).await
+
+            },
+            "sell" => { 
 
                 if asset_info.current_price.is_none(){
 
@@ -1943,7 +2152,7 @@ impl UserNft{
 
                 }
 
-                if asset_info.current_price.is_some() && asset_info.current_price.unwrap() < 0{
+                if asset_info.current_price.is_some() && asset_info.current_price.unwrap() < 0 || asset_info.current_price.unwrap() == 0{
 
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
@@ -1966,6 +2175,26 @@ impl UserNft{
 
             },
             "onchain" => { // only freeze_metadata and metadata_uri
+
+                /* 
+                    in order to update nft freeze_metadata, metadata_uri or transfer it 
+                    or list it, nft must be minted first and have an onchain id already
+                */
+                if nft_data.is_minted.is_none() || 
+                    (nft_data.is_minted.is_some() && nft_data.is_minted.unwrap() == false) &&  
+                    nft_data.onchain_id.is_none() || 
+                    (nft_data.onchain_id.is_some() && nft_data.onchain_id.unwrap().is_empty()){
+
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: NFT_IS_NOT_MINTED_YET,
+                        status: 406,
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    ); 
+
+                }
 
                 if asset_info.metadata_uri.is_empty(){
 

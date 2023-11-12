@@ -187,7 +187,7 @@ impl UserPrivateGallery{
                             let none_minted_cols = decoded_cols
                                 .into_iter()
                                 .map(|mut c|{
-                                    
+
                                     /* return those none minted ones */
                                     if c.nfts.is_some(){
                                         let col_nfts = c.nfts;
@@ -197,7 +197,7 @@ impl UserPrivateGallery{
                                             vec![]
                                         };
                                         
-                                        let none_minted_nfts = decoded_nfts
+                                        let mut none_minted_nfts = decoded_nfts
                                             .into_iter()
                                             .map(|nft|{
                                                 /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -207,7 +207,9 @@ impl UserPrivateGallery{
                                                     None
                                                 }
                                             }).collect::<Vec<Option<UserNftData>>>();
+
                                         
+                                        none_minted_nfts.retain(|nft| nft.is_some());
                                         c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
                                         
                                         c
@@ -304,7 +306,7 @@ impl UserPrivateGallery{
                                                     vec![]
                                                 };
                                                 
-                                                let none_minted_nfts = decoded_nfts
+                                                let mut none_minted_nfts = decoded_nfts
                                                     .into_iter()
                                                     .map(|nft|{
                                                         /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -315,6 +317,7 @@ impl UserPrivateGallery{
                                                         }
                                                     }).collect::<Vec<Option<UserNftData>>>();
                                                 
+                                                none_minted_nfts.retain(|nft| nft.is_some());
                                                 c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
                                                 
                                                 c

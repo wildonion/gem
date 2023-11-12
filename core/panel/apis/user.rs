@@ -8,7 +8,7 @@ use crate::models::users_collections::{UserCollection, UserCollectionData, NewUs
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData};
 use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest};
-use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest};
+use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
@@ -3734,6 +3734,7 @@ async fn update_mafia_player_avatar(
 
                     };
 
+                    let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
                     let get_player_img_path = misc::store_file(
                         AVATAR_UPLOAD_PATH, &format!("{}", player_id), 
                         "player", 
@@ -6684,13 +6685,12 @@ async fn create_nft(
 
 }
 
-#[post("/nft/{asset_id}/create/metadata-uri")]
+#[post("/nft/create/metadata-uri")]
 #[passport(user)]
 async fn create_nft_metadata_uri(
     req: HttpRequest,
-    asset_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    mut img: Multipart,
+    mut payload: Multipart,
 ) -> PanelHttpResponse{
 
 
@@ -6741,26 +6741,114 @@ async fn create_nft_metadata_uri(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match UserNft::create_nft_metadata_uri(
-                        _id, 
-                        asset_id.to_owned(),
-                        img,
-                        redis_client.clone(), 
-                        connection).await{
-                        Ok(user_nft_data) => {
+                    let identifier_key = format!("{}-create-nft-metadata-uri", _id);
+                    let Ok(mut redis_conn) = get_redis_conn else{
 
-                            resp!{
-                                UserNftData, //// the data type
-                                user_nft_data, //// response data
-                                UPDATED, //// response message
-                                StatusCode::OK, //// status code
-                                None::<Cookie<'_>>, //// cookie
-                            }
+                        /* handling the redis connection error using PanelError */
+                        let redis_get_conn_error = get_redis_conn.err().unwrap();
+                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
+                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_nft_metadata_uri");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-                        },
-                        Err(resp) => {
-                            resp
+                        resp!{
+                            &[u8], // the date type
+                            &[], // the data itself
+                            &redis_get_conn_error_string, // response message
+                            StatusCode::INTERNAL_SERVER_ERROR, // status code
+                            None::<Cookie<'_>>, // cookie
                         }
+
+                    };
+
+                    /* 
+                        checking that the incoming request is already rate limited or not,
+                        since there is no global storage setup we have to pass the storage 
+                        data like redis_conn to the macro call 
+                    */
+                    if is_rate_limited!{
+                        redis_conn,
+                        identifier_key.clone(), /* identifier */
+                        String, /* the type of identifier */
+                        "fin_rate_limiter" /* redis key */
+                    }{
+
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            RATE_LIMITED, //// response message
+                            StatusCode::TOO_MANY_REQUESTS, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+
+                    } else {
+                        
+
+                        let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
+                        let get_json_data = misc::convert_multipart_to_json(
+                            arced_payload.clone()
+                        ).await;
+
+                        let Ok((json_data, files)) = get_json_data else{
+                            let err_resp = get_json_data.unwrap_err();
+                            return err_resp;
+                        };
+
+                        let create_nft_metadata_uri_request = serde_json::from_value::<CreateNftMetadataUriRequest>(json_data).unwrap();
+
+
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &create_nft_metadata_uri_request.caller_cid, 
+                            &create_nft_metadata_uri_request.tx_signature, 
+                            &create_nft_metadata_uri_request.hash_data, 
+                            Some(create_nft_metadata_uri_request.amount.parse::<i64>().unwrap()),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+
+
+                        match UserNft::create_nft_metadata_uri(
+                            create_nft_metadata_uri_request,
+                            files,
+                            redis_client.clone(), 
+                            connection).await{
+                            Ok(user_nft_data) => {
+    
+                                resp!{
+                                    UserNftData, //// the data type
+                                    user_nft_data, //// response data
+                                    UPDATED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+    
+                            },
+                            Err(resp) => {
+                                resp
+                            }
+                        }
+                    
+                    
                     }
 
                 },

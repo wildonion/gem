@@ -1,17 +1,22 @@
 
 
 
+use std::io::Write;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use crate::*;
 use crate::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
+use crate::schema::users::identifier;
 use crate::schema::users_nfts::nft_description;
 use actix_web::web::Query;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
+use serde_json::json;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_IMAGE_TYPE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -820,11 +825,7 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let nft_name_ = asset_info.get_nft_name();
     let nft_description_ = asset_info.get_nft_description();
-    let nft_attributes = serde_json::to_string_pretty(
-        &asset_info
-            .get_nft_attribute()
-            .unwrap()
-    ).unwrap();
+    let nft_attributes = asset_info.get_nft_attribute().unwrap();
 
     let asset_info = asset_info.get_self();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
@@ -838,12 +839,15 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let file_url = upload_ipfs_response.ipfs_url;
 
-    /* upload request */
+    /* 
+        sending all data as json value to the nftport server since attributes 
+        must be a valid json list not string 
+    */
     let mut upload_data = HashMap::new();
-    upload_data.insert("name", &nft_name_);
-    upload_data.insert("description", &nft_description_);
-    upload_data.insert("file_url", &file_url);
-    upload_data.insert("attributes", &nft_attributes);
+    upload_data.insert("name", serde_json::to_value(nft_name_.clone()).unwrap());
+    upload_data.insert("description", serde_json::to_value(nft_description_).unwrap());
+    upload_data.insert("file_url", serde_json::to_value(file_url).unwrap());
+    upload_data.insert("attributes", nft_attributes);
     let nftport_upload2ipfs_endpoint = format!("https://api.nftport.xyz/v0/metadata");
     let res = reqwest::Client::new()
         .post(nftport_upload2ipfs_endpoint.as_str())
@@ -1271,22 +1275,78 @@ pub async fn update_nft(
     both of these two structures have the fields that we want it but don't know which one is
     going to be passed to the method!
 */
+type Files = HashMap<String, Vec<u8>>;
 pub async fn get_nft_onchain_metadata_uri<N>(
-    img: Multipart, redis_client: redis::Client, 
+    file: (String, Vec<u8>), /* the filename and its bytes */
+    redis_client: redis::Client, 
     asset_info: N) -> Result<String, PanelHttpResponse>
     where N: NftExt + Clone + Send + Sync + 'static, 
+    Files: Clone + Send + Sync + 'static,
         <N as NftExt>::AssetInfo: Send + Sync + 'static{ /* also the AssetInfo, the dynamic type, in trait must be bounded to Send Sync 'static */
 
     /* uploading nft image on server */
-    let get_nft_img_path = misc::store_file(
-        NFT_UPLOAD_PATH, &format!("nft:{}-incontract:{}-by:{}", asset_info.get_nft_name(), asset_info.get_nft_contract_address(), asset_info.get_nft_current_owner_address()), 
-        "nft", 
-        img).await;
-    let Ok(nft_img_path) = get_nft_img_path else{
+    let filename = file.0;
+    /*************************************************************************/
+    /*** we can manipulate image bytes in here, doing some image processing 
+     *** like shifting and swapping bytes :) ***/
+    /*************************************************************************/
+    let img_bytes = file.1; 
 
-        let err_res = get_nft_img_path.unwrap_err();
-        return Err(err_res);
+    let ext_position_png = filename.find("png");
+    let ext_position_jpg = filename.find("jpg");
+    let ext_position_jpeg = filename.find("jpeg");
+    let ext_position_pdf = filename.find("pdf");
+    let ext_position_mp4 = filename.find("mp4");
+    let ext_position_mp3 = filename.find("mp3");
+    let ext_position_gif = filename.find("gif");
+
+    let (ext_position, file_kind) = if filename.find("png").is_some(){
+        (ext_position_png.unwrap(), "img")
+    } else if filename.find("jpg").is_some(){
+        (ext_position_jpg.unwrap(), "img")
+    } else if filename.find("jpeg").is_some(){
+        (ext_position_jpeg.unwrap(), "img")
+    } else if filename.find("pdf").is_some(){
+        (ext_position_pdf.unwrap(), "pdf")
+    } else if filename.find("mp4").is_some(){
+        (ext_position_mp4.unwrap(), "mp4")
+    } else if filename.find("mp3").is_some(){
+        (ext_position_mp3.unwrap(), "mp3")
+    } else if filename.find("gif").is_some(){
+        (ext_position_gif.unwrap(), "gif")
+    } else{
+
+        let resp = Response::<&[u8]>{
+            data: Some(&[]),
+            message: UNSUPPORTED_IMAGE_TYPE,
+            status: 406
+        };
+        return Err(
+            Ok(HttpResponse::NotAcceptable().json(resp))
+        );
     };
+    
+    let mut nft_img_path = String::from("");
+    tokio::fs::create_dir_all(NFT_UPLOAD_PATH).await.unwrap();
+    let identifier_ = &format!("nft:{}-incontract:{}-by:{}", asset_info.get_nft_name(), asset_info.get_nft_contract_address(), asset_info.get_nft_current_owner_address());
+    let img_filename = format!("{}:{}-{}:{}.{}", "nft", identifier_, file_kind, SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros(), &filename[ext_position..]);
+    let filepath = format!("{}/{}", NFT_UPLOAD_PATH, sanitize_filename::sanitize(&img_filename));
+    nft_img_path = filepath.clone();
+    
+    /* 
+        web::block() executes a blocking function on a actix threadpool
+        using spawn_blocking method of actix runtime so in here we're 
+        creating a file inside a actix runtime threadpool to fill it with 
+        the incoming bytes inside the field object by streaming over field
+        object to extract the bytes
+    */
+    let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
+
+    /* writing fulfilled buffer bytes into the created file with the extracted filepath */
+    f = web::block(move || f.write_all(&img_bytes).map(|_| f))
+        .await
+        .unwrap()
+        .unwrap();
 
     if nft_img_path.is_empty(){
             

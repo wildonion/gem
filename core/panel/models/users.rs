@@ -1381,6 +1381,7 @@ impl User{
             );
         };
 
+        let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
         let get_wallet_img_path = misc::store_file(
             WALLET_BACK_UPLOAD_PATH, &format!("{}", wallet_owner_id), 
             "walletback", 
@@ -1489,6 +1490,7 @@ impl User{
             );
         };
 
+        let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
         let get_avatar_img_path = misc::store_file(
             AVATAR_UPLOAD_PATH, &format!("{}", avatar_owner_id), 
             "avatar", 
@@ -1597,6 +1599,7 @@ impl User{
             );
         };
 
+        let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
         let get_banner_img_path = misc::store_file(
             BANNER_UPLOAD_PATH, &format!("{}", banner_owner_id), 
             "banner", 

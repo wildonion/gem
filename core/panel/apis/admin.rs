@@ -344,6 +344,8 @@ async fn update_mafia_event_img(
 
                     };
 
+                    let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
+
                     let get_event_img_path = misc::store_file(
                         EVENT_UPLOAD_PATH, &format!("{}", event_id), 
                         "event", 

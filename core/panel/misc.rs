@@ -13,6 +13,7 @@ use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HO
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
+use crate::models::users_nfts::CreateNftMetadataUriRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
 use s3::*;
@@ -645,11 +646,18 @@ pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] {
     Box::leak(s.into_boxed_slice()) 
 }
 
-pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, mut asset: Multipart) -> Result<String, PanelHttpResponse>{
+pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, 
+    asset: std::sync::Arc<tokio::sync::Mutex<Multipart>>) -> Result<String, PanelHttpResponse>{
 
     /* making collection image from incoming bytes */
     let mut img_path = String::from("");
     tokio::fs::create_dir_all(upload_path).await.unwrap();
+
+    /* locking on mutex */
+    let lock_payload = asset.lock().await;
+    let mut asset = lock_payload;
+
+    info!("asset {:#?}", asset.next().await.unwrap().unwrap());
 
     /*  
         streaming over incoming img multipart form data to extract the
@@ -658,10 +666,10 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, 
     while let Ok(Some(mut field)) = asset.try_next().await{
         
         /* getting the content_disposition header which contains the filename */
-        let content_type = field.content_disposition();
+        let content_disposition = field.content_disposition();
 
         /* creating the filename and the filepath */
-        let filename = content_type.get_filename().unwrap().to_lowercase();
+        let filename = content_disposition.get_filename().unwrap().to_lowercase();
         let ext_position_png = filename.find("png");
         let ext_position_jpg = filename.find("jpg");
         let ext_position_jpeg = filename.find("jpeg");
@@ -703,7 +711,10 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, 
         /* 
             receiving asyncly by streaming over the field future io object,
             getting the some part of the next field future object to extract 
-            the image bytes from it
+            the image bytes from it, we can also use the following syntax to
+            gather all bytes into a single buffer:
+            let buffer = field.try_next().await.unwrap().unwrap().to_vec();
+
         */
         let mut file_buffer = vec![];
         while let Some(chunk) = field.next().await{
@@ -753,6 +764,85 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, 
 
     Ok(img_path)
 
+
+}
+
+pub async fn convert_multipart_to_json(
+    payload: std::sync::Arc<tokio::sync::Mutex<Multipart>>
+) -> Result<(serde_json::Value, HashMap<String, Vec<u8>>), PanelHttpResponse>{
+
+    /* 
+        streaming over each field of Multipart to extract utf8 bytes of each 
+        field value then map them into desired strcuture to build 
+        CreateNftMetadataUriRequest instance
+    */
+    let mut text_fields: HashMap<String, String> = HashMap::new();
+    let mut file_fields: HashMap<String, Vec<u8>> = HashMap::new();
+    let lock_payload = payload.lock().await;
+    let mut payload = lock_payload;
+    let mut file_buffer = vec![];
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+
+        let content_disposition = field.content_disposition();
+        let field_name = content_disposition.get_name().unwrap_or_default().to_string();
+
+        /* extracting only text fields */
+        if let None = content_disposition.get_filename(){
+            
+            let data = field.next().await.unwrap_or(Ok(bytes::Bytes::from(""))).unwrap();
+            text_fields.insert(field_name, std::str::from_utf8(&data).unwrap().to_string());
+        
+        } else{
+
+            /* creating the filename and the filepath */
+            let filename = content_disposition.get_filename().unwrap_or_default().to_lowercase();
+            
+            /* 
+                receiving asyncly by streaming over the field future io object,
+                getting the some part of the next field future object to extract 
+                the image bytes from it, we can also use the following syntax to
+                gather all bytes into a single buffer:
+                let buffer = field.try_next().await.unwrap().unwrap().to_vec();
+
+            */
+            while let Some(chunk) = field.next().await{
+                
+                /* chunk is a Bytes object that can be used to be written into a buffer */
+                let data = chunk.unwrap();
+
+                /* 
+                    getting the size of the file, data can be coerced 
+                    to &[u8] by taking a reference to the underlying data
+                */
+                file_buffer.extend_from_slice(&data);
+                
+            }
+
+            /* if the file size was greater than 200 MB reject the request */
+            if file_buffer.len() > env::var("FILE_SIZE").unwrap().parse::<usize>().unwrap(){
+
+                /* terminate the method and respond the caller */
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: TOO_LARGE_FILE_SIZE,
+                    status: 406
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                );
+            }
+
+            file_fields.insert(filename, file_buffer.clone());
+
+        }
+    }
+
+    let json_data = serde_json::to_value(&text_fields).unwrap();
+
+    Ok(
+        (json_data, file_fields)
+    )
 
 }
 

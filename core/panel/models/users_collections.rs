@@ -181,6 +181,8 @@ impl UserCollection{
             })
             .collect::<Vec<Option<UserNftData>>>();
         
+        minted_ones.retain(|nft| nft.is_some());
+
         /* sorting nfts in desc order */
         minted_ones.sort_by(|nft1, nft2|{
                 /* 
@@ -402,7 +404,7 @@ impl UserCollection{
                                     vec![]
                                 };
                                 
-                                let none_minted_nfts = decoded_nfts
+                                let mut none_minted_nfts = decoded_nfts
                                     .into_iter()
                                     .map(|nft|{
                                         /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -412,6 +414,8 @@ impl UserCollection{
                                             None
                                         }
                                     }).collect::<Vec<Option<UserNftData>>>();
+                                
+                                none_minted_nfts.retain(|nft| nft.is_some());
                                 
                                 let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
                                 Some(encoded_nfts)
@@ -501,6 +505,7 @@ impl UserCollection{
         }
 
         /* uploading collection image */
+        let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
         let get_collection_img_path = misc::store_file(
             COLLECTION_UPLOAD_PATH, &collection_data.owner_screen_cid, 
             "collection", 
@@ -510,7 +515,6 @@ impl UserCollection{
             let err_res = get_collection_img_path.unwrap_err();
             return Err(err_res);
         };
-
 
         /* if the onchain data was ok we simply update the record based on the data updated onchain */
         let new_col_data = UpdateUserCollection{
@@ -684,7 +688,7 @@ impl UserCollection{
                                     vec![]
                                 };
                                 
-                                let none_minted_nfts = decoded_nfts
+                                let mut minted_nfts = decoded_nfts
                                     .into_iter()
                                     .map(|nft|{
                                         /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -695,7 +699,10 @@ impl UserCollection{
                                         }
                                     }).collect::<Vec<Option<UserNftData>>>();
                                 
-                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
+                                
+                                minted_nfts.retain(|nft| nft.is_some());
+
+                                let encoded_nfts = serde_json::to_value(minted_nfts).unwrap();
                                 Some(encoded_nfts)
         
                             } else{

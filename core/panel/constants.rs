@@ -139,6 +139,7 @@ pub static NFT_METADATA_URI_IS_EMPTY: &str = "Nft Metadata Is Empty";
 pub static NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED: &str = "This Event Type Requires Valid `transfer_to_screen_cid` Field To Be Filled Up";
 pub static NFT_EVENT_TYPE_BUYER_IS_NEEDED: &str = "This Event Type Requires Valid `buyer_screen_cid` Field To Be Filled Up";
 pub static NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED: &str = "This Event Type Requires Valid `metadata_uri` Field To Be Filled Up";
+pub static NFT_IS_NOT_LISTED: &str = "Nft Is Not Listed";
 
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";

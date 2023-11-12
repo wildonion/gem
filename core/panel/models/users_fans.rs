@@ -221,6 +221,8 @@ impl UserFan{
             })
             .collect::<Vec<Option<InvitationRequestData>>>();
 
+        unaccepted_ones.retain(|inv| inv.is_some());
+
         /* sorting invitation requests in desc order */
         unaccepted_ones.sort_by(|inv1, inv2|{
             /* 
@@ -315,6 +317,8 @@ impl UserFan{
 
             })
             .collect::<Vec<Option<FriendData>>>();
+
+        unaccepted_ones.retain(|frd| frd.is_some());
 
         /* sorting friend requests in desc order */
         unaccepted_ones.sort_by(|frd1, frd2|{
