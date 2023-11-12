@@ -753,7 +753,7 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
         */
         let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
 
-        /* writing fulfilled buffer bytes into the created file with the extracted filepath */
+        /* writing fulfilled buffer bytes into the created file with the created filepath */
         f = web::block(move || f.write_all(&file_buffer).map(|_| f))
             .await
             .unwrap()
@@ -787,7 +787,7 @@ pub async fn convert_multipart_to_json(
         let content_disposition = field.content_disposition();
         let field_name = content_disposition.get_name().unwrap_or_default().to_string();
 
-        /* extracting only text fields */
+        /* extracting text fields */
         if let None = content_disposition.get_filename(){
             
             let data = field.next().await.unwrap_or(Ok(bytes::Bytes::from(""))).unwrap();
@@ -795,7 +795,7 @@ pub async fn convert_multipart_to_json(
         
         } else{
 
-            /* creating the filename and the filepath */
+            /* extracting file fields */
             let filename = content_disposition.get_filename().unwrap_or_default().to_lowercase();
             
             /* 

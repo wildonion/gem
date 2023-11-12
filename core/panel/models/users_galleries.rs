@@ -305,7 +305,7 @@ impl UserPrivateGallery{
                                                 } else{
                                                     vec![]
                                                 };
-                                                
+
                                                 let mut none_minted_nfts = decoded_nfts
                                                     .into_iter()
                                                     .map(|nft|{

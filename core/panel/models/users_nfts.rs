@@ -717,7 +717,7 @@ impl UserNft{
         };
 
         /* start uploading nft onchain */
-        let first_map = files.iter().next().unwrap();
+        let first_map = files.iter().next().unwrap(); /* we'll use the first one */
         let filename = first_map.0.to_owned();
         let img_bytes = first_map.1.to_owned();
         let get_nft_metadata_uri = 

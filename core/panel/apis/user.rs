@@ -6795,6 +6795,7 @@ async fn create_nft_metadata_uri(
                             return err_resp;
                         };
 
+                        /* json_data can by any content, here we're trying to map it into the CreateNftMetadataUriRequest struct */
                         let create_nft_metadata_uri_request = serde_json::from_value::<CreateNftMetadataUriRequest>(json_data).unwrap();
 
 

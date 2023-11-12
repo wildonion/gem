@@ -1342,7 +1342,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     */
     let mut f = web::block(|| std::fs::File::create(filepath).unwrap()).await.unwrap();
 
-    /* writing fulfilled buffer bytes into the created file with the extracted filepath */
+    /* writing fulfilled buffer bytes into the created file with the created filepath */
     f = web::block(move || f.write_all(&img_bytes).map(|_| f))
         .await
         .unwrap()
