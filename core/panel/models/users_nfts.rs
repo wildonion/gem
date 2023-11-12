@@ -633,6 +633,13 @@ impl UserNft{
         /* parse the string fields to desire type */
         let amount = amount.parse::<i64>().unwrap();
         let nft_id = nft_id.parse::<i32>().unwrap();
+
+        /* 
+            nft_new_attributes and nft_new_extra are already in json string form
+            but their type must be Value or json, solution to this this is decoding
+            the json string directly into json or Value not creating the Value from
+            json string, in that case we have still the json string but as a Value!!
+        */
         let nft_new_attributes = Some(serde_json::from_str::<serde_json::Value>(&nft_new_attributes).unwrap());
         let nft_new_extra = Some(serde_json::from_str::<serde_json::Value>(&nft_new_extra).unwrap());
 
