@@ -198,6 +198,13 @@ pub struct ChargeWalletRequest{
     pub hash_data: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct CheckKycRequest{
+    pub caller_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct Id{
     pub region: String,

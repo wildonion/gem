@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "1c29aeb4-2345-463e-96d2-52b1c5fe2f93",
+		"_postman_id": "7a3bd80c-b40f-46ab-bc94-5fca466fe30b",
 		"name": "gem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
-		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-1c29aeb4-2345-463e-96d2-52b1c5fe2f93?action=share&source=collection_link&creator=22927035"
+		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
 	},
 	"item": [
 		{
@@ -2570,7 +2570,10 @@
 									"name": "Report User Tasks",
 									"request": {
 										"method": "GET",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								}
@@ -3014,7 +3017,10 @@
 									"name": "Stripe Charge Wallet",
 									"request": {
 										"method": "POST",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3022,7 +3028,10 @@
 									"name": "Deposit",
 									"request": {
 										"method": "POST",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3030,7 +3039,10 @@
 									"name": "Withdraw",
 									"request": {
 										"method": "POST",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3038,7 +3050,10 @@
 									"name": "Get User Deposits",
 									"request": {
 										"method": "GET",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3046,7 +3061,10 @@
 									"name": "Get User Withdrawals",
 									"request": {
 										"method": "GET",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3095,7 +3113,10 @@
 									"name": "Get User Unpaid Checkouts",
 									"request": {
 										"method": "GET",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								},
@@ -3103,7 +3124,10 @@
 									"name": "Get User Paid Checkouts",
 									"request": {
 										"method": "GET",
-										"header": []
+										"header": [],
+										"url": {
+											"raw": ""
+										}
 									},
 									"response": []
 								}
@@ -4405,6 +4429,42 @@
 									],
 									"path": [
 										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Am I KYCed",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQxOTUyMjI1OTQ3MDAwLCJleHAiOjE2OTc2MzM5NTIsImlhdCI6MTY5NTA0MTk1Mn0.jknOjsKMbAwOmxC0_WHyTb85KXfA3hqsQ9ynsOs6FLKFD9Xw-Xz6YOx-OzEczc9bfZoh_UgrHhhjWhnw4axbWg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"caller_cid\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-health}}/am-i-kyced",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"am-i-kyced"
 									]
 								}
 							},

@@ -20,7 +20,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/
 🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE    ==> https://api.panel.conse.app/mongo
-🗺️ RENDEZVOUS API ROUTE                              ==> https://api.rendezvous.conse.app/
+🗺️ RENDEZVOUS API ROUTE                         ==> https://api.rendezvous.conse.app/
 📡 SWAGGER DOC                                  ==> https://api.panel.conse.app/swagger/
 🛢️ ADMINER PANEL                                ==> https://adminer.conse.app
 🛎️ JENKINS PANEL                                ==> https://jenkins.conse.app
@@ -109,7 +109,7 @@ cargo run --bin contest
 
 ```bash
 conse.app                    #---> this main domain is related to the home UI of the app
-api.rendezvous.conse.app          #---> points to the conse rendezvous hyper APIs
+api.rendezvous.conse.app     #---> points to the conse rendezvous hyper APIs
 api.panel.conse.app          #---> points to the conse actix APIs
 panel.conse.app              #---> points to the panel UI
 notif.panel.conse.app        #---> points to the websocket push notification server APIs
