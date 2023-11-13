@@ -1208,4 +1208,30 @@
   "is_disabled": false,
   "created_at": 1690378146,
   "updated_at": 1690378146
+},
+{
+  "_id": {
+    "$oid": "65424fc2215c097357d8e39b"
+  },
+  "name": "رمال",
+  "rate": 1,
+  "desc": "",
+  "abilities": 0,
+  "side_id": "630a35978c198e0d655c8adf",
+  "is_disabled": false,
+  "created_at": 1698844610,
+  "updated_at": 1698844610
+},
+{
+  "_id": {
+    "$oid": "65424fe3215c097357d8e39c"
+  },
+  "name": "جان سخت",
+  "rate": 1,
+  "desc": "",
+  "abilities": 0,
+  "side_id": "630a35978c198e0d655c8adf",
+  "is_disabled": false,
+  "created_at": 1698844643,
+  "updated_at": 1698844643
 }]

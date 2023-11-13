@@ -12,9 +12,11 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 ## 🚟 Infra Routes and APIs
 
 ```bash
+# ---------------------------------------------------------------------------------------------------
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # conse panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server      : postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
+# ---------------------------------------------------------------------------------------------------
 🥛 WEBSOCKET PUSH NOTIFICATION ROUTE            ==> wss://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE                                    ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/

@@ -1423,6 +1423,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> O
         .await
         .unwrap();
 
+    /* return the response directly to the client without mapping it into the struct */
     OnchainNfts{
         onchain_nfts: Some(res_value)
     }
