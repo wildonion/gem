@@ -528,15 +528,16 @@ impl UserNft{
 
     }
 
-    pub async fn find_by_current_owner(current_owner: &str, 
+    pub async fn get_all_by_current_owner(current_owner: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserNftData, PanelHttpResponse>{
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
 
-        let user_nft = users_nfts
+        /* get all nfts owned by the passed in current_owner */
+        let user_nfts = users_nfts
             .filter(users_nfts::current_owner_screen_cid.eq(current_owner))
-            .first::<UserNft>(connection);
+            .load::<UserNft>(connection);
 
-        let Ok(nft) = user_nft else{
+        let Ok(all_nfts) = user_nfts else{
 
             let resp = Response{
                 data: Some(current_owner),
@@ -550,26 +551,33 @@ impl UserNft{
         };
 
         Ok(
-            UserNftData{ 
-                id: nft.id, 
-                contract_address: nft.contract_address, 
-                current_owner_screen_cid: nft.current_owner_screen_cid, 
-                metadata_uri: nft.metadata_uri, 
-                extra: nft.extra, 
-                onchain_id: nft.onchain_id, 
-                nft_name: nft.nft_name, 
-                is_minted: nft.is_minted, 
-                nft_description: nft.nft_description, 
-                current_price: nft.current_price, 
-                is_listed: nft.is_listed, 
-                freeze_metadata: nft.freeze_metadata, 
-                comments: nft.comments, 
-                likes: nft.likes, 
-                tx_hash: nft.tx_hash, 
-                created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string(),
-                attributes: nft.attributes, 
-            }
+            all_nfts
+                .into_iter()
+                .map(|nft|{
+    
+                    UserNftData{ 
+                        id: nft.id, 
+                        contract_address: nft.contract_address, 
+                        current_owner_screen_cid: nft.current_owner_screen_cid, 
+                        metadata_uri: nft.metadata_uri, 
+                        extra: nft.extra, 
+                        onchain_id: nft.onchain_id, 
+                        nft_name: nft.nft_name, 
+                        is_minted: nft.is_minted, 
+                        nft_description: nft.nft_description, 
+                        current_price: nft.current_price, 
+                        is_listed: nft.is_listed, 
+                        freeze_metadata: nft.freeze_metadata, 
+                        comments: nft.comments, 
+                        likes: nft.likes, 
+                        tx_hash: nft.tx_hash, 
+                        created_at: nft.created_at.to_string(), 
+                        updated_at: nft.updated_at.to_string(),
+                        attributes: nft.attributes, 
+                    }
+    
+                })
+                .collect::<Vec<UserNftData>>()
         )
 
     }

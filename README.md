@@ -110,7 +110,7 @@ cargo run --bin contest
 ```bash
 conse.app                    #---> this main domain is related to the home UI of the app
 api.mafia.conse.app          #---> points to the conse mafia hyper APIs
-api.panel.conse.app          #----> points to the conse actix APIs
+api.panel.conse.app          #---> points to the conse actix APIs
 panel.conse.app              #---> points to the panel UI
 notif.panel.conse.app        #---> points to the websocket push notification server APIs
 adminer.conse.app            #---> points to the adminer UI

@@ -559,6 +559,7 @@ impl UserPrivateGallery{
             for col in decoded_cols{
                 if col.contract_address == col_contract_address.to_string(){
 
+                    /* terminate the caller with the found gallery data */
                     return Ok(
                         UserPrivateGalleryData{ 
                             id: gallery.id, 
@@ -577,7 +578,7 @@ impl UserPrivateGallery{
 
         }
 
-        Ok(UserPrivateGalleryData::default())
+        Ok(UserPrivateGalleryData::default()) /* terminate the caller with a default gallery data */
 
     }
 

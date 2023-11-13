@@ -2563,7 +2563,7 @@ async fn start_tcp_server(
 
 pub mod exports{
     // pub use super::request_ecq;  // `<---mafia jwt--->` mafia hyper server
-    // pub use super::advertise_event;  // `<---mafia jwt--->` mafia hyper server
+    // pub use super::advieh_an_event;  // `<---mafia jwt--->` mafia hyper server
     pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
     pub use super::login;
     pub use super::register_new_user;
