@@ -123,7 +123,7 @@ async fn reveal_role(
     ) -> PanelHttpResponse {
 
     /* 
-        reveal role event and webhook handler to call the reveal role api of conse mafia
+        reveal role event and webhook handler to call the reveal role api of conse rendezvous
         hyper server then publish the roles into the redis pubsub channel, cause we'll
         subscribe to the roles in ws server and notify each session about his role.  
         webhook means once an event gets triggered an api call will be invoked to 
@@ -141,9 +141,9 @@ async fn reveal_role(
             @params: 
                 - @token          → JWT
 
-            note that this token must be taken from the conse mafia hyper server
+            note that this token must be taken from the conse rendezvous hyper server
         */
-        match mafia_passport!{ token }{
+        match rendezvous_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ async fn reveal_role(
                 let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
                 
                 let host = env::var("HOST").expect("⚠️ no host variable set");
-                let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
+                let port = env::var("RENDEZVOUS_PORT").expect("⚠️ no port variable set");
                 let reveal_api = format!("http://{}:{}/event/reveal/roles", host, port);
                 
                 let mut revealed = events::publishers::role::Reveal::default();
@@ -164,9 +164,9 @@ async fn reveal_role(
                 match storage.clone().unwrap().get_pgdb().await{
                     Some(pg_pool) => {
                         
-                        info!("📥 sending reveal role request to the conse mafia hyper server at {} for event [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap(), event_id);
+                        info!("📥 sending reveal role request to the conse rendezvous hyper server at {} for event [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap(), event_id);
 
-                        /* calling rveal role API of the mafia hyper server to get the players' roles */
+                        /* calling rveal role API of the rendezvous hyper server to get the players' roles */
                         let get_response_value = reqwest::Client::new()
                             .post(reveal_api.as_str())
                             .json(&map)
@@ -187,7 +187,7 @@ async fn reveal_role(
 
                         };
 
-                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        /* if we're here means that the conse rendezvous hyper server is up and we got a response from it */
                         let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");
@@ -288,8 +288,8 @@ async fn reveal_role(
 
 }
 
-#[post("/mafia/event/{event_id}/upload/img")]
-async fn update_mafia_event_img(
+#[post("/rendezvous/event/{event_id}/upload/img")]
+async fn update_rendezvous_event_img(
     req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -305,9 +305,9 @@ async fn update_mafia_event_img(
                 @params: 
                     - @token          → JWT
     
-                note that this token must be taken from the conse mafia hyper server
+                note that this token must be taken from the conse rendezvous hyper server
             */
-            match mafia_passport!{ token }{
+            match rendezvous_passport!{ token }{
                 true => {
     
                     // -------------------------------------------------------------------------------------
@@ -315,8 +315,8 @@ async fn update_mafia_event_img(
                     // -------------------------------------------------------------------------------------
                     /*  
                         this route requires the admin or god access token from the conse 
-                        mafia hyper server to update an event image, we'll send a request
-                        to the conse mafia hyper server to verify the passed in JWT of the
+                        rendezvous hyper server to update an event image, we'll send a request
+                        to the conse rendezvous hyper server to verify the passed in JWT of the
                         admin and it was verified we'll allow the user to update the image
                     */
     
@@ -359,7 +359,7 @@ async fn update_mafia_event_img(
 
                     /* 
                         writing the event image filename to redis ram, by doing this we can 
-                        retrieve the value from redis in conse hyper mafia server when we call 
+                        retrieve the value from redis in conse hyper rendezvous server when we call 
                         the get event info api
                     */
                     let _: () = redis_conn.set(event_id_img_key.as_str(), event_img_filepath.as_str()).await.unwrap();
@@ -367,7 +367,7 @@ async fn update_mafia_event_img(
                     resp!{
                         &[u8], // the date type
                         &[], // the data itself
-                        MAFIA_EVENT_IMG_UPDATED, // response message
+                        RENDEZVOUS_EVENT_IMG_UPDATED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }
@@ -2562,9 +2562,8 @@ async fn start_tcp_server(
 
 
 pub mod exports{
-    // pub use super::request_ecq;  // `<---mafia jwt--->` mafia hyper server
-    // pub use super::advieh_an_event;  // `<---mafia jwt--->` mafia hyper server
-    pub use super::reveal_role; // `<---mafia jwt--->` mafia hyper server
+    // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
+    pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::login;
     pub use super::register_new_user;
     pub use super::register_new_task; 
@@ -2573,7 +2572,7 @@ pub mod exports{
     pub use super::edit_user;
     pub use super::delete_user;
     pub use super::add_twitter_account;
-    pub use super::update_mafia_event_img; // `<---mafia jwt--->` mafia hyper server
+    pub use super::update_rendezvous_event_img; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::start_tcp_server;
     pub use super::get_all_users_checkouts;
     pub use super::get_users;

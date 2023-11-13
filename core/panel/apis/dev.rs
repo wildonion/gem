@@ -85,7 +85,7 @@ impl Modify for SecurityAddon {
         ("jwt" = [])
     )
 )]
-#[get("/mafia/get/admin/{admin_id}/data/")]
+#[get("/rendezvous/get/admin/{admin_id}/data/")]
 async fn get_admin_data(
         req: HttpRequest, 
         admin_id: web::Path<String>, // mongodb object id of admin or god
@@ -102,9 +102,9 @@ async fn get_admin_data(
             @params: 
                 - @token          → JWT
 
-            note that this token must be taken from the conse mafia hyper server
+            note that this token must be taken from the conse rendezvous hyper server
         */
-        match mafia_passport!{ token }{
+        match rendezvous_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ async fn get_admin_data(
 
                         let god_id = admin_id.to_owned();
                         let host = env::var("HOST").expect("⚠️ no host variable set");
-                        let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
+                        let port = env::var("RENDEZVOUS_PORT").expect("⚠️ no port variable set");
                         let get_event_api = format!("http://{}:{}/event/get/all/god-with-id/{}", host, port, god_id);
                         let mut all_god_events = Vec::<EventInfo>::new();
 
@@ -145,7 +145,7 @@ async fn get_admin_data(
 
                         };
 
-                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        /* if we're here means that the conse rendezvous hyper server is up and we got a response from it */
                         let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");
@@ -251,7 +251,7 @@ async fn get_admin_data(
         ("jwt" = [])
     )
 )]
-#[get("/mafia/get/user/{user_id}/data/")]
+#[get("/rendezvous/get/user/{user_id}/data/")]
 async fn get_user_data(
         req: HttpRequest, 
         limit: web::Query<Limit>,
@@ -268,9 +268,9 @@ async fn get_user_data(
             @params: 
                 - @token          → JWT
 
-            note that this token must be taken from the conse mafia hyper server
+            note that this token must be taken from the conse rendezvous hyper server
         */
-        match mafia_passport!{ token }{
+        match rendezvous_passport!{ token }{
             true => {
 
                 // -------------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ async fn get_user_data(
                         
                         let user_id = user_id.to_owned();
                         let host = env::var("HOST").expect("⚠️ no host variable set");
-                        let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
+                        let port = env::var("RENDEZVOUS_PORT").expect("⚠️ no port variable set");
                         let get_event_api = format!("http://{}:{}/event/get/all/player/{}", host, port, user_id);
                         let mut player_events = Vec::<PlayerEventInfo>::new();
                         
@@ -310,7 +310,7 @@ async fn get_user_data(
 
                         };
 
-                        /* if we're here means that the conse mafia hyper server is up and we got a response from it */
+                        /* if we're here means that the conse rendezvous hyper server is up and we got a response from it */
                         let response_value = response_value.json::<serde_json::Value>().await.unwrap();
 
                         let data = response_value.get("data");

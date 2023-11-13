@@ -81,8 +81,8 @@ path = "core/panel/lib.rs"
 name = "panel_macros"
 
 [[bin]]
-name = "mafia"
-path = "core/mafia/app.rs"
+name = "rendezvous"
+path = "core/rendezvous/app.rs"
 
 [[bin]]
 name = "panel"

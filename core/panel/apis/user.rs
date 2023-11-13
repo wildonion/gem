@@ -3675,11 +3675,11 @@ async fn upload_banner(
 }
 
 /* 
-    this api must gets called by player with his conse mafia hyper server JWT 
+    this api must gets called by player with his conse rendezvous hyper server JWT 
     passed in to the request header 
 */
-#[post("/mafia/player/{player_id}/upload/avatar")]
-async fn update_mafia_player_avatar(
+#[post("/rendezvous/player/{player_id}/upload/avatar")]
+async fn upload_rendezvous_player_avatar(
     req: HttpRequest, 
     player_id: web::Path<String>, // mongodb objectid
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3695,9 +3695,9 @@ async fn update_mafia_player_avatar(
                 @params: 
                     - @token          → JWT
     
-                note that this token must be taken from the conse mafia hyper server
+                note that this token must be taken from the conse rendezvous hyper server
             */
-            match mafia_passport!{ token }{
+            match rendezvous_passport!{ token }{
                 true => {
     
                     // -------------------------------------------------------------------------------------
@@ -3705,8 +3705,8 @@ async fn update_mafia_player_avatar(
                     // -------------------------------------------------------------------------------------
                     /*  
                         this route requires the player access token from the conse 
-                        mafia hyper server to update avatar image, we'll send a request
-                        to the conse mafia hyper server to verify the passed in JWT of the
+                        rendezvous hyper server to update avatar image, we'll send a request
+                        to the conse rendezvous hyper server to verify the passed in JWT of the
                         player and if it was verified we'll allow the user to update the image
                     */
     
@@ -3748,7 +3748,7 @@ async fn update_mafia_player_avatar(
                     
                     /* 
                         writing the avatar image filename to redis ram, by doing this we can 
-                        retrieve the value from redis in conse hyper mafia server when we call 
+                        retrieve the value from redis in conse hyper rendezvous server when we call 
                         the check token api
                     */
                     let _: () = redis_conn.set(player_id_img_key.as_str(), player_img_filepath.as_str()).await.unwrap();
@@ -3756,7 +3756,7 @@ async fn update_mafia_player_avatar(
                     resp!{
                         &[u8], // the date type
                         &[], // the data itself
-                        MAFIA_PLAYER_AVATAR_IMG_UPDATED, // response message
+                        RENDEZVOUS_PLAYER_AVATAR_IMG_UPDATED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }
@@ -8133,6 +8133,7 @@ async fn get_all_nft_reactions(
 }
 
 pub mod exports{
+    pub use super::upload_rendezvous_player_avatar; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::tasks_report;
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
@@ -8159,7 +8160,6 @@ pub mod exports{
     pub use super::upload_banner;
     pub use super::upload_wallet_back;
     pub use super::upload_collection_banner;
-    pub use super::update_mafia_player_avatar;
     pub use super::make_cid;
     pub use super::request_mail_code;
     pub use super::verify_mail_code;
@@ -8195,5 +8195,10 @@ pub mod exports{
     //      - sell their nfts in the platform 
     //      - use their nfts as an entry card in different parts of the platform
     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+    // ...
+    // -----------------------------------------------
+    /*                    advieh apis                */
+    // -----------------------------------------------
+    // pub use super::advieh_collection;
     // ...
 }

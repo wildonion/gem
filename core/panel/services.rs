@@ -65,7 +65,7 @@ pub fn init_dev(config: &mut web::ServiceConfig){
 pub fn init_admin(config: &mut web::ServiceConfig){
     
     config.service(apis::admin::exports::reveal_role);
-    config.service(apis::admin::exports::update_mafia_event_img);
+    config.service(apis::admin::exports::update_rendezvous_event_img);
     config.service(apis::admin::exports::login);
     config.service(apis::admin::exports::register_new_user);
     config.service(apis::admin::exports::register_new_task);
@@ -119,7 +119,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::upload_avatar);
     config.service(apis::user::exports::upload_banner);
     config.service(apis::user::exports::upload_wallet_back);
-    config.service(apis::user::exports::update_mafia_player_avatar);
+    config.service(apis::user::exports::upload_rendezvous_player_avatar);
     config.service(apis::user::exports::create_private_gallery);
     config.service(apis::user::exports::update_private_gallery);
     config.service(apis::user::exports::get_all_private_galleries_for);

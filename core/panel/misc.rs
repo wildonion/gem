@@ -899,9 +899,9 @@ macro_rules! resp {
 }
 
 #[macro_export]
-macro_rules! mafia_passport {
+macro_rules! rendezvous_passport {
     (
-      $token:expr /* this is the generated token from the conse mafia hyper server */
+      $token:expr /* this is the generated token from the conse rendezvous hyper server */
     ) 
     => {
 
@@ -910,7 +910,7 @@ macro_rules! mafia_passport {
             use std::env;
 
             let host = env::var("HOST").expect("⚠️ no host variable set");
-            let port = env::var("MAFIA_PORT").expect("⚠️ no port variable set");
+            let port = env::var("RENDEZVOUS_PORT").expect("⚠️ no port variable set");
             let check_token_api = format!("http://{}:{}/auth/check-token", host, port);
             
             let get_response_value = reqwest::Client::new()

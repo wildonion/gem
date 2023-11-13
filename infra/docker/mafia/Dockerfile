@@ -21,7 +21,7 @@ RUN apt-get update && \
     cd themis && \
     make install && \
     cd .. && \
-    cargo build --bin mafia --release
+    cargo build --bin rendezvous --release
 
 # --- Runtime Stage ---
 FROM debian:bullseye-slim
@@ -50,7 +50,7 @@ WORKDIR /app
 # copy necessary libs from the builder stage into this final stage
 # cause the final binary requires linking files or .so lilke crypto
 # and postgres libs to be in its path.
-COPY --from=builder /usr/src/app/target/release/mafia /app/mafia
+COPY --from=builder /usr/src/app/target/release/rendezvous /app/rendezvous
 COPY --from=builder /usr/local/lib/lib* /usr/local/lib/
 COPY --from=builder /usr/lib/${ARCH}-linux-gnu/lib* /usr/lib/${ARCH}-linux-gnu/
 COPY --from=builder /lib/${ARCH}-linux-gnu/lib* /lib/${ARCH}-linux-gnu/
@@ -58,7 +58,7 @@ COPY --from=builder /lib/${ARCH}-linux-gnu/lib* /lib/${ARCH}-linux-gnu/
 # granting the access for the root to create any folder at runtime
 RUN USER=root chown -R root:root /app
 
-# we must copy necessary runtime files into this stage for ./mafia
+# we must copy necessary runtime files into this stage for ./rendezvous
 COPY ./.env /app/.env
 COPY assets /app/assets
 
@@ -66,4 +66,4 @@ USER root
 
 EXPOSE 7438
 
-CMD ["./mafia"]
+CMD ["./rendezvous"]

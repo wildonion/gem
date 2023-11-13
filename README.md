@@ -20,7 +20,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/
 🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE    ==> https://api.panel.conse.app/mongo
-🗺️ MAFIA API ROUTE                              ==> https://api.mafia.conse.app/
+🗺️ RENDEZVOUS API ROUTE                              ==> https://api.rendezvous.conse.app/
 📡 SWAGGER DOC                                  ==> https://api.panel.conse.app/swagger/
 🛢️ ADMINER PANEL                                ==> https://adminer.conse.app
 🛎️ JENKINS PANEL                                ==> https://jenkins.conse.app
@@ -41,7 +41,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
     * `xbot`: X bot for twitter tasks verification.
     * `xcord`: discord bot to broadcast new twitter task defined by admin into a discord channel and role assginement based on user points.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
-    * `mafia`: mafia game APIs
+    * `rendezvous`: rendezvous service APIs
         * `controllers`: in-game async controllers related to hyper server.
         * `routers`: in-game API routers related to hyper server.
         * `schemas`: in-game mongodb schemas related to hyper server.
@@ -94,9 +94,9 @@ then run:
 
 ```bash
 # 🧪 Test Conse Hyper Server
-cargo test --bin mafia
+cargo test --bin rendezvous
 # 🏃 Run Conse Hyper Server
-cargo run --bin mafia #---> cargo build --bin mafia --release
+cargo run --bin rendezvous #---> cargo build --bin rendezvous --release
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
 cargo run --bin panel #---> cargo build --bin panel --release
 # 🏃🏿 Run Conse Test Codes
@@ -109,7 +109,7 @@ cargo run --bin contest
 
 ```bash
 conse.app                    #---> this main domain is related to the home UI of the app
-api.mafia.conse.app          #---> points to the conse mafia hyper APIs
+api.rendezvous.conse.app          #---> points to the conse rendezvous hyper APIs
 api.panel.conse.app          #---> points to the conse actix APIs
 panel.conse.app              #---> points to the panel UI
 notif.panel.conse.app        #---> points to the websocket push notification server APIs
@@ -127,7 +127,7 @@ api.xbot.conse.app           #---> twitter bot to verify twitter tasks
 ```
 Type	    Hostname	               Value	          TTL (seconds)	
 A	    conse.app              directs to 64.226.71.201	     3600
-A	    api.mafia.conse.app   	   directs to 68.183.137.151     3600 
+A	    api.rendezvous.conse.app   	   directs to 68.183.137.151     3600 
 A	    panel.conse.app    	   directs to 68.183.201.134     3600 
 ```
 **DNS records of wildonion.io domain**
@@ -172,7 +172,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
     <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
 </p>
 
-### 🍢 Conse Mafia Mongodb ERD Schema
+### 🍢 Conse Rendezvous Mongodb ERD Schema
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">

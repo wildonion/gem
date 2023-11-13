@@ -82,10 +82,10 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
 
         sudo docker run -d --network gem --name mongodb --restart unless-stopped -e PUID=1000 -e PGID=1000 -p 27017:27017 -v $(pwd)/infra/data/mongodb/:/data/db mongo
         MONGODB_CONTAINER_ID=$(docker container ls  | grep 'mongodb' | awk '{print $1}')
-        sudo docker cp $(pwd)/infra/mafia-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container
-        sudo docker cp $(pwd)/infra/mafia-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json # root of the container 
-        sudo docker cp $(pwd)/infra/mafia-collections/users.json $MONGODB_CONTAINER_ID:/users.json # root of the container 
-        sudo docker cp $(pwd)/infra/mafia-collections/last_moves.json $MONGODB_CONTAINER_ID:/last_moves.json # root of the container 
+        sudo docker cp $(pwd)/infra/rendezvous-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container
+        sudo docker cp $(pwd)/infra/rendezvous-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json # root of the container 
+        sudo docker cp $(pwd)/infra/rendezvous-collections/users.json $MONGODB_CONTAINER_ID:/users.json # root of the container 
+        sudo docker cp $(pwd)/infra/rendezvous-collections/last_moves.json $MONGODB_CONTAINER_ID:/last_moves.json # root of the container 
         sudo docker exec mongodb mongoimport --db conse --collection roles roles.json # roles.json is now inside the root of the mongodb container
         sudo docker exec mongodb mongoimport --db conse --collection users users.json # users.json is now inside the root of the mongodb container
         sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # sides.json is now inside the root of the mongodb container
@@ -113,14 +113,14 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
 
         ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg-*' | awk '{print $1}')
         ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
-        ANY_CONSE_MAFIA_CONTAINER_ID=$(docker container ls  | grep 'conse-mafia-*' | awk '{print $1}')
+        ANY_CONSE_RENDEZVOUS_CONTAINER_ID=$(docker container ls  | grep 'conse-rendezvous-*' | awk '{print $1}')
         ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook-*' | awk '{print $1}')
         ANY_XBOT_CONTAINER_ID=$(docker container ls  | grep 'xbot-*' | awk '{print $1}')
         ANY_XCORD_CONTAINER_ID=$(docker container ls  | grep 'xcord-*' | awk '{print $1}')
 
         sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
         sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
-        sudo docker stop $ANY_CONSE_MAFIA_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_MAFIA_CONTAINER_ID
+        sudo docker stop $ANY_CONSE_RENDEZVOUS_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_RENDEZVOUS_CONTAINER_ID
         sudo docker stop $ANY_STRIPE_WEBHOOK_CONTAINER_ID && sudo docker rm -f $ANY_STRIPE_WEBHOOK_CONTAINER_ID
         sudo docker stop $ANY_XBOT_CONTAINER_ID && sudo docker rm -f $ANY_XBOT_CONTAINER_ID
         sudo docker stop $ANY_XCORD_CONTAINER_ID && sudo docker rm -f $ANY_XCORD_CONTAINER_ID
@@ -133,8 +133,8 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker build --t xbot-$TIMESTAMP -f $(pwd)/infra/docker/xbot/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --network getm --name xbot-$TIMESTAMP -p 4246:4245 xbot-$TIMESTAMP
 
-        sudo docker build -t conse-mafia-$TIMESTAMP -f $(pwd)/infra/docker/mafia/Dockerfile . --no-cache
-        sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-mafia-$TIMESTAMP -p 7439:7438 conse-mafia-$TIMESTAMP
+        sudo docker build -t conse-rendezvous-$TIMESTAMP -f $(pwd)/infra/docker/rendezvous/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-rendezvous-$TIMESTAMP -p 7439:7438 conse-rendezvous-$TIMESTAMP
         
         echo \t"--[make sure you 1. setup a subdomain for wehbook endpoint in DNS records 2. register the webhook endpoint in your stripe dashabord 3. setup the nginx config file for the endpoint with SSL point to this VPS]--"
         sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache

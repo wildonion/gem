@@ -33,7 +33,7 @@ use actix::prelude::*;
     an specific user can join an specific event room to subscribe to what ws actors 
     will be sent in different parts of the app so this route will be used to receive 
     push notif from admin reveal roles, mmr and ecq engines, here is the example connect 
-    address and make sure that client is passing the mafia server JWT to the header 
+    address and make sure that client is passing the rendezvous server JWT to the header 
     request like `Bearer JWT`:
     
     local API:
@@ -75,8 +75,8 @@ async fn notif_subs(
 
 
     /*
-        this route requires conse mafia hyper server JWT since the user that wants to receive push notif
-        is the user of mafia server thus his JWT is needed to authorize him to be able to use this route, 
+        this route requires conse rendezvous hyper server JWT since the user that wants to receive push notif
+        is the user of rendezvous server thus his JWT is needed to authorize him to be able to use this route, 
         hence the header must contains the Bearer key to extract the JWT from it 
     */
     if let Some(header_value) = req.headers().get("Bearer"){
@@ -87,9 +87,9 @@ async fn notif_subs(
             @params: 
                 - @token          → JWT
 
-            note that this token must be taken from the conse mafia hyper server
+            note that this token must be taken from the conse rendezvous hyper server
         */
-        match mafia_passport!{ &token }{
+        match rendezvous_passport!{ &token }{
             true => {
             
                 let storage = storage.as_ref().to_owned();

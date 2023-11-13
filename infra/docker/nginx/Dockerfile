@@ -20,9 +20,9 @@ COPY key-panel.conse.app.pem /etc/nginx/key-panel.conse.app.pem
 #api.panel.conse.app:
 COPY cert-api.panel.conse.app.pem /etc/nginx/cert-api.panel.conse.app.pem
 COPY key-api.panel.conse.app.pem /etc/nginx/key-api.panel.conse.app.pem
-#api.mafia.conse.app:
-COPY cert-api.mafia.conse.app.pem /etc/nginx/cert-api.mafia.conse.app.pem
-COPY key-api.mafia.conse.app.pem /etc/nginx/key-api.mafia.conse.app.pem
+#api.rendezvous.conse.app:
+COPY cert-api.rendezvous.conse.app.pem /etc/nginx/cert-api.rendezvous.conse.app.pem
+COPY key-api.rendezvous.conse.app.pem /etc/nginx/key-api.rendezvous.conse.app.pem
 #adminer.conse.app:
 COPY cert-adminer.conse.app.pem /etc/nginx/cert-adminer.conse.app.pem
 COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
@@ -61,7 +61,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY conse.app.conf /etc/nginx/conse.app.conf
 COPY panel.conse.app.conf /etc/nginx/panel.conse.app.conf
 COPY api.panel.conse.app.conf /etc/nginx/api.panel.conse.app.conf
-COPY api.mafia.conse.app.conf /etc/nginx/api.mafia.conse.app.conf
+COPY api.rendezvous.conse.app.conf /etc/nginx/api.rendezvous.conse.app.conf
 COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
 COPY portainer.conse.app.conf /etc/nginx/portainer.conse.app.conf
 COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf

@@ -8,7 +8,7 @@
 	},
 	"item": [
 		{
-			"name": "mafia",
+			"name": "rendezvous",
 			"item": [
 				{
 					"name": "Auth APIs",
@@ -2034,7 +2034,7 @@
 							"response": []
 						},
 						{
-							"name": "Upload Mafia Event Picture",
+							"name": "Upload Rendezvous Event Picture",
 							"request": {
 								"auth": {
 									"type": "bearer",
@@ -2059,12 +2059,12 @@
 									]
 								},
 								"url": {
-									"raw": "{{panel-admin}}/mafia/event/64c939bfd19645f57fd9f98a/upload/img",
+									"raw": "{{panel-admin}}/rendezvous/event/64c939bfd19645f57fd9f98a/upload/img",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
-										"mafia",
+										"rendezvous",
 										"event",
 										"64c939bfd19645f57fd9f98a",
 										"upload",
@@ -2965,7 +2965,7 @@
 									"response": []
 								},
 								{
-									"name": "Upload Mafia Player Avatar",
+									"name": "Upload Rendezvous Player Avatar",
 									"request": {
 										"auth": {
 											"type": "bearer",
@@ -2990,12 +2990,12 @@
 											]
 										},
 										"url": {
-											"raw": "{{panel-user}}/mafia/player/64c939bfd19645f57fd9f98a/upload/avatar",
+											"raw": "{{panel-user}}/rendezvous/player/64c939bfd19645f57fd9f98a/upload/avatar",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
-												"mafia",
+												"rendezvous",
 												"player",
 												"64c939bfd19645f57fd9f98a",
 												"upload",
@@ -4321,12 +4321,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-dev}}/mafia/get/admin/64b817de361f2c1b45dfb460/data/?from=0&to=10",
+									"raw": "{{panel-dev}}/rendezvous/get/admin/64b817de361f2c1b45dfb460/data/?from=0&to=10",
 									"host": [
 										"{{panel-dev}}"
 									],
 									"path": [
-										"mafia",
+										"rendezvous",
 										"get",
 										"admin",
 										"64b817de361f2c1b45dfb460",
@@ -4363,12 +4363,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{panel-dev}}/mafia/get/user/64b827fad916781c6d68948a/data",
+									"raw": "{{panel-dev}}/rendezvous/get/user/64b827fad916781c6d68948a/data",
 									"host": [
 										"{{panel-dev}}"
 									],
 									"path": [
-										"mafia",
+										"rendezvous",
 										"get",
 										"user",
 										"64b827fad916781c6d68948a",
@@ -4762,7 +4762,7 @@
 					]
 				}
 			],
-			"description": "# WebSocket Push Notif Subscription\n\nan specific user can join an specific event room to subscribe to what ws actors will be sent in different parts of the app so this route will be used to receive push notif from admin reveal roles, mmr and ecq engines, here is the example connect address and make sure that client is passing the **mafia server JWT** to the header request like \\`Bearer JWT\\`:\n\n**local API:**\n\n`ws://localhost:7442/subscribe/`\n\n**production APIs:**\n\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`\n    \n\n**NOTE:** _we just have to make sure that the user is already inside the event and did the reservation process for the event._\n\nclient must be connect to this route then we have a full duplex communication channel also there is a path in this route which is the event room that must be connected to and is the name of the notification room which can be one of the following:\n\n- `ecq-{event_id}`, ----- /join-ecq\n    \n- `mmr-{event_id}`, ----- /join-mmr\n    \n- `reveal-role-{event_id}` ----- /join-roles\n    \n\nusers after participating in an event we'll redirect them to the event page after that the client must call this route with the passed in event id like so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection will be stablished to this server which will send the subscribed redis topics to the channel that contains event peers."
+			"description": "# WebSocket Push Notif Subscription\n\nan specific user can join an specific event room to subscribe to what ws actors will be sent in different parts of the app so this route will be used to receive push notif from admin reveal roles, mmr and ecq engines, here is the example connect address and make sure that client is passing the **rendezvous server JWT** to the header request like \\`Bearer JWT\\`:\n\n**local API:**\n\n`ws://localhost:7442/subscribe/`\n\n**production APIs:**\n\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`\n- `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`\n    \n\n**NOTE:** _we just have to make sure that the user is already inside the event and did the reservation process for the event._\n\nclient must be connect to this route then we have a full duplex communication channel also there is a path in this route which is the event room that must be connected to and is the name of the notification room which can be one of the following:\n\n- `ecq-{event_id}`, ----- /join-ecq\n    \n- `mmr-{event_id}`, ----- /join-mmr\n    \n- `reveal-role-{event_id}` ----- /join-roles\n    \n\nusers after participating in an event we'll redirect them to the event page after that the client must call this route with the passed in event id like so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection will be stablished to this server which will send the subscribed redis topics to the channel that contains event peers."
 		}
 	],
 	"event": [
@@ -4788,22 +4788,22 @@
 	"variable": [
 		{
 			"key": "auth",
-			"value": "https://api.mafia.conse.app",
+			"value": "https://api.rendezvous.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "event",
-			"value": "https://api.mafia.conse.app",
+			"value": "https://api.rendezvous.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "game",
-			"value": "https://api.mafia.conse.app",
+			"value": "https://api.rendezvous.conse.app",
 			"type": "string"
 		},
 		{
 			"key": "whitelist",
-			"value": "https://api.mafia.conse.app",
+			"value": "https://api.rendezvous.conse.app",
 			"type": "string"
 		},
 		{
