@@ -1,8 +1,5 @@
 
 
-
-## 🎛️ conse user, dev and admin dashboard panel APIs based on their access are:
-
 > for a complete list of all APIs refer to the [postman collection](https://github.com/wildonion/gem/blob/master/infra/gem.http.api.json)
 
 ## 🔐 API Access
@@ -47,8 +44,6 @@
 - user twitter task verification using twitter bot
 - check user twitter task 
 - get token price
-- gallery public calls
-    - get nfts of public gallery
 - tasks leaderboard
 - get ratelimit info of xbot
 - get user wallet info
@@ -57,6 +52,7 @@
 - check server status
 - check token 
 - logout
+- is user kyced
 - get all the tasks
 - stripe update user balance webhook
 
