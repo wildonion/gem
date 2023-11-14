@@ -149,6 +149,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -250,6 +251,7 @@ impl UserCollection{
                 data: Some(col_contract_address),
                 message: COLLECTION_NOT_FOUND_FOR_CONTRACT,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -295,6 +297,7 @@ impl UserCollection{
                 data: Some(col_id),
                 message: COLLECTION_NOT_FOUND_OF,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -346,6 +349,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -360,6 +364,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -379,6 +384,7 @@ impl UserCollection{
                 data: Some(caller_screen_cid.to_string()),
                 message: COLLECTION_NOT_FOUND_FOR,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -476,6 +482,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: COLLECTION_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -498,6 +505,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -621,7 +629,8 @@ impl UserCollection{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -645,6 +654,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -663,6 +673,7 @@ impl UserCollection{
                 data: Some(screen_cid),
                 message: COLLECTION_NOT_FOUND_FOR,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -758,7 +769,8 @@ impl UserCollection{
                 let resp = Response{
                     data: Some(new_col_info.owner_cid),
                     message: USER_SCREEN_CID_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -779,6 +791,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -795,6 +808,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: CANT_CREATE_COLLECTION_ONCHAIN,
                 status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -807,6 +821,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: INVALID_CONTRACT_TX_HASH,
                 status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -820,6 +835,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: CANT_GET_CONTRACT_ADDRESS,
                 status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -940,7 +956,8 @@ impl UserCollection{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -975,7 +992,8 @@ impl UserCollection{
                 let resp = Response{
                     data: Some(col_info.owner_cid),
                     message: USER_SCREEN_CID_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -998,6 +1016,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: COLLECTION_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -1020,6 +1039,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -1057,6 +1077,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: CANT_UPDATE_COLLECTION_ONCHAIN,
                 status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -1069,6 +1090,7 @@ impl UserCollection{
                 data: Some(&[]),
                 message: INVALID_CONTRACT_TX_HASH,
                 status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -1192,7 +1214,8 @@ impl UserCollection{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))

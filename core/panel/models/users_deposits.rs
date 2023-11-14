@@ -130,7 +130,8 @@ impl UserDeposit{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -152,6 +153,7 @@ impl UserDeposit{
                 data: Some(deposit_id),
                 message: DEPOSIT_NOT_FOUND,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -186,6 +188,7 @@ impl UserDeposit{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -204,6 +207,7 @@ impl UserDeposit{
                 data: Some(user_cid.clone()),
                 message: CID_HAS_NO_DEPOSIT_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -272,7 +276,8 @@ impl UserDeposit{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -293,6 +298,7 @@ impl UserDeposit{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -310,6 +316,7 @@ impl UserDeposit{
                 data: Some(&[]),
                 message: NO_DEPOSITS_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -350,6 +357,7 @@ impl UserDeposit{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -369,6 +377,7 @@ impl UserDeposit{
                 data: Some(&[]),
                 message: RECIPIENT_HAS_NO_DEPOSIT_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))

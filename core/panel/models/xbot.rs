@@ -40,7 +40,8 @@ impl Twitter{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &file_open.unwrap_err().to_string(),
-                status: 500
+                status: 500,
+                is_error: true
             };
             return 
                 Err(
@@ -105,7 +106,8 @@ impl Twitter{
                     let resp = Response::<String>{
                         data: Some(account_name.to_string()),
                         message: TWITTER_USER_IS_NOT_VALID,
-                        status: 406
+                        status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -123,7 +125,8 @@ impl Twitter{
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: TWITTER_RATE_LIMIT,
-                    status: 406
+                    status: 406,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -137,7 +140,8 @@ impl Twitter{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: TWITTER_RATE_LIMIT,
-                status: 406
+                status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))

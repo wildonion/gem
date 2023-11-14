@@ -125,7 +125,8 @@ impl UserCheckout{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -149,6 +150,7 @@ impl UserCheckout{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -166,6 +168,7 @@ impl UserCheckout{
                 data: Some(&[]),
                 message: NO_CHECKOUTS_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -209,6 +212,7 @@ impl UserCheckout{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -228,6 +232,7 @@ impl UserCheckout{
                 data: Some(user_crypto_id),
                 message: CID_HAS_NO_PAID_CHECKOUT_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -271,6 +276,7 @@ impl UserCheckout{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -290,6 +296,7 @@ impl UserCheckout{
                 data: Some(user_crypto_id),
                 message: CID_HAS_NO_UNPAID_CHECKOUT_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -333,7 +340,8 @@ impl UserCheckout{
             let resp = Response{
                 data: Some(session_id),
                 message: NO_CHECKOUT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -382,7 +390,8 @@ impl UserCheckout{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))

@@ -211,6 +211,7 @@ pub async fn update_role(req: Request<Body>) -> RendezvousResult<hyper::Response
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -412,6 +413,7 @@ pub async fn update_side(req: Request<Body>) -> RendezvousResult<hyper::Response
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -612,6 +614,7 @@ pub async fn update_status(req: Request<Body>) -> RendezvousResult<hyper::Respon
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -802,6 +805,7 @@ pub async fn update_role_ability(req: Request<Body>) -> RendezvousResult<hyper::
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -1069,6 +1073,7 @@ pub async fn cast_vote_on_player(req: Request<Body>) -> RendezvousResult<hyper::
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -1267,6 +1272,7 @@ pub async fn chain_to_another_player(req: Request<Body>) -> RendezvousResult<hyp
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -1496,6 +1502,7 @@ pub async fn get_single(req: Request<Body>) -> RendezvousResult<hyper::Response<
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -1665,6 +1672,7 @@ pub async fn get_single_god_vote(req: Request<Body>) -> RendezvousResult<hyper::
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -1846,6 +1854,7 @@ pub async fn get_all_god_votes(req: Request<Body>) -> RendezvousResult<hyper::Re
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -2017,6 +2026,7 @@ pub async fn get_player_role_ability(req: Request<Body>) -> RendezvousResult<hyp
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(
@@ -2191,6 +2201,7 @@ pub async fn get_player_chain_infos(req: Request<Body>) -> RendezvousResult<hype
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(

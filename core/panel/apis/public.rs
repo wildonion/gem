@@ -291,7 +291,8 @@ async fn verify_twitter_task(
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                            status: 302
+                            status: 302,
+                            is_error: false
                         };
                         return Ok(
                             HttpResponse::Found().json(resp)

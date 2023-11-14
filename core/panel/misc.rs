@@ -241,6 +241,7 @@ pub struct Response<'m, T>{
     pub data: Option<T>,
     pub message: &'m str, // &str are a slice of String thus they're behind a pointer and every pointer needs a valid lifetime which is 'm in here 
     pub status: u16,
+    pub is_error: bool
 }
 
 /* ----------------------------------------------------------------------- */
@@ -315,7 +316,8 @@ pub async fn is_bot_24hours_limited(
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: &reset_at,
-                        status: 406
+                        status: 406,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -697,7 +699,8 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: UNSUPPORTED_IMAGE_TYPE,
-                status: 406
+                status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -737,7 +740,8 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: TOO_LARGE_FILE_SIZE,
-                status: 406
+                status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -826,7 +830,8 @@ pub async fn convert_multipart_to_json(
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: TOO_LARGE_FILE_SIZE,
-                    status: 406
+                    status: 406,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -876,7 +881,12 @@ macro_rules! resp {
             let response_data = Response::<$data_type>{
                 data: Some($data),
                 message: $msg,
-                status: code
+                status: code,
+                is_error: if code == 200 || code == 201 || code == 302{
+                    false
+                } else{
+                    true
+                }
             };
             
             let resp = if let Some(cookie) = $cookie{

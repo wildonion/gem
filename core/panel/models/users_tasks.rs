@@ -99,7 +99,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -119,6 +120,7 @@ impl UserTask{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -148,7 +150,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -171,7 +174,8 @@ impl UserTask{
             let resp = Response{
                 data: Some(job_id),
                 message: TASK_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -203,7 +207,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -226,6 +231,7 @@ impl UserTask{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -257,7 +263,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -339,7 +346,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -376,7 +384,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -458,7 +467,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -480,6 +490,7 @@ impl UserTask{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -510,7 +521,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -546,7 +558,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -675,7 +688,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -707,7 +721,8 @@ impl UserTask{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))

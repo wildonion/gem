@@ -1893,7 +1893,8 @@ async fn add_twitter_account(
                         let resp = Response::<'_, &[u8]>{
                             data: Some(&[]),
                             message: &file_open.unwrap_err().to_string(),
-                            status: 500
+                            status: 500,
+                            is_error: true
                         };
                         return 
                             Ok(

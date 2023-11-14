@@ -86,6 +86,7 @@ impl UserWithdrawal{
                 data: Some(user_withdraw_request.deposit_id),
                 message: DEPOSITED_NOT_FOUND,
                 status: 404,
+                is_error: true
             };
 
             return Err(
@@ -106,6 +107,7 @@ impl UserWithdrawal{
                     data: Some(user_withdrawal),
                     message: ALREADY_WITHDRAWN,
                     status: 302,
+                    is_error: false
                 };
     
                 return Err(
@@ -155,7 +157,8 @@ impl UserWithdrawal{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: resp_err,
-                                status: 500
+                                status: 500,
+                                is_error: true
                             };
                             return Err(
                                 Ok(HttpResponse::InternalServerError().json(resp))
@@ -178,6 +181,7 @@ impl UserWithdrawal{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -196,6 +200,7 @@ impl UserWithdrawal{
                 data: Some(withdrawer_cid.clone()),
                 message: CID_HAS_NO_WITHDRAWAL_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -231,6 +236,7 @@ impl UserWithdrawal{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -248,6 +254,7 @@ impl UserWithdrawal{
                 data: Some(&[]),
                 message: NO_WITHDRAWAL_YET,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))

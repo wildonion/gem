@@ -198,11 +198,27 @@ pub struct ChargeWalletRequest{
     pub hash_data: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CheckKycRequest{
     pub caller_cid: String,
     pub tx_signature: String,
     pub hash_data: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct UserLoginWithGmailRequest{
+    pub identifier: String,
+    pub gavatar: String,
+    pub gid: String,
+    pub gusername: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct UserLoginWithMicrosoftRequest{
+    pub identifier: String,
+    pub mavatar: String,
+    pub mid: String,
+    pub musername: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
@@ -384,7 +400,8 @@ impl User{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: NOT_FOUND_COOKIE_VALUE_OR_JWT,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -415,7 +432,8 @@ impl User{
                         let resp = Response{
                             data: Some(_id.to_owned()),
                             message: USER_NOT_FOUND,
-                            status: 404
+                            status: 404,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::NotFound().json(resp))
@@ -435,7 +453,8 @@ impl User{
                             let resp = Response{
                                 data: Some(_id.to_owned()),
                                 message: ACCESS_DENIED,
-                                status: 403
+                                status: 403,
+                                is_error: true
                             };
                             return Err(
                                 Ok(HttpResponse::Forbidden().json(resp))
@@ -458,7 +477,8 @@ impl User{
                         let resp = Response{
                             data: Some(_id.to_owned()),
                             message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
-                            status: 403
+                            status: 403,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::Forbidden().json(resp))
@@ -474,7 +494,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: &e.to_string(),
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -498,7 +519,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: NOT_FOUND_TOKEN,
-                        status: 403
+                        status: 403,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::Forbidden().json(resp))
@@ -510,7 +532,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: NOT_FOUND_COOKIE_TIME_HASH,
-                        status: 406
+                        status: 406,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -521,7 +544,8 @@ impl User{
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: INVALID_COOKIE_FORMAT,
-                    status: 406
+                    status: 406,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -545,7 +569,8 @@ impl User{
                                 let resp = Response::<&[u8]>{
                                     data: Some(&[]),
                                     message: EXPIRED_COOKIE,
-                                    status: 403
+                                    status: 403,
+                                    is_error: true
                                 };
                                 return Err(
                                     Ok(HttpResponse::Forbidden().json(resp))
@@ -566,7 +591,8 @@ impl User{
                                     let resp = Response{
                                         data: Some(_id.to_owned()),
                                         message: USER_NOT_FOUND,
-                                        status: 404
+                                        status: 404,
+                                        is_error: true,
                                     };
                                     return Err(
                                         Ok(HttpResponse::NotFound().json(resp))
@@ -580,7 +606,8 @@ impl User{
                                     let resp = Response::<&[u8]>{
                                         data: Some(&[]),
                                         message: INVALID_COOKIE_TIME_HASH,
-                                        status: 406
+                                        status: 406,
+                                        is_error: true,
                                     };
                                     return Err(
                                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -593,7 +620,8 @@ impl User{
                                         let resp = Response{
                                             data: Some(_id.to_owned()),
                                             message: ACCESS_DENIED,
-                                            status: 403
+                                            status: 403,
+                                            is_error: true
                                         };
                                         return Err(
                                             Ok(HttpResponse::Forbidden().json(resp))
@@ -610,7 +638,8 @@ impl User{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: NOT_FOUND_COOKIE_EXP,
-                                status: 406
+                                status: 406,
+                                is_error: true,
                             };
                             return Err(
                                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -623,7 +652,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: &e.to_string(),
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -700,7 +730,7 @@ impl User{
         let cookie_exp_days = env::var("COOKIE_EXPIRATION_DAYS").expect("⚠️ no cookie exporation days variable set").parse::<i64>().unwrap();
         let mut now = OffsetDateTime::now_utc();
         now += Duration::days(cookie_exp_days);
-        cookie.set_expires(now);
+        cookie.set_expires(now); /* will be invalid 30 days from now on */
 
         Some((cookie, time_hash_now, token))
 
@@ -755,7 +785,8 @@ impl User{
             let resp = Response{
                 data: Some(user_name),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -780,7 +811,8 @@ impl User{
             let resp = Response{
                 data: Some(recipient_info),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -806,7 +838,8 @@ impl User{
             let resp = Response{
                 data: Some(user_info),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -835,7 +868,8 @@ impl User{
             let resp = Response{
                 data: Some(user_mail),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -856,7 +890,8 @@ impl User{
             let resp = Response{
                 data: Some(user_phone),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -877,7 +912,8 @@ impl User{
             let resp = Response{
                 data: Some(identifier_login),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -898,7 +934,8 @@ impl User{
             let resp = Response{
                 data: Some(doer_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -919,7 +956,8 @@ impl User{
             let resp = Response{
                 data: Some(user_screen_cid),
                 message: RECIPIENT_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -940,7 +978,8 @@ impl User{
             let resp = Response{
                 data: Some(user_screen_cid),
                 message: RECIPIENT_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1026,7 +1065,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: CANT_GENERATE_COOKIE,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -1062,7 +1102,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1071,6 +1112,18 @@ impl User{
                 }
             }
     
+    }
+
+    pub async fn insert_by_gmail_info(gmail_info: UserLoginWithGmailRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+
+        todo!()
+
+    }
+
+    pub async fn insert_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+
+        todo!()
+        
     }
 
     pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
@@ -1162,7 +1215,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: CANT_GENERATE_COOKIE,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -1198,7 +1252,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1262,7 +1317,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1283,7 +1339,8 @@ impl User{
             let resp = Response{
                 data: Some(bio_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1360,7 +1417,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1381,7 +1439,8 @@ impl User{
             let resp = Response{
                 data: Some(wallet_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1469,7 +1528,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1490,7 +1550,8 @@ impl User{
             let resp = Response{
                 data: Some(avatar_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1578,7 +1639,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1599,7 +1661,8 @@ impl User{
             let resp = Response{
                 data: Some(banner_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1687,7 +1750,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1709,7 +1773,8 @@ impl User{
             let resp = Response{
                 data: Some(new_user.user_id.to_owned()),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1736,7 +1801,8 @@ impl User{
             let resp = Response{
                 data: Some(new_user.user_id.to_owned()),
                 message: USERNAME_CANT_BE_EMPTY,
-                status: 406
+                status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1749,7 +1815,8 @@ impl User{
             let resp = Response{
                 data: Some(new_user.user_id.to_owned()),
                 message: WALLET_CANT_BE_EMPTY,
-                status: 406
+                status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -1841,7 +1908,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1887,7 +1955,8 @@ impl User{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: resp_err,
-                                status: 500
+                                status: 500,
+                                is_error: true,
                             };
                             return Err(
                                 Ok(HttpResponse::InternalServerError().json(resp))
@@ -1916,6 +1985,7 @@ impl User{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1995,7 +2065,8 @@ impl User{
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: resp_err,
-                    status: 500
+                    status: 500,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::InternalServerError().json(resp))
@@ -2078,7 +2149,8 @@ impl User{
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: resp_err,
-                    status: 500
+                    status: 500,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::InternalServerError().json(resp))
@@ -2113,7 +2185,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -2132,7 +2205,8 @@ impl User{
             let resp = Response{
                 data: Some(owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -2143,7 +2217,8 @@ impl User{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: INSUFFICIENT_FUNDS,
-                status: 406
+                status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2220,7 +2295,8 @@ impl User{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -2241,7 +2317,8 @@ impl User{
                 let resp = Response{
                     data: Some(social_owner_id),
                     message: USER_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -2340,7 +2417,8 @@ impl User{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: resp_err,
-                                status: 500
+                                status: 500,
+                                is_error: true,
                             };
                             return Err(
                                 Ok(HttpResponse::InternalServerError().json(resp))
@@ -2353,7 +2431,8 @@ impl User{
                 let resp = Response{
                     data: Some(social_owner_id),
                     message: TWITTER_USER_IS_NOT_VALID,
-                    status: 406
+                    status: 406,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2374,7 +2453,8 @@ impl User{
                 let resp = Response{
                     data: Some(mail_owner_id),
                     message: USER_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -2451,7 +2531,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: resp_err,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -2474,7 +2555,8 @@ impl User{
                 let resp = Response{
                     data: Some(phone_owner_id),
                     message: USER_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -2557,7 +2639,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: resp_err,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -2581,7 +2664,8 @@ impl User{
             let resp = Response{
                 data: Some(phone_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -2594,7 +2678,8 @@ impl User{
             let resp = Response{
                 data: Some(user_phone),
                 message: PHONE_EXISTS,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -2616,7 +2701,8 @@ impl User{
             let resp = Response{
                 data: Some(phone_owner_id),
                 message: ALREADY_VERIFIED_PHONE,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -2655,7 +2741,7 @@ impl User{
         //     let resp = Response{
         //         data: Some(phone_owner_id),
         //         message: REGION_IS_NONE,
-        //         status: 406
+        //         status: 406,
         //     };
         //     return Err(
         //         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2693,7 +2779,8 @@ impl User{
                     let resp = Response{
                         data: Some(phone_owner_id),
                         message: OTP_PROVIDER_DIDNT_SEND_CODE,
-                        status: 417
+                        status: 417,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -2734,7 +2821,8 @@ impl User{
                     let resp = Response{
                         data: Some(phone_owner_id),
                         message: OTP_PROVIDER_DIDNT_SEND_CODE,
-                        status: 417
+                        status: 417,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -2770,7 +2858,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -2782,7 +2871,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: ALREADY_VERIFIED_PHONE,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -2807,7 +2897,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: NO_PHONE_FOR_THIS_USER,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -2819,7 +2910,7 @@ impl User{
 
         /* calculate the naive datetime from the passed in exp milli timestamp */
         let now = Utc::now();
-        let given_time = chrono::DateTime::<Utc>::from_utc(
+        let given_time = chrono::DateTime::<Utc>::from_naive_utc_and_offset(
             chrono::NaiveDateTime::from_timestamp_millis(exp_code).unwrap(),
             Utc,
         );
@@ -2839,7 +2930,8 @@ impl User{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: EXPIRED_PHONE_CODE,
-                status: 406
+                status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2881,7 +2973,8 @@ impl User{
             let resp = Response{
                 data: Some(owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -2970,7 +3063,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: resp_err,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -2984,7 +3078,8 @@ impl User{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: payapl_error_msg,
-                status: 417
+                status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -3003,7 +3098,8 @@ impl User{
                 let resp = Response{
                     data: Some(phone_owner_id),
                     message: USER_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -3080,7 +3176,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: resp_err,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -3102,7 +3199,8 @@ impl User{
                 let resp = Response{
                     data: Some(mail_owner_id),
                     message: USER_NOT_FOUND,
-                    status: 404
+                    status: 404,
+                    is_error: true,
                 };
                 return Err(
                     Ok(HttpResponse::NotFound().json(resp))
@@ -3184,7 +3282,8 @@ impl User{
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),
                             message: resp_err,
-                            status: 500
+                            status: 500,
+                            is_error: true,
                         };
                         return Err(
                             Ok(HttpResponse::InternalServerError().json(resp))
@@ -3205,7 +3304,8 @@ impl User{
             let resp = Response{
                 data: Some(mail_owner_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -3218,7 +3318,8 @@ impl User{
             let resp = Response{
                 data: Some(user_mail),
                 message: MAIL_EXISTS,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -3241,7 +3342,8 @@ impl User{
             let resp = Response{
                 data: Some(mail_owner_id),
                 message: ALREADY_VERIFIED_MAIL,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -3289,7 +3391,8 @@ impl User{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &final_err,
-                status: 417
+                status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -3338,7 +3441,8 @@ impl User{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &send_mail_error.to_string(),
-                status: 417
+                status: 417,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -3369,7 +3473,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -3381,7 +3486,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: ALREADY_VERIFIED_MAIL,
-                status: 302
+                status: 302,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::Found().json(resp))
@@ -3406,7 +3512,8 @@ impl User{
             let resp = Response{
                 data: Some(receiver_id),
                 message: NO_MAIL_FOR_THIS_USER,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -3418,7 +3525,7 @@ impl User{
 
         /* calculate the naive datetime from the passed in exp milli timestamp */
         let now = Utc::now();
-        let given_time = chrono::DateTime::<Utc>::from_utc(
+        let given_time = chrono::DateTime::<Utc>::from_naive_utc_and_offset(
             chrono::NaiveDateTime::from_timestamp_millis(exp_code).unwrap(),
             Utc,
         );
@@ -3438,7 +3545,8 @@ impl User{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: EXPIRED_MAIL_CODE,
-                status: 406
+                status: 406,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -3481,7 +3589,8 @@ impl Id{
             let resp = Response{
                 data: Some(id_owner),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -3558,7 +3667,8 @@ impl Id{
                             let resp = Response{
                                 data: Some(user_data),
                                 message: CID_RECORD_UPDATED,
-                                status: 200
+                                status: 200,
+                                is_error: false
                             };
                             return Err(
                                 Ok(HttpResponse::Found().json(resp))
@@ -3579,7 +3689,8 @@ impl Id{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: resp_err,
-                                status: 500
+                                status: 500,
+                                is_error: true,
                             };
                             return Err(
                                 Ok(HttpResponse::InternalServerError().json(resp))
@@ -3660,7 +3771,8 @@ impl Id{
             let resp = Response{
                 data: Some(self.user_id),
                 message: USER_NOT_FOUND,
-                status: 404
+                status: 404,
+                is_error: true,
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -3761,7 +3873,8 @@ impl Id{
                             let resp = Response::<&[u8]>{
                                 data: Some(&[]),
                                 message: resp_err,
-                                status: 500
+                                status: 500,
+                                is_error: true,
                             };
                             return Err(
                                 Ok(HttpResponse::InternalServerError().json(resp))

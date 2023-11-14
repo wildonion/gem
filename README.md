@@ -204,7 +204,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 * based on the last wrapup the `assets` directory can be accessible through the `https://api.panel.conse.app/assets/` address.
 
-* the logic flow of an HTTP API body should be as the following:
+* the logic flow of an HTTP API body should be the following:
 
 > make sure that you're passing the JWT into the request header, you've defined the request body strucutre and storage (diesel, mongodb or redis) schemas. 
 
@@ -243,14 +243,11 @@ async fn api(
             /* redis rate limit checker */ 
             // ...
 
-                /* signature verification process */
+                /* kyc verification process */
                 // ...
-
-                    /* balance checking */
-                    // ...
                     
-                        /* api body and code flow responses */ 
-                        // ...
+                    /* api body and code flow responses */ 
+                    // ...
 
 }
 ```

@@ -135,7 +135,6 @@ async fn login(
             
             let connection = &mut pg_pool.get().unwrap();
 
-            /* we can pass usernmae by reference or its slice form instead of cloning it */
             match User::find_by_identifier(&login_identifier.to_owned(), connection).await{
                 Ok(user) => {
         
@@ -921,7 +920,6 @@ async fn login_with_identifier_and_password(
 
             let login_info = user_login_info.to_owned();
 
-            /* we can pass usernmae by reference or its slice form instead of cloning it */
             match User::find_by_identifier(&login_info.identifier.to_owned(), connection).await{
                 Ok(user) => {
 
@@ -1062,6 +1060,183 @@ async fn login_with_identifier_and_password(
 
 }
 
+#[post("/login/gmail")]
+async fn login_with_gmail(
+        req: HttpRequest,
+        user_gmail_request: web::Json<UserLoginWithGmailRequest>,
+        storage: web::Data<Option<Arc<Storage>>>,
+    ) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned();
+    match storage.unwrap().clone().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            let user_gmail_request = user_gmail_request.to_owned();
+            
+
+            // find by gid, gusername and gmail
+            // if there wasn't any then validate the new input 
+            // ...
+
+
+            /* trying to find an identifier with the passed in gmail info to the api */
+            match User::find_by_identifier(&&user_gmail_request.identifier.to_owned(), connection).await{
+                Ok(user) => {
+        
+                    /* generate cookie 🍪 from token time and jwt */
+                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+                    let keys_info = user.clone().generate_cookie_and_jwt().unwrap();
+                    let cookie_token_time = keys_info.1;
+                    let jwt = keys_info.2;
+
+                    let now = chrono::Local::now().naive_local();
+                    let updated_user = diesel::update(users.find(user.id))
+                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                        .returning(FetchUser::as_returning())
+                        .get_result(connection)
+                        .unwrap();
+                    
+                    let user_login_data = UserData{
+                        id: user.id,
+                        region: user.region.clone(),
+                        username: user.username.clone(),
+                        bio: user.bio.clone(),
+                        avatar: user.avatar.clone(),
+                        banner: user.banner.clone(),
+                        wallet_background: user.wallet_background.clone(),
+                        activity_code: user.activity_code.clone(),
+                        twitter_username: user.twitter_username.clone(),
+                        facebook_username: user.facebook_username.clone(),
+                        discord_username: user.discord_username.clone(),
+                        identifier: user.identifier.clone(),
+                        user_role: {
+                            match user.user_role.clone(){
+                                UserRole::Admin => "Admin".to_string(),
+                                UserRole::User => "User".to_string(),
+                                _ => "Dev".to_string(),
+                            }
+                        },
+                        token_time: updated_user.token_time,
+                        balance: updated_user.balance,
+                        last_login: { 
+                            if updated_user.last_login.is_some(){
+                                Some(updated_user.last_login.unwrap().to_string())
+                            } else{
+                                Some("".to_string())
+                            }
+                        },
+                        created_at: user.created_at.to_string(),
+                        updated_at: updated_user.updated_at.to_string(),
+                        mail: user.mail,
+                        is_mail_verified: user.is_mail_verified,
+                        is_phone_verified: user.is_phone_verified,
+                        phone_number: user.phone_number,
+                        paypal_id: user.paypal_id,
+                        account_number: user.account_number,
+                        device_id: user.device_id,
+                        social_id: user.social_id,
+                        cid: user.cid,
+                        screen_cid: user.screen_cid,
+                        snowflake_id: user.snowflake_id,
+                        stars: user.stars
+                    };
+
+                    resp!{
+                        UserData, // the data type
+                        user_login_data, // response data
+                        LOGGEDIN, // response message
+                        StatusCode::OK, // status code,
+                        Some(keys_info.0), // cookie 
+                    } 
+
+                },
+                Err(resp) => {
+
+                    /* gently, we'll insert this gmail info into table */
+                    match User::insert_by_gmail_info(user_gmail_request, connection).await{
+                        Ok((user_login_data, cookie)) => {
+
+                            resp!{
+                                UserData, // the data type
+                                user_login_data, // response data
+                                REGISTERED, // response message
+                                StatusCode::CREATED, // status code,
+                                Some(cookie), // cookie 
+                            } 
+
+                        },
+                        Err(resp) => {
+                            
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                                - CANT_GENERATE_COOKIE
+                            */
+                            resp
+                        }
+                    }
+
+                }
+            }
+
+        },
+        None => {
+        
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/login/microsoft")]
+async fn login_with_microsoft(
+        req: HttpRequest,
+        user_microsoft_request: web::Json<UserLoginWithMicrosoftRequest>,
+        storage: web::Data<Option<Arc<Storage>>>,
+    ) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned();
+    match storage.unwrap().clone().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            let user_microsoft_request = user_microsoft_request.to_owned();
+            
+
+            // find by mid, musername and mail
+            // if there wasn't any then validate the new input 
+            // ...
+
+
+            todo!()
+
+        },
+        None => {
+        
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[utoipa::path(
     context_path = "/user",
     responses(
@@ -1186,7 +1361,7 @@ async fn verify_twitter_account(
                         let _: () = redis_conn.set("verify_x_username_rate_limiter", rl_data).await.unwrap(); //// writing to redis ram
 
 
-                        /* we can pass usernmae by reference or its slice form instead of cloning it */
+        
                         match User::update_social_account(_id, &account_name.to_owned(), connection).await{
                             Ok(updated_user) => {
                     
@@ -8154,6 +8329,8 @@ pub mod exports{
     pub use super::get_all_nfts_owned_by;
     pub use super::login;
     pub use super::login_with_identifier_and_password;
+    pub use super::login_with_gmail;
+    pub use super::login_with_microsoft;
     pub use super::verify_twitter_account;
     pub use super::edit_bio;
     pub use super::upload_avatar;

@@ -58,7 +58,8 @@ macro_rules! verify {
                                         let resp = Response::<&[u8]>{
                                             data: Some(&[]),
                                             message: TASK_NOT_VERIFIED,
-                                            status: 406
+                                            status: 406,
+                                            is_error: true,
                                         };
                                         return Ok(
                                             HttpResponse::NotAcceptable().json(resp)
@@ -69,7 +70,8 @@ macro_rules! verify {
                                         let resp = Response::<&[u8]>{
                                             data: Some(&[]),
                                             message: USER_TASK_HAS_ALREADY_BEEN_DELETED,
-                                            status: 417
+                                            status: 417,
+                                            is_error: true
                                         };
                                         return Ok(
                                             HttpResponse::ExpectationFailed().json(resp)
@@ -83,7 +85,8 @@ macro_rules! verify {
                                     let resp = Response::<&[u8]>{
                                         data: Some(&[]),
                                         message: &e.to_string(),
-                                        status: 500
+                                        status: 500,
+                                        is_error: true
                                     };
                                     return Ok(
                                         HttpResponse::InternalServerError().json(resp)
@@ -109,7 +112,8 @@ macro_rules! verify {
                                 let resp = Response::<&[u8]>{
                                     data: Some(&[]),
                                     message: USER_TASK_HAS_ALREADY_BEEN_INSERTED,
-                                    status: 302
+                                    status: 302,
+                                    is_error: false
                                 };
                                 return Ok(
                                     HttpResponse::Found().json(resp)
@@ -126,7 +130,8 @@ macro_rules! verify {
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: TWITTER_RATE_LIMIT,
-                        status: 406
+                        status: 406,
+                        is_error: true
                     };
                     return Ok(
                         HttpResponse::NotAcceptable().json(resp)
@@ -140,7 +145,8 @@ macro_rules! verify {
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: TWITTER_RATE_LIMIT,
-                    status: 406
+                    status: 406,
+                    is_error: true
                 };
                 return Ok(
                     HttpResponse::NotAcceptable().json(resp)

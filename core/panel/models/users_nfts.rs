@@ -311,6 +311,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -323,6 +324,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: "Exceded 50",
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -349,6 +351,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: INVALID_QUERY_LIMIT,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -451,7 +454,8 @@ impl UserNft{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -479,6 +483,7 @@ impl UserNft{
                 data: Some(nft_onchain_id.to_string()),
                 message: NFT_ONCHAINID_NOT_FOUND,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -543,6 +548,7 @@ impl UserNft{
                 data: Some(current_owner),
                 message: NFT_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -596,6 +602,7 @@ impl UserNft{
                 data: Some(onchain_id_),
                 message: NFT_NOT_FOUND_OF,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -671,6 +678,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: NFT_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -698,6 +706,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -774,6 +783,7 @@ impl UserNft{
                 data: Some(asset_id),
                 message: NFT_NOT_FOUND_OF_ID,
                 status: 404,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
@@ -837,6 +847,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: GALLERY_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -1022,7 +1033,8 @@ impl UserNft{
                                 let resp = Response::<&[u8]>{
                                     data: Some(&[]),
                                     message: resp_err,
-                                    status: 500
+                                    status: 500,
+                                    is_error: true
                                 };
                                 return Err(
                                     Ok(HttpResponse::InternalServerError().json(resp))
@@ -1048,7 +1060,8 @@ impl UserNft{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1228,7 +1241,8 @@ impl UserNft{
                                 let resp = Response::<&[u8]>{
                                     data: Some(&[]),
                                     message: resp_err,
-                                    status: 500
+                                    status: 500,
+                                    is_error: true
                                 };
                                 return Err(
                                     Ok(HttpResponse::InternalServerError().json(resp))
@@ -1254,7 +1268,8 @@ impl UserNft{
                     let resp = Response::<&[u8]>{
                         data: Some(&[]),
                         message: resp_err,
-                        status: 500
+                        status: 500,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::InternalServerError().json(resp))
@@ -1524,6 +1539,7 @@ impl UserNft{
                     data: Some(&[]),
                     message: NFT_IS_NOT_MINTED_YET,
                     status: 406,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1543,6 +1559,7 @@ impl UserNft{
                             data: Some(&[]),
                             message: CALLER_IS_NOT_BUYER,
                             status: 406,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1556,6 +1573,7 @@ impl UserNft{
                             data: Some(&[]),
                             message: NFT_PRICE_IS_EMPTY,
                             status: 406,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1570,6 +1588,7 @@ impl UserNft{
                             data: Some(&[]),
                             message: INVALID_NFT_PRICE,
                             status: 406,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1612,6 +1631,7 @@ impl UserNft{
                             data: Some(&[]),
                             message: INVALID_NFT_ROYALTY,
                             status: 406,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1670,6 +1690,7 @@ impl UserNft{
                             data: Some(&[]),
                             message: CANT_TRANSFER_NFT,
                             status: 417,
+                            is_error: true
                         };
                         return Err(
                             Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -1695,6 +1716,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_EVENT_TYPE_BUYER_IS_NEEDED,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1708,6 +1730,7 @@ impl UserNft{
                     data: Some(&[]),
                     message: NFT_IS_NOT_LISTED_YET,
                     status: 406,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1720,6 +1743,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: INVALID_NFT_EVENT_TYPE,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1868,6 +1892,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_IS_ALREADY_MINTED,
                         status: 302,
+                        is_error: false
                     };
                     return Err(
                         Ok(HttpResponse::Found().json(resp))
@@ -1881,6 +1906,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1894,6 +1920,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_IS_NOT_LISTED_YET,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1908,6 +1935,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_PRICE_IS_EMPTY,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1922,6 +1950,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: INVALID_NFT_PRICE,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1940,6 +1969,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: CANT_MINT_NFT,
                         status: 417,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -1977,6 +2007,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: INVALID_NFT_EVENT_TYPE,
                 status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2030,6 +2061,7 @@ impl UserNft{
                 data: Some(&[]),
                 message: NFT_NOT_OWNED_BY,
                 status: 403,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::Forbidden().json(resp))
@@ -2059,6 +2091,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_IS_NOT_MINTED_YET,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2072,6 +2105,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2089,6 +2123,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: RECIPIENT_SCREEN_CID_NOT_FOUND,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2109,6 +2144,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: CANT_TRANSFER_NFT,
                         status: 417,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -2136,6 +2172,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_IS_NOT_LISTED,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2160,6 +2197,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_PRICE_IS_EMPTY,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2173,6 +2211,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: INVALID_NFT_PRICE,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2204,6 +2243,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_IS_NOT_MINTED_YET,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2217,6 +2257,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: NFT_METADATA_URI_IS_EMPTY,
                         status: 406,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
@@ -2258,6 +2299,7 @@ impl UserNft{
                         data: Some(&[]),
                         message: CANT_UPDATE_NFT,
                         status: 417,
+                        is_error: true
                     };
                     return Err(
                         Ok(HttpResponse::ExpectationFailed().json(resp))
@@ -2279,6 +2321,7 @@ impl UserNft{
                     data: Some(&[]),
                     message: INVALID_NFT_EVENT_TYPE,
                     status: 406,
+                    is_error: true
                 };
                 return Err(
                     Ok(HttpResponse::NotAcceptable().json(resp))

@@ -153,6 +153,7 @@ pub async fn main(req: Request<Body>) -> RendezvousResult<hyper::Response<Body>,
                     data: Some(misc::app::Nill(&[])), // data is an empty &[u8] array
                     message: DO_SIGNUP, // document not found in database and the user must do a signup
                     status: 404,
+                    
                 };
                 let response_body_json = serde_json::to_string(&response_body).unwrap(); // converting the response body object into json stringify to send using hyper body
                 Ok(

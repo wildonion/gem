@@ -37,7 +37,8 @@ pub async fn verify_request(
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: EMPTY_CRYPTO_DATA,
-                status: 406
+                status: 406,
+                is_error: true
             };
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
@@ -51,7 +52,8 @@ pub async fn verify_request(
         let resp = Response::<&[u8]>{
             data: Some(&[]),
             message: NOT_VERIFIED_PHONE,
-            status: 406
+            status: 406,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -66,7 +68,8 @@ pub async fn verify_request(
         let resp = Response::<&[u8]>{
             data: Some(&[]),
             message: NOT_VERIFIED_MAIL,
-            status: 406
+            status: 406,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -83,7 +86,8 @@ pub async fn verify_request(
         let resp = Response::<&[u8]>{
             data: Some(&[]),
             message: INSUFFICIENT_FUNDS,
-            status: 406
+            status: 406,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -103,7 +107,8 @@ pub async fn verify_request(
         let resp = Response{
             data: Some(from_cid.to_string()),
             message: USER_SCREEN_CID_NOT_FOUND,
-            status: 404
+            status: 404,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -117,7 +122,8 @@ pub async fn verify_request(
         let resp = Response{
             data: Some(from_cid.to_string()),
             message: CALLER_IS_NOT_THE_OWNER,
-            status: 403
+            status: 403,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::Forbidden().json(resp))
@@ -135,7 +141,8 @@ pub async fn verify_request(
         let resp = Response::<&[u8]>{
             data: Some(&[]),
             message: INVALID_SIGNATURE,
-            status: 406
+            status: 406,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))

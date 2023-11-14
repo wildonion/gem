@@ -738,54 +738,17 @@ async fn is_user_kyced(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
                     
-                    let user_data = UserData{
-                        id: user.id,
-                        region: user.region.clone(),
-                        username: user.username.clone(),
-                        bio: user.bio.clone(),
-                        avatar: user.avatar.clone(),
-                        banner: user.banner.clone(),
-                        wallet_background: user.wallet_background.clone(),
-                        activity_code: user.activity_code.clone(),
-                        twitter_username: user.twitter_username.clone(),
-                        facebook_username: user.facebook_username.clone(),
-                        discord_username: user.discord_username.clone(),
-                        identifier: user.identifier.clone(),
-                        user_role: {
-                            match user.user_role.clone(){
-                                UserRole::Admin => "Admin".to_string(),
-                                UserRole::User => "User".to_string(),
-                                _ => "Dev".to_string(),
-                            }
-                        },
-                        token_time: user.token_time,
-                        balance: user.balance,
-                        last_login: { 
-                            if user.last_login.is_some(){
-                                Some(user.last_login.unwrap().to_string())
-                            } else{
-                                Some("".to_string())
-                            }
-                        },
-                        created_at: user.created_at.to_string(),
-                        updated_at: user.updated_at.to_string(),
-                        mail: user.clone().mail,
-                        is_mail_verified: user.is_mail_verified,
-                        is_phone_verified: user.is_phone_verified,
-                        phone_number: user.clone().phone_number,
-                        paypal_id: user.clone().paypal_id,
-                        account_number: user.clone().account_number,
-                        device_id: user.clone().device_id,
-                        social_id: user.clone().social_id,
-                        cid: user.clone().cid,
-                        screen_cid: user.clone().screen_cid,
-                        snowflake_id: user.snowflake_id,
-                        stars: user.stars
+                    let user_data = UserWalletInfoResponse{
+                        username: user.username,
+                        mail: user.mail,
+                        screen_cid: user.screen_cid,
+                        stars: user.stars,
+                        created_at: user.created_at.to_string()
                     };
 
                     /* sending user data */
                     resp!{
-                        UserData, // the data type
+                        UserWalletInfoResponse, // the data type
                         user_data, // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code

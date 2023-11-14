@@ -177,6 +177,7 @@ async fn get_admin_data(
                                     data: Some(&[]),
                                     message: INVALID_QUERY_LIMIT,
                                     status: 406,
+                                    is_error: true
                                 };
                                 return Ok(HttpResponse::NotAcceptable().json(resp));
                                 
@@ -342,6 +343,7 @@ async fn get_user_data(
                                     data: Some(&[]),
                                     message: INVALID_QUERY_LIMIT,
                                     status: 406,
+                                    is_error: true
                                 };
                                 return Ok(HttpResponse::NotAcceptable().json(resp));
                                 

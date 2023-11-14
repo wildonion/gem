@@ -1319,7 +1319,8 @@ pub async fn get_nft_onchain_metadata_uri<N>(
         let resp = Response::<&[u8]>{
             data: Some(&[]),
             message: UNSUPPORTED_IMAGE_TYPE,
-            status: 406
+            status: 406,
+            is_error: true,
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1354,6 +1355,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
             data: Some(&[]),
             message: EMPTY_NFT_IMG,
             status: 406,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::NotAcceptable().json(resp))
@@ -1398,6 +1400,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
             data: Some(&[]),
             message: NFT_UPLOAD_ISSUE,
             status: 417,
+            is_error: true
         };
         return Err(
             Ok(HttpResponse::ExpectationFailed().json(resp))
