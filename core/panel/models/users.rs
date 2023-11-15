@@ -1114,13 +1114,17 @@ impl User{
     
     }
 
-    pub async fn insert_by_gmail_info(gmail_info: UserLoginWithGmailRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert_by_gmail_info(gmail_info: UserLoginWithGmailRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         todo!()
 
     }
 
-    pub async fn insert_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         todo!()
         

@@ -1119,7 +1119,6 @@ async fn login_with_microsoft(
             // if there wasn't any then validate the new input 
             // ...
 
-
             todo!()
 
         },
