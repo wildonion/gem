@@ -72,7 +72,7 @@ pub static PASSPORT_DATA_NOT_FOUND: &str = "Passport Data Not Found";
 pub static INVALID_TOKEN: &str = "Invalid Token Or Rendezvous Server Is Down";
 pub static RENDEZVOUS_EVENT_IMG_UPDATED: &str = "Rendezvous Event Image Updated Successfully";
 pub static RENDEZVOUS_PLAYER_AVATAR_IMG_UPDATED: &str = "Rendezvous Player Avatar Image Updated Successfully";
-pub static UNSUPPORTED_IMAGE_TYPE: &str = "Image Type Is Not Supported, Only [.png, .jpg, .pdf, .mp4, .mp3, .gif or .jpeg]";
+pub static UNSUPPORTED_FILE_TYPE: &str = "File Type Is Not Supported, Only [.png, .jpg, .pdf, .mp4, .mp3, .gif or .jpeg]";
 pub static NOT_AUTH_HEADER: &str = "No Authorization Header Is Provided";
 pub static ACCESS_DENIED: &str = "Access Denied";
 pub static DO_LOGIN: &str = "Invalid Token Time, Please Login To Generate New JWT";
@@ -191,7 +191,7 @@ pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";
 
 pub mod subnets{
 
-pub fn get_ir_ips() -> &'static [&'static str]{
+pub const fn get_ir_ips() -> &'static [&'static str]{
 
         &[
         "2.57.3.0/24",

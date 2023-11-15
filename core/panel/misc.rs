@@ -9,7 +9,7 @@ use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, UNSUPPORTED_IMAGE_TYPE, TOO_LARGE_FILE_SIZE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -659,8 +659,6 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
     let lock_payload = asset.lock().await;
     let mut asset = lock_payload;
 
-    info!("asset {:#?}", asset.next().await.unwrap().unwrap());
-
     /*  
         streaming over incoming img multipart form data to extract the
         field object for writing the bytes into the file
@@ -698,7 +696,7 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
 
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
-                message: UNSUPPORTED_IMAGE_TYPE,
+                message: UNSUPPORTED_FILE_TYPE,
                 status: 406,
                 is_error: true
             };
@@ -764,7 +762,6 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
             .unwrap();
 
     }
-
 
     Ok(img_path)
 

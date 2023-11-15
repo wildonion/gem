@@ -49,14 +49,23 @@ pub struct NftComment{
     pub nft_onchain_id: String,
     pub content: String,
     pub owner_screen_cid: String,
+    pub owner_username: String,
+    pub owner_avatar: Option<String>,
     pub published_at: i64,
-}
+} 
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NftLike{
     pub nft_onchain_id: String,
-    pub upvoter_screen_cids: Vec<String>,
-    pub downvoter_screen_cids: Vec<String>,
+    pub upvoter_screen_cids: Vec<LikeUserInfo>,
+    pub downvoter_screen_cids: Vec<LikeUserInfo>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct LikeUserInfo{
+    pub screen_cid: String,
+    pub username: String,
+    pub avatar: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -396,14 +405,14 @@ impl UserNft{
                         let mut owner_likes = vec![];
                         for like in decoded_likes{
                             
-                            let like_stat_data = if like.upvoter_screen_cids.contains(&caller_screen_cid.to_string()){
+                            let like_stat_data = if like.upvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.clone().to_string()){
                                     Some(
                                         UserLikeStat{
                                             nft_onchain_id: like.nft_onchain_id,
                                             is_upvote: true,
                                         }
                                     )
-                                } else if like.downvoter_screen_cids.contains(&caller_screen_cid.to_string()){
+                                } else if like.downvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.clone().to_string()){
 
                                     Some(
                                         UserLikeStat{
@@ -1348,6 +1357,8 @@ impl UserNft{
                             content: add_reaction_request.clone().comment_content.unwrap(), 
                             owner_screen_cid: caller_screen_cid.clone(), 
                             published_at: chrono::Local::now().timestamp(),
+                            owner_username: user.clone().username,
+                            owner_avatar: user.clone().avatar,
                         }
                     );
 
@@ -1385,21 +1396,33 @@ impl UserNft{
                         
                         let caller = caller_screen_cid.clone();
                         if this_nft_likes.clone().upvoter_screen_cids.is_empty(){
-                            this_nft_likes.upvoter_screen_cids.push(caller.clone());
+                            this_nft_likes.upvoter_screen_cids.push(
+                                LikeUserInfo{ 
+                                    screen_cid: caller.clone(), 
+                                    username: user.clone().username, 
+                                    avatar: user.clone().avatar 
+                                }
+                            );
                         }
                         
                         for upvote in this_nft_likes.clone().upvoter_screen_cids{
-                            if upvote != caller{
-                                this_nft_likes.upvoter_screen_cids.push(caller.clone());
+                            if upvote.screen_cid != caller{
+                                this_nft_likes.upvoter_screen_cids.push(
+                                    LikeUserInfo{ 
+                                        screen_cid: caller.clone(), 
+                                        username: user.clone().username, 
+                                        avatar: user.clone().avatar 
+                                    }
+                                );
                             }
                         }
 
                         /* remove the caller from downvoters if there was any since he liked the nft */
                         if this_nft_likes.clone().downvoter_screen_cids
                             .into_iter()
-                            .any(|scid| scid == caller_screen_cid.clone()){
+                            .any(|u| u.screen_cid == caller_screen_cid.clone()){
 
-                                let downvoter_position_scid = this_nft_likes.downvoter_screen_cids.iter().position(|scid| scid == &caller_screen_cid.clone());
+                                let downvoter_position_scid = this_nft_likes.downvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
                                 if downvoter_position_scid.is_some(){
                                     this_nft_likes.downvoter_screen_cids.remove(downvoter_position_scid.unwrap());
                                 }
@@ -1412,7 +1435,13 @@ impl UserNft{
                         mutable_decoded_likes.push(
                             NftLike{ 
                                 nft_onchain_id: add_reaction_request.clone().nft_onchain_id, 
-                                upvoter_screen_cids: vec![caller_screen_cid.clone()],
+                                upvoter_screen_cids: vec![
+                                    LikeUserInfo{ 
+                                        screen_cid: caller_screen_cid.clone(), 
+                                        username: user.clone().username, 
+                                        avatar: user.clone().avatar 
+                                    }
+                                ],
                                 downvoter_screen_cids: vec![]
                             }
                         )
@@ -1434,21 +1463,33 @@ impl UserNft{
 
                         let caller = caller_screen_cid.clone();
                         if this_nft_likes.clone().downvoter_screen_cids.is_empty(){
-                            this_nft_likes.downvoter_screen_cids.push(caller.clone());
+                            this_nft_likes.downvoter_screen_cids.push(
+                                LikeUserInfo{ 
+                                    screen_cid: caller.clone(), 
+                                    username: user.clone().username, 
+                                    avatar: user.clone().avatar 
+                                }
+                            );
                         }
 
                         for downvote in this_nft_likes.clone().downvoter_screen_cids{
-                            if downvote != caller{
-                                this_nft_likes.downvoter_screen_cids.push(caller.clone());
+                            if downvote.screen_cid != caller{
+                                this_nft_likes.downvoter_screen_cids.push(
+                                    LikeUserInfo{ 
+                                        screen_cid: caller.clone(), 
+                                        username: user.clone().username, 
+                                        avatar: user.clone().avatar 
+                                    }
+                                );
                             }
                         }
 
                         /* remove the caller from upvoters if there was any since he disliked the nft */
                         if this_nft_likes.clone().upvoter_screen_cids
                             .into_iter()
-                            .any(|scid| scid == caller_screen_cid.clone()){
+                            .any(|u| u.screen_cid == caller_screen_cid.clone()){
 
-                                let upvoter_position_scid = this_nft_likes.upvoter_screen_cids.iter().position(|scid| scid == &caller_screen_cid.clone());
+                                let upvoter_position_scid = this_nft_likes.upvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
                                 if upvoter_position_scid.is_some(){
                                     this_nft_likes.upvoter_screen_cids.remove(upvoter_position_scid.unwrap());
                                 }
@@ -1462,7 +1503,13 @@ impl UserNft{
                             NftLike{ 
                                 nft_onchain_id: add_reaction_request.nft_onchain_id, 
                                 upvoter_screen_cids: vec![],
-                                downvoter_screen_cids: vec![caller_screen_cid.clone()]
+                                downvoter_screen_cids: vec![
+                                    LikeUserInfo{ 
+                                        screen_cid: caller_screen_cid.clone(), 
+                                        username: user.clone().username, 
+                                        avatar: user.clone().avatar 
+                                    }
+                                ]
                             }
                         )
                     }

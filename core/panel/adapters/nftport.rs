@@ -16,7 +16,7 @@ use redis_async::client::PubsubConnection;
 use serde_json::json;
 use wallexerr::Wallet;
 use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_IMAGE_TYPE};
+use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_FILE_TYPE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
@@ -1300,25 +1300,25 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     let ext_position_mp3 = filename.find("mp3");
     let ext_position_gif = filename.find("gif");
 
-    let (ext_position, file_kind) = if filename.find("png").is_some(){
+    let (ext_position, file_kind) = if ext_position_png.is_some(){
         (ext_position_png.unwrap(), "img")
-    } else if filename.find("jpg").is_some(){
+    } else if ext_position_jpg.is_some(){
         (ext_position_jpg.unwrap(), "img")
-    } else if filename.find("jpeg").is_some(){
+    } else if ext_position_jpeg.is_some(){
         (ext_position_jpeg.unwrap(), "img")
-    } else if filename.find("pdf").is_some(){
+    } else if ext_position_pdf.is_some(){
         (ext_position_pdf.unwrap(), "pdf")
-    } else if filename.find("mp4").is_some(){
+    } else if ext_position_mp4.is_some(){
         (ext_position_mp4.unwrap(), "mp4")
-    } else if filename.find("mp3").is_some(){
+    } else if ext_position_mp3.is_some(){
         (ext_position_mp3.unwrap(), "mp3")
-    } else if filename.find("gif").is_some(){
+    } else if ext_position_gif.is_some(){
         (ext_position_gif.unwrap(), "gif")
     } else{
 
         let resp = Response::<&[u8]>{
             data: Some(&[]),
-            message: UNSUPPORTED_IMAGE_TYPE,
+            message: UNSUPPORTED_FILE_TYPE,
             status: 406,
             is_error: true,
         };

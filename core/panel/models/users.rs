@@ -421,7 +421,7 @@ impl User{
                     let token_data = token.claims;
                     let _id = token_data._id;
                     let role = token_data.user_role.clone();
-                    let _token_time = token_data.token_time;
+                    let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
 
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
