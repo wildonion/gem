@@ -6860,7 +6860,7 @@ async fn create_nft_metadata_uri(
                         
 
                         let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
-                        let get_json_data = misc::convert_multipart_to_json(
+                        let get_json_data = misc::extract_multipart(
                             arced_payload.clone()
                         ).await;
 
@@ -8262,18 +8262,18 @@ pub mod exports{
     pub use super::charge_wallet_request; /**** buy in-app token ****/
     // pub use super::sell_token_request; /**** cache in-app token ****/
     // -----------------------------------------------
-    /*          chatroom launchpad http+ws apis       */
+    /*          chatroom launchpad http+ws apis      */
     // -----------------------------------------------
+    // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     // 0 - summerize users' chats and generate n titles
-    // 1 - generate n images using ai based on those titles
-    // 2 - mint ai generated pictures to users screen_cids
+    // 1 - generate a mapping between titles and images using ai
+    // 2 - mint ai generated pictures to users screen_cids inside the chat
     // 3 - users can 
     //      - sell their nfts in the platform 
     //      - use their nfts as an entry card in different parts of the platform
-    // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     // ...
     // -----------------------------------------------
-    /*                    advieh apis                */
+    /*                  advieh apis                  */
     // -----------------------------------------------
     // pub use super::advieh_collection;
     // ...

@@ -17,8 +17,7 @@ use crate::schema::users_tasks::dsl::*;
 #[derive(Debug)]
 pub struct Twitter{
     pub endpoint: Option<String>,
-    pub keys: Vec<Keys>,
-    pub apis: Vec<TwitterApi<BearerToken>>
+    pub keys: Vec<Keys>
 }
 
 impl Twitter{
@@ -54,14 +53,6 @@ impl Twitter{
         let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
         let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
         let twitter_accounts = twitter.keys;
-        
-        let mut apis = vec![];
-        for account in twitter_accounts.clone(){
-            let auth = BearerToken::new(account.twitter_bearer_token.clone());
-            let twitter_api = TwitterApi::new(auth);
-            apis.push(twitter_api);
-
-        }
 
         Ok(
             Self{
@@ -70,7 +61,6 @@ impl Twitter{
                 } else{
                     None // we're using conse twitter APIs
                 },
-                apis,
                 keys: twitter_accounts
             }
         )

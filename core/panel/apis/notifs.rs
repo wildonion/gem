@@ -269,12 +269,16 @@ async fn notif_subs(
 async fn chatroomlp(
     req: HttpRequest, 
     stream: web::Payload, 
+    payload: Multipart,
     route_paths: web::Path<(String, String)>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse {
 
     // only authenticated and kyced user can chat
     // ...
+
+    let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
+    let (json_data, files) = misc::extract_multipart(arced_payload).await.unwrap();
     
     todo!()
 

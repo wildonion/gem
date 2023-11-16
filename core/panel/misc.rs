@@ -768,7 +768,7 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
 
 }
 
-pub async fn convert_multipart_to_json(
+pub async fn extract_multipart(
     payload: std::sync::Arc<tokio::sync::Mutex<Multipart>>
 ) -> Result<(serde_json::Value, HashMap<String, Vec<u8>>), PanelHttpResponse>{
 
