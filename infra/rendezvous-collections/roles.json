@@ -1234,4 +1234,30 @@
   "is_disabled": false,
   "created_at": 1698844643,
   "updated_at": 1698844643
+},
+{
+  "_id": {
+    "$oid": "65577ed22b4d4d183be37bb5"
+  },
+  "name": "باز پرس",
+  "rate": 1,
+  "desc": "",
+  "abilities": 0,
+  "side_id": "630a359e8c198e0d655c8ae0",
+  "is_disabled": false,
+  "created_at": 1700232914,
+  "updated_at": 1700232914
+},
+{
+  "_id": {
+    "$oid": "65577ee22b4d4d183be37bb6"
+  },
+  "name": "قاتل زنجیره ای",
+  "rate": 1,
+  "desc": "",
+  "abilities": 0,
+  "side_id": "630a359e8c198e0d655c8ae0",
+  "is_disabled": false,
+  "created_at": 1700232930,
+  "updated_at": 1700232930
 }]

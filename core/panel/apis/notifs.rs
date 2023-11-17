@@ -386,8 +386,10 @@ async fn chatroomlp(
                     // };
 
 
-
+                    
+                    // TODO - 
                     // chatroomlp validation find with id
+                    // check that the user is already registered for this chatroom
                     // ...
 
 
