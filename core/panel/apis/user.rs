@@ -1075,11 +1075,6 @@ async fn login_with_gmail(
             let connection = &mut pg_pool.get().unwrap();
 
             let user_gmail_request = user_gmail_request.to_owned();
-            
-
-            // find by gid, gusername and gmail
-            // if there wasn't any then validate the new input 
-            // ...
 
             todo!()
 
@@ -1114,10 +1109,6 @@ async fn login_with_microsoft(
 
             let user_microsoft_request = user_microsoft_request.to_owned();
             
-
-            // find by mid, musername and mail
-            // if there wasn't any then validate the new input 
-            // ...
 
             todo!()
 
@@ -8272,6 +8263,9 @@ pub mod exports{
     //      - sell their nfts in the platform 
     //      - use their nfts as an entry card in different parts of the platform
     // ...
+    // pub use super:register_clp;
+    // pub use super:join_clp;
+    // pub use super:end_clp;
     // -----------------------------------------------
     /*                  advieh apis                  */
     // -----------------------------------------------

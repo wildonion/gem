@@ -4,7 +4,7 @@ use wallexerr::Wallet;
 use crate::{*, models::users::User, misc::Response, constants::{NOT_VERIFIED_PHONE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, CALLER_IS_NOT_THE_OWNER, EMPTY_CRYPTO_DATA}};
 
 
-/*   ------------------------------------------------------------------------------------------------
+/*  > ------------------------------------------------------------------------------------------------
     | user must pay for the following calls and spend in-app token by signing the request body 
     | of each api after that if the request was kyced-verified then the rest of the api logic 
     | will be executed otherwise rejected, the following is the process of kycing the request:

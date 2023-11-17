@@ -1,10 +1,11 @@
 
 
-/*   -----------------------------------------------------------------------------------
+/*  > -----------------------------------------------------------------------------------
     | ecq notif actor to communicate (send/receive messages) with session or peer actor 
     | ----------------------------------------------------------------------------------
+    | contains: message structures and their handlers
+    | topic   : `ecq-{event_objectid}`  
     |
-    | topic: `ecq-{event_objectid}`  
     |
 */
 

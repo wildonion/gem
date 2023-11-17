@@ -2,7 +2,7 @@
 
 
 
-/*   ---------------------------------------------------------------------------------------------
+/*  > ---------------------------------------------------------------------------------------------
     | every api return type is Result<actix_web::HttpRequest, actix_web::HttpResponse>
     | means that if everyting goes well an api should return Ok(actix_web::HttpRequest)
     | in form utf8 bytes through the actix tcp socket to the caller or the client. 

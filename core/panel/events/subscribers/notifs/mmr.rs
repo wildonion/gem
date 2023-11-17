@@ -1,10 +1,11 @@
 
 
-/*   -----------------------------------------------------------------------------------
+/*  > -----------------------------------------------------------------------------------
     | mmr notif actor to communicate (send/receive messages) with session or peer actor 
     | ----------------------------------------------------------------------------------
+    | contains: message structures and their handlers
+    | topic   : `mmr-{event_objectid}`   
     |
-    | topic: `mmr-{event_objectid}`   
     |
 */
 

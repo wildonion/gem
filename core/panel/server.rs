@@ -24,6 +24,7 @@ macro_rules! server {
             use crate::events::subscribers::notifs::role::RoleNotifServer;
             use crate::events::subscribers::notifs::mmr::MmrNotifServer;
             use crate::events::subscribers::notifs::ecq::EcqNotifServer;
+            use crate::events::subscribers::chatroomlp::ChatRoomLaunchpadServer;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -67,14 +68,17 @@ macro_rules! server {
                 each server is an actor which allow us to communicate with them asyncly and concurrently 
                 within the different parts of the app by message sending logic  
             */
-            let role_ntif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
-            let shared_ws_role_notif_server = Data::new(role_ntif_server_instance.clone());
+            let role_notif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
+            let shared_ws_role_notif_server = Data::new(role_notif_server_instance.clone());
             
-            let mmr_ntif_server_instance = MmrNotifServer::new(app_storage.clone()).start();
-            let shared_ws_mmr_notif_server = Data::new(mmr_ntif_server_instance.clone());
+            let mmr_notif_server_instance = MmrNotifServer::new(app_storage.clone()).start();
+            let shared_ws_mmr_notif_server = Data::new(mmr_notif_server_instance.clone());
 
-            let ecq_ntif_server_instance = EcqNotifServer::new(app_storage.clone()).start();
-            let shared_ws_ecq_notif_server = Data::new(ecq_ntif_server_instance.clone());
+            let ecq_notif_server_instance = EcqNotifServer::new(app_storage.clone()).start();
+            let shared_ws_ecq_notif_server = Data::new(ecq_notif_server_instance.clone());
+
+            let chatroomlp_server_instance = ChatRoomLaunchpadServer::new(app_storage.clone()).start();
+            let shared_ws_chatroomlp_server = Data::new(chatroomlp_server_instance.clone());
 
             let shared_storage = Data::new(app_storage.clone());
 
@@ -109,6 +113,7 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_mmr_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_ecq_notif_server.clone()))
+                    .app_data(Data::clone(&shared_ws_chatroomlp_server.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
@@ -188,7 +193,7 @@ macro_rules! server {
                                 incoming connections asyncly and concurrently 
                             */
                             .workers(10) 
-                            .run()
+                            .run() /* actix web http+ws server runs in the same thread that actix has ran */
                             .await
                     },
                     Err(e) => {

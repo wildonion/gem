@@ -1,10 +1,11 @@
 
 
-/*   -----------------------------------------------------------------------------------
+/*  > -----------------------------------------------------------------------------------
     | role notif actor to communicate (send/receive messages) with session or peer actor 
     | ----------------------------------------------------------------------------------
-    |
-    | topic: `reveal-role-{event_objectid}`
+    | contains: message structures and their handlers
+    | topic   : `reveal-role-{event_objectid}`
+    | 
     |
 */
 

@@ -1,9 +1,10 @@
 
 
 
-/*   ------------------------------------------------------------------------------------------------------------------
+/*  > ------------------------------------------------------------------------------------------------------------------
     | websocket session actor to receive push notif subscription from redis subscriber of role, mmr and ecq publishers 
     | -----------------------------------------------------------------------------------------------------------------
+    | contains: message structures and their handlers + WS realtime stream message handler
     |
     | with actors we can communicate between different parts of the app by sending async 
     | messages to each other through jobq channels, they also must have a handler for each 
@@ -39,12 +40,10 @@ use super::notifs::{
 };
 
 
-/* 
-    since it's macro it must be complied before any main codes 
-    so we can use it on top of the structures, 
-*/
 #[derive(Message)]
 /*
+    since it's macro it must be complied before any main codes 
+    so we can use it on top of the structures, 
     the following macro will implement the message Handler trait for the 
     NotifySession struct with the result of type () at compile time
 */

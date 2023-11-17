@@ -179,6 +179,14 @@ pub struct UserIdResponse{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct UserChatRoomLaunchpadRequest{
+    pub user_cid: String,
+    pub chatroomlp_id: i32,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct UpdateBioRequest{
     pub bio: String,
 }
@@ -1114,19 +1122,27 @@ impl User{
     
     }
 
-    pub async fn insert_by_gmail_info(gmail_info: UserLoginWithGmailRequest, 
+    pub async fn login_by_gmail_info(gmail_info: UserLoginWithGmailRequest, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(UserData, Cookie), PanelHttpResponse>{
+
+        // find by gid, gusername and gmail
+        // if there wasn't any then validate the new input 
+        // ...
 
         todo!()
 
     }
 
-    pub async fn insert_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, 
+    pub async fn login_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(UserData, Cookie), PanelHttpResponse>{
 
-        todo!()
+        // find by mid, musername and mail
+        // if there wasn't any then validate the new input 
+        // ...
+
+        todo!() 
         
     }
 
