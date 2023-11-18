@@ -14,12 +14,13 @@ use crate::misc::*;
 use s3::*;
 use crate::*;
 use actix::prelude::*;
+use actix_broker::*;
 
 
 /* implementing Message traits for all type of messages that can be used by ChatRoomLaunchpadServer actor to communicate with other actors */
 
 /// new chat session is created
-#[derive(Message)]
+#[derive(Clone, Message)]
 #[rtype(usize)]
 pub struct Connect {
     pub addr: Recipient<Message>, /* user or session actor address */
@@ -28,7 +29,7 @@ pub struct Connect {
 }
 
 /// session is disconnected
-#[derive(Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Disconnect {
     pub id: usize, // session id
@@ -36,20 +37,20 @@ pub struct Disconnect {
 }
 
 /// join room
-#[derive(Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Join {
     pub id: usize, // client id or session id
     pub chatroom_name: &'static str, // chatroom name: `chatroomlp-{clp_id}`
 }
 
-#[derive(Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Message(pub String);
 
 
 /// update chat room
-#[derive(Message)]
+#[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct UpdateChatRoom{
     pub chat_room: &'static str,
@@ -57,7 +58,7 @@ pub struct UpdateChatRoom{
 }
 
 /// notify all sessions
- #[derive(Message)]
+ #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct NotifySessionsWithNewMessage{
     pub chat_room: String,
@@ -66,7 +67,7 @@ pub struct NotifySessionsWithNewMessage{
 }
 
 /* ChatRoomLaunchpadServer contains all the chatrooms and sessions or peers that are connected to ws connection */
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ChatRoomLaunchpadServer{
     pub rooms: HashMap<String, HashSet<usize>>, // a mapping between the room or event name and its peer ids
     pub sessions: HashMap<usize, Recipient<Message>>, // a mapping between the peer id and its actor address
@@ -101,8 +102,8 @@ impl ChatRoomLaunchpadServer{
                         if let Some(addr) = self.sessions.get(id){
                             /* 
                                 a handler with generic Message must be implemented for each session 
-                                or WsNotifSession actor do_send() will send the message to the session 
-                                or WsNotifSession actor later we can handle it using the implemented handler 
+                                or WsLaunchpadSession actor do_send() will send the message to the session 
+                                or WsLaunchpadSession actor later we can handle it using the implemented handler 
                             */
                             addr.do_send(Message(message.to_owned())) 
                         }
@@ -114,9 +115,54 @@ impl ChatRoomLaunchpadServer{
 
 }
 
+impl SystemService for ChatRoomLaunchpadServer {}
+/*
+    by implementing the following trait we're giving the
+    ChatRoomLaunchpadServer actor the ability to restart after failure
+*/
+impl Supervised for ChatRoomLaunchpadServer {}
+
 /* since this is an actor it can communicates with other ws actor as well, by sending pre defined messages to them */
 impl Actor for ChatRoomLaunchpadServer{
-    type Context = Context<ChatRoomLaunchpadServer>;
+    /* 
+        Context is a wrapper around the Self which can be used 
+        as a little instance of the Self in some places that we 
+        need to access the whole instance
+    */
+    type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        
+        /*  subscribing to Join and NotifySessionsWithNewMessage messages once
+            the server actor gets started,
+            by loading actix_broker::BrokerSubscribe trait we have access to 
+            the traits' methods inside each actor since it's already implemented 
+            for each actor instance, and by calling subscribe_async() method 
+            we can asynchronously subscribe to a message that this actor is 
+            interested to, basically actix_broker is used to facilitate the sending 
+            of some messages between the session and server actors where the session 
+            does not require a response thus in the following the server actor 
+            is subscribing to Disconnect and NotifySessionsWithNewMessage messages
+            asyncly and automatically one a session gets disconnected from the room 
+            and notified with a new message 
+
+            > subscribing to Join message might show no session id cause this subscription
+            is async and if the server is subscribing to this message before the session
+            gets joined to chat the session id will be 0 like: 
+                user with id: [0] connected to chatroom: [1]
+
+            > subscribing to NotifySessionsWithNewMessage message causes client to see
+            the incoming message in the room twice because we're notifying the server
+            actor two times with new message, first one is in sending ws message logic 
+            and the second one is in here
+
+            > note that once server actor gets subscribed to these messages all the logs
+            inside each message handler will be shown and sent to the client
+        */
+        self.subscribe_system_async::<Join>(ctx);
+        // self.subscribe_system_async::<NotifySessionsWithNewMessage>(ctx);
+
+    }
 
     fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
         Running::Stop
@@ -182,8 +228,8 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
 
     fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) -> Self::Result{
         
-        info!("💡 --- user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
-        let disconn_message = format!("user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
+        info!("💡 chatroomlp --- user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
+        let disconn_message = format!("chatroomlp::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
         let mut rooms = Vec::<String>::new();
         
         if self.sessions.remove(&msg.id).is_some(){
@@ -211,7 +257,7 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
 
 impl Handler<Connect> for ChatRoomLaunchpadServer{
 
-    type Result = usize;
+    type Result = usize; /* return type is the generated session id */
 
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result{
         
@@ -232,15 +278,16 @@ impl Handler<Connect> for ChatRoomLaunchpadServer{
             })
             .or_insert(HashSet::new());
         
-        info!("💡 --- current rooms of chatroom server actor are: {:?}", self.rooms);
+        info!("💡 chatroomlp --- current rooms of chatroom server actor are: {:?}", self.rooms);
 
-        let conn_message = format!("user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
-        info!("💡 --- user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
+        let conn_message = format!("chatroomlp::user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
+        info!("💡 chatroomlp --- user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
         self.send_message(&msg.chatroom_name, conn_message.as_str(), 0);
 
         unique_id /* session id */
 
     }
+
 }
 
 impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again */
@@ -250,18 +297,19 @@ impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again 
     /* in this handler we'll send disconnect message to old room and send join message to new room */
     fn handle(&mut self, msg: Join, ctx: &mut Self::Context) -> Self::Result{
         
-        let disconn_message = format!("user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
-        let conn_message = format!("user with id: [{}] connected to chatroom: [{}]", msg.id, msg.chatroom_name);
+        let disconn_message = format!("chatroomlp::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
+        let conn_message = format!("chatroomlp::user with id: [{}] connected to chatroom: [{}]", msg.id, msg.chatroom_name);
 
         let Join { id, chatroom_name } = msg; // unpacking msg instance
         let mut rooms = Vec::<String>::new();
 
         /* removing session from all rooms of ChatRoomLaunchpadServer actor */
         for (event_room_name, sessions) in &mut self.rooms{
-            if sessions.remove(&id){
+            if sessions.remove(&id){ /* sessions will be updated since we have a mutable pointer to it */
                 rooms.push(event_room_name.to_owned());
             }
         }
+        
 
         /* send disconnect message to all rooms of ChatRoomLaunchpadServer actor and other user */
         for room in rooms{
@@ -291,7 +339,7 @@ impl Handler<NotifySessionsWithNewMessage> for ChatRoomLaunchpadServer{
         let NotifySessionsWithNewMessage{ chat_room, session_id, new_message }
             = msg;
 
-        self.send_message(&chat_room, &new_message, 0);
+        self.send_message(&chat_room, &new_message, session_id);
 
     }
 }

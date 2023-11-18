@@ -18,6 +18,8 @@ use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR
 use crate::{misc::*, s3::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::prelude::*;
+use actix_broker::BrokerIssue;
+use wallexerr::Wallet;
 use crate::events::subscribers::chatroomlp::{
     
     ChatRoomLaunchpadServer, Disconnect as ChatRoomLaunchpadServerDisconnectMessage,
@@ -28,7 +30,7 @@ use crate::events::subscribers::chatroomlp::{
 
 
 
-
+#[derive(Clone)]
 pub(crate) struct WsLaunchpadSession{
     pub id: usize, // unique session id
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
@@ -115,6 +117,28 @@ impl Actor for WsLaunchpadSession{
             })
             .wait(ctx);
 
+
+        // ---------- PUBLISHING ChatRoomLaunchpadServerJoinMessage 
+        // ----------------------------------------------------------------------
+        /* 
+            publish ChatRoomLaunchpadServerJoinMessage message asyncly, so later on server actor can subscribe to 
+            once the server actor gets subscribed to this clients can see:
+            user with id: [0] connected to chatroom: [1]
+            user with id: [0] disconnected from the chatroom: [1]
+
+            we can also have the following code instead of publishing:
+            self.ws_chatroomlp_actor_address.do_send(
+                ChatRoomLaunchpadServerJoinMessage{ 
+                    id: self.id, 
+                    chatroom_name: self.chat_room 
+                }
+            );
+        */
+        self.issue_system_async(ChatRoomLaunchpadServerJoinMessage{ id: self.id, chatroom_name: self.chat_room });
+        let joined_msg = format!("sessionlp::joined in chatroom launchpad [{}]", self.chat_room);
+        ctx.text(joined_msg);
+        // ----------------------------------------------------------------------
+
     }
 
 
@@ -137,9 +161,9 @@ impl Actor for WsLaunchpadSession{
 
 /* 
     a message handler to send Message type strings to a session 
-    we're sending message in ChatRoomLaunchpadServer::send_message()
-    method to all sessions thus each session must have a handler for 
-    Message struct
+    we'll send message in ChatRoomLaunchpadServer::send_message()
+    method to all sessions with this handler thus each session 
+    must implement a handler for Message struct
 */
 impl Handler<WsMessage> for WsLaunchpadSession{
 
@@ -185,30 +209,50 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             },
             ws::Message::Text(text) => {
 
-                self.ws_chatroomlp_actor_address.do_send(ChatRoomLaunchpadServerJoinMessage{ id: self.id, chatroom_name: self.chat_room });
-                let joined_msg = format!("joined in chatroom launchpad [{}]", self.chat_room);
-                ctx.text(joined_msg);
-
-                let this_actor = self.ws_chatroomlp_actor_address.clone();
+                let this_actor = self.clone();
+                let server_actor = self.ws_chatroomlp_actor_address.clone();
                 let chatroom_name = self.chat_room.to_string().clone();
                 let session_id = self.id;
                 let new_message = text.clone();
+                let to_be_stored_msg = text.clone();
 
-                /* sending the message asyncly to all session in that room */
+                /* sending the message asyncly to all session in that room in a separate thread */
                 tokio::spawn(async move{
-                    this_actor
+                    
+                    let notify_msg = NotifySessionsWithNewMessage{
+                        chat_room: chatroom_name,
+                        session_id,
+                        new_message: new_message.clone().to_string(),
+                    };
+
+                    server_actor
                         .send(
-                            NotifySessionsWithNewMessage{
-                                chat_room: chatroom_name,
-                                session_id,
-                                new_message: new_message.to_string(),
-                            }
+                            notify_msg.clone()
                         ).await.unwrap();
+                    
+                    // ---------- PUBLISHING NotifySessionsWithNewMessage 
+                    // ----------------------------------------------------------------------
+                    /* 
+                        notifying server about a new message by publishing NotifySessionsWithNewMessage message 
+                        asyncly, so later on server actor can subscribe to, subscribing to NotifySessionsWithNewMessage message 
+                        causes client to see the incoming message in the room twice because we're notifying 
+                        the server actor two times with new message, first one is above and the other one is in 
+                        ChatRoomLaunchpadServer::started() method.
+                    */
+                    // this_actor
+                    //     .issue_system_async(notify_msg);
+                    // ----------------------------------------------------------------------
+                    
                 });
 
+                /* store texts in db in a separate thread */
+                tokio::spawn(async move{
+                    
+                    // TODO - store text in db
+                    // ...
 
-                // TODO - store text in db
-                // ...
+                });
+
 
             },
             ws::Message::Binary(_) => info!("unexpected binary"),

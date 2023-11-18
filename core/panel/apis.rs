@@ -3,9 +3,10 @@
 
 
 /*  > ---------------------------------------------------------------------------------------------
-    | every api return type is Result<actix_web::HttpRequest, actix_web::HttpResponse>
-    | means that if everyting goes well an api should return Ok(actix_web::HttpRequest)
-    | in form utf8 bytes through the actix tcp socket to the caller or the client. 
+    | every api return type is Result<actix_web::HttpRequest, actix_web::Error>
+    | that means if everyting goes well an api should return Ok(actix_web::HttpRequest)
+    | in form utf8 bytes through the actix tcp socket to the caller or the client otherwise
+    | the error part will be triggered in the server.
     |
     |   dev    ---> all apis with dev access
     |   admin  ---> all apis with admin access
