@@ -128,18 +128,18 @@ api.xbot.conse.app           #---> twitter bot to verify twitter tasks
 **DNS records of conse.app domain**
 
 ```
-Type	    Hostname	               Value	          TTL (seconds)	
-A	    conse.app              directs to 64.226.71.201	     3600
-A	    api.rendezvous.conse.app   	   directs to 68.183.137.151     3600 
-A	    panel.conse.app    	   directs to 68.183.201.134     3600 
+Type	    Hostname	               Value	                TTL (seconds)	
+A	    conse.app                   directs to 64.100.71.201	  3600
+A	    api.rendezvous.conse.app   	directs to 68.200.137.151     3600 
+A	    panel.conse.app    	        directs to 68.200.201.134     3600 
 ```
 **DNS records of wildonion.io domain**
 
 ```
 Type	    Hostname	               Value	          TTL (seconds)	
-A	    wildonion.io           directs to 64.226.71.201	     3600
-A	    api.wildonion.app      directs to 68.183.137.154     3600 
-A	    admin.wildonion.app    directs to 68.183.201.129     3600 
+A	    wildonion.io           directs to 64.100.71.201	     3600
+A	    api.wildonion.app      directs to 68.200.137.154     3600 
+A	    admin.wildonion.app    directs to 68.200.201.129     3600 
 ```
 in the above records `wildonion.io` and `conse.app` are pointing to a same VPS but their (sub)domains are pointing to different VPS-es.
 
