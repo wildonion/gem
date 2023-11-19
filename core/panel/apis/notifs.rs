@@ -428,10 +428,6 @@ async fn chatroomlp(
                         --------------------------------
                         STARTING THE WEBSOCKET SESSION
                         --------------------------------
-
-                    */
-
-                    /* 
                         starting an actor based ws connection for the passed in peer 
                         and the notif room, by doing this we're handling every incoming
                         session connection asyncly and concurrently inside actor threadpool 

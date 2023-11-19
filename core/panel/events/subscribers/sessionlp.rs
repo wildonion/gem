@@ -308,19 +308,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                 });
 
-
-                trait Rpc{
-                    type Data;
-                }
-
-                struct ActorStructure<D: Clone + Send + Sync + 'static>{
-                    pub data: D,
-                    pub multipart: Multipart,
-                    pub payload: Payload
-                }
-                impl<D> Rpc for ActorStructure<D> where D: Clone + Send + Sync{
-                    type Data = D;
-                }
                 
                 /* store texts in db in a separate thread */
                 tokio::spawn(async move{
