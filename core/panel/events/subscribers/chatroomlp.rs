@@ -21,7 +21,7 @@ use actix_broker::*;
 
 /// new chat session is created
 #[derive(Clone, Message)]
-#[rtype(usize)]
+#[rtype(String)]
 pub struct Connect {
     pub addr: Recipient<Message>, /* user or session actor address */
     pub chatroom_name: &'static str, // chatroom name: `chatroomlp-{clp_id}` to send message to and also user came to the room
@@ -32,7 +32,7 @@ pub struct Connect {
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Disconnect {
-    pub id: usize, // session id
+    pub id: String, // session screen_cid
     pub chatroom_name: String // chatroom name: `chatroomlp-{clp_id}` to send message to and also user disconnected from this room
 }
 
@@ -40,7 +40,7 @@ pub struct Disconnect {
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Join {
-    pub id: usize, // client id or session id
+    pub id: String, // client id or session screen_cid
     pub chatroom_name: &'static str, // chatroom name: `chatroomlp-{clp_id}`
 }
 
@@ -62,17 +62,15 @@ pub struct UpdateChatRoom{
 #[rtype(result = "()")]
 pub struct NotifySessionsWithNewMessage{
     pub chat_room: String,
-    pub session_id: usize,
+    pub session_id: String,
     pub new_message: String,
 }
 
 /* ChatRoomLaunchpadServer contains all the chatrooms and sessions or peers that are connected to ws connection */
 #[derive(Clone, Default)]
 pub struct ChatRoomLaunchpadServer{
-    pub rooms: HashMap<String, HashSet<usize>>, // a mapping between the room or event name and its peer ids
-    pub sessions: HashMap<usize, Recipient<Message>>, // a mapping between the peer id and its actor address
-    pub push_chat_rooms: HashMap<String, HashSet<usize>>,
-    pub last_subscription_at: u64,
+    pub rooms: HashMap<String, HashSet<String>>, // a mapping between the room or event name and its peer ids
+    pub sessions: HashMap<String, Recipient<Message>>, // a mapping between the peer id and its actor address
     pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
 }
 
@@ -83,10 +81,24 @@ impl ChatRoomLaunchpadServer{
         ChatRoomLaunchpadServer{
             sessions: HashMap::new(),
             rooms: HashMap::new(),
-            push_chat_rooms: HashMap::new(),
-            last_subscription_at: 0,
             app_storage,
         }
+    }
+
+    pub fn cache_room(&mut self){
+
+        /* ------------------------- */
+        /* caching rooms using redis */
+        /* ------------------------- */
+        /* we'll use this to fetch users' info in a room */
+        let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
+        let mut conn = redis_client.get_connection().unwrap();
+
+        /* updating the rooms in redis */
+        let current_rooms = self.rooms.clone();
+        let serialized_rooms = serde_json::to_string_pretty(&current_rooms).unwrap();
+        let _: () = conn.set("chatroomlp_server_actor_rooms", serialized_rooms).unwrap(); // writing to redis ram
+
     }
     
 }
@@ -94,7 +106,7 @@ impl ChatRoomLaunchpadServer{
 impl ChatRoomLaunchpadServer{
 
     /* send the passed in message to all session actors in a specific chatroom */
-    fn send_message(&self, room: &str, message: &str, skip_id: usize){
+    fn send_message(&self, room: &str, message: &str, skip_id: String){
         if self.rooms.contains_key(room){
             if let Some(sessions) = self.rooms.get(room){
                 for id in sessions{
@@ -133,7 +145,8 @@ impl Actor for ChatRoomLaunchpadServer{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
-        /*  subscribing to Join and NotifySessionsWithNewMessage messages once
+        /*  ----------------------------------------------------------------------------------
+            subscribing to Join and NotifySessionsWithNewMessage messages once
             the server actor gets started,
             by loading actix_broker::BrokerSubscribe trait we have access to 
             the traits' methods inside each actor since it's already implemented 
@@ -146,9 +159,9 @@ impl Actor for ChatRoomLaunchpadServer{
             asyncly and automatically one a session gets disconnected from the room 
             and notified with a new message 
 
-            > subscribing to Join message might show no session id cause this subscription
+            > subscribing to Join message might show no session screen_cid cause this subscription
             is async and if the server is subscribing to this message before the session
-            gets joined to chat the session id will be 0 like: 
+            gets joined to chat the session screen_cid will be 0 like: 
                 user with id: [0] connected to chatroom: [1]
 
             > subscribing to NotifySessionsWithNewMessage message causes client to see
@@ -181,42 +194,14 @@ impl Handler<UpdateChatRoom> for ChatRoomLaunchpadServer{
         /* 
             insert the passed in room to the message object to current rooms of this actor,
             if it doesn't exist it means that it's the first time we're creating the room
-            thus we insert an empty hash set of peer idds otherwise we don't.
+            thus we insert an empty hash set of peer ids otherwise we don't.
         */
         self.rooms
             .entry(msg.chat_room.to_owned())
             .or_insert_with(HashSet::new);
 
-        let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
-        let mut conn = redis_client.get_connection().unwrap();
         
-        /* caching rooms using redis */
-        let redis_result_rooms: RedisResult<String> = conn.get("chatroomlp_server_actor_rooms");
-        let redis_rooms = match redis_result_rooms{
-            Ok(data) => {
-                let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(data.as_str()).unwrap();
-                rooms_in_redis
-            },
-            Err(e) => {
-                /*
-                    we're cloning the self.rooms since we can't move it to the current_rooms var
-                    while it's behind a mutable reference cause self is behind a mutable reference 
-                    in method param, in general heap data types will be moved by default when we 
-                    put them into another var to avoid expensive runtime operations thus we can't 
-                    move them if they're behind a shared or mutable pointer.
-                */
-                let current_rooms = self.rooms.clone(); 
-                let serialized_rooms = serde_json::to_string(&current_rooms).unwrap();
-                let _: () = conn.set("chatroomlp_server_actor_rooms", serialized_rooms).unwrap();
-                current_rooms
-            }
-        };
-
-
-        /* updating the rooms in redis */
-        let serialized_rooms = serde_json::to_string(&redis_rooms).unwrap();
-        let _: () = conn.set("chatroomlp_server_actor_rooms", serialized_rooms).unwrap(); // writing to redis ram
-
+        self.cache_room();
 
     }
 
@@ -230,7 +215,7 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
         
         info!("💡 chatroomlp --- user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
         let disconn_message = format!("chatroomlp::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
-        let mut rooms = Vec::<String>::new();
+        let mut rooms = Vec::<String>::new(); /* allocating a new room */
         
         if self.sessions.remove(&msg.id).is_some(){
             /* 
@@ -248,8 +233,10 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
             }
 
             for chatroom_name_room in rooms{
-                self.send_message(&chatroom_name_room, disconn_message.as_str(), 0);
+                self.send_message(&chatroom_name_room, disconn_message.as_str(), msg.id.clone());
             }
+
+            self.cache_room();
         }
 
     }
@@ -257,14 +244,17 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
 
 impl Handler<Connect> for ChatRoomLaunchpadServer{
 
-    type Result = usize; /* return type is the generated session id */
+    type Result = String; /* return type is the generated session screen_cid */
 
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result{
         
-        /* insert new session */
-        let mut r = rand::thread_rng();
-        let unique_id = r.gen::<usize>();
-        self.sessions.insert(unique_id, msg.addr);
+        // generating unique random session id 
+        // let mut r = rand::thread_rng();
+        // let unique_id = r.gen::<usize>();
+        
+        /* insert new session using the screen_cid */
+        let unique_id = msg.peer_name.clone();
+        self.sessions.insert(unique_id.clone(), msg.addr);
 
         /* add this session to the chatroom name */
         self.rooms
@@ -274,22 +264,25 @@ impl Handler<Connect> for ChatRoomLaunchpadServer{
                     since session_ids is a mutable reference to the value of self.rooms 
                     thus by mutating it the value of self.rooms will be mutated too
                 */
-                session_ids.insert(unique_id);
+                session_ids.insert(unique_id.clone());
             })
             .or_insert(HashSet::new());
         
         info!("💡 chatroomlp --- current rooms of chatroom server actor are: {:?}", self.rooms);
 
-        let conn_message = format!("chatroomlp::user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
-        info!("💡 chatroomlp --- user with id: [{}] and peer name: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name, msg.chatroom_name);
-        self.send_message(&msg.chatroom_name, conn_message.as_str(), 0);
+        let conn_message = format!("chatroomlp::connect::user with id: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name);
+        info!("💡 chatroomlp --- user with id: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name);
+        self.send_message(&msg.chatroom_name, conn_message.as_str(), msg.peer_name.clone());
 
-        unique_id /* session id */
+        self.cache_room();
+
+        unique_id /* session screen_cid */
 
     }
 
 }
 
+/* this handler will be triggered once a session actor started */
 impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again */
 
     type Result = ();
@@ -297,15 +290,16 @@ impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again 
     /* in this handler we'll send disconnect message to old room and send join message to new room */
     fn handle(&mut self, msg: Join, ctx: &mut Self::Context) -> Self::Result{
         
-        let disconn_message = format!("chatroomlp::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
-        let conn_message = format!("chatroomlp::user with id: [{}] connected to chatroom: [{}]", msg.id, msg.chatroom_name);
+        let disconn_message = format!("chatroomlp::join::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
+        let conn_message = format!("chatroomlp::join::user with id: [{}] connected to chatroom: [{}]", msg.id, msg.chatroom_name);
 
-        let Join { id, chatroom_name } = msg; // unpacking msg instance
+        /* id will be moved later, we're borrowing it in here using ref */
+        let Join { ref id, chatroom_name } = msg; // unpacking msg instance
         let mut rooms = Vec::<String>::new();
 
         /* removing session from all rooms of ChatRoomLaunchpadServer actor */
         for (event_room_name, sessions) in &mut self.rooms{
-            if sessions.remove(&id){ /* sessions will be updated since we have a mutable pointer to it */
+            if sessions.remove(id){ /* sessions will be updated since we have a mutable pointer to it */
                 rooms.push(event_room_name.to_owned());
             }
         }
@@ -313,23 +307,25 @@ impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again 
 
         /* send disconnect message to all rooms of ChatRoomLaunchpadServer actor and other user */
         for room in rooms{
-            self.send_message(&room, &disconn_message, 0);
+            self.send_message(&room, &disconn_message, msg.id.clone());
         }
 
         /* insert the user into the chatroom */
         self.rooms  
             .entry(chatroom_name.to_string().clone())
             .or_insert_with(HashSet::new)
-            .insert(id);
+            .insert(id.to_owned());
 
         /* notify other session in that room that a user has connected */
-        self.send_message(&chatroom_name, conn_message.as_str(), 0);
+        self.send_message(&chatroom_name, conn_message.as_str(), msg.id.clone());
 
+        self.cache_room();
 
     }
 
 }
 
+/* this handler will be triggered once a user sent a new message to the server and the server will notify other peers */
 impl Handler<NotifySessionsWithNewMessage> for ChatRoomLaunchpadServer{
 
     type Result = ();
@@ -339,6 +335,7 @@ impl Handler<NotifySessionsWithNewMessage> for ChatRoomLaunchpadServer{
         let NotifySessionsWithNewMessage{ chat_room, session_id, new_message }
             = msg;
 
+        /* notify all peers except the one who sent the message */
         self.send_message(&chat_room, &new_message, session_id);
 
     }

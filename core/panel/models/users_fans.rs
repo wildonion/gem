@@ -1,7 +1,7 @@
 
 
 
-use wallexerr::Wallet;
+ 
 
 use crate::*;
 use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND};
@@ -131,7 +131,7 @@ impl UserFan{
         let AcceptFriendRequest { owner_cid, friend_screen_cid, tx_signature, hash_data } 
             = accept_friend_request;
 
-        let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid.clone());
+        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
         let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
@@ -475,7 +475,7 @@ impl UserFan{
             let RemoveFriend { owner_cid, friend_screen_cid, tx_signature, hash_data } 
                 = remove_friend_request;
     
-            let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid.clone());
+            let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
             let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
             let Ok(user_fan_data) = get_user_fan else{
                 let resp_error = get_user_fan.unwrap_err();
@@ -530,7 +530,7 @@ impl UserFan{
             = send_friend_request;
 
 
-        let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
+        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
         let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
         let Ok(user) = get_user else{
 
@@ -753,7 +753,7 @@ impl UserFan{
         let AcceptInvitationRequest { owner_cid, from_screen_cid, gal_id, tx_signature, hash_data } 
             = accept_invitation_request;
 
-        let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid.clone());
+        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
         let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();

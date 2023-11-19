@@ -1,0 +1,16 @@
+[package]
+name = "walletreq"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+secp256k1 = { version = "0.27", features = ["rand", "bitcoin-hashes-std"] }
+web3 = "0.19.0"
+hex = "0.4"
+dotenv = "0.15"
+wallexerr = "0.2.3"
+
+
+[lib]
+path = "src/lib.rs"
+name = "walletreq"

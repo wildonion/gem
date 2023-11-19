@@ -10,7 +10,7 @@ use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
 use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
-use wallexerr::Wallet;
+ 
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
@@ -137,6 +137,7 @@ pub struct UserData{
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct UserWalletInfoResponse{
     pub username: String,
+    pub avatar: Option<String>,
     pub mail: Option<String>, /* unique */
     pub screen_cid: Option<String>, /* keccak256 */
     pub stars: Option<i64>,
@@ -857,6 +858,7 @@ impl User{
         Ok(
             UserWalletInfoResponse{ 
                 username: user.username, 
+                avatar: user.avatar,
                 mail: user.mail, 
                 screen_cid: user.screen_cid, 
                 stars: user.stars, 
@@ -3687,7 +3689,7 @@ impl Id{
                             let resp = Response{
                                 data: Some(user_data),
                                 message: CID_RECORD_UPDATED,
-                                status: 200,
+                                status: 302,
                                 is_error: false
                             };
                             return Err(
@@ -3725,14 +3727,14 @@ impl Id{
                 /* --------------------------------------------------------------------------- */
                 //   generating keypair using wallexerr, signing and verification using web3
                 /* --------------------------------------------------------------------------- */
-                let wallet = wallet::evm::get_wallet();
+                let wallet = walletreq::evm::get_wallet();
                 let data_to_be_signed = serde_json::json!({
                     "recipient": "deadkings",
                     "from_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
                     "amount": 5
                 });
 
-                let sign_res = wallet::evm::sign(
+                let sign_res = walletreq::evm::sign(
                     wallet.clone(), 
                     data_to_be_signed.to_string().as_str()
                 ).await;
@@ -3745,7 +3747,7 @@ impl Id{
                 info!("s :::: {}", hex::encode(&signed_data.s.0));
                 info!("hash data :::: {}", sign_res.1);
 
-                let verification_res = wallet::evm::verify_signature(
+                let verification_res = walletreq::evm::verify_signature(
                     wallet.secp256k1_public_address.as_ref().unwrap().to_string(),
                     hex::encode(&signed_data.signature.0).as_str(),
                     sign_res.1.as_str()

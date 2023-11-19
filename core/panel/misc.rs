@@ -7,7 +7,7 @@ use std::time::{UNIX_EPOCH, SystemTime};
 use futures_util::TryStreamExt;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
-use wallexerr::Wallet;
+ 
 use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE};
 use crate::events::publishers::role::PlayerRoleInfo;

@@ -2441,7 +2441,7 @@ async fn start_tcp_server(
                             }
                         };
 
-                    let verification_res = wallet::evm::verify_signature(
+                    let verification_res = walletreq::evm::verify_signature(
                         user_info.screen_cid.unwrap(), 
                         &tcp_server_data.tx_signature,
                         &tcp_server_data.hash_data
@@ -2563,7 +2563,21 @@ async fn start_tcp_server(
 
 
 pub mod exports{
-    // pub use super::start_new_clp;
+    /* 
+        https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+        
+        new chatroom launchpad event (users_clps):
+            - start time
+            - end time
+            - crontab to check constantly
+    */
+    // pub use super::start_new_clp_event;
+    /* 
+        0 - summerize users' chats and generate n titles
+        1 - generate a mapping between titles and images using ai
+        2 - mint ai generated pictures to users screen_cids inside the chat
+    */
+    // pub use super::end_clp_event;
     // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::login;

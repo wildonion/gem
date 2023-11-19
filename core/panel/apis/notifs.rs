@@ -22,7 +22,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use s3::*;
-use wallexerr::Wallet;
+ 
 use crate::events::{
     subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
     subscribers::notifs::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
@@ -388,8 +388,10 @@ async fn chatroomlp(
 
                     
                     // TODO - 
+                    // users_clps schema
                     // chatroomlp validation find with id
                     // check that the user is already registered for this chatroom
+                    // check that there is a room with the passed in id to the get method path
                     // ...
 
 
@@ -406,7 +408,7 @@ async fn chatroomlp(
                     let update_chat_room_result = ws_chatroomlp_actor_address
                         .send(UpdateChatRoom{
                             chat_room: chat_room_str, 
-                            peer_name: Wallet::generate_keccak256_from(user_cid.clone())
+                            peer_name: walletreq::evm::get_keccak256_from(user_cid.clone())
                         })
                         .await;
 
@@ -439,9 +441,9 @@ async fn chatroomlp(
                     */
                     let resp = ws::start(
                         WsLaunchpadSession{
-                            id: 0,
+                            id: walletreq::evm::get_keccak256_from(user_cid.clone()),
                             hb: Instant::now(),
-                            peer_name: Some(Wallet::generate_keccak256_from(user_cid)),
+                            peer_name: Some(walletreq::evm::get_keccak256_from(user_cid)),
                             chat_room: chat_room_str,
                             ws_chatroomlp_actor_address,
                             app_storage: storage.clone(),

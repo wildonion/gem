@@ -1,7 +1,7 @@
 
 
 
-use wallexerr::Wallet;
+ 
 use crate::*;
 use crate::adapters::nftport::{self, NftExt, OnchainNfts};
 use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY, NFT_IS_NOT_LISTED};
@@ -186,7 +186,7 @@ impl NftExt for NewUserNftRequest{
     }
 
     fn get_nft_current_owner_address(&self) -> String {
-        Wallet::generate_keccak256_from(self.caller_cid.clone())
+        walletreq::evm::get_keccak256_from(self.caller_cid.clone())
     }
 
     fn get_nft_extra(&self) -> Option<serde_json::Value>{
@@ -668,7 +668,7 @@ impl UserNft{
         let nft_new_extra = Some(serde_json::from_str::<serde_json::Value>(&nft_new_extra).unwrap());
 
 
-        let caller_screen_cid = Wallet::generate_keccak256_from(caller_cid);
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(caller_cid);
         let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
         let Ok(user) = get_user else{
             let err_resp = get_user.unwrap_err();
@@ -849,7 +849,7 @@ impl UserNft{
             return Err(err_resp);
         };
         
-        let caller_screen_cid = Wallet::generate_keccak256_from(asset_info.clone().caller_cid);
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(asset_info.clone().caller_cid);
         if gallery_data.owner_screen_cid != caller_screen_cid{
 
             let resp = Response::<'_, &[u8]>{
@@ -1294,7 +1294,7 @@ impl UserNft{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
         
-        let caller_screen_cid = Wallet::generate_keccak256_from(add_reaction_request.clone().caller_cid);
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(add_reaction_request.clone().caller_cid);
 
         let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
         let Ok(user) = get_user else{
@@ -1547,7 +1547,7 @@ impl UserNft{
         
         if buy_nft_request.event_type.as_str() == "buy"{
 
-            let caller_screen_cid = Wallet::generate_keccak256_from(buy_nft_request.clone().caller_cid);
+            let caller_screen_cid = walletreq::evm::get_keccak256_from(buy_nft_request.clone().caller_cid);
 
             let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
             let Ok(user) = get_user else{
@@ -1901,7 +1901,7 @@ impl UserNft{
         
         if mint_nft_request.event_type.as_str() == "mint"{
 
-            let caller_screen_cid = Wallet::generate_keccak256_from(mint_nft_request.clone().caller_cid);
+            let caller_screen_cid = walletreq::evm::get_keccak256_from(mint_nft_request.clone().caller_cid);
 
             let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
             let Ok(user) = get_user else{
@@ -2071,7 +2071,7 @@ impl UserNft{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
-        let caller_screen_cid = Wallet::generate_keccak256_from(asset_info.clone().caller_cid);
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(asset_info.clone().caller_cid);
         
         /* find an nft data with the passed in owner address cause only owner can call this method */
         let get_nft = UserNft::find_by_id(asset_info.nft_id, connection).await;

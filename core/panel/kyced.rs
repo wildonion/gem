@@ -1,6 +1,6 @@
 
 
-use wallexerr::Wallet;
+ 
 use crate::{*, models::users::User, misc::Response, constants::{NOT_VERIFIED_PHONE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, CALLER_IS_NOT_THE_OWNER, EMPTY_CRYPTO_DATA}};
 
 
@@ -100,7 +100,7 @@ pub async fn verify_request(
         verification process 
     */
     let find_user_screen_cid = User::find_by_screen_cid(
-        &Wallet::generate_keccak256_from(from_cid.to_string()), connection
+        &walletreq::evm::get_keccak256_from(from_cid.to_string()), connection
     ).await;
     let Ok(user_info) = find_user_screen_cid else{
         
@@ -131,7 +131,7 @@ pub async fn verify_request(
     }
     
     /* verifying signature */
-    let verification_sig_res = wallet::evm::verify_signature(
+    let verification_sig_res = walletreq::evm::verify_signature(
         user_info.screen_cid.unwrap(),
         &tx_signature,
         &hash_data

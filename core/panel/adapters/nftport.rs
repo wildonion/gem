@@ -14,7 +14,7 @@ use actix_web::web::Query;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use serde_json::json;
-use wallexerr::Wallet;
+ 
 use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_FILE_TYPE};
 use crate::events::publishers::role::PlayerRoleInfo;
@@ -590,7 +590,7 @@ pub async fn create_collection(
         .. /* don't care about the rest of the fields */ 
     } = new_collection_request;
 
-    let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
+    let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
     let mut collection_data = HashMap::new();
     collection_data.insert("chain", "polygon");
     collection_data.insert("name", &col_name);
@@ -716,7 +716,7 @@ pub async fn update_collection(
         .. /* don't care about the rest of the fields */
     } = update_collection_request;
 
-    let owner_screen_cid = &Wallet::generate_keccak256_from(owner_cid);
+    let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
     let mut collection_data = HashMap::new();
     collection_data.insert("chain", "polygon");
     collection_data.insert("contract_address", &contract_address);

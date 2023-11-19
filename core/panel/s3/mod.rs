@@ -120,7 +120,14 @@ impl Storage{
         }
     }
 
-    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait
+    pub async fn get_pgdb(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait - return type is a reference to the Pool which is using the self lifetime
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
+            Mode::Off => None, // no storage is available cause it's off
+        }
+    }
+
+    pub fn get_pgdb_sync(&self) -> Option<&Pool<ConnectionManager<PgConnection>>>{ // Pool is an structure which takes a generic M which is bounded to ManageConnection trait - return type is a reference to the Pool which is using the self lifetime
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, // no storage is available cause it's off

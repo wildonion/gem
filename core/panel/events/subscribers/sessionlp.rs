@@ -15,11 +15,13 @@
 */
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
+use crate::models::users::{User, UserWalletInfoResponse};
 use crate::{misc::*, s3::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
-use wallexerr::Wallet;
+use actix_web::dev::Payload;
+ 
 use crate::events::subscribers::chatroomlp::{
     
     ChatRoomLaunchpadServer, Disconnect as ChatRoomLaunchpadServerDisconnectMessage,
@@ -32,7 +34,7 @@ use crate::events::subscribers::chatroomlp::{
 
 #[derive(Clone)]
 pub(crate) struct WsLaunchpadSession{
-    pub id: usize, // unique session id
+    pub id: String, // unique session id or screen_cid
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
     pub chat_room: &'static str, // user has joined in to this room 
     pub peer_name: Option<String>, // user mongodb id
@@ -64,14 +66,16 @@ impl WsLaunchpadSession{
             if Instant::now().duration_since(actor.hb) > WS_CLIENT_TIMEOUT{
                 
                 error!("🚨 --- websocket client heartbeat failed, disconnecting!");
-                actor.ws_chatroomlp_actor_address.do_send(ChatRoomLaunchpadServerDisconnectMessage{id: actor.id, chatroom_name: actor.chat_room.to_owned()}); /* sending disconnect message to the ChatRoomLaunchpadServer actor with the passed in session id and the event name room */
+                actor.ws_chatroomlp_actor_address.do_send(ChatRoomLaunchpadServerDisconnectMessage{id: actor.id.clone(), chatroom_name: actor.chat_room.to_owned()}); /* sending disconnect message to the ChatRoomLaunchpadServer actor with the passed in session id and the event name room */
                 ctx.stop(); /* stop the ws service */
 
                 return;
             }
                         
         });
+        
         ctx.pong(b""); /* sending empty bytes back to the peer */
+
     }
 
 }
@@ -96,7 +100,10 @@ impl Actor for WsLaunchpadSession{
         let chatroom_name_room = self.chat_room;
         let peer_name = self.peer_name.as_ref().unwrap();
 
-        /* tell the ChatRoomLaunchpadServer actor asyncly that this session wants to connect to you */
+        /* 
+            tell the ChatRoomLaunchpadServer actor asyncly that this session wants to 
+            connect to you and assign a unique id to it
+        */
         self.ws_chatroomlp_actor_address
             .send(ChatRoomLaunchpadServerConnectMessage{addr: session_actor_address.recipient(), chatroom_name: &chatroom_name_room, peer_name: peer_name.clone()}) 
             .into_actor(self) /* convert the future object of send() method into an actor future */
@@ -129,13 +136,13 @@ impl Actor for WsLaunchpadSession{
             we can also have the following code instead of publishing:
             self.ws_chatroomlp_actor_address.do_send(
                 ChatRoomLaunchpadServerJoinMessage{ 
-                    id: self.id, 
+                    id: self.id.clone(), 
                     chatroom_name: self.chat_room 
                 }
             );
         */
-        self.issue_system_async(ChatRoomLaunchpadServerJoinMessage{ id: self.id, chatroom_name: self.chat_room });
-        let joined_msg = format!("sessionlp::joined in chatroom launchpad [{}]", self.chat_room);
+        self.issue_system_async(ChatRoomLaunchpadServerJoinMessage{ id: self.id.clone(), chatroom_name: self.chat_room });
+        let joined_msg = format!("sessionlp::user with id [{}] joined in chatroom launchpad [{}]", self.peer_name.clone().unwrap(), self.chat_room);
         ctx.text(joined_msg);
         // ----------------------------------------------------------------------
 
@@ -151,7 +158,7 @@ impl Actor for WsLaunchpadSession{
             be cleaned thus we basically we must don't have access to its internal states
             like the actor fields.
         */
-        self.ws_chatroomlp_actor_address.do_send(ChatRoomLaunchpadServerDisconnectMessage{id: self.id, chatroom_name: self.chat_room.to_owned()}); 
+        self.ws_chatroomlp_actor_address.do_send(ChatRoomLaunchpadServerDisconnectMessage{id: self.id.clone(), chatroom_name: self.chat_room.to_owned()}); 
         Running::Stop /* return the Stop variant */
 
     }
@@ -209,10 +216,62 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             },
             ws::Message::Text(text) => {
 
+                let m = text.trim();
+                if m.starts_with("/"){
+                    let v: Vec<&str> = m.splitn(2, ' ').collect();
+                    match v[0]{
+
+                        /* --------------------------------- */
+                        /*          GET ONLINE USERS         */
+                        /* --------------------------------- */
+                        "/info" => {
+
+                            /* get all room from redis storage */
+                            let storage = self.app_storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+                            let mut redis_client = storage.as_ref().clone().unwrap().get_redis_sync().unwrap().to_owned();
+                            let pg_pool = storage.clone().unwrap().as_ref().get_pgdb_sync().unwrap();
+                            let connection = &mut pg_pool.get().unwrap();
+                            let redis_result_rooms_string: String = redis_client.get("chatroomlp_server_actor_rooms").unwrap();
+                            
+                            /* 
+                                structure of all rooms is like
+                                a mapping between the room name and its peer ids: 
+                                    HashMap<String, HashSet<String>>
+                            */
+                            let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<String>>>(redis_result_rooms_string.as_str()).unwrap();
+                            let users_in_this_event = rooms_in_redis.get(self.chat_room).unwrap();
+                            
+                            let users = users_in_this_event
+                                .into_iter()
+                                .map(|u|{
+                                    let user_info = User::find_by_screen_cid_none_async(u, connection).unwrap();
+                                    UserWalletInfoResponse{
+                                        username: user_info.username,
+                                        avatar: user_info.avatar,
+                                        mail: user_info.mail,
+                                        screen_cid: user_info.screen_cid,
+                                        stars: user_info.stars,
+                                        created_at: user_info.created_at.to_string(),
+                                    }
+
+                                })
+                                .collect::<Vec<UserWalletInfoResponse>>();
+
+                            let json_stringified_users = serde_json::to_string_pretty(&users).unwrap();
+
+                            /* sending to this peer */
+                            ctx.text(format!("online events: {}", rooms_in_redis.len()));
+                            ctx.text(format!("online users in this event: {}", json_stringified_users));
+
+                        },
+                        _ => ctx.text(format!("unknown command")),
+                    }
+                } 
+
                 let this_actor = self.clone();
                 let server_actor = self.ws_chatroomlp_actor_address.clone();
                 let chatroom_name = self.chat_room.to_string().clone();
-                let session_id = self.id;
+                let session_id = self.id.clone();
                 let new_message = text.clone();
                 let to_be_stored_msg = text.clone();
 
@@ -225,6 +284,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                         new_message: new_message.clone().to_string(),
                     };
 
+                    /* sending NotifySessionsWithNewMessage to server actor asyncly */
                     server_actor
                         .send(
                             notify_msg.clone()
@@ -232,12 +292,15 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                     // ---------- PUBLISHING NotifySessionsWithNewMessage 
                     // ----------------------------------------------------------------------
-                    /* 
-                        notifying server about a new message by publishing NotifySessionsWithNewMessage message 
-                        asyncly, so later on server actor can subscribe to, subscribing to NotifySessionsWithNewMessage message 
-                        causes client to see the incoming message in the room twice because we're notifying 
-                        the server actor two times with new message, first one is above and the other one is in 
-                        ChatRoomLaunchpadServer::started() method.
+                    /*  
+                        instead of sending different message to all server actors separately we can publish and 
+                        issuing that message asyncly so those server actors that are interested to that message
+                        can subscribe to that so in here we're notifying server about a new message by publishing 
+                        NotifySessionsWithNewMessage message asyncly, so later on server actor can subscribe to, 
+                        subscribing to NotifySessionsWithNewMessage message causes client to see the incoming 
+                        message in the room twice because we're notifying the server actor two times with new 
+                        message, first one is above and the other one is in ChatRoomLaunchpadServer::started() 
+                        method.
                     */
                     // this_actor
                     //     .issue_system_async(notify_msg);
@@ -245,10 +308,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                 });
 
+
+                trait Rpc{
+                    type Data;
+                }
+
+                struct ActorStructure<D: Clone + Send + Sync + 'static>{
+                    pub data: D,
+                    pub multipart: Multipart,
+                    pub payload: Payload
+                }
+                impl<D> Rpc for ActorStructure<D> where D: Clone + Send + Sync{
+                    type Data = D;
+                }
+                
                 /* store texts in db in a separate thread */
                 tokio::spawn(async move{
                     
                     // TODO - store text in db
+                    // users_chats schema
+                    // users_clps schema
                     // ...
 
                 });

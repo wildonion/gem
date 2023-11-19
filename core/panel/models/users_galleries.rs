@@ -2,7 +2,7 @@
 
 
 use chrono::NaiveDateTime;
-use wallexerr::Wallet;
+ 
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER};
 use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
@@ -420,6 +420,7 @@ impl UserPrivateGallery{
                         Some(
                             UserWalletInfoResponse{
                                 username: user_data.username,
+                                avatar: user_data.avatar,
                                 mail: user_data.mail,
                                 screen_cid: user_data.screen_cid,
                                 stars: user_data.stars,
@@ -655,7 +656,7 @@ impl UserPrivateGallery{
 
 
             let new_gal_info = InsertNewUserPrivateGalleryRequest{
-                owner_screen_cid: Wallet::generate_keccak256_from(new_gallery_info.owner_cid),
+                owner_screen_cid: walletreq::evm::get_keccak256_from(new_gallery_info.owner_cid),
                 gal_name: new_gallery_info.gal_name,
                 gal_description: new_gallery_info.gal_description,
                 extra: new_gallery_info.extra,
@@ -727,7 +728,7 @@ impl UserPrivateGallery{
             return Err(error_resp);
         };
 
-        let gallery_owner_screen_cid = Wallet::generate_keccak256_from(gallery_owner_cid);
+        let gallery_owner_screen_cid = walletreq::evm::get_keccak256_from(gallery_owner_cid);
         if gallery_data.owner_screen_cid != gallery_owner_screen_cid{
             
             let resp = Response::<'_, &[u8]>{
@@ -781,7 +782,7 @@ impl UserPrivateGallery{
             return Err(error_resp);
         };
 
-        let caller_screen_cid = Wallet::generate_keccak256_from(caller_cid.clone());
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(caller_cid.clone());
         if gallery_data.owner_screen_cid != caller_screen_cid{
             
             let resp = Response::<'_, &[u8]>{

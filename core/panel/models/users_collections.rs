@@ -2,7 +2,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
-use wallexerr::Wallet;
+ 
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT};
 use crate::misc::{Response, Limit};
@@ -761,7 +761,7 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
-        let caller_screen_cid = Wallet::generate_keccak256_from(new_col_info.clone().owner_cid);
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid);
         /* caller must be in db */
         let Ok(user) = User::find_by_screen_cid(
             &caller_screen_cid, connection).await 
@@ -862,7 +862,7 @@ impl UserCollection{
             col_name: new_col_info.clone().col_name,
             symbol: new_col_info.clone().symbol,
             contract_address: contract_onchain_address, /* NEW */
-            owner_screen_cid: Wallet::generate_keccak256_from(new_col_info.clone().owner_cid),
+            owner_screen_cid: walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid),
             metadata_updatable: new_col_info.clone().metadata_updatable,
             base_uri: new_col_info.clone().base_uri,
             royalties_share: new_col_info.clone().royalties_share,
@@ -983,7 +983,7 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
-        let collection_owner_screen_cid = Wallet::generate_keccak256_from(col_info.clone().owner_cid);
+        let collection_owner_screen_cid = walletreq::evm::get_keccak256_from(col_info.clone().owner_cid);
         
         /* caller must be in db */
         let Ok(user) = User::find_by_screen_cid(

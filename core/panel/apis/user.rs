@@ -30,7 +30,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
-use wallexerr::Wallet;
+ 
 use crate::adapters::nftport::*;
 
 
@@ -2183,13 +2183,6 @@ async fn deposit(
                         let new_balance = user.balance.unwrap() - deposit_object.amount;
                         let mut mint_tx_hash = String::from("");
                         let mut token_id = String::from("");
-                        
-                        /* 
-                            simd ops on u256 bits can be represented as an slice with 4 elements 
-                            each of type 64 bits or 8 bytes, also 256 bits is 64 chars in hex 
-                            and 32 bytes of utf8 and  rust doesn't have u256
-                        */
-                        let u256 = web3::types::U256::from_str("0").unwrap().0;
 
                         /* deposit_object.recipient_screen_cid must be the keccak256 of the recipient public key */
                         if recipient_info.screen_cid.is_none(){
@@ -2635,7 +2628,7 @@ async fn withdraw(
 
 
                         /* generate keccak256 from recipient_cid to check aginst the one in db */
-                        let polygon_recipient_address = Wallet::generate_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
+                        let polygon_recipient_address = walletreq::evm::get_keccak256_from(withdraw_object.recipient_cid.to_owned().clone());
                         if deposit_info.recipient_screen_cid != polygon_recipient_address ||
                         withdraw_object.recipient_cid != user.cid.unwrap(){
                             resp!{
@@ -3237,7 +3230,7 @@ async fn get_recipient_unclaimed_deposits(
                     }
 
                     /* generate keccak256 from recipient_cid to mint nft to */
-                    let polygon_recipient_address = Wallet::generate_keccak256_from(user.cid.unwrap().to_owned().clone());
+                    let polygon_recipient_address = walletreq::evm::get_keccak256_from(user.cid.unwrap().to_owned().clone());
 
                     match UserDeposit::get_unclaimeds_for(polygon_recipient_address, limit, connection).await{
                         Ok(user_unclaimeds) => {
@@ -4172,7 +4165,7 @@ async fn update_private_gallery(
                             return error_resp; /* terminate the caller with an actix http response object */
                         };
 
-                        match UserPrivateGallery::update(&Wallet::generate_keccak256_from(
+                        match UserPrivateGallery::update(&walletreq::evm::get_keccak256_from(
                             update_private_gallery_request_object.clone().owner_cid), 
                             update_private_gallery_request_object, 
                             gal_id.to_owned(), 
@@ -5879,7 +5872,7 @@ async fn get_all_public_collections_for(
                     }
 
                     match UserCollection::get_all_public_collections_for(
-                        &Wallet::generate_keccak256_from(who_cid.to_owned()), 
+                        &walletreq::evm::get_keccak256_from(who_cid.to_owned()), 
                         limit, connection).await{
                         
                         Ok(collections) => {
@@ -8255,17 +8248,9 @@ pub mod exports{
     // -----------------------------------------------
     /*          chatroom launchpad http+ws apis      */
     // -----------------------------------------------
-    // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
-    // 0 - summerize users' chats and generate n titles
-    // 1 - generate a mapping between titles and images using ai
-    // 2 - mint ai generated pictures to users screen_cids inside the chat
-    // 3 - users can 
-    //      - sell their nfts in the platform 
-    //      - use their nfts as an entry card in different parts of the platform
-    // ...
-    // pub use super:register_clp;
-    // pub use super:join_clp;
-    // pub use super:end_clp;
+    // pub use super:register_clp_event;
+    // pub use super:join_clp_clp;
+    // pub use super::get_new_clp_event_info;
     // -----------------------------------------------
     /*                  advieh apis                  */
     // -----------------------------------------------

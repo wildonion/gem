@@ -105,6 +105,22 @@ impl RoleNotifServer{
             app_storage,
         }
     }
+
+    pub fn cache_room(&mut self){
+
+        /* ------------------------- */
+        /* caching rooms using redis */
+        /* ------------------------- */
+        /* we'll use this to fetch users' info in a room */
+        let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
+        let mut conn = redis_client.get_connection().unwrap();
+
+        /* updating the rooms in redis */
+        let current_rooms = self.rooms.clone();
+        let serialized_rooms = serde_json::to_string_pretty(&current_rooms).unwrap();
+        let _: () = conn.set("role_notif_server_actor_rooms", serialized_rooms).unwrap(); // writing to redis ram
+
+    }
     
 }
 
@@ -239,36 +255,7 @@ impl Handler<UpdateNotifRoom> for RoleNotifServer{
             .entry(msg.notif_room.to_owned())
             .or_insert_with(HashSet::new);
 
-        let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
-        let mut conn = redis_client.get_connection().unwrap();
-        
-        /* caching rooms using redis */
-        let redis_result_rooms: RedisResult<String> = conn.get("role_notif_server_actor_rooms");
-        let redis_rooms = match redis_result_rooms{
-            Ok(data) => {
-                let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<usize>>>(data.as_str()).unwrap();
-                rooms_in_redis
-            },
-            Err(e) => {
-                /*
-                    we're cloning the self.rooms since we can't move it to the current_rooms var
-                    while it's behind a mutable reference cause self is behind a mutable reference 
-                    in method param, in general heap data types will be moved by default when we 
-                    put them into another var to avoid expensive runtime operations thus we can't 
-                    move them if they're behind a shared or mutable pointer.
-                */
-                let current_rooms = self.rooms.clone(); 
-                let serialized_rooms = serde_json::to_string(&current_rooms).unwrap();
-                let _: () = conn.set("role_notif_server_actor_rooms", serialized_rooms).unwrap();
-                current_rooms
-            }
-        };
-
-
-        /* updating the rooms in redis */
-        let serialized_rooms = serde_json::to_string(&redis_rooms).unwrap();
-        let _: () = conn.set("role_notif_server_actor_rooms", serialized_rooms).unwrap(); // writing to redis ram
-
+        self.cache_room();
 
     }
 
@@ -302,6 +289,8 @@ impl Handler<Disconnect> for RoleNotifServer{
             for event_name_room in rooms{
                 self.send_message(&event_name_room, disconn_message.as_str(), 0);
             }
+
+            self.cache_room();
         }
 
     }
@@ -335,6 +324,8 @@ impl Handler<Connect> for RoleNotifServer{
         let conn_message = format!("user with id: [{}] and peer name: [{}] connected to event room: [{}]", unique_id, msg.peer_name, msg.event_name);
         info!("💡 --- user with id: [{}] and peer name: [{}] connected to event room: [{}]", unique_id, msg.peer_name, msg.event_name);
         self.send_message(&msg.event_name, conn_message.as_str(), 0);
+
+        self.cache_room();
 
         unique_id /* session id */
 
@@ -375,6 +366,7 @@ impl Handler<Join> for RoleNotifServer{ /* disconnect and connect again */
         /* notify other session in that room that a user has connected */
         self.send_message(&event_name, conn_message.as_str(), 0);
 
+        self.cache_room();
 
     }
 }

@@ -8,7 +8,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use s3::*;
-use wallexerr::Wallet;
+ 
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -603,7 +603,7 @@ async fn update_user_balance_webhook(
                 Ok(updated_user_checkout) => {
                     
                     /* update the user balance */
-                    let find_user_screen_cid = User::find_by_screen_cid(&Wallet::generate_keccak256_from(updated_user_checkout.user_cid.clone()), connection).await;
+                    let find_user_screen_cid = User::find_by_screen_cid(&walletreq::evm::get_keccak256_from(updated_user_checkout.user_cid.clone()), connection).await;
                         let Ok(user_info) = find_user_screen_cid else{
                             
                             resp!{
@@ -740,6 +740,7 @@ async fn is_user_kyced(
                     
                     let user_data = UserWalletInfoResponse{
                         username: user.username,
+                        avatar: user.avatar,
                         mail: user.mail,
                         screen_cid: user.screen_cid,
                         stars: user.stars,

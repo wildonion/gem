@@ -27,18 +27,9 @@ use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message as LettreMessage,
     Tokio1Executor, 
 };
-use secp256k1::Secp256k1;
-use secp256k1::ecdsa::Signature;
-use secp256k1::{rand::SeedableRng, rand::rngs::StdRng, PublicKey, SecretKey, Message, hashes::sha256};
 use std::io::BufWriter;
-use tiny_keccak::keccak256;
 use std::str::FromStr;
 use std::{fs::OpenOptions, io::BufReader};
-use web3::{
-    transports,
-    types::{Address, TransactionParameters, H256, U256},
-    Web3,
-};
 use rand::Rng;
 use rand::random;
 use sha2::{Digest, Sha256};
@@ -109,7 +100,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 /* ----------------------------------------- */
 /* ------------ loading modules ------------ */
 /* ----------------------------------------- */
-mod wallet;     /* contains crypto web3 wallet signing and verification process */
+// mod wallet;     /* contains crypto web3 wallet signing and verification process */
 mod apis;       /* contains http routes and model call logics */
 mod misc;       /* contains miscellaneous and utilities methods and modules */
 mod constants;  /* contains constant and static types */

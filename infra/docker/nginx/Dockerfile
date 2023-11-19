@@ -41,12 +41,6 @@ COPY key-jenkins.conse.app.pem /etc/nginx/key-jenkins.conse.app.pem
 #notif.panel.conse.app:
 COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
 COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
-#api.panel.stripewh.conse.app:
-COPY cert-api.panel.stripewh.conse.app.pem /etc/nginx/cert-api.panel.stripewh.conse.app.pem
-COPY key-api.panel.stripewh.conse.app.pem /etc/nginx/key-api.panel.stripewh.conse.app.pem
-#api.xbot.conse.app:
-COPY cert-api.xbot.conse.app.pem /etc/nginx/cert-api.xbot.conse.app.pem
-COPY key-api.xbot.conse.app.pem /etc/nginx/key-api.xbot.conse.app.pem
 
 # COPY /etc/letsencrypt/live/deadcat.ir/fullchain.pem /etc/nginx/cert.pem
 # COPY /etc/letsencrypt/live/deadcat.ir/privkey.pem /etc/nginx/key.pem
