@@ -198,6 +198,7 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::get_x_requests);
     config.service(apis::public::tasks_leaderboard);
     config.service(apis::public::get_user_wallet_info);
+    config.service(apis::public::search);
 
     // other routs maybe ?
     // ...

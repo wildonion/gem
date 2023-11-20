@@ -228,12 +228,12 @@ impl UserFan{
         unaccepted_ones.sort_by(|inv1, inv2|{
             /* 
                 cannot move out of `*inv1` which is behind a shared reference
-                move occurs because `*inv1` has type `std::option::Option<UserNftData>`, 
+                move occurs because `*inv1` has type `std::option::Option<InvitationRequestData>`, 
                 which does not implement the `Copy` trait and unwrap() takes the 
                 ownership of the instance.
-                also we must create a longer lifetime for `UserNftData::default()` by 
+                also we must create a longer lifetime for `InvitationRequestData::default()` by 
                 putting it inside a type so we can take a reference to it and pass the 
-                reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                reference to the `unwrap_or()`, cause &InvitationRequestData::default() will be dropped 
                 at the end of the `unwrap_or()` statement while we're borrowing it.
             */
             let inv1_default = InvitationRequestData::default();
@@ -326,12 +326,12 @@ impl UserFan{
         unaccepted_ones.sort_by(|frd1, frd2|{
             /* 
                 cannot move out of `*frd1` which is behind a shared reference
-                move occurs because `*frd1` has type `std::option::Option<UserNftData>`, 
+                move occurs because `*frd1` has type `std::option::Option<FriendData>`, 
                 which does not implement the `Copy` trait and unwrap() takes the 
                 ownership of the instance.
-                also we must create a longer lifetime for `UserNftData::default()` by 
+                also we must create a longer lifetime for `FriendData::default()` by 
                 putting it inside a type so we can take a reference to it and pass the 
-                reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                reference to the `unwrap_or()`, cause &FriendData::default() will be dropped 
                 at the end of the `unwrap_or()` statement while we're borrowing it.
             */
             let frd1_default = FriendData::default();

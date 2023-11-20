@@ -220,6 +220,13 @@ pub struct Limit{
     pub to: Option<i64>
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct Search{
+    pub q: String,
+    pub from: Option<i64>,
+    pub to: Option<i64>
+}
+
 /*
     can't bound the T to ?Sized since 
     T is inside the Option which the size

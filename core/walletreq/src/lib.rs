@@ -80,6 +80,8 @@ pub mod evm{
     
         /* generating secret key instance from secp256k1 secret key */
         let web3_sec = web3::signing::SecretKey::from_str(wallet.secp256k1_secret_key.as_ref().unwrap().as_str()).unwrap();
+        
+        /* generating keccak256 sha3 hash of data to sign it using private key */
         let keccak256_hash_of_message = web3_con.accounts().hash_message(data.to_string().as_bytes());
         println!("web3 keccak256 hash of message {:?}", keccak256_hash_of_message); 
     
@@ -126,7 +128,7 @@ pub mod evm{
         let transport = web3::transports::WebSocket::new(&endpoint).await.unwrap();
         let web3_con = Web3::new(transport);
     
-        /* recovering public address from signature and keccak256 bits hash of the message */
+        /* generating a recovery message from keccak256 sha3 hash of the message */
         let data_hash = match hex::decode(data_hash){
             Ok(hash) => hash,
             Err(e) => return Err(false),

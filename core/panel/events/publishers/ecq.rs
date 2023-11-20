@@ -20,9 +20,8 @@ impl CollaborationQueue{
 
     fn generate_event_time_hash<'t>(&self) -> [u8; 32]{
         
-        let keccak256 = walletreq::evm::get_keccak256_from(self.event_id.clone()).as_bytes();
-        let arr = [0u8; 32];
-        arr
+        let keccak256: [u8; 32] = walletreq::evm::get_keccak256_from(self.event_id.clone()).as_bytes().try_into().ok().unwrap();
+        keccak256
 
     }
 

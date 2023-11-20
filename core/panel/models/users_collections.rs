@@ -202,11 +202,11 @@ impl UserCollection{
                 let nft2 = nft2.as_ref().unwrap_or(&nft2_default);
 
                 let nft1_created_at = NaiveDateTime
-                    ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 let nft2_created_at = NaiveDateTime
-                    ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 nft2_created_at.cmp(&nft1_created_at)

@@ -280,13 +280,13 @@ async fn notif_subs(
     chatroom launchpad, here is the example connect address and make sure that client 
     is passing the panel JWT to the header request like `Bearer JWT`:
 
-    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMjM4MjUwOTIwNzMzMDAwLCJleHAiOjE3MDI4MzAyNTAsImlhdCI6MTcwMDIzODI1MH0.t5z961iVrMfAVuNdcIZ6LNhIszpcj75YCHv97vdDIOJoYBSC2iZW8TiMxMSJZHqdrOkf7saOrkycSR8eTKITqA
+    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNDczOTMzNTQ3MjIxMDAwLCJleHAiOjE3MDMwNjU5MzMsImlhdCI6MTcwMDQ3MzkzM30.T1_JWQVLqj_jEC6LxCBF3KpXcWpzcVJxvYxqVT8wDSdOsrcekACo55z9yFhcmxyBN0sEtFaBrGCdKYtASQzFzw
     
     local API:
         ws://localhost:7442/subscribe/chatroomlp/{chatroomlp_id}/{user_screen_cid}/{tx_signature}/{hash_data}
     
     production APIs:
-        `ws://localhost:7442/subscribe/chatroomlp/1/035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba/035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba/035e339b6b7adf2a771a9d3386244526316f9877069755e288ec2d6b1b06fd25ba`
+        `wss://notif.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1`
 
 */
 #[get("/chatroomlp/{chatroomlp_id}/{user_cid}/{tx_signature}/{hash_data}")]
@@ -371,29 +371,27 @@ async fn chatroomlp(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    // let is_request_verified = kyced::verify_request(
-                    //     _id, 
-                    //     &user_cid, 
-                    //     &tx_signature, 
-                    //     &hash_data, 
-                    //     None, /* no need to charge the user for this call */
-                    //     connection
-                    // ).await;
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &user_cid, 
+                        &tx_signature, 
+                        &hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
 
-                    // let Ok(user) = is_request_verified else{
-                    //     let error_resp = is_request_verified.unwrap_err();
-                    //     return error_resp; /* terminate the caller with an actix http response object */
-                    // };
-
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
 
                     
                     // TODO - 
                     // users_clps schema
                     // chatroomlp validation find with id
-                    // check that the user is already registered for this chatroom
+                    // check that the user is already registered and paid for this chatroom
                     // check that there is a room with the passed in id to the get method path
                     // ...
-
 
 
                     /* 

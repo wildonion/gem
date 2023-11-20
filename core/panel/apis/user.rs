@@ -1803,7 +1803,7 @@ async fn make_cid(
             let mut user_ip = "".to_string();
 
             /* ---------------------------------------------------------------------------------
-                if we're getting 127.0.0.1 for client ip addr from the incoming request means
+                if we're getting 127.0.0.1 for client ip addr inside the incoming request means
                 the address 127.0.0.1 is the loopback address, which means the request is 
                 coming from the same machine where the server is running. if we're running 
                 both the server and the browser on the same computer and we're connecting 

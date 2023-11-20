@@ -24,7 +24,7 @@ use crate::models::users::User;
     diesel migration redo                     ---> drop tables 
 
 */
-#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 #[diesel(table_name=users_galleries)]
 pub struct UserPrivateGallery{
     pub id: i32,
@@ -438,12 +438,12 @@ impl UserPrivateGallery{
             friends_wallets.sort_by(|fw1, fw2|{
                 /* 
                     cannot move out of `*fw1` which is behind a shared reference
-                    move occurs because `*fw1` has type `std::option::Option<UserNftData>`, 
+                    move occurs because `*fw1` has type `std::option::Option<UserWalletInfoResponse>`, 
                     which does not implement the `Copy` trait and unwrap() takes the 
                     ownership of the instance.
-                    also we must create a longer lifetime for `UserNftData::default()` by 
+                    also we must create a longer lifetime for `UserWalletInfoResponse::default()` by 
                     putting it inside a type so we can take a reference to it and pass the 
-                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                    reference to the `unwrap_or()`, cause &UserWalletInfoResponse::default() will be dropped 
                     at the end of the `unwrap_or()` statement while we're borrowing it.
                 */
                 let fw1_default = UserWalletInfoResponse::default();
@@ -452,11 +452,11 @@ impl UserPrivateGallery{
                 let fw2 = fw2.as_ref().unwrap_or(&fw2_default);
 
                 let fw1_created_at = NaiveDateTime
-                    ::parse_from_str(&fw1.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    ::parse_from_str(&fw1.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 let fw2_created_at = NaiveDateTime
-                    ::parse_from_str(&fw2.created_at, "%Y-%m-%d %H:%M:%S%.f%z")
+                    ::parse_from_str(&fw2.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 fw2_created_at.cmp(&fw1_created_at)

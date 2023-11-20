@@ -293,7 +293,11 @@ impl Handler<Join> for ChatRoomLaunchpadServer{ /* disconnect and connect again 
         let disconn_message = format!("chatroomlp::join::user with id: [{}] disconnected from the chatroom: [{}]", msg.id, msg.chatroom_name);
         let conn_message = format!("chatroomlp::join::user with id: [{}] connected to chatroom: [{}]", msg.id, msg.chatroom_name);
 
-        /* id will be moved later, we're borrowing it in here using ref */
+        /* 
+            id will be moved later, we're borrowing it in here using ref 
+            so ref id is a reference to or the borrowed form of the actual
+            id field.
+        */
         let Join { ref id, chatroom_name } = msg; // unpacking msg instance
         let mut rooms = Vec::<String>::new();
 

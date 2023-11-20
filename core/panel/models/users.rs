@@ -13,6 +13,7 @@ use lettre::message::Mailbox;
  
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit};
+use crate::models::users_galleries::{UserPrivateGallery, NewUserPrivateGalleryRequest};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
@@ -2677,10 +2678,6 @@ impl User{
 
     pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, user_ip: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
-        let otp_token = std::env::var("OTP_API_TOKEN").unwrap();
-        let otp_template = std::env::var("OTP_API_TEMPLATE").unwrap();
-        let thesmsworks_jwt = format!("JWT {}", std::env::var("THESMSWORKS_JWT").unwrap());
-
         let get_single_user = User::find_by_id(phone_owner_id, connection).await;
         let Ok(single_user) = get_single_user else{
             let resp = Response{
@@ -2750,109 +2747,21 @@ impl User{
             CHARSET[idx] as char // CHARSET is of type slice of utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
-        
-        let now = Utc::now();
-        let two_mins_later = (now + chrono::Duration::minutes(2)).naive_local();
-
-        /* 
-            the phone verification process is before building crypto id 
-            thus we don't have region in here just make an api call to 
-            get the region.
-        */
-        // if single_user.region.is_none(){
-        //     let resp = Response{
-        //         data: Some(phone_owner_id),
-        //         message: REGION_IS_NONE,
-        //         status: 406,
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::NotAcceptable().json(resp))
-        //     );
-        // }
-
-        // let u_region = single_user.region.unwrap();
-
         /* get the user region using the api call */
         let u_country = get_ip_data(user_ip.clone()).await.country.as_str().to_lowercase();
 
-        let _ = match u_country.as_str(){
-            "ir" => {
-                
-                let otp_endpoint = format!("http://api.kavenegar.com/v1/{}/verify/lookup.json?receptor={}&token={}&template={}", otp_token, user_phone, random_code, otp_template);
-                let otp_response = reqwest::Client::new()
-                    .get(otp_endpoint.as_str())
-                    .send()
-                    .await;
-
-                let res_stat = otp_response
-                    .as_ref()
-                    .unwrap()
-                    .status()
-                    .as_u16();
-
-                let otp_response_data = otp_response
-                    .unwrap()
-                    /* mapping the streaming of future io bytes into the SMSResponse struct */
-                    .json::<SMSResponse>()
-                    .await;
-
-                if res_stat != 200{
-
-                    let resp = Response{
-                        data: Some(phone_owner_id),
-                        message: OTP_PROVIDER_DIDNT_SEND_CODE,
-                        status: 417,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::ExpectationFailed().json(resp))
-                    );
-
-                }  
-
-            },
-            _ => {
-
-                let body_content = format!("Use this code to get verified in {}: {}", APP_NAME, random_code);
-                let mut data = HashMap::new();
-                data.insert("sender", APP_NAME.to_string());
-                data.insert("destination", user_phone.clone());
-                data.insert("content", body_content);
-
-                let otp_endpoint = format!("https://api.thesmsworks.co.uk/v1/message/send");
-                
-                let otp_response = reqwest::Client::new()
-                    .post(otp_endpoint.as_str())
-                    .header("Authorization", thesmsworks_jwt.as_str())
-                    .json(&data)
-                    .send()
-                    .await;
-
-                let res_stat = otp_response
-                    .as_ref()
-                    .unwrap()
-                    .status()
-                    .as_u16();
-
-                 /* accessing json data dynamically without mapping the response bytes into a struct */
-                let otp_response_data = otp_response.unwrap().json::<serde_json::Value>().await.unwrap();
-                // let otp_response_data = otp_response.unwrap().text().await.unwrap();
-
-                if res_stat != 201{
-
-                    let resp = Response{
-                        data: Some(phone_owner_id),
-                        message: OTP_PROVIDER_DIDNT_SEND_CODE,
-                        status: 417,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::ExpectationFailed().json(resp))
-                    );
-
-                }    
-
-            }
+        
+        let get_two_mins_later = phonereq::send_code(
+            APP_NAME, 
+            &random_code, 
+            OTP_PROVIDER_DIDNT_SEND_CODE, 
+            phone_owner_id, 
+            &u_country, 
+            &user_phone
+        ).await;
+        let Ok(two_mins_later) = get_two_mins_later else{
+            let err_resp = get_two_mins_later.unwrap_err();
+            return Err(err_resp);
         };
 
 
@@ -3391,84 +3300,11 @@ impl User{
             CHARSET[idx] as char // CHARSET is of type slice of utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
-        let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
-        let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
-        let smtp_server = std::env::var("SMTP_SERVER").unwrap();
-        let smtp_creds = Credentials::new(smtp_username.clone(), smtp_password);
-        
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_server.as_str())
-            .unwrap()
-            .credentials(smtp_creds)
-            .build();
-
-        let from = format!("{}: <{}>", APP_NAME, smtp_username).parse::<Mailbox>();
-        let to = format!("{}: <{}>", mail_owner_id, user_mail).parse::<Mailbox>();
-
-        if from.is_err() || to.is_err(){
-
-            // let from_send_mail_error = from.unwrap_err();
-            // let to_send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
-            let final_err = format!("Invalid Sender Or Receiver Mail Address");
-
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: &final_err,
-                status: 417,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::ExpectationFailed().json(resp))
-            );
-               
-        }
-
-        /* ------------------------- */
-        /* matching over from and to */
-        /* ------------------------- */
-        // let (from, to) = match (from, to){
-        //     (Ok(from), Ok(to)) => {
-        //         (from, to)
-        //     }, 
-        //     (Err(from_err)) | (Err(to_err)) => {
-
-        //         /* handle error */
-        //         // ...
-
-        //     }
-        // };
-
-        let now = Utc::now();
-        let five_mins_later = (now + chrono::Duration::minutes(5)).naive_local();
-
-        let subject = "Mail Verification";
-        let body = format!("
-            <p>Use this code to get verified in {}: <b>{}</b></p>
-            <br>
-            <p>This code will expire at: <b>{} UTC</b></p>", 
-            APP_NAME, random_code, five_mins_later.and_utc().to_rfc2822().to_string());
-
-        let email = LettreMessage::builder()
-            .from(from.unwrap())
-            .to(to.unwrap())
-            .subject(subject)
-            .header(LettreContentType::TEXT_HTML)
-            .body(body)
-            .unwrap();
-
-        let get_mail_res = mailer.send(email).await;
-        let Ok(_) = get_mail_res else {
-
-            let send_mail_error = get_mail_res.unwrap_err();
-
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: &send_mail_error.to_string(),
-                status: 417,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::ExpectationFailed().json(resp))
-            );
+        /* sending mail */
+        let get_five_mins_later = mailreq::send_mail(APP_NAME, mail_owner_id, &user_mail, &random_code).await;
+        let Ok(five_mins_later) = get_five_mins_later else{
+            let err_resp = get_five_mins_later.unwrap_err();
+            return Err(err_resp);
         };
 
         let save_mail_res = UserMail::save(&user_mail, mail_owner_id, random_code, five_mins_later, connection).await;
@@ -3727,11 +3563,13 @@ impl Id{
                 /* --------------------------------------------------------------------------- */
                 //   generating keypair using wallexerr, signing and verification using web3
                 /* --------------------------------------------------------------------------- */
+                /* we'll create a new private gallery if the verification was ok */
                 let wallet = walletreq::evm::get_wallet();
                 let data_to_be_signed = serde_json::json!({
-                    "recipient": "deadkings",
-                    "from_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
-                    "amount": 5
+                    "owner_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
+                    "gal_name": format!("{} first private gallery", id_username),
+                    "gal_description": format!("{} first private gallery", id_username),
+                    "extra": None::<Option<serde_json::Value>> // serde needs to know the exact type of extra
                 });
 
                 let sign_res = walletreq::evm::sign(
@@ -3739,7 +3577,7 @@ impl Id{
                     data_to_be_signed.to_string().as_str()
                 ).await;
 
-                let signed_data = sign_res.0;
+                let signed_data = sign_res.clone().0;
 
                 info!("sig :::: {}", hex::encode(&signed_data.signature.0));
                 info!("v :::: {}", signed_data.v);
@@ -3754,8 +3592,29 @@ impl Id{
                 ).await;
                 
                 if verification_res.is_ok(){
+                    
                     info!("✅ valid signature");
+
+                    /* ----------------------------------------------- */
+                    /* creating a default private gallery for the user */
+                    /* ----------------------------------------------- */
+                    let create_new_gal = UserPrivateGallery::insert(
+                        NewUserPrivateGalleryRequest{
+                            owner_cid: wallet.secp256k1_public_key.as_ref().unwrap().to_string(),
+                            gal_name: format!("{} very first private gallery", id_username),
+                            gal_description: format!("{} very first private gallery", id_username),
+                            extra: None,
+                            tx_signature: hex::encode(&signed_data.signature.0),
+                            hash_data: sign_res.clone().1,
+                        }, connection).await;
+                    
+                    let Ok(new_gal) = create_new_gal else{
+                        let error_resp = create_new_gal.unwrap_err();
+                        return Err(error_resp);
+                    };
+
                 } else{
+                    // can't create private gallery then :(
                     error!("🔴 invalid signature");
                 }
                 /* ------------------------------------------------------------ */

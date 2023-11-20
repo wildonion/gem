@@ -1,0 +1,31 @@
+[package]
+name = "mailreq"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+actix-web = { version = "4", features = ["openssl"] }
+pretty_env_logger = "0.5"
+env_logger = "0.10.0"
+jsonwebtoken = "9"
+rs-snowflake = "*"
+base64 = "0.21"
+rand = "0.8"
+rust-argon2 = "2"
+sha2 = "0.10"
+bytes = { version = "1", features = ["serde"] }
+hex = "0.4"
+dotenv = "0.15"
+log = "0.4"
+lazy_static = "1"
+serde = {version = "1", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
+lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
+
+
+
+[lib]
+path = "src/lib.rs"
+name = "mailreq"

@@ -12,11 +12,15 @@ repository = "https://github.com/wildonion/gem/"
 [workspace]
 members = [ 
   "core/walletreq",
+  "core/mailreq",
+  "core/phonereq",
 ]
 
 
 [dependencies]
 walletreq = { path = "core/walletreq", name = "walletreq"}
+mailreq = { path = "core/mailreq", name = "mailreq"}
+phonereq = { path = "core/phonereq", name = "phonereq"}
 async-std = "1.12.0"
 futures = "0.3"
 futures-util = "0.3"
@@ -68,10 +72,12 @@ once_cell = "1"
 sysinfo = "0.29"
 tokio-cron-scheduler = "0.9.4"
 openssl = { version = "0.10", features = ["v110"] }
+# -------------------------------------
+# ---- proc macro butter and bread ----
 syn = { version = "*", features = ["full"] }
 quote = "*"
 proc-macro2 = "*"
-libloading = "0.8.0"
+# -------------------------------------
 lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
 serenity = "0.11.7"
 percentage = "0.1.0"
@@ -104,3 +110,6 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 overflow-checks = true # panic on any overflow
+
+[build]
+rustflags = ["-Z", "threads=8"]

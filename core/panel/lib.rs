@@ -181,12 +181,25 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn fn_like_proc_macro(input: TokenStream) -> TokenStream {
 
+    // ex:
+    // #[macro_name]
+    // fn im_a_method(){}
+    
     input
 
 }
 
-#[proc_macro_derive(PassportDrive)]
+#[proc_macro_derive(Passport)]
 pub fn derive_proc_macro(input: TokenStream) -> TokenStream {
+
+    // ex:
+    // #[derive(Passport)]
+    // struct SexyStruct{}
+    
+    // this will be implemented in here for the struct inside input token stream
+    // so later on we can call the method on the struct once we've implemented the
+    // method for the struct in here.
+    // SexyStruct::passport() 
 
     input
 
