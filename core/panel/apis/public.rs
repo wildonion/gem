@@ -642,7 +642,7 @@ async fn search(
             }
 
             /* search in users */
-            let query_to_seatch = format!("{}%", query.q);
+            let query_to_seatch = format!("%{}%", query.q);
             let get_users_info = users::table
                 .filter(
                     users::username.ilike(query_to_seatch.as_str())
@@ -779,9 +779,6 @@ async fn search(
             let mut found_nfts = vec![];
             for gallery in galleries_info{
 
-                let mut found_collections = found_collections.clone();
-                let mut found_nfts = found_nfts.clone();
-
                 let cols = gallery.collections;
                 let decoded_cols = if cols.is_some(){
                     serde_json::from_value::<Vec<UserCollectionData>>(cols.unwrap()).unwrap()
@@ -859,12 +856,73 @@ async fn search(
                         })
                         .collect::<Vec<Option<UserNftData>>>();
                     
+
                     found_nfts.extend(match_nfts);
                     found_nfts.retain(|nft| nft.is_some());
 
                 }
 
             }
+
+            /* order based on newest ones */
+            found_nfts.sort_by(|n1, n2|{
+
+                /* 
+                    cannot move out of `*n1` which is behind a shared reference
+                    move occurs because `*n1` has type `std::option::Option<UserNftData>`, 
+                    which does not implement the `Copy` trait and unwrap() takes the 
+                    ownership of the instance.
+                    also we must create a longer lifetime for `UserNftData::default()` by 
+                    putting it inside a type so we can take a reference to it and pass the 
+                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                */
+                let n1_default = UserNftData::default();
+                let n2_default = UserNftData::default();
+                let n1 = n1.as_ref().unwrap_or(&n1_default);
+                let n2 = n2.as_ref().unwrap_or(&n2_default);
+
+                let n1_created_at = NaiveDateTime
+                    ::parse_from_str(&n1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let n2_created_at = NaiveDateTime
+                    ::parse_from_str(&n2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                n2_created_at.cmp(&n1_created_at)
+
+            });
+
+            /* order based on newest ones */
+            found_collections.sort_by(|c1, c2|{
+
+                /* 
+                    cannot move out of `*c1` which is behind a shared reference
+                    move occurs because `*c1` has type `std::option::Option<UserCollectionData>`, 
+                    which does not implement the `Copy` trait and unwrap() takes the 
+                    ownership of the instance.
+                    also we must create a longer lifetime for `UserCollectionData::default()` by 
+                    putting it inside a type so we can take a reference to it and pass the 
+                    reference to the `unwrap_or()`, cause &UserCollectionData::default() will be dropped 
+                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                */
+                let c1_default = UserCollectionData::default();
+                let c2_default = UserCollectionData::default();
+                let c1 = serde_json::from_value::<UserCollectionData>(c1.clone().unwrap()).unwrap_or(c1_default);
+                let c2 = serde_json::from_value::<UserCollectionData>(c2.clone().unwrap()).unwrap_or(c2_default);
+
+                let c1_created_at = NaiveDateTime
+                    ::parse_from_str(&c1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let c2_created_at = NaiveDateTime
+                    ::parse_from_str(&c2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                c2_created_at.cmp(&c1_created_at)
+
+            });
 
             /*  
                 first we need to slice the current vector convert that type into 
@@ -881,11 +939,11 @@ async fn search(
                 data.to_vec()
             };
 
-            let users_info = if users_info.len() > to{
-                let data = &users_info[from..to+1];
+            let found_nfts = if found_nfts.len() > to{
+                let data = &found_nfts[from..to+1];
                 data.to_vec()
             } else{
-                let data = &users_info[from..users_info.len()];
+                let data = &found_nfts[from..found_nfts.len()];
                 data.to_vec()
             };
 
