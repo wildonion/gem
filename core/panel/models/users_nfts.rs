@@ -2275,6 +2275,11 @@ impl UserNft{
                     connection).await
 
             },
+            /*  ------------------------------------------------------------------------------
+                currently we're getting the following error in updating `freeze_metadata` and
+                `metadata_uri` fields from the nftport server:
+                    the request could not be completed due to an internal server error. 
+            */
             "onchain" => { // only freeze_metadata and metadata_uri
 
                 /* 
