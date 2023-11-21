@@ -14,6 +14,7 @@
     |   health ---> all apis related to server health
     |   public ---> all public apis
     |   notifs ---> all websocket push notification subscription apis with user access
+    |   clp    ---> all websocket chatroom launchpad apis with user access
     |
     |
 */
@@ -23,3 +24,4 @@ pub mod user;
 pub mod health;
 pub mod public;
 pub mod notifs;
+pub mod clp;
