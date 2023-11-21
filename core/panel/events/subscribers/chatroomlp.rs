@@ -36,7 +36,15 @@ pub struct Disconnect {
     pub chatroom_name: String // chatroom name: `chatroomlp-{clp_id}` to send message to and also user disconnected from this room
 }
 
-/// join room
+/// list rooms
+#[derive(Clone, Message)]
+#[rtype(result = "Rooms")]
+pub struct ListRooms;
+
+#[derive(MessageResponse)]
+pub struct Rooms(pub HashMap<String, HashSet<String>>);
+
+/// join room 
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
 pub struct Join {
@@ -280,6 +288,17 @@ impl Handler<Connect> for ChatRoomLaunchpadServer{
 
     }
 
+}
+
+
+impl Handler<ListRooms> for ChatRoomLaunchpadServer{
+
+    type Result = Rooms;
+
+    fn handle(&mut self, msg: ListRooms, ctx: &mut Self::Context) -> Self::Result{
+        let current_rooms = self.rooms.clone();
+        Rooms(current_rooms)
+    }
 }
 
 /* this handler will be triggered once a session actor started */

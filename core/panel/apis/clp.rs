@@ -150,7 +150,7 @@ async fn chatroomlp(
                     // users_clps schema
                     // chatroomlp validation find with id
                     // check that the user is already registered and paid for this chatroom
-                    // check that there is a room with the passed in id to the get method path
+                    // check that there is a room with the passed in id to the api
                     // ...
 
 
