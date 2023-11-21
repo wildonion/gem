@@ -11,7 +11,7 @@ use crate::resp;
 use crate::passport;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
 use crate::models::{
     users::UserData,
     users_tasks::FetchUserTaskReport,

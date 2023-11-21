@@ -45,7 +45,7 @@ macro_rules! server {
                 and redis_async which can be used to authorize then publish topics,
                 response caching and subscribing asyncly to topics respectively
             */
-            let app_storage = storage!{ // this publicly has exported inside the misc so we can access it here 
+            let app_storage = s3req::storage!{ // this publicly has exported inside the misc so we can access it here 
                 db_name,
                 db_engine,
                 db_host,

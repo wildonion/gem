@@ -1414,6 +1414,15 @@ pub async fn get_nft_onchain_metadata_uri<N>(
 
 pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> OnchainNfts{
 
+    /* -----------------------------------------------------------------
+        > in those case that we don't want to create a separate struct 
+        and allocate an instance of it to map a utf8 bytes data coming
+        from a server or client into its feilds we can use serde_json::to_value()
+        which maps an instance of a structure into a serde json value 
+        or serde_json::json!({}) to create a json value from those fields 
+        that we want to return them, but if we want to mutate data in rust we 
+        have to convert the json value or received bytes into the structure, 
+    */
     let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
     let nftport_get_nfts = format!("https://api.nftport.xyz/v0/accounts/{}?chain=polygon&page_size={}&continuation={}&include=metadata", caller_screen_cid, to, from);
     let res_value: serde_json::Value = reqwest::Client::new()

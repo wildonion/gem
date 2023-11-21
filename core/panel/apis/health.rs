@@ -7,7 +7,7 @@ use crate::models::users_checkouts::UserCheckout;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
  
 use crate::models::users::*;
 use crate::schema::users::dsl::*;

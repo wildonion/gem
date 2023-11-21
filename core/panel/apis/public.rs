@@ -13,7 +13,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use chrono::NaiveDateTime;
-use s3::*;
+use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -796,10 +796,13 @@ async fn search(
                             col.contract_address.contains(&query.q)
                             {
                                 /* -----------------------------------------------------------------
-                                    in those case that we don't want to create a separate struct 
-                                    and allocate an instance of it to map a data into its feilds we 
-                                    can use serde_json::json!({}) to create a json value from those 
-                                    fields that we want to return them.
+                                    > in those case that we don't want to create a separate struct 
+                                    and allocate an instance of it to map a utf8 bytes data coming
+                                    from a server or client into its feilds we can use serde_json::to_value()
+                                    which maps an instance of a structure into a serde json value 
+                                    or serde_json::json!({}) to create a json value from those fields 
+                                    that we want to return them, but if we want to mutate data in rust we 
+                                    have to convert the json value or received bytes into the structure, 
                                 */
                                 Some(
                                     serde_json::json!({

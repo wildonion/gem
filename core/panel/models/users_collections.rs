@@ -514,7 +514,7 @@ impl UserCollection{
 
         /* uploading collection image */
         let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
-        let get_collection_img_path = misc::store_file(
+        let get_collection_img_path = multipartreq::store_file(
             COLLECTION_UPLOAD_PATH, &collection_data.owner_screen_cid, 
             "collection", 
             img).await;

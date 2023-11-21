@@ -19,7 +19,7 @@ use crate::models::users::UserRole;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
  
 use crate::events::{
     subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
@@ -62,7 +62,7 @@ async fn chatroomlp(
 
     
     let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
-    let (json_data, files) = misc::extract_multipart(arced_payload).await.unwrap();
+    let (json_data, files) = multipartreq::extract(arced_payload).await.unwrap();
     
     let storage = storage.as_ref().to_owned();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();

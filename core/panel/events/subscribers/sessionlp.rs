@@ -16,8 +16,9 @@
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::models::users::{User, UserWalletInfoResponse};
-use crate::{misc::*, s3::*, constants::WS_HEARTBEAT_INTERVAL};
+use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
+use s3req::Storage;
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web::dev::Payload;

@@ -17,7 +17,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -346,7 +346,7 @@ async fn update_rendezvous_event_img(
 
                     let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
 
-                    let get_event_img_path = misc::store_file(
+                    let get_event_img_path = multipartreq::store_file(
                         EVENT_UPLOAD_PATH, &format!("{}", event_id), 
                         "event", 
                         img).await;

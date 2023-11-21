@@ -4,7 +4,7 @@
 
 # 🛞 Rust Core Backend Service APIs and Engines
 
-Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** with the following engines as its core backend: 
+Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** which uses **Sense**: A Near-Duplicate NFT Detection Protocol on the Pastel Network, with the following engines as its core backend: 
 - chatroom launchpad feature to mint generated AI based NFT images based on users' chats in each launchpad events to those users.
 - **pubsub** pattern to reveal player in-game roles using the redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.
@@ -43,6 +43,11 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
     * `stripewh`: stripe webhook listener for checkout events.
     * `xbot`: X bot for twitter tasks verification.
     * `xcord`: discord bot to broadcast new twitter task defined by admin into a discord channel and role assginement based on user points.
+    * `mailreq`: mail sender crate.
+    * `multipartreq`: Multipart extractor.
+    * `phonereq`: OTP code sender crate.
+    * `s3req`: shared state storage crate.
+    * `walletreq`: wallexerr crate.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
     * `rendezvous`: rendezvous service APIs
         * `controllers`: in-game async controllers related to hyper server.

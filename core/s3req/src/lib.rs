@@ -3,15 +3,16 @@
 
 
 
-use mongodb::bson::oid::ObjectId;
+use diesel::r2d2::ConnectionManager;
 use redis_async::client::PubsubConnection;
-use crate::*;
-use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED};
-use crate::events::publishers::role::PlayerRoleInfo;
-use crate::models::users::{NewIdRequest, IpInfoResponse, User};
-use crate::models::users_deposits::NewUserDepositRequest;
-use crate::models::users_tasks::UserTask;
 use actix::Addr;
+use mongodb::Client;
+use actix_redis::RedisActor;
+use std::sync::Arc;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
+use redis::Client as RedisClient;
+use uuid::Uuid;
 
 
 /*  ----------------------
@@ -192,7 +193,7 @@ macro_rules! storage {
                 
         async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
-            use s3::*;
+            use s3req::{Storage, Mode, Db};
 
             /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
 

@@ -11,7 +11,7 @@
 
 use crate::constants::WS_CLIENT_TIMEOUT;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
 use crate::*;
 use actix::prelude::*;
 use actix_broker::*;

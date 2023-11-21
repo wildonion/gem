@@ -21,7 +21,7 @@ use crate::models::users::UserRole;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
  
 use crate::events::{
     subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},

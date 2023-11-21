@@ -14,7 +14,7 @@ use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
+use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
 use crate::schema::tasks::dsl::*;
@@ -24,7 +24,6 @@ use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
 use crate::misc::*;
-use s3::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
@@ -3793,7 +3792,7 @@ async fn upload_rendezvous_player_avatar(
                     };
 
                     let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
-                    let get_player_img_path = misc::store_file(
+                    let get_player_img_path = multipartreq::store_file(
                         AVATAR_UPLOAD_PATH, &format!("{}", player_id), 
                         "player", 
                         img).await;
@@ -6844,7 +6843,7 @@ async fn create_nft_metadata_uri(
                         
 
                         let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
-                        let get_json_data = misc::extract_multipart(
+                        let get_json_data = multipartreq::extract(
                             arced_payload.clone()
                         ).await;
 
