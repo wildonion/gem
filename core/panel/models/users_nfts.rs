@@ -1735,7 +1735,7 @@ impl UserNft{
 
                         let resp = Response::<'_, &[u8]>{
                             data: Some(&[]),
-                            message: CANT_TRANSFER_NFT,
+                            message: CANT_TRANSFER_NFT, /* maybe: can't transfer nft more than once */
                             status: 417,
                             is_error: true
                         };
