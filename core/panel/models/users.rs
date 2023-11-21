@@ -248,14 +248,12 @@ pub struct Id{
 pub struct CheckUserMailVerificationRequest{
     pub user_mail: String,
     pub verification_code: String,
-    pub vat: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct CheckUserPhoneVerificationRequest{
     pub user_phone: String,
     pub verification_code: String,
-    pub vat: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
@@ -2837,7 +2835,6 @@ impl User{
         };
 
         let exp_code = user_phone.exp;
-        let user_vat = check_user_verification_request.vat;
 
         /* calculate the naive datetime from the passed in exp milli timestamp */
         let now = Utc::now();
@@ -2850,7 +2847,7 @@ impl User{
         let duration = now.signed_duration_since(given_time);
 
         /* code must not be expired */
-        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in not older than 5 mins */
+        if duration.num_minutes() >= 2{ /* make sure that the time code is in not older than 2 mins since we've made a request */
             /* delete the record, user must request the code again */
             let del_res = diesel::delete(users_phones::table
                 .filter(users_phones::user_id.eq(receiver_id)))
@@ -2871,7 +2868,7 @@ impl User{
         }
 
         /* update vat field */
-        let save_phonw_res = UserPhone::update_vat(user_phone.id, user_vat, connection).await;
+        let save_phonw_res = UserPhone::update_vat(user_phone.id, now.timestamp_millis(), connection).await;
         let Ok(_) = save_phonw_res else{
 
             let resp_err = save_phonw_res.unwrap_err();
@@ -3379,7 +3376,6 @@ impl User{
         };
 
         let exp_code = user_mail.exp;
-        let user_vat = check_user_verification_request.vat;
 
         /* calculate the naive datetime from the passed in exp milli timestamp */
         let now = Utc::now();
@@ -3392,7 +3388,7 @@ impl User{
         let duration = now.signed_duration_since(given_time);
 
         /* code must not be expired */
-        if duration >= chrono::Duration::minutes(5){ /* make sure that the time code is in not older than 5 mins */
+        if duration.num_minutes() >= 5{ /* make sure that the time code is in not older than 5 mins since we've made a request */
             /* delete the record, user must request the code again */
             let del_res = diesel::delete(users_mails::table
                 .filter(users_mails::user_id.eq(receiver_id)))
@@ -3413,7 +3409,7 @@ impl User{
         }
 
         /* update vat field */
-        let save_mail_res = UserMail::update_vat(user_mail.id, user_vat, connection).await;
+        let save_mail_res = UserMail::update_vat(user_mail.id, now.timestamp_millis(), connection).await;
         let Ok(_) = save_mail_res else{
 
             let resp_err = save_mail_res.unwrap_err();
