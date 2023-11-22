@@ -17,6 +17,8 @@
     |   users_nfts        ---> methods of postgres users_nfts table
     |   users_collections ---> methods of postgres users_collections table
     |   users_fans        ---> methods of postgres users_fans table
+    |   users_clps        ---> methods of postgres users_clps table
+    |   clp_events        ---> methods of postgres clp_events table
     |
 */
 
@@ -33,3 +35,5 @@ pub mod users_galleries;
 pub mod users_nfts;
 pub mod users_collections;
 pub mod users_fans;
+pub mod users_clps;
+pub mod clp_events;

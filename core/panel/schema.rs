@@ -7,6 +7,41 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    clp_events (id) {
+        id -> Int4,
+        contract_address -> Varchar,
+        nfts -> Nullable<Jsonb>,
+        event_name -> Varchar,
+        symbol -> Varchar,
+        max_supply -> Int4,
+        team_reserve -> Int4,
+        mint_price -> Int8,
+        presale_mint_price -> Int8,
+        tokens_per_mint -> Int4,
+        owner_screen_cid -> Varchar,
+        treasury_address -> Varchar,
+        public_mint_start_date -> Varchar,
+        metadata_updatable -> Nullable<Bool>,
+        freeze_metadata -> Nullable<Bool>,
+        base_uri -> Varchar,
+        presale_mint_start_date -> Varchar,
+        presale_whitelisted_addresses -> Nullable<Array<Nullable<Text>>>,
+        prereveal_token_uri -> Varchar,
+        royalties_share -> Int4,
+        royalties_address_screen_cid -> Varchar,
+        event_background -> Varchar,
+        extra -> Nullable<Jsonb>,
+        event_description -> Varchar,
+        contract_tx_hash -> Nullable<Varchar>,
+        start_at -> Int8,
+        expire_at -> Int8,
+        is_locked -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     tasks (id) {
         id -> Int4,
         task_name -> Varchar,
@@ -78,6 +113,18 @@ diesel::table! {
         usd_token_price -> Int8,
         tx_signature -> Varchar,
         iat -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    users_clps (id) {
+        id -> Int4,
+        clp_id -> Nullable<Int4>,
+        user_id -> Nullable<Jsonb>,
+        entry_amount -> Nullable<Int8>,
+        registered_at -> Timestamptz,
+        joined_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -212,9 +259,11 @@ diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    clp_events,
     tasks,
     users,
     users_checkouts,
+    users_clps,
     users_collections,
     users_deposits,
     users_fans,

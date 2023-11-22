@@ -93,11 +93,11 @@ impl ChatRoomLaunchpadServer{
         }
     }
 
+    /* ------------------------- */
+    /* caching rooms using redis */
+    /* ------------------------- */
     pub fn cache_room(&mut self){
 
-        /* ------------------------- */
-        /* caching rooms using redis */
-        /* ------------------------- */
         /* we'll use this to fetch users' info in a room */
         let redis_client = self.app_storage.as_ref().clone().unwrap().get_redis_sync().unwrap();
         let mut conn = redis_client.get_connection().unwrap();

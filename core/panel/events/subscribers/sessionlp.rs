@@ -126,7 +126,7 @@ impl Actor for WsLaunchpadSession{
             .wait(ctx);
 
 
-        // ---------- PUBLISHING ChatRoomLaunchpadServerJoinMessage 
+        // ---------- PUBLISHING ChatRoomLaunchpadServerJoinMessage topic
         // ----------------------------------------------------------------------
         /* 
             publish ChatRoomLaunchpadServerJoinMessage message asyncly, so later on server actor can subscribe to 
@@ -185,7 +185,11 @@ impl Handler<WsMessage> for WsLaunchpadSession{
 /* stream, listener or event handler to handle the incoming websocket byte packets in realtime */
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSession{
 
-     /* the handler method to handle the incoming websocket messages by decoding them */
+     /* 
+        the handler method to handle the incoming websocket messages by decoding them,
+        when stream resolves its next item, handle() is called with that item, Self::Context
+        is of type WebsocketContext<WsLaunchpadSession>
+    */
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
 
         let msg = match msg{
@@ -217,6 +221,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             },
             ws::Message::Text(text) => {
 
+                /* handling slash commands */
                 let m = text.trim();
                 if m.starts_with("/"){
                     let v: Vec<&str> = m.splitn(2, ' ').collect();
@@ -235,9 +240,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                             let redis_result_rooms_string: String = redis_client.get("chatroomlp_server_actor_rooms").unwrap();
                             
                             /* 
-                                structure of all rooms is like
-                                a mapping between the room name and its peer ids: 
-                                    HashMap<String, HashSet<String>>
+                                structure of all rooms is like a mapping between the room name and its peer ids: 
+                                HashMap<String, HashSet<String>>
                             */
                             let rooms_in_redis = serde_json::from_str::<HashMap<String, HashSet<String>>>(redis_result_rooms_string.as_str()).unwrap();
                             let users_in_this_event = rooms_in_redis.get(self.chat_room).unwrap();
@@ -260,7 +264,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
 
                             let json_stringified_users = serde_json::to_string_pretty(&users).unwrap();
 
-                            /* sending to this peer */
+                            /* 
+                                sending to this peer, also note that the param must implements
+                                ByteString trait thus the param must be in form of byte string
+                                text() method takes a mutable pointer to the self or the instance
+                                of WebsocketContext<WsLaunchpadSession>
+                            */
                             ctx.text(format!("online events: {}", rooms_in_redis.len()));
                             ctx.text(format!("online users in this event: {}", json_stringified_users));
 
@@ -269,12 +278,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     }
                 } 
 
-                let this_actor = self.clone();
+                let im_this_actor: Self = self.clone();
                 let server_actor = self.ws_chatroomlp_actor_address.clone();
                 let chatroom_name = self.chat_room.to_string().clone();
                 let session_id = self.id.clone();
                 let new_message = text.clone();
-                let to_be_stored_msg = text.clone();
+                let save_me_in_db = text.clone();
 
                 /* sending the message asyncly to all session in that room in a separate thread */
                 tokio::spawn(async move{
@@ -285,13 +294,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                         new_message: new_message.clone().to_string(),
                     };
 
-                    /* sending NotifySessionsWithNewMessage to server actor asyncly */
+                    /* 
+                        sending NotifySessionsWithNewMessage to server actor asyncly, then
+                        server actor will notify all the sessions in this room with new messagex
+                    */
                     server_actor
                         .send(
                             notify_msg.clone()
                         ).await.unwrap();
                     
-                    // ---------- PUBLISHING NotifySessionsWithNewMessage 
+                    // ---------- PUBLISHING NotifySessionsWithNewMessage topic
                     // ----------------------------------------------------------------------
                     /*  
                         instead of sending different message to all server actors separately we can publish and 
