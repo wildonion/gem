@@ -119,8 +119,8 @@ diesel::table! {
 diesel::table! {
     users_clps (id) {
         id -> Int4,
-        clp_id -> Nullable<Int4>,
-        user_id -> Nullable<Jsonb>,
+        clp_id -> Int4,
+        user_id -> Int4,
         entry_amount -> Nullable<Int8>,
         registered_at -> Timestamptz,
         joined_at -> Timestamptz,
@@ -255,6 +255,8 @@ diesel::table! {
 }
 
 diesel::joinable!(tasks -> users (admin_id));
+diesel::joinable!(users_clps -> clp_events (clp_id));
+diesel::joinable!(users_clps -> users (user_id));
 diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
 
