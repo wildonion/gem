@@ -27,7 +27,7 @@ Yes! jut run the following command in a new terminal to get the webhook secret a
 ```bash
 cd .. && cd .. && cd scripts
 sudo chmod +x stripe.sh
-stripe login && sudo pm2 start --name stripe-whebook-listener
+stripe login && sudo pm2 start --name stripe-whebook-listener stripe.sh
 ```
 
 see the stripe webhook listener logs by running the `sudo pm2 log stripe-whebook-listener` command.

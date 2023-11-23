@@ -1,0 +1,1 @@
+*/59 * * * 0-7 ../scripts/backupdb.sh

@@ -16,9 +16,16 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
     read NODE_ID
     echo NODE_ID=$NODE_ID >> .env
 
+    echo "[?] Redis/Postgres Password: "
+    read PSWD
+
+    echo "[?] App Name: "
+    read APPNAME
+
     sudo chmod 666 /var/run/docker.sock
     export SERVER_IP=$(hostname -I | awk '{print $1}')
-    export PASSWORD=geDteDd0Ltg2135FJYQ6rjNYHYkGQa70
+    export PASSWORD=$PSWD
+    export APP_NAME=$APPNAME
 
     echo "[?] Wanna Redeploy Infrastructure? "
     read REDPLOY_INFRASTRUCTURE

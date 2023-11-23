@@ -1,0 +1,1 @@
+sudo docker exec postgres pg_dump -U postgres $APP_NAME > ../$APP_NAME.sql
