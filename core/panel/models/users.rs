@@ -5,12 +5,10 @@
 
 use std::io::Write;
 use std::time::{UNIX_EPOCH, SystemTime};
-
 use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
 use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
- 
 use crate::*;
 use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit};
 use crate::models::users_galleries::{UserPrivateGallery, NewUserPrivateGalleryRequest};
@@ -46,6 +44,8 @@ pub struct User{
     pub discord_username: Option<String>, /* unique */
     pub identifier: Option<String>, /* unique */
     pub mail: Option<String>, /* unique */
+    pub google_id: Option<String>, /* unique */
+    pub microsoft_id: Option<String>, /* unique */
     pub is_mail_verified: bool,
     pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
@@ -82,6 +82,8 @@ pub struct FetchUser{
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
+    pub google_id: Option<String>, /* unique */
+    pub microsoft_id: Option<String>, /* unique */
     pub is_mail_verified: bool,
     pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
@@ -116,6 +118,8 @@ pub struct UserData{
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
+    pub google_id: Option<String>, /* unique */
+    pub microsoft_id: Option<String>, /* unique */
     pub is_mail_verified: bool,
     pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
@@ -159,6 +163,8 @@ pub struct UserIdResponse{
     pub discord_username: Option<String>,
     pub identifier: Option<String>,
     pub mail: Option<String>, /* unique */
+    pub google_id: Option<String>, /* unique */
+    pub microsoft_id: Option<String>, /* unique */
     pub is_mail_verified: bool,
     pub is_phone_verified: bool,
     pub phone_number: Option<String>, /* unique */
@@ -1054,6 +1060,8 @@ impl User{
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
                         mail: fetched_user.clone().mail,
+                        google_id: fetched_user.clone().google_id,
+                        microsoft_id: fetched_user.clone().microsoft_id,
                         is_mail_verified: fetched_user.is_mail_verified,
                         is_phone_verified: fetched_user.is_phone_verified,
                         phone_number: fetched_user.clone().phone_number,
@@ -1216,6 +1224,8 @@ impl User{
                         created_at: fetched_user.created_at.to_string(),
                         updated_at: fetched_user.updated_at.to_string(),
                         mail: fetched_user.clone().mail,
+                        google_id: fetched_user.clone().google_id,
+                        microsoft_id: fetched_user.clone().microsoft_id,
                         is_mail_verified: fetched_user.is_mail_verified,
                         is_phone_verified: fetched_user.is_phone_verified,
                         phone_number: fetched_user.clone().phone_number,
@@ -1408,6 +1418,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -1519,6 +1531,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -1630,6 +1644,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -1741,6 +1757,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -1899,6 +1917,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -2055,6 +2075,8 @@ impl User{
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
                             mail: u.clone().mail,
+                            google_id: u.clone().google_id,
+                            microsoft_id: u.clone().microsoft_id,
                             is_mail_verified: u.clone().is_mail_verified,
                             is_phone_verified: u.clone().is_phone_verified,
                             phone_number: u.clone().phone_number,
@@ -2139,6 +2161,8 @@ impl User{
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
                             mail: u.clone().mail,
+                            google_id: u.clone().google_id,
+                            microsoft_id: u.clone().microsoft_id,
                             is_mail_verified: u.clone().is_mail_verified,
                             is_phone_verified: u.clone().is_phone_verified,
                             phone_number: u.clone().phone_number,
@@ -2286,6 +2310,8 @@ impl User{
                             created_at: updated_user.created_at.to_string(),
                             updated_at: updated_user.updated_at.to_string(),
                             mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
                             is_mail_verified: updated_user.is_mail_verified,
                             is_phone_verified: updated_user.is_phone_verified,
                             phone_number: updated_user.clone().phone_number,
@@ -2408,6 +2434,8 @@ impl User{
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
                                     mail: updated_user.clone().mail,
+                                    google_id: updated_user.clone().google_id,
+                                    microsoft_id: updated_user.clone().microsoft_id,
                                     is_mail_verified: updated_user.is_mail_verified,
                                     is_phone_verified: updated_user.is_phone_verified,
                                     phone_number: updated_user.clone().phone_number,
@@ -2522,6 +2550,8 @@ impl User{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -2630,6 +2660,8 @@ impl User{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -2961,6 +2993,8 @@ impl User{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -3074,6 +3108,8 @@ impl User{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -3180,6 +3216,8 @@ impl User{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -3505,6 +3543,8 @@ impl Id{
                                 created_at: updated_user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: updated_user.clone().mail,
+                                google_id: updated_user.clone().google_id,
+                                microsoft_id: updated_user.clone().microsoft_id,
                                 is_mail_verified: updated_user.is_mail_verified,
                                 is_phone_verified: updated_user.is_phone_verified,
                                 phone_number: updated_user.clone().phone_number,
@@ -3715,6 +3755,8 @@ impl Id{
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
                                     mail: updated_user.mail,
+                                    google_id: updated_user.google_id,
+                                    microsoft_id: updated_user.microsoft_id,
                                     is_mail_verified: updated_user.is_mail_verified,
                                     is_phone_verified: updated_user.is_phone_verified,
                                     phone_number: updated_user.phone_number,

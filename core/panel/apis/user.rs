@@ -182,6 +182,8 @@ async fn login(
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
                         mail: user.mail,
+                        google_id: user.google_id,
+                        microsoft_id: user.microsoft_id,
                         is_mail_verified: user.is_mail_verified,
                         is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,
@@ -989,6 +991,8 @@ async fn login_with_identifier_and_password(
                         created_at: user.created_at.to_string(),
                         updated_at: updated_user.updated_at.to_string(),
                         mail: user.mail,
+                        google_id: user.google_id,
+                        microsoft_id: user.microsoft_id,
                         is_mail_verified: user.is_mail_verified,
                         is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,
@@ -8431,6 +8435,7 @@ async fn join_clp_event(
                     
                         
                         // users_clps schema
+                        // ...
                         todo!()
 
                     }
@@ -8537,6 +8542,7 @@ async fn get_new_clp_event_info(
                     }
 
                     // clp_events schema
+                    // ...
                     todo!()
                     
 
@@ -8740,6 +8746,6 @@ pub mod exports{
     pub use super::register_clp_event;
     pub use super::join_clp_event;
     // pub use super::sell_token_request; /**** cache in-app token ****/
-    // pub use super::advieh_collection;
+    // pub use super::request_advieh_collection;
     // ...
 }

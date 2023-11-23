@@ -76,6 +76,8 @@ diesel::table! {
         discord_username -> Nullable<Varchar>,
         identifier -> Nullable<Varchar>,
         mail -> Nullable<Varchar>,
+        google_id -> Nullable<Varchar>,
+        microsoft_id -> Nullable<Varchar>,
         is_mail_verified -> Bool,
         is_phone_verified -> Bool,
         phone_number -> Nullable<Varchar>,

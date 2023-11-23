@@ -45,7 +45,7 @@ actix-web-actors = "4.2.0"
 actix-broker = "0.4.3"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
-diesel = { version = "2", features = ["postgres", "r2d2", "uuid", "chrono", "serde_json"] }
+diesel = { version = "2", features = ["postgres", "r2d2", "uuid", "chrono", "serde_json", "64-column-tables"] }
 diesel-derive-enum = { version = "2", features = ["postgres"] }
 redis = { version = "0.23", features = ["tokio-comp", "cluster-async", "json"] }
 redis-async = "0.16.1"

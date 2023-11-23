@@ -185,7 +185,7 @@ async fn check_token(
                         .filter(id.eq(_id))
                         .select((id, region, username, bio, avatar, banner, wallet_background, activity_code, twitter_username, 
                                 facebook_username, discord_username,
-                                identifier, mail, is_mail_verified, is_phone_verified, phone_number, paypal_id, account_number, 
+                                identifier, mail, google_id, microsoft_id, is_mail_verified, is_phone_verified, phone_number, paypal_id, account_number, 
                                 device_id, social_id, cid, screen_cid, snowflake_id, stars, user_role, 
                                 token_time, balance, last_login, created_at, updated_at))
                         .first::<FetchUser>(connection);
@@ -233,6 +233,8 @@ async fn check_token(
                         created_at: user.created_at.to_string(),
                         updated_at: user.updated_at.to_string(),
                         mail: user.mail,
+                        google_id: user.google_id,
+                        microsoft_id: user.microsoft_id,
                         is_mail_verified: user.is_mail_verified,
                         is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,

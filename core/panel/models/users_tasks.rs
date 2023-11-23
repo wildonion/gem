@@ -607,6 +607,8 @@ impl UserTask{
                         created_at: user.created_at.to_string(),
                         updated_at: user.updated_at.to_string(),
                         mail: user.mail,
+                        google_id: user.google_id,
+                        microsoft_id: user.microsoft_id,
                         is_mail_verified: user.is_mail_verified,
                         is_phone_verified: user.is_phone_verified,
                         phone_number: user.phone_number,

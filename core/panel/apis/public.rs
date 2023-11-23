@@ -708,6 +708,8 @@ async fn search(
                             created_at: u.created_at.to_string(),
                             updated_at: u.updated_at.to_string(),
                             mail: u.clone().mail,
+                            google_id: u.clone().google_id,
+                            microsoft_id: u.clone().microsoft_id,
                             is_mail_verified: u.is_mail_verified,
                             is_phone_verified: u.is_phone_verified,
                             phone_number: u.clone().phone_number,

@@ -100,6 +100,7 @@ brew install diesel
 brew link --force openssl
 brew install libpq && brew link --force libpq
 brew install graphviz
+brew tap cossacklabs/tap && brew install libthemis
 cargo clean
 ```
 then run:

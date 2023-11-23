@@ -473,7 +473,7 @@ async fn login(
                             /* update the login token time */
                             let now = chrono::Local::now().naive_local();
                             let updated_user = diesel::update(users.find(user.id))
-                                .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+                                .set((users::last_login.eq(now), users::token_time.eq(cookie_token_time)))
                                 .returning(FetchUser::as_returning())
                                 .get_result(connection)
                                 .unwrap();
@@ -510,6 +510,8 @@ async fn login(
                                 created_at: user.created_at.to_string(),
                                 updated_at: updated_user.updated_at.to_string(),
                                 mail: user.mail,
+                                google_id: user.google_id,
+                                microsoft_id: user.microsoft_id,
                                 is_mail_verified: user.is_mail_verified,
                                 is_phone_verified: user.is_phone_verified,
                                 phone_number: user.phone_number,
@@ -2563,17 +2565,19 @@ async fn start_tcp_server(
 
 
 pub mod exports{
-    // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
-    // pub use super::start_new_clp_event;
     /* 
-            ----- crontab will call this api every 5 mins -----
+    https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+    pub use super::start_new_clp_event;
+    ---------------------------------------------------
+    ----- crontab will call this api every 5 mins -----
+    ---------------------------------------------------
         0 - summerize users' chats and generate n titles
         1 - generate a mapping between titles and images using ai
         2 - store them in ipfs, pastel using sense apis
         3 - mint ai generated pictures to users screen_cids inside the chat
-    // pub use super::end_clp_event;
+    pub use super::end_clp_event;
+    pub use super::update_clp_event;
     */
-    // pub use super::update_clp_event;
     // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::login;
