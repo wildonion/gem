@@ -2569,9 +2569,10 @@ pub mod exports{
             ----- crontab will call this api every 5 mins -----
         0 - summerize users' chats and generate n titles
         1 - generate a mapping between titles and images using ai
-        2 - mint ai generated pictures to users screen_cids inside the chat
-    */
+        2 - store them in ipfs, pastel using sense apis
+        3 - mint ai generated pictures to users screen_cids inside the chat
     // pub use super::end_clp_event;
+    */
     // pub use super::update_clp_event;
     // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server

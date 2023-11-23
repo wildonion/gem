@@ -153,7 +153,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::upload_collection_banner);
     config.service(apis::user::exports::create_nft_metadata_uri);
     config.service(apis::user::exports::get_new_clp_event_info);
-    config.service(apis::user::exports::get_all_user_events_info);
+    config.service(apis::user::exports::get_all_user_clp_events_info);
     config.service(apis::user::exports::register_clp_event);
     config.service(apis::user::exports::join_clp_event);
     

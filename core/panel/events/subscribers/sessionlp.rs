@@ -327,7 +327,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                     // TODO - store text in db
                     // users_chats schema
-                    // users_clps schema
                     // ...
 
                 });

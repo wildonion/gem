@@ -79,7 +79,7 @@ pub struct NotifySessionsWithNewMessage{
 pub struct ChatRoomLaunchpadServer{
     pub rooms: HashMap<String, HashSet<String>>, // a mapping between the room or event name and its peer ids
     pub sessions: HashMap<String, Recipient<Message>>, // a mapping between the peer id and its actor address
-    pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs so we have to make connections to use them */
+    pub app_storage: Option<Arc<Storage>>, /* this app storage contains instances of redis, mongodb and postgres dbs */
 }
 
 impl ChatRoomLaunchpadServer{
@@ -154,7 +154,7 @@ impl Actor for ChatRoomLaunchpadServer{
     fn started(&mut self, ctx: &mut Self::Context) {
         
         /*  ----------------------------------------------------------------------------------
-            subscribing to Join and NotifySessionsWithNewMessage messages once
+            > subscribing to Join and NotifySessionsWithNewMessage messages once
             the server actor gets started,
             by loading actix_broker::BrokerSubscribe trait we have access to 
             the traits' methods inside each actor since it's already implemented 
@@ -276,10 +276,10 @@ impl Handler<Connect> for ChatRoomLaunchpadServer{
             })
             .or_insert(HashSet::new());
         
+        info!("💡 chatroomlp --- user with id: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name);
         info!("💡 chatroomlp --- current rooms of chatroom server actor are: {:?}", self.rooms);
 
         let conn_message = format!("chatroomlp::connect::user with id: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name);
-        info!("💡 chatroomlp --- user with id: [{}] connected to chatroom: [{}]", unique_id, msg.peer_name);
         self.send_message(&msg.chatroom_name, conn_message.as_str(), msg.peer_name.clone());
 
         self.cache_room();

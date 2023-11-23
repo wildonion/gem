@@ -98,6 +98,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_chats (id) {
+        id -> Int4,
+        clp_event_id -> Int4,
+        user_id -> Int4,
+        content -> Nullable<Varchar>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_checkouts (id) {
         id -> Int4,
         user_cid -> Varchar,
@@ -119,7 +130,7 @@ diesel::table! {
 diesel::table! {
     users_clps (id) {
         id -> Int4,
-        clp_id -> Int4,
+        clp_event_id -> Int4,
         user_id -> Int4,
         entry_amount -> Nullable<Int8>,
         registered_at -> Timestamptz,
@@ -255,7 +266,9 @@ diesel::table! {
 }
 
 diesel::joinable!(tasks -> users (admin_id));
-diesel::joinable!(users_clps -> clp_events (clp_id));
+diesel::joinable!(users_chats -> clp_events (clp_event_id));
+diesel::joinable!(users_chats -> users (user_id));
+diesel::joinable!(users_clps -> clp_events (clp_event_id));
 diesel::joinable!(users_clps -> users (user_id));
 diesel::joinable!(users_tasks -> tasks (task_id));
 diesel::joinable!(users_tasks -> users (user_id));
@@ -264,6 +277,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     clp_events,
     tasks,
     users,
+    users_chats,
     users_checkouts,
     users_clps,
     users_collections,

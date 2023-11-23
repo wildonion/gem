@@ -1,7 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE IF NOT EXISTS users_clps (
   id SERIAL PRIMARY KEY,
-  clp_id SERIAL REFERENCES clp_events(id),
+  clp_event_id SERIAL REFERENCES clp_events(id),
   user_id SERIAL REFERENCES users(id),
   entry_amount BIGINT,
   registered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,

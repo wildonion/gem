@@ -33,6 +33,14 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
 🎙️ HOSTED ON                                    ==> Digitalocean
+
+# Push Notification WS Routes
+`wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
+`wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
+`wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
+
+# Chatroom Launchpad WS Route
+`wss://notif.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1`
 ```
 
 ### 🗃️ Directory and Structure Explained

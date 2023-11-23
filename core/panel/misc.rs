@@ -3,11 +3,9 @@
 
 use std::io::Write;
 use std::time::{UNIX_EPOCH, SystemTime};
-
 use futures_util::TryStreamExt;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
- 
 use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NOT_VERIFIED_PHONE, USER_SCREEN_CID_NOT_FOUND, INVALID_SIGNATURE, NOT_VERIFIED_MAIL, INSUFFICIENT_FUNDS, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE};
 use crate::events::publishers::role::PlayerRoleInfo;
@@ -598,20 +596,19 @@ pub fn gen_random_idx(idx: usize) -> usize{
     }
 }
 
-/* 
-    we cannot obtain &'static str from a String because Strings may not live 
-    for the entire life of our program, and that's what &'static lifetime means. 
-    we can only get a slice parameterized by String own lifetime from it, we can 
-    obtain a static str but it involves leaking the memory of the String. this is 
-    not something we should do lightly, by leaking the memory of the String, this 
-    guarantees that the memory will never be freed (thus the leak), therefore, any 
-    references to the inner object can be interpreted as having the 'static lifetime.
-    
-    also here it's ok to return the reference from function since our reference lifetime 
-    is static and is valid for the entire life of the app
-*/
 pub fn string_to_static_str(s: String) -> &'static str { 
     /* 
+        we cannot obtain &'static str from a String because Strings may not live 
+        for the entire life of our program, and that's what &'static lifetime means. 
+        we can only get a slice parameterized by String own lifetime from it, we can 
+        obtain a static str but it involves leaking the memory of the String. this is 
+        not something we should do lightly, by leaking the memory of the String, this 
+        guarantees that the memory will never be freed (thus the leak), therefore, any 
+        references to the inner object can be interpreted as having the 'static lifetime.
+        
+        also here it's ok to return the reference from function since our reference lifetime 
+        is static and is valid for the entire life of the app
+
         leaking the memory of the heap data String which allows us to have an 
         unfreed allocation that can be used to define static str using it since
         static means we have static lifetime during the whole lifetime of the app
@@ -624,35 +621,9 @@ pub fn string_to_static_str(s: String) -> &'static str {
         for the remainder of the program. Use this sparingly
     */
     Box::leak(s.into_boxed_str()) 
+
 }
 
-/* 
-    we cannot obtain &'static str from a Vec because Vecs may not live 
-    for the entire life of our program, and that's what &'static lifetime means. 
-    we can only get a slice parameterized by Vec own lifetime from it, we can 
-    obtain a static str but it involves leaking the memory of the Vec. this is 
-    not something we should do lightly, by leaking the memory of the Vec, this 
-    guarantees that the memory will never be freed (thus the leak), therefore, any 
-    references to the inner object can be interpreted as having the 'static lifetime.
-    
-    also here it's ok to return the reference from function since our reference lifetime 
-    is static and is valid for the entire life of the app
-*/
-pub fn vector_to_static_slice(s: Vec<u32>) -> &'static [u32] { 
-    /* 
-        leaking the memory of the heap data Vec which allows us to have an 
-        unfreed allocation that can be used to define static str using it since
-        static means we have static lifetime during the whole lifetime of the app
-        and reaching this using Vec is not possible because heap data types 
-        will be dropped from the heap once their lifetime destroyed in a scope
-        like by moving them into another scope hence they can't be live longer 
-        than static lifetime
-
-        Note: this will leak memory! the memory for the Vec will not be freed 
-        for the remainder of the program. Use this sparingly
-    */
-    Box::leak(s.into_boxed_slice()) 
-}
 
 
 /* -------------------------------------------------------------- */

@@ -145,12 +145,11 @@ async fn chatroomlp(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    
+
+                    // ---------------------------------
                     // TODO - 
-                    // users_clps schema
-                    // chatroomlp validation find with id
-                    // check that the user is already registered and paid for this chatroom
-                    // check that there is a room with the passed in id to the api
+                    // chatroomlp validation find with id (clp_events)
+                    // check that the user is already registered and paid for this chatroom (users_clps)
                     // ...
 
 

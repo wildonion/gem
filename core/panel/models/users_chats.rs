@@ -12,8 +12,8 @@ use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::User;
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
 use super::users_nfts::UserNftData;
-use crate::schema::users_clps::dsl::*;
-use crate::schema::users_clps;
+use crate::schema::users_chats::dsl::*;
+use crate::schema::users_chats;
 use crate::models::clp_events::ClpEvent;
 
 
@@ -22,7 +22,7 @@ use crate::models::clp_events::ClpEvent;
     in order this table works correctly clp_events must be initialized first
     since there is a reference as fk to the pk of clp_events and users
 
-    diesel migration generate users_clps        ---> create users_clps migration sql files
+    diesel migration generate users_chats       ---> create users_chats migration sql files
     diesel migration run                        ---> apply sql files to db 
     diesel migration redo                       ---> drop tables 
 
@@ -30,17 +30,17 @@ use crate::models::clp_events::ClpEvent;
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(ClpEvent))]
-#[diesel(table_name=users_clps)]
-pub struct UserClp{
+#[diesel(table_name=users_chats)]
+pub struct UserChat{
     pub id: i32,
     pub clp_event_id: i32,
     pub user_id: i32,
-    pub entry_amount: i64,
-    pub registered_at: chrono::NaiveDateTime,
-    pub joined_at: chrono::NaiveDateTime,
+    pub content: String,
+    pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
 
-impl UserClp{
+
+impl UserChat{
     
 }

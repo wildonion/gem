@@ -8289,6 +8289,7 @@ async fn register_clp_event(
                         
 
                         // kyc with deposited amount
+                        // users_clps schema
                         // ...
                         
                         todo!()
@@ -8429,6 +8430,7 @@ async fn join_clp_event(
                     } else {
                     
                         
+                        // users_clps schema
                         todo!()
 
                     }
@@ -8534,6 +8536,7 @@ async fn get_new_clp_event_info(
                         }
                     }
 
+                    // clp_events schema
                     todo!()
                     
 
@@ -8574,7 +8577,7 @@ async fn get_new_clp_event_info(
 
 #[get("/clp/get/all/")]
 #[passport(user)]
-async fn get_all_user_events_info(
+async fn get_all_user_clp_events_info(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -8639,6 +8642,7 @@ async fn get_all_user_events_info(
                         }
                     }
 
+                    // join users_clps on clp_events
                     todo!()
                     
 
@@ -8698,7 +8702,7 @@ pub mod exports{
     pub use super::get_all_nft_reactions; /**** all nft comments, likes and dislikes ****/
     pub use super::get_all_nfts_owned_by;
     pub use super::get_new_clp_event_info;
-    pub use super::get_all_user_events_info;
+    pub use super::get_all_user_clp_events_info;
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::login_with_gmail;

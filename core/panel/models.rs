@@ -19,6 +19,7 @@
     |   users_fans        ---> methods of postgres users_fans table
     |   users_clps        ---> methods of postgres users_clps table
     |   clp_events        ---> methods of postgres clp_events table
+    |   users_chats       ---> methods of postgres users_chats table
     |
 */
 
@@ -37,3 +38,4 @@ pub mod users_collections;
 pub mod users_fans;
 pub mod users_clps;
 pub mod clp_events;
+pub mod users_chats;
