@@ -9,6 +9,39 @@ use web3::Web3;
 use wallexerr::*;
 
 
+
+
+/* -------------------------- */
+/* ------- ed25519 ---------- */
+/* -------------------------- */
+pub mod ed25519{
+
+    use super::*;
+    
+    pub fn generate_new_wallet() -> Wallet{
+
+        Wallet::new_ed25519()
+    }
+
+}
+
+/* -------------------------- */
+/* ------- sescp256r1 ------- */
+/* -------------------------- */
+pub mod secp256r1{
+
+    use super::*;
+
+    pub fn generate_new_wallet() -> Wallet{
+
+        Wallet::new_secp256r1()
+    }
+
+}
+
+/* -------------------------- */
+/* ------- sescp256k1 ------- */
+/* -------------------------- */
 pub mod evm{
 
     use super::*;

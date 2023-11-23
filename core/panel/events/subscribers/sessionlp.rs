@@ -324,7 +324,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                 
                 /* store texts in db in a separate thread */
                 tokio::spawn(async move{
+
+                    let wallet = walletreq::secp256r1::generate_new_wallet();
                     
+                    // -------------------------------
                     // TODO - store text in db
                     // users_chats schema
                     // ...
