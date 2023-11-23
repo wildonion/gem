@@ -795,7 +795,8 @@ async fn search(
                         if col.col_name.contains(&query.q) ||
                             col.col_description.contains(&query.q) ||
                             col.owner_screen_cid.contains(&query.q) || 
-                            col.contract_address.contains(&query.q)
+                            col.contract_address.contains(&query.q) || 
+                            col.contract_tx_hash.clone().unwrap_or(String::from("")).contains(&query.q)
                             {
                                 /* -----------------------------------------------------------------
                                     > in those case that we don't want to create a separate struct 
@@ -852,7 +853,9 @@ async fn search(
                                 nft.nft_name.contains(&query.q) ||
                                 nft.nft_description.contains(&query.q) ||
                                 nft.current_owner_screen_cid.contains(&query.q) ||
-                                nft.contract_address.contains(&query.q)
+                                nft.contract_address.contains(&query.q) ||
+                                nft.onchain_id.clone().unwrap().contains(&query.q) ||
+                                nft.tx_hash.clone().unwrap().contains(&query.q)
                             ){
                                 Some(nft)
                             } else{
