@@ -2837,7 +2837,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwODI0MzIxNDEwNDIwMDAwLCJleHAiOjE3MDM0MTYzMjEsImlhdCI6MTcwMDgyNDMyMX0.XOJCcedpUF8z2jA1jJHkAETmVgYov5KQmXb7sKblHf31-Ow3DkkxjxZo3q8WteMJmV-YsfZPtlCEDk6JipH8zg",
 													"type": "string"
 												}
 											]
@@ -2912,7 +2912,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNTg4ODE3MDU3MDAwLCJleHAiOjE3MDE1MzI1ODgsImlhdCI6MTY5ODk0MDU4OH0.8QDS8BRFaE6ca9bEVBl8702OJ8t1Ew90hyb6rtXLMjQBOZem-Or1gmluh8OfMELtPYblGwey8ucmXI0kYtReKg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNTgwMjk5NzgyMzkyMDAwLCJleHAiOjE3MDMxNzIyOTksImlhdCI6MTcwMDU4MDI5OX0.-oIKK8V1mm1qpVEdGegVXeFSek1O_Onfs58_WbW2MOfqwKaqPHs91z19VWEtnPV7HBuZTt9GWiASjXbi3iXeZA",
 													"type": "string"
 												}
 											]
@@ -2925,7 +2925,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": "/Users/wildonion/Desktop/onion.jpeg"
+													"src": "/Users/wildonion/Desktop/deadkings.jpeg"
 												}
 											]
 										},
@@ -3057,6 +3057,61 @@
 												"64c939bfd19645f57fd9f98a",
 												"upload",
 												"avatar"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Token Value",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwODI0MzIxNDEwNDIwMDAwLCJleHAiOjE3MDM0MTYzMjEsImlhdCI6MTcwMDgyNDMyMX0.XOJCcedpUF8z2jA1jJHkAETmVgYov5KQmXb7sKblHf31-Ow3DkkxjxZo3q8WteMJmV-YsfZPtlCEDk6JipH8zg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-public}}/get-token-value/5",
+											"host": [
+												"{{panel-public}}"
+											],
+											"path": [
+												"get-token-value",
+												"5"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Gas Fee",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwODI0MzIxNDEwNDIwMDAwLCJleHAiOjE3MDM0MTYzMjEsImlhdCI6MTcwMDgyNDMyMX0.XOJCcedpUF8z2jA1jJHkAETmVgYov5KQmXb7sKblHf31-Ow3DkkxjxZo3q8WteMJmV-YsfZPtlCEDk6JipH8zg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-public}}/get-gas-fee",
+											"host": [
+												"{{panel-public}}"
+											],
+											"path": [
+												"get-gas-fee"
 											]
 										}
 									},
@@ -4110,7 +4165,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk5Nzc4Mzc3NDAxODE4MDAwLCJleHAiOjE3MDIzNzAzNzcsImlhdCI6MTY5OTc3ODM3N30.N2XsvNi2f_Y71NnBgPWm-l9XfiNvLlaZnlyrYo2eU04mC3v8xBhjegUdzSosdxwrjcQvljsngX4u_tenuCjJSw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNTgwMjk5NzgyMzkyMDAwLCJleHAiOjE3MDMxNzIyOTksImlhdCI6MTcwMDU4MDI5OX0.-oIKK8V1mm1qpVEdGegVXeFSek1O_Onfs58_WbW2MOfqwKaqPHs91z19VWEtnPV7HBuZTt9GWiASjXbi3iXeZA",
 													"type": "string"
 												}
 											]
@@ -4119,7 +4174,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"sell\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"onchain\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4769,27 +4824,6 @@
 											"key": "to",
 											"value": "10"
 										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Get Token Value",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{panel-public}}/get-token-value/5",
-									"host": [
-										"{{panel-public}}"
-									],
-									"path": [
-										"get-token-value",
-										"5"
 									]
 								}
 							},

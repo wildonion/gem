@@ -1598,7 +1598,7 @@ async fn charge_wallet_request(
                         }
 
                         let u_region = user.region.as_ref().unwrap();
-                        let token_price = calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
+                        let token_price = gastracker::calculate_token_value(charge_wallet_request_object.tokens, redis_client.clone()).await;
 
                         match u_region.as_str(){
                             "ir" => {
@@ -8687,9 +8687,242 @@ async fn get_all_user_clp_events_info(
 
 }
 
+#[get("/get-token-value/{tokens}")]
+#[passport(user)]
+async fn get_token_value(
+        req: HttpRequest,  
+        tokens: web::Path<i64>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    let value = gastracker::calculate_token_value(tokens.to_owned(), redis_client.clone()).await;
+                    resp!{
+                        GetTokenValueResponse, // the data type
+                        GetTokenValueResponse{
+                            usd: value.0,
+                            irr: value.1,
+                        }, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/get-gas-fee")]
+#[passport(user)]
+async fn get_gas_fee(
+        req: HttpRequest,  
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match User::passport(req, granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    let get_gas_fee = gastracker::calculate_gas_in_token(redis_client.clone()).await;
+                    let Ok(gas) = get_gas_fee else{
+                        let resp_err = get_gas_fee.unwrap_err();
+                        return resp_err;
+                    };
+
+                    resp!{
+                        i64, // the data type
+                        gas, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 pub mod exports{
     pub use super::upload_rendezvous_player_avatar; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::tasks_report;
+    pub use super::get_token_value;
+    pub use super::get_gas_fee;
     pub use super::get_all_user_withdrawals;
     pub use super::get_all_user_deposits;
     pub use super::get_recipient_unclaimed_deposits;

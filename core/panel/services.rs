@@ -99,6 +99,8 @@ pub fn init_admin(config: &mut web::ServiceConfig){
 */
 pub fn init_user(config: &mut web::ServiceConfig){
     
+    config.service(apis::user::exports::get_token_value);
+    config.service(apis::user::exports::get_gas_fee);
     config.service(apis::user::exports::login);
     config.service(apis::user::exports::login_with_identifier_and_password);
     config.service(apis::user::exports::login_with_gmail);
@@ -198,7 +200,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
 
     config.service(apis::public::exports::verify_twitter_task);
     config.service(apis::public::exports::check_users_task);
-    config.service(apis::public::exports::get_token_value);
     config.service(apis::public::exports::get_x_requests);
     config.service(apis::public::tasks_leaderboard);
     config.service(apis::public::get_user_wallet_info);

@@ -2,7 +2,7 @@
 
 /*
     > ----------------------------------------------------
-    |             CHATROOM LAUNCHPAD WS APIS
+    |       CHATROOM LAUNCHPAD WS SUBSCRIPTION APIS
     | ----------------------------------------------------
     |
     |
@@ -36,9 +36,10 @@ use actix::prelude::*;
 
                           WebSocket Chatroom Launchpad
     
-    an specific user can join an specific chat room to start chat inside an specific 
-    chatroom launchpad, here is the example connect address and make sure that client 
-    is passing the panel JWT to the header request like `Bearer JWT`:
+    an specific user can join an specific chat room by subscribing to the following 
+    endpoint to start chat inside an specific chatroom launchpad event, here is the 
+    example connect address and make sure that client is passing the panel JWT to the 
+    header request like `Bearer JWT`:
 
     Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNDczOTMzNTQ3MjIxMDAwLCJleHAiOjE3MDMwNjU5MzMsImlhdCI6MTcwMDQ3MzkzM30.T1_JWQVLqj_jEC6LxCBF3KpXcWpzcVJxvYxqVT8wDSdOsrcekACo55z9yFhcmxyBN0sEtFaBrGCdKYtASQzFzw
     

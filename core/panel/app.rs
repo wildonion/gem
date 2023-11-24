@@ -100,7 +100,6 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 /* ----------------------------------------- */
 /* ------------ loading modules ------------ */
 /* ----------------------------------------- */
-// mod wallet;     /* contains crypto web3 wallet signing and verification process */
 mod apis;       /* contains http routes and model call logics */
 mod misc;       /* contains miscellaneous and utilities methods and modules */
 mod constants;  /* contains constant and static types */
@@ -117,10 +116,18 @@ mod kyced;      /* contains kyc process of the api body */
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    dotenv::dotenv().expect(".env file must be in here!");
+    let tcp_listener = std::net::TcpListener::bind(
+    format!("{}:{}", 
+            std::env::var("HOST").expect("⚠️ no host variable set"), 
+            std::env::var("PANEL_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap()
+    )).unwrap();
 
+    
     let server = server!
     {
         /* SERVER CONFIGS */
+        tcp_listener
     };
 
     server

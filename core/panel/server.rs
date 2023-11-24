@@ -11,6 +11,7 @@ macro_rules! server {
     (
         
         /* ... setup args go here ... */
+        $tcp_listener:expr
 
     ) => {
         
@@ -29,7 +30,6 @@ macro_rules! server {
             
             env::set_var("RUST_LOG", "trace");
             // env::set_var("RUST_LOG", "actix_web=debug");
-            dotenv().expect("⚠️ .env file not found");
             env_logger::init_from_env(Env::default().default_filter_or("info"));
             let host = std::env::var("HOST").expect("⚠️ no host variable set");
             let port = std::env::var("PANEL_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap();
@@ -185,7 +185,7 @@ macro_rules! server {
                         )
                     ]))
                 }) 
-                .bind((host.as_str(), port)){
+                .listen($tcp_listener){
                     Ok(server) => {
                         server
                             /* 

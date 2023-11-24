@@ -3,6 +3,7 @@
 
 use crate::*;
 
+// openai dalle
 pub mod generate{
 
 } 

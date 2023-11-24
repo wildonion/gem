@@ -1129,3 +1129,11 @@ code: 65532 | message: {"response":"NOK","error":{"status_code":422,"code":"inva
 code: 65532 | message: {"response":"NOK","error":{"status_code":422,"code":"invalid_type","message":"attributes is not a valid list."}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"response\":\"NOK\",\"error\":{\"status_code\":422,\"code\":\"invalid_type\",\"message\":\"attributes is not a valid list.\"}}")) | time: 1699800720776 | method name: nftport::upload_nft_to_ipfs
 code: 65535 | message: duplicate key value violates unique constraint "users_galleries_pkey" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_galleries_pkey\""))) | time: 1700461338161 | method name: UserGallery::insert
 code: 65532 | message: {"response":"NOK","error":{"status_code":500,"code":"internal_server_error","message":"The request could not be completed due to an internal server error."}} | due to: ThirdPartyApi(ReqwestTextResponse("{\"response\":\"NOK\",\"error\":{\"status_code\":500,\"code\":\"internal_server_error\",\"message\":\"The request could not be completed due to an internal server error.\"}}")) | time: 1700580529590 | method name: nftport::update_nft
+code: 65532 | message: {
+  "success":false,
+  "error":{
+    "code":101,
+    "type":"invalid_access_key",
+    "info":"You have not supplied a valid API Access Key. [Technical Support: support@apilayer.com]"
+  }
+} | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":101,\n    \"type\":\"invalid_access_key\",\n    \"info\":\"You have not supplied a valid API Access Key. [Technical Support: support@apilayer.com]\"\n  }\n}")) | time: 1700824832875 | method name: calculate_token_value

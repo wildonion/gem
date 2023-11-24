@@ -324,34 +324,6 @@ async fn verify_twitter_task(
     
 }
 
-
-#[get("/get-token-value/{tokens}")]
-#[passport(admin, user, dev)]
-async fn get_token_value(
-        req: HttpRequest,  
-        tokens: web::Path<i64>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> PanelHttpResponse {
-
-    let storage = storage.as_ref().to_owned();
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
-
-
-    let value = calculate_token_value(tokens.to_owned(), redis_client.clone()).await;
-    resp!{
-        GetTokenValueResponse, // the data type
-        GetTokenValueResponse{
-            usd: value.0,
-            irr: value.1,
-        }, // response data
-        FETCHED, // response message
-        StatusCode::OK, // status code
-        None::<Cookie<'_>>, // cookie
-    }
-
-}
-
 #[get("/get-x-requests")]
 async fn get_x_requests(
         req: HttpRequest,   
@@ -996,7 +968,6 @@ async fn search(
 pub mod exports{
     pub use super::verify_twitter_task;
     pub use super::check_users_task;
-    pub use super::get_token_value;
     pub use super::get_x_requests;
     pub use super::tasks_leaderboard;
     pub use super::get_user_wallet_info;

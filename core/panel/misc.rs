@@ -519,62 +519,6 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 
 }
 
-pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> (i64, i64){
-
-    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let currencty_layer_secret_key = std::env::var("CURRENCY_LAYER_TOKEN").unwrap();
-    let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,GBP,IRR&source=USD&format=1", currencty_layer_secret_key);
-    let res = reqwest::Client::new()
-        .get(endpoint.as_str())
-        .send()
-        .await;
-
-    let get_currencies_response = &mut res.unwrap();
-    let get_currencies_response_bytes = get_currencies_response.chunk().await.unwrap();
-    let err_resp_vec = get_currencies_response_bytes.unwrap().to_vec();
-    let get_currencies_response_json = serde_json::from_slice::<CurrencyLayerResponse>(&err_resp_vec);
-    
-    /* 
-        if we're here means that we couldn't map the bytes into the CurrencyLayerResponse 
-        and perhaps we have errors in response from the currency layer
-    */
-    if get_currencies_response_json.is_err(){
-        
-        /* log caching using redis */
-        let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
-        let get_currencies_logs_key_err = format!("ERROR=>CurrencyLayerResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(get_currencies_logs_key_err, err_resp_str).await;
-
-        /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
-        let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "calculate_token_value");
-        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-        error!("serde decoding currecny layer response error: {}", err_resp_str);
-
-        return (0, 0);
-
-    }
-    
-    let currencies = get_currencies_response_json.unwrap();
-
-    let value_of_a_token_usd = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
-    
-    let final_value = tokens as f64 * value_of_a_token_usd;
-    let scaled_final_value = (final_value * 100.0).round(); // scale to keep 2 decimal places (e.g., 1.23 becomes 123)
-    let final_value_i64: i64 = scaled_final_value as i64;
-
-    let irr_price = scaled_final_value * currencies.quotes.USDIRR;
-    let scaled_final_irr_price = (irr_price * 100.0).round(); 
-    let final_irr_price_i64: i64 = scaled_final_irr_price as i64;
-
-
-    (final_value_i64, final_irr_price_i64)
-
-
-}
-
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{

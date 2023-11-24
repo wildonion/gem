@@ -12,6 +12,15 @@
     | tokio concepts (jobq channels, spawn, select, time interval) by streaming over io 
     | future object of bytes to register a push notif.
     |
+    | streaming over future io bytes can be done using actix|tokio|tonic with thier tlp listeners 
+    | wsactor|http|tcp|grpc in a separate threadpool in tokio::spawn(), actors in a same server must 
+    | use actix to send/recv responses actors in two different mses can use tcp, (g)capnprpc or redis 
+    | to send/recv responses also there must be a message and stream handlers implemented for actors 
+    | so they can communicate with each other and different parts of the app to send/receive static 
+    | lazy mutex streams of utf8 bytes data based on serde_json, web::Payload, Multipart and capnp and
+    | protobuf codecs throught rpc or mpsc channel based on tokio::spawn,mpsc,mailbox,mutex,select,time 
+    | we can also have a pubsub pattern for them using libp2pgossipsub,rpc,redisstreamqueue,actixbroker
+    |
 */
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
@@ -22,7 +31,6 @@ use s3req::Storage;
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web::dev::Payload;
- 
 use crate::events::subscribers::chatroomlp::{
     
     ChatRoomLaunchpadServer, Disconnect as ChatRoomLaunchpadServerDisconnectMessage,
@@ -330,6 +338,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     // -------------------------------
                     // TODO - store text in db
                     // users_chats schema
+                    // chat encryption using wallet or aes256
                     // ...
 
                 });
