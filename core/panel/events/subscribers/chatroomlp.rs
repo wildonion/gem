@@ -248,6 +248,7 @@ impl Handler<Disconnect> for ChatRoomLaunchpadServer{
         }
 
     }
+    
 }
 
 impl Handler<Connect> for ChatRoomLaunchpadServer{

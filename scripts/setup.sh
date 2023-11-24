@@ -14,6 +14,7 @@ sudo systemctl status docker
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 cargo install diesel_cli --no-default-features --features postgres
+cargo build #------> build proto files
 
 curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm && sudo npm install pm2@latest -g

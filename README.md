@@ -106,6 +106,8 @@ cargo clean
 then run:
 
 ```bash
+# build proto files
+cargo build
 # 🧪 Test Conse Hyper Server
 cargo test --bin rendezvous
 # 🏃 Run Conse Hyper Server
