@@ -32,6 +32,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 🤖 X BOT                                        ==> https://api.xbot.conse.app
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
+🧙‍♂️ KYC gRPC SERVER                              ==> <DIGITAL_OCEAN_VPS_PUBLIC_IP>:7436
 🎙️ HOSTED ON                                    ==> Digitalocean
 
 # Push Notification WS Routes
@@ -54,6 +55,8 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
     * `phonereq`: OTP code sender crate.
     * `s3req`: shared state storage crate.
     * `walletreq`: wallexerr crate.
+    * `gastracker`: gastracker crate.
+    * `grpc`: KYC grpc server.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
     * `rendezvous`: rendezvous service APIs
         * `controllers`: in-game async controllers related to hyper server.
@@ -67,7 +70,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 * `scripts`: deployment scripts
 * `test`: gem test codes like admin and dev password generator script
 
-## 📘 Docs
+## 📘 Docs and Collections
 
 * [Engines](https://github.com/wildonion/gem/wiki/Engines)
 
@@ -76,6 +79,12 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 * [Reveal Role](https://github.com/wildonion/gem/wiki/Reveal-Role)
 
 * [TLPS](https://github.com/wildonion/gem/wiki/TLPs)
+
+* [HTTP Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&creator=22927035)
+
+* [Websocket Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/65619b4947e9207e30af90fa?action=share&creator=22927035)
+
+* [gRPC Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/65619a9b26e3b575756a3ee5?action=share&creator=22927035)
 
 ## 🛠️ Development Setup
 
@@ -106,7 +115,7 @@ cargo clean
 then run:
 
 ```bash
-# build proto files
+# 🥒 build proto files
 cargo build
 # 🧪 Test Conse Hyper Server
 cargo test --bin rendezvous
@@ -114,6 +123,8 @@ cargo test --bin rendezvous
 cargo run --bin rendezvous #---> cargo build --bin rendezvous --release
 # 🏃🏽‍♀️ Run Conse Actix Panel Server
 cargo run --bin panel #---> cargo build --bin panel --release
+# 🏃🏽‍♀️ Run Conse KYC gRPC Server
+cargo run --bin grpc #---> cargo build --bin grpc --release
 # 🏃🏿 Run Conse Test Codes
 cargo run --bin contest
 ```

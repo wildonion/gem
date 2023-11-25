@@ -4,7 +4,7 @@
 		"name": "gem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
-		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
+		"_collection_link": "https://dewoloper.postman.co/workspace/9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
 	},
 	"item": [
 		{
@@ -3086,7 +3086,8 @@
 												"get-token-value",
 												"5"
 											]
-										}
+										},
+										"description": "> Note: The `usd` field in response need to gets divided by **10000000** to extract the exact amount of token based in **USD.**"
 									},
 									"response": []
 								},
@@ -4552,7 +4553,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQxOTUyMjI1OTQ3MDAwLCJleHAiOjE2OTc2MzM5NTIsImlhdCI6MTY5NTA0MTk1Mn0.jknOjsKMbAwOmxC0_WHyTb85KXfA3hqsQ9ynsOs6FLKFD9Xw-Xz6YOx-OzEczc9bfZoh_UgrHhhjWhnw4axbWg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwODI0MzIxNDEwNDIwMDAwLCJleHAiOjE3MDM0MTYzMjEsImlhdCI6MTcwMDgyNDMyMX0.XOJCcedpUF8z2jA1jJHkAETmVgYov5KQmXb7sKblHf31-Ow3DkkxjxZo3q8WteMJmV-YsfZPtlCEDk6JipH8zg",
 											"type": "string"
 										}
 									]
@@ -4561,7 +4562,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"caller_cid\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+									"raw": "{\n    \"caller_cid\": \"038af3f6272cfeeeed4a9916bdc6d34534cb5146386f70d68116ccf2293a41b7d8\",\n    \"tx_signature\": \"8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c\",\n    \"hash_data\": \"b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"

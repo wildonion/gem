@@ -111,6 +111,10 @@ name = "xcord"
 path = "core/xcord/src/bot.rs"
 
 [[bin]]
+name = "grpc"
+path = "core/grpc/src/app.rs"
+
+[[bin]]
 name = "contest"
 path = "test/tests.rs"
 

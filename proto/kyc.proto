@@ -2,15 +2,18 @@ syntax = "proto3";
 package kyc;
 
 message KycRequest {
-  int32 _id = 2;
-  string cid = 3;
-  string tx_signature = 4;
-  string hash_data = 5;
-  int64 deposited_amount = 6;
+  string cid = 1;
+  string tx_signature = 2;
+  string hash_data = 3;
 }
 
 message KycResponse {
-  string screen_cid = 1;
+  string username = 1;
+  string avatar = 2;
+  string mail = 3;
+  string screen_cid = 4;
+  int64 stars = 5;
+  string created_at = 6;
 }
 
 service KycService {

@@ -1,0 +1,199 @@
+
+
+
+use log::error;
+use log::info;
+use serde::Deserialize;
+use serde::Serialize;
+use tonic::Status;
+use crate::{*, kyc::kyc_service_server::KycService};
+use tonic::Request as TonicRequest;
+use tonic::Response as TonicResponse;
+
+
+pub const APP_NAME: &str = "Conse";
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct CheckKycRequest{
+    pub caller_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct UserWalletInfoResponse{
+    pub username: String,
+    pub avatar: Option<String>,
+    pub mail: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* keccak256 */
+    pub stars: Option<i64>,
+    pub created_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct PanelHttpKycResponse{
+    /* 
+        since we don't know the type of data coming from panel server
+        we're mapping it into json Value first then based on our need
+        we can map the json value into our desired structure
+    */
+    pub data: serde_json::Value, /* can by any type of json data */
+    pub message: String,
+    pub status: u16,
+    pub is_error: bool
+}
+
+/* this is our server */
+#[derive(Clone, Debug, Default)]
+pub struct KycServer{}
+
+
+/* > ----------------------------------------------------------------------------------
+   | -> each rpc ds is like an actix actor contains:
+   |    * message and stream handlers
+   |    * tcp based listener to stream over incoming connections to map 
+   |      packet bytes like Capnp, Protobuf, serde_json, Multipart and 
+   |      Payload into data struct
+   |    * inner concurrent features for sending/receiving message, handling
+   |      async tasks using inner tokio::spawn,mpsc,mailbox,mutex,select,time 
+   | -> two actors in two apps communicate through http and pubsub patterns using rpc
+   | -> two actors in an app communicate through message sending and pubsub 
+   |    patterns using mpsc and redis
+*/
+impl KycServer{
+
+    pub async fn start() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+
+        let addr = format!("{}:{}", 
+            std::env::var("HOST").expect("⚠️ no host variable set"), 
+            std::env::var("KYC_GRPC_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap()
+        ).parse::<std::net::SocketAddr>().unwrap();
+        
+        info!("➔ 🚀 {} panel gRPC server has launched from [{}] at {}", 
+            APP_NAME, addr, chrono::Local::now().naive_local());
+
+        let kyc = KycServer::default(); 
+        TonicServer::builder()
+            /* 
+                creating a new server service actor from the EchoServer 
+                structure which is our rpc server 
+            */
+            .add_service(KycServiceServer::new(kyc))
+            .serve(addr)
+            .await
+            .unwrap();
+
+        Ok(())
+        
+    }
+
+}
+
+/* -----------------------------------------------------------------------------------------
+    every actor like actix actors must have some message structs to send pre defined message
+    to other actors or send message from different parts of the app to the actor also it must
+    contains a handler to handle the incoming messages or streams and respond the caller with
+    appropriate message, node.proto is an actor which contains message structs and service 
+    handlers KycService handler contains a method called verify which can be used to handle 
+    incoming requests and send a response back to the caller, we're implementing the KycService 
+    handlder trait for the KycServer struct in here which allows us to handle and accept the 
+    requests and send tonic response directly back to the caller of the verify method, for every
+    service handler in proto file we have to implement the trait in here for the server struct
+    so client can call the methods directly.
+*/
+#[tonic::async_trait]
+impl KycService for KycServer{
+
+    /* --------------------------------------------------------------
+        verify is a method of the KycService actor that can be called
+        directly by the gRPC client
+    */
+    async fn verify(&self, request: TonicRequest<KycRequest>) -> Result<TonicResponse<KycResponse>, Status> {
+
+        info!("got a request at time {:?} | {:?}", chrono::Local::now().naive_local(), request);
+        
+        let request_parts = request.into_parts();
+        let kyc_rpc_request_body = request_parts.2;
+        let metadata = request_parts.0;
+        let get_headeres = metadata.get("authorization");
+        
+        let kyc_http_request_body = CheckKycRequest{ 
+            caller_cid: kyc_rpc_request_body.cid, 
+            tx_signature: kyc_rpc_request_body.tx_signature, 
+            hash_data: kyc_rpc_request_body.hash_data 
+        };
+
+        match get_headeres{
+
+            Some(metadata_value) => {
+
+                let jwt = format!("Bearer {}", metadata_value.to_str().unwrap());
+                
+                /* ----- local endpoint ----- */
+                // let endpoint = format!("http://{}:{}/health/am-i-kyced",
+                //     std::env::var("HOST").unwrap(),
+                //     std::env::var("PANEL_PORT").unwrap()
+                // );
+
+                let endpoint = std::env::var("KYC_GRPC_PANEL_KYC_CALLBACK").unwrap();
+                match reqwest::Client::new()
+                    .post(endpoint.as_str())
+                    .header("Authorization", &jwt)
+                    .json(&kyc_http_request_body)
+                    .send()
+                    .await
+                    {
+                        Ok(resp) => {
+                            
+                            match resp
+                                .json::<PanelHttpKycResponse>()
+                                .await
+                                {
+                                    Ok(kyc_http_resp) => {
+                                        
+                                        if kyc_http_resp.is_error{
+                                            return Err(Status::unavailable(&format!("panel http server said -> {}", kyc_http_resp.message)));
+                                        }
+
+                                        let data = serde_json::from_value::<UserWalletInfoResponse>(kyc_http_resp.data).unwrap();
+                                        let kyc_resp = KycResponse{ 
+                                            username: data.username, 
+                                            avatar: data.avatar.unwrap_or(String::from("")), 
+                                            mail: data.mail.unwrap_or(String::from("")), 
+                                            screen_cid: data.screen_cid.unwrap_or(String::from("")), 
+                                            stars: data.stars.unwrap_or(0), 
+                                            created_at: data.created_at 
+                                        };
+            
+                                        Ok(TonicResponse::new(kyc_resp))
+                                    },
+                                    Err(e) => {
+
+                                        error!("error response from panel http server at time {:?} | {}", chrono::Local::now().naive_local(), e.to_string());
+                                        let kyc_resp = KycResponse::default();
+                                        Err(Status::unavailable(&e.to_string()))
+                                    }
+                                }
+
+                        },
+                        Err(e) => {
+
+                            error!("error response from panel http server at time {:?} | {}", chrono::Local::now().naive_local(), e.to_string());
+                            let kyc_resp = KycResponse::default();
+                            Err(Status::data_loss(&e.to_string()))
+
+                        }
+                    }
+            },
+            None => {
+
+                error!("found no jwt in metadata {:?}", chrono::Local::now().naive_local());
+                let kyc_resp = KycResponse::default();
+                Err(Status::unauthenticated("invalid token"))
+
+            }
+        }
+
+    }
+}

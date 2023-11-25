@@ -95,9 +95,7 @@ use base64::{engine, alphabet, Engine as _};
 use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use kyc::{KycRequest, KycResponse, kyc_service_client::KycServiceClient, kyc_service_server::KycServiceServer};
-use tonic::transport::Server as TonicServer;
-use crate::grpc::server::KycServer;
+
 
 
 /* ----------------------------------------- */
@@ -114,18 +112,8 @@ mod error;      /* contains error handler logis */
 mod adapters;   /* contains all third party apis */
 mod server;     /* contains server handler methods and macros */
 mod kyced;      /* contains kyc process of the api body */
-mod grpc;       /* contains grpc server for kyc requests */
 
 
-
-/* ---------------------------------------------------------
-    loading the compiled proto file into rust code in here 
-    contains traits and data structures to use them in here 
-    to create rpc server and client
-*/
-pub mod kyc{
-    tonic::include_proto!("kyc");
-}
 
 
 #[actix_web::main]
@@ -139,14 +127,12 @@ async fn main() -> std::io::Result<()> {
     )).unwrap();
 
 
-    // let server = server!
-    // {
-    //     /* SERVER CONFIGS */
-    //     tcp_listener
-    // };
+    let server = server!
+    {
+        /* SERVER CONFIGS */
+        tcp_listener
+    };
 
-    // server
-
-    KycServer::start().await
+    server
 
 }

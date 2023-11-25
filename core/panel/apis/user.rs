@@ -8755,6 +8755,10 @@ async fn get_token_value(
                         }
                     }
 
+                    /* 
+                        Note: The usd field in response need to gets divided by 10000000 to extract 
+                        the exact amount of token based in USD.
+                    */
                     let value = gastracker::calculate_token_value(tokens.to_owned(), redis_client.clone()).await;
                     resp!{
                         GetTokenValueResponse, // the data type

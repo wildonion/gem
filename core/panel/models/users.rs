@@ -148,6 +148,7 @@ pub struct UserWalletInfoResponse{
     pub stars: Option<i64>,
     pub created_at: String,
 }
+
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct UserIdResponse{
     pub id: i32,

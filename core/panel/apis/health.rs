@@ -657,7 +657,7 @@ async fn update_user_balance_webhook(
 
 }
 
-#[get("/am-i-kyced")]
+#[post("/am-i-kyced")]
 #[passport(admin, user, dev)]
 async fn is_user_kyced(
         req: HttpRequest,  
