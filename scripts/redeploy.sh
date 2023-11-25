@@ -137,6 +137,9 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker build -t xcord-$TIMESTAMP -f Dockerfile . --no-cache
         sudo docker run -d --link redis --network gem --name xcord-$TIMESTAMP -v $(pwd)/infra/logs/xcord/:/app/logs xcord-$TIMESTAMP
         
+        sudo docker build -t conse-grpc-$TIMESTAMP -f $(pwd)/infra/docker/grpc/Dockerfile . --no-cache
+        sudo docker run -d --restart unless-stopped --network gem --name conse-grpc-$TIMESTAMP -p 7436:7435 conse-grpc-$TIMESTAMP
+
         sudo docker build --t xbot-$TIMESTAMP -f $(pwd)/infra/docker/xbot/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --network getm --name xbot-$TIMESTAMP -p 4246:4245 xbot-$TIMESTAMP
 

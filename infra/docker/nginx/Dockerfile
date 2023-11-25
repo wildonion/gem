@@ -41,6 +41,9 @@ COPY key-jenkins.conse.app.pem /etc/nginx/key-jenkins.conse.app.pem
 #notif.panel.conse.app:
 COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
 COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
+#rpc.conse.app:
+COPY cert-rpc.conse.app.pem /etc/nginx/cert-rpc.conse.app.pem
+COPY key-rpc.conse.app.pem /etc/nginx/key-rpc.conse.app.pem
 
 # COPY /etc/letsencrypt/live/deadcat.ir/fullchain.pem /etc/nginx/cert.pem
 # COPY /etc/letsencrypt/live/deadcat.ir/privkey.pem /etc/nginx/key.pem
@@ -62,6 +65,7 @@ COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf
 COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
 COPY api.panel.stripewh.conse.app.conf /etc/nginx/api.panel.stripewh.conse.app.conf
 COPY api.xbot.conse.app.conf /etc/nginx/api.xbot.conse.app.conf
+COPY rpc.conse.app.conf /etc/nginx/rpc.conse.app.conf
 
 # Start Nginx in the foreground when the Docker container starts
 CMD ["nginx", "-g", "daemon off;"]

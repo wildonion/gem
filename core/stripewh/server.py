@@ -24,8 +24,9 @@ notify (it's like a notification to the server) server about the event happend
 as a result of handling another process in some where like a payment result in 
 which server subscribes to incoming event type and can publish it to redispubsub 
 so other app, threads and scopes can also subscribe to it 
-receiving async stripe payment events, remember to register a webhook
-in stripe dashboard so stripe knows where to deliver events
+receiving async stripe payment events, remember to register this webhook url
+in stripe dashboard so stripe knows where to deliver events, this event will be
+triggered once a payment process gets done
 '''
 
 @app.route('/webhook', methods=['POST'])

@@ -32,7 +32,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 🤖 X BOT                                        ==> https://api.xbot.conse.app
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
-🧙‍♂️ KYC gRPC SERVER                              ==> rpc.kyc.conse.app
+🧙‍♂️ KYC gRPC SERVER                              ==> rpc.conse.app/kyc.KycService
 🎙️ HOSTED ON                                    ==> Digitalocean
 
 # Push Notification WS Routes
@@ -145,7 +145,7 @@ jenkins.conse.app            #---> points to the jenkins UI
 portainer.conse.app          #---> points to the portainer UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
 api.xbot.conse.app           #---> twitter bot to verify twitter tasks 
-rpc.kyc.conse.app            #---> KYC gRPC server 
+rpc.conse.app                #---> gRPC server actors
 ```
 
 > keep in mind that multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:

@@ -19,7 +19,10 @@ mod server;
 /* ---------------------------------------------------------
     loading the compiled proto file into rust code in here 
     contains traits and data structures to use them in here 
-    to create rpc server and client
+    to create rpc server and client, once we build the server
+    for production all the generated rust codes from proto 
+    will be compile too, thus there is no need to put any code
+    in the root path.
 */
 pub mod kyc{
     tonic::include_proto!("kyc");
