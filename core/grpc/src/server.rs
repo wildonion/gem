@@ -57,9 +57,10 @@ pub struct KycServer{}
    |      Payload into data struct
    |    * inner concurrent features for sending/receiving message, handling
    |      async tasks using inner tokio::spawn,mpsc,mailbox,mutex,select,time 
-   | -> two actors in two apps communicate through http and pubsub patterns using rpc
+   | -> two actors in two apps communicate through http and pubsub channels using rpc
    | -> two actors in an app communicate through message sending and pubsub 
-   |    patterns using mpsc and redis
+   |    channels using mpsc and redis
+   |
 */
 impl KycServer{
 
@@ -90,7 +91,7 @@ impl KycServer{
 
 }
 
-/* -----------------------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------------------------
     every actor like actix actors must have some message structs to send pre defined message
     to other actors or send message from different parts of the app to the actor also it must
     contains a handler to handle the incoming messages or streams and respond the caller with
@@ -105,13 +106,13 @@ impl KycServer{
 #[tonic::async_trait]
 impl KycService for KycServer{
 
-    /* --------------------------------------------------------------
+    /* ---------------------------------------------------------------
         verify is a method of the KycService actor that can be called
         directly by the gRPC client
     */
     async fn verify(&self, request: TonicRequest<KycRequest>) -> Result<TonicResponse<KycResponse>, Status> {
 
-        info!("got a request at time {:?} | {:?}", chrono::Local::now().naive_local(), request);
+        info!("got an rpc request at time {:?} | {:?}", chrono::Local::now().naive_local(), request);
         
         let request_parts = request.into_parts();
         let kyc_rpc_request_body = request_parts.2;
@@ -153,6 +154,8 @@ impl KycService for KycServer{
                                     Ok(kyc_http_resp) => {
                                         
                                         if kyc_http_resp.is_error{
+
+                                            /* terminating the caller with an error */
                                             return Err(Status::unavailable(&format!("panel http server said -> {}", kyc_http_resp.message)));
                                         }
 

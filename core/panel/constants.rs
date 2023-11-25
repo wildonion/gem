@@ -2,10 +2,38 @@
 
 
 
+use futures::executor::block_on;
+use s3req::Storage;
+
 use crate::*;
 
 pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
+
+
+pub static STORAGE: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
+
+    let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
+    let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
+    let db_username = env::var("DB_USERNAME").expect("⚠️ no db username variable set");
+    let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
+    let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
+    let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
+
+    let app_storage = block_on(
+        s3req::storage!{ // this publicly has exported inside the misc so we can access it here 
+            db_name,
+            db_engine,
+            db_host,
+            db_port,
+            db_username,
+            db_password
+        }
+    );
+
+    app_storage
+
+});
 
 pub static INVALID_SIGNATURE: &str = "Invalid Signature";
 pub static INVALID_TOKEN_AMOUNT: &str = "Minimum Token Amounts Must Be 5";
@@ -107,6 +135,7 @@ pub static EMPTY_USERS_TASKS: &str = "No User Tasks Are Available";
 pub static COMPLETE_VERIFICATION_PROCESS: &str = "Users Tasks Verification Completed Successfully";
 pub static TCP_SERVER_ERROR: &str = "Can't Start Tcp Listener";
 pub static TCP_SERVER_STARTED: &str = "Tcp Listener Started Successfully";
+pub static GRPC_SERVER_STARTED: &str = "gRPC Listener Started Successfully";
 pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
 pub static NO_GALLERY_FOUND: &str = "No Gallery Found";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";

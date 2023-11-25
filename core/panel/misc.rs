@@ -76,14 +76,6 @@ pub struct TwitterAccounts{
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct TcpServerData{
-    pub data: String,
-    pub from_cid: String,
-    pub tx_signature: String,
-    pub hash_data: String,
-}
-
-#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct AddGroupInfoToEvent{
     pub _id: String, // ObjectId is the bson type of _id inside the mongodb
     pub name: String,

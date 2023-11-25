@@ -2295,45 +2295,6 @@
 							"response": []
 						},
 						{
-							"name": "Start TCP Listener",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NTEwODcwNDUzODYyMzAwMCwiZXhwIjoxNjk3NzAwNzA0LCJpYXQiOjE2OTUxMDg3MDR9.DpIbBdUCkBvE9GGaDUxFR3NCp8rarYp9r0pZNvhRPNbKx_CuK-Lfr0KBpV1_FNBih6OcQ1VeDX9uoOJQ5vCqaQ",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"data\": \"name=wildonion?age=26\",\n    \"tx_signature\": \"71f09f60cac98ea5051ce8682362ea7947168695358dab4622dba820240c411475ce48bc8aa438a5587f7a0f67357037103dd70b52117016387b9db8d6a065ae1b\",\n    \"hash_data\": \"8498f2c41b723f011c7c69590defdbb9a6d788e48b515989520b41df1d12ec68\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-admin}}/listener/start/tcp/2425",
-									"host": [
-										"{{panel-admin}}"
-									],
-									"path": [
-										"listener",
-										"start",
-										"tcp",
-										"2425"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Get Users Deposits",
 							"request": {
 								"auth": {

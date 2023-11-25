@@ -32,7 +32,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 🤖 X BOT                                        ==> https://api.xbot.conse.app
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
-🧙‍♂️ KYC gRPC SERVER                              ==> <DIGITAL_OCEAN_VPS_PUBLIC_IP>:7436
+🧙‍♂️ KYC gRPC SERVER                              ==> rpc.kyc.conse.app
 🎙️ HOSTED ON                                    ==> Digitalocean
 
 # Push Notification WS Routes
@@ -46,7 +46,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 
 ### 🗃️ Directory and Structure Explained
 
-* `core`: hyper, actix web HTTP and actix WS servers.
+* `core`: hyper, tonic gRPC, actix web HTTP and actix WS servers.
     * `stripewh`: stripe webhook listener for checkout events.
     * `xbot`: X bot for twitter tasks verification.
     * `xcord`: discord bot to broadcast new twitter task defined by admin into a discord channel and role assginement based on user points.
@@ -108,6 +108,7 @@ brew install openssl
 brew install diesel
 brew link --force openssl
 brew install libpq && brew link --force libpq
+brew install protobuf
 brew install graphviz
 brew tap cossacklabs/tap && brew install libthemis
 cargo clean
@@ -144,6 +145,7 @@ jenkins.conse.app            #---> points to the jenkins UI
 portainer.conse.app          #---> points to the portainer UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
 api.xbot.conse.app           #---> twitter bot to verify twitter tasks 
+rpc.kyc.conse.app            #---> KYC gRPC server 
 ```
 
 > keep in mind that multiple domains can point to a same VPS which their ssl-s and routes can be setup by nginx also multiple (sub)domains of different domains can point to multiple VPS-es which can be setup inside the DNS panel of those domains like the following:

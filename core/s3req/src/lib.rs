@@ -95,7 +95,7 @@ impl Db{
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Storage{
     pub id: Uuid,
     pub db: Option<Db>, // we could have no db at all

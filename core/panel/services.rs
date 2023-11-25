@@ -74,7 +74,6 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::edit_task);
     config.service(apis::admin::exports::edit_user);
     config.service(apis::admin::exports::delete_user);
-    config.service(apis::admin::exports::start_tcp_server);
     config.service(apis::admin::exports::get_users);
     config.service(apis::admin::exports::get_admin_tasks);
     config.service(apis::admin::exports::get_users_tasks);
