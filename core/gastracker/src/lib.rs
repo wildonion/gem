@@ -137,7 +137,14 @@ pub async fn calculate_gas_in_token(redis_client: redis::Client) -> Result<i64, 
     info!(" ---> current_token_value {}", current_token_value);
     info!(" ---> gas_price_in_usd {}", gas_price_in_usd);
 
-    Ok(amount_of_token_to_be_burned_i64)
+    Ok(
+
+        if amount_of_token_to_be_burned_i64 == 0{
+            1
+        } else{
+            amount_of_token_to_be_burned_i64
+        }
+    )
 
 }
 

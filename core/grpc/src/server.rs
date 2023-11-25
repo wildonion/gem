@@ -108,11 +108,13 @@ impl KycService for KycServer{
 
     /* ---------------------------------------------------------------
         verify is a method of the KycService actor that can be called
-        directly by the gRPC client
+        directly by the gRPC client, note that the TonicResponse is 
+        not Send means that we can't share it across threads
     */
     async fn verify(&self, request: TonicRequest<KycRequest>) -> Result<TonicResponse<KycResponse>, Status> {
 
-        info!("got an rpc request at time {:?} | {:?}", chrono::Local::now().naive_local(), request);
+        info!("got an gRPC request at time {:?} | {:?}", 
+            chrono::Local::now().naive_local(), request);
         
         let request_parts = request.into_parts();
         let kyc_rpc_request_body = request_parts.2;
@@ -146,7 +148,7 @@ impl KycService for KycServer{
                     .await
                     {
                         Ok(resp) => {
-                            
+                                  
                             match resp
                                 .json::<PanelHttpKycResponse>()
                                 .await
@@ -156,7 +158,7 @@ impl KycService for KycServer{
                                         if kyc_http_resp.is_error{
 
                                             /* terminating the caller with an error */
-                                            return Err(Status::unavailable(&format!("panel http server said -> {}", kyc_http_resp.message)));
+                                            return Err(Status::unavailable(&format!("panel http server got an error -> {}", kyc_http_resp.message)));
                                         }
 
                                         let data = serde_json::from_value::<UserWalletInfoResponse>(kyc_http_resp.data).unwrap();
@@ -173,7 +175,8 @@ impl KycService for KycServer{
                                     },
                                     Err(e) => {
 
-                                        error!("error response from panel http server at time {:?} | {}", chrono::Local::now().naive_local(), e.to_string());
+                                        error!("error response from panel http server at time {:?} | {}", 
+                                            chrono::Local::now().naive_local(), e.to_string());
                                         let kyc_resp = KycResponse::default();
                                         Err(Status::unavailable(&e.to_string()))
                                     }
@@ -182,7 +185,8 @@ impl KycService for KycServer{
                         },
                         Err(e) => {
 
-                            error!("error response from panel http server at time {:?} | {}", chrono::Local::now().naive_local(), e.to_string());
+                            error!("error response from panel http server at time {:?} | {}", 
+                                chrono::Local::now().naive_local(), e.to_string());
                             let kyc_resp = KycResponse::default();
                             Err(Status::data_loss(&e.to_string()))
 

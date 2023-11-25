@@ -93,9 +93,9 @@ impl ChatRoomLaunchpadServer{
         }
     }
 
-    /* ------------------------- */
-    /* caching rooms using redis */
-    /* ------------------------- */
+    /* ----------------------------- */
+    /*   caching rooms using redis   */
+    /* ----------------------------- */
     pub fn cache_room(&mut self){
 
         /* we'll use this to fetch users' info in a room */
@@ -258,8 +258,8 @@ impl Handler<Connect> for ChatRoomLaunchpadServer{
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result{
         
         // generating unique random session id 
-        // let mut r = rand::thread_rng();
-        // let unique_id = r.gen::<usize>();
+        let mut r = rand::thread_rng();
+        let random_unique_id = r.gen::<usize>();
         
         /* insert new session using the screen_cid */
         let unique_id = msg.peer_name.clone();

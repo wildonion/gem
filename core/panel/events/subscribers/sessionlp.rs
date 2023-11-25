@@ -334,7 +334,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                 tokio::spawn(async move{
 
                     let wallet = walletreq::secp256r1::generate_new_wallet();
-                    
+
                     // -------------------------------
                     // TODO - store text in db
                     // users_chats schema
@@ -342,7 +342,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     // ...
 
                 });
-
 
             },
             ws::Message::Binary(_) => info!("unexpected binary"),
