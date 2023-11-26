@@ -12,12 +12,15 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 
 ## 🚟 Infra Routes and APIs
 
+> Ensure that any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
+
 ```bash
 # ---------------------------------------------------------------------------------------------------
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
 # conse panel admin username/password            : adminy/4dmin@%$^$3hjsD
 # postgres adminer username/password/server      : postgres/geDteDd0Ltg2135FJYQ6rjNYHYkGQa70/postgres
 # ---------------------------------------------------------------------------------------------------
+🎙️ HOSTED ON                                    ==> Digitalocean
 🥛 WEBSOCKET PUSH NOTIFICATION ROUTE            ==> wss://notif.panel.conse.app/subscribe/
 🌍 MAIN SITE                                    ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/
@@ -32,8 +35,7 @@ Conse is a crypto based friendly gathering board **Game Event Manager**, adverti
 🤖 X BOT                                        ==> https://api.xbot.conse.app
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
 🗂️ PANEL ASSETS FOLDER                          ==> https://api.panel.conse.app/assets
-🧙‍♂️ KYC gRPC SERVER                              ==> rpc.conse.app/kyc.KycService
-🎙️ HOSTED ON                                    ==> Digitalocean
+🧙‍♂️ KYC gRPC SERVER                              ==> grpcs://rpc.conse.app/kyc.KycService/Verify
 
 # Push Notification WS Routes
 `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`

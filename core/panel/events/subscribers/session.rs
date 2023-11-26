@@ -7,10 +7,8 @@
     | contains: message structures and their handlers + WS realtime stream message handler
     |
     | with actors we can communicate between different parts of the app by sending async 
-    | messages to each other through jobq channels, they also must have a handler for each 
-    | type of incoming messages like redis streams and pubsub patterns with ws actors and 
-    | tokio concepts (jobq channels, spawn, select, time interval) by streaming over io 
-    | future object of bytes to register a push notif.
+    | messages to other actors through jobq channels, they also must have a handler for each 
+    | type of incoming messages.
     |
 */
 

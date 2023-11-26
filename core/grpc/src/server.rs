@@ -49,17 +49,17 @@ pub struct PanelHttpKycResponse{
 pub struct KycServer{}
 
 
-/* > ----------------------------------------------------------------------------------
-   | -> each rpc ds is like an actix actor contains:
-   |    * message and stream handlers
-   |    * tcp based listener to stream over incoming connections to map 
-   |      packet bytes like Capnp, Protobuf, serde_json, Multipart and 
-   |      Payload into data struct
-   |    * inner concurrent features for sending/receiving message, handling
-   |      async tasks using inner tokio::spawn,mpsc,mailbox,mutex,select,time 
-   | -> two actors in two apps communicate through http and pubsub channels using rpc
-   | -> two actors in an app communicate through message sending and pubsub 
-   |    channels using mpsc and redis
+/* > ------------------------------------------------------------------
+   | -> each rpc ds is like an actix actor which contains:
+   |    * inner message handlers to communicate with different parts of the app's actors
+   |    * tcp based stream handlers and listeners to stream over incoming connections 
+   |      to map packet bytes like Capnp, Protobuf, serde_json, Multipart, BSON and 
+   |      Payload into desired data struct
+   |    * inner concurrent task handlers for sending/receiving message, handling
+   |      async tasks from outside of the app using tokio::spawn,mpsc,mailbox,mutex,
+   |      rwlock,select,time 
+   | -> two actors in two apps communicate through streaming and pubsub channels using rcp http2 and redis
+   | -> two actors in an app communicate through streaming and pubsub channels using mpsc and redis 
    |
 */
 impl KycServer{
@@ -70,17 +70,17 @@ impl KycServer{
             std::env::var("HOST").expect("⚠️ no host variable set"), 
             std::env::var("KYC_GRPC_PORT").expect("⚠️ no panel port variable set").parse::<u16>().unwrap()
         ).parse::<std::net::SocketAddr>().unwrap();
-        
+
         info!("➔ 🚀 {} panel gRPC server has launched from [{}] at {}", 
             APP_NAME, addr, chrono::Local::now().naive_local());
 
-        let kyc = KycServer::default(); 
+        let kyc_rpc_server = KycServer::default(); 
+        /* 
+            creating a new server service actor from the EchoServer 
+            structure which is our rpc server 
+        */
         TonicServer::builder()
-            /* 
-                creating a new server service actor from the EchoServer 
-                structure which is our rpc server 
-            */
-            .add_service(KycServiceServer::new(kyc))
+            .add_service(KycServiceServer::new(kyc_rpc_server))
             .serve(addr)
             .await
             .unwrap();
@@ -102,6 +102,10 @@ impl KycServer{
     requests and send tonic response directly back to the caller of the verify method, for every
     service handler in proto file we have to implement the trait in here for the server struct
     so client can call the methods directly.
+
+    each service in protobuf is a trait in rust which allows us to implement it for any server 
+    struct and overwrite its handler methods to accept rpc request in form of single structure
+    or streaming and sequencing of data structures.
 */
 #[tonic::async_trait]
 impl KycService for KycServer{
