@@ -111,6 +111,7 @@ mod error;      /* contains error handler logis */
 mod adapters;   /* contains all third party apis */
 mod server;     /* contains server handler methods and macros */
 mod kyced;      /* contains kyc process of the api body */
+mod passport;   /* contains passport traits for HttpRequest */
 
 
 

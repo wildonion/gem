@@ -8294,6 +8294,7 @@ async fn register_clp_event(
                         
 
                         // kyc with deposited amount
+                        // user balance must be higher than the entry amount of the event
                         // users_clps schema
                         // ...
                         
@@ -8628,7 +8629,6 @@ async fn get_all_user_clp_events_info(
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
-
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
             match User::passport(req, granted_role, connection).await{

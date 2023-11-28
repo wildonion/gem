@@ -1009,7 +1009,7 @@ impl UserCollection{
             return Err(err_resp);
         };
 
-        /* caller must be the collection owner */
+        /* caller must be the collection owner, we've got the caller screen_cid from the JWT id */
         if collection_owner_screen_cid != collection_data.owner_screen_cid{
 
             let resp = Response::<'_, &[u8]>{

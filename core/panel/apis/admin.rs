@@ -14,6 +14,7 @@ use crate::models::users_checkouts::{UserCheckout, UserCheckoutData};
 use crate::models::users_deposits::{UserDeposit, UserDepositData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
+use crate::passport::Passport;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -644,7 +645,7 @@ async fn register_new_user(
                 and if a type is behind a pointer we can't move it into a new scope we must either
                 clone it or borrow it
             */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -782,7 +783,7 @@ async fn edit_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -916,7 +917,7 @@ async fn delete_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1059,7 +1060,7 @@ async fn get_users(
                 };
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1190,7 +1191,7 @@ async fn register_new_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1338,7 +1339,7 @@ async fn delete_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1491,7 +1492,7 @@ async fn edit_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1622,7 +1623,7 @@ async fn get_admin_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1752,7 +1753,7 @@ async fn get_users_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1883,7 +1884,7 @@ async fn add_twitter_account(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2062,7 +2063,7 @@ async fn get_all_users_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2190,7 +2191,7 @@ async fn get_all_users_withdrawals(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2307,7 +2308,7 @@ async fn get_all_users_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2375,8 +2376,6 @@ async fn get_all_users_checkouts(
 
 pub mod exports{
     /* 
-    https://docs.nftport.xyz/reference/deploy-nft-collection-contract
-    pub use super::start_new_clp_event;
     ---------------------------------------------------
     ----- crontab will call this api every 5 mins -----
     ---------------------------------------------------
@@ -2384,6 +2383,8 @@ pub mod exports{
         1 - generate a mapping between titles and images using ai
         2 - store them in ipfs, pastel using sense apis
         3 - mint ai generated pictures to users screen_cids inside the chat
+    https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+    pub use super::start_new_clp_event;
     pub use super::end_clp_event;
     pub use super::update_clp_event;
     */

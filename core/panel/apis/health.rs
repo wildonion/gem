@@ -8,7 +8,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use s3req::Storage;
- 
+use passport::Passport;
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -175,7 +175,7 @@ async fn check_token(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -359,7 +359,7 @@ async fn logout(
                 }
             };
 
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -498,7 +498,7 @@ async fn get_tasks(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -703,8 +703,8 @@ async fn is_user_kyced(
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
-            
-            match User::passport(req, granted_role, connection).await{
+
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

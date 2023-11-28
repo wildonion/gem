@@ -16,6 +16,7 @@ use crate::events::subscribers::sessionlp::WsLaunchpadSession;
 use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
+use crate::passport::Passport;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -103,7 +104,7 @@ async fn chatroomlp(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req.clone(), granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
