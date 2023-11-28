@@ -10,8 +10,10 @@ use crate::{*, kyc::kyc_service_server::KycService};
 use tonic::Request as TonicRequest;
 use tonic::Response as TonicResponse;
 
-
-pub const APP_NAME: &str = "Conse";
+const fn app_name<'a>() -> &'a str{
+    APP_NAME
+}
+const APP_NAME: &str = "Conse";
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -72,7 +74,7 @@ impl KycServer{
         ).parse::<std::net::SocketAddr>().unwrap();
 
         info!("➔ 🚀 {} panel gRPC server has launched from [{}] at {}", 
-            APP_NAME, addr, chrono::Local::now().naive_local());
+            app_name(), addr, chrono::Local::now().naive_local());
 
         let kyc_rpc_server = KycServer::default(); 
         /* 
@@ -87,6 +89,12 @@ impl KycServer{
         
         Ok(())
         
+    }
+
+    fn restart() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+
+        Ok(())
+
     }
 
 }

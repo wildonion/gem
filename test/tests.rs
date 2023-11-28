@@ -21,7 +21,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
 
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
-    // gen_passwords();
+    /* ---------------- generate admin and dev passwords ---------------- */
+    gen_passwords();
 
     let body_content = format!("Use this code to get verified in ----: ----");
     let mut data = HashMap::new();
