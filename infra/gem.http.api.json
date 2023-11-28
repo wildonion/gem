@@ -2594,7 +2594,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"avatar\": \"\"\n}",
+											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"gavatar\": \"\",\n    \"gid\": \"\",\n    \"gusername\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2798,7 +2798,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwODI0MzIxNDEwNDIwMDAwLCJleHAiOjE3MDM0MTYzMjEsImlhdCI6MTcwMDgyNDMyMX0.XOJCcedpUF8z2jA1jJHkAETmVgYov5KQmXb7sKblHf31-Ow3DkkxjxZo3q8WteMJmV-YsfZPtlCEDk6JipH8zg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMTYxNTgzOTYxMzQzMDAwLCJleHAiOjE3MDM3NTM1ODMsImlhdCI6MTcwMTE2MTU4M30.es3106w0cKqg2b04yk-q26R_ifCp5PuhKEQYMEVBwfwMje9P7Zqz5GsMjGjutfXjzsss47sHcMZ4oRYtQC-Zlw",
 													"type": "string"
 												}
 											]
