@@ -3604,8 +3604,8 @@ impl Id{
                 let wallet = walletreq::evm::get_wallet();
                 let data_to_be_signed = serde_json::json!({
                     "owner_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
-                    "gal_name": format!("{} first private gallery", id_username),
-                    "gal_description": format!("{} first private gallery", id_username),
+                    "gal_name": format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
+                    "gal_description": format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
                     "extra": None::<Option<serde_json::Value>> // serde needs to know the exact type of extra which can be any json value data
                 });
 
@@ -3638,8 +3638,8 @@ impl Id{
                     let create_new_gal = UserPrivateGallery::insert(
                         NewUserPrivateGalleryRequest{
                             owner_cid: wallet.secp256k1_public_key.as_ref().unwrap().to_string(),
-                            gal_name: format!("{} very first private gallery", id_username),
-                            gal_description: format!("{} very first private gallery", id_username),
+                            gal_name: format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
+                            gal_description: format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
                             extra: None,
                             tx_signature: hex::encode(&signed_data.signature.0),
                             hash_data: sign_res.clone().1,
@@ -3650,9 +3650,17 @@ impl Id{
                         return Err(error_resp);
                     };
 
-                } else{
-                    // can't create private gallery then :(
+                } else{ // can't create private gallery then :(
                     error!("🔴 invalid signature");
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: INVALID_SIGNATURE,
+                        status: 406,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    );
                 }
                 /* ------------------------------------------------------------ */
 

@@ -1137,3 +1137,6 @@ code: 65532 | message: {
     "info":"You have not supplied a valid API Access Key. [Technical Support: support@apilayer.com]"
   }
 } | due to: ThirdPartyApi(ReqwestTextResponse("{\n  \"success\":false,\n  \"error\":{\n    \"code\":101,\n    \"type\":\"invalid_access_key\",\n    \"info\":\"You have not supplied a valid API Access Key. [Technical Support: support@apilayer.com]\"\n  }\n}")) | time: 1700824832875 | method name: calculate_token_value
+code: 65535 | message: duplicate key value violates unique constraint "users_galleries_gal_name_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_galleries_gal_name_key\""))) | time: 1701161402324 | method name: UserGallery::insert
+code: 65535 | message: duplicate key value violates unique constraint "users_galleries_gal_name_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_galleries_gal_name_key\""))) | time: 1701161610722 | method name: UserGallery::insert
+code: 65535 | message: duplicate key value violates unique constraint "users_galleries_gal_name_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_galleries_gal_name_key\""))) | time: 1701161743750 | method name: UserGallery::insert

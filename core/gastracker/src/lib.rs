@@ -55,7 +55,7 @@ pub async fn gwei_to_usd() -> Result<f64, PanelHttpResponse>{
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: &e.to_string(),
-                    status: 417,
+                    status: 406,
                     is_error: true
                 };
                 return Err(
@@ -100,7 +100,7 @@ pub async fn calculate_gas_in_token(redis_client: redis::Client) -> Result<i64, 
                 let resp = Response::<&[u8]>{
                     data: Some(&[]),
                     message: &e.to_string(),
-                    status: 417,
+                    status: 406,
                     is_error: true
                 };
                 return Err(
