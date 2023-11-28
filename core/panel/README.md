@@ -24,6 +24,8 @@
     - create nfts and upload their artworkds on pastel network storage using sense and cascade technologies
     - mint, buy and transfer nfts on polygon network in the platform
 - buy and sell in-app token (charge wallet and stripe apis)
+- get token price and gas fee
+- register, get and join latest chatroom launchpad event
 
 ### 👑 Admin Access
 - publish reveal role topic of an event `<---rendezvous jwt--->` rendezvous hyper server
@@ -43,8 +45,8 @@
 ### 🌎 Public Access
 - user twitter task verification using twitter bot
 - check user twitter task 
-- get token price
 - tasks leaderboard
+- search
 - get ratelimit info of xbot
 - get user wallet info
 
