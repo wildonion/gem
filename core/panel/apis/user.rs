@@ -1078,6 +1078,7 @@ async fn login_with_gmail(
             let connection = &mut pg_pool.get().unwrap();
 
             let user_gmail_request = user_gmail_request.to_owned();
+            
 
             todo!()
 
