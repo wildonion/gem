@@ -14,6 +14,7 @@
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::models::users::{User, UserWalletInfoResponse};
+use crate::models::users_chats::UserChat;
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use s3req::Storage;
@@ -287,8 +288,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                     let notify_msg = NotifySessionsWithNewMessage{
                         chat_room: chatroom_name,
-                        session_id,
-                        new_message: new_message.clone().to_string(),
+                        session_id: session_id,
+                        new_message: new_message.to_string(),
                     };
 
                     /* 
@@ -318,17 +319,42 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                 });
 
-                
-                /* store texts in db in a separate thread */
+                /* --------- storing texts in db in a separate thread --------- */
+                let app_storage = self.app_storage.clone();
+                let chatroom_name = self.chat_room.to_string().clone();
+                let session_id = self.id.clone();
+
                 tokio::spawn(async move{
 
-                    let wallet = walletreq::secp256r1::generate_new_wallet();
+                    /*  >------------------------------------------------------------------------------
+                        unwrapping process of app_storage and creating pg connection must be done inside 
+                        the tokio::spawn since we can't move pg pool into this scope because self will be 
+                        moved too which will be dropped once the ws::Message::Text{} arm gets executed 
+                        which won't last across .awaits inside the tokio::spawn sicne tokio::spawn is another 
+                        and separate thread also note that when we're solving a future inside tokio:::spawn 
+                        or another thread all the types used inside the future scopes must be Send so we 
+                        can share them safely also they must have valid lifetime across .await or before 
+                        and after the future since futures will be pinned into the ram until they get solved 
+                        and executed and rust however drop the lifetime of the type once it goes 
+                        out of the scope.
+                    */
+                    let pool_conn = app_storage.unwrap();
+                    let connection = &mut pool_conn.get_pgdb_sync().unwrap().get().unwrap();
 
-                    // -------------------------------
-                    // TODO - store text in db
-                    // users_chats schema
-                    // chat encryption using wallet or aes256
-                    // ...
+                    /* 
+                        all the types passed in to the UserChat::store must be Send 
+                        in this tokio::spawn green threadpool so tokio executor can
+                        share them safely between threads
+                    */
+                    if let Err(resp) = UserChat::store(
+                        chatroom_name.parse::<i32>().unwrap(),
+                        &session_id,
+                        &save_me_in_db,
+                        connection
+                    ).await{
+
+                        error!("WsLaunchpadSession::StreamHandler::handle::UserChat::store error: {:?}", resp);
+                    }
 
                 });
 

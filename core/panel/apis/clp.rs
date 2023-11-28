@@ -109,6 +109,7 @@ async fn chatroomlp(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
+                    /* extracting path vars */
                     let clpucid = clpucid.to_owned();
                     let chat_room = clpucid.0;
                     let user_cid = clpucid.1;

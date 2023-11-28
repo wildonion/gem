@@ -42,5 +42,25 @@ pub struct UserChat{
 
 
 impl UserChat{
-    
+
+    pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserChat, PanelHttpResponse>{
+
+        let get_user = User::find_by_screen_cid(user_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let wallet = walletreq::secp256r1::generate_new_wallet();
+
+        // -------------------------------
+        // TODO - store text in db
+        // users_chats schema
+        // chat encryption using wallet or aes256
+        // ...
+
+        todo!()
+    }
 }
