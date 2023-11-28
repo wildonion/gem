@@ -3606,7 +3606,7 @@ impl Id{
                     "owner_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
                     "gal_name": format!("{} first private gallery", id_username),
                     "gal_description": format!("{} first private gallery", id_username),
-                    "extra": None::<Option<serde_json::Value>> // serde needs to know the exact type of extra
+                    "extra": None::<Option<serde_json::Value>> // serde needs to know the exact type of extra which can be any json value data
                 });
 
                 let sign_res = walletreq::evm::sign(

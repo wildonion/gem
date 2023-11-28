@@ -91,7 +91,6 @@ use once_cell::sync::Lazy;
 use constants::PanelHttpResponse;
 use panel_macros::passport; /* loading from lib.rs which contains proc macros */
 use snowflake::SnowflakeIdGenerator;
-use base64::{engine, alphabet, Engine as _};
 use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};
