@@ -44,7 +44,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker stop jenkins-blueocean && sudo docker rm -f jenkins-blueocean
         sudo docker stop portainer && sudo docker rm -f portainer
         sudo docker stop spacetimedb && sudo docker rm -f spacetimedb
-        sudo docker run -d --name spacetimedb --rm --pull always -p 7556:80 clockworklabs/spacetimedb start
+        sudo docker run -d --network gem --name spacetimedb --rm --pull always -p 7556:80 clockworklabs/spacetimedb start
 
         sudo docker run --name jenkins-docker --rm --detach \
         --privileged --network gem --network-alias docker \
@@ -155,6 +155,8 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
         read CONSE_PANEL_DB_STORAGE
 
+        sudo mkdir -p $(pwd)/core/panel/spacetimedb/client/chatdb
+        spacetime generate --lang rust --out-dir $(pwd)/core/panel/spacetimedb/client/chatdb --project-path .
         if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
             echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
             sudo docker build -t conse-panel-pg-$TIMESTAMP -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache

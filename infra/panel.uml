@@ -6,6 +6,12 @@ skinparam linetype ortho
 entity "**users_checkouts**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
+* <b>""iat""</b>: //""timestamp with time zone""  //
+* <b>""user_cid""</b>: //""character varying""  //
+* <b>""product_id""</b>: //""character varying""  //
+* <b>""price_id""</b>: //""character varying""  //
+* <b>""payment_status""</b>: //""character varying""  //
+* <b>""payment_intent""</b>: //""character varying""  //
 * <b>""c_status""</b>: //""character varying""  //
 * <b>""checkout_session_url""</b>: //""character varying""  //
 * <b>""checkout_session_id""</b>: //""character varying""  //
@@ -13,12 +19,53 @@ entity "**users_checkouts**" {
 * <b>""tokens""</b>: //""bigint""  //
 * <b>""usd_token_price""</b>: //""bigint""  //
 * <b>""tx_signature""</b>: //""character varying""  //
-* <b>""iat""</b>: //""timestamp with time zone""  //
-* <b>""payment_intent""</b>: //""character varying""  //
-* <b>""payment_status""</b>: //""character varying""  //
-* <b>""price_id""</b>: //""character varying""  //
-* <b>""product_id""</b>: //""character varying""  //
-* <b>""user_cid""</b>: //""character varying""  //
+}
+
+entity "**users_phones**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""user_id""</b>: //""integer""  //
+* <b>""phone""</b>: //""character varying""  //
+* <b>""code""</b>: //""character varying""  //
+* <b>""exp""</b>: //""bigint""  //
+* <b>""vat""</b>: //""bigint""  //
+}
+
+entity "**users**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""screen_cid""</b>: //""character varying""  //
+* <b>""region""</b>: //""character varying""  //
+* <b>""username""</b>: //""character varying""  //
+* <b>""bio""</b>: //""character varying""  //
+* <b>""avatar""</b>: //""character varying""  //
+* <b>""banner""</b>: //""character varying""  //
+* <b>""wallet_background""</b>: //""character varying""  //
+* <b>""activity_code""</b>: //""character varying""  //
+* <b>""twitter_username""</b>: //""character varying""  //
+* <b>""facebook_username""</b>: //""character varying""  //
+* <b>""discord_username""</b>: //""character varying""  //
+* <b>""identifier""</b>: //""character varying""  //
+* <b>""mail""</b>: //""character varying""  //
+* <b>""google_id""</b>: //""character varying""  //
+* <b>""microsoft_id""</b>: //""character varying""  //
+* <b>""phone_number""</b>: //""character varying""  //
+* <b>""paypal_id""</b>: //""character varying""  //
+* <b>""account_number""</b>: //""character varying""  //
+* <b>""device_id""</b>: //""character varying""  //
+* <b>""social_id""</b>: //""character varying""  //
+* <b>""cid""</b>: //""character varying""  //
+* <b>""snowflake_id""</b>: //""bigint""  //
+* <b>""stars""</b>: //""bigint""  //
+* <b>""pswd""</b>: //""character varying""  //
+* <b>""token_time""</b>: //""bigint""  //
+* <b>""balance""</b>: //""bigint""  //
+* <b>""last_login""</b>: //""timestamp with time zone""  //
+* <b>""is_mail_verified""</b>: //""boolean""  //
+* <b>""is_phone_verified""</b>: //""boolean""  //
+* <b>""user_role""</b>: //""userrole""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
 }
 
 entity "**__diesel_schema_migrations**" {
@@ -27,20 +74,10 @@ entity "**__diesel_schema_migrations**" {
 * <b>""run_on""</b>: //""timestamp without time zone""  //
 }
 
-entity "**users_clps**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""user_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""clp_event_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""joined_at""</b>: //""timestamp with time zone""  //
-* <b>""registered_at""</b>: //""timestamp with time zone""  //
-* <b>""entry_amount""</b>: //""bigint""  //
-}
-
 entity "**users_deposits**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
+* <b>""is_claimed""</b>: //""boolean""  //
 * <b>""iat""</b>: //""timestamp with time zone""  //
 * <b>""mint_tx_hash""</b>: //""character varying""  //
 * <b>""nft_id""</b>: //""character varying""  //
@@ -49,153 +86,30 @@ entity "**users_deposits**" {
 * <b>""recipient_screen_cid""</b>: //""character varying""  //
 * <b>""amount""</b>: //""bigint""  //
 * <b>""tx_signature""</b>: //""character varying""  //
-* <b>""is_claimed""</b>: //""boolean""  //
 }
 
-entity "**users_mails**" {
+entity "**users_clps**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""user_id""</b>: //""integer""  //
-* <b>""vat""</b>: //""bigint""  //
-* <b>""exp""</b>: //""bigint""  //
-* <b>""code""</b>: //""character varying""  //
-* <b>""mail""</b>: //""character varying""  //
-}
-
-entity "**users_galleries**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""invited_friends""</b>: //""text[]""  //
-* <b>""extra""</b>: //""jsonb""  //
-* <b>""gal_description""</b>: //""character varying""  //
-* <b>""gal_name""</b>: //""character varying""  //
-* <b>""collections""</b>: //""jsonb""  //
-* <b>""owner_screen_cid""</b>: //""character varying""  //
+* <b>""clp_event_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""user_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
 * <b>""updated_at""</b>: //""timestamp with time zone""  //
-}
-
-entity "**clp_events**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""event_name""</b>: //""character varying""  //
-* <b>""symbol""</b>: //""character varying""  //
-* <b>""max_supply""</b>: //""integer""  //
-* <b>""team_reserve""</b>: //""integer""  //
-* <b>""mint_price""</b>: //""bigint""  //
-* <b>""presale_mint_price""</b>: //""bigint""  //
-* <b>""tokens_per_mint""</b>: //""integer""  //
-* <b>""owner_screen_cid""</b>: //""character varying""  //
-* <b>""treasury_address""</b>: //""character varying""  //
-* <b>""public_mint_start_date""</b>: //""character varying""  //
-* <b>""base_uri""</b>: //""character varying""  //
-* <b>""presale_mint_start_date""</b>: //""character varying""  //
-* <b>""prereveal_token_uri""</b>: //""character varying""  //
-* <b>""contract_address""</b>: //""character varying""  //
-* <b>""royalties_address_screen_cid""</b>: //""character varying""  //
-* <b>""event_background""</b>: //""character varying""  //
-* <b>""extra""</b>: //""jsonb""  //
-* <b>""event_description""</b>: //""character varying""  //
-* <b>""contract_tx_hash""</b>: //""character varying""  //
-* <b>""metadata_updatable""</b>: //""boolean""  //
-* <b>""freeze_metadata""</b>: //""boolean""  //
-* <b>""presale_whitelisted_addresses""</b>: //""text[]""  //
-* <b>""start_at""</b>: //""bigint""  //
-* <b>""expire_at""</b>: //""bigint""  //
-* <b>""is_locked""</b>: //""boolean""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""royalties_share""</b>: //""integer""  //
-* <b>""nfts""</b>: //""jsonb""  //
-}
-
-entity "**users_fans**" {
-# <b>""user_screen_cid""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""friends""</b>: //""jsonb""  //
-* <b>""invitation_requests""</b>: //""jsonb""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-}
-
-entity "**users**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""bio""</b>: //""character varying""  //
-* <b>""username""</b>: //""character varying""  //
-* <b>""region""</b>: //""character varying""  //
-* <b>""is_phone_verified""</b>: //""boolean""  //
-* <b>""is_mail_verified""</b>: //""boolean""  //
-* <b>""last_login""</b>: //""timestamp with time zone""  //
-* <b>""balance""</b>: //""bigint""  //
-* <b>""token_time""</b>: //""bigint""  //
-* <b>""pswd""</b>: //""character varying""  //
-* <b>""stars""</b>: //""bigint""  //
-* <b>""snowflake_id""</b>: //""bigint""  //
-* <b>""screen_cid""</b>: //""character varying""  //
-* <b>""cid""</b>: //""character varying""  //
-* <b>""social_id""</b>: //""character varying""  //
-* <b>""device_id""</b>: //""character varying""  //
-* <b>""account_number""</b>: //""character varying""  //
-* <b>""paypal_id""</b>: //""character varying""  //
-* <b>""phone_number""</b>: //""character varying""  //
-* <b>""microsoft_id""</b>: //""character varying""  //
-* <b>""google_id""</b>: //""character varying""  //
-* <b>""mail""</b>: //""character varying""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""identifier""</b>: //""character varying""  //
-* <b>""discord_username""</b>: //""character varying""  //
-* <b>""facebook_username""</b>: //""character varying""  //
-* <b>""user_role""</b>: //""userrole""  //
-* <b>""twitter_username""</b>: //""character varying""  //
-* <b>""activity_code""</b>: //""character varying""  //
-* <b>""wallet_background""</b>: //""character varying""  //
-* <b>""banner""</b>: //""character varying""  //
-* <b>""avatar""</b>: //""character varying""  //
-}
-
-entity "**users_tasks**" {
-# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
-# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
----
-* <b>""done_at""</b>: //""timestamp with time zone""  //
-}
-
-entity "**tasks**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""admin_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""task_score""</b>: //""integer""  //
-* <b>""task_name""</b>: //""character varying""  //
-* <b>""task_description""</b>: //""character varying""  //
-* <b>""task_priority""</b>: //""integer""  //
-* <b>""hashtag""</b>: //""character varying""  //
-* <b>""tweet_content""</b>: //""character varying""  //
-* <b>""retweet_id""</b>: //""character varying""  //
-* <b>""like_tweet_id""</b>: //""character varying""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-}
-
-entity "**users_phones**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""phone""</b>: //""character varying""  //
-* <b>""user_id""</b>: //""integer""  //
-* <b>""vat""</b>: //""bigint""  //
-* <b>""exp""</b>: //""bigint""  //
-* <b>""code""</b>: //""character varying""  //
+* <b>""entry_amount""</b>: //""bigint""  //
+* <b>""registered_at""</b>: //""timestamp with time zone""  //
+* <b>""joined_at""</b>: //""timestamp with time zone""  //
 }
 
 entity "**users_collections**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""symbol""</b>: //""character varying""  //
+* <b>""metadata_updatable""</b>: //""boolean""  //
+* <b>""freeze_metadata""</b>: //""boolean""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
 * <b>""contract_address""</b>: //""character varying""  //
 * <b>""nfts""</b>: //""jsonb""  //
 * <b>""col_name""</b>: //""character varying""  //
+* <b>""symbol""</b>: //""character varying""  //
 * <b>""owner_screen_cid""</b>: //""character varying""  //
 * <b>""base_uri""</b>: //""character varying""  //
 * <b>""royalties_share""</b>: //""integer""  //
@@ -204,52 +118,128 @@ entity "**users_collections**" {
 * <b>""extra""</b>: //""jsonb""  //
 * <b>""col_description""</b>: //""character varying""  //
 * <b>""contract_tx_hash""</b>: //""character varying""  //
-* <b>""metadata_updatable""</b>: //""boolean""  //
+}
+
+entity "**clp_events**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
 * <b>""freeze_metadata""</b>: //""boolean""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""public_mint_start_date""</b>: //""character varying""  //
+* <b>""treasury_address""</b>: //""character varying""  //
+* <b>""owner_screen_cid""</b>: //""character varying""  //
+* <b>""tokens_per_mint""</b>: //""integer""  //
+* <b>""presale_mint_price""</b>: //""bigint""  //
+* <b>""mint_price""</b>: //""bigint""  //
+* <b>""team_reserve""</b>: //""integer""  //
+* <b>""max_supply""</b>: //""integer""  //
+* <b>""symbol""</b>: //""character varying""  //
+* <b>""event_name""</b>: //""character varying""  //
+* <b>""nfts""</b>: //""jsonb""  //
+* <b>""contract_address""</b>: //""character varying""  //
 * <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""is_locked""</b>: //""boolean""  //
+* <b>""expire_at""</b>: //""bigint""  //
+* <b>""start_at""</b>: //""bigint""  //
+* <b>""presale_whitelisted_addresses""</b>: //""text[]""  //
+* <b>""metadata_updatable""</b>: //""boolean""  //
+* <b>""contract_tx_hash""</b>: //""character varying""  //
+* <b>""event_description""</b>: //""character varying""  //
+* <b>""extra""</b>: //""jsonb""  //
+* <b>""event_background""</b>: //""character varying""  //
+* <b>""royalties_address_screen_cid""</b>: //""character varying""  //
+* <b>""royalties_share""</b>: //""integer""  //
+* <b>""prereveal_token_uri""</b>: //""character varying""  //
+* <b>""presale_mint_start_date""</b>: //""character varying""  //
+* <b>""base_uri""</b>: //""character varying""  //
+}
+
+entity "**users_fans**" {
+# <b>""user_screen_cid""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""invitation_requests""</b>: //""jsonb""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""friends""</b>: //""jsonb""  //
 }
 
 entity "**users_nfts**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
+* <b>""attributes""</b>: //""jsonb""  //
+* <b>""extra""</b>: //""jsonb""  //
+* <b>""current_price""</b>: //""bigint""  //
+* <b>""is_minted""</b>: //""boolean""  //
+* <b>""nft_description""</b>: //""character varying""  //
+* <b>""nft_name""</b>: //""character varying""  //
 * <b>""onchain_id""</b>: //""character varying""  //
 * <b>""metadata_uri""</b>: //""character varying""  //
-* <b>""nft_name""</b>: //""character varying""  //
-* <b>""nft_description""</b>: //""character varying""  //
-* <b>""extra""</b>: //""jsonb""  //
-* <b>""attributes""</b>: //""jsonb""  //
-* <b>""comments""</b>: //""jsonb""  //
-* <b>""likes""</b>: //""jsonb""  //
-* <b>""tx_hash""</b>: //""character varying""  //
-* <b>""is_minted""</b>: //""boolean""  //
-* <b>""current_price""</b>: //""bigint""  //
-* <b>""is_listed""</b>: //""boolean""  //
+* <b>""current_owner_screen_cid""</b>: //""character varying""  //
+* <b>""contract_address""</b>: //""character varying""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
 * <b>""freeze_metadata""</b>: //""boolean""  //
+* <b>""tx_hash""</b>: //""character varying""  //
+* <b>""likes""</b>: //""jsonb""  //
+* <b>""comments""</b>: //""jsonb""  //
+* <b>""is_listed""</b>: //""boolean""  //
+}
+
+entity "**tasks**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""admin_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""task_name""</b>: //""character varying""  //
+* <b>""task_description""</b>: //""character varying""  //
+* <b>""task_score""</b>: //""integer""  //
+* <b>""task_priority""</b>: //""integer""  //
+* <b>""hashtag""</b>: //""character varying""  //
+* <b>""tweet_content""</b>: //""character varying""  //
+* <b>""retweet_id""</b>: //""character varying""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""like_tweet_id""</b>: //""character varying""  //
+}
+
+entity "**users_galleries**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
 * <b>""created_at""</b>: //""timestamp with time zone""  //
 * <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""contract_address""</b>: //""character varying""  //
-* <b>""current_owner_screen_cid""</b>: //""character varying""  //
+* <b>""owner_screen_cid""</b>: //""character varying""  //
+* <b>""collections""</b>: //""jsonb""  //
+* <b>""gal_name""</b>: //""character varying""  //
+* <b>""gal_description""</b>: //""character varying""  //
+* <b>""extra""</b>: //""jsonb""  //
+* <b>""invited_friends""</b>: //""text[]""  //
 }
 
 entity "**users_withdrawals**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
 * <b>""recipient_cid""</b>: //""character varying""  //
-* <b>""tx_signature""</b>: //""character varying""  //
-* <b>""wat""</b>: //""timestamp with time zone""  //
-* <b>""deposit_id""</b>: //""integer""  //
 * <b>""transfer_tx_hash""</b>: //""character varying""  //
+* <b>""deposit_id""</b>: //""integer""  //
+* <b>""wat""</b>: //""timestamp with time zone""  //
+* <b>""tx_signature""</b>: //""character varying""  //
 }
 
-entity "**users_chats**" {
+entity "**users_tasks**" {
+# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+---
+* <b>""done_at""</b>: //""timestamp with time zone""  //
+}
+
+entity "**users_mails**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""clp_event_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""user_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""content""</b>: //""character varying""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""exp""</b>: //""bigint""  //
+* <b>""vat""</b>: //""bigint""  //
+* <b>""user_id""</b>: //""integer""  //
+* <b>""mail""</b>: //""character varying""  //
+* <b>""code""</b>: //""character varying""  //
 }
 
 
@@ -257,15 +247,11 @@ entity "**users_chats**" {
 
 "**users_clps**" }o--|| "**clp_events**"
 
+"**tasks**" }o--|| "**users**"
+
 "**users_tasks**" }o--|| "**users**"
 
 "**users_tasks**" }o--|| "**tasks**"
-
-"**tasks**" }o--|| "**users**"
-
-"**users_chats**" }o--|| "**users**"
-
-"**users_chats**" }o--|| "**clp_events**"
 
 
 @enduml

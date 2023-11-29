@@ -19,8 +19,9 @@ use crate::models::clp_events::ClpEvent;
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct UserChat;
 
-
+/* ---------------------------------------- */
 /* ----- spacetimechatdb wasm methods ----- */
+/* ---------------------------------------- */
 impl UserChat{
 
     pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
