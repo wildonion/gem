@@ -11,6 +11,7 @@ use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPri
 use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
+use crate::passport::Passport;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
@@ -1170,7 +1171,6 @@ async fn verify_twitter_account(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
-
 
 
             /* 
@@ -2816,7 +2816,7 @@ async fn get_all_user_withdrawals(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2944,7 +2944,7 @@ async fn get_all_user_unpaid_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3072,7 +3072,7 @@ async fn get_all_user_paid_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3214,7 +3214,7 @@ async fn get_recipient_unclaimed_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4556,7 +4556,7 @@ async fn get_all_private_galleries_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4678,7 +4678,7 @@ async fn get_all_galleries_invited_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4803,7 +4803,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4928,7 +4928,7 @@ async fn get_user_unaccpeted_invitation_requests(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5052,7 +5052,7 @@ async fn get_user_unaccpeted_friend_requests(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5732,7 +5732,7 @@ async fn get_all_user_fans_data_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5856,7 +5856,7 @@ async fn get_all_public_collections_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5981,7 +5981,7 @@ async fn get_all_public_collection_nfts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6106,7 +6106,7 @@ async fn get_all_private_collections_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7874,7 +7874,7 @@ async fn get_all_user_reactions(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7996,7 +7996,7 @@ async fn get_all_nfts_owned_by(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8119,7 +8119,7 @@ async fn get_all_nft_reactions(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8543,6 +8543,7 @@ async fn get_new_clp_event_info(
                     }
 
                     // clp_events schema
+                    // return the latest clp in the stack
                     // ...
                     todo!()
                     

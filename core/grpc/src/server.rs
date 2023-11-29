@@ -78,7 +78,7 @@ impl KycServer{
 
         let kyc_rpc_server = KycServer::default(); 
         /* 
-            creating a new server service actor from the EchoServer 
+            creating a new server service actor from the KycServer 
             structure which is our rpc server 
         */
         TonicServer::builder()

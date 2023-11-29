@@ -43,6 +43,8 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker stop jenkins-docker && sudo docker rm -f jenkins-docker
         sudo docker stop jenkins-blueocean && sudo docker rm -f jenkins-blueocean
         sudo docker stop portainer && sudo docker rm -f portainer
+        sudo docker stop spacetimedb && sudo docker rm -f spacetimedb
+        sudo docker run -d --name spacetimedb --rm --pull always -p 7556:80 clockworklabs/spacetimedb start
 
         sudo docker run --name jenkins-docker --rm --detach \
         --privileged --network gem --network-alias docker \

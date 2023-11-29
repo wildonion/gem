@@ -94,24 +94,35 @@ use snowflake::SnowflakeIdGenerator;
 use std::rc::Weak;
 use tokio::sync::RwLock;
 use tokio_util::codec::{BytesCodec, FramedRead};
+use spacetimedb_sdk::{
+    Address,
+    disconnect,
+    identity::{load_credentials, once_on_connect, save_credentials, Credentials as SpacetimedbCredentials, Identity},
+    on_disconnect, on_subscription_applied,
+    reducer::Status,
+    subscribe,
+    table::{TableType, TableWithPrimaryKey},
+};
 
 
 
 /* ----------------------------------------- */
 /* ------------ loading modules ------------ */
 /* ----------------------------------------- */
-mod apis;       /* contains http routes and model call logics */
-mod misc;       /* contains miscellaneous and utilities methods and modules */
-mod constants;  /* contains constant and static types */
-mod services;   /* contains service handler to register routes */
-mod events;     /* contains realtiming event pubsub logics based on ws */
-mod models;     /* contains models, schemas structures and db query calls */
-mod schema;     /* contains diesel db schemas */
-mod error;      /* contains error handler logis */
-mod adapters;   /* contains all third party apis */
-mod server;     /* contains server handler methods and macros */
-mod kyced;      /* contains kyc process of the api body */
-mod passport;   /* contains passport traits for HttpRequest */
+#[path="spacetimedb/client/chatdb/mod.rs"]
+mod spacetimchatdb; /* contains spacetimedb client interfaces for chatdb server */
+mod apis;           /* contains http routes and model call logics */
+mod misc;           /* contains miscellaneous and utilities methods and modules */
+mod constants;      /* contains constant and static types */
+mod services;       /* contains service handler to register routes */
+mod events;         /* contains realtiming event pubsub logics based on ws */
+mod models;         /* contains models, schemas structures and db query calls */
+mod schema;         /* contains diesel db schemas */
+mod error;          /* contains error handler logis */
+mod adapters;       /* contains all third party apis */
+mod server;         /* contains server handler methods and macros */
+mod kyced;          /* contains kyc process of the api body */
+mod passport;       /* contains passport traits for HttpRequest */
 
 
 

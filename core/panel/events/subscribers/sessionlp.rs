@@ -14,7 +14,7 @@
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::models::users::{User, UserWalletInfoResponse};
-use crate::models::users_chats::UserChat;
+use crate::models::chatdb::UserChat;
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use s3req::Storage;

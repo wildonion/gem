@@ -18,6 +18,8 @@ members = [
   "core/multipartreq",
   "core/gastracker"
 ]
+exclude = ["core/chatdb"]
+
 
 [dependencies]
 walletreq = { path = "core/walletreq", name = "walletreq"}
@@ -90,6 +92,8 @@ percentage = "0.1.0"
 prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
+spacetimedb-sdk = "0.7.3"
+
 
 [lib]
 proc-macro = true

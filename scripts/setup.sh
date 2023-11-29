@@ -26,6 +26,7 @@ sudo apt update -y && sudo apt upgrade && sudo apt install -y libpq-dev pkg-conf
 sudo apt install -y snapd && sudo snap install core; sudo snap refresh core
 sudo snap install --classic certbot && sudo ln -s /snap/bin/certbot /usr/bin/certbot
 cargo install sqlant && sudo apt install -y openjdk-11-jdk && sudo apt install -y graphviz
+sudo npm i wasm-opt -g
 
 git clone https://github.com/cossacklabs/themis.git
 cd themis

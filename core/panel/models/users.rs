@@ -997,7 +997,7 @@ impl User{
     
     }
 
-    /* 
+    /* >------------------------------------------------------------------------------------------------------------------
         since self is not behind & thus the Cookie can't use the lifetime of the self reference hence we 
         must specify the 'static lifetime for the Cookie also the reason that the self is not behind a pointer
         is because this function returns a Cookie instance which takes a valid lifetime in which we can't return
@@ -1023,11 +1023,11 @@ impl User{
         /* every 2 chars is 1 byte thus in sha256 we have 32 bytes elements which is 64 chars in hex */
         let time_hash_hex_string = time_hash
                                         .into_iter()
+                                        /* mapping each byte into its corresponding hex char */
                                         .map(|byte| format!("{:02x}", byte))
                                         .collect::<String>();
         
         // let time_hash_hex_string = hex::encode(&time_hash);
-
 
         /* if we're here means that the password was correct */
         let token = self.generate_token(time_hash_now).unwrap();

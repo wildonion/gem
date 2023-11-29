@@ -113,6 +113,8 @@ brew install libpq && brew link --force libpq
 brew install protobuf
 brew install graphviz
 brew tap cossacklabs/tap && brew install libthemis
+brew install clockworklabs/tap/spacetime
+sudo npm i wasm-opt -g
 cargo clean
 ```
 then run:

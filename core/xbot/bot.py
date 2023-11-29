@@ -33,7 +33,6 @@ class ViewsInfo(BaseModel):
 def check_user_existance(key: str, request: UserExistance):
     if key != "{8eN~PF=xyqz0s^":
         return {"data":  {"status": "key is not valid"}}
-    # TODO: validate request input before giving it to function
     print(":::::: {} requested for verification: ", request.username)
     result = utils.user_exist(username=request.username)
     if result == "403":
@@ -46,7 +45,6 @@ def check_user_existance(key: str, request: UserExistance):
 def user_verification(key: str, request: UserVerification):
     if key != "{8eN~PF=xyqz0s^":
         return {"data":  {"status": "key is not valid"}}
-    # TODO: validate incoming request
     result = utils.user_verify(username=request.username, code=request.code)
     if result == "403":
         raise HTTPException(status_code=403, detail="too many request")

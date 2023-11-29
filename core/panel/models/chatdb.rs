@@ -12,35 +12,15 @@ use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::User;
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
 use super::users_nfts::UserNftData;
-use crate::schema::users_chats::dsl::*;
-use crate::schema::users_chats;
 use crate::models::clp_events::ClpEvent;
 
 
-/* 
 
-    in order this table works correctly clp_events must be initialized first
-    since there is a reference as fk to the pk of clp_events and users
-
-    diesel migration generate users_chats       ---> create users_chats migration sql files
-    diesel migration run                        ---> apply sql files to db 
-    diesel migration redo                       ---> drop tables 
-
-*/
-#[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
-#[diesel(belongs_to(User))]
-#[diesel(belongs_to(ClpEvent))]
-#[diesel(table_name=users_chats)]
-pub struct UserChat{
-    pub id: i32,
-    pub clp_event_id: i32,
-    pub user_id: i32,
-    pub content: String,
-    pub created_at: chrono::NaiveDateTime,
-    pub updated_at: chrono::NaiveDateTime,
-}
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct UserChat;
 
 
+/* ----- spacetimechatdb wasm methods ----- */
 impl UserChat{
 
     pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
@@ -56,8 +36,7 @@ impl UserChat{
         let wallet = walletreq::secp256r1::generate_new_wallet();
 
         // -------------------------------
-        // TODO - store text in db
-        // users_chats schema
+        // TODO - store in chatdb by calling wasm methods
         // chat encryption using wallet or aes256
         // ...
 
