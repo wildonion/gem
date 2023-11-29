@@ -304,7 +304,7 @@ pub async fn start_minting_card_process(
                 let mint_tx_hash = mint_response.transaction_hash;
 
                 /* sleep till the transaction gets confirmed on blockchain */
-                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
                 let token_id_string = {
         
@@ -660,7 +660,7 @@ pub async fn create_collection(
     if collection_creation.response == String::from("OK"){
 
         /* sleep till the transaction gets confirmed on blockchain */
-        tokio::time::sleep(tokio::time::Duration::from_secs(15)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
         /* getting the deployed contract address */
         let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);
@@ -993,7 +993,7 @@ pub async fn mint_nft(
             let mint_tx_hash = mint_response.transaction_hash;
 
             /* sleep till the transaction gets confirmed on blockchain */
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
 
             let token_id_string = {
     

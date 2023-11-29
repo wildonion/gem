@@ -126,6 +126,7 @@ pub struct InsertNewUserCollectionRequest{
     pub extra: Option<serde_json::Value>,
     pub contract_tx_hash: String,
     pub col_description: String,
+    pub collection_background: String
 }
 
 /* 
@@ -797,7 +798,7 @@ impl UserCollection{
                 Ok(HttpResponse::Forbidden().json(resp))
             )
         }
-
+        
         /* getting onchain contract information */
         let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client, new_col_info.clone()).await;
         
@@ -869,7 +870,8 @@ impl UserCollection{
             royalties_address_screen_cid: new_col_info.clone().royalties_address_screen_cid,
             extra: new_col_info.clone().extra,
             col_description: new_col_info.clone().col_description,
-            contract_tx_hash: contract_create_tx_hash
+            contract_tx_hash: contract_create_tx_hash,
+            collection_background: String::from(""), /* will be updated later */
         };
     
         match diesel::insert_into(users_collections)

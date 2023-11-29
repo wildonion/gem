@@ -2798,7 +2798,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMTYxNTgzOTYxMzQzMDAwLCJleHAiOjE3MDM3NTM1ODMsImlhdCI6MTcwMTE2MTU4M30.es3106w0cKqg2b04yk-q26R_ifCp5PuhKEQYMEVBwfwMje9P7Zqz5GsMjGjutfXjzsss47sHcMZ4oRYtQC-Zlw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMjAwNDQ5OTUxMjEwNjcyLCJleHAiOjE3MDM3OTI0NDksImlhdCI6MTcwMTIwMDQ0OX0.cQi07Tvgdt2Al2AbdVtwetaEqpLJr-jB8gDZE116Ty2ofrn6ma7IqXTmn7MY2PCmX6EsDNPOdBiIUNKNpX8a1w",
 													"type": "string"
 												}
 											]
@@ -4581,7 +4581,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMTM5Njg5OTM1NDgyMDAwLCJleHAiOjE3MDI3MzE2ODksImlhdCI6MTcwMDEzOTY4OX0.Z10r2O8shcA-Wv-7wvQv64sRLRaMB9-uUwdraaDWvr7AMy6LYe-vMlmsqCyT8fH0_YUDI2IrY-a--hydNguWTg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMTYxNTgzOTYxMzQzMDAwLCJleHAiOjE3MDM3NTM1ODMsImlhdCI6MTcwMTE2MTU4M30.es3106w0cKqg2b04yk-q26R_ifCp5PuhKEQYMEVBwfwMje9P7Zqz5GsMjGjutfXjzsss47sHcMZ4oRYtQC-Zlw",
 											"type": "string"
 										}
 									]
