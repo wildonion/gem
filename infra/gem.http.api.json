@@ -2581,7 +2581,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDEzNjI3NDYyODUwOTkwMDAsImlhdCI6MTcwMTM2MDkzMTI4NTE5MjAwMH0.Vxla8ErwpYAXMaVIQsu3Qi-Nkn9MeA4oJHMOIAwYbCynjCDI4FxTyS9LDQ4-eUq_asgSun6TV5Z7hWEsu8Gu4A",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDEzNzIzNjQwMjM5NjUwMDAsImlhdCI6MTcwMTM3MDU0OTAyNDYyNzAwMH0.-6ipiOal4qa__KynR-GjVTIqrNQX8ktYLvDOK8dgyfZGIT1rjq5yfZGrKDpnbQkaWQ3kLHX0QjQ_0-0cvQ0rOw",
 													"type": "string"
 												}
 											]
@@ -3360,7 +3360,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    // from_screen_cid wants to send friend request to owner_cid\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"from_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    // caller or owner_cid wants to send friend request to to_screen_cid\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"to_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"

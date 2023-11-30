@@ -45,7 +45,7 @@ pub struct FriendData{
 #[derive(PartialEq)]
 pub struct SendFriendRequest{
     pub owner_cid: String,
-    pub from_screen_cid: String,
+    pub to_screen_cid: String,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -526,7 +526,7 @@ impl UserFan{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         
-        let SendFriendRequest{ owner_cid, from_screen_cid, tx_signature, hash_data } 
+        let SendFriendRequest{ owner_cid, to_screen_cid, tx_signature, hash_data } 
             = send_friend_request;
 
 
@@ -538,7 +538,7 @@ impl UserFan{
             return Err(resp_err);
         };
 
-        let get_friend = User::find_by_screen_cid(&from_screen_cid.clone(), connection).await;
+        let get_friend = User::find_by_screen_cid(&to_screen_cid.clone(), connection).await;
         let Ok(friend_info) = get_friend else{
 
             let resp_err = get_friend.unwrap_err();
@@ -559,9 +559,9 @@ impl UserFan{
                 };
 
                 let friend_data = FriendData{ 
-                    screen_cid: from_screen_cid.clone(), 
+                    screen_cid: to_screen_cid.clone(), 
                     requested_at: chrono::Local::now().timestamp(), 
-                    is_accepted: false,
+                    is_accepted: false, /* user must accept it later */
                     username: friend_info.username,
                     user_avatar: friend_info.avatar, 
                 };
@@ -571,7 +571,7 @@ impl UserFan{
                     we'll push it to friends, also the owner might have deleted/removed/unfollowed the 
                     user so next time his friend can send a request again 
                 */
-                if !decoded_friends_data.iter().any(|f| f.screen_cid == from_screen_cid){
+                if !decoded_friends_data.iter().any(|f| f.screen_cid == to_screen_cid){
                     decoded_friends_data.push(friend_data);
                 } 
 
@@ -589,7 +589,7 @@ impl UserFan{
                     user_screen_cid: owner_screen_cid.to_owned(),
                     friends: {
                         let friend_data = FriendData{ 
-                            screen_cid: from_screen_cid, 
+                            screen_cid: to_screen_cid, 
                             requested_at: chrono::Local::now().timestamp(), 
                             is_accepted: false,
                             username: friend_info.username,
@@ -629,7 +629,7 @@ impl UserFan{
                             
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::insert");
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::send_friend_request_to");
                             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
                             let resp = Response::<&[u8]>{
