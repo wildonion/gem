@@ -32,6 +32,10 @@ pub mod ed25519{
         Wallet::new_ed25519()
     }
 
+    pub fn get_default_aes256_config() -> Aes256Config{
+        Aes256Config::default()
+    }
+
 }
 
 /* -------------------------- */
