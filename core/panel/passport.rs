@@ -3,7 +3,7 @@
 
 use crate::{*, 
     models::users::{UserData, User, UserRole, JWTClaims}, 
-    constants::FETCHED, misc::Response
+    constants::{FETCHED, EXPIRED_JWT, EXPIRED_REF_JWT, INVALID_REF_JWT}, misc::Response
 };
 
 
@@ -15,6 +15,9 @@ pub trait Passport{
     fn get_user(&self, role: Option<UserRole>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<JWTClaims, PanelHttpResponse>;
+
+    fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<User, PanelHttpResponse>;
 
 }
 
@@ -29,6 +32,93 @@ impl Passport for HttpRequest{
         between threads which in our case `req` is not Send 
     */
     type Request = HttpRequest;
+
+    fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
+
+        let req = self as &Self::Request;
+
+        if let Some(authen_header) = req.headers().get("Authorization"){
+            if let Ok(authen_str) = authen_header.to_str(){
+                if authen_str.starts_with("bearer") || authen_str.starts_with("Bearer"){
+                    
+                    let token = authen_str[6..authen_str.len()].trim();
+
+                    let token_result = User::decode_token(token);
+                
+                    match token_result{
+                        Ok(token) => {
+
+                            /* cookie time is not expired yet */
+                            let token_data = token.claims;
+                            let _id = token_data._id;
+                            let role = token_data.user_role.clone();
+                            let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
+                            let exp_time = token_data.exp;
+                            
+                            if !token_data.is_refresh{
+                                let resp = Response{
+                                    data: Some(_id.to_owned()),
+                                    message: INVALID_REF_JWT,
+                                    status: 406,
+                                    is_error: true,
+                                };
+                                return Err(
+                                    Ok(HttpResponse::NotAcceptable().json(resp))
+                                );
+                            }
+
+                            if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
+                                let resp = Response{
+                                    data: Some(_id.to_owned()),
+                                    message: EXPIRED_REF_JWT,
+                                    status: 406,
+                                    is_error: true,
+                                };
+                                return Err(
+                                    Ok(HttpResponse::NotAcceptable().json(resp))
+                                );
+                            } 
+
+
+                            let get_user = User::find_by_id_none_sync(_id, connection);
+                            let Ok(user) = get_user else{
+                                let err_resp = get_user.unwrap_err();
+                                return Err(err_resp);
+                            };
+                            
+                            Ok(user)
+
+                        },
+                        Err(e) => {
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: &e.to_string(),
+                                status: 500,
+                                is_error: true,
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+                        }
+                    }
+
+                } else{
+                    Ok(
+                        User::default()
+                    )
+                }
+            } else{
+                Ok(
+                    User::default()
+                )
+            }
+        } else{
+            Ok(
+                User::default()
+            )
+        } 
+
+    }
 
     fn get_user(&self, role: Option<UserRole>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 

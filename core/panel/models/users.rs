@@ -29,7 +29,7 @@ use super::users_tasks::UserTask;
     diesel migration redo           ---> drop tables 
 
 */
-#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct User{
     pub id: i32,
     pub region: Option<String>,
@@ -275,11 +275,12 @@ pub struct UserLoginInfoRequest{
     pub password: String
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, Default)]
 #[derive(diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::Userrole"]
 pub enum UserRole{
     Admin,
+    #[default] /* we've considered the User variant as the default one */
     User,
     Dev
 }
@@ -309,6 +310,7 @@ pub struct JWTClaims{
     pub _id: i32, // mongodb object id
     pub user_role: UserRole,
     pub token_time: i64,
+    pub is_refresh: bool,
     pub exp: i64, // expiration timestamp
     pub iat: i64, // issued timestamp
 }
@@ -372,6 +374,87 @@ pub struct IpInfoResponse{
     and pass its encoded form (utf8 bytes) directly through the socket to the client 
 */
 impl User{
+
+    pub async fn get_user_data_response_with_cookie(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
+
+        /* generate cookie 🍪 from token time and jwt */
+        /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+        let keys_info = self.clone().generate_cookie_and_jwt().unwrap();
+        let cookie_token_time = keys_info.1;
+        let jwt = keys_info.2;
+
+        let now = chrono::Local::now().naive_local();
+        let updated_user = diesel::update(users.find(self.id))
+            .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            .unwrap();
+        
+        let user_login_data = UserData{
+            id: updated_user.id,
+            region: updated_user.region.clone(),
+            username: updated_user.username.clone(),
+            bio: updated_user.bio.clone(),
+            avatar: updated_user.avatar.clone(),
+            banner: updated_user.banner.clone(),
+            wallet_background: updated_user.wallet_background.clone(),
+            activity_code: updated_user.activity_code.clone(),
+            twitter_username: updated_user.twitter_username.clone(),
+            facebook_username: updated_user.facebook_username.clone(),
+            discord_username: updated_user.discord_username.clone(),
+            identifier: updated_user.identifier.clone(),
+            user_role: {
+                match self.user_role.clone(){
+                    UserRole::Admin => "Admin".to_string(),
+                    UserRole::User => "User".to_string(),
+                    _ => "Dev".to_string(),
+                }
+            },
+            token_time: updated_user.token_time,
+            balance: updated_user.balance,
+            last_login: { 
+                if updated_user.last_login.is_some(){
+                    Some(updated_user.last_login.unwrap().to_string())
+                } else{
+                    Some("".to_string())
+                }
+            },
+            created_at: updated_user.created_at.to_string(),
+            updated_at: updated_user.updated_at.to_string(),
+            mail: updated_user.mail,
+            google_id: updated_user.google_id,
+            microsoft_id: updated_user.microsoft_id,
+            is_mail_verified: updated_user.is_mail_verified,
+            is_phone_verified: updated_user.is_phone_verified,
+            phone_number: updated_user.phone_number,
+            paypal_id: updated_user.paypal_id,
+            account_number: updated_user.account_number,
+            device_id: updated_user.device_id,
+            social_id: updated_user.social_id,
+            cid: updated_user.cid,
+            screen_cid: updated_user.screen_cid,
+            snowflake_id: updated_user.snowflake_id,
+            stars: updated_user.stars
+        };
+
+        let resp = Response{
+            data: Some(user_login_data),
+            message: LOGGEDIN,
+            status: 200,
+            is_error: false,
+        };
+        return Ok(
+            Ok(
+                HttpResponse::Ok()
+                    .cookie(keys_info.0.clone())
+                    .append_header(("cookie", keys_info.0.value()))
+                    .json(
+                        resp
+                    )
+            )
+        );
+                    
+    }
 
     pub fn decode_token(token: &str) -> Result<TokenData<JWTClaims>, jsonwebtoken::errors::Error>{
         let encoding_key = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
@@ -437,6 +520,19 @@ impl User{
                     let _id = token_data._id;
                     let role = token_data.user_role.clone();
                     let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
+                    let exp_time = token_data.exp;
+
+                    if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
+                        let resp = Response{
+                            data: Some(_id.to_owned()),
+                            message: EXPIRED_JWT,
+                            status: 406,
+                            is_error: true,
+                        };
+                        return Err(
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        );
+                    } 
 
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
@@ -732,6 +828,19 @@ impl User{
                     let _id = token_data._id;
                     let role = token_data.user_role.clone();
                     let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
+                    let exp_time = token_data.exp;
+
+                    if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
+                        let resp = Response{
+                            data: Some(_id.to_owned()),
+                            message: EXPIRED_JWT,
+                            status: 406,
+                            is_error: true,
+                        };
+                        return Err(
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        );
+                    } 
 
                     /* fetch user info based on the data inside jwt */ 
                     let single_user = users
@@ -974,12 +1083,19 @@ impl User{
         }
     }
 
-    fn generate_token(&self, _token_time: i64) -> Result<String, jsonwebtoken::errors::Error>{
+    fn generate_token(&self, _token_time: i64) -> (
+        Result<String, jsonwebtoken::errors::Error>,
+        Result<String, jsonwebtoken::errors::Error>
+    ){
+
+        let encoding_key = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
+        let now = Utc::now();
+        let access_exp_time = now + chrono::Duration::minutes(30);
         
-        let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
-        let exp_time = now + env::var("JWT_EXPIRATION").expect("⚠️ found no jwt expiration time").parse::<i64>().unwrap();
-        
-        let payload = JWTClaims{
+        // -------------------------------------------------
+        //    access token payload, will be used to login 
+        // ------------------------------------------------
+        let access_token_payload = JWTClaims{
             _id: self.id,
             /* 
                 if a user role is changed by the admin, user must logout 
@@ -987,32 +1103,62 @@ impl User{
             */
             user_role: self.user_role.clone(),
             token_time: _token_time,
-            exp: exp_time,
-            iat: now
+            exp: access_exp_time.timestamp_nanos_opt().unwrap(),
+            iat: now.timestamp_nanos_opt().unwrap(),
+            is_refresh: false,
         };
-    
-        let encoding_key = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
-        let token = encode(&Header::new(Algorithm::HS512), &payload, &EncodingKey::from_secret(encoding_key.as_bytes()));
-        token
+
+        let access_token = encode(
+            &Header::new(Algorithm::HS512), 
+            &access_token_payload, 
+            &EncodingKey::from_secret(encoding_key.as_bytes())
+        );
+        
+        // ---------------------------------------------------------------------
+        //    access token payload, will be used to generate new set of tokens 
+        // ---------------------------------------------------------------------
+        let refresh_exp_time = access_exp_time + chrono::Duration::seconds(15);
+        let refresh_token_payload = JWTClaims{
+            _id: self.id,
+            /* 
+                if a user role is changed by the admin, user must logout 
+                then login again since the jwt must be updated with new role
+            */
+            user_role: self.user_role.clone(),
+            token_time: 0,
+            exp: refresh_exp_time.timestamp_nanos_opt().unwrap(),
+            iat: Utc::now().timestamp_nanos_opt().unwrap(),
+            is_refresh: true,
+        };
+
+        let refresh_token = encode(
+            &Header::new(Algorithm::HS512), 
+            &refresh_token_payload, 
+            &EncodingKey::from_secret(encoding_key.as_bytes())
+        );
+
+        (access_token, refresh_token)
     
     }
 
-    /* >------------------------------------------------------------------------------------------------------------------
+    /* >-----------------------------------------------------------------------------------------------------------
         since self is not behind & thus the Cookie can't use the lifetime of the self reference hence we 
         must specify the 'static lifetime for the Cookie also the reason that the self is not behind a pointer
         is because this function returns a Cookie instance which takes a valid lifetime in which we can't return
         it from the the caller space of this method since rust says can't returns a value referencing data owned by 
         the current function means that the returned cookie instance from here to the caller space has a reference 
-        to the instance of User struct in which we can't return the cookie instance from the caller scope to other scopes
-        in other words we can't return reference to a data which is owned by the current function. 
+        to the instance of User struct in which we can't return the cookie instance from the caller scope to other 
+        scopes in other words we can't return reference to a data which is owned by the current function. 
     */
-    pub fn generate_cookie_and_jwt(self) -> Option<(Cookie<'static>, i64, String)>{
+    pub fn generate_cookie_and_jwt(self) -> Option<(Cookie<'static>, i64, String, String)>{
 
         /*
             since cookie can be stored inside the request object thus for peers on the same network 
             which have an equal ip address they share a same cookie thus we'll face the bug of which 
             every user can be every user in which they can see other peer's jwt info inside their browser
             which allows them to be inside each other panel!
+            
+            let time_hash = walletreq::get_sha256_from(&time_hash_now_now_str);
         */
         let time_hash_now = chrono::Local::now().timestamp_nanos_opt().unwrap();
         let time_hash_now_now_str = format!("{}", time_hash_now);
@@ -1030,9 +1176,11 @@ impl User{
         // let time_hash_hex_string = hex::encode(&time_hash);
 
         /* if we're here means that the password was correct */
-        let token = self.generate_token(time_hash_now).unwrap();
+        let get_tokens = self.generate_token(time_hash_now);
+        let access_token = get_tokens.0.unwrap();
+        let refresh_token = get_tokens.1.unwrap();
         
-        let cookie_value = format!("{token:}::{time_hash_hex_string:}");
+        let cookie_value = format!("{access_token:}::{time_hash_hex_string:}||[{refresh_token:}]");
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
                                     .secure(true)
@@ -1042,7 +1190,7 @@ impl User{
         now += Duration::days(cookie_exp_days);
         cookie.set_expires(now); /* will be invalid 30 days from now on */
 
-        Some((cookie, time_hash_now, token))
+        Some((cookie, time_hash_now, access_token, refresh_token))
 
     }
 

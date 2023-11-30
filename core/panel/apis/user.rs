@@ -120,6 +120,14 @@ impl Modify for SecurityAddon {
     ),
     tag = "crate::apis::user",
 )]
+/* 
+    >-------------------------------------------------------------------------
+    There are access and refresh tokens in cookie response in form of:
+        ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]
+    once the access token gets expired we can pass refresh token into 
+    the request header in place of access token to get a new set of keys 
+    on behalf of user, instead of redirecting client to the login page again.
+*/
 #[post("/login/{identifier}")]
 async fn login(
         req: HttpRequest, 
@@ -135,78 +143,22 @@ async fn login(
             
             let connection = &mut pg_pool.get().unwrap();
 
+
+            let check_refresh_token = req.check_refresh_token(connection);
+            let Ok(user) = check_refresh_token else{
+                let err_resp = check_refresh_token.unwrap_err();
+                return err_resp;
+            };
+
+            if user.id != 0{
+
+                info!("generating new set of token with refresh token for user with id: {}", user.id);
+                return user.get_user_data_response_with_cookie(connection).await.unwrap();
+
+            }
+
             match User::find_by_identifier(&login_identifier.to_owned(), connection).await{
-                Ok(user) => {
-        
-                    /* generate cookie 🍪 from token time and jwt */
-                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
-                    let keys_info = user.clone().generate_cookie_and_jwt().unwrap();
-                    let cookie_token_time = keys_info.1;
-                    let jwt = keys_info.2;
-
-                    let now = chrono::Local::now().naive_local();
-                    let updated_user = diesel::update(users.find(user.id))
-                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
-                        .returning(FetchUser::as_returning())
-                        .get_result(connection)
-                        .unwrap();
-                    
-                    let user_login_data = UserData{
-                        id: user.id,
-                        region: user.region.clone(),
-                        username: user.username.clone(),
-                        bio: user.bio.clone(),
-                        avatar: user.avatar.clone(),
-                        banner: user.banner.clone(),
-                        wallet_background: user.wallet_background.clone(),
-                        activity_code: user.activity_code.clone(),
-                        twitter_username: user.twitter_username.clone(),
-                        facebook_username: user.facebook_username.clone(),
-                        discord_username: user.discord_username.clone(),
-                        identifier: user.identifier.clone(),
-                        user_role: {
-                            match user.user_role.clone(){
-                                UserRole::Admin => "Admin".to_string(),
-                                UserRole::User => "User".to_string(),
-                                _ => "Dev".to_string(),
-                            }
-                        },
-                        token_time: updated_user.token_time,
-                        balance: updated_user.balance,
-                        last_login: { 
-                            if updated_user.last_login.is_some(){
-                                Some(updated_user.last_login.unwrap().to_string())
-                            } else{
-                                Some("".to_string())
-                            }
-                        },
-                        created_at: user.created_at.to_string(),
-                        updated_at: updated_user.updated_at.to_string(),
-                        mail: user.mail,
-                        google_id: user.google_id,
-                        microsoft_id: user.microsoft_id,
-                        is_mail_verified: user.is_mail_verified,
-                        is_phone_verified: user.is_phone_verified,
-                        phone_number: user.phone_number,
-                        paypal_id: user.paypal_id,
-                        account_number: user.account_number,
-                        device_id: user.device_id,
-                        social_id: user.social_id,
-                        cid: user.cid,
-                        screen_cid: user.screen_cid,
-                        snowflake_id: user.snowflake_id,
-                        stars: user.stars
-                    };
-
-                    resp!{
-                        UserData, // the data type
-                        user_login_data, // response data
-                        LOGGEDIN, // response message
-                        StatusCode::OK, // status code,
-                        Some(keys_info.0), // cookie 
-                    } 
-
-                },
+                Ok(user) => user.get_user_data_response_with_cookie(connection).await.unwrap(),
                 Err(resp) => {
 
                     /* USER NOT FOUND response */
@@ -905,6 +857,15 @@ async fn verify_phone_code(
     ),
     tag = "crate::apis::user",
 )]
+
+/* 
+    >-------------------------------------------------------------------------
+    There are access and refresh tokens in cookie response in form of:
+        ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]
+    once the access token gets expired we can pass refresh token into 
+    the request header in place of access token to get a new set of keys 
+    on behalf of user, instead of redirecting client to the login page again.
+*/
 #[post("/login")]
 async fn login_with_identifier_and_password(
         req: HttpRequest, 
@@ -919,6 +880,19 @@ async fn login_with_identifier_and_password(
         Some(pg_pool) => {
             
             let connection = &mut pg_pool.get().unwrap();
+
+            let check_refresh_token = req.check_refresh_token(connection);
+            let Ok(user) = check_refresh_token else{
+                let err_resp = check_refresh_token.unwrap_err();
+                return err_resp;
+            };
+
+            if user.id != 0{
+
+                info!("generating new set of token with refresh token for admin with id: {}", user.id);
+                return user.get_user_data_response_with_cookie(connection).await.unwrap();
+
+            }
 
             let login_info = user_login_info.to_owned();
 
@@ -947,74 +921,7 @@ async fn login_with_identifier_and_password(
                         }
                     }
         
-                    /* generate cookie 🍪 from token time and jwt */
-                    /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
-                    let keys_info = user.clone().generate_cookie_and_jwt().unwrap();
-                    let cookie_token_time = keys_info.1;
-                    let jwt = keys_info.2;
-
-                    let now = chrono::Local::now().naive_local();
-                    let updated_user = diesel::update(users.find(user.id))
-                        .set((last_login.eq(now), token_time.eq(cookie_token_time)))
-                        .returning(FetchUser::as_returning())
-                        .get_result(connection)
-                        .unwrap();
-                    
-                    let user_login_data = UserData{
-                        id: user.id,
-                        region: user.region.clone(),
-                        username: user.username.clone(),
-                        bio: user.bio.clone(),
-                        avatar: user.avatar.clone(),
-                        banner: user.banner.clone(),
-                        wallet_background: user.wallet_background.clone(),
-                        activity_code: user.activity_code.clone(),
-                        twitter_username: user.twitter_username.clone(),
-                        facebook_username: user.facebook_username.clone(),
-                        discord_username: user.discord_username.clone(),
-                        identifier: user.identifier.clone(),
-                        user_role: {
-                            match user.user_role.clone(){
-                                UserRole::Admin => "Admin".to_string(),
-                                UserRole::User => "User".to_string(),
-                                _ => "Dev".to_string(),
-                            }
-                        },
-                        token_time: updated_user.token_time,
-                        balance: updated_user.balance,
-                        last_login: { 
-                            if updated_user.last_login.is_some(){
-                                Some(updated_user.last_login.unwrap().to_string())
-                            } else{
-                                Some("".to_string())
-                            }
-                        },
-                        created_at: user.created_at.to_string(),
-                        updated_at: updated_user.updated_at.to_string(),
-                        mail: user.mail,
-                        google_id: user.google_id,
-                        microsoft_id: user.microsoft_id,
-                        is_mail_verified: user.is_mail_verified,
-                        is_phone_verified: user.is_phone_verified,
-                        phone_number: user.phone_number,
-                        paypal_id: user.paypal_id,
-                        account_number: user.account_number,
-                        device_id: user.device_id,
-                        social_id: user.social_id,
-                        cid: user.cid,
-                        screen_cid: user.screen_cid,
-                        snowflake_id: user.snowflake_id,
-                        stars: user.stars
-                    };
-
-                    resp!{
-                        UserData, // the data type
-                        user_login_data, // response data
-                        LOGGEDIN, // response message
-                        StatusCode::OK, // status code,
-                        Some(keys_info.0), // cookie 
-                    } 
-
+                    user.get_user_data_response_with_cookie(connection).await.unwrap()
                 },
                 Err(resp) => {
 
@@ -1079,7 +986,9 @@ async fn login_with_gmail(
             let connection = &mut pg_pool.get().unwrap();
 
             let user_gmail_request = user_gmail_request.to_owned();
+
             
+            // User::login_by_gmail_info();
             todo!()
 
         },
@@ -1113,7 +1022,7 @@ async fn login_with_microsoft(
 
             let user_microsoft_request = user_microsoft_request.to_owned();
             
-
+            // User::login_by_microsoft_info();
             todo!()
 
         },

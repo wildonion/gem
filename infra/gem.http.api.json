@@ -4,7 +4,7 @@
 		"name": "gem",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
-		"_collection_link": "https://dewoloper.postman.co/workspace/9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
+		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
 	},
 	"item": [
 		{
@@ -1980,6 +1980,16 @@
 						{
 							"name": "Login",
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MCwiaXNfcmVmcmVzaCI6dHJ1ZSwiZXhwIjoxNzAxMzYzNDIyMzU5MzY3MDAwLCJpYXQiOjE3MDEzNjE2MDczNjI1NDMwMDB9.vfoAgIFxh0GVFQho_m-jaY2LTeZVpEJf3b1OKcM7gnY9Aopfh8VidFGUnxQKSHYcJUoRWnccg7wR9PVxeGmHxg",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [],
 								"body": {
@@ -1999,7 +2009,8 @@
 									"path": [
 										"login"
 									]
-								}
+								},
+								"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 							},
 							"response": []
 						},
@@ -2557,13 +2568,24 @@
 												"login",
 												"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
 											]
-										}
+										},
+										"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 									},
 									"response": []
 								},
 								{
 									"name": "Login With Identifier and Password",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDEzNjI3NDYyODUwOTkwMDAsImlhdCI6MTcwMTM2MDkzMTI4NTE5MjAwMH0.Vxla8ErwpYAXMaVIQsu3Qi-Nkn9MeA4oJHMOIAwYbCynjCDI4FxTyS9LDQ4-eUq_asgSun6TV5Z7hWEsu8Gu4A",
+													"type": "string"
+												}
+											]
+										},
 										"method": "POST",
 										"header": [],
 										"body": {
@@ -2583,7 +2605,8 @@
 											"path": [
 												"login"
 											]
-										}
+										},
+										"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 									},
 									"response": []
 								},
@@ -2798,7 +2821,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMjAwNDQ5OTUxMjEwNjcyLCJleHAiOjE3MDM3OTI0NDksImlhdCI6MTcwMTIwMDQ0OX0.cQi07Tvgdt2Al2AbdVtwetaEqpLJr-jB8gDZE116Ty2ofrn6ma7IqXTmn7MY2PCmX6EsDNPOdBiIUNKNpX8a1w",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMzYwOTMxMjg0NjAyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxMzYyNzMxMjg1MDk5MDAwLCJpYXQiOjE3MDEzNjA5MzEyODUwOTkwMDB9.KoS1d99QI2FmlyvSUG1MAK-1Lot3dE8Rnm5VqOEE_Vln2lfMcpmTqZtfhxtXfha19jf9pM1Kx91c1kbnU07KvQ",
 													"type": "string"
 												}
 											]

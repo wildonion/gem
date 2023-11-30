@@ -34,11 +34,13 @@ impl UserChat{
             return Err(err_resp);
         };
 
-        let wallet = walletreq::secp256r1::generate_new_wallet();
+        let r1_wallet = walletreq::secp256r1::generate_new_wallet();
+        let ed_wallet = walletreq::ed25519::generate_new_wallet();
 
         // -------------------------------
         // TODO - store in chatdb by calling wasm methods
-        // chat encryption using wallet or aes256
+        // end2enc chat encryption using ed_wallet aes256
+        // see ed25519_aes256_test() method
         // ...
 
         todo!()

@@ -2,6 +2,15 @@
 
 
 
+/** 
+ *  ---------------------
+ * | RSA based ECC curves
+ *  ---------------------
+ * - ed25519
+ * - secp256k1
+ * - secp256r1
+*/
+
 use web3::types::SignedData;
 use std::str::FromStr;
 use secp256k1::Secp256k1;
@@ -122,4 +131,9 @@ pub mod evm{
     
     }
 
+}
+
+
+pub fn get_sha256_from(data: &str) -> [u8; 32]{
+    Wallet::generate_sha256_from(data)
 }
