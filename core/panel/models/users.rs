@@ -469,32 +469,10 @@ impl User{
 
     pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
 
-        let mut jwt_flag = false;
-        let mut cookie_flag = false;
         let mut jwt_token = ""; 
 
-        if let Some(authen_header) = req.headers().get("Authorization"){
-            if let Ok(authen_str) = authen_header.to_str(){
-                if authen_str.starts_with("bearer") || authen_str.starts_with("Bearer"){
-                    let token = authen_str[6..authen_str.len()].trim();
+        let Some(authen_header) = req.headers().get("Authorization") else{
 
-                    jwt_flag = true;
-                    jwt_token = token;
-
-                }
-            }
-        } else{
-            /* checking that the request cookie has the jwt key */
-            if let Some(_) = req.cookie("jwt"){
-
-                cookie_flag = true;
-
-            }
-        }
-
-
-        if !jwt_flag && !cookie_flag {
-            
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: NOT_FOUND_COOKIE_VALUE_OR_JWT,
@@ -505,304 +483,127 @@ impl User{
                 Ok(HttpResponse::NotFound().json(resp))
             );
 
+        };
+
+        let auth_header_value = authen_header.to_str().unwrap();
+        if auth_header_value.starts_with("bearer") ||
+            auth_header_value.starts_with("Bearer"){
+
+            jwt_token = auth_header_value[6..auth_header_value.len()].trim();
+
         }
 
-        if jwt_flag{
 
-             /* decoding the jwt */
-            let token_result = User::decode_token(jwt_token);
-            
-            match token_result{
-                Ok(token) => {
+        /* decoding the jwt */
+        let token_result = User::decode_token(jwt_token);
+        
+        match token_result{
+            Ok(token) => {
 
-                    /* cookie time is not expired yet */
-                    let token_data = token.claims;
-                    let _id = token_data._id;
-                    let role = token_data.user_role.clone();
-                    let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
-                    let exp_time = token_data.exp;
+                /* cookie time is not expired yet */
+                let token_data = token.claims;
+                let _id = token_data._id;
+                let role = token_data.user_role.clone();
+                let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
+                let exp_time = token_data.exp;
 
-                    if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: EXPIRED_JWT,
-                            status: 406,
-                            is_error: true,
-                        };
-                        return Err(
-                            Ok(HttpResponse::NotAcceptable().json(resp))
-                        );
-                    } 
-
-                    /* fetch user info based on the data inside jwt */ 
-                    let single_user = users
-                        .filter(id.eq(_id))
-                        .first::<User>(connection);
-
-                    if single_user.is_err(){
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: USER_NOT_FOUND,
-                            status: 404,
-                            is_error: true,
-                        };
-                        return Err(
-                            Ok(HttpResponse::NotFound().json(resp))
-                        );
-                    }
-
-                    let user = single_user.unwrap();
-
-                    /* 
-                        check that the user is authorized with the 
-                        passed in role and the one inside the jwt
-                        since some of the routes require role guard 
-                    */
-                    if pass_role.is_some(){
-                        if user.user_role != pass_role.unwrap() &&
-                            user.user_role != role{
-                            let resp = Response{
-                                data: Some(_id.to_owned()),
-                                message: ACCESS_DENIED,
-                                status: 403,
-                                is_error: true
-                            };
-                            return Err(
-                                Ok(HttpResponse::Forbidden().json(resp))
-                            );
-                        } 
-                    }
-
-                    /*
-                        if the current token time of the fetched user 
-                        wasn't equal to the one inside the passed in JWT
-                        into the request header means that the user did
-                        a logout or did a login again since by logging out 
-                        the token time will be set to zero and by logging 
-                        in again a new token time will be initialized.
-                    */
-                    if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
-                        user.token_time.unwrap() != _token_time || 
-                        user.token_time.unwrap() == 0{ /* user did a logout! */
-                        
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
-                            status: 403,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::Forbidden().json(resp))
-                        );
-                        
-                    }
-
-                    /* returning token data, if we're here means that nothing went wrong */
-                    return Ok(token_data);
-
-                },
-                Err(e) => {
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500,
-                        is_error: true,
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-                }
-            };
- 
-        } else{ /* surely we have cookie since the jwt flag is not true */
-
-            let cookie = req.cookie("jwt").unwrap();
-
-            let expire_datetime = cookie.expires_datetime();
-            let cookie_time_hash;
-            let token;
-
-            /* parsing the jwt value inside the cookie */
-            let jwt = cookie.value();
-            if jwt.contains("::"){
-                let mut splitted_token = jwt.split("::");
-                let Some(cookie_token) = splitted_token.next() else{
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: NOT_FOUND_TOKEN,
-                        status: 403,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::Forbidden().json(resp))
-                    );
-                };
-                token = cookie_token;
-
-                let Some(cth) = splitted_token.next() else{
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: NOT_FOUND_COOKIE_TIME_HASH,
+                if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: EXPIRED_JWT,
                         status: 406,
                         is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
                     );
-                };
-                cookie_time_hash = cth;
-            } else{
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: INVALID_COOKIE_FORMAT,
-                    status: 406,
-                    is_error: true,
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            }
+                } 
 
-            /* decoding the jwt */
-            let token_result = User::decode_token(token);
-            
-            match token_result{
-                Ok(token) => {
+                /* fetch user info based on the data inside jwt */ 
+                let single_user = users
+                    .filter(id.eq(_id))
+                    .first::<User>(connection);
 
-                    /* checking the expiration time inside the cookie */
-                    match expire_datetime{
-                        Some(exp) => {
-
-                            let now = OffsetDateTime::now_utc();
-                            
-                            /* we have an expired cookie */
-                            if exp >= now{
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: EXPIRED_COOKIE,
-                                    status: 403,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::Forbidden().json(resp))
-                                );
-                            } else{
-
-                                /* cookie time is not expired yet */
-                                let token_data = token.claims;
-                                let _id = token_data._id;
-                                let role = token_data.user_role.clone();
-
-                                /* fetch user info based on the data inside jwt */ 
-                                let single_user = users
-                                    .filter(id.eq(_id))
-                                    .first::<User>(connection);
-
-                                if single_user.is_err(){
-                                    let resp = Response{
-                                        data: Some(_id.to_owned()),
-                                        message: USER_NOT_FOUND,
-                                        status: 404,
-                                        is_error: true,
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::NotFound().json(resp))
-                                    );
-                                }
-
-                                let user = single_user.unwrap();
-
-                                /* check that the time hash of the cookie is valid */
-                                if !user.check_cookie_time_hash(cookie_time_hash){
-                                    let resp = Response::<&[u8]>{
-                                        data: Some(&[]),
-                                        message: INVALID_COOKIE_TIME_HASH,
-                                        status: 406,
-                                        is_error: true,
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::NotAcceptable().json(resp))
-                                    );
-                                }
-
-                                /* check that the user is authorized with the passed in role */
-                                if pass_role.is_some(){
-                                    if user.user_role != pass_role.unwrap(){
-                                        let resp = Response{
-                                            data: Some(_id.to_owned()),
-                                            message: ACCESS_DENIED,
-                                            status: 403,
-                                            is_error: true
-                                        };
-                                        return Err(
-                                            Ok(HttpResponse::Forbidden().json(resp))
-                                        );
-                                    } 
-                                }
-
-                                /* returning token data, if we're here means that nothing went wrong */
-                                return Ok(token_data);
-                            }
-            
-                        },
-                        None => {
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: NOT_FOUND_COOKIE_EXP,
-                                status: 406,
-                                is_error: true,
-                            };
-                            return Err(
-                                Ok(HttpResponse::NotAcceptable().json(resp))
-                            );
-                        }
-                    }
-
-                },
-                Err(e) => {
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500,
+                if single_user.is_err(){
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: USER_NOT_FOUND,
+                        status: 404,
                         is_error: true,
                     };
                     return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
+                        Ok(HttpResponse::NotFound().json(resp))
                     );
                 }
-            }
 
+                let user = single_user.unwrap();
+
+                /* 
+                    check that the user is authorized with the 
+                    passed in role and the one inside the jwt
+                    since some of the routes require role guard 
+                */
+                if pass_role.is_some(){
+                    if user.user_role != pass_role.unwrap() &&
+                        user.user_role != role{
+                        let resp = Response{
+                            data: Some(_id.to_owned()),
+                            message: ACCESS_DENIED,
+                            status: 403,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::Forbidden().json(resp))
+                        );
+                    } 
+                }
+
+                /*
+                    if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
+                    into the request header means that the user did a logout or did a login again since by logging 
+                    out the token time will be set to zero and by logging in again a new token time will be initialized.
+                */
+                if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
+                    user.token_time.unwrap() != _token_time || 
+                    user.token_time.unwrap() == 0{ /* user did a logout! */
+                    
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
+                        status: 403,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::Forbidden().json(resp))
+                    );
+                    
+                }
+
+                /* returning token data, if we're here means that nothing went wrong */
+                return Ok(token_data);
+
+            },
+            Err(e) => {
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: &e.to_string(),
+                    status: 500,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+            }
         }
+
     }
 
     pub fn passport_none_sync(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
 
-        let mut jwt_flag = false;
-        let mut cookie_flag = false;
         let mut jwt_token = ""; 
 
-        if let Some(authen_header) = req.headers().get("Authorization"){
-            if let Ok(authen_str) = authen_header.to_str(){
-                if authen_str.starts_with("bearer") || authen_str.starts_with("Bearer"){
-                    let token = authen_str[6..authen_str.len()].trim();
+        let Some(authen_header) = req.headers().get("Authorization") else{
 
-                    jwt_flag = true;
-                    jwt_token = token;
-
-                }
-            }
-        } else{
-            /* checking that the request cookie has the jwt key */
-            if let Some(_) = req.cookie("jwt"){
-
-                cookie_flag = true;
-
-            }
-        }
-
-
-        if !jwt_flag && !cookie_flag {
-            
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: NOT_FOUND_COOKIE_VALUE_OR_JWT,
@@ -813,277 +614,122 @@ impl User{
                 Ok(HttpResponse::NotFound().json(resp))
             );
 
+        };
+
+        let auth_header_value = authen_header.to_str().unwrap();
+        if auth_header_value.starts_with("bearer") ||
+            auth_header_value.starts_with("Bearer"){
+
+            jwt_token = auth_header_value[6..auth_header_value.len()].trim();
+
         }
 
-        if jwt_flag{
 
-             /* decoding the jwt */
-            let token_result = User::decode_token(jwt_token);
-            
-            match token_result{
-                Ok(token) => {
+        /* decoding the jwt */
+        let token_result = User::decode_token(jwt_token);
+        
+        match token_result{
+            Ok(token) => {
 
-                    /* cookie time is not expired yet */
-                    let token_data = token.claims;
-                    let _id = token_data._id;
-                    let role = token_data.user_role.clone();
-                    let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
-                    let exp_time = token_data.exp;
+                /* cookie time is not expired yet */
+                let token_data = token.claims;
+                let _id = token_data._id;
+                let role = token_data.user_role.clone();
+                let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
+                let exp_time = token_data.exp;
 
-                    if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: EXPIRED_JWT,
-                            status: 406,
-                            is_error: true,
-                        };
-                        return Err(
-                            Ok(HttpResponse::NotAcceptable().json(resp))
-                        );
-                    } 
-
-                    /* fetch user info based on the data inside jwt */ 
-                    let single_user = users
-                        .filter(id.eq(_id))
-                        .first::<User>(connection);
-
-                    if single_user.is_err(){
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: USER_NOT_FOUND,
-                            status: 404,
-                            is_error: true,
-                        };
-                        return Err(
-                            Ok(HttpResponse::NotFound().json(resp))
-                        );
-                    }
-
-                    let user = single_user.unwrap();
-
-                    /* 
-                        check that the user is authorized with the 
-                        passed in role and the one inside the jwt
-                        since some of the routes require role guard 
-                    */
-                    if pass_role.is_some(){
-                        if user.user_role != pass_role.unwrap() &&
-                            user.user_role != role{
-                            let resp = Response{
-                                data: Some(_id.to_owned()),
-                                message: ACCESS_DENIED,
-                                status: 403,
-                                is_error: true
-                            };
-                            return Err(
-                                Ok(HttpResponse::Forbidden().json(resp))
-                            );
-                        } 
-                    }
-
-                    /*
-                        if the current token time of the fetched user 
-                        wasn't equal to the one inside the passed in JWT
-                        into the request header means that the user did
-                        a logout or did a login again since by logging out 
-                        the token time will be set to zero and by logging 
-                        in again a new token time will be initialized.
-                    */
-                    if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
-                        user.token_time.unwrap() != _token_time || 
-                        user.token_time.unwrap() == 0{ /* user did a logout! */
-                        
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
-                            status: 403,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::Forbidden().json(resp))
-                        );
-                        
-                    }
-
-                    /* returning token data, if we're here means that nothing went wrong */
-                    return Ok(token_data);
-
-                },
-                Err(e) => {
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500,
-                        is_error: true,
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-                }
-            };
- 
-        } else{ /* surely we have cookie since the jwt flag is not true */
-
-            let cookie = req.cookie("jwt").unwrap();
-
-            let expire_datetime = cookie.expires_datetime();
-            let cookie_time_hash;
-            let token;
-
-            /* parsing the jwt value inside the cookie */
-            let jwt = cookie.value();
-            if jwt.contains("::"){
-                let mut splitted_token = jwt.split("::");
-                let Some(cookie_token) = splitted_token.next() else{
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: NOT_FOUND_TOKEN,
-                        status: 403,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::Forbidden().json(resp))
-                    );
-                };
-                token = cookie_token;
-
-                let Some(cth) = splitted_token.next() else{
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: NOT_FOUND_COOKIE_TIME_HASH,
+                if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: EXPIRED_JWT,
                         status: 406,
                         is_error: true,
                     };
                     return Err(
                         Ok(HttpResponse::NotAcceptable().json(resp))
                     );
-                };
-                cookie_time_hash = cth;
-            } else{
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: INVALID_COOKIE_FORMAT,
-                    status: 406,
-                    is_error: true,
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                );
-            }
+                } 
 
-            /* decoding the jwt */
-            let token_result = User::decode_token(token);
-            
-            match token_result{
-                Ok(token) => {
+                /* fetch user info based on the data inside jwt */ 
+                let single_user = users
+                    .filter(id.eq(_id))
+                    .first::<User>(connection);
 
-                    /* checking the expiration time inside the cookie */
-                    match expire_datetime{
-                        Some(exp) => {
-
-                            let now = OffsetDateTime::now_utc();
-                            
-                            /* we have an expired cookie */
-                            if exp >= now{
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: EXPIRED_COOKIE,
-                                    status: 403,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::Forbidden().json(resp))
-                                );
-                            } else{
-
-                                /* cookie time is not expired yet */
-                                let token_data = token.claims;
-                                let _id = token_data._id;
-                                let role = token_data.user_role.clone();
-
-                                /* fetch user info based on the data inside jwt */ 
-                                let single_user = users
-                                    .filter(id.eq(_id))
-                                    .first::<User>(connection);
-
-                                if single_user.is_err(){
-                                    let resp = Response{
-                                        data: Some(_id.to_owned()),
-                                        message: USER_NOT_FOUND,
-                                        status: 404,
-                                        is_error: true,
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::NotFound().json(resp))
-                                    );
-                                }
-
-                                let user = single_user.unwrap();
-
-                                /* check that the time hash of the cookie is valid */
-                                if !user.check_cookie_time_hash(cookie_time_hash){
-                                    let resp = Response::<&[u8]>{
-                                        data: Some(&[]),
-                                        message: INVALID_COOKIE_TIME_HASH,
-                                        status: 406,
-                                        is_error: true,
-                                    };
-                                    return Err(
-                                        Ok(HttpResponse::NotAcceptable().json(resp))
-                                    );
-                                }
-
-                                /* check that the user is authorized with the passed in role */
-                                if pass_role.is_some(){
-                                    if user.user_role != pass_role.unwrap(){
-                                        let resp = Response{
-                                            data: Some(_id.to_owned()),
-                                            message: ACCESS_DENIED,
-                                            status: 403,
-                                            is_error: true
-                                        };
-                                        return Err(
-                                            Ok(HttpResponse::Forbidden().json(resp))
-                                        );
-                                    } 
-                                }
-
-                                /* returning token data, if we're here means that nothing went wrong */
-                                return Ok(token_data);
-                            }
-            
-                        },
-                        None => {
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: NOT_FOUND_COOKIE_EXP,
-                                status: 406,
-                                is_error: true,
-                            };
-                            return Err(
-                                Ok(HttpResponse::NotAcceptable().json(resp))
-                            );
-                        }
-                    }
-
-                },
-                Err(e) => {
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: &e.to_string(),
-                        status: 500,
+                if single_user.is_err(){
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: USER_NOT_FOUND,
+                        status: 404,
                         is_error: true,
                     };
                     return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
+                        Ok(HttpResponse::NotFound().json(resp))
                     );
                 }
-            }
 
+                let user = single_user.unwrap();
+
+                /* 
+                    check that the user is authorized with the 
+                    passed in role and the one inside the jwt
+                    since some of the routes require role guard 
+                */
+                if pass_role.is_some(){
+                    if user.user_role != pass_role.unwrap() &&
+                        user.user_role != role{
+                        let resp = Response{
+                            data: Some(_id.to_owned()),
+                            message: ACCESS_DENIED,
+                            status: 403,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::Forbidden().json(resp))
+                        );
+                    } 
+                }
+
+                /*
+                    if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
+                    into the request header means that the user did a logout or did a login again since by logging 
+                    out the token time will be set to zero and by logging in again a new token time will be initialized.
+                */
+                if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
+                    user.token_time.unwrap() != _token_time || 
+                    user.token_time.unwrap() == 0{ /* user did a logout! */
+                    
+                    let resp = Response{
+                        data: Some(_id.to_owned()),
+                        message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
+                        status: 403,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::Forbidden().json(resp))
+                    );
+                    
+                }
+
+                /* returning token data, if we're here means that nothing went wrong */
+                return Ok(token_data);
+
+            },
+            Err(e) => {
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: &e.to_string(),
+                    status: 500,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+            }
         }
+
     }
 
-    fn generate_token(&self, _token_time: i64) -> (
+    fn generate_tokens(&self, _token_time: i64) -> (
         Result<String, jsonwebtoken::errors::Error>,
         Result<String, jsonwebtoken::errors::Error>
     ){
@@ -1176,11 +822,11 @@ impl User{
         // let time_hash_hex_string = hex::encode(&time_hash);
 
         /* if we're here means that the password was correct */
-        let get_tokens = self.generate_token(time_hash_now);
+        let get_tokens = self.generate_tokens(time_hash_now);
         let access_token = get_tokens.0.unwrap();
         let refresh_token = get_tokens.1.unwrap();
         
-        let cookie_value = format!("{access_token:}::{time_hash_hex_string:}||[{refresh_token:}]");
+        let cookie_value = format!("/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}");
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
                                     .secure(true)

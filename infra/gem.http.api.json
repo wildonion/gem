@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "7a3bd80c-b40f-46ab-bc94-5fca466fe30b",
-		"name": "gem",
+		"name": "gem-http",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "22927035",
 		"_collection_link": "https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&source=collection_link&creator=22927035"
@@ -2010,7 +2010,7 @@
 										"login"
 									]
 								},
-								"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
+								"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 							},
 							"response": []
 						},
@@ -2569,7 +2569,7 @@
 												"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
 											]
 										},
-										"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
+										"description": "> There are access and refresh tokens in cookie response in form of /`accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 									},
 									"response": []
 								},
@@ -2577,7 +2577,14 @@
 									"name": "Login With Identifier and Password",
 									"request": {
 										"auth": {
-											"type": "noauth"
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDE0NDQzNTAzMjUyMTAwMDAsImlhdCI6MTcwMTQ0MTk1MDMyNTMxMDAwMH0.L3MLa_vHzaOY-gQ1r7XnTKPxmFbyzu7-rqLP8eqgNbLJYggtdxnZIgbyzNG751U4x6sbEXRVvaX-9cgiieXqUg",
+													"type": "string"
+												}
+											]
 										},
 										"method": "POST",
 										"header": [],
@@ -2599,7 +2606,7 @@
 												"login"
 											]
 										},
-										"description": "> There are access and refresh tokens in cookie response in form of `ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
+										"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
 									},
 									"response": []
 								},
@@ -2814,7 +2821,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxMzYwOTMxMjg0NjAyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxMzYyNzMxMjg1MDk5MDAwLCJpYXQiOjE3MDEzNjA5MzEyODUwOTkwMDB9.KoS1d99QI2FmlyvSUG1MAK-1Lot3dE8Rnm5VqOEE_Vln2lfMcpmTqZtfhxtXfha19jf9pM1Kx91c1kbnU07KvQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNDQxOTUwMzI1MDk1MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNDQzNzUwMzI1MjEwMDAwLCJpYXQiOjE3MDE0NDE5NTAzMjUyMTAwMDB9.xj-Suv0cVjjj8vXlEFdmKr2XB1AXq2s5O9YKWxpW4zyF2Ii_AUTVvO4aQ-HjSFYiZYgI9bofStOih-qNjxySiA",
 													"type": "string"
 												}
 											]

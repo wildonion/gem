@@ -122,11 +122,12 @@ impl Modify for SecurityAddon {
 )]
 /* 
     >-------------------------------------------------------------------------
-    There are access and refresh tokens in cookie response in form of:
-        ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]
+    There are access and refresh tokens in cookie response in form of 
+        /accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:} 
     once the access token gets expired we can pass refresh token into 
-    the request header in place of access token to get a new set of keys 
-    on behalf of user, instead of redirecting client to the login page again.
+    the request header in place of access token to get a new set of 
+    keys on behalf of user, instead of redirecting client to the 
+    login page again.
 */
 #[post("/login/{identifier}")]
 async fn login(
@@ -860,11 +861,12 @@ async fn verify_phone_code(
 
 /* 
     >-------------------------------------------------------------------------
-    There are access and refresh tokens in cookie response in form of:
-        ACCESS_TOKEN::TOKEN_TIME||[REFRESH_TOKEN]
+    There are access and refresh tokens in cookie response in form of 
+        /accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:} 
     once the access token gets expired we can pass refresh token into 
-    the request header in place of access token to get a new set of keys 
-    on behalf of user, instead of redirecting client to the login page again.
+    the request header in place of access token to get a new set of 
+    keys on behalf of user, instead of redirecting client to the 
+    login page again.
 */
 #[post("/login")]
 async fn login_with_identifier_and_password(
