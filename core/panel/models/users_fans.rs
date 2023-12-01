@@ -545,7 +545,7 @@ impl UserFan{
             return Err(resp_err);
         };
 
-        let user_screen_cid_ = user.screen_cid.unwrap();
+        let user_screen_cid_ = friend_info.screen_cid.unwrap();
         match Self::get_user_fans_data_for(&user_screen_cid_, connection).await{
 
             /* already inserted just update the friends field */
@@ -575,7 +575,7 @@ impl UserFan{
                     decoded_friends_data.push(friend_data);
                 } 
 
-                Self::update(owner_screen_cid, 
+                Self::update(&user_screen_cid_, 
                     UpdateUserFanData{ 
                         friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
                         invitation_requests: user_fan_data.invitation_requests 
