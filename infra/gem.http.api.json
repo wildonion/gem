@@ -2577,14 +2577,7 @@
 									"name": "Login With Identifier and Password",
 									"request": {
 										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDEzNzIzNjQwMjM5NjUwMDAsImlhdCI6MTcwMTM3MDU0OTAyNDYyNzAwMH0.-6ipiOal4qa__KynR-GjVTIqrNQX8ktYLvDOK8dgyfZGIT1rjq5yfZGrKDpnbQkaWQ3kLHX0QjQ_0-0cvQ0rOw",
-													"type": "string"
-												}
-											]
+											"type": "noauth"
 										},
 										"method": "POST",
 										"header": [],
