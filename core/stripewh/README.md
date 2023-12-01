@@ -1,5 +1,7 @@
 
 
+Stripe payment webhook
+
 ## How 2? 
 
 > note that live (test) webhooks only work in a live (test) environment, so make sure you're creating a webhook based on your environment which can be switched in stripe dashboard panel.
@@ -22,7 +24,9 @@ step 6. update the `STRIPE_WEBHOOK_SIGNATURE` field inside the `.env` file with 
 
 ## Can be easier?
 
-Yes! jut run the following command in a new terminal to get the webhook secret and start the stripe webhook listener to accept incoming webhook events like checkouts in localhost, make sure you have already setup the docker container for the `stripewh` server and is accepting connection on port `4243`, also remember to update the `STRIPE_WEBHOOK_SIGNATURE` field inside the `.env` file.
+> Make sure you've setup the `https://api.panel.conse.app` DNS record for the panel APIs so the webhook server can send the charge-user-balance request to the panel server or if your ass is a wide one! you can change the `panel_webhook_url` value in `server.py` code to `http://localhost:7443/health/cid/wallet/stripe/update/balance/webhook`.
+
+Yes! just run the following command in a new terminal to get the webhook secret and start the stripe webhook listener to accept incoming webhook events like checkouts in localhost, make sure you have already setup the docker container for the `stripewh` server and is accepting connection on port `4243`, also remember to update the `STRIPE_WEBHOOK_SIGNATURE` field inside the `.env` file.
 
 ```bash
 cd .. && cd .. && cd scripts
