@@ -5910,7 +5910,7 @@ async fn get_all_public_collections_for(
 
                     match UserCollection::get_all_public_collections_for(
                         &walletreq::evm::get_keccak256_from(who_cid.to_owned()), 
-                        limit, connection).await{
+                        limit, &user.screen_cid.unwrap(), connection).await{
                         
                         Ok(collections) => {
 
@@ -6035,7 +6035,7 @@ async fn get_all_public_collection_nfts(
 
                     match UserCollection::get_all_minted_nfts_of_collection(
                         col_id.to_owned(), 
-                        limit, connection).await{
+                        limit, &user.screen_cid.unwrap(), connection).await{
                         
                         Ok(nfts) => {
 
