@@ -804,7 +804,7 @@ impl User{
             every user can be every user in which they can see other peer's jwt info inside their browser
             which allows them to be inside each other panel!
             
-            let time_hash = walletreq::get_sha256_from(&time_hash_now_now_str);
+            let time_hash = walletreq::exports::get_sha256_from(&time_hash_now_now_str);
         */
         let time_hash_now = chrono::Local::now().timestamp_nanos_opt().unwrap();
         let time_hash_now_now_str = format!("{}", time_hash_now);

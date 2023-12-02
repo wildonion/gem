@@ -23,6 +23,7 @@ pub struct User {
 #[spacetimedb(table)]
 pub struct Message {
     sender: Identity,
+    signature: String, // secp256r1 signature
     sent: Timestamp,
     text: String,
 }

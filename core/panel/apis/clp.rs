@@ -20,6 +20,7 @@ use crate::passport::Passport;
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use actix_web::web::Query;
 use s3req::Storage;
  
 use crate::events::{
@@ -45,19 +46,20 @@ use actix::prelude::*;
     Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNDczOTMzNTQ3MjIxMDAwLCJleHAiOjE3MDMwNjU5MzMsImlhdCI6MTcwMDQ3MzkzM30.T1_JWQVLqj_jEC6LxCBF3KpXcWpzcVJxvYxqVT8wDSdOsrcekACo55z9yFhcmxyBN0sEtFaBrGCdKYtASQzFzw
     
     local API:
-        ws://localhost:7442/subscribe/chatroomlp/{chatroomlp_id}/{user_screen_cid}/{tx_signature}/{hash_data}
+        ws://localhost:7442/subscribe/chatroomlp/{chatroomlp_id}/{user_screen_cid}/{tx_signature}/{hash_data}/?r1pubkey={r1pubkey}&r1signature={r1signature}
     
     production APIs:
-        `wss://notif.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1`
+        `wss://notif.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1/?r1pubkey=0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16&r1signature=0x20260426e5000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c2266726f6d5f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c22616d6f756e74223a357d3045022100d49e8716ef150129b612c65ef8e798e8fac73577fc8df1d4664674488b89f86d02203f62c3c5776ed393a4d0a761714d9f1e52185c5b24c4a3afe03b7903aa5186af`
 
 */
-#[get("/chatroomlp/{chatroomlp_id}/{user_cid}/{tx_signature}/{hash_data}")]
+#[get("/chatroomlp/{chatroomlp_id}/{user_cid}/{tx_signature}/{hash_data}/")]
 #[passport(user)]
 async fn chatroomlp(
     req: HttpRequest, 
     stream: web::Payload, 
     clpucid: web::Path<(i32, String, String, String)>,
     payload: Multipart,
+    r1keys: Query<R1Keys>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_chatroomlp_actor_address: web::Data<Addr<ChatRoomLaunchpadServer>>,
 ) -> PanelHttpResponse {
@@ -109,6 +111,19 @@ async fn chatroomlp(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+
+                    let r1pubkey = r1keys.r1pubkey.clone();
+                    let r1signature = r1keys.r1signature.clone();
+                    if r1pubkey.is_empty() || r1signature.is_empty(){
+
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            WS_EMPTY_R1_KEYS, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    }
 
                     /* extracting path vars */
                     let clpucid = clpucid.to_owned();
@@ -203,6 +218,8 @@ async fn chatroomlp(
                             chat_room: chat_room_str,
                             ws_chatroomlp_actor_address,
                             app_storage: storage.clone(),
+                            r1pubkey,
+                            r1signature
                         }, 
                         &req, 
                         stream

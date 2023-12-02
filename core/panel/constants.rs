@@ -221,6 +221,7 @@ pub const WS_CLIENT_TIMEOUT: StdDuration = StdDuration::from_secs(3600);
 pub static WS_INVALID_PATH: &str = "Invalid Path Params";
 pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";
 pub static WS_UPDATE_CLP_ROOM_ISSUE: &str = "Can't Update Chat Room";
+pub static WS_EMPTY_R1_KEYS: &str = "Secp256r1 Public Key and Signature Can't Be Empty";
 
 pub mod subnets{
 

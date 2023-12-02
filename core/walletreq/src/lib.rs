@@ -9,13 +9,19 @@
  * - ed25519
  * - secp256k1
  * - secp256r1
+ *  ---------------------
+ * | HASH METHODS
+ *  ---------------------
+ * - sha3 keccak256 ---- secp256k1, secp256r1, ed25519
+ * - aes256         ---- ed25519
+ * - sha2
 */
 
 use web3::types::SignedData;
 use std::str::FromStr;
 use secp256k1::Secp256k1;
 use web3::Web3;
-use wallexerr::*;
+use wallexerr::misc::*;
 
 
 
@@ -30,6 +36,21 @@ pub mod ed25519{
     pub fn generate_new_wallet() -> Wallet{
 
         Wallet::new_ed25519()
+    }
+
+    
+
+}
+
+/* -------------------------- */
+/* ------- symmetric  ------- */
+/* -------------------------- */
+pub mod symmteric{
+
+    pub use super::*;
+
+    pub fn get_default_secure_cell_config() -> SecureCellConfig{
+        SecureCellConfig::default()
     }
 
     pub fn get_default_aes256_config() -> Aes256Config{
@@ -138,6 +159,16 @@ pub mod evm{
 }
 
 
-pub fn get_sha256_from(data: &str) -> [u8; 32]{
-    Wallet::generate_sha256_from(data)
+/* -------------------------- */
+/* ------- utilities  ------- */
+/* -------------------------- */
+pub mod exports{
+    
+    pub use super::*;
+
+    pub fn get_sha256_from(data: &str) -> [u8; 32]{
+        Wallet::generate_sha256_from(data)
+    }
 }
+
+

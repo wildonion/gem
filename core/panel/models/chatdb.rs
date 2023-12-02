@@ -34,28 +34,12 @@ impl UserChat{
             return Err(err_resp);
         };
 
-        let r1_wallet = walletreq::secp256r1::generate_new_wallet();
-        let mut ed_wallet = walletreq::ed25519::generate_new_wallet();
 
-        let mut default_aes256_condif = walletreq::ed25519::get_default_aes256_config();
-        default_aes256_condif.secret_key = misc::gen_random_chars(64); /*** ---- secret key must be 64 bytes or 512 bits */
-        default_aes256_condif.nonce = misc::gen_random_chars(16); /*** ---- secret key must be 16 bytes or 128 bits */
-        default_aes256_condif.data = text.as_bytes().to_vec();
-
-        let encrypted_text = ed_wallet.self_generate_aes256_from(default_aes256_condif.clone());        
-        default_aes256_condif.data = encrypted_text.clone(); /* update data field with encrypted form of raw data */
-        let dec = ed_wallet.self_generate_data_from_aes256(default_aes256_condif.clone());
-        
-        let raw_text = std::str::from_utf8(&dec).unwrap();
-        info!("aes256 decrypted data :::: {:?}", raw_text);
-        info!("default_aes256_condif.secret_key :::: {:?}", default_aes256_condif.secret_key);
-        info!("default_aes256_condif.nonce :::: {:?}", default_aes256_condif.nonce);
-
+        // text is the decrypted message
 
         // -------------------------------
         // TODO - store in chatdb by calling wasm methods
-        // end2enc chat encryption using ed_wallet aes256
-        // see ed25519_aes256_test() method
+        // TODO - n.chat per user limit
         // ...
 
         todo!()

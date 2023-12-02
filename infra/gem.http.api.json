@@ -2581,7 +2581,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDE0NDQzNTAzMjUyMTAwMDAsImlhdCI6MTcwMTQ0MTk1MDMyNTMxMDAwMH0.L3MLa_vHzaOY-gQ1r7XnTKPxmFbyzu7-rqLP8eqgNbLJYggtdxnZIgbyzNG751U4x6sbEXRVvaX-9cgiieXqUg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDE0NDY4MTY2NTI4MDQwMDAsImlhdCI6MTcwMTQ0NDQxNjY1MzYwMjAwMH0.d0Q8uOT--OeLGdTpAmNBclyTYVPJqFzOLXhZDaErMYV3NR3Hoth1CmKTZsvYSFoB37yLAdd8zaYilhqkyFtceA",
 													"type": "string"
 												}
 											]
@@ -2821,7 +2821,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNDQxOTUwMzI1MDk1MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNDQzNzUwMzI1MjEwMDAwLCJpYXQiOjE3MDE0NDE5NTAzMjUyMTAwMDB9.xj-Suv0cVjjj8vXlEFdmKr2XB1AXq2s5O9YKWxpW4zyF2Ii_AUTVvO4aQ-HjSFYiZYgI9bofStOih-qNjxySiA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNDQ0NDU1ODMwOTUzMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNDQ2MjU1ODMyMDA3MDAwLCJpYXQiOjE3MDE0NDQ0NTU4MzIwMDcwMDB9.0rLWkWRbH2wJ2948LRXzvqDYXExkA9l8mBAKRvdKROZSeO_xdz2YKVc07YEiWxpfLN7DnqwU6AwOQt1HHo1ZAw",
 													"type": "string"
 												}
 											]
@@ -3865,7 +3865,7 @@
 									"response": []
 								},
 								{
-									"name": "Get All My Fans Data",
+									"name": "Get All My Followings",
 									"request": {
 										"auth": {
 											"type": "bearer",
@@ -3880,7 +3880,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/all/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/all/followings/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3888,6 +3888,48 @@
 												"fan",
 												"get",
 												"all",
+												"followings",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All My Followers",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/all/followers/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"all",
+												"followers",
 												""
 											],
 											"query": [

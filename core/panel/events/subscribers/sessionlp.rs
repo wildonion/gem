@@ -36,6 +36,8 @@ pub(crate) struct WsLaunchpadSession{
     pub id: String, // unique session id or screen_cid
     pub hb: Instant, // client must send ping at least once per 10 seconds (CLIENT_TIMEOUT), otherwise we drop connection.
     pub chat_room: &'static str, // user has joined in to this room 
+    pub r1pubkey: String,
+    pub r1signature: String,
     pub peer_name: Option<String>, // user mongodb id
     pub ws_chatroomlp_actor_address: Addr<ChatRoomLaunchpadServer>, // the mmr notif actor server address,
     pub app_storage: Option<Arc<Storage>>,
@@ -219,6 +221,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             },
             ws::Message::Text(text) => {
 
+                /* ---- decrypting the message ---- */
+                let mut r1_wallet = walletreq::secp256r1::generate_new_wallet();
+                let get_decrypted_new_message = r1_wallet.self_verify_secp256r1_signature(&self.r1signature, &self.r1pubkey);
+                if get_decrypted_new_message.is_err(){
+                    let error = get_decrypted_new_message.unwrap_err();
+                    return ctx.text(error.to_string());
+                }
+
+                let message_vec = get_decrypted_new_message.unwrap();
+                // converting vector decoded message into static slice so it can live long enough for the entire app
+                let message_vec_slice = misc::vector_to_static_slice(message_vec); 
+                let new_message = std::str::from_utf8(message_vec_slice).unwrap();
+
                 /* handling slash commands */
                 let m = text.trim();
                 if m.starts_with("/"){
@@ -280,8 +295,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                 let server_actor = self.ws_chatroomlp_actor_address.clone();
                 let chatroom_name = self.chat_room.to_string().clone();
                 let session_id = self.id.clone();
-                let new_message = text.clone();
-                let save_me_in_db = text.clone();
 
                 /* sending the message asyncly to all session in that room in a separate thread */
                 tokio::spawn(async move{
@@ -349,7 +362,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     if let Err(resp) = UserChat::store(
                         chatroom_name.parse::<i32>().unwrap(),
                         &session_id,
-                        &save_me_in_db,
+                        new_message,
                         connection
                     ).await{
 
