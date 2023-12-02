@@ -158,8 +158,9 @@ impl UserFan{
             }
         }
 
+        /* updating the friend data of the owner whom accepted the request */
         Self::update(&owner_screen_cid, UpdateUserFanData{ 
-            friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
+            friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), /* encoding the updated decoded_friends_data back to serde json value */
             invitation_requests: user_fan_data.invitation_requests
         }, connection).await
         
@@ -407,7 +408,7 @@ impl UserFan{
 
     }
 
-    pub async fn get_all_user_fans_data_for(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_my_followings(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<Vec<UserFanData>, PanelHttpResponse>{
 
@@ -464,6 +465,86 @@ impl UserFan{
 
                 })
                 .collect::<Vec<UserFanData>>()
+        )
+
+    }
+
+    /* get all users that they have owner_screen_cid in their friend data */
+    pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    -> Result<Vec<Option<UserFanData>>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        let user_fan_data = users_fans
+            .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .load::<UserFan>(connection);
+
+        let Ok(fans_data) = user_fan_data else{
+
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: NO_FANS_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        let mut fans_data_ = fans_data
+            .into_iter()
+            .map(|f|{
+
+                let friends_data = f.clone().friends;
+                let mut decoded_friends_data = if friends_data.is_some(){
+                    serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                } else{
+                    vec![]
+                };
+                
+                if decoded_friends_data
+                    .into_iter()
+                    .any(|f| f.screen_cid == owner_screen_cid){
+                        
+                        Some(
+                            UserFanData{
+                                id: f.id,
+                                user_screen_cid: f.user_screen_cid,
+                                friends: f.friends,
+                                invitation_requests: f.invitation_requests,
+                                created_at: f.created_at.to_string(),
+                                updated_at: f.updated_at.to_string(),
+                            }
+                        )
+                    } else{
+                        None
+                    }
+
+            })
+            .collect::<Vec<Option<UserFanData>>>();
+        
+        fans_data_.retain(|f| f.is_some());
+
+        Ok(
+            fans_data_
         )
 
     }
@@ -559,11 +640,11 @@ impl UserFan{
                 };
 
                 let friend_data = FriendData{ 
-                    screen_cid: to_screen_cid.clone(), 
+                    screen_cid: owner_screen_cid.clone(), 
                     requested_at: chrono::Local::now().timestamp(), 
                     is_accepted: false, /* user must accept it later */
-                    username: friend_info.username,
-                    user_avatar: friend_info.avatar, 
+                    username: user.username,
+                    user_avatar: user.avatar, 
                 };
                 
                 /* 
@@ -585,8 +666,9 @@ impl UserFan{
             /* insert new record */
             Err(resp) => {
                 
+                /* we'll insert a new user fan data for the one whom the caller sent the request */
                 let new_fan_data = InsertNewUserFanRequest{
-                    user_screen_cid: owner_screen_cid.to_owned(),
+                    user_screen_cid: user_screen_cid_.to_owned(),
                     friends: {
                         let friend_data = FriendData{ 
                             screen_cid: to_screen_cid, 
