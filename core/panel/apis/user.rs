@@ -5667,7 +5667,7 @@ async fn get_all_my_followings(
                         Ok(user_fans_data) => {
 
                             resp!{
-                                Vec<UserFanData>, //// the data type
+                                Vec<Option<UserFanData>>, //// the data type
                                 user_fans_data, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
