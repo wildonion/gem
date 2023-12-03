@@ -34,11 +34,11 @@ pub struct UserFan{
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[derive(PartialEq)]
 pub struct FriendData{
-    pub username: String,
-    pub user_avatar: Option<String>,
-    pub screen_cid: String,
-    pub requested_at: i64,
-    pub is_accepted: bool, /* owner or user_screen_cid field must accept or deny the request */
+    pub username: String, // request sender username
+    pub user_avatar: Option<String>, // request sender avatar
+    pub screen_cid: String, // request sender screen_cid
+    pub requested_at: i64, 
+    pub is_accepted: bool, /* owner or user_screen_cid field in UserFan struct must accept or reject the request */
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -144,16 +144,16 @@ impl UserFan{
         } else{
             vec![]
         };
-
+        
 
         /* mutating a structure inside a vector of FriendData structs using &mut pointer */
-        'updatefrienddata: for frn_req in &mut decoded_friends_data{
+        'updatefrienddatablock: for frn_req in &mut decoded_friends_data{
 
             if frn_req.is_accepted == false && 
                 frn_req.screen_cid == friend_screen_cid{
                     
                 frn_req.is_accepted = true;
-                break 'updatefrienddata;
+                break 'updatefrienddatablock;
 
             }
         }
@@ -408,6 +408,7 @@ impl UserFan{
 
     }
 
+    // friends
     pub async fn get_all_my_followings(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<Vec<Option<UserFanData>>, PanelHttpResponse>{
@@ -460,7 +461,9 @@ impl UserFan{
 
             let mut both_friend_data_arr = vec![];
             let mut fdata: Option<FriendData> = Default::default();
+            
             for fd in decoded_friends_data{
+                
                 let both_friend_data = if fd.is_accepted{
 
                     let get_user_fan_data = Self::get_user_fans_data_for(&fd.clone().screen_cid, connection).await;
@@ -528,7 +531,7 @@ impl UserFan{
 
     }
 
-    /* get all users that they have owner_screen_cid in their friend data */
+    /* fans: get all users that they have owner_screen_cid in their friends data */
     pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<Vec<Option<UserFanData>>, PanelHttpResponse>{
@@ -581,7 +584,7 @@ impl UserFan{
                 
                 if decoded_friends_data
                     .into_iter()
-                    .any(|f| f.screen_cid == owner_screen_cid){
+                    .any(|fd| f.user_screen_cid == owner_screen_cid && fd.is_accepted){
                         
                         Some(
                             UserFanData{
@@ -593,6 +596,7 @@ impl UserFan{
                                 updated_at: f.updated_at.to_string(),
                             }
                         )
+
                     } else{
                         None
                     }
@@ -670,8 +674,8 @@ impl UserFan{
             = send_friend_request;
 
 
-        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid); // narni 
-        let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
+        let caller_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid); // narni 
+        let get_user = User::find_by_screen_cid(caller_screen_cid, connection).await;
         let Ok(user) = get_user else{
 
             let resp_err = get_user.unwrap_err();
@@ -699,11 +703,11 @@ impl UserFan{
                 };
 
                 let friend_data = FriendData{ 
-                    screen_cid: owner_screen_cid.clone(), //
+                    screen_cid: caller_screen_cid.clone(), //
                     requested_at: chrono::Local::now().timestamp(), 
                     is_accepted: false, /* user_screen_cid_ must accept it later */
-                    username: friend_info.username, // username of the one who has sent the request
-                    user_avatar: friend_info.avatar, // avatar of the one who has sent the request
+                    username: user.username, // username of the one who has sent the request
+                    user_avatar: user.avatar, // avatar of the one who has sent the request
                 };
                 
                 /* 
@@ -730,11 +734,11 @@ impl UserFan{
                     user_screen_cid: user_screen_cid_.to_owned(),
                     friends: {
                         let friend_data = FriendData{ 
-                            screen_cid: owner_screen_cid.clone(), 
+                            screen_cid: caller_screen_cid.clone(), // caller is sending request to user_screen_cid
                             requested_at: chrono::Local::now().timestamp(), 
                             is_accepted: false,
-                            username: friend_info.username,
-                            user_avatar: friend_info.avatar, 
+                            username: user.username,
+                            user_avatar: user.avatar, 
                         };
 
                         Some(serde_json::to_value(vec![friend_data]).unwrap())
@@ -911,14 +915,14 @@ impl UserFan{
 
 
         /* mutating a structure inside a vector of InvitationRequestData structs using &mut pointer */
-        'updateinvreq: for inv_req in &mut decoded_invitation_request_data{
+        'updateinvreqblock: for inv_req in &mut decoded_invitation_request_data{
 
             if inv_req.is_accepted == false && 
                 inv_req.from_screen_cid == from_screen_cid && 
                 inv_req.gallery_id == gal_id{
             
                 inv_req.is_accepted = true;
-                break 'updateinvreq;
+                break 'updateinvreqblock;
 
             }
         }
