@@ -34,6 +34,15 @@ impl UserChat{
             return Err(err_resp);
         };
 
+        fn get_name() -> String{ String::from("") }
+        let callback = |func: fn() -> String|{
+            func();
+        };
+        callback(get_name);
+
+
+        // wasm, box pin, impl Trait | &dyn Trait, Send Sync Arc, Weak, Rc, RefCell, Mutex, RwLock
+        // share the references of the type between threads using clone or & 
 
         // text is the decrypted message
 

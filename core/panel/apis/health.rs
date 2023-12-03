@@ -746,7 +746,9 @@ async fn is_user_kyced(
                         mail: user.mail,
                         screen_cid: user.screen_cid,
                         stars: user.stars,
-                        created_at: user.created_at.to_string()
+                        created_at: user.created_at.to_string(),
+                        bio: user.bio,
+                        banner: user.banner
                     };
 
                     /* sending user data */

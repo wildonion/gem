@@ -38,7 +38,7 @@ pub struct FriendData{
     pub user_avatar: Option<String>,
     pub screen_cid: String,
     pub requested_at: i64,
-    pub is_accepted: bool,
+    pub is_accepted: bool, /* owner or user_screen_cid field must accept or deny the request */
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -670,7 +670,7 @@ impl UserFan{
             = send_friend_request;
 
 
-        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
+        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid); // narni 
         let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
         let Ok(user) = get_user else{
 
@@ -699,15 +699,15 @@ impl UserFan{
                 };
 
                 let friend_data = FriendData{ 
-                    screen_cid: owner_screen_cid.clone(), 
+                    screen_cid: owner_screen_cid.clone(), //
                     requested_at: chrono::Local::now().timestamp(), 
-                    is_accepted: false, /* user must accept it later */
-                    username: user.username,
-                    user_avatar: user.avatar, 
+                    is_accepted: false, /* user_screen_cid_ must accept it later */
+                    username: friend_info.username, // username of the one who has sent the request
+                    user_avatar: friend_info.avatar, // avatar of the one who has sent the request
                 };
                 
                 /* 
-                    if the user has not already requested regardless of the owner is accepted or not
+                    if the user has not already requested regardless of that owner is accepted or not
                     we'll push it to friends, also the owner might have deleted/removed/unfollowed the 
                     user so next time his friend can send a request again 
                 */
@@ -730,7 +730,7 @@ impl UserFan{
                     user_screen_cid: user_screen_cid_.to_owned(),
                     friends: {
                         let friend_data = FriendData{ 
-                            screen_cid: to_screen_cid, 
+                            screen_cid: owner_screen_cid.clone(), 
                             requested_at: chrono::Local::now().timestamp(), 
                             is_accepted: false,
                             username: friend_info.username,
@@ -741,7 +741,8 @@ impl UserFan{
                     },
                     invitation_requests: Some(serde_json::to_value::<Vec<InvitationRequestData>>(vec![]).unwrap()),
                 };
-            
+                
+                /* return the last record */
                 match diesel::insert_into(users_fans)
                     .values(&new_fan_data)
                     .returning(UserFan::as_returning())

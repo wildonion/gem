@@ -143,6 +143,8 @@ pub struct UserData{
 pub struct UserWalletInfoResponse{
     pub username: String,
     pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub banner: Option<String>,
     pub mail: Option<String>, /* unique */
     pub screen_cid: Option<String>, /* keccak256 */
     pub stars: Option<i64>,
@@ -957,7 +959,9 @@ impl User{
                 mail: user.mail, 
                 screen_cid: user.screen_cid, 
                 stars: user.stars, 
-                created_at: user.created_at.to_string() 
+                created_at: user.created_at.to_string(),
+                bio: user.bio,
+                banner: user.banner, 
             }
         )
 

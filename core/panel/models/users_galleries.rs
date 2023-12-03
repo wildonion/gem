@@ -425,6 +425,8 @@ impl UserPrivateGallery{
                                 screen_cid: user_data.screen_cid,
                                 stars: user_data.stars,
                                 created_at: user_data.created_at.to_string(),
+                                bio: user_data.bio,
+                                banner: user_data.banner,
                             }
                         )
                     } else{

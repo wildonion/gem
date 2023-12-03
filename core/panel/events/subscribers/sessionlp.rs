@@ -270,6 +270,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                                         screen_cid: user_info.screen_cid,
                                         stars: user_info.stars,
                                         created_at: user_info.created_at.to_string(),
+                                        bio: user_info.bio,
+                                        banner: user_info.banner,
                                     }
 
                                 })

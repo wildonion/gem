@@ -268,7 +268,7 @@ async fn request_mail_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -441,7 +441,7 @@ async fn verify_mail_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -596,7 +596,7 @@ async fn request_phone_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -778,7 +778,7 @@ async fn verify_phone_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1115,7 +1115,7 @@ async fn verify_twitter_account(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1291,7 +1291,7 @@ pub async fn tasks_report(
                 };
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1403,7 +1403,7 @@ async fn charge_wallet_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1771,7 +1771,7 @@ async fn make_cid(
                 };
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2001,7 +2001,7 @@ async fn deposit(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2309,7 +2309,7 @@ async fn get_all_user_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2454,7 +2454,7 @@ async fn withdraw(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3253,7 +3253,7 @@ async fn edit_bio(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3364,7 +3364,7 @@ async fn upload_wallet_back(
     
     
                 /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-                match User::passport(req, granted_role, connection).await{
+                match req.get_user(granted_role, connection){
                     Ok(token_data) => {
                         
                         let _id = token_data._id;
@@ -3475,7 +3475,7 @@ async fn upload_avatar(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3586,7 +3586,7 @@ async fn upload_banner(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3814,7 +3814,7 @@ async fn create_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4000,7 +4000,7 @@ async fn update_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4189,7 +4189,7 @@ async fn remove_invited_friend_from_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4328,7 +4328,7 @@ async fn send_private_gallery_invitation_request_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5087,7 +5087,7 @@ async fn accept_invitation_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5226,7 +5226,7 @@ async fn accept_friend_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5323,7 +5323,6 @@ async fn send_friend_request_to(
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
@@ -5365,7 +5364,7 @@ async fn send_friend_request_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5504,7 +5503,7 @@ async fn remove_user_from_friend(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5843,7 +5842,7 @@ async fn get_all_my_followers(
 #[passport(user)]
 async fn get_all_public_collections_for(
     req: HttpRequest,
-    who_cid: web::Path<String>,
+    who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -5909,7 +5908,7 @@ async fn get_all_public_collections_for(
                     }
 
                     match UserCollection::get_all_public_collections_for(
-                        &walletreq::evm::get_keccak256_from(who_cid.to_owned()), 
+                        &who_screen_cid.to_owned(), 
                         limit, &user.screen_cid.unwrap(), connection).await{
                         
                         Ok(collections) => {
@@ -6266,7 +6265,7 @@ async fn create_collection(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6454,7 +6453,7 @@ async fn update_collection(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6642,7 +6641,7 @@ async fn create_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6830,7 +6829,7 @@ async fn create_nft_metadata_uri(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7033,7 +7032,7 @@ async fn upload_collection_banner(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7157,7 +7156,7 @@ async fn update_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7345,7 +7344,7 @@ async fn add_reaction_to_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7532,7 +7531,7 @@ async fn buy_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7720,7 +7719,7 @@ async fn mint_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8276,7 +8275,7 @@ async fn register_clp_event(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8419,7 +8418,7 @@ async fn join_clp_event(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8558,7 +8557,7 @@ async fn get_new_clp_event_info(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8665,7 +8664,7 @@ async fn get_all_user_clp_events_info(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8772,7 +8771,7 @@ async fn get_token_value(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8890,7 +8889,7 @@ async fn get_gas_fee(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match User::passport(req, granted_role, connection).await{
+            match req.get_user(granted_role, connection){
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
