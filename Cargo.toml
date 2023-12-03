@@ -128,7 +128,7 @@ codegen-units = 1
 overflow-checks = true # panic on any overflow
 
 [build]
-rustflags = ["-Z", "threads=8"]
+rustflags = ["-Z", "threads=10"]
 
 [build-dependencies]
 tonic-build = "0.10.2"
