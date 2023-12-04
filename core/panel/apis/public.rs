@@ -583,6 +583,57 @@ async fn get_user_wallet_info(
 
 }
 
+#[get("/get-users-wallet-info/")]
+async fn get_users_wallet_info(
+        req: HttpRequest,   
+        limit: web::Query<Limit>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = &mut pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+            match User::fetch_all_users_wallet_info(limit, connection).await{
+
+                Ok(users_info) => {
+
+                    resp!{
+                        Vec<UserWalletInfoResponse>, // the data type
+                        users_info, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
+            }
+            
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
 #[get("/search/")]
 async fn search(
         req: HttpRequest,   
@@ -971,5 +1022,6 @@ pub mod exports{
     pub use super::get_x_requests;
     pub use super::tasks_leaderboard;
     pub use super::get_user_wallet_info;
+    pub use super::get_users_wallet_info;
     pub use super::search;
 }
