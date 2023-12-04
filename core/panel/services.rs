@@ -149,6 +149,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::buy_nft);
     config.service(apis::user::exports::mint_nft);
     config.service(apis::user::exports::add_reaction_to_nft);
+    config.service(apis::user::exports::get_all_user_relations);
     config.service(apis::user::exports::get_all_user_reactions);
     config.service(apis::user::exports::get_all_nft_reactions);
     config.service(apis::user::exports::get_all_nfts_owned_by);

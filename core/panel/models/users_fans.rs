@@ -8,7 +8,7 @@ use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
-use super::users::User;
+use super::users::{User, UserWalletInfoResponse};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest};
 
 
@@ -18,6 +18,9 @@ use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest
     diesel migration generate users_fans ---> create users_fans migration sql files
     diesel migration run                 ---> apply sql files to db 
     diesel migration redo                ---> drop tables 
+
+    friends             ---> those one who have sent requests to user_screen_cid
+    invitation_requests ---> those one who have sent invitation requests of their own gallery to user_screen_cid
 
 */
 #[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -39,6 +42,14 @@ pub struct FriendData{
     pub screen_cid: String, // request sender screen_cid
     pub requested_at: i64, 
     pub is_accepted: bool, /* owner or user_screen_cid field in UserFan struct must accept or reject the request */
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq)]
+pub struct UserRelations{
+    pub user_info: UserWalletInfoResponse,
+    pub fans: UserFanData,
+    pub friends: UserFanData
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -73,6 +84,7 @@ pub struct InvitationRequestDataResponse{
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq)]
 pub struct UserFanData{
     pub id: i32,
     pub user_screen_cid: String,
@@ -225,7 +237,10 @@ impl UserFan{
 
         unaccepted_ones.retain(|inv| inv.is_some());
 
-        /* sorting invitation requests in desc order */
+        /* 
+            sorting invitation requests in desc order, sort_by accepts a closure which returns 
+            the Ordering and order the elements based on that 
+        */
         unaccepted_ones.sort_by(|inv1, inv2|{
             /* 
                 cannot move out of `*inv1` which is behind a shared reference
@@ -408,13 +423,87 @@ impl UserFan{
 
     }
 
-    // friends
+
+    pub async fn are_we_friends(first_screen_cid: &str, second_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, PanelHttpResponse>{
+
+        /* ----- get all fan data of the first one ------ */
+        let user_fan_data = users_fans
+            .filter(users_fans::user_screen_cid.eq(first_screen_cid))
+            .first::<UserFan>(connection);
+
+        let Ok(first_fan_data) = user_fan_data else{
+
+            let resp = Response{
+                data: Some(first_screen_cid),
+                message: NO_FANS_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        /* ----- get all fan data of the second one ------ */
+        let user_fan_data = users_fans
+            .filter(users_fans::user_screen_cid.eq(second_screen_cid))
+            .first::<UserFan>(connection);
+
+        let Ok(second_fan_data) = user_fan_data else{
+
+            let resp = Response{
+                data: Some(first_screen_cid),
+                message: NO_FANS_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        /* both of them must have each other in their friend and the request be accepted */
+        let first_friends_data = first_fan_data.clone().friends;
+        let decoded_first_friends_data = if first_friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(first_friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+        let second_friends_data = second_fan_data.clone().friends;
+        let decoded_second_friends_data = if second_friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(second_friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+        if 
+            decoded_first_friends_data
+                .into_iter()
+                .any(|fd| fd.screen_cid == second_screen_cid && fd.is_accepted == true) 
+        
+        && 
+            decoded_second_friends_data
+                .into_iter()
+                .any(|fd| fd.screen_cid == first_screen_cid && fd.is_accepted == true)
+        
+        {
+            Ok(true)
+        } else{
+            Ok(false)
+        }
+
+
+    }
+
     pub async fn get_all_my_followings(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-    -> Result<Vec<Option<UserFanData>>, PanelHttpResponse>{
+    -> Result<UserFanData, PanelHttpResponse>{
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -430,12 +519,9 @@ impl UserFan{
 
         let user_fan_data = users_fans
             .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
-            .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
-            .load::<UserFan>(connection);
+            .first::<UserFan>(connection);
 
-        let Ok(fans_data) = user_fan_data else{
+        let Ok(fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -449,84 +535,73 @@ impl UserFan{
 
         };
 
-        let mut all_accepted_friends_data = vec![];
-        for fan in fans_data{
+        let friends_data = fan_data.clone().friends;
+        let decoded_friends_data = if friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        };
 
-            let friends_data = fan.clone().friends;
-            let decoded_friends_data = if friends_data.is_some(){
-                serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-            } else{
-                vec![]
-            };
-
-            let mut both_friend_data_arr = vec![];
-            let mut fdata: Option<FriendData> = Default::default();
+        let mut both_friend_data_arr = vec![];
+        for fd in decoded_friends_data{
             
-            for fd in decoded_friends_data{
-                
-                let both_friend_data = if fd.is_accepted{
+            let check_we_are_friend = Self::are_we_friends(
+                &fd.screen_cid, 
+                owner_screen_cid, connection).await;
+            
+            let Ok(are_we_friend) = check_we_are_friend else{
+                let err_resp = check_we_are_friend.unwrap_err();
+                return Err(err_resp);
+            };
+            
+            if are_we_friend{
 
-                    let get_user_fan_data = Self::get_user_fans_data_for(&fd.clone().screen_cid, connection).await;
-                    let Ok(user_fan_data) = get_user_fan_data else{
-
-                        let resp_err = get_user_fan_data.unwrap_err();
-                        return Err(resp_err);
-                    };
-
-                    let friends_data = user_fan_data.clone().friends;
-                    let decoded_friends_data = if friends_data.is_some(){
-                        serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-                    } else{
-                        vec![]
-                    };
-
-                    /* also check that caller is a friend of fdata.unwrap().screen_cid */
-                    if decoded_friends_data.iter().any(|f| {
-                        if f.screen_cid == owner_screen_cid
-                            && f.is_accepted{
-                                true
-                            } else{
-                                false
-                            }
-                    }){
-
-                        Some(fd)
-
-                    } else{
-                        None
-                    }
-
-                    
-                } else{
-                    None
-                };
-                
-                /* push this friend cause it has the caller as his friend */
-                both_friend_data_arr.push(both_friend_data);
-
-            }
-
-            all_accepted_friends_data.push(
-                Some(
-                    UserFanData{
-                        id: fan.id,
-                        user_screen_cid: fan.user_screen_cid,
-                        friends: {
-                            Some(serde_json::to_value(both_friend_data_arr).unwrap())
-                        },
-                        invitation_requests: fan.invitation_requests,
-                        created_at: fan.created_at.to_string(),
-                        updated_at: fan.updated_at.to_string(),
-                    }
-                )
-            );
+                both_friend_data_arr.push(fd);
+            } 
         }
 
-        /* removing Nones */
-        all_accepted_friends_data.retain(|f| f.is_some());
-
+        /* followings are whom owner_screen_cid has accepted their request and also they've accepted owner_screen_cid request */
         Ok(
-            all_accepted_friends_data
+            UserFanData{
+                id: fan_data.id,
+                user_screen_cid: fan_data.user_screen_cid,
+                friends: {
+
+                    if both_friend_data_arr.is_empty(){
+                        Some(serde_json::to_value(both_friend_data_arr).unwrap())
+                    } else{
+
+                        /* sorting friend requests in desc order */
+                        both_friend_data_arr.sort_by(|frd1, frd2|{
+    
+                            let frd1_requested_at = frd1.requested_at;
+                            let frd2_requested_at = frd2.requested_at;
+                            frd2_requested_at.cmp(&frd1_requested_at)
+    
+                        });
+                        
+                        /*  
+                            first we need to slice the current vector convert that type into 
+                            another vector, the reason behind doing this is becasue we can't
+                            call to_vec() on the slice directly since the lifetime fo the slice
+                            will be dropped while is getting used we have to create a longer 
+                            lifetime then call to_vec() on that type
+                        */
+                        let sliced = if both_friend_data_arr.len() > to{
+                            let data = &both_friend_data_arr[from..to+1];
+                            data.to_vec()
+                        } else{
+                            let data = &both_friend_data_arr[from..both_friend_data_arr.len()];
+                            data.to_vec()
+                        };
+    
+                        Some(serde_json::to_value(sliced).unwrap())
+                    }
+                },
+                invitation_requests: fan_data.invitation_requests,
+                created_at: fan_data.created_at.to_string(),
+                updated_at: fan_data.updated_at.to_string(),
+            }
         )
 
     }
@@ -534,10 +609,10 @@ impl UserFan{
     /* fans: get all users that they have owner_screen_cid in their friends data */
     pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-    -> Result<Vec<Option<UserFanData>>, PanelHttpResponse>{
+    -> Result<UserFanData, PanelHttpResponse>{
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -552,12 +627,10 @@ impl UserFan{
         }
 
         let user_fan_data = users_fans
-            .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
-            .load::<UserFan>(connection);
+            .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
+            .first::<UserFan>(connection);
 
-        let Ok(fans_data) = user_fan_data else{
+        let Ok(fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -571,43 +644,101 @@ impl UserFan{
 
         };
 
-        let mut fans_data_ = fans_data
-            .into_iter()
-            .map(|f|{
 
-                let friends_data = f.clone().friends;
-                let mut decoded_friends_data = if friends_data.is_some(){
-                    serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-                } else{
-                    vec![]
-                };
-                
-                if decoded_friends_data
-                    .into_iter()
-                    .any(|fd| f.user_screen_cid == owner_screen_cid && fd.is_accepted){
-                        
-                        Some(
-                            UserFanData{
-                                id: f.id,
-                                user_screen_cid: f.user_screen_cid,
-                                friends: f.friends,
-                                invitation_requests: f.invitation_requests,
-                                created_at: f.created_at.to_string(),
-                                updated_at: f.updated_at.to_string(),
-                            }
-                        )
+        let friends_data = fan_data.clone().friends;
+        let mut decoded_friends_data = if friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        }; 
 
+
+        let mut fd_data_arr = vec![];
+        for fd in decoded_friends_data{
+            if fan_data.user_screen_cid == owner_screen_cid && fd.is_accepted{
+                fd_data_arr.push(fd);
+            }
+        }
+        
+        /* followers are whom owner_screen_cid has accepted their request */
+        Ok(
+            UserFanData{
+                id: fan_data.id,
+                user_screen_cid: fan_data.user_screen_cid,
+                friends: {
+
+                    if fd_data_arr.is_empty(){
+                        Some(serde_json::to_value(fd_data_arr).unwrap())
                     } else{
-                        None
+
+                        /* sorting friend requests in desc order */
+                        fd_data_arr.sort_by(|frd1, frd2|{
+    
+                            let frd1_requested_at = frd1.requested_at;
+                            let frd2_requested_at = frd2.requested_at;
+                            frd2_requested_at.cmp(&frd1_requested_at)
+    
+                        });
+                        
+                        /*  
+                            first we need to slice the current vector convert that type into 
+                            another vector, the reason behind doing this is becasue we can't
+                            call to_vec() on the slice directly since the lifetime fo the slice
+                            will be dropped while is getting used we have to create a longer 
+                            lifetime then call to_vec() on that type
+                        */
+                        let sliced = if fd_data_arr.len() > to{
+                            let data = &fd_data_arr[from..to+1];
+                            data.to_vec()
+                        } else{
+                            let data = &fd_data_arr[from..fd_data_arr.len()];
+                            data.to_vec()
+                        };
+    
+                        Some(serde_json::to_value(sliced).unwrap())
                     }
 
-            })
-            .collect::<Vec<Option<UserFanData>>>();
-        
-        fans_data_.retain(|f| f.is_some());
+                },
+                invitation_requests: fan_data.invitation_requests,
+                created_at: fan_data.created_at.to_string(),
+                updated_at: fan_data.updated_at.to_string(),
+            }
+        )   
 
+    }
+
+    pub async fn get_user_realations(who_screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserRelations, PanelHttpResponse>{
+
+        // in-place initialization and returning
         Ok(
-            fans_data_
+            UserRelations{
+                user_info: {
+                    let get_user_info = User::fetch_wallet_by_username_or_mail_or_scid(who_screen_cid, connection).await;
+                    let Ok(user_wallet_info) = get_user_info else{
+                        let err_resp = get_user_info.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_wallet_info
+                },
+                fans: {
+                    let get_followers = Self::get_all_my_followers(who_screen_cid, limit.clone(), connection).await;
+                    let Ok(user_followers) = get_followers else{
+                        let err_resp = get_followers.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_followers
+                },
+                friends: {
+                    let get_followings = Self::get_all_my_followings(who_screen_cid, limit, connection).await;
+                    let Ok(user_followings) = get_followings else{
+                        let err_resp = get_followings.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_followings
+                },
+            }
         )
 
     }
@@ -821,26 +952,19 @@ impl UserFan{
             return Err(error_resp);
         };
 
-        let friends_data = user_fan_data.clone().friends;
-        let decoded_friends_data = if friends_data.is_some(){
-            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-        } else{
-            vec![]
+        let request_sender = invitation_request_data.clone().from_screen_cid;
+
+        let check_we_are_friend = Self::are_we_friends(
+            &request_sender, 
+            owner_screen_cid, connection).await;
+        
+        let Ok(are_we_friend) = check_we_are_friend else{
+            let err_resp = check_we_are_friend.unwrap_err();
+            return Err(err_resp);
         };
         
-        let request_sender = invitation_request_data.clone().from_screen_cid;
-        if decoded_friends_data.iter().any(|f| {
-            /*  check that the owner_screen_cid has a friend with the screen_cid of the one who has send the request or not */
-            /*  check that the passed in friend has accepted the request or not */
-            if f.screen_cid == request_sender
-                && f.is_accepted{
-                    true
-                } else{
-                    false
-                }
-        }){
+        if are_we_friend{
 
-            
             let user_invitation_request_data = user_fan_data.invitation_requests;
             let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
                 serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()

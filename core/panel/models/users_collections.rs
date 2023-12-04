@@ -172,30 +172,16 @@ impl UserCollection{
         };
 
 
-        let get_user_fan_data = UserFan::get_user_fans_data_for(&collection.owner_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan_data else{
-
-            let error_resp = get_user_fan_data.unwrap_err();
-            return Err(error_resp);
-        };
-
-        let friends_data = user_fan_data.clone().friends;
-        let decoded_friends_data = if friends_data.is_some(){
-            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-        } else{
-            vec![]
+        let check_we_are_friend = UserFan::are_we_friends(
+            &collection.owner_screen_cid, 
+            caller_screen_cid, connection).await;
+        
+        let Ok(are_we_friend) = check_we_are_friend else{
+            let err_resp = check_we_are_friend.unwrap_err();
+            return Err(err_resp);
         };
         
-        if decoded_friends_data.iter().any(|f| {
-            /*  check that the owner_screen_cid has a friend with the screen_cid of the one who has send the request or not */
-            /*  check that the passed in friend has accepted the request or not */
-            if f.screen_cid == caller_screen_cid
-                && f.is_accepted{
-                    true
-                } else{
-                    false
-                }
-        }){
+        if are_we_friend{
 
             let mut minted_ones = decoded_nfts
                 .into_iter()
@@ -703,31 +689,16 @@ impl UserCollection{
             )
         }
 
-
-        let get_user_fan_data = UserFan::get_user_fans_data_for(screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan_data else{
-
-            let error_resp = get_user_fan_data.unwrap_err();
-            return Err(error_resp);
-        };
-
-        let friends_data = user_fan_data.clone().friends;
-        let decoded_friends_data = if friends_data.is_some(){
-            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-        } else{
-            vec![]
+        let check_we_are_friend = UserFan::are_we_friends(
+            &screen_cid, 
+            caller_screen_cid, connection).await;
+        
+        let Ok(are_we_friend) = check_we_are_friend else{
+            let err_resp = check_we_are_friend.unwrap_err();
+            return Err(err_resp);
         };
         
-        if decoded_friends_data.iter().any(|f| {
-            /*  check that the owner_screen_cid has a friend with the screen_cid of the one who has send the request or not */
-            /*  check that the passed in friend has accepted the request or not */
-            if f.screen_cid == caller_screen_cid
-                && f.is_accepted{
-                    true
-                } else{
-                    false
-                }
-        }){
+        if are_we_friend{
 
             let user_collections = users_collections
                 .order(created_at.desc())
