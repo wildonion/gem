@@ -464,7 +464,7 @@ impl UserFan{
 
         };
 
-        /* both of them must have each other in their friend and the request be accepted */
+        /* both of them must have each other in their friend data and the request be accepted */
         let first_friends_data = first_fan_data.clone().friends;
         let decoded_first_friends_data = if first_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(first_friends_data.clone().unwrap()).unwrap()
@@ -846,7 +846,7 @@ impl UserFan{
                     we'll push it to friends, also the owner might have deleted/removed/unfollowed the 
                     user so next time his friend can send a request again 
                 */
-                if !decoded_friends_data.iter().any(|f| f.screen_cid == to_screen_cid){
+                if !decoded_friends_data.iter().any(|f| f.screen_cid == caller_screen_cid.to_owned()){
                     decoded_friends_data.push(friend_data);
                 } 
 
@@ -1064,6 +1064,10 @@ impl UserFan{
                     let resp_error = get_gallery_data.unwrap_err();
                     return Err(resp_error);
                 };
+
+                // consider the amount of entry
+                // ...
+
 
                 let gallery_invited_friends = gallery.invited_friends;
                 let mut invited_friends = if gallery_invited_friends.is_some(){
