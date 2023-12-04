@@ -2,7 +2,7 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-# 🛞 Rust Core Backend Service APIs and Engines
+# 🛞 Rust Both Core Monolithic and Micro-service Backend APIs and Engines
 
 Conse is a crypto based friendly gathering board **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** which uses **Sense**: A Near-Duplicate NFT Detection Protocol on the Pastel Network, with the following engines as its core backend: 
 - chatroom launchpad feature to mint generated AI based NFT images based on users' chats in each launchpad events to those users.
