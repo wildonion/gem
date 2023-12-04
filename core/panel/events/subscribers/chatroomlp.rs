@@ -1,10 +1,18 @@
 
 
-/*  > --------------------------------------------------------------------------------------------------
-    | chatroom launchpad server actor to communicate (send/receive messages) with session or peer actor 
-    | --------------------------------------------------------------------------------------------------
+/*  > -----------------------------------------------------------------------------------------------------
+    | chatroom launchpad server actor to communicate (send/receive messages) with sessions or peer actors 
+    | -----------------------------------------------------------------------------------------------------
     | contains: message structures and their handlers
     | 
+    | each session actor can be used to communicate using pre defined mesaages
+    | to send message to other actors also server actor contains all session actor 
+    | in which we can use the message sending pattern for pubsub push notif subscribing 
+    | to an specific topic using redis in server actor, like if we want to 
+    | notify all sessions about a new session since the server actor has all sessions
+    | we should send a new session income message to the server actor once a new 
+    | session gets connected to the socket and server can send to all session actors 
+    | the new income message 
     |
 */
 

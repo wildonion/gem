@@ -222,6 +222,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             ws::Message::Text(text) => {
 
                 /* ---- decrypting the message ---- */
+                // note that frontend must not hash the data just sign the raw data
                 let mut r1_wallet = walletreq::secp256r1::generate_new_wallet();
                 let get_decrypted_new_message = r1_wallet.self_verify_secp256r1_signature(&self.r1signature, &self.r1pubkey);
                 if get_decrypted_new_message.is_err(){
@@ -320,7 +321,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     // ----------------------------------------------------------------------
                     /*  
                         instead of sending different message to all server actors separately we can publish and 
-                        issuing that message asyncly so those server actors that are interested to that message
+                        issue that message asyncly so those server actors that are interested to that message
                         can subscribe to that so in here we're notifying server about a new message by publishing 
                         NotifySessionsWithNewMessage message asyncly, so later on server actor can subscribe to, 
                         subscribing to NotifySessionsWithNewMessage message causes client to see the incoming 

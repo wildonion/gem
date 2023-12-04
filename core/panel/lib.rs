@@ -39,7 +39,7 @@
     tell the compiler that extend the old AST with this new one
 
     kinds: 
-        decl_macro (inside misc.rs)
+        decl_macro
         proc_macro
         proc_macro_derive
         proc_macro_attribute

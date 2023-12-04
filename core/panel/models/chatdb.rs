@@ -44,7 +44,7 @@ impl UserChat{
         // wasm, box pin, impl Trait | &dyn Trait, Send Sync Arc, Weak, Rc, RefCell, Mutex, RwLock
         // share the references of the type between threads using clone or & 
 
-        // text is the decrypted message
+        // text is the decrypted and raw message
 
         // -------------------------------
         // TODO - store in chatdb by calling wasm methods
