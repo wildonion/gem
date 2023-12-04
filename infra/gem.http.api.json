@@ -3322,7 +3322,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"gal_id\": 1,\n    \"gallery_owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"to_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    // gallery owner wants to send invitation request to to_screen_cid\n    \"gal_id\": 1,\n    \"gallery_owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"to_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3632,7 +3632,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/collection/get/all/for/036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e/?from=0&to=10",
+											"raw": "{{panel-user}}/collection/get/all/for/0xed2b3bdae27c24480f0676f43228a7981c42fdea/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3641,7 +3641,7 @@
 												"get",
 												"all",
 												"for",
-												"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e",
+												"0xed2b3bdae27c24480f0676f43228a7981c42fdea",
 												""
 											],
 											"query": [
@@ -4392,6 +4392,48 @@
 												"reaction",
 												"get",
 												"all",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Relations For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/relations/for/0xed2b3bdae27c24480f0676f43228a7981c42fdea/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"relations",
+												"for",
+												"0xed2b3bdae27c24480f0676f43228a7981c42fdea",
 												""
 											],
 											"query": [
