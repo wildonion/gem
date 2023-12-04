@@ -4864,6 +4864,38 @@
 							"response": []
 						},
 						{
+							"name": "Get Users Wallet Info",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-users-wallet-info/?from=0&to=10",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-users-wallet-info",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
+									]
+								},
+								"description": "> Use this to suggest other users."
+							},
+							"response": []
+						},
+						{
 							"name": "Search",
 							"request": {
 								"auth": {
