@@ -683,10 +683,11 @@ impl UserFan{
                         }
                     }
 
+                } else{
+
+                    fd_data_arr.push(fd.clone());
                 }
 
-                // pass and check next fan friend data
-                // ...
                 
             }
         }
