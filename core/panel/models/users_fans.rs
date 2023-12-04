@@ -655,8 +655,39 @@ impl UserFan{
 
         let mut fd_data_arr = vec![];
         for fd in decoded_friends_data{
-            if fan_data.user_screen_cid == owner_screen_cid && fd.is_accepted{
-                fd_data_arr.push(fd);
+            if fd.is_accepted{
+                
+                let user_fan_data = users_fans
+                    .filter(users_fans::user_screen_cid.eq(fd.clone().screen_cid))
+                    .first::<UserFan>(connection);
+
+                // if we found a friend data for fd.clone().screen_cid 
+                // we simply iterate over its friends to see that 
+                // we have owner_screen_cid as his friend or not
+                if user_fan_data.is_ok(){
+
+                    let fd_fan_data = user_fan_data.unwrap();
+                    /* both of them must have each other in their friend data and the request be accepted */
+                    let friends_data = fd_fan_data.clone().friends;
+                    let decoded_friends_data = if friends_data.is_some(){
+                        serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                    } else{
+                        vec![]
+                    };
+    
+                    // return only fans
+                    for frd in decoded_friends_data{
+                        if frd.screen_cid != owner_screen_cid ||
+                            (frd.screen_cid == owner_screen_cid && !frd.is_accepted){
+                            fd_data_arr.push(fd.clone());
+                        }
+                    }
+
+                }
+
+                // pass and check next fan friend data
+                // ...
+                
             }
         }
         
@@ -1065,7 +1096,7 @@ impl UserFan{
                     return Err(resp_error);
                 };
 
-                // consider the amount of entry
+                // consider the amount of entry by parsing the exra field
                 // ...
 
 
