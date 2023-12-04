@@ -1087,21 +1087,42 @@ impl User{
                                 vec![]
                             };
 
+                            // might be admin, dev or the user didn't create wallet yet
+                            if user.screen_cid.is_none() ||
+                            (user.screen_cid.is_some() && user.screen_cid.as_ref().unwrap() == owner_screen_cid){
+                                continue;
+                            }
+
                             if !decoded_friends_data.into_iter().any(|frd| &frd.screen_cid == user.screen_cid.as_ref().unwrap()){
                                 suggestions.push(
                                     UserWalletInfoResponse{
-                                        username: user.username,
-                                        avatar: user.avatar,
-                                        bio: user.bio,
-                                        banner: user.banner,
-                                        mail: user.mail,
-                                        screen_cid: user.screen_cid,
-                                        stars: user.stars,
-                                        created_at: user.created_at.to_string(),
+                                        username: user.clone().username,
+                                        avatar: user.clone().avatar,
+                                        bio: user.clone().bio,
+                                        banner: user.clone().banner,
+                                        mail: user.clone().mail,
+                                        screen_cid: user.clone().screen_cid,
+                                        stars: user.clone().stars,
+                                        created_at: user.clone().created_at.to_string(),
                                     }
                                 )
                             }
+                        } else{
+
+                            suggestions.push(
+                                UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                }
+                            )
                         }
+
                     
                     }
                     Ok(
@@ -1119,7 +1140,7 @@ impl User{
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::fetch_all_users_wallet_info");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::suggest_user_to_owner");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
     
                     let resp = Response::<&[u8]>{
