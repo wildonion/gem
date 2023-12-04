@@ -16,6 +16,7 @@ use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
 use crate::constants::*;
+use super::users_fans::{UserFan, FriendData};
 use super::users_mails::UserMail;
 use super::users_phones::UserPhone;
 use super::users_tasks::UserTask;
@@ -1012,6 +1013,99 @@ impl User{
 
                         })
                         .collect::<Vec<UserWalletInfoResponse>>()
+                    )
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+    
+    
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::fetch_all_users_wallet_info");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+    
+                }
+            }
+
+
+    }
+
+    pub async fn suggest_user_to_owner(limit: web::Query<Limit>, owner_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
+
+            let from = limit.from.unwrap_or(0);
+            let to = limit.to.unwrap_or(10);
+    
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+            }
+            
+            match users
+                .order(created_at.desc())
+                .offset(from)
+                .limit((to - from) + 1)
+                .load::<User>(connection)
+            {
+                Ok(all_users) => {
+
+                    let get_user_followings = UserFan::get_all_my_followings(owner_screen_cid, limit.clone(), connection).await;
+
+                    let mut suggestions = vec![];
+                    for user in all_users{
+                        
+                        if get_user_followings.is_ok(){
+                            
+                            let user_friends = get_user_followings.as_ref().unwrap();
+                            let friends_data = user_friends.clone().friends;
+                            let decoded_friends_data = if friends_data.is_some(){
+                                serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            if !decoded_friends_data.into_iter().any(|frd| &frd.screen_cid == user.screen_cid.as_ref().unwrap()){
+                                suggestions.push(
+                                    UserWalletInfoResponse{
+                                        username: user.username,
+                                        avatar: user.avatar,
+                                        bio: user.bio,
+                                        banner: user.banner,
+                                        mail: user.mail,
+                                        screen_cid: user.screen_cid,
+                                        stars: user.stars,
+                                        created_at: user.created_at.to_string(),
+                                    }
+                                )
+                            }
+                        }
+                    
+                    }
+                    Ok(
+                        suggestions
                     )
 
                 },
