@@ -2577,14 +2577,7 @@
 									"name": "Login With Identifier and Password",
 									"request": {
 										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjowLCJpc19yZWZyZXNoIjp0cnVlLCJleHAiOjE3MDE0NDY4MTY2NTI4MDQwMDAsImlhdCI6MTcwMTQ0NDQxNjY1MzYwMjAwMH0.d0Q8uOT--OeLGdTpAmNBclyTYVPJqFzOLXhZDaErMYV3NR3Hoth1CmKTZsvYSFoB37yLAdd8zaYilhqkyFtceA",
-													"type": "string"
-												}
-											]
+											"type": "noauth"
 										},
 										"method": "POST",
 										"header": [],
@@ -2821,7 +2814,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNDQ0NDU1ODMwOTUzMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNDQ2MjU1ODMyMDA3MDAwLCJpYXQiOjE3MDE0NDQ0NTU4MzIwMDcwMDB9.0rLWkWRbH2wJ2948LRXzvqDYXExkA9l8mBAKRvdKROZSeO_xdz2YKVc07YEiWxpfLN7DnqwU6AwOQt1HHo1ZAw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI2NzEwODQ5MjQwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzI4NTEwODQ5MjkzMDAwLCJpYXQiOjE3MDE3MjY3MTA4NDkyOTMwMDB9.hxDG0dphcsp4aLsqML_dWF-_4BJaoqUUtNlVJThZ16Bff-jyj8mC_a23noZAdxEK5A_AtoRwlKQ9giuckKFd-w",
 													"type": "string"
 												}
 											]
@@ -2830,7 +2823,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"username\": \"dewo\",\n    \"device_id\": \"010111\"\n}",
+											"raw": "{\n    \"username\": \"king\",\n    \"device_id\": \"1111\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3351,7 +3344,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI3NzAzNjQ4NjM3MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzI5NTAzNjUxNjk1MDAwLCJpYXQiOjE3MDE3Mjc3MDM2NTE2OTUwMDB9.5M_xypXiLL2MygW9g9MNd7d1uMLHRaniT6Z8A8lGJClTlGNWhQ6ULEvRIO1TQTwopzlNGUsaMSdQdDnHeTeiIg",
 													"type": "string"
 												}
 											]
@@ -3360,7 +3353,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    // caller or owner_cid wants to send friend request to to_screen_cid\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"to_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    // caller or owner_cid wants to send friend request to to_screen_cid\n    \"owner_cid\": \"0352f061ccb4560a782e2303477dd42f75f74754b76723745a7222b57c716618ee\",\n    \"to_screen_cid\": \"0x79fcb507988a227a98ab68fe044193dfeca7a968\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3389,7 +3382,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI4NjQ3NjcyMTA5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzMwNDQ3NjczOTUzMDAwLCJpYXQiOjE3MDE3Mjg2NDc2NzM5NTMwMDB9.exiBKYmWTw2l5T42Ica7D3erSIZD7jX1Y49LTUYDsstYboNQtsezU8RbzDFVJBqVpw7W14VG40lljV4rg08nAQ",
 													"type": "string"
 												}
 											]
@@ -3398,7 +3391,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    // owner_cid wants to accept friend_screen_cid request\n    \"owner_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"friend_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    // owner_cid wants to accept friend_screen_cid request\n    \"owner_cid\": \"031b170469b78ae786ed82efb5ad4881597ec38fc6498b3644c3ce436ff3cc3129\",\n    \"friend_screen_cid\": \"0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3831,7 +3824,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ5NTU2NDU4NDQ2MDAwLCJleHAiOjE3MDE1NDE1NTYsImlhdCI6MTY5ODk0OTU1Nn0.Ks9bvArg8RpTvefUrHGCH8nzwGA4DYowhOLS0cTcHsCSOxnWBHQrswVLSjMYo05QGYMwcw4Gvt_U3Rz2TseBMQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI4NjQ3NjcyMTA5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzMwNDQ3NjczOTUzMDAwLCJpYXQiOjE3MDE3Mjg2NDc2NzM5NTMwMDB9.exiBKYmWTw2l5T42Ica7D3erSIZD7jX1Y49LTUYDsstYboNQtsezU8RbzDFVJBqVpw7W14VG40lljV4rg08nAQ",
 													"type": "string"
 												}
 											]
@@ -3839,12 +3832,12 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/gallery/get/unaccepted/friend-requests/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/unaccepted/friend-requests/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
-												"gallery",
+												"fan",
 												"get",
 												"unaccepted",
 												"friend-requests",
@@ -3872,7 +3865,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI4NjQ3NjcyMTA5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzMwNDQ3NjczOTUzMDAwLCJpYXQiOjE3MDE3Mjg2NDc2NzM5NTMwMDB9.exiBKYmWTw2l5T42Ica7D3erSIZD7jX1Y49LTUYDsstYboNQtsezU8RbzDFVJBqVpw7W14VG40lljV4rg08nAQ",
 													"type": "string"
 												}
 											]
@@ -3913,7 +3906,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI3NzAzNjQ4NjM3MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzI5NTAzNjUxNjk1MDAwLCJpYXQiOjE3MDE3Mjc3MDM2NTE2OTUwMDB9.5M_xypXiLL2MygW9g9MNd7d1uMLHRaniT6Z8A8lGJClTlGNWhQ6ULEvRIO1TQTwopzlNGUsaMSdQdDnHeTeiIg",
 													"type": "string"
 												}
 											]
@@ -4466,13 +4459,13 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/get/all/suggestions/for/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/suggestions/for/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
+												"fan",
 												"get",
-												"all",
 												"suggestions",
 												"for",
 												""

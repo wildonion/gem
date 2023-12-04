@@ -4925,7 +4925,7 @@ async fn get_user_unaccpeted_invitation_requests(
 
 }
 
-#[get("/gallery/get/unaccepted/friend-requests/")]
+#[get("/fan/get/unaccepted/friend-requests/")]
 #[passport(user)]
 async fn get_user_unaccpeted_friend_requests(
     req: HttpRequest,
