@@ -14,13 +14,13 @@
 
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::events::publishers::role::PlayerRoleInfo;
-use crate::events::subscribers::notifs::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
+use crate::events::subscribers::handlers::wsactors::servers::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
 use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use s3req::Storage;
 use actix::prelude::*;
 use redis_async::resp::FromResp;
-use super::notifs::{
+use crate::events::subscribers::handlers::wsactors::servers::{
     mmr::{
         Message as MmrMessage, 
         MmrNotifServer, Disconnect as MmrNotifServerDisconnectMessage,

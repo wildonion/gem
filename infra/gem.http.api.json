@@ -2583,7 +2583,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3858,14 +3858,14 @@
 									"response": []
 								},
 								{
-									"name": "Get All My Followings",
+									"name": "Get All My Friends",
 									"request": {
 										"auth": {
 											"type": "bearer",
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI4NjQ3NjcyMTA5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzMwNDQ3NjczOTUzMDAwLCJpYXQiOjE3MDE3Mjg2NDc2NzM5NTMwMDB9.exiBKYmWTw2l5T42Ica7D3erSIZD7jX1Y49LTUYDsstYboNQtsezU8RbzDFVJBqVpw7W14VG40lljV4rg08nAQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzg5NDAyNDQzNzQ3MzU5LCJleHAiOjE3MDQzODE0MDIsImlhdCI6MTcwMTc4OTQwMn0.VE9mzB5DHdm-Ncs6fc6KcBsudTD81p7TvqvFp098HsiX5z2iTeU9O0pYbw8GAxYB8YUsh7nEvKdoaYSTdlD2nA",
 													"type": "string"
 												}
 											]
@@ -3873,7 +3873,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/all/followings/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/all/friends/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3881,7 +3881,7 @@
 												"fan",
 												"get",
 												"all",
-												"followings",
+												"friends",
 												""
 											],
 											"query": [
@@ -3899,14 +3899,14 @@
 									"response": []
 								},
 								{
-									"name": "Get All My Followers",
+									"name": "Get All My Fans",
 									"request": {
 										"auth": {
 											"type": "bearer",
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI3NzAzNjQ4NjM3MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzI5NTAzNjUxNjk1MDAwLCJpYXQiOjE3MDE3Mjc3MDM2NTE2OTUwMDB9.5M_xypXiLL2MygW9g9MNd7d1uMLHRaniT6Z8A8lGJClTlGNWhQ6ULEvRIO1TQTwopzlNGUsaMSdQdDnHeTeiIg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzkwNDIyOTM3OTIxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzkyMjIyOTQxNjQ4MDAwLCJpYXQiOjE3MDE3OTA0MjI5NDE2NDgwMDB9.8ONF2Zy7-hZG0x_P3_QKzAtljqL3UR4v1q9HqS7uynX6fsfSuAgIbWTWe8KZnIblK_RcEe1FLh2og48EjyCq2A",
 													"type": "string"
 												}
 											]
@@ -3914,7 +3914,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/all/followers/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/all/fans/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3922,7 +3922,7 @@
 												"fan",
 												"get",
 												"all",
-												"followers",
+												"fans",
 												""
 											],
 											"query": [
@@ -4409,7 +4409,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzU1NDUyNTc2OTIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzU3MjUyNTc5NDc2MDAwLCJpYXQiOjE3MDE3NTU0NTI1Nzk0NzYwMDB9.b5u0WqFoqD_8MZ1W2Gaj8FHyhGgTbtCZ27YEEPkHGSlpjH3Om7ttIqTZG9j_xmI1jSwfJRe2496Ao2Gr1muZ_w",
 													"type": "string"
 												}
 											]
@@ -4417,7 +4417,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/relations/for/0xed2b3bdae27c24480f0676f43228a7981c42fdea/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/relations/for/0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -4426,7 +4426,7 @@
 												"get",
 												"relations",
 												"for",
-												"0xed2b3bdae27c24480f0676f43228a7981c42fdea",
+												"0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe",
 												""
 											],
 											"query": [

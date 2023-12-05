@@ -1072,28 +1072,29 @@ impl User{
             {
                 Ok(all_users) => {
 
-                    let get_user_followings = UserFan::get_all_my_followings(owner_screen_cid, limit.clone(), connection).await;
-
                     let mut suggestions = vec![];
                     for user in all_users{
-                        
-                        if get_user_followings.is_ok(){
-                            
-                            let user_friends = get_user_followings.as_ref().unwrap();
+
+                        // might be admin, dev or the user didn't create wallet yet
+                        // also don't suggest the user to himself
+                        if user.screen_cid.is_none() ||
+                            (user.screen_cid.is_some() && user.screen_cid.as_ref().unwrap() == owner_screen_cid){
+                                continue;
+                            }
+
+                        // get all friends data of user, push to suggestions if:
+                        // the owner_screen_cid wasn't in their friends
+                        let get_user_fan_data = UserFan::get_user_fans_data_for(user.screen_cid.as_ref().unwrap(), connection).await;
+                        if get_user_fan_data.is_ok(){
+                            let user_friends = get_user_fan_data.as_ref().unwrap();
                             let friends_data = user_friends.clone().friends;
                             let decoded_friends_data = if friends_data.is_some(){
                                 serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
                             } else{
                                 vec![]
                             };
-
-                            // might be admin, dev or the user didn't create wallet yet
-                            if user.screen_cid.is_none() ||
-                            (user.screen_cid.is_some() && user.screen_cid.as_ref().unwrap() == owner_screen_cid){
-                                continue;
-                            }
-
-                            if !decoded_friends_data.into_iter().any(|frd| &frd.screen_cid == user.screen_cid.as_ref().unwrap()){
+    
+                            if !decoded_friends_data.into_iter().any(|frd| &frd.screen_cid == owner_screen_cid){
                                 suggestions.push(
                                     UserWalletInfoResponse{
                                         username: user.clone().username,
@@ -1108,22 +1109,20 @@ impl User{
                                 )
                             }
                         } else{
-
                             suggestions.push(
                                 UserWalletInfoResponse{
-                                    username: user.username,
-                                    avatar: user.avatar,
-                                    bio: user.bio,
-                                    banner: user.banner,
-                                    mail: user.mail,
-                                    screen_cid: user.screen_cid,
-                                    stars: user.stars,
-                                    created_at: user.created_at.to_string(),
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
                                 }
                             )
                         }
 
-                    
                     }
                     Ok(
                         suggestions

@@ -498,7 +498,7 @@ impl UserFan{
 
     }
 
-    pub async fn get_all_my_followings(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_my_friends(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<UserFanData, PanelHttpResponse>{
 
@@ -607,7 +607,7 @@ impl UserFan{
     }
 
     /* fans: get all users that they have owner_screen_cid in their friends data */
-    pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_my_fans(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<UserFanData, PanelHttpResponse>{
 
@@ -643,8 +643,23 @@ impl UserFan{
             )
 
         };
+        
+        // get friends
+        let get_owner_friends = Self::get_all_my_friends(owner_screen_cid, limit, connection).await;
+        let mut owner_friends = if get_owner_friends.is_ok(){
+            let owner_friends = get_owner_friends.unwrap();
+            let friends_data = owner_friends.clone().friends;
+            if friends_data.is_some(){
+                serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+            } else{
+                vec![]
+            } 
 
+        } else{
+            vec![]
+        };
 
+        // get followers
         let friends_data = fan_data.clone().friends;
         let mut decoded_friends_data = if friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
@@ -652,59 +667,46 @@ impl UserFan{
             vec![]
         }; 
 
-
-        let mut fd_data_arr = vec![];
-        for fd in decoded_friends_data{
-            if fd.is_accepted{
-                
-                let user_fan_data = users_fans
-                    .filter(users_fans::user_screen_cid.eq(fd.clone().screen_cid))
-                    .first::<UserFan>(connection);
-
-                // if we found a friend data for fd.clone().screen_cid 
-                // we simply iterate over its friends to see that 
-                // we have owner_screen_cid as his friend or not
-                if user_fan_data.is_ok(){
-
-                    let fd_fan_data = user_fan_data.unwrap();
-                    /* both of them must have each other in their friend data and the request be accepted */
-                    let friends_data = fd_fan_data.clone().friends;
-                    let decoded_friends_data = if friends_data.is_some(){
-                        serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-                    } else{
-                        vec![]
-                    };
-    
-                    // return only fans
-                    for frd in decoded_friends_data{
-                        if frd.screen_cid != owner_screen_cid ||
-                            (frd.screen_cid == owner_screen_cid && !frd.is_accepted){
-                            fd_data_arr.push(fd.clone());
-                        }
-                    }
-
+        let mut owner_followers = decoded_friends_data
+            .into_iter()
+            .map(|frd| {
+                if frd.is_accepted{
+                    info!("is true");
+                    Some(frd)
                 } else{
-
-                    fd_data_arr.push(fd.clone());
+                    None
                 }
+            })
+            .collect::<Vec<Option<FriendData>>>();
+        owner_followers.retain(|frd| frd.is_some());
 
-                
+        info!("followings of {owner_screen_cid:} are: {:?}", owner_friends);
+        info!("followers of {owner_screen_cid:} are: {:?}", owner_followers);
+
+        let mut fans_data_arr = vec![];
+        
+        // fans: friends must not be in followers
+        for friend in owner_friends{
+            for wrapped_follower in owner_followers.clone(){
+                let follower = wrapped_follower.unwrap();
+                if friend.screen_cid != follower.screen_cid{
+                    fans_data_arr.push(follower);
+                }
             }
         }
-        
-        /* followers are whom owner_screen_cid has accepted their request */
+
+        info!("fans of {owner_screen_cid:} are: {:?}", fans_data_arr);
+
         Ok(
             UserFanData{
                 id: fan_data.id,
                 user_screen_cid: fan_data.user_screen_cid,
-                friends: {
-
-                    if fd_data_arr.is_empty(){
-                        Some(serde_json::to_value(fd_data_arr).unwrap())
+                friends: if fans_data_arr.is_empty(){
+                        Some(serde_json::to_value(fans_data_arr).unwrap())
                     } else{
 
                         /* sorting friend requests in desc order */
-                        fd_data_arr.sort_by(|frd1, frd2|{
+                        fans_data_arr.sort_by(|frd1, frd2|{
     
                             let frd1_requested_at = frd1.requested_at;
                             let frd2_requested_at = frd2.requested_at;
@@ -719,18 +721,16 @@ impl UserFan{
                             will be dropped while is getting used we have to create a longer 
                             lifetime then call to_vec() on that type
                         */
-                        let sliced = if fd_data_arr.len() > to{
-                            let data = &fd_data_arr[from..to+1];
+                        let sliced = if fans_data_arr.len() > to{
+                            let data = &fans_data_arr[from..to+1];
                             data.to_vec()
                         } else{
-                            let data = &fd_data_arr[from..fd_data_arr.len()];
+                            let data = &fans_data_arr[from..fans_data_arr.len()];
                             data.to_vec()
                         };
     
                         Some(serde_json::to_value(sliced).unwrap())
-                    }
-
-                },
+                    },
                 invitation_requests: fan_data.invitation_requests,
                 created_at: fan_data.created_at.to_string(),
                 updated_at: fan_data.updated_at.to_string(),
@@ -755,7 +755,7 @@ impl UserFan{
                     user_wallet_info
                 },
                 fans: {
-                    let get_followers = Self::get_all_my_followers(who_screen_cid, limit.clone(), connection).await;
+                    let get_followers = Self::get_all_my_fans(who_screen_cid, limit.clone(), connection).await;
                     let Ok(user_followers) = get_followers else{
                         let err_resp = get_followers.unwrap_err();
                         return Err(err_resp);
@@ -763,7 +763,7 @@ impl UserFan{
                     user_followers
                 },
                 friends: {
-                    let get_followings = Self::get_all_my_followings(who_screen_cid, limit, connection).await;
+                    let get_followings = Self::get_all_my_friends(who_screen_cid, limit, connection).await;
                     let Ok(user_followings) = get_followings else{
                         let err_resp = get_followings.unwrap_err();
                         return Err(err_resp);

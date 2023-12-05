@@ -12,9 +12,9 @@
 */
 
 use crate::*;
-use crate::events::subscribers::chatroomlp::ChatRoomLaunchpadServer;
-use crate::events::subscribers::chatroomlp::UpdateChatRoom;
-use crate::events::subscribers::sessionlp::WsLaunchpadSession;
+use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::ChatRoomLaunchpadServer;
+use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::UpdateChatRoom;
+use crate::events::subscribers::handlers::wsactors::sessions::sessionlp::WsLaunchpadSession;
 use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
@@ -24,10 +24,10 @@ use crate::misc::*;
 use s3req::Storage;
  
 use crate::events::{
-    subscribers::notifs::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
-    subscribers::notifs::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
-    subscribers::notifs::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
-    subscribers::session::WsNotifSession,
+    subscribers::handlers::wsactors::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
+    subscribers::handlers::wsactors::servers::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
+    subscribers::handlers::wsactors::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
+    subscribers::handlers::wsactors::sessions::sessionrole::WsNotifSession,
 };
 use actix::prelude::*;
 
@@ -70,7 +70,7 @@ use actix::prelude::*;
 
 */
 #[get("/{user_id}/{notif_room}")]
-async fn notif_subs(
+async fn sub_to_reveal_role(
     req: HttpRequest, 
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
@@ -280,5 +280,5 @@ pub mod exports{
         which will be used to extract the utf8 bytes from the 
         payload asyncly
     */
-    pub use super::notif_subs;
+    pub use super::sub_to_reveal_role;
 }

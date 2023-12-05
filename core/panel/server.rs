@@ -22,10 +22,10 @@ macro_rules! server {
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
             use crate::constants::*;
-            use crate::events::subscribers::notifs::role::RoleNotifServer;
-            use crate::events::subscribers::notifs::mmr::MmrNotifServer;
-            use crate::events::subscribers::notifs::ecq::EcqNotifServer;
-            use crate::events::subscribers::chatroomlp::ChatRoomLaunchpadServer;
+            use crate::events::subscribers::handlers::wsactors::servers::role::RoleNotifServer;
+            use crate::events::subscribers::handlers::wsactors::servers::mmr::MmrNotifServer;
+            use crate::events::subscribers::handlers::wsactors::servers::ecq::EcqNotifServer;
+            use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::ChatRoomLaunchpadServer;
 
             
             env::set_var("RUST_LOG", "trace");

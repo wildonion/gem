@@ -21,7 +21,7 @@ use s3req::Storage;
 use actix::prelude::*;
 use actix_broker::BrokerIssue;
 use actix_web::dev::Payload;
-use crate::events::subscribers::chatroomlp::{
+use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::{
     
     ChatRoomLaunchpadServer, Disconnect as ChatRoomLaunchpadServerDisconnectMessage,
     Connect as ChatRoomLaunchpadServerConnectMessage, NotifySessionsWithNewMessage,

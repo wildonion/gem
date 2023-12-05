@@ -5729,9 +5729,9 @@ async fn remove_user_from_friend(
 
 }
 
-#[get("/fan/get/all/followings/")]
+#[get("/fan/get/all/friends/")]
 #[passport(user)]
-async fn get_all_my_followings(
+async fn get_all_my_friends(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5797,7 +5797,7 @@ async fn get_all_my_followings(
                         }
                     }
 
-                    match UserFan::get_all_my_followings(
+                    match UserFan::get_all_my_friends(
                         &user.screen_cid.unwrap(),
                         limit, connection).await{
                         Ok(user_fans_data) => {
@@ -5852,9 +5852,9 @@ async fn get_all_my_followings(
 
 }
 
-#[get("/fan/get/all/followers/")]
+#[get("/fan/get/all/fans/")]
 #[passport(user)]
-async fn get_all_my_followers(
+async fn get_all_my_fans(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5920,7 +5920,7 @@ async fn get_all_my_followers(
                         }
                     }
 
-                    match UserFan::get_all_my_followers(
+                    match UserFan::get_all_my_fans(
                         &user.screen_cid.unwrap(),
                         limit, connection).await{
                         Ok(user_fans_data) => {
@@ -9235,8 +9235,8 @@ pub mod exports{
     pub use super::get_invited_friends_wallet_data_of_gallery;
     pub use super::get_user_unaccpeted_invitation_requests;
     pub use super::get_user_unaccpeted_friend_requests;
-    pub use super::get_all_my_followings;
-    pub use super::get_all_my_followers;
+    pub use super::get_all_my_friends;
+    pub use super::get_all_my_fans;
     pub use super::get_all_user_relations;
     pub use super::get_all_user_reactions; /**** all user comments, likes and dislikes ****/
     pub use super::get_all_nft_reactions; /**** all nft comments, likes and dislikes ****/

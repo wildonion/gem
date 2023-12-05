@@ -36,6 +36,11 @@ pub struct Quote{
 }
 
 
+/* >_
+    use serde_json::Value codec in case that we don't know the type of data 
+    coming from or sending to server or client
+*/
+
 pub async fn gwei_to_usd() -> Result<f64, PanelHttpResponse>{
         
     let endpoint = format!("https://api.coinlore.net/api/ticker/?id=33536");
