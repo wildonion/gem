@@ -142,7 +142,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::send_friend_request_to);
     config.service(apis::user::exports::remove_user_from_friend);
     config.service(apis::user::exports::get_all_my_friends);
-    config.service(apis::user::exports::get_all_my_fans);
+    config.service(apis::user::exports::get_all_my_followers);
+    config.service(apis::user::exports::get_all_my_followings);
     config.service(apis::user::exports::create_collection);
     config.service(apis::user::exports::update_collection);
     config.service(apis::user::exports::create_nft);

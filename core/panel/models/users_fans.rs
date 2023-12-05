@@ -4,7 +4,7 @@
  
 
 use crate::*;
-use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND};
+use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS};
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
@@ -21,7 +21,12 @@ use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest
 
     friends             ---> those one who have sent requests to user_screen_cid
     invitation_requests ---> those one who have sent invitation requests of their own gallery to user_screen_cid
-
+    
+    >_ user_screen_cid can accept each request he wants inside friends field
+    >_ friends are the ones inside `friends` field who have sent requests to each other and both of them accepted each other's request
+    >_ followers are the ones inside `friends` field who their requests are accepted by the user_screen_cid
+    >_ followings are the ones inside `friends` field who you've send request to them and they've accepted your request 
+    
 */
 #[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=users_fans)]
@@ -48,8 +53,9 @@ pub struct FriendData{
 #[derive(PartialEq)]
 pub struct UserRelations{
     pub user_info: UserWalletInfoResponse,
-    pub fans: UserFanData,
-    pub friends: UserFanData
+    pub followers: UserFanData,
+    pub friends: UserFanData,
+    pub followings: Vec<FriendData>
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -170,7 +176,6 @@ impl UserFan{
             }
         }
 
-        /* updating the friend data of the owner whom accepted the request */
         Self::update(&owner_screen_cid, UpdateUserFanData{ 
             friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), /* encoding the updated decoded_friends_data back to serde json value */
             invitation_requests: user_fan_data.invitation_requests
@@ -560,7 +565,6 @@ impl UserFan{
             } 
         }
 
-        /* followings are whom owner_screen_cid has accepted their request and also they've accepted owner_screen_cid request */
         Ok(
             UserFanData{
                 id: fan_data.id,
@@ -607,7 +611,7 @@ impl UserFan{
     }
 
     /* fans: get all users that they have owner_screen_cid in their friends data */
-    pub async fn get_all_my_fans(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<UserFanData, PanelHttpResponse>{
 
@@ -643,21 +647,6 @@ impl UserFan{
             )
 
         };
-        
-        // get friends
-        let get_owner_friends = Self::get_all_my_friends(owner_screen_cid, limit, connection).await;
-        let mut owner_friends = if get_owner_friends.is_ok(){
-            let owner_friends = get_owner_friends.unwrap();
-            let friends_data = owner_friends.clone().friends;
-            if friends_data.is_some(){
-                serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
-            } else{
-                vec![]
-            } 
-
-        } else{
-            vec![]
-        };
 
         // get followers
         let friends_data = fan_data.clone().friends;
@@ -671,7 +660,6 @@ impl UserFan{
             .into_iter()
             .map(|frd| {
                 if frd.is_accepted{
-                    info!("is true");
                     Some(frd)
                 } else{
                     None
@@ -680,34 +668,22 @@ impl UserFan{
             .collect::<Vec<Option<FriendData>>>();
         owner_followers.retain(|frd| frd.is_some());
 
-        info!("followings of {owner_screen_cid:} are: {:?}", owner_friends);
-        info!("followers of {owner_screen_cid:} are: {:?}", owner_followers);
-
-        let mut fans_data_arr = vec![];
-        
-        // fans: friends must not be in followers
-        for friend in owner_friends{
-            for wrapped_follower in owner_followers.clone(){
-                let follower = wrapped_follower.unwrap();
-                if friend.screen_cid != follower.screen_cid{
-                    fans_data_arr.push(follower);
-                }
-            }
-        }
-
-        info!("fans of {owner_screen_cid:} are: {:?}", fans_data_arr);
-
         Ok(
             UserFanData{
                 id: fan_data.id,
                 user_screen_cid: fan_data.user_screen_cid,
-                friends: if fans_data_arr.is_empty(){
-                        Some(serde_json::to_value(fans_data_arr).unwrap())
+                friends: if owner_followers.is_empty(){
+                        Some(serde_json::to_value(owner_followers).unwrap())
                     } else{
 
                         /* sorting friend requests in desc order */
-                        fans_data_arr.sort_by(|frd1, frd2|{
-    
+                        owner_followers.sort_by(|frd1, frd2|{
+                            
+                            let frd1_default = FriendData::default();
+                            let frd2_default = FriendData::default();
+                            let frd1 = frd1.as_ref().unwrap_or(&frd1_default);
+                            let frd2 = frd2.as_ref().unwrap_or(&frd2_default);
+                            
                             let frd1_requested_at = frd1.requested_at;
                             let frd2_requested_at = frd2.requested_at;
                             frd2_requested_at.cmp(&frd1_requested_at)
@@ -721,11 +697,11 @@ impl UserFan{
                             will be dropped while is getting used we have to create a longer 
                             lifetime then call to_vec() on that type
                         */
-                        let sliced = if fans_data_arr.len() > to{
-                            let data = &fans_data_arr[from..to+1];
+                        let sliced = if owner_followers.len() > to{
+                            let data = &owner_followers[from..to+1];
                             data.to_vec()
                         } else{
-                            let data = &fans_data_arr[from..fans_data_arr.len()];
+                            let data = &owner_followers[from..owner_followers.len()];
                             data.to_vec()
                         };
     
@@ -738,6 +714,75 @@ impl UserFan{
         )   
 
     }
+
+    pub async fn get_all_my_followings(who_screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<FriendData>, PanelHttpResponse>{
+
+            let from = limit.from.unwrap_or(0);
+            let to = limit.to.unwrap_or(10);
+
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+            }
+
+            let all_fans_data = users_fans
+                .order(created_at.desc())
+                .offset(from)
+                .limit((to - from) + 1)    
+                .load::<UserFan>(connection);
+
+            let Ok(fans_data) = all_fans_data else{
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: NO_USER_FANS,
+                    status: 404,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+
+            };
+
+            let mut followings = vec![];
+            for fan_data in fans_data{
+
+                if fan_data.user_screen_cid == who_screen_cid{
+                    continue;
+                }
+
+                let friends_data = fan_data.clone().friends;
+                let mut decoded_friends_data = if friends_data.is_some(){
+                    serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                } else{
+                    vec![]
+                }; 
+                
+                for friend in decoded_friends_data{
+                    if friend.screen_cid == who_screen_cid && friend.is_accepted{
+                        followings.push(friend);
+                    }
+                }
+
+            }
+
+            // can't return UserFanData cause user might have no one send him a request yet
+            // so there is no record for who_screen_cid yet thus users_fans would be empty.
+            Ok(
+                followings
+            ) 
+
+        }
 
     pub async fn get_user_realations(who_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -754,8 +799,8 @@ impl UserFan{
                     };
                     user_wallet_info
                 },
-                fans: {
-                    let get_followers = Self::get_all_my_fans(who_screen_cid, limit.clone(), connection).await;
+                followers: {
+                    let get_followers = Self::get_all_my_followers(who_screen_cid, limit.clone(), connection).await;
                     let Ok(user_followers) = get_followers else{
                         let err_resp = get_followers.unwrap_err();
                         return Err(err_resp);
@@ -763,7 +808,15 @@ impl UserFan{
                     user_followers
                 },
                 friends: {
-                    let get_followings = Self::get_all_my_friends(who_screen_cid, limit, connection).await;
+                    let get_friends = Self::get_all_my_friends(who_screen_cid, limit.clone(), connection).await;
+                    let Ok(user_friends) = get_friends else{
+                        let err_resp = get_friends.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_friends
+                },
+                followings: {
+                    let get_followings = Self::get_all_my_followings(who_screen_cid, limit, connection).await;
                     let Ok(user_followings) = get_followings else{
                         let err_resp = get_followings.unwrap_err();
                         return Err(err_resp);
@@ -892,7 +945,6 @@ impl UserFan{
             /* insert new record */
             Err(resp) => {
                 
-                /* we'll insert a new user fan data for the one whom the caller sent the request */
                 let new_fan_data = InsertNewUserFanRequest{
                     user_screen_cid: user_screen_cid_.to_owned(),
                     friends: {

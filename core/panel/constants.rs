@@ -146,6 +146,7 @@ pub static NO_GALLERY_FOUND_FOR: &str = "No Gallery Found For This User";
 pub static NO_GALLERY_FOUND_FOR_COL_OWNER: &str = "No Gallery Found For This Collection Owner";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
+pub static NO_USER_FANS: &str = "Found No User Fan Data";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
 pub static NFT_NOT_FOUND_OF: &str = "No Nft Found With This Onchain Id";
 pub static NFT_NOT_FOUND_OF_ID: &str = "No Nft Found With This Id";

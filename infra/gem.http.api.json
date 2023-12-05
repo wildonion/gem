@@ -3899,14 +3899,14 @@
 									"response": []
 								},
 								{
-									"name": "Get All My Fans",
+									"name": "Get All My Followers",
 									"request": {
 										"auth": {
 											"type": "bearer",
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzkwNDIyOTM3OTIxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzkyMjIyOTQxNjQ4MDAwLCJpYXQiOjE3MDE3OTA0MjI5NDE2NDgwMDB9.8ONF2Zy7-hZG0x_P3_QKzAtljqL3UR4v1q9HqS7uynX6fsfSuAgIbWTWe8KZnIblK_RcEe1FLh2og48EjyCq2A",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxODA5ODcxOTA4NDAyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxODExNjcxOTEwODc1MDAwLCJpYXQiOjE3MDE4MDk4NzE5MTA4NzUwMDB9.WPE3apdX8NyIaZOWX5ZgDRpy94q9q6r6Frw00-4C_WIOnLBiL6bz0n8SosaDUhoCc3_bAfAhqq2jAjGVOkfWOQ",
 													"type": "string"
 												}
 											]
@@ -3914,7 +3914,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/fan/get/all/fans/?from=0&to=10",
+											"raw": "{{panel-user}}/fan/get/all/followers/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3922,7 +3922,48 @@
 												"fan",
 												"get",
 												"all",
-												"fans",
+												"followers",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All My Followings",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxODA3Mjc1MTU0NDIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxODA5MDc1MTU3MzIwMDAwLCJpYXQiOjE3MDE4MDcyNzUxNTczMjAwMDB9.4qqDiVr-N1Z1kjsHegdg8pqugc7u2Ts4BTVfV8ok8M0WDVYn33DgltuAEtrE6hgejNwtlmKBoLx4IQCsfG3kEw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/all/followings/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"all",
+												"followings",
 												""
 											],
 											"query": [
