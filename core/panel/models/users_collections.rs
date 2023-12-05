@@ -176,12 +176,9 @@ impl UserCollection{
             &collection.owner_screen_cid, 
             caller_screen_cid, connection).await;
         
-        let Ok(are_we_friend) = check_we_are_friend else{
-            let err_resp = check_we_are_friend.unwrap_err();
-            return Err(err_resp);
-        };
-        
-        if are_we_friend{
+        // caller might be the collection owner otherwise they must be friend of each other
+        if (check_we_are_friend.is_ok() && check_we_are_friend.unwrap())
+            || collection.owner_screen_cid == caller_screen_cid{
 
             let mut minted_ones = decoded_nfts
                 .into_iter()
@@ -672,7 +669,7 @@ impl UserCollection{
 
     pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>, caller_screen_cid: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+        -> Result<Vec<Option<UserCollectionData>>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -692,13 +689,7 @@ impl UserCollection{
         let check_we_are_friend = UserFan::are_we_friends(
             &screen_cid, 
             caller_screen_cid, connection).await;
-        
-        let Ok(are_we_friend) = check_we_are_friend else{
-            let err_resp = check_we_are_friend.unwrap_err();
-            return Err(err_resp);
-        };
-        
-        if are_we_friend{
+
 
             let user_collections = users_collections
                 .order(created_at.desc())
@@ -719,80 +710,78 @@ impl UserCollection{
                 )
             };
 
-            Ok(
+            
                 
-                collections
+            let mut cols = collections
                     .into_iter()
                     .map(|c|{
 
-                        UserCollectionData{
-                            id: c.id,
-                            contract_address: c.contract_address,
-                            nfts: {
-                                /* return those none minted ones */
-                                if c.nfts.is_some(){
-                                    let col_nfts = c.nfts;
-                                    let decoded_nfts = if col_nfts.is_some(){
-                                        serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
-                                    } else{
-                                        vec![]
-                                    };
-                                    
-                                    let mut minted_nfts = decoded_nfts
-                                        .into_iter()
-                                        .map(|nft|{
-                                            /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                                            if nft.is_minted.unwrap_or(false) == true{
-                                                Some(nft)
+                        // caller might be the collection owner otherwise they must be friend of each other
+                        if (check_we_are_friend.is_ok() && *check_we_are_friend.as_ref().unwrap())
+                            || c.owner_screen_cid == caller_screen_cid{
+                                Some(
+                                    UserCollectionData{
+                                        id: c.id,
+                                        contract_address: c.contract_address,
+                                        nfts: {
+                                            /* return those none minted ones */
+                                            if c.nfts.is_some(){
+                                                let col_nfts = c.nfts;
+                                                let decoded_nfts = if col_nfts.is_some(){
+                                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                                } else{
+                                                    vec![]
+                                                };
+                                                
+                                                let mut minted_nfts = decoded_nfts
+                                                    .into_iter()
+                                                    .map(|nft|{
+                                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                                        if nft.is_minted.unwrap_or(false) == true{
+                                                            Some(nft)
+                                                        } else{
+                                                            None
+                                                        }
+                                                    }).collect::<Vec<Option<UserNftData>>>();
+                                                
+                                                
+                                                minted_nfts.retain(|nft| nft.is_some());
+    
+                                                let encoded_nfts = serde_json::to_value(minted_nfts).unwrap();
+                                                Some(encoded_nfts)
+                        
                                             } else{
-                                                None
+                                                c.nfts
                                             }
-                                        }).collect::<Vec<Option<UserNftData>>>();
-                                    
-                                    
-                                    minted_nfts.retain(|nft| nft.is_some());
-
-                                    let encoded_nfts = serde_json::to_value(minted_nfts).unwrap();
-                                    Some(encoded_nfts)
-            
-                                } else{
-                                    c.nfts
-                                }
-                            },
-                            col_name: c.col_name,
-                            symbol: c.symbol,
-                            owner_screen_cid: c.owner_screen_cid,
-                            metadata_updatable: c.metadata_updatable,
-                            base_uri: c.base_uri,
-                            royalties_share: c.royalties_share,
-                            royalties_address_screen_cid: c.royalties_address_screen_cid,
-                            collection_background: c.collection_background,
-                            extra: c.extra,
-                            col_description: c.col_description,
-                            created_at: c.created_at.to_string(),
-                            updated_at: c.updated_at.to_string(),
-                            freeze_metadata: c.freeze_metadata,
-                            contract_tx_hash: c.contract_tx_hash,
+                                        },
+                                        col_name: c.col_name,
+                                        symbol: c.symbol,
+                                        owner_screen_cid: c.owner_screen_cid,
+                                        metadata_updatable: c.metadata_updatable,
+                                        base_uri: c.base_uri,
+                                        royalties_share: c.royalties_share,
+                                        royalties_address_screen_cid: c.royalties_address_screen_cid,
+                                        collection_background: c.collection_background,
+                                        extra: c.extra,
+                                        col_description: c.col_description,
+                                        created_at: c.created_at.to_string(),
+                                        updated_at: c.updated_at.to_string(),
+                                        freeze_metadata: c.freeze_metadata,
+                                        contract_tx_hash: c.contract_tx_hash,
+                                    }
+                                )
+                        } else{
+                            None
                         }
 
                     })
-                    .collect::<Vec<UserCollectionData>>()
-            )
-
-        } else{
-
-            let resp_msg = format!("{caller_screen_cid:} Is Not A Friend Of {screen_cid:}");
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: &resp_msg,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            )
-
-        }
+                    .collect::<Vec<Option<UserCollectionData>>>();
+        
+        cols.retain(|c| c.is_some());            
+        
+        Ok(
+            cols
+        )
 
     }
 
