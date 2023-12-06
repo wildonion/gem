@@ -55,7 +55,7 @@ pub struct UserRelations{
     pub user_info: UserWalletInfoResponse,
     pub followers: UserFanData,
     pub friends: UserFanData,
-    pub followings: Vec<FriendData>
+    pub followings: Vec<UserFanData>
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -717,7 +717,7 @@ impl UserFan{
 
     pub async fn get_all_my_followings(who_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<FriendData>, PanelHttpResponse>{
+        -> Result<Vec<UserFanData>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0);
             let to = limit.to.unwrap_or(10);
@@ -770,7 +770,16 @@ impl UserFan{
                 
                 for friend in decoded_friends_data{
                     if friend.screen_cid == who_screen_cid && friend.is_accepted{
-                        followings.push(friend);
+                        followings.push({
+                            UserFanData{
+                                id: fan_data.id,
+                                user_screen_cid: fan_data.clone().user_screen_cid,
+                                friends: fan_data.clone().friends,
+                                invitation_requests: fan_data.clone().invitation_requests,
+                                created_at: fan_data.created_at.to_string(),
+                                updated_at: fan_data.updated_at.to_string(),
+                            }
+                        });
                     }
                 }
 
@@ -784,7 +793,7 @@ impl UserFan{
 
         }
 
-    pub async fn get_user_realations(who_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_user_relations(who_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserRelations, PanelHttpResponse>{
 

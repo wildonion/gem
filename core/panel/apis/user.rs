@@ -5257,7 +5257,7 @@ async fn get_all_user_relations(
                         }
                     }
 
-                    match UserFan::get_user_realations(
+                    match UserFan::get_user_relations(
                         &who_screen_cid.to_owned(), 
                         limit, connection).await{
                         
@@ -5926,7 +5926,7 @@ async fn get_all_my_followings(
                         Ok(followings) => {
 
                             resp!{
-                                Vec<FriendData>, //// the data type
+                                Vec<UserFanData>, //// the data type
                                 followings, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code
