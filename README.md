@@ -192,6 +192,9 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 # ---------------
 # ---- renew nginx 
 ./renew.sh
+# ---------------
+# ---- rebuild conse panel docker container only 
+./rebuildpanel.sh
 ```
     
 ## 🪟 Schemas and ERDs

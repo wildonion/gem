@@ -155,8 +155,9 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         echo \t"🪣 Which Db Storage You Want To Use for Conse Panel Service? [postgres/mongodb] > "
         read CONSE_PANEL_DB_STORAGE
 
+        echo \t"generating spacetimechatdb wasm methdos..."
         sudo mkdir -p $(pwd)/core/panel/spacetimedb/client/chatdb
-        spacetime generate --lang rust --out-dir $(pwd)/core/panel/spacetimedb/client/chatdb --project-path .
+        spacetime generate --lang rust --out-dir $(pwd)/core/panel/spacetimedb/client/chatdb --project-path $(pwd)/core/chatdb
         if [[ $CONSE_PANEL_DB_STORAGE == "postgres" ]]; then
             echo \n"> 🛢 Building Conse Panel With postgres Db Storage"
             sudo docker build -t conse-panel-pg-$TIMESTAMP -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
