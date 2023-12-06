@@ -12,9 +12,9 @@
 */
 
 use crate::*;
-use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::ChatRoomLaunchpadServer;
-use crate::events::subscribers::handlers::wsactors::servers::chatroomlp::UpdateChatRoom;
-use crate::events::subscribers::handlers::wsactors::sessions::sessionlp::WsLaunchpadSession;
+use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
+use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::UpdateChatRoom;
+use crate::events::subscribers::handlers::actors::ws::sessions::sessionlp::WsLaunchpadSession;
 use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
@@ -24,10 +24,10 @@ use crate::misc::*;
 use s3req::Storage;
  
 use crate::events::{
-    subscribers::handlers::wsactors::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
-    subscribers::handlers::wsactors::servers::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
-    subscribers::handlers::wsactors::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
-    subscribers::handlers::wsactors::sessions::sessionrole::WsNotifSession,
+    subscribers::handlers::actors::ws::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
+    subscribers::handlers::actors::ws::servers::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
+    subscribers::handlers::actors::ws::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
+    subscribers::handlers::actors::ws::sessions::sessionrole::WsNotifSession,
 };
 use actix::prelude::*;
 

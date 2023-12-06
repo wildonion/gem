@@ -24,43 +24,6 @@
     // mutexed shared state data to be mutated during the checking process
     // and accessible inside other actix routes threads
     // wasm, box pin, impl Trait | &dyn Trait, Send Sync Arc, Weak, Rc, RefCell, Mutex, RwLock
-    
-    CREATE OR REPLACE FUNCTION notify_trigger() RETURNS trigger AS $$
-    BEGIN
-        PERFORM pg_notify('my_channel', 'update');
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    CREATE TRIGGER user_update_trigger
-    AFTER UPDATE ON users
-    FOR EACH ROW EXECUTE PROCEDURE notify_trigger();
-
-    use tokio_postgres::{NoTls, Error};
-
-    #[tokio::main]
-    async fn main() -> Result<(), Error> {
-        // Connect to the database
-        let (client, connection) = tokio_postgres::connect("host=localhost dbname=mydb user=myuser", NoTls).await?;
-
-        tokio::spawn(async move {
-            if let Err(e) = connection.await {
-                eprintln!("connection error: {}", e);
-            }
-        });
-
-        // Start listening to the channel
-        client.execute("LISTEN my_channel", &[]).await?;
-
-        loop {
-            client.process_notifications().await;
-            while let Some(notification) = client.notifications().try_recv() {
-                println!("Got notification: {:?}", notification);
-                // Refresh data from database or whatever you need to do
-            }
-        }
-    }
-
 
 */
 

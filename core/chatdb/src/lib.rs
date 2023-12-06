@@ -7,7 +7,7 @@
    | - thread safe app state syncing
    | - pubsub pattern syncing
    | - wasm and smart contract based design pattern
-   | - in wasm context we can't async and std crates
+   | - in wasm contexts we can't have async and std crates
    |
 */
 use spacetimedb::{spacetimedb, ReducerContext, Identity, Timestamp};
