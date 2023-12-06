@@ -2279,6 +2279,10 @@ impl UserNft{
                 currently we're getting the following error in updating `freeze_metadata` and
                 `metadata_uri` fields from the nftport server:
                     the request could not be completed due to an internal server error. 
+
+                note that in order to update metadata_uri field, the freeze_metadata must not 
+                be set to true and before calling this api user must create a new metadata uri 
+                using /nft/create/metadata-uri api.
             */
             "onchain" => { // only freeze_metadata and metadata_uri
 

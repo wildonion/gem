@@ -2334,9 +2334,10 @@ pub mod exports{
     ----- crontab will call this api every 5 mins -----
     ---------------------------------------------------
         0 - summerize users' chats and generate n titles
-        1 - generate a mapping between titles and images using ai
-        2 - store them in ipfs, pastel using sense apis
-        3 - mint ai generated pictures to users screen_cids inside the chat
+        2 - generate nft based images for those titles
+        3 - generate a mapping between titles and images using ai
+        4 - store them in ipfs, pastel using sense apis
+        5 - mint ai generated pictures to users screen_cids inside the chat
     https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     pub use super::start_new_clp_event;
     pub use super::end_clp_event;

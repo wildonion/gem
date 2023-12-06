@@ -69,9 +69,6 @@ impl PgListenerActor{
         // mutexed shared state data to gets mutated during the checking process
         // and accessible inside other actix routes threads
 
-        // send new changes from table to other parts of the app 
-        // using mpsc jobq channel
-
         // or 
 
         // get new changes by sending GetUserNewChanges message from 
