@@ -4,7 +4,7 @@
  
 
 use crate::*;
-use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS};
+use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND};
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
@@ -19,8 +19,8 @@ use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest
     diesel migration run                 ---> apply sql files to db 
     diesel migration redo                ---> drop tables 
 
-    friends             ---> those one who have sent requests to user_screen_cid
-    invitation_requests ---> those one who have sent invitation requests of their own gallery to user_screen_cid
+    friends                              ---> those one who have sent requests to user_screen_cid
+    invitation_requests                  ---> those one who have sent invitation requests of their own gallery to user_screen_cid
     
     >_ user_screen_cid can accept each request he wants inside friends field
     >_ friends are the ones inside `friends` field who have sent requests to each other and both of them accepted each other's request
@@ -1130,6 +1130,47 @@ impl UserFan{
             vec![]
         };
 
+        // update invited_friends with the owner_screen_cid
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let Ok(gallery) = get_gallery_data else{
+            let resp_error = get_gallery_data.unwrap_err();
+            return Err(resp_error);
+        };
+        
+
+        /* ---- considering gallery entry price ---- */
+        let mut g_entry_price = 0;
+        if gallery.extra.is_some(){
+            let g_extra = gallery.extra.as_ref().unwrap();
+            if g_extra.is_array(){
+                let g_extra_arr = g_extra.as_array().unwrap();
+                for obj in g_extra_arr{
+                    g_entry_price = obj["entry_price"].as_i64().unwrap_or(0);
+                }
+            }
+        }
+
+        let user = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
+        if user.screen_cid.is_none(){
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: USER_SCREEN_CID_NOT_FOUND,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::InternalServerError().json(resp))
+            );
+        }
+
+        // update balance of the one who accepted the request
+        // cause he must pay for the entry price of the gallery
+        let new_balance = user.balance.unwrap() - g_entry_price;
+        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        if update_user_balance.is_err(){
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+        }
 
         /* mutating a structure inside a vector of InvitationRequestData structs using &mut pointer */
         'updateinvreqblock: for inv_req in &mut decoded_invitation_request_data{
@@ -1150,17 +1191,6 @@ impl UserFan{
         }, connection).await{
 
             Ok(updated_user_fan_data) => {
-
-                // update invited_friends with the owner_screen_cid
-                let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
-                let Ok(gallery) = get_gallery_data else{
-                    let resp_error = get_gallery_data.unwrap_err();
-                    return Err(resp_error);
-                };
-
-                // consider the amount of entry by parsing the exra field
-                // ...
-
 
                 let gallery_invited_friends = gallery.invited_friends;
                 let mut invited_friends = if gallery_invited_friends.is_some(){
@@ -1190,13 +1220,22 @@ impl UserFan{
                     }, gal_id, connection).await{
 
                         Ok(_) => Ok(updated_user_fan_data),
-                        Err(resp) => return Err(resp),
+                        Err(resp) => {
+                            
+                            // revert the payment process, pay the gallery price back the user 
+                            let new_balance = user.balance.unwrap() + g_entry_price;
+                            let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                            return Err(resp)
+                        },
                     }
 
 
             },
             Err(resp) => {
 
+                // revert the payment process, pay the gallery price back the user 
+                let new_balance = user.balance.unwrap() + g_entry_price;
+                let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
                 return Err(resp);
             }
         }
