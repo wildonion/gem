@@ -13,7 +13,7 @@
     |   user   ---> all apis with user access 
     |   health ---> all apis related to server health
     |   public ---> all public apis
-    |   role   ---> all websocket reveal role subscription apis with user access
+    |   erm    ---> all websocket reveal role, ecq and mmr subscription apis with user access
     |   clp    ---> all websocket chatroom launchpad apis with user access
     |
     |
@@ -23,5 +23,5 @@ pub mod admin;
 pub mod user;
 pub mod health;
 pub mod public;
-pub mod role;
+pub mod erm;
 pub mod clp;

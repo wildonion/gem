@@ -38,9 +38,9 @@ COPY key-api.xbot.conse.app.pem /etc/nginx/key-api.xbot.conse.app.pem
 #jenkins.conse.app:
 COPY cert-jenkins.conse.app.pem /etc/nginx/cert-jenkins.conse.app.pem
 COPY key-jenkins.conse.app.pem /etc/nginx/key-jenkins.conse.app.pem
-#notif.panel.conse.app:
-COPY cert-notif.panel.conse.app.pem /etc/nginx/cert-notif.panel.conse.app.pem
-COPY key-notif.panel.conse.app.pem /etc/nginx/key-notif.panel.conse.app.pem
+#event.panel.conse.app:
+COPY cert-event.panel.conse.app.pem /etc/nginx/cert-event.panel.conse.app.pem
+COPY key-event.panel.conse.app.pem /etc/nginx/key-event.panel.conse.app.pem
 #rpc.conse.app:
 COPY cert-rpc.conse.app.pem /etc/nginx/cert-rpc.conse.app.pem
 COPY key-rpc.conse.app.pem /etc/nginx/key-rpc.conse.app.pem
@@ -62,7 +62,7 @@ COPY api.rendezvous.conse.app.conf /etc/nginx/api.rendezvous.conse.app.conf
 COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
 COPY portainer.conse.app.conf /etc/nginx/portainer.conse.app.conf
 COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf
-COPY notif.panel.conse.app.conf /etc/nginx/notif.panel.conse.app.conf
+COPY event.panel.conse.app.conf /etc/nginx/event.panel.conse.app.conf
 COPY api.panel.stripewh.conse.app.conf /etc/nginx/api.panel.stripewh.conse.app.conf
 COPY api.xbot.conse.app.conf /etc/nginx/api.xbot.conse.app.conf
 COPY rpc.conse.app.conf /etc/nginx/rpc.conse.app.conf

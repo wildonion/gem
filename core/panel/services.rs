@@ -27,7 +27,7 @@ use crate::*;
 */
 pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
-    config.service(apis::role::exports::sub_to_reveal_role);
+    config.service(apis::erm::exports::sub_to_erm);
     config.service(apis::clp::exports::chatroomlp);
     
     // other routs maybe ?

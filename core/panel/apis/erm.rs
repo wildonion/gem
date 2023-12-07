@@ -4,9 +4,11 @@
 
 /*
     > ----------------------------------------------------
-    |               NOTIF SUBSCRIPTIONS WS APIS
+    |            ERM NOTIF SUBSCRIPTIONS WS APIS
     | ----------------------------------------------------
-    |
+    |   E: ECQ
+    |   R: Reveal Role
+    |   M: MMR
     |
 
 */
@@ -47,9 +49,9 @@ use actix::prelude::*;
         ws://localhost:7442/subscribe/
     
     production APIs:
-        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
-        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
-        `wss://notif.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
+        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
+        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
+        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
 
     NOTE: we just have to make sure that the user is already inside the event 
             and did the reservation process for the event.
@@ -70,7 +72,7 @@ use actix::prelude::*;
 
 */
 #[get("/{user_id}/{notif_room}")]
-async fn sub_to_reveal_role(
+async fn sub_to_erm(
     req: HttpRequest, 
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
@@ -280,5 +282,5 @@ pub mod exports{
         which will be used to extract the utf8 bytes from the 
         payload asyncly
     */
-    pub use super::sub_to_reveal_role;
+    pub use super::sub_to_erm;
 }

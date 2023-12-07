@@ -73,7 +73,11 @@ impl PgListenerActor{
 
         // get new changes by sending GetUserNewChanges message from 
         // different parts of the app to this actor to get the latest
-        // table update as a response of this actor
+        // table update as a response of this actor, this can be done
+        // by starting the actor in place where we're starting the server
+        // then share the actor as a shared state data like Arc<Mutex< 
+        // between actix routers threads so we can extract it from 
+        // the app_data in each api
 
     }
 

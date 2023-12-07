@@ -2583,7 +2583,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
+											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3981,6 +3981,89 @@
 									"response": []
 								},
 								{
+									"name": "Get Relations For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzU1NDUyNTc2OTIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzU3MjUyNTc5NDc2MDAwLCJpYXQiOjE3MDE3NTU0NTI1Nzk0NzYwMDB9.b5u0WqFoqD_8MZ1W2Gaj8FHyhGgTbtCZ27YEEPkHGSlpjH3Om7ttIqTZG9j_xmI1jSwfJRe2496Ao2Gr1muZ_w",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/relations/for/0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"relations",
+												"for",
+												"0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get My Friend Suggestions",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/get/suggestions/for/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"get",
+												"suggestions",
+												"for",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Create Collection",
 									"request": {
 										"auth": {
@@ -4092,7 +4175,7 @@
 												"update"
 											]
 										},
-										"description": "**onchain updates**\n\n- freeze_metadata\n    \n- owner_address\n    \n- royalties_address\n    \n- royalties_share\n    \n- base_uri"
+										"description": "**onchain updates**\n\n- freeze_metadata\n- owner_address\n- royalties_address\n- royalties_share\n- base_uri"
 									},
 									"response": []
 								},
@@ -4235,7 +4318,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"onchain\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"onchain\",\n    \"transfer_to_screen_cid\": \"0x79fcb507988a227a98ab68fe044193dfeca7a968\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4349,7 +4432,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"nft_onchain_id\": \"126824823888680544453\",\n    \"reaction_type\": \"comment\",\n    \"comment_content\": \"a very wild comment\",\n    \"is_like_upvote\": false,\n    \"is_like_downvote\": true,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"nft_onchain_id\": \"126824823888680544453\",\n    \"reaction_type\": \"comment\",\n    \"comment_content\": \"a very wild comment\",\n    \"is_like_upvote\": null,\n    \"is_like_downvote\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4426,89 +4509,6 @@
 												"reaction",
 												"get",
 												"all",
-												""
-											],
-											"query": [
-												{
-													"key": "from",
-													"value": "0"
-												},
-												{
-													"key": "to",
-													"value": "10"
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Get Relations For",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzU1NDUyNTc2OTIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzU3MjUyNTc5NDc2MDAwLCJpYXQiOjE3MDE3NTU0NTI1Nzk0NzYwMDB9.b5u0WqFoqD_8MZ1W2Gaj8FHyhGgTbtCZ27YEEPkHGSlpjH3Om7ttIqTZG9j_xmI1jSwfJRe2496Ao2Gr1muZ_w",
-													"type": "string"
-												}
-											]
-										},
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "{{panel-user}}/fan/get/relations/for/0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe/?from=0&to=10",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"fan",
-												"get",
-												"relations",
-												"for",
-												"0x8a3a0fd4066e1edb97b2bdf29e17130b56cea2fe",
-												""
-											],
-											"query": [
-												{
-													"key": "from",
-													"value": "0"
-												},
-												{
-													"key": "to",
-													"value": "10"
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Get My Friend Suggestions",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-													"type": "string"
-												}
-											]
-										},
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "{{panel-user}}/fan/get/suggestions/for/?from=0&to=10",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"fan",
-												"get",
-												"suggestions",
-												"for",
 												""
 											],
 											"query": [
