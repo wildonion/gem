@@ -1,10 +1,34 @@
 
 
-
-
-
+/*  > -----------------------------------------------------------------------------------------------------
+    | pg listener actor to subscribe to tables changes notifs and communicate with other parts of the app 
+    | -----------------------------------------------------------------------------------------------------
+    | contains: message structures and their handlers
+    | 
+    |
+    |
+*/
 
 use crate::*;
+use crate::constants::{WS_CLIENT_TIMEOUT, WS_SUBSCRIPTION_INTERVAL};
+use crate::misc::*;
+use s3req::Storage;
+use crate::*;
+use actix::prelude::*;
+
+
+
+#[derive(Clone, Message)]
+#[rtype(String)]
+pub struct GetLatestChanges {
+    pub table_name: String
+}
+
+#[derive(Clone, Default)]
+pub struct TableInfo{
+    pub latest_record: String,
+    pub table_name: String
+}
 
 /* 
     pg notif actor is a ds that will start subscribing to postgres event in 
@@ -12,28 +36,43 @@ use crate::*;
     once it gets started, to notify other parts about tables changes by sending 
     the received event through mpsc channels.
 */
-pub struct PgListenerActor{}
+#[derive(Clone, Default)]
+pub struct PgListenerActor{
+    pub tables: Vec<TableInfo>,
+}
+
+impl Actor for PgListenerActor{
+    type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+
+        ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+            
+            let mut this = actor.clone();
+            tokio::spawn(async move{
+                this.subscribe().await;
+            });
+        });
+    }
+}
 
 impl PgListenerActor{
 
     /* 
-        pg streaming of events handler by subscribing to the event 
-        in an interval loop using while let Some()... syntax
+        pg streaming of events handler by subscribing to the event in an interval loop using 
+        while let Some()... syntax get new changes by sending GetLatestChanges message from 
+        different parts of the app to this actor to get the latest table update as a response 
+        of this actor, this can be done by starting the actor in place where we're starting 
+        the server then share the actor as a shared state data like Arc<Mutex< between actix 
+        routers threads so we can extract it from the app_data in each api and send the 
+        GetLatestChanges message to fetch new updated record of the passed in table name
     */
-    pub async fn subscribe(){
+    pub async fn subscribe(&mut self){
 
         /* 
-        
-            CREATE OR REPLACE FUNCTION notify_trigger() RETURNS trigger AS $$
-            BEGIN
-                PERFORM pg_notify('my_channel', 'update');
-                RETURN NEW;
-            END;
-            $$ LANGUAGE plpgsql;
 
-            CREATE TRIGGER user_update_trigger
-            AFTER UPDATE ON users
-            FOR EACH ROW EXECUTE PROCEDURE notify_trigger();
+            behind message handlers are mpsc 
+            pass received notification through mpsc channel
 
             use tokio_postgres::{NoTls, Error};
 
@@ -47,7 +86,7 @@ impl PgListenerActor{
                         eprintln!("connection error: {}", e);
                     }
                 });
-
+                
                 // Start listening to the channel
                 client.execute("LISTEN my_channel", &[]).await?;
 
@@ -62,23 +101,44 @@ impl PgListenerActor{
 
         */
         
-        // use redis pubsub pattern
-        // use Postgres' NOTIFY/LISTEN to notify app on users table update
-        // with worker patterns like mpsc, tokio::select, tokio::spawn(), 
-        // to fetch latest data from db every 5 seconds with a global 
-        // mutexed shared state data to gets mutated during the checking process
-        // and accessible inside other actix routes threads
 
-        // or 
+    }
 
-        // get new changes by sending GetUserNewChanges message from 
-        // different parts of the app to this actor to get the latest
-        // table update as a response of this actor, this can be done
-        // by starting the actor in place where we're starting the server
-        // then share the actor as a shared state data like Arc<Mutex< 
-        // between actix routers threads so we can extract it from 
-        // the app_data in each api
+}
 
+
+/* 
+    other parts of the app can communicate with this actor to get the 
+    latest record update of the passed in table name 
+*/
+impl Handler<GetLatestChanges> for PgListenerActor{
+    
+    type Result = String;
+
+    fn handle(&mut self, msg: GetLatestChanges, ctx: &mut Self::Context) -> Self::Result{
+
+        let GetLatestChanges{ table_name } = msg;
+        let tables = self.tables.clone();
+        
+        let mut found_tabel = TableInfo::default();
+        if tables
+            .into_iter()
+            .any(|t|{
+                
+                if t.table_name == table_name{
+                    found_tabel = t;
+                    true
+                } else{
+                    false
+                }
+
+            }){
+
+                found_tabel.latest_record
+            } else{
+                String::from("")
+            }
+        
     }
 
 }

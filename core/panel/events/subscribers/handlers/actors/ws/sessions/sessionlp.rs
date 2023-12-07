@@ -223,6 +223,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
 
                 /* ---- decrypting the message ---- */
                 // note that frontend must not hash the data just sign the raw data
+                // since hashing with secure cell generates a new random hash everytime
+                // and it's hard to hash the raw data in here and check it agains the one
+                // that has been sent by the frontend
                 let mut r1_wallet = walletreq::secp256r1::generate_new_wallet();
                 let get_decrypted_new_message = r1_wallet.self_verify_secp256r1_signature(&self.r1signature, &self.r1pubkey);
                 if get_decrypted_new_message.is_err(){
@@ -231,7 +234,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                 }
 
                 let message_vec = get_decrypted_new_message.unwrap();
-                // converting vector decoded message into static slice so it can live long enough for the entire app
+                // converting vector decoded message into static slice so it can live 
+                // long enough for the entire app and then to str using std::str::from_utf8 
                 let message_vec_slice = misc::vector_to_static_slice(message_vec); 
                 let new_message = std::str::from_utf8(message_vec_slice).unwrap();
 

@@ -388,7 +388,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
                         /* join the event notif room to subscribe to redis topics */
                         "/join-roles" => {
 
-                            /* communicating with role notif server actor (notifs/role.rs) */
+                            /* communicating with role notif server actor (notifs/erm.rs) */
 
                             self.ws_role_notif_actor_address.do_send(RoleNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
                             let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
