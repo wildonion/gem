@@ -189,8 +189,8 @@ macro_rules! server {
                     Ok(server) => {
                         server
                             /* 
-                                running server in a threadpool with 10 spawned threads to handle 
-                                incoming connections asyncly and concurrently 
+                                running our own tcp listener server in a threadpool with 10 spawned 
+                                threads to handle incoming connections asyncly and concurrently 
                             */
                             .workers(10) 
                             .run() /* actix web http+ws server runs in the same thread that actix has ran */

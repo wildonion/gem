@@ -24,6 +24,7 @@ redis = { version = "0.23", features = ["tokio-comp", "cluster-async", "json"] }
 redis-async = "0.16.1"
 mongodb = "2"
 uuid = { version = "1", features = ["serde", "v4"] }
+tokio-postgres = "0.7.10"
 
 [lib]
 path = "src/lib.rs"

@@ -39,6 +39,7 @@ pub struct TableInfo{
 #[derive(Clone, Default)]
 pub struct PgListenerActor{
     pub tables: Vec<TableInfo>,
+    pub app_storage: Option<Arc<Storage>>,
 }
 
 impl Actor for PgListenerActor{
@@ -69,23 +70,18 @@ impl PgListenerActor{
     */
     pub async fn subscribe(&mut self){
 
+        let app_storage = self.app_storage.as_ref().unwrap();
+        let tokio_pg_client = app_storage.get_tokio_pg_client().await;
+
         /* 
 
-            behind message handlers are mpsc 
-            pass received notification through mpsc channel
-
-            use tokio_postgres::{NoTls, Error};
+            behind message handlers of each actor are mpsc jobq channel which 
+            allows other parts of the app to send data using the sender and 
+            receive the response using receiver
+            pass received table notification through mpsc channel to other parts
 
             #[tokio::main]
             async fn main() -> Result<(), Error> {
-                // Connect to the database
-                let (client, connection) = tokio_postgres::connect("host=localhost dbname=mydb user=myuser", NoTls).await?;
-
-                tokio::spawn(async move {
-                    if let Err(e) = connection.await {
-                        eprintln!("connection error: {}", e);
-                    }
-                });
                 
                 // Start listening to the channel
                 client.execute("LISTEN my_channel", &[]).await?;
@@ -119,7 +115,7 @@ impl Handler<GetLatestChanges> for PgListenerActor{
 
         let GetLatestChanges{ table_name } = msg;
         let tables = self.tables.clone();
-        
+
         let mut found_tabel = TableInfo::default();
         if tables
             .into_iter()

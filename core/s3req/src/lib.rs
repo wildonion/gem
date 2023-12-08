@@ -13,6 +13,7 @@ use diesel::r2d2::Pool;
 use diesel::PgConnection;
 use redis::Client as RedisClient;
 use uuid::Uuid;
+use tokio_postgres::Client as TokiopgClient;
 
 
 /*  ----------------------
@@ -22,7 +23,8 @@ use uuid::Uuid;
    | redis async
    | redis actor
    | mongodb
-   | postgres
+   | diesel postgres
+   | tokio postgres
    |
 */
 
@@ -37,6 +39,7 @@ pub struct Db{
     pub redis: Option<RedisClient>,
     pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
     pub redis_actix_actor: Option<Addr<RedisActor>>,
+    pub tokio_postgres_client: Option<Arc<tokio_postgres::Client>>
 }
 
 impl Default for Db{
@@ -50,6 +53,7 @@ impl Default for Db{
             redis: None,
             redis_async_pubsub_conn: None,
             redis_actix_actor: None,
+            tokio_postgres_client: None
         }
     }
 }
@@ -67,6 +71,7 @@ impl Db{
                 redis: None,
                 redis_async_pubsub_conn: None,
                 redis_actix_actor: None,
+                tokio_postgres_client: None
             }
         )
     }
@@ -125,6 +130,13 @@ impl Storage{
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, // no storage is available cause it's off
+        }
+    }
+
+    pub async fn get_tokio_pg_client(&self) -> Option<Arc<TokiopgClient>>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().tokio_postgres_client.clone(),
+            Mode::Off => None,
         }
     }
 
@@ -194,6 +206,7 @@ macro_rules! storage {
         async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use s3req::{Storage, Mode, Db};
+            use tokio_postgres::*;
 
             /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
 
@@ -220,7 +233,16 @@ macro_rules! storage {
             
             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-            
+            let config = format!("host={} dbname={} user={} password={}", $name, $host, $port, $password);
+            let (tokio_pg_client, connection) = tokio_postgres::connect(config.as_str(), NoTls).await.unwrap();
+
+            /* handling pg connection in a separate threadpool */
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    error!("tokio postgres connection error: {}", e);
+                }
+            });
+ 
             let empty_app_storage = Some( // putting the Arc-ed db inside the Option
                 Arc::new( // cloning app_storage to move it between threads
                     Storage{ // defining db context 
@@ -234,7 +256,8 @@ macro_rules! storage {
                                 pool: None, // pg pool
                                 redis: None,
                                 redis_async_pubsub_conn: None,
-                                redis_actix_actor: None
+                                redis_actix_actor: None,
+                                tokio_postgres_client: None,
                             }
                         ),
                     }
@@ -268,7 +291,8 @@ macro_rules! storage {
                                             pool: None, // pg pool
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actix_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone()),
+                                            tokio_postgres_client: Some(Arc::new(tokio_pg_client))
                                         }
                                     ),
                                 }
@@ -308,7 +332,8 @@ macro_rules! storage {
                                             pool: Some(pg_pool),
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actix_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone()),
+                                            tokio_postgres_client: Some(Arc::new(tokio_pg_client))
                                         }
                                     ),
                                 }

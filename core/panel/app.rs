@@ -103,13 +103,14 @@ use spacetimedb_sdk::{
     subscribe,
     table::{TableType, TableWithPrimaryKey},
 };
+use tokio_postgres::{NoTls, Error as TokiopgError, Client as TokiopgClient};
 
 
 
 /* ----------------------------------------- */
 /* ------------ loading modules ------------ */
 /* ----------------------------------------- */
-#[path="spacetimedb/client/chatdb/mod.rs"]
+#[path="spacetimedb/client/chatdb/mod.rs"] /* mod.rs contains all modules, methods, structures and functions */
 mod spacetimchatdb; /* contains spacetimedb client interfaces for chatdb server */
 mod apis;           /* contains http routes and model call logics */
 mod misc;           /* contains miscellaneous and utilities methods and modules */
@@ -130,6 +131,10 @@ mod passport;       /* contains passport traits for HttpRequest */
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
+    /*
+        >_ running a tcp listener server so actix can use this to accept 
+        incoming connections in its threadpool 
+    */
     dotenv::dotenv().expect(".env file must be in here!");
     let tcp_listener = std::net::TcpListener::bind(
     format!("{}:{}", 
