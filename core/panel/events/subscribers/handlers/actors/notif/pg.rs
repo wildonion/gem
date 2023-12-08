@@ -34,7 +34,7 @@ pub struct TableInfo{
     pg notif actor is a ds that will start subscribing to postgres event in 
     its interval loop using while let Some()... syntax in the background and realtime
     once it gets started, to notify other parts about tables changes by sending 
-    the received event through mpsc channels.
+    the received event from redis through mpsc channels.
 */
 #[derive(Clone, Default)]
 pub struct PgListenerActor{
@@ -60,43 +60,22 @@ impl Actor for PgListenerActor{
 impl PgListenerActor{
 
     /* 
-        pg streaming of events handler by subscribing to the event in an interval loop using 
-        while let Some()... syntax get new changes by sending GetLatestChanges message from 
-        different parts of the app to this actor to get the latest table update as a response 
-        of this actor, this can be done by starting the actor in place where we're starting 
-        the server then share the actor as a shared state data like Arc<Mutex< between actix 
-        routers threads so we can extract it from the app_data in each api and send the 
-        GetLatestChanges message to fetch new updated record of the passed in table name
+        pg streaming of events handler by subscribing to the related topic in an interval loop using 
+        while let Some()... syntax and redis, in order to get new changes by sending GetLatestChanges 
+        message from different parts of the app to this actor to get the latest table update as a response 
+        of this actor, this can be done by starting the actor in place where we're starting the server 
+        then share the actor as a shared state data like Arc<Mutex< between actix routers threads so we 
+        can extract it from the app_data in each api and send the GetLatestChanges message to fetch new 
+        updated record of the passed in table name
     */
     pub async fn subscribe(&mut self){
-
-        let app_storage = self.app_storage.as_ref().unwrap();
-        let tokio_pg_client = app_storage.get_tokio_pg_client().await;
-
-        /* 
-
-            behind message handlers of each actor are mpsc jobq channel which 
-            allows other parts of the app to send data using the sender and 
-            receive the response using receiver
-            pass received table notification through mpsc channel to other parts
-
-            #[tokio::main]
-            async fn main() -> Result<(), Error> {
-                
-                // Start listening to the channel
-                client.execute("LISTEN my_channel", &[]).await?;
-
-                loop {
-                    client.process_notifications().await;
-                    while let Some(notification) = client.notifications().try_recv() {
-                        println!("Got notification: {:?}", notification);
-                        // Refresh data from database or whatever you need to do
-                    }
-                }
-            }
-
-        */
         
+        tokio::spawn(async move{
+            
+            // subscribe to users_*_update topic using redis and while let Some()...
+            // ...
+
+        }); 
 
     }
 
@@ -105,7 +84,10 @@ impl PgListenerActor{
 
 /* 
     other parts of the app can communicate with this actor to get the 
-    latest record update of the passed in table name 
+    latest record update of the passed in table name, behind message 
+    handlers of each actor are mpsc jobq channel which allows other 
+    parts of the app to send data using the sender and receive the 
+    response using receiver
 */
 impl Handler<GetLatestChanges> for PgListenerActor{
     

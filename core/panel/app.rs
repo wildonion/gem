@@ -103,7 +103,6 @@ use spacetimedb_sdk::{
     subscribe,
     table::{TableType, TableWithPrimaryKey},
 };
-use tokio_postgres::{NoTls, Error as TokiopgError, Client as TokiopgClient};
 
 
 
