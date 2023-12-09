@@ -5,6 +5,7 @@
 
 use std::io::Write;
 use std::time::{UNIX_EPOCH, SystemTime};
+use actix::Addr;
 use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
 use futures_util::TryStreamExt;
@@ -378,7 +379,8 @@ pub struct IpInfoResponse{
 */
 impl User{
 
-    pub async fn get_user_data_response_with_cookie(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
+    pub async fn get_user_data_response_with_cookie(&self, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
 
         /* generate cookie 🍪 from token time and jwt */
         /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
@@ -439,6 +441,13 @@ impl User{
             snowflake_id: updated_user.snowflake_id,
             stars: updated_user.stars
         };
+
+        /* ----------------------------------------------- */
+        /* --------- publish updated user to redis channel */
+        /* ----------------------------------------------- */
+        
+        let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
+        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
         let resp = Response{
             data: Some(user_login_data),
@@ -1438,7 +1447,7 @@ impl User{
     
     }
 
-    pub async fn login_by_gmail_info(gmail_info: UserLoginWithGmailRequest, 
+    pub async fn login_by_gmail_info(gmail_info: UserLoginWithGmailRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(UserData, Cookie), PanelHttpResponse>{
 
@@ -1446,17 +1455,31 @@ impl User{
         // if there wasn't any then validate the new input 
         // ...
 
+        /* ----------------------------------------------- */
+        /* --------- publish updated user to redis channel */
+        /* ----------------------------------------------- */
+        // 
+        // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
+        // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
         todo!()
 
     }
 
-    pub async fn login_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, 
+    pub async fn login_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         // find by mid, musername and mail
         // if there wasn't any then validate the new input 
         // ...
+
+        /* ----------------------------------------------- */
+        /* --------- publish updated user to redis channel */
+        /* ----------------------------------------------- */
+        // 
+        // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
+        // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
         todo!() 
         
@@ -1670,6 +1693,8 @@ impl User{
     pub async fn update_bio(
         bio_owner_id: i32, 
         new_bio: &str, 
+        redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -1692,6 +1717,13 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+                    
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -1772,6 +1804,8 @@ impl User{
     pub async fn update_wallet_back(
         wallet_owner_id: i32, 
         mut img: Multipart, 
+        redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
         
             
@@ -1805,6 +1839,14 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+                    
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -1885,6 +1927,8 @@ impl User{
     pub async fn update_avatar(
         avatar_owner_id: i32, 
         mut img: Multipart, 
+        redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -1918,6 +1962,14 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -1998,6 +2050,8 @@ impl User{
     pub async fn update_banner(
         banner_owner_id: i32, 
         mut img: Multipart, 
+        redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -2031,6 +2085,14 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -2108,7 +2170,8 @@ impl User{
 
     }
 
-    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn edit_by_admin(new_user: EditUserByAdminRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         /* fetch user info based on the data inside jwt */ 
         let single_user = users
@@ -2191,6 +2254,14 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -2513,14 +2584,25 @@ impl User{
 
     }
 
-    pub async fn logout(who: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), PanelHttpResponse>{
+    pub async fn logout(who: i32, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), PanelHttpResponse>{
 
         match diesel::update(users.find(who))
             .set(token_time.eq(0))
             .returning(FetchUser::as_returning())
             .get_result(connection)
             {
-                Ok(updated_user) => Ok(()),
+                Ok(updated_user) => {
+                    
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    
+                    Ok(())
+                },
                 Err(e) => {
 
                     let resp_err = &e.to_string();
@@ -2549,7 +2631,7 @@ impl User{
 
     }
 
-    pub async fn update_balance(owner_id: i32, new_balance: i64,
+    pub async fn update_balance(owner_id: i32, new_balance: i64, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserData, PanelHttpResponse>{
 
@@ -2584,6 +2666,14 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                     Ok(
                         UserData { 
                             id: updated_user.id, 
@@ -2802,6 +2892,8 @@ impl User{
     pub async fn update_mail(
         mail_owner_id: i32, 
         new_mail: &str, 
+        redis_client: RedisClient,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -2824,6 +2916,14 @@ impl User{
                 .get_result(connection)
                 {
                     Ok(updated_user) => {
+
+                        /* ----------------------------------------------- */
+                        /* --------- publish updated user to redis channel */
+                        /* ----------------------------------------------- */
+                        
+                        let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
@@ -2906,6 +3006,7 @@ impl User{
     pub async fn update_phone(
         phone_owner_id: i32, 
         new_phone: &str, 
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -2934,6 +3035,15 @@ impl User{
                 .get_result(connection)
                 {
                     Ok(updated_user) => {
+
+                        /* ----------------------------------------------- */
+                        /* --------- publish updated user to redis channel */
+                        /* ----------------------------------------------- */
+                        
+                        let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
+
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
@@ -3013,7 +3123,8 @@ impl User{
 
     }
 
-    pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, user_ip: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, user_ip: String, redis_actor: Addr<RedisActor>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
         let get_single_user = User::find_by_id(phone_owner_id, connection).await;
         let Ok(single_user) = get_single_user else{
@@ -3110,7 +3221,7 @@ impl User{
         };
 
         /* if we're here means code has been sent successfully */
-        match User::update_phone(phone_owner_id, &user_phone, connection).await{
+        match User::update_phone(phone_owner_id, &user_phone, redis_actor, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
@@ -3569,7 +3680,8 @@ impl User{
 
     }
 
-    pub async fn send_mail_verification_code_to(mail_owner_id: i32, user_mail: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+    pub async fn send_mail_verification_code_to(mail_owner_id: i32, user_mail: String, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
         let get_single_user = User::find_by_id(mail_owner_id, connection).await;
@@ -3657,7 +3769,7 @@ impl User{
         };
 
         /* if we're here means code has been sent successfully */
-        match User::update_mail(mail_owner_id, &user_mail, connection).await{
+        match User::update_mail(mail_owner_id, &user_mail,  redis_client, redis_actor, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
@@ -3781,7 +3893,7 @@ impl User{
 
 impl Id{
 
-    pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String, user_ip: String,
+    pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String, user_ip: String, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Id, PanelHttpResponse>{
 
         let Ok(user) = User::find_by_id(id_owner, connection).await else{
@@ -3817,6 +3929,13 @@ impl Id{
                     .get_result(connection)
                     {
                         Ok(updated_user) => {
+
+                            /* ----------------------------------------------- */
+                            /* --------- publish updated user to redis channel */
+                            /* ----------------------------------------------- */
+                            
+                            let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                            events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
@@ -3999,7 +4118,8 @@ impl Id{
 
     }
 
-    pub async fn save(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserIdResponse, PanelHttpResponse>{
+    pub async fn save(&mut self, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserIdResponse, PanelHttpResponse>{
         
         let get_user = User::find_by_id(self.user_id, connection).await;
         let Ok(user) = get_user else{
@@ -4022,17 +4142,24 @@ impl Id{
         */
 
         let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
-        match User::update_balance(self.user_id, new_balance, connection).await{
+        match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
 
             Ok(updated_user_data) => {
 
+                /* ----------------------------------------------- */
+                /* --------- publish updated user to redis channel */
+                /* ----------------------------------------------- */
+                
+                let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
+                events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+
                 match diesel::update(users.find(self.user_id))
                     .set(
-                (   
-                        /* 
-                            can't return heap data of type String we must clone them or use their 
-                            borrowed form or return the static version of their slice like &'static str
-                        */
+                        (   
+                            /* 
+                                can't return heap data of type String we must clone them or use their 
+                                borrowed form or return the static version of their slice like &'static str
+                            */
                             username.eq(self.username.clone()),
                             region.eq(self.region.clone()),
                             device_id.eq(self.device_id.clone()),
@@ -4045,6 +4172,14 @@ impl Id{
                     .get_result(connection)
                     {
                         Ok(updated_user) => {
+
+                            /* ----------------------------------------------- */
+                            /* --------- publish updated user to redis channel */
+                            /* ----------------------------------------------- */
+                            
+                            let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                            events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+
                             Ok(
                                 UserIdResponse { 
                                     id: updated_user.id, 

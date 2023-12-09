@@ -2,6 +2,8 @@
 
 
  
+use actix::Addr;
+
 use crate::*;
 use crate::adapters::nftport::{self, NftExt, OnchainNfts};
 use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY, NFT_IS_NOT_LISTED};
@@ -831,7 +833,7 @@ impl UserNft{
 impl UserNft{
 
     pub async fn insert(asset_info: NewUserNftRequest,
-        redis_client: redis::Client,
+        redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
             
@@ -877,7 +879,7 @@ impl UserNft{
             onchain process
         */
         let new_balance = user.balance.unwrap() - asset_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1541,6 +1543,7 @@ impl UserNft{
         --------------------------------------------------------------------------------
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
@@ -1697,6 +1700,8 @@ impl UserNft{
                         nft_price as i64,
                         pay_to_seller as i64,
                         royalty_amount as i64,
+                        redis_actor.clone(),
+                        redis_client.clone(),
                         connection
                     ).await;
                     let Ok(updated_user) = get_updated_user else{
@@ -1725,6 +1730,8 @@ impl UserNft{
                             nft_price as i64,
                             pay_to_seller as i64,
                             royalty_amount as i64,
+                            redis_actor,
+                            redis_client.clone(),
                             connection
                         ).await;
                         let Ok(updated_user) = get_updated_user else{
@@ -1807,6 +1814,8 @@ impl UserNft{
         nft_price: i64,
         pay_to_seller: i64,
         royalty_amount: i64,
+        redis_actor: Addr<RedisActor>,
+        redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
@@ -1815,7 +1824,7 @@ impl UserNft{
         /* --------------------------------------------- */
         /* update buyer balance (nft price + onchain gas fee) */
         let new_balance = user.balance.unwrap() - (nft_price as i64 + gas_fee);
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1825,7 +1834,7 @@ impl UserNft{
 
         /* update seller balance */
         let new_balance = seller_info.balance.unwrap() + pay_to_seller as i64;
-        let update_user_balance = User::update_balance(seller_info.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(seller_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1835,7 +1844,7 @@ impl UserNft{
 
         /* update royalty owner balance */
         let new_balance = royalty_owner_info.balance.unwrap() + royalty_amount as i64;
-        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1854,6 +1863,8 @@ impl UserNft{
         nft_price: i64,
         pay_to_seller: i64,
         royalty_amount: i64,
+        redis_actor: Addr<RedisActor>,
+        redis_client: redis::Client,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<(), PanelHttpResponse>{
 
@@ -1862,7 +1873,7 @@ impl UserNft{
         /* --------------------------------------------- */
         /* update buyer balance (nft price + onchain gas fee) */
         let new_balance = user.balance.unwrap() + nft_price as i64;
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1872,7 +1883,7 @@ impl UserNft{
 
         /* update seller balance */
         let new_balance = seller_info.balance.unwrap() - pay_to_seller as i64;
-        let update_user_balance = User::update_balance(seller_info.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(seller_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1882,7 +1893,7 @@ impl UserNft{
 
         /* update royalty owner balance */
         let new_balance = royalty_owner_info.balance.unwrap() - royalty_amount as i64;
-        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(royalty_owner_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1894,7 +1905,7 @@ impl UserNft{
 
     }
 
-    pub async fn mint_nft(mut mint_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
+    pub async fn mint_nft(mut mint_nft_request: UpdateUserNftRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
@@ -2033,7 +2044,7 @@ impl UserNft{
 
                 /* update minter balance (nft price + onchain gas fee) */
                 let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
-                let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
                 let Ok(updated_user_data) = update_user_balance else{
 
                     let err_resp = update_user_balance.unwrap_err();
@@ -2067,7 +2078,7 @@ impl UserNft{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= NFT OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(mut asset_info: UpdateUserNftRequest,
-        redis_client: redis::Client,
+        redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
@@ -2389,7 +2400,7 @@ impl UserNft{
 
             /* if any update goes well we charge the user for onchain gas fee */
             let new_balance = user.balance.unwrap() - asset_info.amount;
-            let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
 
                 let err_resp = update_user_balance.unwrap_err();

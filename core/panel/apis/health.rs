@@ -324,6 +324,7 @@ async fn logout(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -372,7 +373,7 @@ async fn logout(
                         inside the passed in jwt to the request header must be the one 
                         inside the users table
                     */
-                    match User::logout(_id, connection).await{
+                    match User::logout(_id, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(_) => {
                             
                             resp!{
@@ -580,6 +581,7 @@ async fn update_user_balance_webhook(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().unwrap().get_async_redis_pubsub_conn().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -618,7 +620,7 @@ async fn update_user_balance_webhook(
                         };
 
                     let new_balance = if user_info.balance.is_none(){0 + updated_user_checkout.tokens} else{user_info.balance.unwrap() + updated_user_checkout.tokens};
-                    match User::update_balance(user_info.id, new_balance, connection).await{
+                    match User::update_balance(user_info.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await{
 
                         Ok(updated_user_data) => {
 

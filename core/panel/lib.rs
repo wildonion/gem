@@ -160,7 +160,7 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
                 inside a vec![] and since there are multiple roles we used * to 
                 push them all into the vec![] which means repetition pattern
             */
-            let granted_roles = vec![#(#granted_roles),*];
+            let granted_roles = vec![#(#granted_roles),*]; // extending the AST of the api method at compile time
 
         }
     ).unwrap();

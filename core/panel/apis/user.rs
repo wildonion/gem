@@ -3,6 +3,8 @@
 
 use crate::*;
 use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
+use crate::events::subscribers::handlers::actors::notif::pg::{PgListenerActor};
+use crate::events::subscribers::handlers::actors::notif::system::{SystemActor, GetSystemUsersMap};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
@@ -15,6 +17,7 @@ use crate::passport::Passport; /* loading Passport macro to use get_user() metho
 use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
+use actix::Addr;
 use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -138,6 +141,7 @@ async fn login(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -154,12 +158,12 @@ async fn login(
             if user.id != 0{
 
                 info!("generating new set of token with refresh token for user with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(connection).await.unwrap();
+                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
 
             }
 
             match User::find_by_identifier(&login_identifier.to_owned(), connection).await{
-                Ok(user) => user.get_user_data_response_with_cookie(connection).await.unwrap(),
+                Ok(user) => user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap(),
                 Err(resp) => {
 
                     /* USER NOT FOUND response */
@@ -230,6 +234,7 @@ async fn request_mail_code(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -317,7 +322,7 @@ async fn request_mail_code(
 
                     } else {
                     
-                        match User::send_mail_verification_code_to(_id, user_mail.to_owned(), connection).await{
+                        match User::send_mail_verification_code_to(_id, user_mail.to_owned(), redis_client.to_owned(), redis_actix_actor, connection).await{
                             
                             Ok(updated_user) => {
     
@@ -532,6 +537,7 @@ async fn request_phone_code(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -653,7 +659,7 @@ async fn request_phone_code(
                         };
                         
                       
-                        match User::send_phone_verification_code_to(_id, user_phone.to_owned(), user_ip.clone(), connection).await{
+                        match User::send_phone_verification_code_to(_id, user_phone.to_owned(), user_ip.clone(), redis_actix_actor, connection).await{
                             
                             Ok(updated_user) => {
     
@@ -877,6 +883,7 @@ async fn login_with_identifier_and_password(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -892,7 +899,7 @@ async fn login_with_identifier_and_password(
             if user.id != 0{
 
                 info!("generating new set of token with refresh token for admin with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(connection).await.unwrap();
+                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
 
             }
 
@@ -923,7 +930,7 @@ async fn login_with_identifier_and_password(
                         }
                     }
         
-                    user.get_user_data_response_with_cookie(connection).await.unwrap()
+                    user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap()
                 },
                 Err(resp) => {
 
@@ -1709,6 +1716,7 @@ async fn make_cid(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -1863,6 +1871,8 @@ async fn make_cid(
                             */
                             new_object_id_request.username.clone().to_lowercase(),
                             user_ip,
+                            redis_client.to_owned(),
+                            redis_actix_actor.clone(),
                             connection
                         ).await;
 
@@ -1883,7 +1893,7 @@ async fn make_cid(
                             that we're creating a new Id for the user since on the 
                             second request it'll return the founded user info
                         */
-                        let save_user_data = new_id.save(connection).await;
+                        let save_user_data = new_id.save(redis_client.to_owned(), redis_actix_actor, connection).await;
                         let Ok(user_data) = save_user_data else{
                             let resp = save_user_data.unwrap_err();
                             return resp;
@@ -1962,7 +1972,7 @@ async fn deposit(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
-
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -2165,7 +2175,7 @@ async fn deposit(
                             match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, connection).await{
                                 Ok(user_deposit_data) => {
 
-                                    let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
                                     let Ok(updated_user_data) = update_user_balance else{
 
                                         let err_resp = update_user_balance.unwrap_err();
@@ -2415,6 +2425,7 @@ async fn withdraw(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
 
     /* 
@@ -2583,7 +2594,7 @@ async fn withdraw(
                                 Ok(user_withdrawal_data) => {
                                     
                                     let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
-                                    let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
                                     let Ok(updated_user_data) = update_user_balance else{
 
                                         let err_resp = update_user_balance.unwrap_err();
@@ -3215,6 +3226,7 @@ async fn edit_bio(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -3261,9 +3273,8 @@ async fn edit_bio(
 
                     let new_bio = update_bio_request.to_owned().bio;
 
-                    match User::update_bio(_id, &new_bio, connection).await{
+                    match User::update_bio(_id, &new_bio, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(updated_user) => {
-                            
                             resp!{
                                 UserData, // the data type
                                 updated_user, // response data
@@ -3326,6 +3337,7 @@ async fn upload_wallet_back(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -3371,7 +3383,7 @@ async fn upload_wallet_back(
                         let role = token_data.user_role;
     
                         
-                        match User::update_wallet_back(_id, img, connection).await{
+                        match User::update_wallet_back(_id, img, redis_client.to_owned(), redis_actix_actor, connection).await{
                             Ok(updated_user) => {
                                 
                                 resp!{
@@ -3437,6 +3449,7 @@ async fn upload_avatar(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -3482,7 +3495,7 @@ async fn upload_avatar(
                     let role = token_data.user_role;
 
                     
-                    match User::update_avatar(_id, img, connection).await{
+                    match User::update_avatar(_id, img, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(updated_user) => {
                             
                             resp!{
@@ -3548,6 +3561,7 @@ async fn upload_banner(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -3592,7 +3606,7 @@ async fn upload_banner(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match User::update_banner(_id, img, connection).await{
+                    match User::update_banner(_id, img, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(updated_user) => {
                             
                             resp!{
@@ -3776,6 +3790,7 @@ async fn create_private_gallery(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -5061,6 +5076,7 @@ async fn accept_invitation_request(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -5135,7 +5151,7 @@ async fn accept_invitation_request(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::accept_invitation_request(accept_invitation_request, connection).await{
+                    match UserFan::accept_invitation_request(accept_invitation_request, redis_client.clone(), redis_actix_actor, connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -6611,6 +6627,7 @@ async fn create_collection(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -6731,6 +6748,7 @@ async fn create_collection(
 
                         match UserCollection::insert(
                             new_user_collection_request, 
+                            redis_actix_actor.clone(),
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_collection_data) => {
@@ -6799,6 +6817,7 @@ async fn update_collection(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -6919,6 +6938,7 @@ async fn update_collection(
 
                         match UserCollection::update(
                             update_user_collection_request,
+                            redis_actix_actor,
                             redis_client.clone(), 
                             connection).await{
                             Ok(user_collection_data) => {
@@ -6987,6 +7007,7 @@ async fn create_nft(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -7108,6 +7129,7 @@ async fn create_nft(
                         match UserNft::insert(
                             new_user_nft_request, 
                             redis_client.clone(), 
+                            redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
 
@@ -7502,6 +7524,7 @@ async fn update_nft(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -7623,6 +7646,7 @@ async fn update_nft(
                         match UserNft::update(
                             update_user_nft_request,
                             redis_client.clone(), 
+                            redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
 
@@ -7877,6 +7901,7 @@ async fn buy_nft(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -7998,6 +8023,7 @@ async fn buy_nft(
                         match UserNft::buy_nft(
                             user_buy_nft_request,
                             redis_client.clone(),
+                            redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
 
@@ -8065,6 +8091,7 @@ async fn mint_nft(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -8186,6 +8213,7 @@ async fn mint_nft(
                         match UserNft::mint_nft(
                             user_mint_nft_request,
                             redis_client.clone(),
+                            redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
 

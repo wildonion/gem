@@ -434,6 +434,7 @@ async fn login(
    
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -450,7 +451,7 @@ async fn login(
             if user.id != 0{
 
                 info!("generating new set of token with refresh token for admin with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(connection).await.unwrap();
+                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
 
             }
 
@@ -486,7 +487,7 @@ async fn login(
                                 }
                             }
         
-                            user.get_user_data_response_with_cookie(connection).await.unwrap()
+                            user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap()
         
                         },
                         _ => {
@@ -700,6 +701,7 @@ async fn edit_user(
 
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
 
     /* 
@@ -743,7 +745,7 @@ async fn edit_user(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match User::edit_by_admin(new_user.to_owned(), connection).await{
+                    match User::edit_by_admin(new_user.to_owned(), redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(updated_user) => {
 
                             resp!{

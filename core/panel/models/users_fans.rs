@@ -3,6 +3,8 @@
 
  
 
+use actix::Addr;
+
 use crate::*;
 use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND};
 use crate::misc::{Response, Limit};
@@ -1110,6 +1112,7 @@ impl UserFan{
     }
     
     pub async fn accept_invitation_request(accept_invitation_request: AcceptInvitationRequest,
+        redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
 
@@ -1166,7 +1169,7 @@ impl UserFan{
         // update balance of the one who accepted the request
         // cause he must pay for the entry price of the gallery
         let new_balance = user.balance.unwrap() - g_entry_price;
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         if update_user_balance.is_err(){
             let err_resp = update_user_balance.unwrap_err();
             return Err(err_resp);
@@ -1224,7 +1227,7 @@ impl UserFan{
                             
                             // revert the payment process, pay the gallery price back the user 
                             let new_balance = user.balance.unwrap() + g_entry_price;
-                            let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
                             return Err(resp)
                         },
                     }
@@ -1235,7 +1238,7 @@ impl UserFan{
 
                 // revert the payment process, pay the gallery price back the user 
                 let new_balance = user.balance.unwrap() + g_entry_price;
-                let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
                 return Err(resp);
             }
         }

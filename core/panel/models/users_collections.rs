@@ -1,6 +1,7 @@
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
+use actix::Addr;
 use chrono::NaiveDateTime;
  
 use crate::adapters::nftport;
@@ -869,7 +870,7 @@ impl UserCollection{
             - royalties_address
             - base_uri
     */
-    pub async fn insert(new_col_info: NewUserCollectionRequest,
+    pub async fn insert(new_col_info: NewUserCollectionRequest, redis_actor: Addr<RedisActor>,
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
@@ -911,7 +912,7 @@ impl UserCollection{
         }
         
         /* getting onchain contract information */
-        let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client, new_col_info.clone()).await;
+        let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client.clone(), new_col_info.clone()).await;
         
         if status == 1 && contract_onchain_address == String::from("") && 
             contract_create_tx_hash == String::from(""){
@@ -962,7 +963,7 @@ impl UserCollection{
             the contract collection
         */
         let new_balance = user.balance.unwrap() - new_col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1092,7 +1093,7 @@ impl UserCollection{
             - royalties_address
             - base_uri
     */
-    pub async fn update(mut col_info: UpdateUserCollectionRequest, 
+    pub async fn update(mut col_info: UpdateUserCollectionRequest, redis_actor: Addr<RedisActor>,
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
@@ -1180,7 +1181,7 @@ impl UserCollection{
 
         /* updating onchain contract information */
         let (contract_update_tx_hash, status) = nftport::update_collection(
-            redis_client, 
+            redis_client.clone(), 
             col_info.clone(), 
             collection_data.contract_address.clone()).await;
         
@@ -1218,7 +1219,7 @@ impl UserCollection{
             the contract collection
         */
         let new_balance = user.balance.unwrap() - col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();

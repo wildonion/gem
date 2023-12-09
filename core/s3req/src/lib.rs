@@ -8,6 +8,7 @@ use redis_async::client::PubsubConnection;
 use actix::Addr;
 use mongodb::Client;
 use actix_redis::RedisActor;
+use sqlx::Postgres;
 use std::sync::Arc;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -22,7 +23,8 @@ use uuid::Uuid;
    | redis async
    | redis actor
    | mongodb
-   | postgres
+   | diesel postgres
+   | tokio postgres
    |
 */
 
@@ -37,6 +39,7 @@ pub struct Db{
     pub redis: Option<RedisClient>,
     pub redis_async_pubsub_conn: Option<Arc<PubsubConnection>>,
     pub redis_actix_actor: Option<Addr<RedisActor>>,
+    pub sqlx_pg_listener: Option<Arc<tokio::sync::Mutex<sqlx::postgres::PgListener>>>,
 }
 
 impl Default for Db{
@@ -50,6 +53,7 @@ impl Default for Db{
             redis: None,
             redis_async_pubsub_conn: None,
             redis_actix_actor: None,
+            sqlx_pg_listener: None
         }
     }
 }
@@ -67,6 +71,7 @@ impl Db{
                 redis: None,
                 redis_async_pubsub_conn: None,
                 redis_actix_actor: None,
+                sqlx_pg_listener: None
             }
         )
     }
@@ -125,6 +130,20 @@ impl Storage{
         match self.db.as_ref().unwrap().mode{
             Mode::On => self.db.as_ref().unwrap().pool.as_ref(), // return the db if it wasn't detached from the server - instance.as_ref() will return the Option<&Pool<ConnectionManager<PgConnection>>> or Option<&T>
             Mode::Off => None, // no storage is available cause it's off
+        }
+    }
+
+    pub async fn get_sqlx_pg_listener(&self) -> Option<Arc<tokio::sync::Mutex<sqlx::postgres::PgListener>>>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().sqlx_pg_listener.clone(),
+            Mode::Off => None,
+        }
+    }
+
+    pub fn get_sqlx_pg_listener_none_async(&self) -> Option<Arc<tokio::sync::Mutex<sqlx::postgres::PgListener>>>{
+        match self.db.as_ref().unwrap().mode{
+            Mode::On => self.db.as_ref().unwrap().sqlx_pg_listener.clone(),
+            Mode::Off => None,
         }
     }
 
@@ -194,6 +213,7 @@ macro_rules! storage {
         async { // this is the key! this curly braces is required to use if let statement, use libs and define let inside macro
             
             use s3req::{Storage, Mode, Db};
+            use sqlx::PgPool;
 
             /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
 
@@ -220,7 +240,9 @@ macro_rules! storage {
             
             /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
-            
+            let pg_url = std::env::var("DATABASE_URL").unwrap();
+            let sqlx_pg_listener = sqlx::postgres::PgListener::connect(&pg_url).await.unwrap();
+ 
             let empty_app_storage = Some( // putting the Arc-ed db inside the Option
                 Arc::new( // cloning app_storage to move it between threads
                     Storage{ // defining db context 
@@ -234,7 +256,8 @@ macro_rules! storage {
                                 pool: None, // pg pool
                                 redis: None,
                                 redis_async_pubsub_conn: None,
-                                redis_actix_actor: None
+                                redis_actix_actor: None,
+                                sqlx_pg_listener: None,
                             }
                         ),
                     }
@@ -268,7 +291,8 @@ macro_rules! storage {
                                             pool: None, // pg pool
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actix_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone()),
+                                            sqlx_pg_listener: Some(Arc::new(tokio::sync::Mutex::new(sqlx_pg_listener)))
                                         }
                                     ),
                                 }
@@ -308,7 +332,8 @@ macro_rules! storage {
                                             pool: Some(pg_pool),
                                             redis: Some(none_async_redis_client.clone()),
                                             redis_async_pubsub_conn: Some(async_redis_pubsub_conn.clone()),
-                                            redis_actix_actor: Some(redis_actor.clone())
+                                            redis_actix_actor: Some(redis_actor.clone()),
+                                            sqlx_pg_listener: Some(Arc::new(tokio::sync::Mutex::new(sqlx_pg_listener)))
                                         }
                                     ),
                                 }

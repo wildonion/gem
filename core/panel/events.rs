@@ -21,8 +21,8 @@
           - tokio::mpsc,select,spawn,mutex,arc
           - actix http webhook with stream: Payload and Multipart codec
           - codecs with protobuf and serde, Payload, Multipart
-    note that we can each publisher/listener server in a separate threadpool
-    like tokio::spawn(async move{})
+    note that we can run each publisher/listener server in a separate 
+    threadpool like tokio::spawn(async move{})
 */
 
 pub mod publishers;
