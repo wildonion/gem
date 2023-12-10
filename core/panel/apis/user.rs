@@ -8,7 +8,7 @@ use crate::events::subscribers::handlers::actors::notif::system::{SystemActor, G
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
-use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData, UserRelations};
+use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData, UserRelations, EnterPrivateGalleryRequest};
 use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData};
 use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -5321,6 +5321,145 @@ async fn accept_invitation_request(
 
 }
 
+#[post("/gallery/enter")]
+#[passport(user)]
+async fn enter_private_gallery(
+    req: HttpRequest,
+    enter_private_gallery_request: web::Json<EnterPrivateGalleryRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let enter_private_gallery_request = enter_private_gallery_request.to_owned();
+                    
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &enter_private_gallery_request.owner_cid, 
+                        &enter_private_gallery_request.tx_signature, 
+                        &enter_private_gallery_request.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::enter_private_gallery_request(enter_private_gallery_request, redis_client.clone(), redis_actix_actor, connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[get("/fan/get/relations/for/{who}/")]
 #[passport(user)]
 async fn get_all_user_relations(
@@ -6552,6 +6691,7 @@ async fn get_all_private_galleries_general_info_for(
                     // get all general infos of all private galleries for who_screen_cid
                     match UserPrivateGallery::get_all_general_info_for(
                         &who_screen_cid.to_owned(), 
+                        &user.screen_cid.unwrap(),
                         limit, connection).await{
                         
                         Ok(private_galleries) => {
@@ -9659,6 +9799,7 @@ pub mod exports{
     pub use super::send_private_gallery_invitation_request_to;
     pub use super::send_friend_request_to;
     pub use super::accept_invitation_request;
+    pub use super::enter_private_gallery;
     pub use super::accept_friend_request;
     pub use super::remove_user_from_friend;
     pub use super::remove_invited_friend_from_gallery;

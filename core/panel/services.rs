@@ -128,6 +128,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::remove_invited_friend_from_gallery);
     config.service(apis::user::exports::get_all_public_collection_nfts);
     config.service(apis::user::exports::accept_invitation_request);
+    config.service(apis::user::exports::enter_private_gallery);
     config.service(apis::user::exports::get_user_unaccpeted_invitation_requests);
     config.service(apis::user::exports::get_user_unaccpeted_friend_requests);
     config.service(apis::user::exports::accept_friend_request);
