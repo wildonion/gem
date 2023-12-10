@@ -172,95 +172,72 @@ impl UserCollection{
             vec![]
         };
 
-
-        let check_we_are_friend = UserFan::are_we_friends(
-            &collection.owner_screen_cid, 
-            caller_screen_cid, connection).await;
-        
-        // caller might be the collection owner otherwise they must be friend of each other
-        if (check_we_are_friend.is_ok() && check_we_are_friend.unwrap())
-            || collection.owner_screen_cid == caller_screen_cid{
-
-            let mut minted_ones = decoded_nfts
-                .into_iter()
-                .map(|nft|{
-                    /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                    if nft.is_minted.unwrap_or(false) == true{
-                        Some(nft)
-                    } else{
-                        None
-                    }
-                })
-                .collect::<Vec<Option<UserNftData>>>();
-            
-            minted_ones.retain(|nft| nft.is_some());
-
-            /* sorting nfts in desc order */
-            minted_ones.sort_by(|nft1, nft2|{
-                    /* 
-                        cannot move out of `*nft1` which is behind a shared reference
-                        move occurs because `*nft1` has type `std::option::Option<UserNftData>`, 
-                        which does not implement the `Copy` trait and unwrap() takes the 
-                        ownership of the instance.
-                        also we must create a longer lifetime for `UserNftData::default()` by 
-                        putting it inside a type so we can take a reference to it and pass the 
-                        reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
-                        at the end of the `unwrap_or()` statement while we're borrowing it.
-                    */
-                    let nft1_default = UserNftData::default();
-                    let nft2_default = UserNftData::default();
-                    let nft1 = nft1.as_ref().unwrap_or(&nft1_default);
-                    let nft2 = nft2.as_ref().unwrap_or(&nft2_default);
-
-                    let nft1_created_at = NaiveDateTime
-                        ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                        .unwrap();
-
-                    let nft2_created_at = NaiveDateTime
-                        ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                        .unwrap();
-
-                    nft2_created_at.cmp(&nft1_created_at)
-
-                });
-            
-            /*  
-                first we need to slice the current vector convert that type into 
-                another vector, the reason behind doing this is becasue we can't
-                call to_vec() on the slice directly since the lifetime fo the slice
-                will be dropped while is getting used we have to create a longer 
-                lifetime then call to_vec() on that type
-            */
-            let sliced = if minted_ones.len() > to{
-                let data = &minted_ones[from..to+1];
-                data.to_vec()
-            } else{
-                let data = &minted_ones[from..minted_ones.len()];
-                data.to_vec()
-            };
-
-            Ok(
-                if sliced.contains(&None){
-                    vec![]
+        let mut minted_ones = decoded_nfts
+            .into_iter()
+            .map(|nft|{
+                /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                if nft.is_minted.unwrap_or(false) == true{
+                    Some(nft)
                 } else{
-                    sliced.to_owned()
+                    None
                 }
-            )
+            })
+            .collect::<Vec<Option<UserNftData>>>();
+        
+        minted_ones.retain(|nft| nft.is_some());
 
+        /* sorting nfts in desc order */
+        minted_ones.sort_by(|nft1, nft2|{
+            /* 
+                cannot move out of `*nft1` which is behind a shared reference
+                move occurs because `*nft1` has type `std::option::Option<UserNftData>`, 
+                which does not implement the `Copy` trait and unwrap() takes the 
+                ownership of the instance.
+                also we must create a longer lifetime for `UserNftData::default()` by 
+                putting it inside a type so we can take a reference to it and pass the 
+                reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                at the end of the `unwrap_or()` statement while we're borrowing it.
+            */
+            let nft1_default = UserNftData::default();
+            let nft2_default = UserNftData::default();
+            let nft1 = nft1.as_ref().unwrap_or(&nft1_default);
+            let nft2 = nft2.as_ref().unwrap_or(&nft2_default);
+
+            let nft1_created_at = NaiveDateTime
+                ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let nft2_created_at = NaiveDateTime
+                ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            nft2_created_at.cmp(&nft1_created_at)
+
+        });
+        
+        /*  
+            first we need to slice the current vector convert that type into 
+            another vector, the reason behind doing this is becasue we can't
+            call to_vec() on the slice directly since the lifetime fo the slice
+            will be dropped while is getting used we have to create a longer 
+            lifetime then call to_vec() on that type
+        */
+        let sliced = if minted_ones.len() > to{
+            let data = &minted_ones[from..to+1];
+            data.to_vec()
         } else{
-            
-            let collection_owner_screen_cid = collection.owner_screen_cid;
-            let resp_msg = format!("{caller_screen_cid:} Is Not A Friend Of {collection_owner_screen_cid:}");
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: &resp_msg,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            )
-        }
+            let data = &minted_ones[from..minted_ones.len()];
+            data.to_vec()
+        };
+
+        Ok(
+            if sliced.contains(&None){
+                vec![]
+            } else{
+                sliced.to_owned()
+            }
+        )
+
 
     }
 
@@ -772,10 +749,6 @@ impl UserCollection{
             )
         }
 
-        let check_we_are_friend = UserFan::are_we_friends(
-            &screen_cid, 
-            caller_screen_cid, connection).await;
-
 
             let user_collections = users_collections
                 .order(created_at.desc())
@@ -795,54 +768,47 @@ impl UserCollection{
                     Ok(HttpResponse::NotFound().json(resp))
                 )
             };
-
-            
                 
             let mut cols = collections
                     .into_iter()
                     .map(|c|{
 
-                        // caller might be the collection owner otherwise they must be friend of each other
-                        if (check_we_are_friend.is_ok() && *check_we_are_friend.as_ref().unwrap())
-                            || c.owner_screen_cid == caller_screen_cid{
-                                Some(
-                                    UserCollectionData{
-                                        id: c.id,
-                                        contract_address: c.contract_address,
-                                        /* get all minted nfts for this collection */
-                                        nfts: {
-                                            let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(c.id, connection);
-                                            if get_minted_nfts_of_this_collection.is_ok(){
-                                                let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
-                                                minted_nfts_of_this_collection.retain(|nft| nft.is_some());
-                                                Some(
-                                                    serde_json::to_value(minted_nfts_of_this_collection).unwrap()
-                                                )
-                                            } else{
-                                                Some(
-                                                    serde_json::to_value::<Vec<UserNftData>>(vec![]).unwrap()
-                                                )
-                                            }
-                                        },
-                                        col_name: c.col_name,
-                                        symbol: c.symbol,
-                                        owner_screen_cid: c.owner_screen_cid,
-                                        metadata_updatable: c.metadata_updatable,
-                                        base_uri: c.base_uri,
-                                        royalties_share: c.royalties_share,
-                                        royalties_address_screen_cid: c.royalties_address_screen_cid,
-                                        collection_background: c.collection_background,
-                                        extra: c.extra,
-                                        col_description: c.col_description,
-                                        created_at: c.created_at.to_string(),
-                                        updated_at: c.updated_at.to_string(),
-                                        freeze_metadata: c.freeze_metadata,
-                                        contract_tx_hash: c.contract_tx_hash,
+                        Some(
+                            UserCollectionData{
+                                id: c.id,
+                                contract_address: c.contract_address,
+                                /* get all minted nfts for this collection */
+                                nfts: {
+                                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(c.id, connection);
+                                    if get_minted_nfts_of_this_collection.is_ok(){
+                                        let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
+                                        minted_nfts_of_this_collection.retain(|nft| nft.is_some());
+                                        Some(
+                                            serde_json::to_value(minted_nfts_of_this_collection).unwrap()
+                                        )
+                                    } else{
+                                        Some(
+                                            serde_json::to_value::<Vec<UserNftData>>(vec![]).unwrap()
+                                        )
                                     }
-                                )
-                        } else{
-                            None
-                        }
+                                },
+                                col_name: c.col_name,
+                                symbol: c.symbol,
+                                owner_screen_cid: c.owner_screen_cid,
+                                metadata_updatable: c.metadata_updatable,
+                                base_uri: c.base_uri,
+                                royalties_share: c.royalties_share,
+                                royalties_address_screen_cid: c.royalties_address_screen_cid,
+                                collection_background: c.collection_background,
+                                extra: c.extra,
+                                col_description: c.col_description,
+                                created_at: c.created_at.to_string(),
+                                updated_at: c.updated_at.to_string(),
+                                freeze_metadata: c.freeze_metadata,
+                                contract_tx_hash: c.contract_tx_hash,
+                            }
+                        )
+                        
 
                     })
                     .collect::<Vec<Option<UserCollectionData>>>();
