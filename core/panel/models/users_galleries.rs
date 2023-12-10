@@ -131,7 +131,7 @@ pub struct SendInvitationRequest{
 */
 impl UserPrivateGallery{
 
-    pub async fn get_all_general_info_for(screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_general_info_for(screen_cid: &str, caller_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryInfoData>, PanelHttpResponse>{
         
@@ -150,67 +150,88 @@ impl UserPrivateGallery{
             )
         }
 
-        /* fetch all owner galleries */
-        let user_galleries = users_galleries
-            .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
-            .filter(owner_screen_cid.eq(screen_cid))
-            .load::<UserPrivateGallery>(connection);
+        let check_we_are_friend = UserFan::are_we_friends(
+            &screen_cid, 
+            caller_screen_cid, connection).await;
         
-        let Ok(galleries) = user_galleries else{
-            let resp = Response{
-                data: Some(screen_cid),
-                message: NO_GALLERY_FOUND_FOR,
-                status: 404,
+        if check_we_are_friend.is_ok() && *check_we_are_friend.as_ref().unwrap(){
+
+            /* fetch all owner galleries */
+            let user_galleries = users_galleries
+                .order(created_at.desc())
+                .offset(from)
+                .limit((to - from) + 1)
+                .filter(owner_screen_cid.eq(screen_cid))
+                .load::<UserPrivateGallery>(connection);
+            
+            let Ok(galleries) = user_galleries else{
+                let resp = Response{
+                    data: Some(screen_cid),
+                    message: NO_GALLERY_FOUND_FOR,
+                    status: 404,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+            };
+
+            Ok(
+                galleries
+                    .into_iter()
+                    /* 
+                        map takes an FnMut closure so it captures env vars mutably and 
+                        and since the prv_cols is moving into the closure we have to 
+                        clone it in each iteration to not to lose ownership
+                    */
+                    .map(|g| {
+                
+                        UserPrivateGalleryInfoData{
+                            id: g.id,
+                            owner_screen_cid: g.owner_screen_cid,
+                            collections: {
+                                let cols = g.collections;
+                                let decoded_cols = if cols.is_some(){
+                                    serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
+
+                                decoded_cols.len() as u64
+                            },
+                            gal_name: g.gal_name,
+                            gal_description: g.gal_description,
+                            invited_friends: {
+                                let invf = g.invited_friends;
+                                let decoded_invfs_len = if invf.is_some(){
+                                    invf.unwrap().len() as u64
+                                } else{
+                                    0
+                                };
+                                decoded_invfs_len
+                            },
+                            extra: g.extra,
+                            created_at: g.created_at.to_string(),
+                            updated_at: g.updated_at.to_string(),
+                        }
+            
+                    }).collect::<Vec<UserPrivateGalleryInfoData>>()
+            )
+        } else{
+            
+            let resp_msg = format!("{caller_screen_cid:} Is Not A Friend Of {screen_cid:}");
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: &resp_msg,
+                status: 406,
                 is_error: true
             };
             return Err(
-                Ok(HttpResponse::NotFound().json(resp))
+                Ok(HttpResponse::NotAcceptable().json(resp))
             )
-        };
+        }
 
-        Ok(
-            galleries
-                .into_iter()
-                /* 
-                    map takes an FnMut closure so it captures env vars mutably and 
-                    and since the prv_cols is moving into the closure we have to 
-                    clone it in each iteration to not to lose ownership
-                */
-                .map(|g| {
-            
-                    UserPrivateGalleryInfoData{
-                        id: g.id,
-                        owner_screen_cid: g.owner_screen_cid,
-                        collections: {
-                            let cols = g.collections;
-                            let decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            decoded_cols.len() as u64
-                        },
-                        gal_name: g.gal_name,
-                        gal_description: g.gal_description,
-                        invited_friends: {
-                            let invf = g.invited_friends;
-                            let decoded_invfs_len = if invf.is_some(){
-                                invf.unwrap().len() as u64
-                            } else{
-                                0
-                            };
-                            decoded_invfs_len
-                        },
-                        extra: g.extra,
-                        created_at: g.created_at.to_string(),
-                        updated_at: g.updated_at.to_string(),
-                    }
         
-                }).collect::<Vec<UserPrivateGalleryInfoData>>()
-        )
 
     }
 
