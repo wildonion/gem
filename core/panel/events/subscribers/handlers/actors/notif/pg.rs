@@ -187,7 +187,7 @@ impl PgListenerActor{
                     .await;
 
                 //------------------------------------------
-                //------------- update hooks to tables
+                //------------- updating hooks to tables
                 //------------------------------------------
                 // we'll update following tables once we received 
                 // new update of a user from redis pubsub channel

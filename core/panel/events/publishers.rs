@@ -5,12 +5,12 @@
 /* 
     >----------------------------------------------------------------------------------------------
     | publishers are writers who will send data notif to the specified 
-    | channel (tcp, rpc, mpsc) so subscribers be able to catch them so
-    | they can parse and decode the data by subscribing to them 
+    | channel (tcp, rpc, mpsc) so subscribers be able to catch them 
+    | by subscribing to them so they can parse and decode the data 
     |
 
-    redis publisher actors using redis actix actor 
-    to publish topics and notifs 
+    followings are redis publisher actors using redis 
+    actix actor to publish topics and notifs 
 */
 
 pub mod ecq;

@@ -55,7 +55,7 @@ use actix::prelude::*;
 #[passport(user)]
 async fn chatroomlp(
     req: HttpRequest, 
-    stream: web::Payload, 
+    stream: web::Payload, // it's like streaming over bytes in tcp listener but this is http based one
     clpucid: web::Path<(i32, String, String, String)>,
     payload: Multipart,
     r1keys: Query<R1Keys>,

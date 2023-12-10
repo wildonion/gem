@@ -848,7 +848,7 @@ async fn search(
                                         "col_description": col.col_description,
                                         "contract_tx_hash": col.contract_tx_hash,
                                         "created_at": col.created_at,
-                                        "created_at": col.col_name,
+                                        "updated_at": col.updated_at,
                                     })
                                 )
                         } else{
