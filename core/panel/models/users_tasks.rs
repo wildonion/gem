@@ -619,7 +619,8 @@ impl UserTask{
                         cid: user.cid,
                         screen_cid: user.screen_cid,
                         snowflake_id: user.snowflake_id,
-                        stars: user.stars
+                        stars: user.stars,
+                        extra: user.extra,
                     },
                     tasks: {
                         let jobs = t

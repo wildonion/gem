@@ -743,7 +743,8 @@ async fn search(
                             cid: u.clone().cid,
                             screen_cid: u.clone().screen_cid,
                             snowflake_id: u.snowflake_id,
-                            stars: u.stars
+                            stars: u.stars,
+                            extra: u.clone().extra,
                         }
                     })
                     .collect::<Vec<UserData>>();

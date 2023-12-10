@@ -56,6 +56,14 @@ impl Handler<NotifySystemActorWithRedisSubscription> for SystemActor{
     updated records also behind message handlers of each actor are mpsc 
     jobq channel which allows other parts of the app to send data using 
     the sender and receive the response using receiver
+
+
+    other parts of the app can do this:
+
+    let resp = system_actor
+        .send(GetSystemUsersMap)
+        .await;
+
 */
 impl Handler<GetSystemUsersMap> for SystemActor{
 

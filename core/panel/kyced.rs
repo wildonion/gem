@@ -9,7 +9,7 @@ use crate::{*, models::users::User, misc::Response, constants::{NOT_VERIFIED_PHO
     | of each api after that if the request was kyced-verified then the rest of the api logic 
     | will be executed otherwise rejected, the following is the process of kycing the request:
     |    🆔 there must be a user with the passed in id
-    |    📮 there must be a verified mail and phone number related to the found user
+    |    📮 there must be a verified mail related to the found user
     |    💰 user must have enough balance to execute the call
     |    🏷 there must be an screen cid related to the passed in cid (keccak256 of cid must be in db)
     |    🔑 the secp256k1 signature inside the api body must be valid
@@ -45,21 +45,27 @@ pub async fn verify_request(
             );
         }
 
+    /* ------------------------------------------------------------ */
+    /* ------------------ NO NEED TO BE VERIFIED ------------------ */
+    /* ------------------------------------------------------------ */
     /* if the phone wasn't verified user can't deposit */
-    if user.phone_number.is_none() || 
-    !user.is_phone_verified{
+    // if user.phone_number.is_none() || 
+    // !user.is_phone_verified{
 
-        let resp = Response::<&[u8]>{
-            data: Some(&[]),
-            message: NOT_VERIFIED_PHONE,
-            status: 406,
-            is_error: true
-        };
-        return Err(
-            Ok(HttpResponse::NotAcceptable().json(resp))
-        );
+    //     let resp = Response::<&[u8]>{
+    //         data: Some(&[]),
+    //         message: NOT_VERIFIED_PHONE,
+    //         status: 406,
+    //         is_error: true
+    //     };
+    //     return Err(
+    //         Ok(HttpResponse::NotAcceptable().json(resp))
+    //     );
 
-    }
+    // }
+    /* ------------------------------------------------------------ */
+    /* ------------------------------------------------------------ */
+    /* ------------------------------------------------------------ */
 
     /* if the mail wasn't verified user can't deposit */
     if user.mail.is_none() || 

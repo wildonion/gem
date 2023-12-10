@@ -63,6 +63,7 @@ pub struct User{
     pub pswd: String,
     pub token_time: Option<i64>,
     pub balance: Option<i64>,
+    pub extra: Option<serde_json::Value>,
     pub last_login: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -100,6 +101,7 @@ pub struct FetchUser{
     pub user_role: UserRole,
     pub token_time: Option<i64>,
     pub balance: Option<i64>,
+    pub extra: Option<serde_json::Value>,
     pub last_login: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -137,6 +139,7 @@ pub struct UserData{
     pub token_time: Option<i64>,
     pub balance: Option<i64>,
     pub last_login: Option<String>,
+    pub extra: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -149,6 +152,7 @@ pub struct UserWalletInfoResponse{
     pub banner: Option<String>,
     pub mail: Option<String>, /* unique */
     pub screen_cid: Option<String>, /* keccak256 */
+    pub extra: Option<serde_json::Value>,
     pub stars: Option<i64>,
     pub created_at: String,
 }
@@ -187,6 +191,7 @@ pub struct UserIdResponse{
     pub token_time: Option<i64>,
     pub balance: Option<i64>,
     pub last_login: Option<String>,
+    pub extra: Option<serde_json::Value>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -202,6 +207,15 @@ pub struct UserChatRoomLaunchpadRequest{
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
 pub struct UpdateBioRequest{
     pub bio: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+pub struct UpdateExtraRequest{
+    /* 
+        it can be any type of object cause we don't know the structure 
+        of the frontend it's a json object 
+    */
+    pub extra: serde_json::Value, 
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
@@ -439,7 +453,8 @@ impl User{
             cid: updated_user.cid,
             screen_cid: updated_user.screen_cid,
             snowflake_id: updated_user.snowflake_id,
-            stars: updated_user.stars
+            stars: updated_user.stars,
+            extra: updated_user.extra,
         };
 
         /* ----------------------------------------------- */
@@ -972,6 +987,7 @@ impl User{
                 created_at: user.created_at.to_string(),
                 bio: user.bio,
                 banner: user.banner, 
+                extra: user.extra,
             }
         )
 
@@ -1018,6 +1034,7 @@ impl User{
                                 screen_cid: u.screen_cid,
                                 stars: u.stars,
                                 created_at: u.created_at.to_string(),
+                                extra: u.extra,
                             }
 
                         })
@@ -1114,6 +1131,7 @@ impl User{
                                         screen_cid: user.clone().screen_cid,
                                         stars: user.clone().stars,
                                         created_at: user.clone().created_at.to_string(),
+                                        extra: user.clone().extra,
                                     }
                                 )
                             }
@@ -1128,6 +1146,7 @@ impl User{
                                     screen_cid: user.clone().screen_cid,
                                     stars: user.clone().stars,
                                     created_at: user.clone().created_at.to_string(),
+                                    extra: user.clone().extra,
                                 }
                             )
                         }
@@ -1388,7 +1407,8 @@ impl User{
                         cid: fetched_user.clone().cid,
                         screen_cid: fetched_user.clone().screen_cid,
                         snowflake_id: fetched_user.snowflake_id,
-                        stars: fetched_user.stars
+                        stars: fetched_user.stars,
+                        extra: fetched_user.clone().extra,
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -1566,7 +1586,8 @@ impl User{
                         cid: fetched_user.clone().cid,
                         screen_cid: fetched_user.clone().screen_cid,
                         snowflake_id: fetched_user.snowflake_id,
-                        stars: fetched_user.stars
+                        stars: fetched_user.stars,
+                        extra: fetched_user.clone().extra,
                     };
 
                     /* generate cookie 🍪 from token time and jwt */
@@ -1769,7 +1790,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -1784,6 +1806,118 @@ impl User{
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_bio");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn update_extra(
+        extra_owner_id: i32, 
+        new_extra: serde_json::Value, 
+        redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+
+
+        let Ok(user) = User::find_by_id(extra_owner_id, connection).await else{
+            let resp = Response{
+                data: Some(extra_owner_id),
+                message: USER_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+
+        match diesel::update(users.find(user.id))
+            .set(extra.eq(new_extra))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            wallet_background: updated_user.wallet_background.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_extra");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1892,7 +2026,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -2015,7 +2150,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -2138,7 +2274,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -2307,7 +2444,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -2465,7 +2603,8 @@ impl User{
                             cid: u.clone().cid,
                             screen_cid: u.clone().screen_cid,
                             snowflake_id: u.snowflake_id,
-                            stars: u.stars
+                            stars: u.stars,
+                            extra: u.clone().extra,
                         })
                         .collect::<Vec<UserData>>()
                 )
@@ -2551,7 +2690,8 @@ impl User{
                             cid: u.clone().cid,
                             screen_cid: u.clone().screen_cid,
                             snowflake_id: u.snowflake_id,
-                            stars: u.stars
+                            stars: u.stars,
+                            extra: u.clone().extra,
                         })
                         .collect::<Vec<UserData>>()
                 )
@@ -2719,7 +2859,8 @@ impl User{
                             cid: updated_user.clone().cid,
                             screen_cid: updated_user.clone().screen_cid,
                             snowflake_id: updated_user.snowflake_id,
-                            stars: updated_user.stars
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
                         }
                     )
                 },
@@ -2843,7 +2984,8 @@ impl User{
                                     cid: updated_user.clone().cid,
                                     screen_cid: updated_user.clone().screen_cid,
                                     snowflake_id: updated_user.snowflake_id,
-                                    stars: updated_user.stars
+                                    stars: updated_user.stars,
+                                    extra: updated_user.clone().extra,
                                 }
                             )
                         },
@@ -2969,7 +3111,8 @@ impl User{
                                 cid: updated_user.clone().cid,
                                 screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
+                                stars: updated_user.stars,
+                                extra: updated_user.clone().extra,
                             }
                         )
                     },
@@ -3089,7 +3232,8 @@ impl User{
                                 cid: updated_user.clone().cid,
                                 screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
+                                stars: updated_user.stars,
+                                extra: updated_user.clone().extra,
                             }
                         )
                     },
@@ -3228,7 +3372,7 @@ impl User{
 
     }
 
-    pub async fn check_phone_verification_code(check_user_verification_request: CheckUserPhoneVerificationRequest, receiver_id: i32, 
+    pub async fn check_phone_verification_code(check_user_verification_request: CheckUserPhoneVerificationRequest, receiver_id: i32, redis_actor: Addr<RedisActor>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
             
 
@@ -3332,7 +3476,7 @@ impl User{
             .execute(connection);
         
         /* update is_mail_verified field */
-        match User::verify_phone(receiver_id, connection).await{
+        match User::verify_phone(receiver_id, redis_actor, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
@@ -3340,137 +3484,9 @@ impl User{
 
     }
 
-    pub async fn verify_paypal_id(
-        user_paypal_id: String,
-        owner_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>
-    ) -> Result<UserData, PanelHttpResponse>{
-
-
-        let Ok(user) = User::find_by_id(owner_id, connection).await else{
-            let resp = Response{
-                data: Some(owner_id),
-                message: USER_NOT_FOUND,
-                status: 404,
-                is_error: true,
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            );
-        };
-
-        let payapl_error_msg = "";
-        let paypal_response = {
-
-            // paypal api to verify user
-            // https://stackoverflow.com/questions/20570566/paypal-api-verify-that-an-account-is-valid-exists-verified
-            // ...
-
-            let verify_paypal_user_endpoint = format!("");
-            200
-        };
-
-        if paypal_response == 200{
-            
-            match diesel::update(users.find(user.id))
-                .set(paypal_id.eq(user_paypal_id))
-                .returning(FetchUser::as_returning())
-                .get_result(connection)
-                {
-                    Ok(updated_user) => {
-                        Ok(
-                            UserData { 
-                                id: updated_user.id, 
-                                region: updated_user.region.clone(),
-                                username: updated_user.clone().username, 
-                                bio: updated_user.bio.clone(),
-                                avatar: updated_user.avatar.clone(),
-                                banner: updated_user.banner.clone(),
-                                wallet_background: updated_user.wallet_background.clone(),
-                                activity_code: updated_user.clone().activity_code, 
-                                twitter_username: updated_user.clone().twitter_username, 
-                                facebook_username: updated_user.clone().facebook_username, 
-                                discord_username: updated_user.clone().discord_username, 
-                                identifier: updated_user.clone().identifier, 
-                                user_role: {
-                                    match updated_user.user_role.clone(){
-                                        UserRole::Admin => "Admin".to_string(),
-                                        UserRole::User => "User".to_string(),
-                                        _ => "Dev".to_string(),
-                                    }
-                                },
-                                token_time: updated_user.token_time,
-                                balance: updated_user.balance,
-                                last_login: { 
-                                    if updated_user.last_login.is_some(){
-                                        Some(updated_user.last_login.unwrap().to_string())
-                                    } else{
-                                        Some("".to_string())
-                                    }
-                                },
-                                created_at: updated_user.created_at.to_string(),
-                                updated_at: updated_user.updated_at.to_string(),
-                                mail: updated_user.clone().mail,
-                                google_id: updated_user.clone().google_id,
-                                microsoft_id: updated_user.clone().microsoft_id,
-                                is_mail_verified: updated_user.is_mail_verified,
-                                is_phone_verified: updated_user.is_phone_verified,
-                                phone_number: updated_user.clone().phone_number,
-                                paypal_id: updated_user.clone().paypal_id,
-                                account_number: updated_user.clone().account_number,
-                                device_id: updated_user.clone().device_id,
-                                social_id: updated_user.clone().social_id,
-                                cid: updated_user.clone().cid,
-                                screen_cid: updated_user.clone().screen_cid,
-                                snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
-                            }
-                        )
-                    },
-                    Err(e) => {
-                        
-                        let resp_err = &e.to_string();
-    
-    
-                        /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                            
-                        let error_content = &e.to_string();
-                        let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::verify_paypal_id");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-    
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: resp_err,
-                            status: 500,
-                            is_error: true,
-                        };
-                        return Err(
-                            Ok(HttpResponse::InternalServerError().json(resp))
-                        );
-    
-                    }
-                }
-
-        } else{
-
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: payapl_error_msg,
-                status: 417,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::ExpectationFailed().json(resp))
-            );
-        }
-
-
-    }
-
     pub async fn verify_phone(
         phone_owner_id: i32, 
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -3493,6 +3509,15 @@ impl User{
                 .get_result(connection)
                 {
                     Ok(updated_user) => {
+
+                        /* ----------------------------------------------- */
+                        /* --------- publish updated user to redis channel */
+                        /* ----------------------------------------------- */
+                        
+                        let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
+
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
@@ -3538,7 +3563,8 @@ impl User{
                                 cid: updated_user.clone().cid,
                                 screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
+                                stars: updated_user.stars,
+                                extra: updated_user.clone().extra,
                             }
                         )
                     },
@@ -3574,6 +3600,7 @@ impl User{
 
     pub async fn verify_mail(
         mail_owner_id: i32, 
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
 
@@ -3601,6 +3628,15 @@ impl User{
                 .get_result(connection)
                 {
                     Ok(updated_user) => {
+
+                        /* ----------------------------------------------- */
+                        /* --------- publish updated user to redis channel */
+                        /* ----------------------------------------------- */
+                        
+                        let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
+
                         Ok(
                             UserData { 
                                 id: updated_user.id, 
@@ -3646,7 +3682,8 @@ impl User{
                                 cid: updated_user.clone().cid,
                                 screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
+                                stars: updated_user.stars,
+                                extra: updated_user.clone().extra,
                             }
                         )
                     },
@@ -3776,7 +3813,7 @@ impl User{
 
     }
 
-    pub async fn check_mail_verification_code(check_user_verification_request: CheckUserMailVerificationRequest, receiver_id: i32, 
+    pub async fn check_mail_verification_code(check_user_verification_request: CheckUserMailVerificationRequest, receiver_id: i32, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
             
 
@@ -3880,7 +3917,7 @@ impl User{
             .execute(connection);
         
         /* update is_mail_verified field */
-        match User::verify_mail(receiver_id, connection).await{
+        match User::verify_mail(receiver_id, redis_actor, connection).await{
             Ok(user_data) => Ok(user_data),
             Err(e) => Err(e)
         }
@@ -3981,7 +4018,8 @@ impl Id{
                                 cid: updated_user.clone().cid,
                                 screen_cid: updated_user.clone().screen_cid,
                                 snowflake_id: updated_user.snowflake_id,
-                                stars: updated_user.stars
+                                stars: updated_user.stars,
+                                extra: updated_user.extra,
                             };
 
                             let resp = Response{
@@ -4183,13 +4221,13 @@ impl Id{
                             Ok(
                                 UserIdResponse { 
                                     id: updated_user.id, 
-                                    region: updated_user.region.unwrap(),
-                                    username: updated_user.username, 
-                                    activity_code: updated_user.activity_code, 
-                                    twitter_username: updated_user.twitter_username, 
-                                    facebook_username: updated_user.facebook_username, 
-                                    discord_username: updated_user.discord_username, 
-                                    identifier: updated_user.identifier, 
+                                    region: updated_user.clone().region.unwrap(),
+                                    username: updated_user.clone().username, 
+                                    activity_code: updated_user.clone().activity_code, 
+                                    twitter_username: updated_user.clone().twitter_username, 
+                                    facebook_username: updated_user.clone().facebook_username, 
+                                    discord_username: updated_user.clone().discord_username, 
+                                    identifier: updated_user.clone().identifier, 
                                     user_role: {
                                         match updated_user.user_role.clone(){
                                             UserRole::Admin => "Admin".to_string(),
@@ -4207,26 +4245,27 @@ impl Id{
                                     ,
                                     created_at: updated_user.created_at.to_string(),
                                     updated_at: updated_user.updated_at.to_string(),
-                                    mail: updated_user.mail,
-                                    google_id: updated_user.google_id,
-                                    microsoft_id: updated_user.microsoft_id,
-                                    is_mail_verified: updated_user.is_mail_verified,
-                                    is_phone_verified: updated_user.is_phone_verified,
-                                    phone_number: updated_user.phone_number,
-                                    paypal_id: updated_user.paypal_id,
-                                    account_number: updated_user.account_number,
-                                    device_id: updated_user.device_id,
-                                    social_id: updated_user.social_id,
-                                    cid: updated_user.cid,
+                                    mail: updated_user.clone().mail,
+                                    google_id: updated_user.clone().google_id,
+                                    microsoft_id: updated_user.clone().microsoft_id,
+                                    is_mail_verified: updated_user.clone().is_mail_verified,
+                                    is_phone_verified: updated_user.clone().is_phone_verified,
+                                    phone_number: updated_user.clone().phone_number,
+                                    paypal_id: updated_user.clone().paypal_id,
+                                    account_number: updated_user.clone().account_number,
+                                    device_id: updated_user.clone().device_id,
+                                    social_id: updated_user.clone().social_id,
+                                    cid: updated_user.clone().cid,
                                     screen_cid: self.screen_cid.clone(),
                                     signer: self.signer.clone(),
                                     mnemonic: self.mnemonic.clone(),
-                                    snowflake_id: updated_user.snowflake_id,
-                                    stars: updated_user.stars,
-                                    bio: updated_user.bio,
-                                    avatar: updated_user.avatar,
-                                    banner: updated_user.banner,
-                                    wallet_background: updated_user.wallet_background,
+                                    snowflake_id: updated_user.clone().snowflake_id,
+                                    stars: updated_user.clone().stars,
+                                    bio: updated_user.clone().bio,
+                                    avatar: updated_user.clone().avatar,
+                                    banner: updated_user.clone().banner,
+                                    wallet_background: updated_user.clone().wallet_background,
+                                    extra: updated_user.clone().extra,
                                 }
                             )
                         },

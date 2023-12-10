@@ -3,6 +3,22 @@
 hide circle
 skinparam linetype ortho
 
+entity "**users_fans**" {
+# <b>""user_screen_cid""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""invitation_requests""</b>: //""jsonb""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""friends""</b>: //""jsonb""  //
+}
+
+entity "**__diesel_schema_migrations**" {
+# <b>""version""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""run_on""</b>: //""timestamp without time zone""  //
+}
+
 entity "**users_checkouts**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
@@ -19,16 +35,6 @@ entity "**users_checkouts**" {
 * <b>""tokens""</b>: //""bigint""  //
 * <b>""usd_token_price""</b>: //""bigint""  //
 * <b>""tx_signature""</b>: //""character varying""  //
-}
-
-entity "**users_phones**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""user_id""</b>: //""integer""  //
-* <b>""phone""</b>: //""character varying""  //
-* <b>""code""</b>: //""character varying""  //
-* <b>""exp""</b>: //""bigint""  //
-* <b>""vat""</b>: //""bigint""  //
 }
 
 entity "**users**" {
@@ -60,6 +66,7 @@ entity "**users**" {
 * <b>""pswd""</b>: //""character varying""  //
 * <b>""token_time""</b>: //""bigint""  //
 * <b>""balance""</b>: //""bigint""  //
+* <b>""extra""</b>: //""jsonb""  //
 * <b>""last_login""</b>: //""timestamp with time zone""  //
 * <b>""is_mail_verified""</b>: //""boolean""  //
 * <b>""is_phone_verified""</b>: //""boolean""  //
@@ -68,35 +75,49 @@ entity "**users**" {
 * <b>""updated_at""</b>: //""timestamp with time zone""  //
 }
 
-entity "**__diesel_schema_migrations**" {
-# <b>""version""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""run_on""</b>: //""timestamp without time zone""  //
-}
-
-entity "**users_deposits**" {
+entity "**tasks**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""is_claimed""</b>: //""boolean""  //
-* <b>""iat""</b>: //""timestamp with time zone""  //
-* <b>""mint_tx_hash""</b>: //""character varying""  //
-* <b>""nft_id""</b>: //""character varying""  //
-* <b>""nft_img_url""</b>: //""character varying""  //
-* <b>""from_cid""</b>: //""character varying""  //
-* <b>""recipient_screen_cid""</b>: //""character varying""  //
-* <b>""amount""</b>: //""bigint""  //
-* <b>""tx_signature""</b>: //""character varying""  //
-}
-
-entity "**users_clps**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""clp_event_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""user_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""admin_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
 * <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""entry_amount""</b>: //""bigint""  //
-* <b>""registered_at""</b>: //""timestamp with time zone""  //
-* <b>""joined_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""tweet_content""</b>: //""character varying""  //
+* <b>""retweet_id""</b>: //""character varying""  //
+* <b>""task_name""</b>: //""character varying""  //
+* <b>""task_description""</b>: //""character varying""  //
+* <b>""like_tweet_id""</b>: //""character varying""  //
+* <b>""task_score""</b>: //""integer""  //
+* <b>""task_priority""</b>: //""integer""  //
+* <b>""hashtag""</b>: //""character varying""  //
+}
+
+entity "**users_nfts**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""comments""</b>: //""jsonb""  //
+* <b>""attributes""</b>: //""jsonb""  //
+* <b>""current_price""</b>: //""bigint""  //
+* <b>""is_minted""</b>: //""boolean""  //
+* <b>""nft_description""</b>: //""character varying""  //
+* <b>""nft_name""</b>: //""character varying""  //
+* <b>""onchain_id""</b>: //""character varying""  //
+* <b>""metadata_uri""</b>: //""character varying""  //
+* <b>""current_owner_screen_cid""</b>: //""character varying""  //
+* <b>""contract_address""</b>: //""character varying""  //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""created_at""</b>: //""timestamp with time zone""  //
+* <b>""freeze_metadata""</b>: //""boolean""  //
+* <b>""is_listed""</b>: //""boolean""  //
+* <b>""tx_hash""</b>: //""character varying""  //
+* <b>""likes""</b>: //""jsonb""  //
+* <b>""extra""</b>: //""jsonb""  //
+}
+
+entity "**users_tasks**" {
+# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
+---
+* <b>""done_at""</b>: //""timestamp with time zone""  //
 }
 
 entity "**users_collections**" {
@@ -120,10 +141,55 @@ entity "**users_collections**" {
 * <b>""contract_tx_hash""</b>: //""character varying""  //
 }
 
+entity "**users_phones**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""user_id""</b>: //""integer""  //
+* <b>""phone""</b>: //""character varying""  //
+* <b>""code""</b>: //""character varying""  //
+* <b>""exp""</b>: //""bigint""  //
+* <b>""vat""</b>: //""bigint""  //
+}
+
+entity "**users_clps**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""clp_event_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""user_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
+* <b>""updated_at""</b>: //""timestamp with time zone""  //
+* <b>""entry_amount""</b>: //""bigint""  //
+* <b>""registered_at""</b>: //""timestamp with time zone""  //
+* <b>""joined_at""</b>: //""timestamp with time zone""  //
+}
+
+entity "**users_withdrawals**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""recipient_cid""</b>: //""character varying""  //
+* <b>""transfer_tx_hash""</b>: //""character varying""  //
+* <b>""deposit_id""</b>: //""integer""  //
+* <b>""wat""</b>: //""timestamp with time zone""  //
+* <b>""tx_signature""</b>: //""character varying""  //
+}
+
+entity "**users_deposits**" {
+# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
+---
+* <b>""is_claimed""</b>: //""boolean""  //
+* <b>""iat""</b>: //""timestamp with time zone""  //
+* <b>""mint_tx_hash""</b>: //""character varying""  //
+* <b>""nft_id""</b>: //""character varying""  //
+* <b>""nft_img_url""</b>: //""character varying""  //
+* <b>""from_cid""</b>: //""character varying""  //
+* <b>""recipient_screen_cid""</b>: //""character varying""  //
+* <b>""amount""</b>: //""bigint""  //
+* <b>""tx_signature""</b>: //""character varying""  //
+}
+
 entity "**clp_events**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""freeze_metadata""</b>: //""boolean""  //
+* <b>""presale_whitelisted_addresses""</b>: //""text[]""  //
 * <b>""public_mint_start_date""</b>: //""character varying""  //
 * <b>""treasury_address""</b>: //""character varying""  //
 * <b>""owner_screen_cid""</b>: //""character varying""  //
@@ -141,7 +207,7 @@ entity "**clp_events**" {
 * <b>""is_locked""</b>: //""boolean""  //
 * <b>""expire_at""</b>: //""bigint""  //
 * <b>""start_at""</b>: //""bigint""  //
-* <b>""presale_whitelisted_addresses""</b>: //""text[]""  //
+* <b>""freeze_metadata""</b>: //""boolean""  //
 * <b>""metadata_updatable""</b>: //""boolean""  //
 * <b>""contract_tx_hash""</b>: //""character varying""  //
 * <b>""event_description""</b>: //""character varying""  //
@@ -154,52 +220,14 @@ entity "**clp_events**" {
 * <b>""base_uri""</b>: //""character varying""  //
 }
 
-entity "**users_fans**" {
-# <b>""user_screen_cid""</b>: //""character varying"" <b><color:goldenrod>(PK) </color></b> //
+entity "**users_mails**" {
 # <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
 ---
-* <b>""invitation_requests""</b>: //""jsonb""  //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""friends""</b>: //""jsonb""  //
-}
-
-entity "**users_nfts**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""attributes""</b>: //""jsonb""  //
-* <b>""extra""</b>: //""jsonb""  //
-* <b>""current_price""</b>: //""bigint""  //
-* <b>""is_minted""</b>: //""boolean""  //
-* <b>""nft_description""</b>: //""character varying""  //
-* <b>""nft_name""</b>: //""character varying""  //
-* <b>""onchain_id""</b>: //""character varying""  //
-* <b>""metadata_uri""</b>: //""character varying""  //
-* <b>""current_owner_screen_cid""</b>: //""character varying""  //
-* <b>""contract_address""</b>: //""character varying""  //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""freeze_metadata""</b>: //""boolean""  //
-* <b>""tx_hash""</b>: //""character varying""  //
-* <b>""likes""</b>: //""jsonb""  //
-* <b>""comments""</b>: //""jsonb""  //
-* <b>""is_listed""</b>: //""boolean""  //
-}
-
-entity "**tasks**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""admin_id""</b>: //""integer"" <b><color:701fc6>(FK) </color></b> //
-* <b>""updated_at""</b>: //""timestamp with time zone""  //
-* <b>""task_name""</b>: //""character varying""  //
-* <b>""task_description""</b>: //""character varying""  //
-* <b>""task_score""</b>: //""integer""  //
-* <b>""task_priority""</b>: //""integer""  //
-* <b>""hashtag""</b>: //""character varying""  //
-* <b>""tweet_content""</b>: //""character varying""  //
-* <b>""retweet_id""</b>: //""character varying""  //
-* <b>""created_at""</b>: //""timestamp with time zone""  //
-* <b>""like_tweet_id""</b>: //""character varying""  //
+* <b>""exp""</b>: //""bigint""  //
+* <b>""vat""</b>: //""bigint""  //
+* <b>""user_id""</b>: //""integer""  //
+* <b>""mail""</b>: //""character varying""  //
+* <b>""code""</b>: //""character varying""  //
 }
 
 entity "**users_galleries**" {
@@ -215,43 +243,16 @@ entity "**users_galleries**" {
 * <b>""invited_friends""</b>: //""text[]""  //
 }
 
-entity "**users_withdrawals**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""recipient_cid""</b>: //""character varying""  //
-* <b>""transfer_tx_hash""</b>: //""character varying""  //
-* <b>""deposit_id""</b>: //""integer""  //
-* <b>""wat""</b>: //""timestamp with time zone""  //
-* <b>""tx_signature""</b>: //""character varying""  //
-}
 
-entity "**users_tasks**" {
-# <b>""task_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
-# <b>""user_id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b><b><color:701fc6>(FK) </color></b> //
----
-* <b>""done_at""</b>: //""timestamp with time zone""  //
-}
+"**tasks**" }o--|| "**users**"
 
-entity "**users_mails**" {
-# <b>""id""</b>: //""integer"" <b><color:goldenrod>(PK) </color></b> //
----
-* <b>""exp""</b>: //""bigint""  //
-* <b>""vat""</b>: //""bigint""  //
-* <b>""user_id""</b>: //""integer""  //
-* <b>""mail""</b>: //""character varying""  //
-* <b>""code""</b>: //""character varying""  //
-}
+"**users_tasks**" }o--|| "**tasks**"
 
+"**users_tasks**" }o--|| "**users**"
 
 "**users_clps**" }o--|| "**users**"
 
 "**users_clps**" }o--|| "**clp_events**"
-
-"**tasks**" }o--|| "**users**"
-
-"**users_tasks**" }o--|| "**users**"
-
-"**users_tasks**" }o--|| "**tasks**"
 
 
 @enduml

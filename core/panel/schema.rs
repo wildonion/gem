@@ -93,6 +93,7 @@ diesel::table! {
         pswd -> Varchar,
         token_time -> Nullable<Int8>,
         balance -> Nullable<Int8>,
+        extra -> Nullable<Jsonb>,
         last_login -> Nullable<Timestamptz>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,

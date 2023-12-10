@@ -310,6 +310,132 @@ pub struct AddReactionRequest{
 */
 impl UserNft{
 
+    pub async fn update_nft_reactions_with_this_user(latest_user_info: UserData,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNft>, String>{
+
+        match users_nfts
+            .order(users_nfts::created_at.desc())
+            .load::<UserNft>(connection)
+            {
+                Ok(nfts_) => {
+
+                    let mut updated_nfts = vec![];
+                    for nft in nfts_{
+
+                        let nft_comments = nft.comments;
+                        let mut decoded_comments = if nft_comments.is_some(){
+                            serde_json::from_value::<Vec<NftComment>>(nft_comments.clone().unwrap()).unwrap()
+                        } else{
+                            vec![]
+                        };
+
+                        let nft_likes = nft.likes;
+                        let mut decoded_likes = if nft_likes.is_some(){
+                            serde_json::from_value::<Vec<NftLike>>(nft_likes.clone().unwrap()).unwrap()
+                        } else{
+                            vec![]
+                        };
+                        
+                        /* 
+                            since we're taking a mutable pointer to decoded_comments
+                            so by mutating an element of &mut decoded_comments the
+                            decoded_comments itself will be mutated too
+                        */
+                        for comment in &mut decoded_comments{
+
+                            if comment.owner_screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+
+                                comment.owner_avatar = latest_user_info.clone().avatar;
+                                comment.owner_username = latest_user_info.clone().username;
+                            }
+                        }
+
+                        /* 
+                            since we're taking a mutable pointer to decoded_likes
+                            so by mutating an element of &mut decoded_likes the
+                            decoded_likes itself will be mutated too
+                        */
+                        for like in &mut decoded_likes{
+
+                            let mut downvoters = like.clone().downvoter_screen_cids;
+                            for voter in &mut downvoters{
+                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                                    voter.username = latest_user_info.clone().username;
+                                    voter.avatar = latest_user_info.clone().avatar;
+                                }
+                            }
+                            like.downvoter_screen_cids = downvoters;
+
+                            let mut upvoters = like.clone().upvoter_screen_cids;
+                            for voter in &mut upvoters{
+                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                                    voter.username = latest_user_info.clone().username;
+                                    voter.avatar = latest_user_info.clone().avatar;
+                                }
+                            }
+                            like.upvoter_screen_cids = upvoters;
+                        }
+
+                        // update nft 
+                        let _ = match diesel::update(users_nfts.find(nft.id))
+                            .set((
+                                comments.eq(
+                                    serde_json::to_value(decoded_comments).unwrap()
+                                ), 
+                                likes.eq(
+                                    serde_json::to_value(decoded_likes).unwrap()
+                                )
+                            ))
+                            .returning(UserNft::as_returning())
+                            .get_result::<UserNft>(connection)
+                            {
+                                Ok(fetched_nft_data) => {
+                                    updated_nfts.push(fetched_nft_data);
+                                },
+                                Err(e) => {
+
+                                    let resp_err = &e.to_string();
+
+                                    /* custom error handler */
+                                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                    
+                                    let error_content = &e.to_string();
+                                    let error_content = error_content.as_bytes().to_vec();  
+                                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_reactions_with_this_user");
+                                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                                }
+                            };
+
+
+                    }
+
+                    Ok(
+                        updated_nfts
+                    )
+
+                },
+                Err(e) => {
+    
+                    let resp_err = &e.to_string();
+    
+    
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_reactions_with_this_user");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    Err(resp_err.to_owned())
+    
+                }
+            }
+
+    }
+
     pub async fn get_all_nfts_owned_by(caller_screen_cid: &str, limit: web::Query<Limit>) 
         -> Result<OnchainNfts, PanelHttpResponse>{
 

@@ -10,7 +10,7 @@ use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
-use super::users::{User, UserWalletInfoResponse};
+use super::users::{User, UserWalletInfoResponse, UserData};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest};
 
 
@@ -143,6 +143,123 @@ pub struct InsertNewUserFanRequest{
 }
 
 impl UserFan{
+
+    pub async fn update_user_fans_data_with_this_user(latest_user_info: UserData,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserFan>, String>{
+
+            match users_fans
+            .order(users_fans::created_at.desc())
+            .load::<UserFan>(connection)
+            {
+                Ok(users_fans_) => {
+
+                    let mut updated_users_fans = vec![];
+                    for user_fan in users_fans_{
+
+                        let user_friends_data = user_fan.friends;
+                        let mut decoded_friends_data = if user_friends_data.is_some(){
+                            serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
+                        } else{
+                            vec![]
+                        }; 
+
+                        let user_invitation_request_data = user_fan.invitation_requests;
+                        let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
+                            serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
+                        } else{
+                            vec![]
+                        };
+                        
+                        /* 
+                            since we're taking a mutable pointer to decoded_friends_data
+                            so by mutating an element of &mut decoded_friends_data the
+                            decoded_friends_data itself will be mutated too
+                        */
+                        for friend in &mut decoded_friends_data{
+
+                            if friend.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+
+                                friend.user_avatar = latest_user_info.clone().avatar;
+                                friend.username = latest_user_info.clone().username;
+                            }
+                        }
+
+                        /* 
+                            since we're taking a mutable pointer to decoded_invitation_request_data
+                            so by mutating an element of &mut decoded_invitation_request_data the
+                            decoded_invitation_request_data itself will be mutated too
+                        */
+                        for inv in &mut decoded_invitation_request_data{
+
+                            if inv.from_screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+
+                                inv.user_avatar = latest_user_info.clone().avatar;
+                                inv.username = latest_user_info.clone().username;
+                            }
+                            
+                        }
+
+                        // update user_fan 
+                        let _ = match diesel::update(users_fans.find((user_fan.id, user_fan.user_screen_cid)))
+                            .set((
+                                friends.eq(
+                                    serde_json::to_value(decoded_friends_data).unwrap()
+                                ), 
+                                invitation_requests.eq(
+                                    serde_json::to_value(decoded_invitation_request_data).unwrap()
+                                )
+                            ))
+                            .returning(UserFan::as_returning())
+                            .get_result::<UserFan>(connection)
+                            {
+                                Ok(fetched_uf_data) => {
+                                    updated_users_fans.push(fetched_uf_data);
+                                },
+                                Err(e) => {
+
+                                    let resp_err = &e.to_string();
+
+                                    /* custom error handler */
+                                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                    
+                                    let error_content = &e.to_string();
+                                    let error_content = error_content.as_bytes().to_vec();  
+                                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::update_user_fans_data_with_this_user");
+                                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                                }
+                            };
+
+
+                    }
+
+                    Ok(
+                        updated_users_fans
+                    )
+
+                },
+                Err(e) => {
+    
+                    let resp_err = &e.to_string();
+    
+    
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::update_user_fans_data_with_this_user");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+
+                    Err(resp_err.to_owned())
+                    
+                }
+            }
+
+
+    }
 
     pub async fn accept_friend_request(accept_friend_request: AcceptFriendRequest,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 

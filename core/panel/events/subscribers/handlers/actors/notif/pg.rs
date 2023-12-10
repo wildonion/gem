@@ -5,9 +5,6 @@
     | -----------------------------------------------------------------------------------------------------
     | contains: message structures and their handlers
     | 
-    | remember to enable a trigger function to notify 
-    | listeners of changes to table content 
-    |
     |
 */
 
@@ -16,6 +13,8 @@ use crate::constants::{WS_CLIENT_TIMEOUT, WS_SUBSCRIPTION_INTERVAL, STORAGE_IO_E
 use crate::events::subscribers::handlers::actors::notif::system::NotifySystemActorWithRedisSubscription;
 use crate::misc::*;
 use crate::models::users::{User, UserData};
+use crate::models::users_fans::UserFan;
+use crate::models::users_nfts::UserNft;
 use redis_async::resp::FromResp;
 use s3req::Storage;
 use sqlx::postgres::PgListener;
@@ -51,14 +50,14 @@ impl Actor for PgListenerActor{
         ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
             
             let mut this = actor.clone();
-            let app_storage = actor.app_storage.as_ref().unwrap();
+            let app_storage = actor.app_storage.clone().unwrap(); // don't borrow it by using as_ref() cause app_storage is going to be moved out of closure and we can't move if it gets borrowed using as_ref()
             let get_sqlx_pg_listener = app_storage.get_sqlx_pg_listener_none_async().unwrap();
             let redis_async_pubsub = app_storage.get_async_redis_pubsub_conn_sync().unwrap();
 
             tokio::spawn(async move{
                
                 // this.sqlx_subscribe(get_sqlx_pg_listener).await;
-                this.redis_subscribe(redis_async_pubsub).await;
+                this.redis_subscribe(app_storage, redis_async_pubsub).await;
                
             });
 
@@ -85,6 +84,16 @@ impl PgListenerActor{
         then share the actor as a shared state data like Arc<Mutex< between actix routers threads so we 
         can extract it from the app_data in each api and send the GetUpdatedRecord message to fetch new 
         updated record of the passed in table name
+
+        remember to enable a trigger function to notify 
+        listeners of changes to table content 
+        https://hackmd.io/@wtflink515/BksvOw2Hw
+
+        create EXTENSION tcn;
+        create trigger users_tcn_trigger
+        after insert or update or delete on users
+        for each row execute function triggered_change_notification();
+
     */
     pub async fn sqlx_subscribe(&mut self, sqlx_pg_listener: Arc<tokio::sync::Mutex<PgListener>>){
 
@@ -105,8 +114,10 @@ impl PgListenerActor{
 
     }
 
-    pub async fn redis_subscribe(&mut self, redis_async_pubsubconn: Arc<PubsubConnection>){
+    pub async fn redis_subscribe(&mut self, app_storage: Arc<Storage>,
+        redis_async_pubsubconn: Arc<PubsubConnection>){
 
+        let cloned_app_storage = app_storage.clone(); // we're gonna move this into the tokio::spawn
         let redis_async_pubsubconn = redis_async_pubsubconn.clone();
         let mut this = self.clone();
         let system_actor = self.system_actor.clone();
@@ -117,6 +128,13 @@ impl PgListenerActor{
             from the passed in channel contains updated data over users tables
         */
         tokio::spawn(async move{
+
+            /* 
+                we should get and extract the pg pool in tokio spawn not outside of it 
+                cause pg pool doesn't implement the Clone trait
+            */
+            let pool_conn = cloned_app_storage.get_pgdb().await;
+            let connection = &mut pool_conn.unwrap().get().unwrap();
 
             /* 🚨 !!! 
                 we must receive asyncly from the redis subscription streaming 
@@ -159,13 +177,34 @@ impl PgListenerActor{
 
                 let resp_val = message.unwrap();
                 let stringified_update_user = String::from_resp(resp_val).unwrap();
-                
+                let decoded_user = serde_json::from_str::<UserData>(&stringified_update_user).unwrap();
+
                 info!("got user update notification payload on `on_user_update` channel at time {}", chrono::Local::now().timestamp());    
                 system_actor
                     .send(NotifySystemActorWithRedisSubscription{
                         new_user: stringified_update_user
                     })
                     .await;
+
+                //------------------------------------------
+                //------------- update hooks to tables
+                //------------------------------------------
+                // we'll update following tables once we received 
+                // new update of a user from redis pubsub channel
+
+                info!("updateing `users_nfts` and `users_fans` tables with new user data");
+                
+                // trigger the update process of user nfts likes and comments with this user
+                if let Err(why) = UserNft::update_nft_reactions_with_this_user(decoded_user.clone(), connection).await{
+                    error!("can't update `users_nfts` table due to: {}", why);
+                };
+
+                // trigger the update process of user fans friends and invitation requests with this user
+                if let Err(why) = UserFan::update_user_fans_data_with_this_user(decoded_user.clone(), connection).await{
+                    error!("can't update `users_fans` table due to: {}", why);
+                };
+                
+                info!("finished updating `users_nfts` and `users_fans` tables");
 
             }
 

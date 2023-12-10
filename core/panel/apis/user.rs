@@ -9,7 +9,7 @@ use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserChec
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, RemoveFriend, FriendData, UserRelations};
-use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest};
+use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData};
 use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -408,6 +408,7 @@ async fn verify_mail_code(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -452,7 +453,7 @@ async fn verify_mail_code(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match User::check_mail_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
+                    match User::check_mail_verification_code(check_user_verification_request.to_owned(), _id, redis_actix_actor, connection).await{
                         
                         Ok(updated_user) => {
 
@@ -746,6 +747,7 @@ async fn verify_phone_code(
     let storage = storage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
     
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -790,7 +792,7 @@ async fn verify_phone_code(
                     let _id = token_data._id;
                     let role = token_data.user_role;
                     
-                    match User::check_phone_verification_code(check_user_verification_request.to_owned(), _id, connection).await{
+                    match User::check_phone_verification_code(check_user_verification_request.to_owned(), _id, redis_actix_actor, connection).await{
                         
                         Ok(updated_user) => {
 
@@ -1805,17 +1807,23 @@ async fn make_cid(
                         }
                     }
 
+                    /* ------------------------------------------------------------ */
+                    /* ------------------ NO NEED TO BE VERIFIED ------------------ */
+                    /* ------------------------------------------------------------ */
                     /* if the phone wasn't verified user can't create id */
-                    if user.phone_number.is_none() || 
-                        !user.is_phone_verified{
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            NOT_VERIFIED_PHONE, // response message
-                            StatusCode::NOT_ACCEPTABLE, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    }
+                    // if user.phone_number.is_none() || 
+                    //     !user.is_phone_verified{
+                    //     resp!{
+                    //         &[u8], // the date type
+                    //         &[], // the data itself
+                    //         NOT_VERIFIED_PHONE, // response message
+                    //         StatusCode::NOT_ACCEPTABLE, // status code
+                    //         None::<Cookie<'_>>, // cookie
+                    //     }
+                    // }
+                    /* ------------------------------------------------------------ */
+                    /* ------------------------------------------------------------ */
+                    /* ------------------------------------------------------------ */
 
                     let identifier_key = format!("{}-make-cid", _id);
 
@@ -3274,6 +3282,116 @@ async fn edit_bio(
                     let new_bio = update_bio_request.to_owned().bio;
 
                     match User::update_bio(_id, &new_bio, redis_client.to_owned(), redis_actix_actor, connection).await{
+                        Ok(updated_user) => {
+                            resp!{
+                                UserData, // the data type
+                                updated_user, // response data
+                                UPDATED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+                        },
+                        Err(resp) => {
+                            
+                            /* USER NOT FOUND response */
+                            resp
+                        }
+                    }
+
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+}
+
+#[post("/profile/update/extra")]
+#[passport(user)]
+async fn edit_extra(
+    req: HttpRequest,
+    update_extra_request: web::Json<UpdateExtraRequest>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let new_extra = update_extra_request.to_owned().extra;
+
+                    match User::update_extra(_id, new_extra, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(updated_user) => {
                             resp!{
                                 UserData, // the data type
@@ -6363,6 +6481,132 @@ async fn get_all_public_collections_for(
 
 }
 
+#[get("/gallery/get/all/for/{who}/")]
+#[passport(user)]
+async fn get_all_private_galleries_general_info_for(
+    req: HttpRequest,
+    who_screen_cid: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    // get all general infos of all private galleries for who_screen_cid
+                    match UserPrivateGallery::get_all_general_info_for(
+                        &who_screen_cid.to_owned(), 
+                        limit, connection).await{
+                        
+                        Ok(private_galleries) => {
+
+                            resp!{
+                                Vec<UserPrivateGalleryInfoData>, //// the data type
+                                private_galleries, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[get("/collection/{col_id}/get/all/minted-nfts/")]
 #[passport(user)]
 async fn get_all_public_collection_nfts(
@@ -9379,6 +9623,7 @@ pub mod exports{
     pub use super::get_all_user_unpaid_checkouts;
     pub use super::get_all_user_paid_checkouts;
     pub use super::get_all_private_galleries_for;
+    pub use super::get_all_private_galleries_general_info_for;
     pub use super::get_all_private_collections_for;
     pub use super::get_all_public_collections_for;
     pub use super::get_all_public_collection_nfts;
@@ -9402,6 +9647,7 @@ pub mod exports{
     pub use super::login_with_microsoft;
     pub use super::verify_twitter_account;
     pub use super::edit_bio;
+    pub use super::edit_extra;
     pub use super::upload_avatar;
     pub use super::upload_banner;
     pub use super::upload_wallet_back;

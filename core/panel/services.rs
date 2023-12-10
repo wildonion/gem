@@ -29,9 +29,6 @@ pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
     config.service(apis::erm::exports::sub_to_erm);
     config.service(apis::clp::exports::chatroomlp);
-    
-    // other routs maybe ?
-    // ...
 
 
 }
@@ -48,9 +45,6 @@ pub fn init_dev(config: &mut web::ServiceConfig){
 
     config.service(apis::dev::exports::get_admin_data);
     config.service(apis::dev::exports::get_user_data);
-    
-    // other routs maybe ?
-    // ...
 
 
 }
@@ -81,10 +75,6 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_deposits);
     config.service(apis::admin::exports::get_all_users_checkouts);
     config.service(apis::admin::exports::get_all_users_withdrawals);
-
-    // other routs maybe ?
-    // ...
-
 
 }
 
@@ -120,6 +110,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::verify_phone_code);
     config.service(apis::user::exports::charge_wallet_request);
     config.service(apis::user::exports::edit_bio);
+    config.service(apis::user::exports::edit_extra);
     config.service(apis::user::exports::upload_avatar);
     config.service(apis::user::exports::upload_banner);
     config.service(apis::user::exports::upload_wallet_back);
@@ -127,6 +118,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::create_private_gallery);
     config.service(apis::user::exports::update_private_gallery);
     config.service(apis::user::exports::get_all_private_galleries_for);
+    config.service(apis::user::exports::get_all_private_galleries_general_info_for);
     config.service(apis::user::exports::get_all_galleries_invited_to);
     config.service(apis::user::exports::get_all_public_collections_for);
     config.service(apis::user::exports::get_all_private_collections_for);
@@ -161,9 +153,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_user_clp_events_info);
     config.service(apis::user::exports::register_clp_event);
     config.service(apis::user::exports::join_clp_event);
-    
-    // other routs maybe ?
-    // ...
 
 
 }
@@ -185,10 +174,6 @@ pub fn init_health(config: &mut web::ServiceConfig){
     config.service(apis::health::update_user_balance_webhook);
     config.service(apis::health::is_user_kyced);
 
-    // other routs maybe ?
-    // ...
-
-
 }
 
 /*
@@ -208,9 +193,5 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::get_user_wallet_info);
     config.service(apis::public::get_users_wallet_info);
     config.service(apis::public::search);
-
-    // other routs maybe ?
-    // ...
-
 
 }

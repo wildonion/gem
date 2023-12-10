@@ -2583,7 +2583,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"wildonion@123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2851,7 +2851,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTUxNzk2MzM5OTc2MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTUzNTk2MzQxOTQzMDAwLCJpYXQiOjE3MDIxNTE3OTYzNDE5NDMwMDB9.xveZOqFfHOZJAh4fEwcNSc6Kuw_p7Vs4wTeHa7KrUnzHOtKoFEBnzZ6DAZCX_g6v8ikh2nZC_B7hqFCKJEZYAw",
 													"type": "string"
 												}
 											]
@@ -2860,7 +2860,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"bio\": \"the wildest one!\"\n}",
+											"raw": "{\n    \"bio\": \"the sexeist\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2882,6 +2882,44 @@
 									"response": []
 								},
 								{
+									"name": "Update Extra",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTg4OTA0OTg2NTAxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTkwNzA0OTg3MDgxMDAwLCJpYXQiOjE3MDIxODg5MDQ5ODcwODEwMDB9.epSI5uGHlgnGnuVSlr9NVna0dJYZy70l6Mez7zEm44mkfmpY1cSom-5Xt_CghmCUSjMBswr_u6ybE4WMIUp4tA",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"extra\": [\n        {\n            \"phone\": \"09211686115\"\n        },\n        {\n            \"instagram\": \"_wildonion|\"\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/extra",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"extra"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Upload Avatar",
 									"request": {
 										"auth": {
@@ -2889,7 +2927,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNTgwMjk5NzgyMzkyMDAwLCJleHAiOjE3MDMxNzIyOTksImlhdCI6MTcwMDU4MDI5OX0.-oIKK8V1mm1qpVEdGegVXeFSek1O_Onfs58_WbW2MOfqwKaqPHs91z19VWEtnPV7HBuZTt9GWiASjXbi3iXeZA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTM4NDU0ODk3MDgxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTQwMjU0ODk4MjMzMDAwLCJpYXQiOjE3MDIxMzg0NTQ4OTgyMzMwMDB9.fVOQk_mj9iYaxfaNP9BAneel9MHVyPAwAZAjWlHZBvJE2qtZIIg3LCE6JuQ1fUNajuYQaLUjDz740lfzxyWBog",
 													"type": "string"
 												}
 											]
@@ -2902,7 +2940,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": "/Users/wildonion/Desktop/deadkings.jpeg"
+													"src": "/Users/wildonion/Desktop/onion.png"
 												}
 											]
 										},
@@ -2928,7 +2966,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTM4NDU0ODk3MDgxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTQwMjU0ODk4MjMzMDAwLCJpYXQiOjE3MDIxMzg0NTQ4OTgyMzMwMDB9.fVOQk_mj9iYaxfaNP9BAneel9MHVyPAwAZAjWlHZBvJE2qtZIIg3LCE6JuQ1fUNajuYQaLUjDz740lfzxyWBog",
 													"type": "string"
 												}
 											]
@@ -2941,7 +2979,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": "/Users/wildonion/Desktop/consep.jpeg"
+													"src": "/Users/wildonion/Desktop/onion.png"
 												}
 											]
 										},
@@ -3550,6 +3588,48 @@
 												"gallery",
 												"get",
 												"all",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All Private Galleries General Info For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/get/all/for/0xed2b3bdae27c24480f0676f43228a7981c42fdea/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"get",
+												"all",
+												"for",
+												"0xed2b3bdae27c24480f0676f43228a7981c42fdea",
 												""
 											],
 											"query": [

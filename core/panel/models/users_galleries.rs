@@ -51,6 +51,19 @@ pub struct UserPrivateGalleryData{
     pub updated_at: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct UserPrivateGalleryInfoData{
+    pub id: i32,
+    pub owner_screen_cid: String,
+    pub collections: u64,
+    pub gal_name: String,
+    pub gal_description: String,
+    pub invited_friends: u64,
+    pub extra: Option<serde_json::Value>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserPrivateGalleryRequest{
     pub owner_cid: String,
@@ -117,6 +130,89 @@ pub struct SendInvitationRequest{
     and pass its encoded form (utf8 bytes) directly through the socket to the client 
 */
 impl UserPrivateGallery{
+
+    pub async fn get_all_general_info_for(screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserPrivateGalleryInfoData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        /* fetch all owner galleries */
+        let user_galleries = users_galleries
+            .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .filter(owner_screen_cid.eq(screen_cid))
+            .load::<UserPrivateGallery>(connection);
+        
+        let Ok(galleries) = user_galleries else{
+            let resp = Response{
+                data: Some(screen_cid),
+                message: NO_GALLERY_FOUND_FOR,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+
+        Ok(
+            galleries
+                .into_iter()
+                /* 
+                    map takes an FnMut closure so it captures env vars mutably and 
+                    and since the prv_cols is moving into the closure we have to 
+                    clone it in each iteration to not to lose ownership
+                */
+                .map(|g| {
+            
+                    UserPrivateGalleryInfoData{
+                        id: g.id,
+                        owner_screen_cid: g.owner_screen_cid,
+                        collections: {
+                            let cols = g.collections;
+                            let decoded_cols = if cols.is_some(){
+                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            decoded_cols.len() as u64
+                        },
+                        gal_name: g.gal_name,
+                        gal_description: g.gal_description,
+                        invited_friends: {
+                            let invf = g.invited_friends;
+                            let decoded_invfs_len = if invf.is_some(){
+                                invf.unwrap().len() as u64
+                            } else{
+                                0
+                            };
+                            decoded_invfs_len
+                        },
+                        extra: g.extra,
+                        created_at: g.created_at.to_string(),
+                        updated_at: g.updated_at.to_string(),
+                    }
+        
+                }).collect::<Vec<UserPrivateGalleryInfoData>>()
+        )
+
+    }
 
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -427,6 +523,7 @@ impl UserPrivateGallery{
                                 created_at: user_data.created_at.to_string(),
                                 bio: user_data.bio,
                                 banner: user_data.banner,
+                                extra: user_data.extra,
                             }
                         )
                     } else{

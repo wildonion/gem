@@ -183,12 +183,7 @@ async fn check_token(
 
                     let single_user = users
                         .filter(id.eq(_id))
-                        .select((id, region, username, bio, avatar, banner, wallet_background, activity_code, twitter_username, 
-                                facebook_username, discord_username,
-                                identifier, mail, google_id, microsoft_id, is_mail_verified, is_phone_verified, phone_number, paypal_id, account_number, 
-                                device_id, social_id, cid, screen_cid, snowflake_id, stars, user_role, 
-                                token_time, balance, last_login, created_at, updated_at))
-                        .first::<FetchUser>(connection);
+                        .first::<User>(connection);
 
 
                     let Ok(user) = single_user else{
@@ -245,7 +240,8 @@ async fn check_token(
                         cid: user.cid,
                         screen_cid: user.screen_cid,
                         snowflake_id: user.snowflake_id,
-                        stars: user.stars
+                        stars: user.stars,
+                        extra: user.extra,
                     };
 
 
@@ -750,7 +746,8 @@ async fn is_user_kyced(
                         stars: user.stars,
                         created_at: user.created_at.to_string(),
                         bio: user.bio,
-                        banner: user.banner
+                        banner: user.banner,
+                        extra: user.extra,
                     };
 
                     /* sending user data */
