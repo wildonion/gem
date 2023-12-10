@@ -44,6 +44,14 @@
         which can be treated like a push notif handler by subsribing and streaming to incoming 
         notifs, events and data changes from server or publisher, in case of tcp server the 
         server is a listener which will stream over incoming bytes from clients
+    
+    >_ note:
+        server/client actor can stream over client/server across requests/responses  
+        inside tokio spawn using while let some also in subscription actor we can call 
+        update hook apis once we received the notification from the source channel like 
+        redis and in publisher actor we can send a message from different parts of the 
+        app to tell the actor publish the data or notification to the source 
+        channel like redis
           
 */
 
