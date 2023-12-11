@@ -76,7 +76,7 @@ impl PgListenerActor{
         }
     }
 
-    /* 
+    /* >_ ------------------ redis and sqlx subscription process ------------------
         pg streaming of events handler by subscribing to the related topic in an interval loop using 
         while let Some()... syntax and redis/pg, in order to get new changes by sending GetUpdatedRecord 
         message from different parts of the app to this actor to get the latest table update as a response 
@@ -99,16 +99,14 @@ impl PgListenerActor{
 
         /* start subscribing inside a separate threadpool */
         tokio::spawn(async move{
-            loop{
-    
-                let mut sqlx_pg_listener = sqlx_pg_listener.lock().await;
-                info!("inside the notif listener loop");
-                
-                /* start listening to all channels */
-                while let Some(notification) = sqlx_pg_listener.try_recv().await.unwrap(){
-                    let payload = notification.payload();
-                    info!("got notification payload on {:?} channel : {:?}", payload, notification.channel());
-                }
+
+            let mut sqlx_pg_listener = sqlx_pg_listener.lock().await;
+            info!("inside the notif listener loop");
+            
+            /* start listening to all channels */
+            while let Some(notification) = sqlx_pg_listener.try_recv().await.unwrap(){
+                let payload = notification.payload();
+                info!("got notification payload on {:?} channel : {:?}", payload, notification.channel());
             }
         });
 

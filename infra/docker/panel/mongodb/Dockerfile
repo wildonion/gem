@@ -6,6 +6,8 @@ ENV LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 WORKDIR /usr/src/app
 COPY . /usr/src/app
 
+ENV SQLX_OFFLINE true
+
 RUN apt-get update && \
     apt-get install -y \
     pkg-config \

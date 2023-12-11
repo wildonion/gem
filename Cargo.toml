@@ -93,7 +93,15 @@ prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
 spacetimedb-sdk = "0.7.3"
-sqlx = { version = "0.7", features = [ "runtime-tokio", "postgres", "json", "chrono", "uuid" ] }
+sqlx = { version = "0.7", features = [ 
+  "runtime-tokio-rustls",
+  "postgres",
+  "macros",
+  "chrono",
+  "migrate",
+  "json",
+  "uuid"
+  ]}
 
 [lib]
 proc-macro = true

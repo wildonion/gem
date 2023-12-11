@@ -10,9 +10,10 @@
     handlers run in a separate threadpool
     
     streamer or event handler channels to notify app in realtime about 
-    some data changes by sharing lazy static global mutex shared state 
+    some data changes by sharing global static lazy arced mutex shared state 
     between different parts, route and threads of the app can be done 
-    with interval loop{}, while let Some()... and actor workers like: 
+    with actor workers and their interval loop{}, while let Some()... 
+    inside tokio::spawn like: 
           - tokio tcp listener as publisher
           - tonic rpc pubsub
           - actix ws stream handler and actor message handler as subscriber
