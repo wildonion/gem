@@ -779,6 +779,7 @@ async fn search(
                             gal_description: g.gal_description, 
                             invited_friends: g.invited_friends, 
                             extra: g.extra, 
+                            gallery_background: g.gallery_background,
                             created_at: g.created_at.to_string(), 
                             updated_at: g.updated_at.to_string() 
                         }

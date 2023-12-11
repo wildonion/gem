@@ -188,6 +188,7 @@ diesel::table! {
         gal_description -> Varchar,
         invited_friends -> Nullable<Array<Nullable<Text>>>,
         extra -> Nullable<Jsonb>,
+        gallery_background -> Varchar,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }

@@ -3,7 +3,7 @@
 
 use chrono::NaiveDateTime;
  
-use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER};
+use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER, GALLERY_UPLOAD_PATH};
 use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
@@ -34,6 +34,7 @@ pub struct UserPrivateGallery{
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub gallery_background: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
@@ -47,6 +48,7 @@ pub struct UserPrivateGalleryData{
     pub gal_description: String,
     pub invited_friends: Option<Vec<Option<String>>>,
     pub extra: Option<serde_json::Value>,
+    pub gallery_background: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -60,6 +62,7 @@ pub struct UserPrivateGalleryInfoData{
     pub gal_description: String,
     pub invited_friends: u64,
     pub extra: Option<serde_json::Value>,
+    pub gallery_background: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -124,12 +127,111 @@ pub struct SendInvitationRequest{
     pub hash_data: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GalleryExtraObjWithPriceAndImgPath{
+    pub entry_price: i64,
+    pub img_path: String,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
     and pass its encoded form (utf8 bytes) directly through the socket to the client 
 */
 impl UserPrivateGallery{
+
+    pub async fn upload_background(
+        gal_id: i32, 
+        screen_cid: &str,
+        mut img: Multipart, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+        
+            
+        let Ok(gallery) = Self::find_by_id(gal_id, connection).await else{
+            let resp = Response{
+                data: Some(gal_id),
+                message: GALLERY_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        if gallery.owner_screen_cid != screen_cid.to_string(){
+            let resp = Response{
+                data: Some(gal_id),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            );
+        }
+
+        let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
+        let get_gallery_img_path = multipartreq::store_file(
+            GALLERY_UPLOAD_PATH, &format!("{}", gal_id), 
+            "gallback", 
+            img).await;
+        let Ok(gallery_img_path) = get_gallery_img_path else{
+
+            let err_res = get_gallery_img_path.unwrap_err();
+            return Err(err_res);
+        };
+
+        /* update the avatar field in db */
+        match diesel::update(users_galleries.find(gallery.id))
+            .set(gallery_background.eq(gallery_img_path))
+            .returning(UserPrivateGallery::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_gallery) => {
+                    
+                    Ok(
+                        UserPrivateGalleryData{
+                            id: updated_gallery.id,
+                            owner_screen_cid: updated_gallery.owner_screen_cid,
+                            collections: updated_gallery.collections,
+                            gal_name: updated_gallery.gal_name,
+                            gal_description: updated_gallery.gal_description,
+                            invited_friends: updated_gallery.invited_friends,
+                            extra: updated_gallery.extra,
+                            gallery_background: updated_gallery.gallery_background,
+                            created_at: updated_gallery.created_at.to_string(),
+                            updated_at: updated_gallery.updated_at.to_string(),
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserPrivateGallery::update_wallet_back");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+    
+    }
 
     pub async fn get_all_general_info_for(screen_cid: &str, caller_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -211,6 +313,7 @@ impl UserPrivateGallery{
                                 decoded_invfs_len
                             },
                             extra: g.extra,
+                            gallery_background: g.gallery_background,
                             created_at: g.created_at.to_string(),
                             updated_at: g.updated_at.to_string(),
                         }
@@ -346,6 +449,7 @@ impl UserPrivateGallery{
                         gal_description: g.gal_description,
                         invited_friends: g.invited_friends,
                         extra: g.extra,
+                        gallery_background: g.gallery_background,
                         created_at: g.created_at.to_string(),
                         updated_at: g.updated_at.to_string(),
                     }
@@ -456,6 +560,7 @@ impl UserPrivateGallery{
                                 gal_description: g.gal_description,
                                 invited_friends: inv_frds.clone(),
                                 extra: g.extra,
+                                gallery_background: g.gallery_background,
                                 created_at: g.created_at.to_string(),
                                 updated_at: g.updated_at.to_string(),
                             }
@@ -646,6 +751,7 @@ impl UserPrivateGallery{
                 gal_description: gallery_info.gal_description, 
                 invited_friends: gallery_info.invited_friends, 
                 extra: gallery_info.extra, 
+                gallery_background: gallery_info.gallery_background,
                 created_at: gallery_info.created_at.to_string(), 
                 updated_at: gallery_info.updated_at.to_string() 
             }
@@ -698,6 +804,7 @@ impl UserPrivateGallery{
                             gal_description: gallery.gal_description, 
                             invited_friends: gallery.invited_friends, 
                             extra: gallery.extra, 
+                            gallery_background: gallery.gallery_background,
                             created_at: gallery.created_at.to_string(), 
                             updated_at: gallery.updated_at.to_string() 
                         }
@@ -753,6 +860,7 @@ impl UserPrivateGallery{
                             gal_description: gallery.gal_description, 
                             invited_friends: gallery.invited_friends, 
                             extra: gallery.extra, 
+                            gallery_background: gallery.gallery_background,
                             created_at: gallery.created_at.to_string(), 
                             updated_at: gallery.updated_at.to_string() 
                         }
@@ -797,6 +905,7 @@ impl UserPrivateGallery{
                         gal_description: fetched_gallery_data.gal_description,
                         invited_friends: fetched_gallery_data.invited_friends,
                         extra: fetched_gallery_data.extra,
+                        gallery_background: fetched_gallery_data.gallery_background,
                         created_at: fetched_gallery_data.created_at.to_string(),
                         updated_at: fetched_gallery_data.updated_at.to_string(),
                     };
@@ -953,6 +1062,7 @@ impl UserPrivateGallery{
                     gal_description: gallery_data.gal_description, 
                     invited_friends: inv_frds, 
                     extra: gallery_data.extra, 
+                    gallery_background: gallery_data.gallery_background,
                     created_at: gallery_data.created_at.to_string(), 
                     updated_at: gallery_data.updated_at.to_string() 
                 }
@@ -1001,6 +1111,7 @@ impl UserPrivateGallery{
                                 gal_description: g.gal_description,
                                 invited_friends: g.invited_friends,
                                 extra: g.extra,
+                                gallery_background: g.gallery_background,
                                 created_at: g.created_at.to_string(),
                                 updated_at: g.updated_at.to_string(),
                             }

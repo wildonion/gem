@@ -3337,6 +3337,46 @@
 									"response": []
 								},
 								{
+									"name": "Upload Private Gallery Background",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk5Nzc4Mzc3NDAxODE4MDAwLCJleHAiOjE3MDIzNzAzNzcsImlhdCI6MTY5OTc3ODM3N30.N2XsvNi2f_Y71NnBgPWm-l9XfiNvLlaZnlyrYo2eU04mC3v8xBhjegUdzSosdxwrjcQvljsngX4u_tenuCjJSw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "img",
+													"type": "file",
+													"src": "/Users/wildonion/Desktop/consep.jpeg"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/1/upload/background",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"1",
+												"upload",
+												"background"
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Send Private Gallery Invitation Request",
 									"request": {
 										"auth": {

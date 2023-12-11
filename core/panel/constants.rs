@@ -180,6 +180,7 @@ pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
 pub const COLLECTION_UPLOAD_PATH: &str = "assets/images/collections";
+pub const GALLERY_UPLOAD_PATH: &str = "assets/images/galleries";
 pub const NFT_UPLOAD_PATH: &str = "assets/images/nfts";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 pub const TOO_LARGE_FILE_SIZE: &str = "File Is Too Large";
