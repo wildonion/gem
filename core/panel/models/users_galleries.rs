@@ -106,6 +106,7 @@ pub struct InsertNewUserPrivateGalleryRequest{
     pub owner_screen_cid: String,
     pub gal_name: String,
     pub gal_description: String,
+    pub gallery_background: String,
     pub extra: Option<serde_json::Value>,
 }
 
@@ -887,6 +888,7 @@ impl UserPrivateGallery{
                 owner_screen_cid: walletreq::evm::get_keccak256_from(new_gallery_info.owner_cid),
                 gal_name: new_gallery_info.gal_name,
                 gal_description: new_gallery_info.gal_description,
+                gallery_background: String::from(""),
                 extra: new_gallery_info.extra,
             };
         
