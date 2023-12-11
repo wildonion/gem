@@ -1,4 +1,6 @@
 #!/bin/bash
+cd ..
+sudo rm -r target
 TIMESTAMP=$(date +%s)
 CONSE_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg' | awk '{print $1}')
 sudo docker build -t conse-panel-pg-$TIMESTAMP -f $(pwd)/infra/docker/panel/postgres/Dockerfile . --no-cache
