@@ -163,10 +163,10 @@ async fn chatroomlp(
                     };
 
 
-                    // ---------------------------------
+
                     // TODO - 
-                    // chatroomlp validation find with id (clp_events)
-                    // check that the user is already registered and paid for this chatroom (users_clps)
+                    // find a chatroomlp inside clp_events with this id (chat_room)
+                    // check that the user is already registered and paid for this chatroom already (users_clps)
                     // ...
 
 

@@ -788,7 +788,7 @@ impl User{
         );
         
         // ---------------------------------------------------------------------
-        //    access token payload, will be used to generate new set of tokens 
+        //    refresh token payload, will be used to generate new set of tokens 
         // ---------------------------------------------------------------------
         let refresh_exp_time = access_exp_time + chrono::Duration::minutes(10);
         let refresh_token_payload = JWTClaims{

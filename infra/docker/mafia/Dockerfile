@@ -6,6 +6,8 @@ ENV LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 WORKDIR /usr/src/app
 COPY . /usr/src/app
 
+# don't forget to set this to true otherwise u'll get the following error inside the container 
+# actix: OSError: [Errno 99] Cannot assign requested address
 ENV SQLX_OFFLINE true
 
 RUN apt-get update && \

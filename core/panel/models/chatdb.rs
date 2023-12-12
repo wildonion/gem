@@ -23,8 +23,10 @@ pub struct UserChat;
 /* ----- spacetimechatdb wasm methods ----- */
 /* ---------------------------------------- */
 impl UserChat{
-
+    
     pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
+        //--- connection is the one which has been initialized once in server.rs 
+        //--- and passed through the routers' threads as a shared state data 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserChat, PanelHttpResponse>{
 
@@ -34,17 +36,29 @@ impl UserChat{
             return Err(err_resp);
         };
 
-
         // text is the decrypted and raw message
-
-        // -------------------------------
-        // TODO - store in chatdb by calling wasm methods
-        // TODO - n.chat per user limit
+        // TODO - store text in chatdb by calling wasm methods
+        // TODO - consider n.chat per user limit
+        // TODO - test themis wasm in js
         // ...
 
         todo!()
 
     }
+
+    pub async fn get_all_chats_of(user_screen_cid: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Vec<UserChat>, PanelHttpResponse>{
+
+            let get_user = User::find_by_screen_cid(user_screen_cid, connection).await;
+            let Ok(user) = get_user else{
+                let err_resp = get_user.unwrap_err();
+                return Err(err_resp);
+            };
+
+            todo!()
+
+        }
 
 
 }

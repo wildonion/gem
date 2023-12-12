@@ -343,7 +343,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                     
                 });
 
-                /* --------- storing texts in db in a separate thread --------- */
+                /* --------------------------------------------------------------------- */
+                /* --------- storing texts in spacetimedb in a separate thread --------- */
                 let app_storage = self.app_storage.clone();
                 let chatroom_name = self.chat_room.to_string().clone();
                 let session_id = self.id.clone();

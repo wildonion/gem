@@ -153,7 +153,7 @@ pub async fn start_minting_card_process(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     /* upload card to ipfs */
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     /* ---------------------------- we're using the ifps nft_img_url ----------------------------
     let (metadata_uri, res_metadata_uri_status) = upload_file_to_ipfs(&nftport_token, redis_client.clone()).await;
@@ -420,7 +420,7 @@ pub async fn start_transferring_card_process(
     */
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     let mut transfer_data = HashMap::new();
     transfer_data.insert("chain", "polygon");
@@ -578,7 +578,7 @@ pub async fn create_collection(
 ) -> (String, String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
     let NewUserCollectionRequest{ 
         col_name, 
         symbol, 
@@ -706,7 +706,7 @@ pub async fn update_collection(
 ) -> (String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
     let UpdateUserCollectionRequest{ 
         owner_cid, 
         base_uri, 
@@ -829,7 +829,7 @@ pub async fn upload_nft_to_ipfs<N>(
 
     let asset_info = asset_info.get_self();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     let (upload_ipfs_response, status) = self::upload_file_to_ipfs(&nftport_token, redis_client, &nft_img_path_on_server).await;
     
@@ -923,7 +923,7 @@ pub async fn mint_nft(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     /* upload card to ipfs */
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     if !asset_info.metadata_uri.is_empty(){
 
@@ -1092,7 +1092,7 @@ pub async fn transfer_nft(
 ) -> (String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     let transfer_to = asset_info.get_recipient_screen_cid();
 
@@ -1184,7 +1184,7 @@ pub async fn update_nft(
 ) -> (String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
     let contract_address = asset_info.clone().contract_address;
     let token_id = asset_info.clone().onchain_id.unwrap();
@@ -1423,7 +1423,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> O
         that we want to return them, but if we want to mutate data in rust we 
         have to convert the json value or received bytes into the structure, 
     */
-    let nftport_token = std::env::var("NFTYPORT_TOKEN").unwrap();
+    let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
     let nftport_get_nfts = format!("https://api.nftport.xyz/v0/accounts/{}?chain=polygon&page_size={}&continuation={}&include=metadata", caller_screen_cid, to, from);
     let res_value: serde_json::Value = reqwest::Client::new()
         .get(nftport_get_nfts.as_str())

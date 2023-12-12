@@ -122,8 +122,6 @@ then run:
 ```bash
 # 🥒 build proto files
 cargo build
-# 🧪 Test Conse Hyper Server
-cargo test --bin rendezvous
 # 🏃 Run Conse Hyper Server
 cargo run --bin rendezvous #---> cargo build --bin rendezvous --release
 # 🏃🏽‍♀️ Run Conse Actix Panel Server

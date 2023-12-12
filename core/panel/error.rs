@@ -20,7 +20,7 @@ pub struct PanelError{
     pub code: u16,
     pub msg: Vec<u8>, // reason 
     pub kind: ErrorKind, // due to what service 
-    pub method_name: String
+    pub method_name: String // in what method
 }
 
 
@@ -47,7 +47,7 @@ pub enum ErrorKind{
 }
 
 /* 
-    make it senable to be shared between threads also note that 
+    make it sendable to be shared between threads also note that 
     Send and Sync can only be implement for a type that is inside 
     the current crate thus can't be implemented for actix_web::HttpResponse
 */

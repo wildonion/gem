@@ -7,22 +7,24 @@
 /* 
     look at apis/erm.rs and apis/clp.rs routes for http ws streamers
     and https://github.com/wildonion/zoomate for tcp, rpc streamer
-    handlers run in a separate threadpool
+    handlers, each, ran in a separate threadpool to start listening
     
-    streamer or event handler channels to notify app in realtime about 
-    some data changes by sharing global static lazy arced mutex shared state 
-    between different parts, route and threads of the app can be done 
-    with actor workers and their interval loop{}, while let Some()... 
-    inside tokio::spawn like: 
-          - tokio tcp listener as publisher
-          - tonic rpc pubsub
-          - actix ws stream handler and actor message handler as subscriber
-          - libp2p gossipsub 
-          - redis pubsub
-          - actix borker pubsub
-          - tokio::mpsc,select,spawn,mutex,arc
-          - actix http webhook with stream: Payload and Multipart codec
-          - codecs with protobuf and serde, Payload, Multipart
+    >_ note: 
+        streamer or event handler channels to notify app in realtime about 
+        some data changes by sharing global static lazy arced mutex data
+        between different parts, route and threads of the app can be done 
+        with actor workers in their interval loop{} with while let Some()... 
+        inside tokio::spawn to start subscribing and listening to incoming 
+        packets from the following tlp sources: 
+            - tokio tcp listener as publisher
+            - tonic rpc pubsub
+            - actix ws stream handler and actor message handler as subscriber
+            - libp2p gossipsub 
+            - redis pubsub
+            - actix borker pubsub
+            - tokio::mpsc,select,spawn,mutex,arc
+            - actix http webhook with stream: Payload and Multipart codec
+            - codecs with protobuf and serde, Payload, Multipart
     
     >_ note: 
         we can run each publisher and subscriber actor in a separate 
@@ -37,14 +39,13 @@
         hence in actor based pubsub pattern server and client both can be listener, publisher, 
         subscriber and stream handlre actors at the same time:
             server can listen to streams over client requests like tokio tcp listener or stream: web::Payload in actix http
-            client can listen to streams over server responses like redis client listener
+            client can listen to streams over server responses like redis and rpc client listener
         in our case publishers are server actors contains session or client actors that can:
-            communicate with them using message sending pattern
-            publish new topics on data changes to a channel
-        on the other hand a subscriber is basically an stream of events or messages handler 
-        which can be treated like a push notif handler by subsribing and streaming to incoming 
-        notifs, events and data changes from server or publisher, in case of tcp server the 
-        server is a listener which will stream over incoming bytes from clients
+        communicate with them using message sending pattern publish new topics on data changes 
+        to a channel, a subscriber on the other hand, is basically an stream of events or messages 
+        handler which can be treated like a push notif handler by subsribing and streaming to
+        incoming notifs, events and data changes from server or publisher, in case of tcp server 
+        the server is a listener which will stream over incoming bytes from clients
     
     >_ note:
         server/client actor can stream over client/server across requests/responses  

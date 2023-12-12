@@ -1,7 +1,9 @@
 
 
 
-## Setup
+spacetimechatdb server and wasm methods
+
+## Setup and Compile
 
 ```bash
 spacetime init --lang=rust
