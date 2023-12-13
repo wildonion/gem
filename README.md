@@ -49,6 +49,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 ### 🗃️ Directory and Structure Explained
 
 * `core`: hyper, tonic gRPC, actix web HTTP and actix WS servers.
+    * `chatdb`: spacetimedb wasm methods used in chatroom launchpad section in conse panel.
     * `stripewh`: stripe webhook listener for checkout events.
     * `xbot`: X bot for twitter tasks verification.
     * `xcord`: discord bot to broadcast new twitter task defined by admin into a discord channel and role assginement based on user points.
@@ -211,7 +212,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
     <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
 </p>
 
-### 🖼️ [Conse Panel](https://github.com/wildonion/gem/tree/master/core/panel) Push Notif Architecture Diagram
+### 🖼️ Conse Panel Websocket Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
