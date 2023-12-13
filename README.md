@@ -241,7 +241,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 ```rust
 
-//----> route: /a/sexy/route/0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D/12/?from=0&to=10
+//----> route: /a/sexy/route/wildonion/0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D/12/?from=0&to=10
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct Limit{
@@ -249,13 +249,16 @@ pub struct Limit{
     pub to: Option<i64>
 }
 
-#[post("/a/sexy/route/{sexy-param}/{another-sexy-param-id}/")]
+async fn api()
+#[post("/a/sexy/route/{sexy-param}/{another-sexy-param-id}/?from=0&to=10")]
 async fn api(
-        req: HttpRequest, app_storage: 
-        storage: web::Data<Option<Arc<Storage>>>,
+        req: HttpRequest,  
+        app_storage: web::Data<Option<Arc<Storage>>>,
         req_body: web::Json<ReqBody>,
-        limit: web::Path<Limit>
+        limit: web::Path<Limit>,
         a_sexy_param: web::Path<(String, i32)>
+        stream: web::Payload,
+        payload: Multipart,
     ) -> PanelHttpResponse{
 
 
