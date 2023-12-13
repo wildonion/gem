@@ -13,6 +13,7 @@ use crate::*;
 use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
 use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::UpdateChatRoom;
 use crate::events::subscribers::handlers::actors::ws::sessions::sessionlp::WsLaunchpadSession;
+use crate::models::clp_events::ClpEvent;
 use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
@@ -162,11 +163,18 @@ async fn chatroomlp(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
+                    /* find a clp event with the passed in id */
+                    let get_clp_event = ClpEvent::find_by_id(chat_room, connection).await;
+                    let Ok(clp_event) = get_clp_event else{
+                        let err_resp = get_clp_event.unwrap_err();
+                        return err_resp;
+                    };
 
+                    
 
                     // TODO - 
-                    // find a chatroomlp inside clp_events with this id (chat_room)
                     // check that the user is already registered and paid for this chatroom already (users_clps)
+                    // use foreign keys of clp_events and users tables
                     // ...
 
 

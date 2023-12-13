@@ -55,5 +55,13 @@ pub struct ClpEvent{
 }
 
 impl ClpEvent{
-    
+
+    pub async fn find_by_id(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Self, PanelHttpResponse>{
+
+
+            todo!()
+        }
+
+
 }
