@@ -10,7 +10,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 - event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
 
-## 🚟 Infra Routes and APIs
+## 🚟 Infra Route and API Endpoints
 
 > Ensure that any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
 

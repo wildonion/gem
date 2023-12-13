@@ -207,6 +207,11 @@ pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
 pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
 
 
+pub static CLP_EVENT_NOT_REGISTERED_EVENT: &str = "User With This Screen Crypto Id Is Not Registered For This Event";
+pub static CLP_EVENT_HASNT_STARTED: &str = "Event Hasn't Started Yet";
+pub static CLP_EVENT_NO_FOUND_ANY: &str = "Found No User Clp Event Data";
+pub static CLP_EVENT_NO_FOUND: &str = "Found No User Clp With This Data";
+
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 
     u8 bits is 1 byte which is 2 chars in hex 

@@ -240,9 +240,6 @@ impl UserTask{
 
         let user = match users::table
             .filter(users::id.eq(doer_id))
-            .offset(from)
-            .limit((to - from) + 1)
-            .order(users::created_at.desc())
             .select(User::as_select())
             .get_result(connection)
             {
@@ -276,6 +273,8 @@ impl UserTask{
         /* get all found user tasks which are done already since users_tasks are done tasks by the user */
         match UserTask::belonging_to(&user)
             .inner_join(tasks::table)
+            .offset(from)
+            .limit((to - from) + 1)
             .select(Task::as_select())
             .order(tasks::created_at.desc())
             .load(connection)

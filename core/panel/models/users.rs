@@ -107,7 +107,7 @@ pub struct FetchUser{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ToSchema)]
 pub struct UserData{
     pub id: i32,
     pub region: Option<String>,

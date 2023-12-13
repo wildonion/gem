@@ -20,7 +20,7 @@ use crate::schema::clp_events;
     diesel migration redo                       ---> drop tables 
 
 */
-#[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
 #[diesel(table_name=clp_events)]
 pub struct ClpEvent{
     pub id: i32,
@@ -52,6 +52,28 @@ pub struct ClpEvent{
     pub contract_tx_hash: Option<String>,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+pub struct ClpEventData{
+    pub id: i32,
+    pub contract_address: String,
+    pub event_name: String,
+    pub symbol: String,
+    pub max_supply: i32,
+    pub mint_price: i64,
+    pub presale_mint_price: i64,
+    pub tokens_per_mint: i32,
+    pub start_at: i64,
+    pub expire_at: i64,
+    pub is_locked: bool,
+    pub owner_screen_cid: String,
+    pub event_background: String,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub event_description: String,
+    pub contract_tx_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 impl ClpEvent{

@@ -17,6 +17,7 @@ use crate::models::clp_events::ClpEvent;
 use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
+use crate::models::users_clps::UserClp;
 use crate::passport::Passport;
 use crate::resp;
 use crate::constants::*;
@@ -134,6 +135,26 @@ async fn chatroomlp(
                     let chat_room_str = string_to_static_str(format!("{}", chat_room));
                     let ws_chatroomlp_actor_address = ws_chatroomlp_actor_address.get_ref().to_owned();
 
+                    /* find a clp event with the passed in id */
+                    let get_clp_event = ClpEvent::find_by_id(chat_room, connection).await;
+                    let Ok(clp_event) = get_clp_event else{
+                        let err_resp = get_clp_event.unwrap_err();
+                        return err_resp;
+                    };
+
+                    // if the event hasn't started yet they must not be allowed to enter to start chat
+                    let now = chrono::Local::now().timestamp();
+                    if now < clp_event.start_at{
+
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            CLP_EVENT_NOT_REGISTERED_EVENT, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+
+                    }
                     
                     /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
                     /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
@@ -163,19 +184,41 @@ async fn chatroomlp(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    /* find a clp event with the passed in id */
-                    let get_clp_event = ClpEvent::find_by_id(chat_room, connection).await;
-                    let Ok(clp_event) = get_clp_event else{
-                        let err_resp = get_clp_event.unwrap_err();
+
+                    let get_users_in_this_event = UserClp::get_all_users_in_clp_event(chat_room, connection).await;
+                    let Ok(users) = get_users_in_this_event else{
+                        let err_resp = get_users_in_this_event.unwrap_err();
+                        return err_resp;
+                    };
+
+                    let get_all_users_clps = UserClp::get_all_users_clps(connection).await;
+                    let Ok(all_users_clps) = get_all_users_clps else{
+                        let err_resp = get_all_users_clps.unwrap_err();
                         return err_resp;
                     };
 
                     
+                    // if the user hasn't registered already we should reject his request
+                    if !users
+                        .into_iter()
+                        .any(|u| u.screen_cid.unwrap() == walletreq::evm::get_keccak256_from(user_cid.clone())) 
+                        
+                        ||
+                        
+                        !all_users_clps
+                            .into_iter()
+                            .any(|uclp| uclp.user_id == user.id)
+                        {
 
-                    // TODO - 
-                    // check that the user is already registered and paid for this chatroom already (users_clps)
-                    // use foreign keys of clp_events and users tables
-                    // ...
+                            resp!{
+                                &[u8], // the data type
+                                &[], // response data
+                                CLP_EVENT_HASNT_STARTED, // response message
+                                StatusCode::FORBIDDEN, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        }
 
 
                     /* 
@@ -231,6 +274,13 @@ async fn chatroomlp(
                         &req, 
                         stream
                     );
+
+                    // if anything went well we should update the joined_at field
+                    let update_joined_at = UserClp::update_joined_at(user.id, chat_room, connection).await;
+                    let Ok(updated_user_clp) = update_joined_at else{
+                        let err_resp = update_joined_at.unwrap_err();
+                        return err_resp;
+                    };
 
                     /* 
                         sending the ws connection response, we'll have either a successful 

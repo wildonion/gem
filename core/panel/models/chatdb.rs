@@ -36,6 +36,12 @@ impl UserChat{
             return Err(err_resp);
         };
 
+
+        type Roomate = String;
+        trait Event{
+            type Room: Clone + Send; // we can bound the Room GAT to traits in here
+        }
+
         // text is the decrypted and raw message
         // TODO - store text in chatdb by calling wasm methods
         // TODO - consider n.chat per user limit
