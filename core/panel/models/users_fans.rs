@@ -212,6 +212,7 @@ impl UserFan{
                         // update user_fan 
                         let _ = match diesel::update(users_fans.find((user_fan.id, user_fan.user_screen_cid)))
                             .set((
+                                /* store as a new json value in db */
                                 friends.eq(
                                     serde_json::to_value(decoded_friends_data).unwrap()
                                 ), 

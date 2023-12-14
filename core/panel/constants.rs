@@ -209,8 +209,9 @@ pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
 
 pub static CLP_EVENT_NOT_REGISTERED_EVENT: &str = "User With This Screen Crypto Id Is Not Registered For This Event";
 pub static CLP_EVENT_HASNT_STARTED: &str = "Event Hasn't Started Yet";
-pub static CLP_EVENT_NO_FOUND_ANY: &str = "Found No User Clp Event Data";
-pub static CLP_EVENT_NO_FOUND: &str = "Found No User Clp With This Data";
+pub static USER_CLP_EVENT_NOT_FOUND_ANY: &str = "Found No User Clp Event Data";
+pub static USER_CLP_EVENT_NOT_FOUND: &str = "Found No User Clp With This Data";
+pub static CLP_EVENT_NOT_FOUND: &str = "Found No Clp Event With This Id";
 
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 

@@ -25,7 +25,7 @@ pub struct UserChat;
 impl UserChat{
     
     pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
-        //--- connection is the one which has been initialized once in server.rs 
+        //--- connection must be initialized once in server.rs and will be passed to different scopes
         //--- and passed through the routers' threads as a shared state data 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserChat, PanelHttpResponse>{
@@ -39,7 +39,7 @@ impl UserChat{
 
         type Roomate = String;
         trait Event{
-            type Room: Clone + Send; // we can bound the Room GAT to traits in here
+            type Room: ?Sized + Default + Clone + Send + Sync + 'static; // we can bound the Room GAT to traits in here
         }
 
         // text is the decrypted and raw message

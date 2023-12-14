@@ -120,7 +120,7 @@ impl PanelError{
         err
     }
 
-    pub async fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that is satisfied the Write trait */
+    pub async fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that has satisfied the Write trait */
         
         let this = self;
         let Self { code, msg, kind, method_name } = this;

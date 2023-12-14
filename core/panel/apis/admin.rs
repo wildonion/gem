@@ -10,6 +10,7 @@ use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() o
 use mongodb::bson::oid::ObjectId;
 use crate::*;
 use crate::events::publishers::role::{PlayerRoleInfo, Reveal};
+use crate::models::clp_events::ClpEvent;
 use crate::models::users_checkouts::{UserCheckout, UserCheckoutData};
 use crate::models::users_deposits::{UserDeposit, UserDepositData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -2293,6 +2294,122 @@ async fn get_all_users_checkouts(
                         }
                     }
                     
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/clp/get/{clpevent_id}")]
+#[passport(admin)]
+async fn get_clp_event(
+    req: HttpRequest,
+    clp_event_id: web::Path<i32>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection){
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    match ClpEvent::find_by_id(clp_event_id.to_owned(), connection).await{
+                        Ok(clp_event_info) => {
+
+                            resp!{
+                                ClpEvent, // the data type
+                                clp_event_info, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+
+                        },
+                        Err(resp) => {
+                            /* 
+                                🥝 response can be one of the following:
+                                
+                                - DIESEL INSERT ERROR RESPONSE
+                            */
+                            resp
+                        }
+                    }
+                    
                     
                 },
                 Err(resp) => {
@@ -2346,6 +2463,7 @@ pub mod exports{
     pub use super::update_clp_event;
     */
     // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
+    pub use super::get_clp_event;
     pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server
     pub use super::login;
     pub use super::register_new_user;

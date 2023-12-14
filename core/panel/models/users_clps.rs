@@ -1,20 +1,20 @@
 
 
 
-
-
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::web::Query;
 use chrono::NaiveDateTime;
 use crate::adapters::nftport;
-use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NO_FOUND_ANY, CLP_EVENT_NO_FOUND};
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, USER_CLP_EVENT_NOT_FOUND_ANY, USER_CLP_EVENT_NOT_FOUND};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::clp_events::ClpEventData;
-use super::users::{User, UserData};
+use super::users::{User, UserData, UserRole};
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
 use super::users_nfts::UserNftData;
 use crate::schema::users_clps::dsl::*;
+use crate::schema::clp_events::dsl::*;
+use crate::schema::users::dsl::*;
 use crate::schema::{users_clps, clp_events, users};
 use crate::models::clp_events::ClpEvent;
 
@@ -62,7 +62,7 @@ impl UserClp{
         let Ok(all_users_clps) = users_clps_ else{
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: CLP_EVENT_NO_FOUND_ANY,
+                message: USER_CLP_EVENT_NOT_FOUND_ANY,
                 status: 404,
                 is_error: true
             };
@@ -134,7 +134,7 @@ impl UserClp{
         let Ok(user) = single_user_clp else{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
-                message: CLP_EVENT_NO_FOUND,
+                message: USER_CLP_EVENT_NOT_FOUND,
                 status: 404,
                 is_error: true,
             };
@@ -195,28 +195,154 @@ impl UserClp{
     pub async fn get_all_users_and_their_events(limit: Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<ClpEventsPerUser>, PanelHttpResponse>{
 
-            /* 
+            let from = limit.from.unwrap_or(0);
+            let to = limit.to.unwrap_or(10);
+
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+            }
+
+            match users::table
+                .order(users::created_at.desc())
+                .offset(from)
+                .limit((to - from) + 1)
+                .load::<User>(connection)
+            {
+                Ok(all_users) => {
+
+                    match UserClp::belonging_to(&all_users)
+                        .inner_join(clp_events::table)
+                        .select((UserClp::as_select(), ClpEventData::as_select()))
+                        .offset(from)
+                        .limit((to - from) + 1)
+                        .order(users_clps::registered_at.desc())
+                        .load(connection)
+                    {
+                        Ok(all_users_events) => {
+                            
+                            let events_per_user: Vec<ClpEventsPerUser> = all_users_events
+                                .grouped_by(&all_users)
+                                .into_iter()
+                                .zip(all_users)
+                                .map(|(clpevts, user)|{
+                                    ClpEventsPerUser{
+                                        user: UserData{
+                                            id: user.id, 
+                                            region: user.region.clone(),
+                                            username: user.username, 
+                                            bio: user.bio.clone(),
+                                            avatar: user.avatar.clone(),
+                                            banner: user.banner.clone(),
+                                            wallet_background: user.wallet_background.clone(),
+                                            activity_code: user.activity_code,
+                                            twitter_username: user.twitter_username, 
+                                            facebook_username: user.facebook_username, 
+                                            discord_username: user.discord_username, 
+                                            identifier: user.identifier, 
+                                            user_role: {
+                                                match user.user_role.clone(){
+                                                    UserRole::Admin => "Admin".to_string(),
+                                                    UserRole::User => "User".to_string(),
+                                                    _ => "Dev".to_string(),
+                                                }
+                                            },
+                                            token_time: user.token_time,
+                                            balance: user.balance,
+                                            last_login: { 
+                                                if user.last_login.is_some(){
+                                                    Some(user.last_login.unwrap().to_string())
+                                                } else{
+                                                    Some("".to_string())
+                                                }
+                                            },
+                                            created_at: user.created_at.to_string(),
+                                            updated_at: user.updated_at.to_string(),
+                                            mail: user.mail,
+                                            google_id: user.google_id,
+                                            microsoft_id: user.microsoft_id,
+                                            is_mail_verified: user.is_mail_verified,
+                                            is_phone_verified: user.is_phone_verified,
+                                            phone_number: user.phone_number,
+                                            paypal_id: user.paypal_id,
+                                            account_number: user.account_number,
+                                            device_id: user.device_id,
+                                            social_id: user.social_id,
+                                            cid: user.cid,
+                                            screen_cid: user.screen_cid,
+                                            snowflake_id: user.snowflake_id,
+                                            stars: user.stars,
+                                            extra: user.extra,
+                                        },
+                                        clp_events: {
+                                            clpevts
+                                                .into_iter()
+                                                .map(|(uclpevt, clpevt)| clpevt)
+                                                .collect::<Vec<ClpEventData>>()
+                                        },
+                                    }
+                                })  
+                                .collect();
+
+                            Ok(events_per_user)
+
+                        },
+                        Err(e) => {
             
-                let all_authors = authors::table
-                    .select(Author::as_select())
-                    .load(conn)?;
+                            let resp_err = &e.to_string();
+            
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                            let error_content = &e.to_string();
+                            let error_content = error_content.as_bytes().to_vec();  
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserClp::get_all_users_and_their_events");
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+        
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: resp_err,
+                                status: 500,
+                                is_error: true
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+                        }
+                    }
 
-                let books = BookAuthor::belonging_to(&authors)
-                    .inner_join(books::table)
-                    .select((BookAuthor::as_select(), Book::as_select()))
-                    .load(conn)?;
+                    
+                },
+                Err(e) => {
 
-                let books_per_author: Vec<(Author, Vec<Book>)> = books
-                    .grouped_by(&all_authors)
-                    .into_iter()
-                    .zip(authors)
-                    .map(|(b, author)| (author, b.into_iter().map(|(_, book)| book).collect()))
-                    .collect();
+                    let resp_err = &e.to_string();
 
-                println!("All authors including their books: {books_per_author:?}");
-            */
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserClp::get_all_users_and_their_events");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
-            todo!()
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
 
     }
 
@@ -224,8 +350,61 @@ impl UserClp{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<ClpEventData>, PanelHttpResponse>{
 
+            let from = limit.from.unwrap_or(0);
+            let to = limit.to.unwrap_or(10);
 
-        todo!()
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+            }
+
+            let get_user = User::find_by_id(participant_id, connection).await;
+            let Ok(user) = get_user else{
+                let err_resp = get_user.unwrap_err();
+                return Err(err_resp);
+            };
+    
+            // trying to get all events for the found user
+            match UserClp::belonging_to(&user)
+                .inner_join(clp_events::table)
+                .select(ClpEventData::as_select())
+                .offset(from)
+                .limit((to - from) + 1)
+                .order(users_clps::registered_at.desc())
+                .load(connection)
+            {
+                Ok(events_for_this_user) => Ok(events_for_this_user),
+                Err(e) => {
+    
+                    let resp_err = &e.to_string();
+    
+    
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                         
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserClp::get_all_user_events");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+                }
+            }
 
     }
 
