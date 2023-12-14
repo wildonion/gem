@@ -30,68 +30,6 @@ use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 
-/*
-     -------------------------------
-    |          SWAGGER DOC
-    | ------------------------------
-    |
-    |
-
-*/
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        reveal_role,   
-        login,
-        register_new_user,
-        register_new_task, 
-        delete_task,
-        edit_task,
-        edit_user,
-        delete_user,
-        get_users,
-        get_admin_tasks,
-        get_users_tasks,
-        add_twitter_account,
-        get_all_users_withdrawals,
-        get_all_users_deposits
-    ),
-    components(
-        schemas(
-            Keys,
-            TwitterAccounts,
-            UserTaskData,
-            UserData,
-            TaskData,
-            LoginInfoRequest,
-            NewUserInfoRequest,
-            EditUserByAdminRequest,
-            NewTaskRequest,
-            EditTaskRequest,
-            UserDepositData,
-            UserWithdrawalData
-        )
-    ),
-    tags(
-        (name = "crate::apis::admin", description = "Admin Endpoints")
-    ),
-    info(
-        title = "Admin Access APIs"
-    ),
-    modifiers(&SecurityAddon),
-)]
-pub struct AdminApiDoc;
-struct SecurityAddon;
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "jwt",
-            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-        )
-    }
-}
-
 
 /*
      ------------------------
@@ -101,22 +39,6 @@ impl Modify for SecurityAddon {
     |
 
 */
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=201, description="Created Successfully", body=[u8]),
-        (status=403, description="Invalid Token", body=[u8]),
-        (status=403, description="No Authorization Header Is Provided", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("event_id" = String, Path, description = "event id")
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/notif/register/reveal-role/{event_id}")]
 async fn reveal_role(
         req: HttpRequest, 
@@ -405,18 +327,6 @@ async fn update_rendezvous_event_img(
 
 } 
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = LoginInfoRequest,
-    responses(
-        (status=200, description="Loggedin Successfully", body=UserData),
-        (status=403, description="Wrong Password", body=String),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=500, description="Storage Issue", body=[u8]),
-        (status=403, description="Access Denied", body=String), // access denied by wallet
-    ),
-    tag = "crate::apis::admin",
-)]
 /* 
     >-------------------------------------------------------------------------
     There are access and refresh tokens in cookie response in form of 
@@ -525,27 +435,6 @@ async fn login(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = NewUserInfoRequest,
-    responses(
-        (status=201, description="Created Successfully", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/register-new-user")]
 #[passport(admin)]
 async fn register_new_user(
@@ -671,27 +560,6 @@ async fn register_new_user(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = EditUserByAdminRequest,
-    responses(
-        (status=200, description="Updated Successfully", body=[UserData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/edit-user")]
 #[passport(admin)]
 async fn edit_user(
@@ -805,29 +673,6 @@ async fn edit_user(
     }
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=200, description="Deleted Successfully", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("user_id" = i32, Path, description = "user id")
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/delete-user/{user_id}")]
 #[passport(admin)]
 async fn delete_user(
@@ -951,26 +796,6 @@ async fn delete_user(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=200, description="Fetched Successfully", body=[UserData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/get-users/")]
 #[passport(admin)]
 async fn get_users(
@@ -1077,28 +902,6 @@ async fn get_users(
     }         
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = NewTaskRequest,
-    responses(
-        (status=201, description="Created Successfully", body=[TaskData]),
-        (status=302, description="Task Has Already Been Registered", body=[TaskData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/register-new-task")]
 #[passport(admin)]
 async fn register_new_task(
@@ -1223,30 +1026,6 @@ async fn register_new_task(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=200, description="Deleted Successfully", body=[u8]),
-        (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("job_id" = i32, Path, description = "task id")
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/delete-task/{job_id}")]
 #[passport(admin)]
 async fn delete_task(
@@ -1378,28 +1157,6 @@ async fn delete_task(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = EditTaskRequest,
-    responses(
-        (status=200, description="Updated Successfully", body=[TaskData]),
-        (status=404, description="Task Not Found", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/edit-task")]
 #[passport(admin)]
 async fn edit_task(
@@ -1509,29 +1266,6 @@ async fn edit_task(
     }
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=200, description="Fetched Successfully", body=[TaskData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("owner_id" = i32, Path, description = "task owner id")
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/get-admin-tasks/{owner_id}/")]
 #[passport(admin)]
 async fn get_admin_tasks(
@@ -1643,26 +1377,6 @@ async fn get_admin_tasks(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=200, description="Fetched Successfully", body=[UserTaskData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/get-users-tasks/")]
 #[passport(admin)]
 async fn get_users_tasks(
@@ -1772,27 +1486,6 @@ async fn get_users_tasks(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    request_body = Keys,
-    responses(
-        (status=200, description="Updated Successfully", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/add-twitter-account")]
 #[passport(admin)]
 async fn add_twitter_account(
@@ -1957,18 +1650,6 @@ async fn add_twitter_account(
 
 }
 
-
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/deposit/get/")]
 #[passport(admin)]
 async fn get_all_users_deposits(
@@ -2086,17 +1767,6 @@ async fn get_all_users_deposits(
 
 }
 
-#[utoipa::path(
-    context_path = "/admin",
-    responses(
-        (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    tag = "crate::apis::admin",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/withdraw/get/")]
 #[passport(admin)]
 async fn get_all_users_withdrawals(

@@ -41,68 +41,6 @@ use crate::adapters::nftport::*;
 
 
 
-/*
-     -------------------------------
-    |          SWAGGER DOCS
-    | ------------------------------
-    |
-    |
-
-*/
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        login,
-        login_with_identifier_and_password,
-        verify_twitter_account,
-        tasks_report,
-        make_cid,
-        withdraw,
-        deposit,
-        get_all_user_withdrawals,
-        get_all_user_deposits,
-        get_recipient_unclaimed_deposits,
-        request_mail_code,
-        verify_mail_code,
-        request_phone_code,
-        verify_phone_code,
-    ),
-    components(
-        schemas(
-            UserData,
-            FetchUserTaskReport,
-            UserLoginInfoRequest,
-            TaskData,
-            ReportTaskData,
-            UserDepositData,
-            UserWithdrawalData,
-            CheckUserMailVerificationRequest,
-            CheckUserPhoneVerificationRequest,
-            NewUserDepositRequest,
-            NewIdRequest,
-            UserIdResponse,
-            ChargeWalletRequest
-        )
-    ),
-    tags(
-        (name = "crate::apis::user", description = "User Endpoints")
-    ),
-    info(
-        title = "User Access APIs"
-    ),
-    modifiers(&SecurityAddon),
-)]
-pub struct UserApiDoc;
-struct SecurityAddon;
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "jwt",
-            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-        )
-    }
-}
 
 /*
      ------------------------
@@ -112,19 +50,7 @@ impl Modify for SecurityAddon {
     |
 
 */
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=200, description="Loggedin Successfully", body=UserData),
-        (status=201, description="Registered Successfully", body=UserData),
-        (status=500, description="Can't Generate Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("identifier" = String, Path, description = "login identifier")
-    ),
-    tag = "crate::apis::user",
-)]
+
 /* 
     >-------------------------------------------------------------------------
     There are access and refresh tokens in cookie response in form of 
@@ -214,17 +140,6 @@ async fn login(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=200, description="Verification Code Sent Successfully", body=UserData),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("mail" = String, Path, description = "user mail")
-    ),
-    tag = "crate::apis::user",
-)]
 #[post("/request-mail-code/{mail}")]
 #[passport(user)]
 async fn request_mail_code(
@@ -389,15 +304,6 @@ async fn request_mail_code(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = CheckUserMailVerificationRequest,
-    responses(
-        (status=200, description="Mail Verified Successfully", body=UserData),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::user",
-)]
 #[post("/verify-mail-code")]
 #[passport(user)]
 async fn verify_mail_code(
@@ -518,17 +424,6 @@ async fn verify_mail_code(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=200, description="Verification Code Sent Successfully", body=UserData),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("phone" = String, Path, description = "user phone")
-    ),
-    tag = "crate::apis::user",
-)]
 #[post("/request-phone-code/{phone}")]
 #[passport(user)]
 async fn request_phone_code(
@@ -728,15 +623,6 @@ async fn request_phone_code(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = CheckUserPhoneVerificationRequest,
-    responses(
-        (status=200, description="Phone Verified Successfully", body=UserData),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::user",
-)]
 #[post("/verify-phone-code")]
 #[passport(user)]
 async fn verify_phone_code(
@@ -856,18 +742,6 @@ async fn verify_phone_code(
 
 
 }
-
-#[utoipa::path(
-    context_path = "/user",
-    request_body = UserLoginInfoRequest,
-    responses(
-        (status=200, description="Loggedin Successfully", body=UserData),
-        (status=201, description="Registered Successfully", body=UserData),
-        (status=500, description="Can't Generate Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::user",
-)]
 
 /* 
     >-------------------------------------------------------------------------
@@ -1053,30 +927,6 @@ async fn login_with_microsoft(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=200, description="Updated Successfully", body=UserData),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="User Not Found", body=String), // not found by identifier
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("account_name" = String, Path, description = "twitter account")
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/verify-twitter-account/{account_name}")]
 #[passport(user)]
 async fn verify_twitter_account(
@@ -1231,30 +1081,6 @@ async fn verify_twitter_account(
     }
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=200, description="Fetched Successfully", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("user_id" = i32, Path, description = "user id"),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/report-tasks/{user_id}/")]
 #[passport(user)]
 pub async fn tasks_report(
@@ -1695,19 +1521,6 @@ async fn charge_wallet_request(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = NewIdRequest,
-    responses(
-        (status=201, description="Built Successfully", body=UserIdResponse),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/cid/build")]
 #[passport(user)]
 async fn make_cid(
@@ -1955,20 +1768,6 @@ async fn make_cid(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = NewUserDepositRequest,
-    responses(
-        (status=201, description="Deposited Successfully", body=UserDepositData),
-        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
-        (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/deposit/to/{contract_address}")]
 #[passport(user)]
 async fn deposit(
@@ -2264,20 +2063,6 @@ async fn deposit(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=201, description="Fetched Successfully", body=Vec<UserDepositData>),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    params(
-        ("cid" = String, Path, description = "user cid"),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/deposit/get/all/")]
 #[passport(user)]
 async fn get_all_user_deposits(
@@ -2407,22 +2192,6 @@ async fn get_all_user_deposits(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    request_body = NewUserWithdrawRequest,
-    responses(
-        (status=201, description="Withdrawn Successfully", body=UserWithdrawalData),
-        (status=429, description="Rate Limited, Chill 30 Seconds", body=&[u8]),
-        (status=406, description="Not Acceptable Errors (Invalid Signatures, CID, Data and ...)", body=&[u8]),
-        (status=404, description="Deposit Object Not Found", body=i32),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-        (status=302, description="Already Withdrawn", body=&[u8]),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/withdraw/from/{contract_address}")]
 #[passport(user)]
 async fn withdraw(
@@ -2683,20 +2452,6 @@ async fn withdraw(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=201, description="Fetched Successfully", body=Vec<UserWithdrawalData>),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    params(
-        ("cid" = String, Path, description = "user cid"),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/withdraw/get/all/")]
 #[passport(user)]
 async fn get_all_user_withdrawals(
@@ -3081,20 +2836,6 @@ async fn get_all_user_paid_checkouts(
 
 }
 
-#[utoipa::path(
-    context_path = "/user",
-    responses(
-        (status=201, description="Fetched Successfully", body=Vec<UserWithdrawalData>),
-        (status=500, description="Internal Server Erros  Caused By Diesel or Redis", body=&[u8]),
-    ),
-    params(
-        ("cid" = String, Path, description = "user cid"),
-    ),
-    tag = "crate::apis::user",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/deposit/get/all/unclaimed/")]
 #[passport(user)]
 async fn get_recipient_unclaimed_deposits(

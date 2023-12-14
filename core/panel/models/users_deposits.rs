@@ -35,7 +35,7 @@ pub struct UserDeposit { /* note that the ordering of fields must be the same as
     pub iat: chrono::NaiveDateTime
 }
 
-#[derive(Insertable, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Insertable, Clone, Debug, PartialEq)]
 #[diesel(table_name=users_deposits)]
 pub struct NewUserDeposit{
     pub from_cid: String,
@@ -48,7 +48,7 @@ pub struct NewUserDeposit{
     pub tx_signature: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct NewUserDepositRequest{
     pub from_cid: String,
     pub recipient: String, // useranem, mail
@@ -60,7 +60,7 @@ pub struct NewUserDepositRequest{
     pub hash_data: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct UserDepositData{
     pub id: i32,
     pub from_cid: String,

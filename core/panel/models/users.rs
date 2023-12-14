@@ -107,7 +107,7 @@ pub struct FetchUser{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct UserData{
     pub id: i32,
     pub region: Option<String>,
@@ -157,7 +157,7 @@ pub struct UserWalletInfoResponse{
     pub created_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserIdResponse{
     pub id: i32,
     pub region: String,
@@ -196,7 +196,7 @@ pub struct UserIdResponse{
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UserChatRoomLaunchpadRequest{
     pub user_cid: String,
     pub chatroomlp_id: i32,
@@ -204,12 +204,12 @@ pub struct UserChatRoomLaunchpadRequest{
     pub hash_data: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UpdateBioRequest{
     pub bio: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UpdateExtraRequest{
     /* 
         it can be any type of object cause we don't know the structure 
@@ -218,13 +218,13 @@ pub struct UpdateExtraRequest{
     pub extra: serde_json::Value, 
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NewIdRequest{
     pub username: String,
     pub device_id: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ChargeWalletRequest{
     pub user_id: i32,
     pub buyer_cid: String,
@@ -256,7 +256,7 @@ pub struct UserLoginWithMicrosoftRequest{
     pub musername: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Id{
     pub region: String,
     pub user_id: i32,
@@ -269,31 +269,31 @@ pub struct Id{
     pub mnemonic: Option<String>, /* mnemonic */
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CheckUserMailVerificationRequest{
     pub user_mail: String,
     pub verification_code: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CheckUserPhoneVerificationRequest{
     pub user_phone: String,
     pub verification_code: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct LoginInfoRequest{
     pub username: String,
     pub password: String
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UserLoginInfoRequest{
     pub identifier: String,
     pub password: String
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[derive(diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::Userrole"]
 pub enum UserRole{
@@ -333,7 +333,7 @@ pub struct JWTClaims{
     pub iat: i64, // issued timestamp
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NewUserInfoRequest{
     pub username: String,
     pub identifier: String,
@@ -341,7 +341,7 @@ pub struct NewUserInfoRequest{
     pub password: String
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EditUserByAdminRequest{
     pub user_id: i32,
     pub role: String,

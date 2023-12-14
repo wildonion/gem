@@ -175,31 +175,6 @@ macro_rules! server {
                         actix_web::web::scope("/public")
                             .configure(services::init_public)
                     )
-                    /*
-                        INIT SWAGGER UI SERIVES
-                    */
-                    .service(SwaggerUi::new("/swagger/{_:.*}").urls(vec![
-                        (
-                            Url::new("admin", "/api-docs/admin.json"),
-                            apis::admin::AdminApiDoc::openapi(),
-                        ),
-                        (
-                            Url::new("dev", "/api-docs/dev.json"),
-                            apis::dev::DevApiDoc::openapi(),
-                        ),
-                        (
-                            Url::new("user", "/api-docs/user.json"),
-                            apis::user::UserApiDoc::openapi(),
-                        ),
-                        (
-                            Url::new("health", "/api-docs/health.json"),
-                            apis::health::HealthApiDoc::openapi(),
-                        ),
-                        (
-                            Url::new("public", "/api-docs/public.json"),
-                            apis::public::PublicApiDoc::openapi(),
-                        )
-                    ]))
                 }) 
                 .listen($tcp_listener){
                     Ok(server) => {

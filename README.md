@@ -244,7 +244,7 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 //----> route: /a/sexy/route/wildonion/0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D/12/?from=0&to=10
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Limit{
     pub from: Option<i64>,
     pub to: Option<i64>

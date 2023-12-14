@@ -16,48 +16,6 @@ use crate::models::{tasks::*, users_tasks::*};
 
 
 
-/*
-     -------------------------------
-    |          SWAGGER DOCS
-    | ------------------------------
-    |
-    |
-
-*/
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        index,
-        check_token,
-        get_tasks,
-        logout,
-    ),
-    components(
-        schemas(
-            UserData,
-            Health,
-            TaskData
-        )
-    ),
-    tags(
-        (name = "crate::apis::health", description = "Tasks Verification Endpoints")
-    ),
-    info(
-        title = "Health Access APIs"
-    ),
-    modifiers(&SecurityAddon),
-)]
-pub struct HealthApiDoc;
-struct SecurityAddon;
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "jwt",
-            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-        )
-    }
-}
 
 /*
      ------------------------
@@ -67,7 +25,7 @@ impl Modify for SecurityAddon {
     |
 
 */
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Health{
     pub status: String,
 }
@@ -81,13 +39,6 @@ pub struct Health{
     |
 
 */
-#[utoipa::path(
-    context_path = "/health",
-    responses(
-        (status=200, description="I'm Alive", body=Health),
-    ),
-    tag = "crate::apis::health",
-)]
 #[get("/check-server")]
 #[passport(admin, user, dev)]
 async fn index(
@@ -109,26 +60,6 @@ async fn index(
 
 }
 
-#[utoipa::path(
-    context_path = "/health",
-    responses(
-        (status=200, description="Fetched Successfully", body=UserData),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::health",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/check-token")]
 #[passport(admin, user, dev)]
 async fn check_token(
@@ -290,26 +221,6 @@ async fn check_token(
 
 }
 
-#[utoipa::path(
-    context_path = "/health",
-    responses(
-        (status=200, description="Loggedout Successfully", body=UserData),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::health",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[post("/logout")]
 #[passport(admin, user, dev)]
 async fn logout(
@@ -427,26 +338,6 @@ async fn logout(
 
 }
 
-#[utoipa::path(
-    context_path = "/health",
-    responses(
-        (status=200, description="Fetched Successfully", body=[TaskData]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    tag = "crate::apis::health",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/get-tasks/")]
 #[passport(admin, user, dev)]
 async fn get_tasks(

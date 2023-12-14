@@ -60,7 +60,7 @@ pub struct XBotRateLimitInfo{
     pub rl_info: XRlInfo,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Keys{
     pub twitter_bearer_token: String,
     pub twitter_access_token: String,
@@ -71,7 +71,7 @@ pub struct Keys{
     pub twitter_api_secret: String
 }
 
-#[derive(Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TwitterAccounts{
     pub keys: Vec<Keys>
 }
@@ -193,30 +193,30 @@ pub struct Quote{
     pub USDIRR: f64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetTokenValueResponse{
     pub irr: i64,
     pub usd: i64
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GithubCommitWebhookEventRequest{
 
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Limit{
     pub from: Option<i64>,
     pub to: Option<i64>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct R1Keys{
     pub r1pubkey: String,
     pub r1signature: String
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Search{
     pub q: String,
     pub from: Option<i64>,

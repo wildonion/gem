@@ -43,7 +43,7 @@ pub struct Task{
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskData{
     pub id: i32,
     pub task_name: String,
@@ -59,7 +59,7 @@ pub struct TaskData{
     pub updated_at: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NewTaskRequest{
     pub task_name: String,
     pub task_description: String,
@@ -72,7 +72,7 @@ pub struct NewTaskRequest{
     pub admin_id: i32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EditTaskRequest{
     pub task_id: i32,
     pub task_name: String,

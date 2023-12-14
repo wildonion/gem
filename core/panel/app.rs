@@ -33,18 +33,6 @@ use std::{fs::OpenOptions, io::BufReader};
 use rand::Rng;
 use rand::random;
 use sha2::{Digest, Sha256};
-use utoipa::OpenApi;
-use utoipa::{ToSchema, IntoParams};
-use utoipa::{
-    openapi::security::{
-        ApiKey, 
-        ApiKeyValue, 
-        SecurityScheme
-    },
-};
-use utoipa::Modify;
-use utoipa::openapi::security::{Http, HttpAuthScheme};
-use utoipa_swagger_ui::{SwaggerUi, Url};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;

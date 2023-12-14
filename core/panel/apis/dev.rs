@@ -19,46 +19,7 @@ use crate::models::{
 };
 
 
-/*
-     -------------------------------
-    |          SWAGGER DOCS
-    | ------------------------------
-    |
-    |
 
-*/
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        get_admin_data,
-        get_user_data,
-    ),
-    components(
-        schemas(
-            UserData,
-            FetchUserTaskReport,
-            TaskData
-        )
-    ),
-    tags(
-        (name = "crate::apis::dev", description = "Dev Endpoints")
-    ),
-    info(
-        title = "Dev Access APIs"
-    ),
-    modifiers(&SecurityAddon),
-)]
-pub struct DevApiDoc;
-struct SecurityAddon;
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.as_mut().unwrap();
-        components.add_security_scheme(
-            "jwt",
-            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-        )
-    }
-}
 
 
 /*
@@ -69,22 +30,6 @@ impl Modify for SecurityAddon {
     |
 
 */
-#[utoipa::path(
-    context_path = "/dev",
-    responses(
-        (status=200, description="Fetched Successfully", body=[u8]),
-        (status=403, description="Invalid Token", body=[u8]),
-        (status=403, description="No Authorization Header Is Provided", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("admin_id" = String, Path, description = "admin id")
-    ),
-    tag = "crate::apis::dev",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/rendezvous/get/admin/{admin_id}/data/")]
 async fn get_admin_data(
         req: HttpRequest, 
@@ -236,22 +181,6 @@ async fn get_admin_data(
 
 }
 
-#[utoipa::path(
-    context_path = "/dev",
-    responses(
-        (status=200, description="Fetched Successfully", body=[u8]),
-        (status=403, description="Invalid Token", body=[u8]),
-        (status=403, description="No Authorization Header Is Provided", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("user_id" = String, Path, description = "user id")
-    ),
-    tag = "crate::apis::dev",
-    security(
-        ("jwt" = [])
-    )
-)]
 #[get("/rendezvous/get/user/{user_id}/data/")]
 async fn get_user_data(
         req: HttpRequest, 

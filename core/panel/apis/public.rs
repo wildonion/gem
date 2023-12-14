@@ -21,34 +21,6 @@ use crate::schema::tasks;
 
 
 
-/*
-     -------------------------------
-    |          SWAGGER DO
-    | ------------------------------
-    |
-    |
-
-*/
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        verify_twitter_task,
-    ),
-    components(
-        schemas(
-            UserData,
-            TaskData,
-            GetTokenValueResponse
-        )
-    ),
-    tags(
-        (name = "crate::apis::bot", description = "Tasks Verification Endpoints")
-    ),
-    info(
-        title = "Twitter Bot Tasks Verification APIs"
-    ),
-)]
-pub struct PublicApiDoc;
 
 /*
      ------------------------
@@ -78,35 +50,7 @@ pub struct PublicApiDoc;
 
 
 */
-#[utoipa::path(
-    context_path = "/bot",
-    responses(
-        (status=200, description="The User Task Has Already Been Inserted", body=[u8]),
-        (status=417, description="The User Task Has Been Deleted Before", body=[u8]),
-        (status=406, description="Task Couldn't Be Verified Successfully (Maybe User Has Been Deleted/Twitter Rate Limit Issue), Deleted Relevant User Task", body=[u8]),
-        (status=406, description="Not A Twitter Tasks", body=[u8]),
-        (status=406, description="Invalid Twitter Task Type", body=[u8]),
-        (status=200, description="Task Verified Successfully", body=[u8]),
-        (status=406, description="Task Can't Be Verified Successfully", body=[u8]),
-        (status=404, description="Task Not Found", body=i32), // not found by id
-        (status=403, description="Bot Is Busy", body=[u8]),
-        (status=404, description="User Not Found", body=i32), // not found by id
-        (status=404, description="No Value Found In Cookie Or JWT In Header", body=[u8]),
-        (status=403, description="JWT Not Found In Cookie", body=[u8]),
-        (status=406, description="No Time Hash Found In Cookie", body=[u8]),
-        (status=406, description="Invalid Cookie Format", body=[u8]),
-        (status=403, description="Cookie Has Been Expired", body=[u8]),
-        (status=406, description="Invalid Cookie Time Hash", body=[u8]),
-        (status=403, description="Access Denied", body=i32),
-        (status=406, description="No Expiration Time Found In Cookie", body=[u8]),
-        (status=500, description="Storage Issue", body=[u8])
-    ),
-    params(
-        ("job_id" = i32, Path, description = "task id"),
-        ("doer_id" = i32, Path, description = "user id")
-    ),
-    tag = "crate::apis::bot",
-)]
+
 #[post("/bot/verify-user/{doer_id}/twitter-task/{job_id}")]
 async fn verify_twitter_task(
         req: HttpRequest,

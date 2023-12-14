@@ -6,12 +6,12 @@ use crate::{*, constants::{APP_NAME, THIRDPARTYAPI_ERROR_CODE}};
 
 /* stripe api adapter to decode incoming u8 bytes from stripe server */
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct StripeWebhookPayload{
 
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct StripeCreateProductResponse{
     pub id: Option<String>,
     pub object: Option<String>,
@@ -33,7 +33,7 @@ pub struct StripeCreateProductResponse{
     pub url: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct StripeCreateCheckoutSessionData{
     pub session_id: String,
     pub session_url: String,

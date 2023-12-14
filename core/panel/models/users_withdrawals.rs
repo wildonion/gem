@@ -32,7 +32,7 @@ pub struct UserWithdrawal { /* note that the ordering of fields must be the same
     pub wat: chrono::NaiveDateTime
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct NewUserWithdrawRequest{
     pub deposit_id: i32,
     pub recipient_cid: String,
@@ -40,7 +40,7 @@ pub struct NewUserWithdrawRequest{
     pub hash_data: String,
 }
 
-#[derive(Insertable, Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Insertable, Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[diesel(table_name=users_withdrawals)]
 pub struct NewUserWithdrawal{
     pub deposit_id: i32,
@@ -49,7 +49,7 @@ pub struct NewUserWithdrawal{
     pub tx_signature: String
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UserWithdrawalData{
     pub id: i32,
     pub deposit_id: i32,

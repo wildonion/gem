@@ -41,7 +41,7 @@ pub struct UserCheckout{
     pub iat: chrono::NaiveDateTime
 }
 
-#[derive(Insertable, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Insertable, Clone, Debug, PartialEq)]
 #[diesel(table_name=users_checkouts)]
 pub struct NewUserCheckout{
     pub user_cid: String,
@@ -58,7 +58,7 @@ pub struct NewUserCheckout{
     pub tx_signature: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct UserCheckoutData{
     pub id: i32,
     pub user_cid: String,

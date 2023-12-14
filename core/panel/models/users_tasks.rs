@@ -40,13 +40,13 @@ pub struct NewUserTask{
     pub user_id: i32
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FetchUserTaskReport{
     pub total_score: i32,
     pub done_tasks: Vec<ReportTaskData>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ReportTaskData{
     pub id: i32,
     pub task_name: String,
@@ -63,7 +63,7 @@ pub struct ReportTaskData{
     pub done_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserTaskData{
     pub user: UserData,
     pub tasks: Vec<Task>
