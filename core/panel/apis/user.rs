@@ -8989,7 +8989,7 @@ async fn register_clp_event(
 
                         // kyc with deposited amount
                         // user balance must be higher than the entry amount of the event
-                        // users_clps schema
+                        // update users_clps schema
                         // ...
                         
                         todo!()
