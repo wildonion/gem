@@ -6,7 +6,7 @@
 use actix::Addr;
 
 use crate::*;
-use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND};
+use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND, INVALID_GALLERY_PRICE};
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
@@ -113,8 +113,8 @@ pub struct AcceptInvitationRequest{
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct EnterPrivateGalleryRequest{
-    pub owner_cid: String, 
-    pub from_screen_cid: String, 
+    pub caller_cid: String, 
+    pub owner_screen_cid: String, 
     pub gal_id: i32,
     pub tx_signature: String,
     pub hash_data: String,
@@ -1346,11 +1346,12 @@ impl UserFan{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
 
-        let EnterPrivateGalleryRequest { owner_cid, from_screen_cid, gal_id, tx_signature, hash_data } 
+        let EnterPrivateGalleryRequest { caller_cid, owner_screen_cid, gal_id, tx_signature, hash_data } 
             = enter_private_gallery_request;
 
-        let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
-        let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
+        // caller
+        let caller_screen_cid = &walletreq::evm::get_keccak256_from(caller_cid.clone());
+        let get_user_fan = Self::get_user_fans_data_for(&caller_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
             return Err(resp_error);
@@ -1363,7 +1364,7 @@ impl UserFan{
             vec![]
         };
 
-        // update invited_friends with the owner_screen_cid
+        // update invited_friends with the caller_screen_cid
         let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
         let Ok(gallery) = get_gallery_data else{
             let resp_error = get_gallery_data.unwrap_err();
@@ -1383,10 +1384,22 @@ impl UserFan{
             }
         }
 
-        let user = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
+        if g_entry_price == 0{
+            let resp = Response{
+                data: Some(caller_screen_cid),
+                message: INVALID_GALLERY_PRICE,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::InternalServerError().json(resp))
+            );
+        }
+
+        let user = User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap();
         if user.screen_cid.is_none(){
             let resp = Response{
-                data: Some(owner_screen_cid),
+                data: Some(caller_screen_cid),
                 message: USER_SCREEN_CID_NOT_FOUND,
                 status: 406,
                 is_error: true
@@ -1409,7 +1422,7 @@ impl UserFan{
         'updateinvreqblock: for inv_req in &mut decoded_invitation_request_data{
 
             if inv_req.is_accepted == false && 
-                inv_req.from_screen_cid == from_screen_cid && 
+                inv_req.from_screen_cid == owner_screen_cid && 
                 inv_req.gallery_id == gal_id{
             
                 inv_req.is_accepted = true;
@@ -1442,7 +1455,10 @@ impl UserFan{
                 */
                 match UserPrivateGallery::update(&gallery.owner_screen_cid, 
                     UpdateUserPrivateGalleryRequest{
-                        owner_cid,
+                        owner_cid: {
+                            let user = User::find_by_screen_cid_none_async(&owner_screen_cid, connection);
+                            user.unwrap().cid.unwrap()
+                        },
                         collections: gallery.collections,
                         gal_name: gallery.gal_name,
                         gal_description: gallery.gal_description,

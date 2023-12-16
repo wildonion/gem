@@ -32,32 +32,31 @@ oauth2 = "4.4.2"
 async-std = "1.12.0"
 futures = "0.3"
 futures-util = "0.3"
-rayon = "1"
 tonic = "0.10.2"
 tokio = { version = "1", features = ["full"] }
-tokio-util = { version = "0.7.9", features = ["codec"] }
-tokio-rustls = "0.24"
-rustls = "0.21"
+tokio-util = { version = "0.7", features = ["codec"] }
+tokio-rustls = "0.25"
+rustls = "0.22"
 hyper = { version = "0.14", features = ["full"] }
 reqwest = { version = "0.11", features = ["json", "blocking", "stream", "multipart"] }
 actix-redis = "0.13.0"
 actix-session = { version = "0.8", features = ["redis-actor-session"] }
 actix = "0.13"
-actix-cors = "0.6.4"
+actix-cors = "0.6"
 actix-web = { version = "4", features = ["openssl"] }
 actix-multipart = "0.6"
-actix-web-actors = "4.2.0"
+actix-web-actors = "4.2"
 actix-broker = "0.4.3"
 diesel = { version = "2", features = ["postgres", "r2d2", "uuid", "chrono", "serde_json", "64-column-tables"] }
 diesel-derive-enum = { version = "2", features = ["postgres"] }
-redis = { version = "0.23", features = ["tokio-comp", "cluster-async", "json"] }
-redis-async = "0.16.1"
+redis = { version = "0.23.3", features = ["tokio-comp", "cluster-async", "json"] }
+redis-async = "0.16"
 mongodb = "2"
 uuid = { version = "1", features = ["serde", "v4"] }
-borsh = "1.1"
+borsh = "1"
 serde_json = "1"
 pretty_env_logger = "0.5"
-env_logger = "0.10.0"
+env_logger = "0.10"
 jsonwebtoken = "9"
 rs-snowflake = "*"
 rand = "0.8"
@@ -84,13 +83,13 @@ syn = { version = "*", features = ["full"] }
 quote = "*"
 proc-macro2 = "*"
 # -------------------------------------
-lettre = { version = "0.10", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
 serenity = "0.11.7"
 percentage = "0.1.0"
 prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
-spacetimedb-sdk = "0.7.3"
+spacetimedb-sdk = "0.8"
 sqlx = { version = "0.7", features = [ 
   "runtime-tokio-rustls",
   "postgres",

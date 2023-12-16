@@ -953,47 +953,70 @@ impl UserPrivateGallery{
         let SendInvitationRequest{ gal_id, gallery_owner_cid, to_screen_cid, tx_signature, hash_data } = 
             send_invitation_request;
 
-        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
-        let Ok(gallery_data) = get_gallery_data else{
-            let error_resp = get_gallery_data.unwrap_err();
-            return Err(error_resp);
+        let check_we_are_friend = UserFan::are_we_friends(
+            &gallery_owner_cid, 
+            &to_screen_cid, connection).await;
+        
+        let Ok(are_we_friend) = check_we_are_friend else{
+            let err_resp = check_we_are_friend.unwrap_err();
+            return Err(err_resp);
         };
+        
+        if are_we_friend{
 
-        let gallery_owner_screen_cid = walletreq::evm::get_keccak256_from(gallery_owner_cid);
-        if gallery_data.owner_screen_cid != gallery_owner_screen_cid{
+            let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+            let Ok(gallery_data) = get_gallery_data else{
+                let error_resp = get_gallery_data.unwrap_err();
+                return Err(error_resp);
+            };
+
+            let gallery_owner_screen_cid = walletreq::evm::get_keccak256_from(gallery_owner_cid);
+            if gallery_data.owner_screen_cid != gallery_owner_screen_cid{
+                
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: GALLERY_NOT_OWNED_BY,
+                    status: 403,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::Forbidden().json(resp))
+                )
+            }
+
             
+            let get_user = User::find_by_screen_cid(&gallery_owner_screen_cid.clone(), connection).await;
+            let Ok(user) = get_user else{
+
+                let resp_err = get_user.unwrap_err();
+                return Err(resp_err);
+            };
+
+
+            let invitation_request_data = InvitationRequestData{
+                from_screen_cid: gallery_owner_screen_cid,
+                requested_at: chrono::Local::now().timestamp(),
+                gallery_id: gal_id,
+                is_accepted: false,
+                username: user.username,
+                user_avatar: user.avatar,
+            };
+
+            /* note that gallery_owner_screen_cid and to_screen_cid must be each other's friends */
+            UserFan::push_invitation_request_for(&to_screen_cid, invitation_request_data, connection).await
+
+        } else{
+            let resp_msg = format!("{gallery_owner_cid:} Is Not A Friend Of {to_screen_cid:}");
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
-                message: GALLERY_NOT_OWNED_BY,
-                status: 403,
+                message: &resp_msg,
+                status: 406,
                 is_error: true
             };
             return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
+                Ok(HttpResponse::NotAcceptable().json(resp))
             )
         }
-
-        
-        let get_user = User::find_by_screen_cid(&gallery_owner_screen_cid.clone(), connection).await;
-        let Ok(user) = get_user else{
-
-            let resp_err = get_user.unwrap_err();
-            return Err(resp_err);
-        };
-
-
-        let invitation_request_data = InvitationRequestData{
-            from_screen_cid: gallery_owner_screen_cid,
-            requested_at: chrono::Local::now().timestamp(),
-            gallery_id: gal_id,
-            is_accepted: false,
-            username: user.username,
-            user_avatar: user.avatar,
-        };
-
-        /* note that gallery_owner_screen_cid and to_screen_cid must be each other's friends */
-        UserFan::push_invitation_request_for(&to_screen_cid, invitation_request_data, connection).await
-
 
     }
 

@@ -26,9 +26,10 @@ impl Actor for UserActionActor{
     
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Self::Context) {
+    fn started(&mut self, ctx: &mut Self::Context){
         
     }
+    
 }
 
 

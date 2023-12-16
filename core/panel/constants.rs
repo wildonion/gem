@@ -4,12 +4,21 @@
 
 use futures::executor::block_on;
 use s3req::Storage;
-
+use config::{Env, Context};
+use config::EnvExt;
 use crate::*;
 
 pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
+
+pub static CONFIG: Lazy<std::sync::Arc<Context<Env>>> = Lazy::new(||{
+
+    let env = Env::default();
+    let ctx_env = env.get_vars();
+    std::sync::Arc::new(ctx_env)
+
+});
 
 pub static STORAGE: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
@@ -109,6 +118,7 @@ pub static INSUFFICIENT_FUNDS: &str = "Insufficient Balance";
 pub static RECIPIENT_NOT_FOUND: &str = "No Recipient Found With This Identifier";
 pub static RECIPIENT_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypto Id Found For This Recipient";
 pub static USER_SCREEN_CID_NOT_FOUND: &str = "No Screen Crypto Id Found For This User";
+pub static INVALID_GALLERY_PRICE: &str = "Gallery Has No Price Yet";
 pub static CALLER_IS_NOT_THE_OWNER: &str = "Caller Of This Method Is Not The Owner Of Crypto Id, Perhaps You Should Use Correct JWT";
 pub static SENDER_CANT_BE_RECEIVER: &str = "Sender Can't Be The Recipient";
 pub static USERNAME_CANT_BE_EMPTY: &str = "Username Can't Be Empty";

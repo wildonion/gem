@@ -4,7 +4,7 @@
 
 
 
-
+use redis::AsyncCommands;
 use actix_web::HttpMessage;
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
 use mongodb::bson::oid::ObjectId;

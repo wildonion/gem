@@ -5138,7 +5138,7 @@ async fn enter_private_gallery(
                     */
                     let is_request_verified = kyced::verify_request(
                         _id, 
-                        &enter_private_gallery_request.owner_cid, 
+                        &enter_private_gallery_request.caller_cid, 
                         &enter_private_gallery_request.tx_signature, 
                         &enter_private_gallery_request.hash_data, 
                         None, /* no need to charge the user for this call */

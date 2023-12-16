@@ -3165,7 +3165,7 @@ impl User{
                 );
             };
 
-            let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
+            let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
             match diesel::update(users.find(user.id))
                 .set(
                     (
@@ -3616,7 +3616,7 @@ impl User{
                 );
             };
 
-            let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
+            let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
             match diesel::update(users.find(user.id))
                 .set(
                     (
@@ -4179,7 +4179,7 @@ impl Id{
             make_cid api again to build it until we hit the jackpot!
         */
 
-        let new_balance = if user.balance.is_none(){1} else{user.balance.unwrap() + 1};
+        let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
         match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
 
             Ok(updated_user_data) => {
