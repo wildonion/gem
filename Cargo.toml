@@ -77,12 +77,9 @@ once_cell = "1"
 sysinfo = "0.29"
 tokio-cron-scheduler = "0.9.4"
 openssl = { version = "0.10", features = ["v110"] }
-# -------------------------------------
-# ---- proc macro butter and bread ----
 syn = { version = "*", features = ["full"] }
 quote = "*"
 proc-macro2 = "*"
-# -------------------------------------
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "hostname", "builder"] }
 serenity = "0.11.7"
 percentage = "0.1.0"

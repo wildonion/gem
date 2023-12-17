@@ -179,10 +179,14 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
 
 
 #[proc_macro]
-pub fn fn_like_proc_macro(input: TokenStream) -> TokenStream {
+pub fn passport_proc(input: TokenStream) -> TokenStream {
 
     // ex:
-    // #[macro_name]
+    // #[passport_proc]
+    // #[passport_proc(access=all)]
+    // #[passport_proc(access=user)]
+    // #[passport_proc(access=admin)]
+    // #[passport_proc(access=dev)]
     // fn im_a_method(){}
     
     input
@@ -197,9 +201,9 @@ pub fn derive_proc_macro(input: TokenStream) -> TokenStream {
     // struct SexyStruct{}
     
     // this will be implemented in here for the struct inside input token stream
-    // so later on we can call the method on the struct once we've implemented the
+    // so later on we can call the method on the struct once we implement the
     // method for the struct in here.
-    // SexyStruct::passport() 
+    // SexyStruct::passport() // like checking jwt in request object
 
     input
 

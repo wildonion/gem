@@ -181,8 +181,8 @@ impl Actor for ChatRoomLaunchpadServer{
             > note that once server actor gets subscribed to these messages all the logs
             inside each message handler will be shown and sent to the client
         */
-        self.subscribe_system_async::<Join>(ctx);
-        // self.subscribe_system_async::<NotifySessionsWithNewMessage>(ctx);
+        self.subscribe_system_async::<Join>(ctx); // subscribe to Join message
+        // self.subscribe_system_async::<NotifySessionsWithNewMessage>(ctx); // subscribe to NotifySessionsWithNewMessage message
 
     }
 

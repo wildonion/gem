@@ -1384,6 +1384,7 @@ impl UserFan{
             }
         }
 
+        // gallery must have price for this api perhaps is not of type i64
         if g_entry_price == 0{
             let resp = Response{
                 data: Some(caller_screen_cid),

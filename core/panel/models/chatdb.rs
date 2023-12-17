@@ -24,10 +24,10 @@ pub struct UserChat;
 /* ---------------------------------------- */
 impl UserChat{
     
-    pub async fn store(event_id: i32, user_screen_cid: &str, text: &str, 
-        //--- connection must be initialized once in server.rs and will be passed to different scopes
-        //--- and passed through the routers' threads as a shared state data 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn store(event_id: i32, user_screen_cid: &str, user_text: &str, 
+            //--- connection must be initialized once in server.rs and will be passed to different scopes
+            //--- and passed through the routers' threads as a shared state data 
+            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserChat, PanelHttpResponse>{
 
         let get_user = User::find_by_screen_cid(user_screen_cid, connection).await;
@@ -36,15 +36,18 @@ impl UserChat{
             return Err(err_resp);
         };
 
-
         let config = CONFIG.to_owned();
         let vars = config.vars.clone();
+        
+        
         
         // text is the decrypted and raw message
         // TODO - store text in chatdb by calling wasm methods
         // TODO - consider n.chat per user limit
         // TODO - test themis wasm in js
         // ...
+
+
 
         todo!()
 

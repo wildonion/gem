@@ -3283,19 +3283,21 @@ impl User{
             );
         };
 
-        let get_same_user = User::find_by_phone(&user_phone, connection).await;
-        if get_same_user.is_ok(){
+        //----- don't uncomment it since the user might not enter the code 
+        //----- but server saved his mail in db so he must request again for a new code
+        // let get_same_user = User::find_by_phone(&user_phone, connection).await;
+        // if get_same_user.is_ok(){
 
-            let resp = Response{
-                data: Some(user_phone),
-                message: PHONE_EXISTS,
-                status: 302,
-                is_error: true,
-            };
-            return Err(
-                Ok(HttpResponse::Found().json(resp))
-            );
-        }
+        //     let resp = Response{
+        //         data: Some(user_phone),
+        //         message: PHONE_EXISTS,
+        //         status: 302,
+        //         is_error: true,
+        //     };
+        //     return Err(
+        //         Ok(HttpResponse::Found().json(resp))
+        //     );
+        // }
 
         /* if the passed in mail was the one inside the db, means it has already been verified */
         if single_user.phone_number.is_some() && 
@@ -3734,19 +3736,21 @@ impl User{
             );
         };
         
-        let get_same_user = User::find_by_mail(&user_mail, connection).await;
-        if get_same_user.is_ok(){
+        //----- don't uncomment it since the user might not enter the code 
+        //----- but server saved his mail in db so he must request again for a new code
+        // let get_same_user = User::find_by_mail(&user_mail, connection).await;
+        // if get_same_user.is_ok(){
 
-            let resp = Response{
-                data: Some(user_mail),
-                message: MAIL_EXISTS,
-                status: 302,
-                is_error: true,
-            };
-            return Err(
-                Ok(HttpResponse::Found().json(resp))
-            );
-        }
+        //     let resp = Response{
+        //         data: Some(user_mail),
+        //         message: MAIL_EXISTS,
+        //         status: 302,
+        //         is_error: true,
+        //     };
+        //     return Err(
+        //         Ok(HttpResponse::Found().json(resp))
+        //     );
+        // }
 
 
         /* if the passed in mail was the one inside the db, means it has already been verified */
