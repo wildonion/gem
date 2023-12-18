@@ -460,6 +460,11 @@ impl User{
         /* ----------------------------------------------- */
         /* --------- publish updated user to redis channel */
         /* ----------------------------------------------- */
+        /* 
+            once the user updates his info we'll publish new updated user to redis channel and in
+            other parts we start to subscribe to the new updated user topic then once we receive 
+            the new user we'll start updating user fans and user nfts 
+        */
         
         let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
         events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -1478,6 +1483,11 @@ impl User{
         /* ----------------------------------------------- */
         /* --------- publish updated user to redis channel */
         /* ----------------------------------------------- */
+        /* 
+            once the user updates his info we'll publish new updated user to redis channel and in
+            other parts we start to subscribe to the new updated user topic then once we receive 
+            the new user we'll start updating user fans and user nfts 
+        */
         // 
         // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
         // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -1497,6 +1507,11 @@ impl User{
         /* ----------------------------------------------- */
         /* --------- publish updated user to redis channel */
         /* ----------------------------------------------- */
+        /* 
+            once the user updates his info we'll publish new updated user to redis channel and in
+            other parts we start to subscribe to the new updated user topic then once we receive 
+            the new user we'll start updating user fans and user nfts 
+        */
         // 
         // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
         // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -1742,6 +1757,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
@@ -1854,6 +1874,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
@@ -1977,6 +2002,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -2101,6 +2131,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -2225,6 +2260,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -2395,6 +2435,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -2737,6 +2782,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -2810,6 +2860,11 @@ impl User{
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
                     /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                     events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -3062,6 +3117,11 @@ impl User{
                         /* ----------------------------------------------- */
                         /* --------- publish updated user to redis channel */
                         /* ----------------------------------------------- */
+                        /* 
+                            once the user updates his info we'll publish new updated user to redis channel and in
+                            other parts we start to subscribe to the new updated user topic then once we receive 
+                            the new user we'll start updating user fans and user nfts 
+                        */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                         events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -3182,6 +3242,11 @@ impl User{
                         /* ----------------------------------------------- */
                         /* --------- publish updated user to redis channel */
                         /* ----------------------------------------------- */
+                        /* 
+                            once the user updates his info we'll publish new updated user to redis channel and in
+                            other parts we start to subscribe to the new updated user topic then once we receive 
+                            the new user we'll start updating user fans and user nfts 
+                        */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                         events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -3284,7 +3349,7 @@ impl User{
         };
 
         //----- don't uncomment it since the user might not enter the code 
-        //----- but server saved his mail in db so he must request again for a new code
+        //----- but server has saved his phone in db so he must request again for a new code
         // let get_same_user = User::find_by_phone(&user_phone, connection).await;
         // if get_same_user.is_ok(){
 
@@ -3515,6 +3580,11 @@ impl User{
                         /* ----------------------------------------------- */
                         /* --------- publish updated user to redis channel */
                         /* ----------------------------------------------- */
+                        /* 
+                            once the user updates his info we'll publish new updated user to redis channel and in
+                            other parts we start to subscribe to the new updated user topic then once we receive 
+                            the new user we'll start updating user fans and user nfts 
+                        */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                         events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -3634,6 +3704,11 @@ impl User{
                         /* ----------------------------------------------- */
                         /* --------- publish updated user to redis channel */
                         /* ----------------------------------------------- */
+                        /* 
+                            once the user updates his info we'll publish new updated user to redis channel and in
+                            other parts we start to subscribe to the new updated user topic then once we receive 
+                            the new user we'll start updating user fans and user nfts 
+                        */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                         events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -3737,7 +3812,7 @@ impl User{
         };
         
         //----- don't uncomment it since the user might not enter the code 
-        //----- but server saved his mail in db so he must request again for a new code
+        //----- but server has saved his mail in db so he must request again for a new code
         // let get_same_user = User::find_by_mail(&user_mail, connection).await;
         // if get_same_user.is_ok(){
 
@@ -3974,6 +4049,11 @@ impl Id{
                             /* ----------------------------------------------- */
                             /* --------- publish updated user to redis channel */
                             /* ----------------------------------------------- */
+                            /* 
+                                once the user updates his info we'll publish new updated user to redis channel and in
+                                other parts we start to subscribe to the new updated user topic then once we receive 
+                                the new user we'll start updating user fans and user nfts 
+                            */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                             events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
@@ -4191,6 +4271,11 @@ impl Id{
                 /* ----------------------------------------------- */
                 /* --------- publish updated user to redis channel */
                 /* ----------------------------------------------- */
+                /* 
+                    once the user updates his info we'll publish new updated user to redis channel and in
+                    other parts we start to subscribe to the new updated user topic then once we receive 
+                    the new user we'll start updating user fans and user nfts 
+                */
                 
                 let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
                 events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
@@ -4218,6 +4303,11 @@ impl Id{
                             /* ----------------------------------------------- */
                             /* --------- publish updated user to redis channel */
                             /* ----------------------------------------------- */
+                            /* 
+                                once the user updates his info we'll publish new updated user to redis channel and in
+                                other parts we start to subscribe to the new updated user topic then once we receive 
+                                the new user we'll start updating user fans and user nfts 
+                            */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
                             events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;

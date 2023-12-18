@@ -187,7 +187,7 @@ impl UserFan{
                         */
                         for friend in &mut decoded_friends_data{
 
-                            if friend.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                            if friend.screen_cid == latest_user_info.clone().screen_cid.unwrap_or(String::from("")){
 
                                 friend.user_avatar = latest_user_info.clone().avatar;
                                 friend.username = latest_user_info.clone().username;
@@ -201,7 +201,7 @@ impl UserFan{
                         */
                         for inv in &mut decoded_invitation_request_data{
 
-                            if inv.from_screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                            if inv.from_screen_cid == latest_user_info.clone().screen_cid.unwrap_or(String::from("")){
 
                                 inv.user_avatar = latest_user_info.clone().avatar;
                                 inv.username = latest_user_info.clone().username;
@@ -1309,8 +1309,8 @@ impl UserFan{
                     vec![]
                 };
 
-                if !invited_friends.contains(&Some(owner_screen_cid.to_string())){
-                    invited_friends.push(Some(owner_screen_cid.to_string()));
+                if !invited_friends.contains(&Some(from_screen_cid.to_string())){
+                    invited_friends.push(Some(from_screen_cid.to_string()));
                 }
                 
                 /* 
@@ -1419,26 +1419,45 @@ impl UserFan{
             return Err(err_resp);
         }
 
-        /* mutating a structure inside a vector of InvitationRequestData structs using &mut pointer */
-        'updateinvreqblock: for inv_req in &mut decoded_invitation_request_data{
-
-            if inv_req.is_accepted == false && 
-                inv_req.from_screen_cid == owner_screen_cid && 
-                inv_req.gallery_id == gal_id{
-            
-                inv_req.is_accepted = true;
-                break 'updateinvreqblock;
-
-            }
+        let owner = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
+        if owner.screen_cid.is_none(){
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: USER_SCREEN_CID_NOT_FOUND,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::InternalServerError().json(resp))
+            );
         }
 
-        match Self::update(&owner_screen_cid, UpdateUserFanData{ 
+        // update balance of the owner
+        let new_owner_balance = owner.balance.unwrap() + g_entry_price;
+        let update_owner_balance = User::update_balance(user.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+        if update_owner_balance.is_err(){
+            let err_resp = update_owner_balance.unwrap_err();
+            return Err(err_resp);
+        }
+
+        decoded_invitation_request_data.push(InvitationRequestData{
+            username: owner.username,
+            user_avatar: owner.avatar,
+            from_screen_cid: owner_screen_cid.clone(),
+            requested_at: chrono::Local::now().timestamp(),
+            gallery_id: gallery.id,
+            is_accepted: true,
+        });
+
+        match Self::update(&caller_screen_cid, UpdateUserFanData{ 
             friends: user_fan_data.friends, 
             invitation_requests: Some(serde_json::to_value(decoded_invitation_request_data).unwrap())
         }, connection).await{
 
             Ok(updated_user_fan_data) => {
 
+                // if the users_fans record was updated successfully then we simply push the 
+                // user who has paid for the gllary into the invited_friends field of the gallery
                 let gallery_invited_friends = gallery.invited_friends;
                 let mut invited_friends = if gallery_invited_friends.is_some(){
                     gallery_invited_friends.unwrap()
@@ -1446,14 +1465,10 @@ impl UserFan{
                     vec![]
                 };
 
-                if !invited_friends.contains(&Some(owner_screen_cid.to_string())){
-                    invited_friends.push(Some(owner_screen_cid.to_string()));
+                if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
+                    invited_friends.push(Some(caller_screen_cid.to_string()));
                 }
-                
-                /* 
-                    update the invited_friends field inside the gallery since the user 
-                    is accepted the request and he can see the gallery contents
-                */
+
                 match UserPrivateGallery::update(&gallery.owner_screen_cid, 
                     UpdateUserPrivateGalleryRequest{
                         owner_cid: {

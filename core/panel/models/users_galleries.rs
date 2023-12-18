@@ -60,7 +60,7 @@ pub struct UserPrivateGalleryInfoData{
     pub collections: u64,
     pub gal_name: String,
     pub gal_description: String,
-    pub invited_friends: u64,
+    pub invited_friends: Vec<UserWalletInfoResponse>,
     pub extra: Option<serde_json::Value>,
     pub gallery_background: String,
     pub created_at: String,
@@ -305,13 +305,33 @@ impl UserPrivateGallery{
                             gal_name: g.gal_name,
                             gal_description: g.gal_description,
                             invited_friends: {
-                                let invf = g.invited_friends;
-                                let decoded_invfs_len = if invf.is_some(){
-                                    invf.unwrap().len() as u64
+                                let g_invf = g.invited_friends;
+                                let mut invfs = if g_invf.is_some(){
+                                    g_invf.unwrap()
                                 } else{
-                                    0
+                                    vec![]
                                 };
-                                decoded_invfs_len
+                                
+                                invfs.retain(|scid| scid.is_some());
+
+                                invfs
+                                    .into_iter()
+                                    .map(|scid|{
+                                        let user = User::find_by_screen_cid_none_async(&scid.unwrap(), connection).unwrap();
+                                        UserWalletInfoResponse{
+                                            username: user.username,
+                                            avatar: user.avatar,
+                                            bio: user.bio,
+                                            banner: user.banner,
+                                            mail: user.mail,
+                                            screen_cid: user.screen_cid,
+                                            extra: user.extra,
+                                            stars: user.stars,
+                                            created_at: user.created_at.to_string(),
+                                        }
+                                    })
+                                    .collect::<Vec<UserWalletInfoResponse>>()
+                                
                             },
                             extra: g.extra,
                             gallery_background: g.gallery_background,
@@ -953,8 +973,9 @@ impl UserPrivateGallery{
         let SendInvitationRequest{ gal_id, gallery_owner_cid, to_screen_cid, tx_signature, hash_data } = 
             send_invitation_request;
 
+        let gallery_owner_screen_cid = walletreq::evm::get_keccak256_from(gallery_owner_cid.clone());
         let check_we_are_friend = UserFan::are_we_friends(
-            &gallery_owner_cid, 
+            &gallery_owner_screen_cid, 
             &to_screen_cid, connection).await;
         
         let Ok(are_we_friend) = check_we_are_friend else{
@@ -970,7 +991,7 @@ impl UserPrivateGallery{
                 return Err(error_resp);
             };
 
-            let gallery_owner_screen_cid = walletreq::evm::get_keccak256_from(gallery_owner_cid);
+            
             if gallery_data.owner_screen_cid != gallery_owner_screen_cid{
                 
                 let resp = Response::<'_, &[u8]>{

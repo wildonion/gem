@@ -344,7 +344,7 @@ impl UserNft{
                         */
                         for comment in &mut decoded_comments{
 
-                            if comment.owner_screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                            if comment.owner_screen_cid == latest_user_info.clone().screen_cid.unwrap_or(String::from("")){
 
                                 comment.owner_avatar = latest_user_info.clone().avatar;
                                 comment.owner_username = latest_user_info.clone().username;
@@ -360,7 +360,7 @@ impl UserNft{
 
                             let mut downvoters = like.clone().downvoter_screen_cids;
                             for voter in &mut downvoters{
-                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap_or(String::from("")){
                                     voter.username = latest_user_info.clone().username;
                                     voter.avatar = latest_user_info.clone().avatar;
                                 }
@@ -369,7 +369,7 @@ impl UserNft{
 
                             let mut upvoters = like.clone().upvoter_screen_cids;
                             for voter in &mut upvoters{
-                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap(){
+                                if voter.screen_cid == latest_user_info.clone().screen_cid.unwrap_or(String::from("")){
                                     voter.username = latest_user_info.clone().username;
                                     voter.avatar = latest_user_info.clone().avatar;
                                 }

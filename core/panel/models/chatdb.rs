@@ -41,7 +41,6 @@ impl UserChat{
         
         
         
-        // text is the decrypted and raw message
         // TODO - store text in chatdb by calling wasm methods
         // TODO - consider n.chat per user limit
         // TODO - test themis wasm in js
