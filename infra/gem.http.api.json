@@ -3604,7 +3604,82 @@
 									"response": []
 								},
 								{
-									"name": "Remove User From Friends",
+									"name": "Exit From Private Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"gal_id\": 1,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/gallery/exit",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"exit"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove Follower",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"follower_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/fan/remove/follower",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"remove",
+												"follower"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove Friend",
 									"request": {
 										"auth": {
 											"type": "bearer",

@@ -113,6 +113,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::edit_bio);
     config.service(apis::user::exports::edit_extra);
     config.service(apis::user::exports::upload_avatar);
+    config.service(apis::user::exports::update_password);
+    config.service(apis::user::exports::forgot_password);
     config.service(apis::user::exports::upload_banner);
     config.service(apis::user::exports::upload_wallet_back);
     config.service(apis::user::exports::upload_private_gallery_back);
@@ -128,6 +130,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_invited_friends_wallet_data_of_gallery);
     config.service(apis::user::exports::send_private_gallery_invitation_request_to);
     config.service(apis::user::exports::remove_invited_friend_from_gallery);
+    config.service(apis::user::exports::exit_from_private_gallery);
     config.service(apis::user::exports::get_all_public_collection_nfts);
     config.service(apis::user::exports::accept_invitation_request);
     config.service(apis::user::exports::enter_private_gallery);
@@ -135,7 +138,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_user_unaccpeted_friend_requests);
     config.service(apis::user::exports::accept_friend_request);
     config.service(apis::user::exports::send_friend_request_to);
-    config.service(apis::user::exports::remove_user_from_friend);
+    config.service(apis::user::exports::remove_user_from_follower);
+    config.service(apis::user::exports::remove_user_from_freind);
     config.service(apis::user::exports::get_all_my_friends);
     config.service(apis::user::exports::get_all_my_followers);
     config.service(apis::user::exports::get_all_my_followings);

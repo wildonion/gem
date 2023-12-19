@@ -157,6 +157,21 @@ pub struct UserWalletInfoResponse{
     pub created_at: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct ForgotPasswordRequest{
+    pub owner_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct NewPasswordRequest{
+    pub new_password: String,
+    pub owner_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserIdResponse{
     pub id: i32,

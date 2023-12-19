@@ -129,9 +129,17 @@ pub struct AcceptFriendRequest{
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct RemoveFollower{
+    pub owner_cid: String, 
+    pub follower_screen_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct RemoveFriend{
     pub owner_cid: String, 
-    pub friend_screen_cid: String, 
+    pub friend_screen_cid: String,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -683,10 +691,7 @@ impl UserFan{
                 &fd.screen_cid, 
                 owner_screen_cid, connection).await;
             
-            let Ok(are_we_friend) = check_we_are_friend else{
-                let err_resp = check_we_are_friend.unwrap_err();
-                return Err(err_resp);
-            };
+            let are_we_friend = check_we_are_friend.unwrap_or(false);
             
             if are_we_friend{
 
@@ -966,13 +971,13 @@ impl UserFan{
 
     }
 
-    pub async fn remove_user_from_friend(remove_friend_request: RemoveFriend,
+    pub async fn remove_follower(remove_follower_request: RemoveFollower,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         
-            let RemoveFriend { owner_cid, friend_screen_cid, tx_signature, hash_data } 
-                = remove_friend_request;
-    
+            let RemoveFollower { owner_cid, follower_screen_cid, tx_signature, hash_data } 
+                = remove_follower_request;
+            
             let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
             let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
             let Ok(user_fan_data) = get_user_fan else{
@@ -989,7 +994,7 @@ impl UserFan{
     
             
             if decoded_friends_data.clone().into_iter().any(|frd| {
-                if frd.screen_cid == friend_screen_cid{
+                if frd.screen_cid == follower_screen_cid && frd.is_accepted == true{
                     let f_idx = decoded_friends_data.iter().position(|f| *f == frd).unwrap();
                     decoded_friends_data.remove(f_idx);
                     true
@@ -999,6 +1004,60 @@ impl UserFan{
             }){
             
                 Self::update(&owner_screen_cid, UpdateUserFanData{ 
+                    friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
+                    invitation_requests: user_fan_data.invitation_requests
+                }, connection).await
+                
+            } else{
+
+                let resp = Response::<'_, String>{
+                    data: Some(follower_screen_cid),
+                    message: NO_FRIEND_FOUND,
+                    status: 404,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+
+            }
+
+
+    }
+
+    pub async fn remove_freind(remove_friend_request: RemoveFriend,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<UserFanData, PanelHttpResponse>{
+        
+            let RemoveFriend { owner_cid, friend_screen_cid, tx_signature, hash_data } 
+                = remove_friend_request;
+    
+            let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
+            let get_user_fan = Self::get_user_fans_data_for(&friend_screen_cid, connection).await;
+            let Ok(user_fan_data) = get_user_fan else{
+                let resp_error = get_user_fan.unwrap_err();
+                return Err(resp_error);
+            };
+    
+            let user_friends_data = user_fan_data.friends;
+            let mut decoded_friends_data = if user_friends_data.is_some(){
+                serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
+            } else{
+                vec![]
+            };
+    
+            
+            if decoded_friends_data.clone().into_iter().any(|frd| {
+                if frd.screen_cid == owner_screen_cid.to_owned() && frd.is_accepted == true{
+                    let f_idx = decoded_friends_data.iter().position(|f| *f == frd).unwrap();
+                    decoded_friends_data.remove(f_idx);
+                    true
+                } else{
+                    false
+                }
+            }){
+            
+                Self::update(&friend_screen_cid, UpdateUserFanData{ 
                     friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
                     invitation_requests: user_fan_data.invitation_requests
                 }, connection).await

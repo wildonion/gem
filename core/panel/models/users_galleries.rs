@@ -120,6 +120,14 @@ pub struct RemoveInvitedFriendFromPrivateGalleryRequest{
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct ExitFromPrivateGalleryRequest{
+    pub gal_id: i32,
+    pub caller_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SendInvitationRequest{
     pub gal_id: i32,
     pub gallery_owner_cid: String,
@@ -898,6 +906,63 @@ impl UserPrivateGallery{
 }
 
 impl UserPrivateGallery{
+
+    pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let ExitFromPrivateGalleryRequest{ gal_id, caller_cid, tx_signature, hash_data } = 
+            exit_from_private_gallery;
+        
+        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+            let error_resp = get_gallery_data.unwrap_err();
+            return Err(error_resp);
+        };
+
+        let caller_screen_cid = walletreq::evm::get_keccak256_from(caller_cid.clone());
+
+        let inv_frds = gallery_data.invited_friends;
+        if inv_frds.is_some(){
+            let mut friends_ = inv_frds.unwrap();
+            if friends_.contains(&Some(caller_screen_cid.to_string())){
+                let scid_idx = friends_.iter().position(|scid| *scid == Some(caller_screen_cid.to_string())).unwrap();
+                friends_.remove(scid_idx);
+            }
+
+            let updated_gal_data = UpdateUserPrivateGalleryRequest{
+                owner_cid: caller_cid,
+                collections: gallery_data.collections,
+                gal_name: gallery_data.gal_name,
+                gal_description: gallery_data.gal_description,
+                invited_friends: Some(friends_), /* updated */
+                extra: gallery_data.extra,
+                tx_signature,
+                hash_data,
+            };
+
+            Self::update(&caller_screen_cid, updated_gal_data, gal_id, connection).await
+
+        } else{
+
+            /* just return the old one */
+            Ok(
+                UserPrivateGalleryData{ 
+                    id: gallery_data.id, 
+                    owner_screen_cid: gallery_data.owner_screen_cid, 
+                    collections: gallery_data.collections, 
+                    gal_name: gallery_data.gal_name, 
+                    gal_description: gallery_data.gal_description, 
+                    invited_friends: inv_frds, 
+                    extra: gallery_data.extra, 
+                    gallery_background: gallery_data.gallery_background,
+                    created_at: gallery_data.created_at.to_string(), 
+                    updated_at: gallery_data.updated_at.to_string() 
+                }
+            )
+        }
+
+    }
 
     pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
