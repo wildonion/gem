@@ -477,7 +477,7 @@ impl UserNft{
 
     pub async fn get_all_user_reactions(caller_screen_cid: &str, limit: web::Query<Limit>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserReactionData>, PanelHttpResponse>{
+        -> Result<Vec<Option<UserReactionData>>, PanelHttpResponse>{
 
         
         let from = limit.from.unwrap_or(0);
@@ -505,7 +505,7 @@ impl UserNft{
                 Ok(nfts_) => {
 
                     
-                    let mut user_reactions = vec![];
+                    let mut user_reactions = Vec::<Option<UserReactionData>>::new();
                     for nft in nfts_{
 
                         let nft_comments = nft.comments;
@@ -533,14 +533,14 @@ impl UserNft{
                         let mut owner_likes = vec![];
                         for like in decoded_likes{
                             
-                            let like_stat_data = if like.upvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.clone().to_string()){
+                            let like_stat_data = if like.upvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.to_string()){
                                     Some(
                                         UserLikeStat{
                                             nft_onchain_id: like.nft_onchain_id,
                                             is_upvote: true,
                                         }
                                     )
-                                } else if like.downvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.clone().to_string()){
+                                } else if like.downvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.to_string()){
 
                                     Some(
                                         UserLikeStat{
@@ -559,19 +559,27 @@ impl UserNft{
                                     
                             };
 
-                        
-                        user_reactions.push(
-                            UserReactionData{
-                                comments: owner_comments,
-                                likes: owner_likes,
-                                nft_metadata_uri: nft.metadata_uri,
-                                nft_onchain_addres: nft.onchain_id,
-                            }
-                        )
+                        if owner_comments.is_empty() && owner_likes.is_empty() {
+                            user_reactions.push(
+                                None
+                            )
+                        } else{
+                            user_reactions.push(
+                                Some(
+                                    UserReactionData{
+                                        comments: owner_comments,
+                                        likes: owner_likes,
+                                        nft_metadata_uri: nft.metadata_uri,
+                                        nft_onchain_addres: nft.onchain_id,
+                                    }
+                                )
+                            )
+                        }
                     
     
                     }
-                     
+                    
+                    user_reactions.retain(|reaction| reaction.is_some());
                     Ok(user_reactions)
 
                 },
@@ -601,9 +609,6 @@ impl UserNft{
                 }
             }
         
-
-        
-
     }
 
     pub async fn get_all_nft_reactions(nft_onchain_id: &str, 
