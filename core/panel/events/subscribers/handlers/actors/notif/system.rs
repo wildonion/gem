@@ -28,6 +28,10 @@ pub struct SystemUsers(pub HashMap<i32, UserData>);
 
 #[derive(Clone)]
 pub struct SystemActor{
+    /* 
+        we're using an in memory map based db to store updated user in runtime and realtime
+        hence it's fast enough to do read and write operations
+    */
     pub updated_users: HashMap<i32, UserData>,
 }
 

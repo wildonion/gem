@@ -566,6 +566,10 @@ impl UserFan{
     }
 
 
+    /* -------------------- 
+    // both screen cids must have each other in their friends data 
+    // and they must have accepted each other's request
+    -------------------- */
     pub async fn are_we_friends(first_screen_cid: &str, second_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, PanelHttpResponse>{
 
         /* ----- get all fan data of the first one ------ */
@@ -639,7 +643,11 @@ impl UserFan{
 
 
     }
-
+    
+    /* -------------------- 
+    // get those ones inside the owner friend data who
+    // are friend with the owner
+    -------------------- */
     pub async fn get_all_my_friends(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<UserFanData, PanelHttpResponse>{
@@ -744,7 +752,10 @@ impl UserFan{
 
     }
 
-    /* fans: get all users that they have owner_screen_cid in their friends data */
+    /* -------------------- 
+    // get those ones inside the owner friend data who
+    // the owner has accepted their requests
+    -------------------- */
     pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<UserFanData, PanelHttpResponse>{
@@ -849,6 +860,11 @@ impl UserFan{
 
     }
 
+    /* -------------------- 
+    // get those ones inside the users_fans table who
+    // have owner in their friend data (or) they have 
+    // accepted the owner request
+    -------------------- */
     pub async fn get_all_my_followings(who_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserFanData>, PanelHttpResponse>{
@@ -903,7 +919,8 @@ impl UserFan{
                 }; 
                 
                 for friend in decoded_friends_data{
-                    if friend.screen_cid == who_screen_cid && friend.is_accepted{
+                    // if friend.screen_cid == who_screen_cid && friend.is_accepted{
+                    if friend.screen_cid == who_screen_cid{
                         followings.push({
                             UserFanData{
                                 id: fan_data.id,
@@ -1051,6 +1068,10 @@ impl UserFan{
                 if frd.screen_cid == owner_screen_cid.to_owned() && frd.is_accepted == true{
                     let f_idx = decoded_friends_data.iter().position(|f| *f == frd).unwrap();
                     decoded_friends_data.remove(f_idx);
+                    
+                    // remove frd from private gallery 
+                    // ...
+
                     true
                 } else{
                     false
