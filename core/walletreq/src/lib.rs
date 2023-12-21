@@ -145,6 +145,7 @@ pub mod evm{
     
     }
     
+    /* sender must be inside the signature means that signer pubkey must be inside signature */
     pub async fn verify_signature(
         sender: String,
         sig: &str,

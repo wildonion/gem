@@ -11,7 +11,7 @@ use crate::models::users_clps::UserClp;
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, FriendData, UserRelations, EnterPrivateGalleryRequest, RemoveFriend, RemoveFollower};
-use crate::models::users_galleries::{NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
+use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
 use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
@@ -4366,6 +4366,7 @@ async fn remove_invited_friend_from_gallery(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -4440,7 +4441,7 @@ async fn remove_invited_friend_from_gallery(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserPrivateGallery::remove_invited_friend_from(remove_invited_friend_request, connection).await{
+                    match UserPrivateGallery::remove_invited_friend_from(remove_invited_friend_request, redis_client.clone(), redis_actix_actor, connection).await{
                         Ok(gallery_data) => {
 
                             resp!{
@@ -4979,7 +4980,7 @@ async fn get_all_galleries_invited_to(
                         Ok(galleries) => {
 
                             resp!{
-                                Vec<Option<UserPrivateGalleryData>>, //// the data type
+                                Vec<Option<UserPrivateGalleryInfoDataInvited>>, //// the data type
                                 galleries, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code

@@ -1,6 +1,7 @@
 
 
 
+use actix::Addr;
 use chrono::NaiveDateTime;
  
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER, GALLERY_UPLOAD_PATH};
@@ -65,6 +66,22 @@ pub struct UserPrivateGalleryInfoData{
     pub gallery_background: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct UserPrivateGalleryInfoDataInvited{
+    pub id: i32,
+    pub owner_screen_cid: String,
+    pub owner_username: String,
+    pub collections: u64,
+    pub gal_name: String,
+    pub gal_description: String,
+    pub invited_friends: Vec<UserWalletInfoResponse>,
+    pub extra: Option<serde_json::Value>,
+    pub gallery_background: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub requested_at: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -488,12 +505,113 @@ impl UserPrivateGallery{
 
     }
 
+    pub fn get_all_for_without_limit(screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
+        
+        /* fetch all owner galleries */
+        let user_galleries = users_galleries
+            .order(created_at.desc())
+            .filter(owner_screen_cid.eq(screen_cid))
+            .load::<UserPrivateGallery>(connection);
+        
+        /* 
+            the first process of verifying the galler owner is the process
+            of matching the JWT id and the caller screen cid and the second 
+            step is to find all those galleries belong to the caller
+        */
+        let Ok(galleries) = user_galleries else{
+            let resp = Response{
+                data: Some(screen_cid),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        };
+
+        Ok(
+            galleries
+                .into_iter()
+                /* 
+                    map takes an FnMut closure so it captures env vars mutably and 
+                    and since the prv_cols is moving into the closure we have to 
+                    clone it in each iteration to not to lose ownership
+                */
+                .map(|g| {
+            
+                    UserPrivateGalleryData{
+                        id: g.id,
+                        owner_screen_cid: g.owner_screen_cid,
+                        collections: {
+                            let cols = g.collections;
+                            let decoded_cols = if cols.is_some(){
+                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+                            
+                            let none_minted_cols = decoded_cols
+                                .into_iter()
+                                .map(|mut c|{
+
+                                    /* return those none minted ones */
+                                    if c.nfts.is_some(){
+                                        let col_nfts = c.nfts;
+                                        let decoded_nfts = if col_nfts.is_some(){
+                                            serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                        } else{
+                                            vec![]
+                                        };
+                                        
+                                        let mut none_minted_nfts = decoded_nfts
+                                            .into_iter()
+                                            .map(|nft|{
+                                                /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                                if nft.is_minted.unwrap_or(false) == false{
+                                                    Some(nft)
+                                                } else{
+                                                    None
+                                                }
+                                            }).collect::<Vec<Option<UserNftData>>>();
+
+                                        
+                                        none_minted_nfts.retain(|nft| nft.is_some());
+                                        c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
+                                        
+                                        c
+                
+                                    } else{
+                                        c
+                                    }
+                                })
+                                .collect::<Vec<UserCollectionData>>();
+
+                            Some(serde_json::to_value(none_minted_cols).unwrap())
+
+                        },
+                        gal_name: g.gal_name,
+                        gal_description: g.gal_description,
+                        invited_friends: g.invited_friends,
+                        extra: g.extra,
+                        gallery_background: g.gallery_background,
+                        created_at: g.created_at.to_string(),
+                        updated_at: g.updated_at.to_string(),
+                    }
+        
+                }).collect::<Vec<UserPrivateGalleryData>>()
+        )
+
+    }
+
     pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, 
         limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<Option<UserPrivateGalleryData>>, PanelHttpResponse>{
+        -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -505,113 +623,123 @@ impl UserPrivateGallery{
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
             )
-        }
+        }   
 
-        /* fetch all owner galleries */
-        let user_galleries = users_galleries
-            .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
-            .load::<UserPrivateGallery>(connection);
-            
-        let Ok(galleries) = user_galleries else{
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: NO_GALLERY_FOUND,
-                status: 404,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            )
+        let get_user_fan = UserFan::get_user_fans_data_for(&caller_screen_cid, connection).await;
+        let Ok(user_fan_data) = get_user_fan else{
+            let resp_error = get_user_fan.unwrap_err();
+            return Err(resp_error);
         };
 
-        let gals = galleries
+        let user_invitation_request_data = user_fan_data.invitation_requests;
+        let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
+            serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut gals = decoded_invitation_request_data
             .into_iter()
-            .map(|g|{
+            .map(|invrd|{
 
-                let inv_frds = g.invited_friends;
-                if inv_frds.is_some(){
-                    let friends_scid = inv_frds.as_ref().unwrap();
-                    if friends_scid.contains(&Some(caller_screen_cid.to_string())){
-                        /* caller must be invited to this gallery before */
-                        Some(
-                            UserPrivateGalleryData{
-                                id: g.id,
-                                owner_screen_cid: g.owner_screen_cid,
-                                collections: {
-                                    let cols = g.collections;
-                                    let decoded_cols = if cols.is_some(){
-                                        serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                    } else{
-                                        vec![]
-                                    };
-                                    
-                                    let none_minted_cols = decoded_cols
-                                        .into_iter()
-                                        .map(|mut c|{
-                                            
-                                            /* return those none minted ones */
-                                            if c.nfts.is_some(){
-                                                let col_nfts = c.nfts;
-                                                let decoded_nfts = if col_nfts.is_some(){
-                                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
-                                                } else{
-                                                    vec![]
-                                                };
+                if !invrd.is_accepted{
+                    
+                    let gal_id = invrd.gallery_id;
+                    let gallery = Self::find_by_id_none_sync(gal_id, connection).unwrap();
+                    Some(
+                        UserPrivateGalleryInfoDataInvited{
+                            id: gallery.id,
+                            owner_username: User::find_by_screen_cid_none_async(&gallery.owner_screen_cid, connection).unwrap().username,
+                            owner_screen_cid: gallery.owner_screen_cid,
+                            collections: {
+                                let cols = gallery.collections;
+                                let decoded_cols = if cols.is_some(){
+                                    serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
 
-                                                let mut none_minted_nfts = decoded_nfts
-                                                    .into_iter()
-                                                    .map(|nft|{
-                                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                                                        if nft.is_minted.unwrap_or(false) == false{
-                                                            Some(nft)
-                                                        } else{
-                                                            None
-                                                        }
-                                                    }).collect::<Vec<Option<UserNftData>>>();
-                                                
-                                                none_minted_nfts.retain(|nft| nft.is_some());
-                                                c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
-                                                
-                                                c
-                        
-                                            } else{
-                                                c
-                                            }
-                                        })
-                                        .collect::<Vec<UserCollectionData>>();
-        
-                                    Some(serde_json::to_value(none_minted_cols).unwrap())
-        
-                                },
-                                gal_name: g.gal_name,
-                                gal_description: g.gal_description,
-                                invited_friends: inv_frds.clone(),
-                                extra: g.extra,
-                                gallery_background: g.gallery_background,
-                                created_at: g.created_at.to_string(),
-                                updated_at: g.updated_at.to_string(),
-                            }
-                        ) 
-                    } else{
-                        None
-                    }
+                                decoded_cols.len() as u64
+                            },
+                            gal_name: gallery.gal_name,
+                            gal_description: gallery.gal_description,
+                            invited_friends: {
+                                let g_invf = gallery.invited_friends;
+                                let mut invfs = if g_invf.is_some(){
+                                    g_invf.unwrap()
+                                } else{
+                                    vec![]
+                                };
+                                
+                                invfs.retain(|scid| scid.is_some());
+
+                                invfs
+                                    .into_iter()
+                                    .map(|scid|{
+                                        let user = User::find_by_screen_cid_none_async(&scid.unwrap(), connection).unwrap();
+                                        UserWalletInfoResponse{
+                                            username: user.username,
+                                            avatar: user.avatar,
+                                            bio: user.bio,
+                                            banner: user.banner,
+                                            mail: user.mail,
+                                            screen_cid: user.screen_cid,
+                                            extra: user.extra,
+                                            stars: user.stars,
+                                            created_at: user.created_at.to_string(),
+                                        }
+                                    })
+                                    .collect::<Vec<UserWalletInfoResponse>>()
+                                
+                            },
+                            extra: gallery.extra,
+                            gallery_background: gallery.gallery_background,
+                            created_at: gallery.created_at.to_string(),
+                            updated_at: gallery.updated_at.to_string(),
+                            requested_at: invrd.requested_at
+                        }
+                    )
                 } else{
                     None
                 }
 
             })
-            .collect::<Vec<Option<UserPrivateGalleryData>>>();
-        
+            .collect::<Vec<Option<UserPrivateGalleryInfoDataInvited>>>();
+
+
+        /* sorting wallet data in desc order */
+        gals.sort_by(|g1, g2|{
+
+            let g1_default = UserPrivateGalleryInfoDataInvited::default();
+            let g2_default = UserPrivateGalleryInfoDataInvited::default();
+            let g1 = g1.as_ref().unwrap_or(&g1_default);
+            let g2 = g2.as_ref().unwrap_or(&g2_default);
+
+            let g1_created_at = NaiveDateTime
+                ::parse_from_str(&g1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let g2_created_at = NaiveDateTime
+                ::parse_from_str(&g2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            g2_created_at.cmp(&g1_created_at)
+
+        });
+
+        gals.retain(|upgig| upgig.is_some());
+
+        let sliced = if gals.len() > to{
+            let data = &gals[from..to+1];
+            data.to_vec()
+        } else{
+            let data = &gals[from..gals.len()];
+            data.to_vec()
+        };
         
 
         Ok(
-            if gals.contains(&None){
-                vec![]
-            } else{
-                gals
-            }
+            sliced   
         )
 
     }
@@ -622,7 +750,6 @@ impl UserPrivateGallery{
     pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, 
         limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
-
 
         let from = limit.from.unwrap_or(0) as usize;
         let to = limit.to.unwrap_or(10) as usize;
@@ -750,6 +877,45 @@ impl UserPrivateGallery{
     }
 
     pub async fn find_by_id(gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let user_gallery = users_galleries
+            .filter(users_galleries::id.eq(gallery_id))
+            .first::<UserPrivateGallery>(connection);
+
+        let Ok(gallery_info) = user_gallery else{
+
+            let resp = Response{
+                data: Some(gallery_id),
+                message: GALLERY_NOT_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserPrivateGalleryData{ 
+                id: gallery_info.id, 
+                owner_screen_cid: gallery_info.owner_screen_cid, 
+                collections: gallery_info.collections, 
+                gal_name: gallery_info.gal_name, 
+                gal_description: gallery_info.gal_description, 
+                invited_friends: gallery_info.invited_friends, 
+                extra: gallery_info.extra, 
+                gallery_background: gallery_info.gallery_background,
+                created_at: gallery_info.created_at.to_string(), 
+                updated_at: gallery_info.updated_at.to_string() 
+            }
+        )
+
+    }
+
+    pub fn find_by_id_none_sync(gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_gallery = users_galleries
@@ -931,7 +1097,7 @@ impl UserPrivateGallery{
             }
 
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
-                owner_cid: caller_cid,
+                owner_cid: gallery_data.owner_screen_cid.clone(),
                 collections: gallery_data.collections,
                 gal_name: gallery_data.gal_name,
                 gal_description: gallery_data.gal_description,
@@ -941,7 +1107,8 @@ impl UserPrivateGallery{
                 hash_data,
             };
 
-            Self::update(&caller_screen_cid, updated_gal_data, gal_id, connection).await
+            // only owner can update
+            Self::update(&gallery_data.owner_screen_cid, updated_gal_data, gal_id, connection).await
 
         } else{
 
@@ -1110,7 +1277,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn remove_invited_friend_from(remove_invited_friend_request: RemoveInvitedFriendFromPrivateGalleryRequest,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        redis_client: RedisClient, redis_actor: Addr<RedisActor>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let RemoveInvitedFriendFromPrivateGalleryRequest{ gal_id, caller_cid, friend_screen_cid, tx_signature, hash_data } = 
@@ -1121,7 +1288,7 @@ impl UserPrivateGallery{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
         };
-
+        
         let caller_screen_cid = walletreq::evm::get_keccak256_from(caller_cid.clone());
         if gallery_data.owner_screen_cid != caller_screen_cid{
             
@@ -1136,6 +1303,12 @@ impl UserPrivateGallery{
             )
         }
 
+        let get_friend_info = User::find_by_screen_cid(&friend_screen_cid, connection).await;
+        let Ok(friend_info) = get_friend_info else{
+            let err_resp = get_friend_info.unwrap_err();
+            return Err(err_resp);
+        };
+
         /* 
             since we've moved the gallery_data.invited_friends into inv_frds 
             thus to return the old data we'll use inv_frds 
@@ -1148,6 +1321,33 @@ impl UserPrivateGallery{
                 friends_.remove(scid_idx);
             }
 
+            // also remove from redis and pyback the friend_screen_cid with enterance fee 
+            let mut conn = redis_client.get_async_connection().await.unwrap();
+            let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
+            if get_galleries_with_entrance_fee.is_ok(){
+                let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&get_galleries_with_entrance_fee.unwrap()).unwrap();
+                let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
+                let mut gprice = 0 as i64;
+                if get_friend_scids.is_some(){
+                    let friend_scids_gprice = get_friend_scids.unwrap();
+                    let mut friend_scids = friend_scids_gprice.0.to_owned();
+                    gprice = friend_scids_gprice.1;
+                    if friend_scids.contains(&friend_screen_cid.to_string()){
+                        let scid_idx = friend_scids.iter().position(|scid| *scid == friend_screen_cid.to_string()).unwrap();
+                        friend_scids.remove(scid_idx);
+                        galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), gprice));
+                    }
+                }
+
+                let stringified_ = serde_json::to_string_pretty(&galleries_with_entrance_fee).unwrap();
+                let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
+                
+                // payback friend_screen_cid with the gallery price
+                let new_balance = friend_info.balance.unwrap() + gprice;
+                let update_user_balance = User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                
+            }
+
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
                 owner_cid: caller_cid,
                 collections: gallery_data.collections,
@@ -1157,7 +1357,7 @@ impl UserPrivateGallery{
                 extra: gallery_data.extra,
                 tx_signature,
                 hash_data,
-            };
+            }; 
 
             Self::update(&caller_screen_cid, updated_gal_data, gal_id, connection).await
 
@@ -1240,6 +1440,91 @@ impl UserPrivateGallery{
                         let error_content = error_content.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserGallery::update");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        let resp = Response::<&[u8]>{
+                            data: Some(&[]),
+                            message: resp_err,
+                            status: 500,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::InternalServerError().json(resp))
+                        );
+                    }
+                
+                }
+            
+        } else{
+
+            let resp = Response::<'_, &str>{
+                data: Some(caller_screen_cid),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
+
+    }
+
+    pub fn update_none_async(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
+        gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+        
+        let get_gallery_info = Self::find_by_id_none_sync(gal_id, connection);
+        let Ok(gallery_data) = get_gallery_info else{
+            let error_resp = get_gallery_info.unwrap_err();
+            return Err(error_resp);
+        };
+
+        if gallery_data.owner_screen_cid == caller_screen_cid{
+
+            let update_gal_data = UpdateUserPrivateGallery{
+                owner_screen_cid: caller_screen_cid.to_string(),
+                collections: new_gallery_info.collections,
+                gal_name: new_gallery_info.gal_name,
+                gal_description: new_gallery_info.gal_description,
+                invited_friends: new_gallery_info.invited_friends,
+                extra: new_gallery_info.extra,
+            };
+            
+            match diesel::update(users_galleries.find(gallery_data.id))
+                .set(&update_gal_data)
+                .returning(UserPrivateGallery::as_returning())
+                .get_result(connection)
+                {
+                
+                    Ok(g) => {
+                        Ok(
+                            UserPrivateGalleryData{
+                                id: g.id,
+                                owner_screen_cid: g.owner_screen_cid,
+                                collections: g.collections,
+                                gal_name: g.gal_name,
+                                gal_description: g.gal_description,
+                                invited_friends: g.invited_friends,
+                                extra: g.extra,
+                                gallery_background: g.gallery_background,
+                                created_at: g.created_at.to_string(),
+                                updated_at: g.updated_at.to_string(),
+                            }
+                        )
+
+                    },
+                    Err(e) => {
+                        
+                        let resp_err = &e.to_string();
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserGallery::update_none_async");
+                        let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer from the error  */
 
                         let resp = Response::<&[u8]>{
                             data: Some(&[]),

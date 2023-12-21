@@ -1063,14 +1063,42 @@ impl UserFan{
                 vec![]
             };
     
-            
             if decoded_friends_data.clone().into_iter().any(|frd| {
                 if frd.screen_cid == owner_screen_cid.to_owned() && frd.is_accepted == true{
                     let f_idx = decoded_friends_data.iter().position(|f| *f == frd).unwrap();
                     decoded_friends_data.remove(f_idx);
                     
-                    // remove frd from private gallery 
-                    // ...
+                    // remove frd from private gallery if his in there
+                    // since the owner is not his friend any more
+                    let get_all_private_galleries = UserPrivateGallery::get_all_for_without_limit(owner_screen_cid, connection);
+                    if get_all_private_galleries.is_ok(){
+                        let galleries = get_all_private_galleries.unwrap();
+                        for gallery in galleries{
+                            let invited_friends = gallery.clone().invited_friends;
+                            if invited_friends.is_some(){
+                                let mut inv_frds = invited_friends.clone().unwrap();
+                                for inv_frd in inv_frds.clone(){
+                                    if inv_frd.unwrap_or(String::from("")) == frd.screen_cid{
+                                        let frd_idx = inv_frds.iter().position(|invfrd| *invfrd.clone().unwrap() == frd.screen_cid).unwrap();
+                                        inv_frds.remove(frd_idx);
+                                        // update private gallery
+                                        UserPrivateGallery::update_none_async(&gallery.clone().owner_screen_cid, 
+                                            UpdateUserPrivateGalleryRequest{
+                                                owner_cid: owner_cid.clone(),
+                                                collections: gallery.clone().collections,
+                                                gal_name: gallery.clone().gal_name,
+                                                gal_description: gallery.clone().gal_description,
+                                                invited_friends: Some(inv_frds.clone()),
+                                                extra: gallery.clone().extra,
+                                                tx_signature: String::from(""),
+                                                hash_data: String::from(""),
+                                            }, gallery.clone().id, connection);
+                                        
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     true
                 } else{
@@ -1274,7 +1302,13 @@ impl UserFan{
                 vec![]
             };
 
-            decoded_invitation_request_data.push(invitation_request_data.clone());
+            if !decoded_invitation_request_data
+                .clone()
+                .into_iter()
+                .any(|invrd| invrd.gallery_id == invitation_request_data.gallery_id){
+
+                    decoded_invitation_request_data.push(invitation_request_data.clone());
+                }
 
             let new_updated_data = Self::update(owner_screen_cid, 
                 UpdateUserFanData{ 
@@ -1327,6 +1361,19 @@ impl UserFan{
             = accept_invitation_request;
 
         let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
+        let user = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
+        if user.screen_cid.is_none(){
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: USER_SCREEN_CID_NOT_FOUND,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::InternalServerError().json(resp))
+            );
+        }
+        
         let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
@@ -1346,20 +1393,6 @@ impl UserFan{
             let resp_error = get_gallery_data.unwrap_err();
             return Err(resp_error);
         };
-        
-
-        let user = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
-        if user.screen_cid.is_none(){
-            let resp = Response{
-                data: Some(owner_screen_cid),
-                message: USER_SCREEN_CID_NOT_FOUND,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::InternalServerError().json(resp))
-            );
-        }
 
 
         /* mutating a structure inside a vector of InvitationRequestData structs using &mut pointer */
@@ -1382,6 +1415,8 @@ impl UserFan{
 
             Ok(updated_user_fan_data) => {
 
+                // if the updation process of users_fans data was successful then we simply
+                // add the caller to invited_friend of the gallery owner
                 let gallery_invited_friends = gallery.invited_friends;
                 let mut invited_friends = if gallery_invited_friends.is_some(){
                     gallery_invited_friends.unwrap()
@@ -1389,8 +1424,8 @@ impl UserFan{
                     vec![]
                 };
 
-                if !invited_friends.contains(&Some(from_screen_cid.to_string())){
-                    invited_friends.push(Some(from_screen_cid.to_string()));
+                if !invited_friends.contains(&Some(owner_screen_cid.to_string())){
+                    invited_friends.push(Some(owner_screen_cid.to_string()));
                 }
                 
                 /* 
@@ -1478,18 +1513,6 @@ impl UserFan{
         }
 
         let user = User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap();
-        if user.screen_cid.is_none(){
-            let resp = Response{
-                data: Some(caller_screen_cid),
-                message: USER_SCREEN_CID_NOT_FOUND,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::InternalServerError().json(resp))
-            );
-        }
-
         // update balance of the one who accepted the request
         // cause he must pay for the entry price of the gallery
         let new_balance = user.balance.unwrap() - g_entry_price;
@@ -1500,34 +1523,29 @@ impl UserFan{
         }
 
         let owner = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
-        if owner.screen_cid.is_none(){
-            let resp = Response{
-                data: Some(owner_screen_cid),
-                message: USER_SCREEN_CID_NOT_FOUND,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::InternalServerError().json(resp))
-            );
-        }
-
         // update balance of the owner
         let new_owner_balance = owner.balance.unwrap() + g_entry_price;
-        let update_owner_balance = User::update_balance(user.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+        let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         if update_owner_balance.is_err(){
             let err_resp = update_owner_balance.unwrap_err();
             return Err(err_resp);
         }
 
-        decoded_invitation_request_data.push(InvitationRequestData{
-            username: owner.username,
-            user_avatar: owner.avatar,
-            from_screen_cid: owner_screen_cid.clone(),
-            requested_at: chrono::Local::now().timestamp(),
-            gallery_id: gallery.id,
-            is_accepted: true,
-        });
+        if !decoded_invitation_request_data
+                .clone()
+                .into_iter()
+                .any(|invrd| invrd.gallery_id == gallery.id){
+
+                    decoded_invitation_request_data.push(InvitationRequestData{
+                        username: owner.username,
+                        user_avatar: owner.avatar,
+                        from_screen_cid: owner_screen_cid.clone(),
+                        requested_at: chrono::Local::now().timestamp(),
+                        gallery_id: gallery.id,
+                        is_accepted: true,
+                    });
+                }
+
 
         match Self::update(&caller_screen_cid, UpdateUserFanData{ 
             friends: user_fan_data.friends, 
@@ -1545,6 +1563,31 @@ impl UserFan{
                     vec![]
                 };
 
+                // caching the gallery entrance fees in redis, we'll use this to payback the caller_screen_cid
+                // when the owner wants to remove the caller_screen_cid from his gallery 
+                let mut conn = redis_client.get_async_connection().await.unwrap();
+                let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
+                if get_galleries_with_entrance_fee.is_ok(){
+                    let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&get_galleries_with_entrance_fee.unwrap()).unwrap();
+                    // also at the time of entering we have to cache the enterance fee so later on 
+                    // we should be able to payback the user with this fee once the owner kicks him out
+                    // cause the owner might have updated the gallery entery price
+                    let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
+                    if get_friend_scids.is_some(){
+                        let mut friend_scids = get_friend_scids.clone().unwrap().0.clone();
+                        if !friend_scids.contains(&caller_screen_cid.to_string()){
+                            friend_scids.push(caller_screen_cid.to_string());
+                        }
+                        galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), g_entry_price));
+                    } else{
+                        galleries_with_entrance_fee.insert(gal_id, (vec![caller_cid], g_entry_price));
+                    }
+
+                    let stringified_ = serde_json::to_string_pretty(&galleries_with_entrance_fee).unwrap();
+                    let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
+                }
+
+                // push this caller into invited_friends anyways!
                 if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
                     invited_friends.push(Some(caller_screen_cid.to_string()));
                 }
@@ -1569,7 +1612,12 @@ impl UserFan{
                             
                             // revert the payment process, pay the gallery price back the user 
                             let new_balance = user.balance.unwrap() + g_entry_price;
-                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                            
+                            // charge the owner for the gallery price
+                            let new_owner_balance = owner.balance.unwrap() - g_entry_price;
+                            let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                            
                             return Err(resp)
                         },
                     }
@@ -1578,9 +1626,14 @@ impl UserFan{
             },
             Err(resp) => {
 
-                // revert the payment process, pay the gallery price back the user 
+                // revert the payment process, pay the gallery price back the user
                 let new_balance = user.balance.unwrap() + g_entry_price;
-                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                
+                // charge the owner for the gallery price
+                let new_owner_balance = owner.balance.unwrap() - g_entry_price;
+                let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+
                 return Err(resp);
             }
         }

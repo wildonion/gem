@@ -10,7 +10,7 @@
     |
 
     followings are redis publisher actors using redis 
-    actix actor to publish topics and notifs 
+    actix actor to publish/fire/emit/broadcast topics and notifs 
 */
 
 pub mod ecq;

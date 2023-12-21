@@ -578,6 +578,43 @@ async fn get_users_wallet_info(
 
 }
 
+#[get("/get-top-nfts/")]
+async fn get_top_nfts(
+        req: HttpRequest,   
+        limit: web::Query<Limit>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = &mut pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+
+            
+            todo!()
+            
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
 #[get("/search/")]
 async fn search(
         req: HttpRequest,   
