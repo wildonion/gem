@@ -29,6 +29,9 @@ COPY key-adminer.conse.app.pem /etc/nginx/key-adminer.conse.app.pem
 #portainer.conse.app:
 COPY cert-portainer.conse.app.pem /etc/nginx/cert-portainer.conse.app.pem
 COPY key-portainer.conse.app.pem /etc/nginx/key-portainer.conse.app.pem
+#grafana.conse.app:
+COPY cert-grafana.conse.app.pem /etc/nginx/cert-grafana.conse.app.pem
+COPY key-grafana.conse.app.pem /etc/nginx/key-grafana.conse.app.pem
 #api.panel.stripewh.conse.app
 COPY cert-api.panel.stripewh.conse.app.pem /etc/nginx/cert-api.panel.stripewh.conse.app.pem
 COPY key-api.panel.stripewh.conse.app.pem /etc/nginx/key-api.panel.stripewh.conse.app.pem
@@ -61,6 +64,7 @@ COPY api.panel.conse.app.conf /etc/nginx/api.panel.conse.app.conf
 COPY api.rendezvous.conse.app.conf /etc/nginx/api.rendezvous.conse.app.conf
 COPY adminer.conse.app.conf /etc/nginx/adminer.conse.app.conf
 COPY portainer.conse.app.conf /etc/nginx/portainer.conse.app.conf
+COPY grafana.conse.app.conf /etc/nginx/grafana.conse.app.conf
 COPY jenkins.conse.app.conf /etc/nginx/jenkins.conse.app.conf
 COPY event.panel.conse.app.conf /etc/nginx/event.panel.conse.app.conf
 COPY api.panel.stripewh.conse.app.conf /etc/nginx/api.panel.stripewh.conse.app.conf

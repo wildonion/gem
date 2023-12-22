@@ -35,6 +35,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         echo "> Redeploying Infrastructure Only"
         echo "☕ Okay, sit back and drink your coffee :)"
 
+        sudo docker stop graphana && sudo docker rm -f grapana
         sudo docker stop mongodb && sudo docker rm -f mongodb
         sudo docker stop postgres && sudo docker rm -f postgres
         sudo docker stop adminer && sudo docker rm -f adminer
@@ -44,7 +45,10 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker stop jenkins-blueocean && sudo docker rm -f jenkins-blueocean
         sudo docker stop portainer && sudo docker rm -f portainer
         sudo docker stop spacetimedb && sudo docker rm -f spacetimedb
+
         sudo docker run -d --network gem --name spacetimedb --rm --pull always -p 7556:80 clockworklabs/spacetimedb start
+
+        sudo docker run -d --network gem -p 7050:3000 --name=grafana --user "$(id -u)" --volume $(pwd)/infra/data:/var/lib/grafana grafana/grafana
 
         sudo docker run --name jenkins-docker --rm --detach \
         --privileged --network gem --network-alias docker \
@@ -120,12 +124,12 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
 
         sudo rm -r $(pwd)/target
 
-        ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg-*' | awk '{print $1}')
-        ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo-*' | awk '{print $1}')
-        ANY_CONSE_RENDEZVOUS_CONTAINER_ID=$(docker container ls  | grep 'conse-rendezvous-*' | awk '{print $1}')
-        ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook-*' | awk '{print $1}')
-        ANY_XBOT_CONTAINER_ID=$(docker container ls  | grep 'xbot-*' | awk '{print $1}')
-        ANY_XCORD_CONTAINER_ID=$(docker container ls  | grep 'xcord-*' | awk '{print $1}')
+        ANY_CONSE_PANEL_PG_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-pg' | awk '{print $1}')
+        ANY_CONSE_PANEL_MONGO_CONTAINER_ID=$(docker container ls  | grep 'conse-panel-mongo' | awk '{print $1}')
+        ANY_CONSE_RENDEZVOUS_CONTAINER_ID=$(docker container ls  | grep 'conse-rendezvous' | awk '{print $1}')
+        ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook' | awk '{print $1}')
+        ANY_XBOT_CONTAINER_ID=$(docker container ls  | grep 'xbot' | awk '{print $1}')
+        ANY_XCORD_CONTAINER_ID=$(docker container ls  | grep 'xcord' | awk '{print $1}')
 
         sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
         sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
