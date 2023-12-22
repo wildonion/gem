@@ -160,6 +160,7 @@ pub static NO_USER_FANS: &str = "Found No User Fan Data";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
 pub static NFT_NOT_FOUND_OF: &str = "No Nft Found With This Onchain Id";
 pub static NFT_NOT_FOUND_OF_ID: &str = "No Nft Found With This Id";
+pub static NOT_FOUND_NFT: &str = "No Nft Found";
 pub static COLLECTION_NOT_FOUND_FOR_CONTRACT: &str = "No Collection Found With This Contract Address";
 pub static COLLECTION_NOT_OWNED_BY: &str = "Collection Is Not Owned By The Caller Of This Method";
 pub static NFT_NOT_OWNED_BY: &str = "NFT Is Not Owned By The Caller Of This Method";

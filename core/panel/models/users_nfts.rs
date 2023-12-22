@@ -6,7 +6,7 @@ use actix::Addr;
 
 use crate::*;
 use crate::adapters::nftport::{self, NftExt, OnchainNfts};
-use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY, NFT_IS_NOT_LISTED};
+use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, INVALID_QUERY_LIMIT, STORAGE_IO_ERROR_CODE, NFT_ONCHAINID_NOT_FOUND, NFT_UPLOAD_ISSUE, CANT_MINT_CARD, CANT_MINT_NFT, CANT_TRANSFER_NFT, NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED, NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED, INVALID_NFT_EVENT_TYPE, NFT_IS_NOT_MINTED_YET, CANT_UPDATE_NFT, NFT_NOT_FOUND_OF, NFT_IS_ALREADY_MINTED, NFT_IS_NOT_LISTED_YET, NFT_PRICE_IS_EMPTY, NFT_EVENT_TYPE_BUYER_IS_NEEDED, CALLER_IS_NOT_BUYER, INVALID_NFT_ROYALTY, INVALID_NFT_PRICE, RECIPIENT_SCREEN_CID_NOT_FOUND, EMPTY_NFT_IMG, NFT_NOT_FOUND_OF_ID, USER_SCREEN_CID_NOT_FOUND, NFT_METADATA_URI_IS_EMPTY, NFT_IS_NOT_LISTED, NOT_FOUND_NFT};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
@@ -61,6 +61,12 @@ pub struct NftLike{
     pub nft_onchain_id: String,
     pub upvoter_screen_cids: Vec<LikeUserInfo>,
     pub downvoter_screen_cids: Vec<LikeUserInfo>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NftUpvoterLikes{
+    pub id: i32,
+    pub upvoter_screen_cids: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -730,6 +736,77 @@ impl UserNft{
 
     }
 
+    pub async fn get_all(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+        
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        /* get all nfts owned by the passed in current_owner */
+        let user_nfts = users_nfts
+            .order(users_nfts::created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .load::<UserNft>(connection);
+
+        let Ok(all_nfts) = user_nfts else{
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: NOT_FOUND_NFT,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        Ok(
+            all_nfts
+                .into_iter()
+                .map(|nft|{
+    
+                    UserNftData{ 
+                        id: nft.id, 
+                        contract_address: nft.contract_address, 
+                        current_owner_screen_cid: nft.current_owner_screen_cid, 
+                        metadata_uri: nft.metadata_uri, 
+                        extra: nft.extra, 
+                        onchain_id: nft.onchain_id, 
+                        nft_name: nft.nft_name, 
+                        is_minted: nft.is_minted, 
+                        nft_description: nft.nft_description, 
+                        current_price: nft.current_price, 
+                        is_listed: nft.is_listed, 
+                        freeze_metadata: nft.freeze_metadata, 
+                        comments: nft.comments, 
+                        likes: nft.likes, 
+                        tx_hash: nft.tx_hash, 
+                        created_at: nft.created_at.to_string(), 
+                        updated_at: nft.updated_at.to_string(),
+                        attributes: nft.attributes, 
+                    }
+    
+                })
+                .collect::<Vec<UserNftData>>()
+        )
+
+    }
+
     pub async fn find_by_onchain_id(onchain_id_: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
@@ -912,6 +989,53 @@ impl UserNft{
     }
 
     pub async fn find_by_id(asset_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserNftData, PanelHttpResponse>{
+
+        let user_nft = users_nfts
+            .filter(users_nfts::id.eq(asset_id))
+            .first::<UserNft>(connection);
+
+        let Ok(nft) = user_nft else{
+
+            let resp = Response{
+                data: Some(asset_id),
+                message: NFT_NOT_FOUND_OF_ID,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        Ok(
+            UserNftData{ 
+                id: nft.id, 
+                contract_address: nft.contract_address, 
+                current_owner_screen_cid: nft.current_owner_screen_cid, 
+                metadata_uri: nft.metadata_uri, 
+                extra: nft.extra, 
+                onchain_id: nft.onchain_id, 
+                nft_name: nft.nft_name, 
+                is_minted: nft.is_minted, 
+                nft_description: nft.nft_description, 
+                current_price: nft.current_price, 
+                is_listed: nft.is_listed, 
+                freeze_metadata: nft.freeze_metadata, 
+                comments: nft.comments, 
+                likes: nft.likes, 
+                tx_hash: nft.tx_hash, 
+                created_at: nft.created_at.to_string(), 
+                updated_at: nft.updated_at.to_string(),
+                attributes: nft.attributes, 
+            }
+        )
+
+    }
+
+    pub fn find_by_id_none_async(asset_id: i32, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 

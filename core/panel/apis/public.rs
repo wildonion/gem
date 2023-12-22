@@ -5,7 +5,7 @@
 
 use crate::*;
 use crate::models::users_collections::UserCollectionData;
-use crate::models::users_nfts::UserNftData;
+use crate::models::users_nfts::{UserNftData, UserNft, NftLike, LikeUserInfo, UserLikeStat, NftUpvoterLikes};
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::models::users_galleries::{UserPrivateGallery, UserPrivateGalleryData};
 use crate::models::{users::*, tasks::*, users_tasks::*, xbot::*};
@@ -595,9 +595,60 @@ async fn get_top_nfts(
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
 
+            let get_nfts = UserNft::get_all(limit, connection).await;
+            let Ok(nfts) = get_nfts else{
+                let err_resp = get_nfts.unwrap_err();
+                return err_resp;
+            };
+
+            let mut nft_like_map = vec![];
+            for nft in nfts{
+                
+                let nft_likes = nft.likes;
+                let mut decoded_likes = if nft_likes.is_some(){
+                    serde_json::from_value::<Vec<NftLike>>(nft_likes.unwrap()).unwrap()
+                } else{
+                    vec![]
+                };  
+                
+                for like in decoded_likes{
+                    nft_like_map.push(
+                        NftUpvoterLikes{
+                            id: nft.id,
+                            upvoter_screen_cids: like.upvoter_screen_cids.len() as u64
+                        }
+                    );
+                }
+
+            }
             
-            todo!()
+            // sort by the most likes to less ones
+            nft_like_map.sort_by(|nl1, nl2|{
+
+                let nl1_likes = nl1.upvoter_screen_cids;
+                let nl2_likes = nl2.upvoter_screen_cids;
+
+                nl2_likes.cmp(&nl1_likes)
+
+            });
             
+            let top_nfts = nft_like_map
+                .into_iter()
+                .map(|nlinfo|{
+
+                    let nft = UserNft::find_by_id_none_async(nlinfo.id, connection).unwrap();
+                    nft
+
+                })
+                .collect::<Vec<UserNftData>>();
+
+            resp!{
+                Vec<UserNftData>, // the data type
+                top_nfts, // response data
+                FETCHED, // response message
+                StatusCode::OK, // status code
+                None::<Cookie<'_>>, // cookie
+            }
         
         }, 
         None => {
@@ -1007,4 +1058,5 @@ pub mod exports{
     pub use super::get_user_wallet_info;
     pub use super::get_users_wallet_info;
     pub use super::search;
+    pub use super::get_top_nfts;
 }
