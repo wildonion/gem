@@ -60,10 +60,10 @@ macro_rules! server {
             /*  
                                         SETTING UP SHARED STATE DATA
                 
-                make sure we're starting the RoleNotifServer, MmrNotifServer and EcqNotifServer actor in here 
-                and pass the actor isntance to the routers' threadpool in order to move them between different
-                apis, otherwise each actor will be started each time by calling the related websocket route and
-                the their last state will be lost.
+                make sure we're starting the RoleNotifServer, MmrNotifServer, EcqNotifServer and ChatRoomLaunchpadServer 
+                actor in here and pass the actor isntance to the routers' threadpool in order to move them between 
+                different apis, otherwise each actor will be started each time by calling the related websocket route 
+                and the their last state will be lost.
 
                 following servers need to be started globally so we can share them between actix threads 
                 and push new ws session actor inside subscription routes into their sessions field, also 

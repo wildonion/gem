@@ -1,7 +1,7 @@
 
 
 
-use crate::*;
+use crate::{*, constants::WS_SUBSCRIPTION_INTERVAL};
 use actix::prelude::*;
 use s3req::Storage;
 
@@ -28,8 +28,35 @@ impl Actor for UserActionActor{
 
     fn started(&mut self, ctx: &mut Self::Context){
         
+        info!("UserActionActor -> started subscription interval");
+
+        /* start subscription interval in tokio::spawn() using while let Some()... syntax */
+        ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+
+            let mut this = actor.clone();
+            let app_storage = actor.app_storage.clone().unwrap();
+            let redis_pubsub_async = app_storage.get_async_redis_pubsub_conn_sync().unwrap();
+
+            // start subscribing to redis
+            tokio::spawn(async move{
+
+                this.redis_subscribe(app_storage, redis_pubsub_async).await;
+
+            });
+
+        });
+
     }
     
+}
+
+impl UserActionActor{
+
+    pub async fn redis_subscribe(&mut self, app_storage: Arc<Storage>,
+        redis_async_pubsubconn: Arc<PubsubConnection>){
+
+    }
+
 }
 
 
