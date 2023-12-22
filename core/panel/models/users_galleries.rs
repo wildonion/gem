@@ -623,7 +623,7 @@ impl UserPrivateGallery{
             return Err(
                 Ok(HttpResponse::NotAcceptable().json(resp))
             )
-        }   
+        }
 
         let get_user_fan = UserFan::get_user_fans_data_for(&caller_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{

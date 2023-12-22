@@ -31,6 +31,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 🛢️ ADMINER PANEL                                ==> https://adminer.conse.app
 🛎️ JENKINS PANEL                                ==> https://jenkins.conse.app
 ⛵ PORTAINER PANEL                              ==> https://portainer.conse.app
+📊 GRAFANA PANEL                                ==> https://grafana.conse.app
 🏦 STRIPE WEBHOOK ENDPOINT                      ==> https://api.panel.stripewh.conse.app
 🤖 X BOT                                        ==> https://api.xbot.conse.app
 🗞️ PANEL AND XCORD ERROR LOGS                   ==> https://api.panel.conse.app/logs
@@ -61,7 +62,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
     * `gastracker`: gastracker crate.
     * `grpc`: KYC grpc server.
     * `panel`: user, dev and admin dashboard panel APIs with actix web and actix WS server.
-    * `rendezvous`: rendezvous service APIs
+    * `rendezvous`: rendezvous service upsert event and deck, reserve event, reveal role and other in-game APIs.
         * `controllers`: in-game async controllers related to hyper server.
         * `routers`: in-game API routers related to hyper server.
         * `schemas`: in-game mongodb schemas related to hyper server.
@@ -146,6 +147,7 @@ event.panel.conse.app        #---> points to the websocket chat and push notific
 adminer.conse.app            #---> points to the adminer UI
 jenkins.conse.app            #---> points to the jenkins UI
 portainer.conse.app          #---> points to the portainer UI
+grafana.conse.app            #---> points to the grafana UI
 api.panel.stripewh.conse.app #---> stripe webhook endpoint to receive checkout events
 api.xbot.conse.app           #---> twitter bot to verify twitter tasks 
 rpc.conse.app                #---> gRPC server actors
