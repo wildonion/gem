@@ -9260,10 +9260,11 @@ async fn get_all_user_reactions(
 
 }
 
-#[get("/nft/get/all/onchain/")]
+#[get("/nft/get/all/onchain/for/{who_screen_cid}/")]
 #[passport(user)]
 async fn get_all_nfts_owned_by(
     req: HttpRequest,
+    who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -9326,6 +9327,13 @@ async fn get_all_nfts_owned_by(
                             None::<Cookie<'_>>, //// cookie
                         }
                     }
+
+                    /* caller must have an screen_cid */
+                    let get_user = User::find_by_screen_cid(&who_screen_cid.to_owned(), connection).await;
+                    let Ok(user) = get_user else{
+                        let err_resp = get_user.unwrap_err();
+                        return err_resp;
+                    };
 
                     match UserNft::get_all_nfts_owned_by(
                         &user.screen_cid.unwrap(),
