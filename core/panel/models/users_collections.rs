@@ -827,6 +827,8 @@ impl UserCollection{
 impl UserCollection{
 
     /*  ------------- nftport request body -------------
+    create new nft product contract collection
+    https://docs.nftport.xyz/docs/contract-comparison
         onchian updates:
             - name
             - symbol

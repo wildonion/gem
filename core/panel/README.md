@@ -21,7 +21,7 @@
     - polygon trade nft calls
     - add/remove/accept friend requests
     - add/remove/accept gallery friend requests
-    - create nfts and upload their artworkds on pastel network storage using sense and cascade technologies
+    - create nfts and upload their artworkds on ipfs network storage
     - mint, buy and transfer nfts on polygon network in the platform
 - buy and sell in-app token (charge wallet and stripe apis)
 - get token price and gas fee

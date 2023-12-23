@@ -2125,7 +2125,7 @@ pub mod exports{
         0 - summerize users' chats and generate n titles
         2 - generate nft based images for those titles
         3 - generate a mapping between titles and images using ai
-        4 - store them in ipfs, pastel using sense apis
+        4 - store them on ipfs,
         5 - mint ai generated pictures to users screen_cids inside the chat
     https://docs.nftport.xyz/reference/deploy-nft-collection-contract
     pub use super::start_new_clp_event;

@@ -4,7 +4,7 @@
 
 # 🛞 Rust Both Core Monolithic and Micro-service Stateful Backend APIs and Engines
 
-Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** which uses **Sense**: A Near-Duplicate NFT Detection Protocol on the **Pastel** Network, with the following engines as its core backend: 
+Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), gallery based NFT Marketplace on top of **Polygon** with the following engines as its core backend: 
 - chatroom launchpad feature to mint generated AI based NFT images to users based on their chats in each launchpad events.
 - **pubsub** pattern to reveal player in-game roles inside the rendezvous service using redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.
@@ -95,16 +95,6 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 > you can download runtime crashing error logs throught the address `https://api.panel.conse.app/logs` also after setting up the `portainer`, each container logs can be downloaded inside the panel, also makre sure that you've installed the following packages on **MacOS M1**:
 
 ```bash
-wget https://download.pastel.network/latest-release/pastelup/pastelup-linux-amd64
-chmod 755 pastelup-linux-amd64
-./pastelup install walletnode -n=testnet
-./pastelup start walletnode --development-mode
-cd pastel && ./pastel-cli getconnectioncount
-./pastel-cli getnewaddress
-./pastel-cli dumpprivkey <address you just printed>
-./pastel-cli importprivkey <private key you just printed>
-./pastel-cli pastelid newkey "<passphrase>"
-./pastel-cli tickets register id personal <pastelid> <passphrase> <address>
 brew tap cossacklabs/tap
 brew install openjdk
 brew install pkg-config

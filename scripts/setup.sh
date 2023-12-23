@@ -17,7 +17,7 @@ cargo install diesel_cli --no-default-features --features postgres
 echo "🥒 Building Proto Files..."
 cargo build
 
-sudo apt install -y protobuf-compiler
+sudo apt install -y protobuf-compiler libssl-dev zlib1g-dev
 curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs && sudo apt install -y npm && sudo npm install pm2@latest -g
 wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb

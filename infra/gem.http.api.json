@@ -4773,7 +4773,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/nft/get/all/onchain/?from=0&to=10",
+											"raw": "{{panel-user}}/nft/get/all/onchain/for/0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2/?from=0&to=10",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -4782,6 +4782,8 @@
 												"get",
 												"all",
 												"onchain",
+												"for",
+												"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2",
 												""
 											],
 											"query": [
@@ -5203,7 +5205,7 @@
 							"response": []
 						},
 						{
-							"name": "Get Top Nfts (Most Likes)",
+							"name": "Get Top Nfts (Most Liked)",
 							"request": {
 								"auth": {
 									"type": "bearer",
@@ -5224,6 +5226,44 @@
 									],
 									"path": [
 										"get-top-nfts",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Minted Nfts",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/get-all-minted-nfts/?from=0&to=10",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"get-all-minted-nfts",
 										""
 									],
 									"query": [

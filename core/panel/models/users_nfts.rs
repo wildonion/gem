@@ -1794,7 +1794,7 @@ impl UserNft{
     /*  --------------------------------------------------------------------------------
         Note: Transferring is possible only if the token is owned by the contract owner 
         and the token has not been transferred/sold yet, so the following operation can 
-        only be done once.
+        only be done once after minting.
         --------------------------------------------------------------------------------
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
@@ -1922,7 +1922,8 @@ impl UserNft{
                     /* ---------------------------------------------------------------------------- */
                     /*                  calculating royalty for collection
                         since royalties_address_screen_cid is heap data thus by getting this field 
-                        the collection_data instance will be moved, we should clone it 
+                        the collection_data instance will be moved, we should either clone it or 
+                        borrow it using ref, & or as_ref()
                     */
                     /* ---------------------------------------------------------------------------- */
                     let nft_price = get_nft_price.unwrap() as f64;
@@ -1969,12 +1970,14 @@ impl UserNft{
                     /* ----------------------------------------------------- */
                     /* ------- transferring the ownership of the nft ------- */
                     /* ----------------------------------------------------- */
+                    // note that this can only be done once after nft minting
                     let (new_tx_hash, status) = 
                         nftport::transfer_nft(
                             redis_client.clone(), 
                             buy_nft_request.clone()
                         ).await;
 
+                    // if anything went wrong we simpley revert the shares
                     if status == 1{
 
                         /* revert shares */
@@ -2007,6 +2010,7 @@ impl UserNft{
 
                     }
 
+                    // updating nft fields with new onchain data
                     buy_nft_request.tx_hash = Some(new_tx_hash);
                     buy_nft_request.current_owner_screen_cid = buyer_screen_cid;
                     buy_nft_request.is_listed = Some(false);
@@ -2386,7 +2390,7 @@ impl UserNft{
             /*  --------------------------------------------------------------------------------
                 Note: Transferring is possible only if the token is owned by the contract owner 
                 and the token has not been transferred/sold yet, so the following operation can 
-                only be done once.
+                only be done once after minting.
                 --------------------------------------------------------------------------------
             */
             "transfer" => {
@@ -2590,7 +2594,11 @@ impl UserNft{
                 asset_info.metadata_uri = if nft_data.freeze_metadata.is_some() &&
                     nft_data.freeze_metadata.unwrap() == true{
 
-                        /* just ignore updating metadata_uri and use the old one */
+                        /* 
+                            just ignore updating metadata_uri and use the old one 
+                            cause we can't update metadata_uri onchain if the freeze_metadata
+                            is set to true
+                        */
                         nft_data.metadata_uri 
 
                     } else{
