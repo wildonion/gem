@@ -200,5 +200,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::get_users_wallet_info);
     config.service(apis::public::search);
     config.service(apis::public::get_top_nfts);
+    config.service(apis::public::get_all_nfts);
 
 }

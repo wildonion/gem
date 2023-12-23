@@ -13,6 +13,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use chrono::NaiveDateTime;
+use rand::seq::SliceRandom;
 use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -612,12 +613,14 @@ async fn get_top_nfts(
                 };  
                 
                 for like in decoded_likes{
-                    nft_like_map.push(
-                        NftUpvoterLikes{
-                            id: nft.id,
-                            upvoter_screen_cids: like.upvoter_screen_cids.len() as u64
-                        }
-                    );
+                    if nft.is_minted.is_some() && nft.is_minted.unwrap(){
+                        nft_like_map.push(
+                            NftUpvoterLikes{
+                                id: nft.id,
+                                upvoter_screen_cids: like.upvoter_screen_cids.len() as u64
+                            }
+                        );
+                    }
                 }
 
             }
@@ -645,6 +648,82 @@ async fn get_top_nfts(
             resp!{
                 Vec<UserNftData>, // the data type
                 top_nfts, // response data
+                FETCHED, // response message
+                StatusCode::OK, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
+#[get("/get-all-minted-nfts/")]
+async fn get_all_nfts(
+        req: HttpRequest,   
+        limit: web::Query<Limit>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = &mut pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+
+            let get_nfts = UserNft::get_all(limit, connection).await;
+            let Ok(nfts) = get_nfts else{
+                let err_resp = get_nfts.unwrap_err();
+                return err_resp;
+            };
+
+            let mut minted_ones = vec![];
+            for nft in nfts{
+                
+                if nft.is_minted.is_some() && nft.is_minted.clone().unwrap(){
+                    minted_ones.push(
+                        nft.clone()
+                    )
+                }
+
+            }
+            
+            // sort by the most likes to less ones
+            minted_ones.sort_by(|nft1, nft2|{
+
+                let nft1_created_at = NaiveDateTime
+                    ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let nft2_created_at = NaiveDateTime
+                    ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                nft2_created_at.cmp(&nft1_created_at)
+
+            });
+            
+            let mut rng = rand::thread_rng();
+            minted_ones.shuffle(&mut rng);
+
+            resp!{
+                Vec<UserNftData>, // the data type
+                minted_ones, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie
@@ -1059,4 +1138,5 @@ pub mod exports{
     pub use super::get_users_wallet_info;
     pub use super::search;
     pub use super::get_top_nfts;
+    pub use super::get_all_nfts;
 }
