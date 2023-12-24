@@ -78,6 +78,8 @@ impl UserActionActor{
 
         // start subscribing to the user_actions topic
         // inside tokio::spawn() using while let Some 
+        // send the received data to mpsc channel to 
+        // receive it outside of the tokio::spawn()
         // ...
         
     }

@@ -72,4 +72,12 @@ impl NotifExt for UserNotif{
 
 pub async fn publish_actions(){
 
+    type Method = fn() -> i32;
+    fn run(param: impl Fn() -> ActionType, method: Method)
+    // bounding generic Method to traits and lifetimes
+    where Method: Send + Sync + 'static{}
+    fn execute<'f, F>(param: &'f F) -> () 
+    // bounding generic F to closure, lifetimes and other traits
+    where F: Fn() -> ActionType + Send + Sync + 'static{}
+
 }

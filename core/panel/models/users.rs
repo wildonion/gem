@@ -11,7 +11,7 @@ use chrono::Timelike;
 use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
 use crate::*;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit};
+use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit, gen_random_chars_0_255};
 use crate::models::users_galleries::{UserPrivateGallery, NewUserPrivateGalleryRequest};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
@@ -159,17 +159,12 @@ pub struct UserWalletInfoResponse{
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct ForgotPasswordRequest{
-    pub owner_cid: String,
-    pub tx_signature: String,
-    pub hash_data: String,
+    pub mail: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct NewPasswordRequest{
     pub new_password: String,
-    pub owner_cid: String,
-    pub tx_signature: String,
-    pub hash_data: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -3809,6 +3804,244 @@ impl User{
 
     }
 
+    pub async fn reset_password(forgot_pswd: ForgotPasswordRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserData, PanelHttpResponse>{
+
+        let get_user = Self::find_by_mail(&forgot_pswd.mail, connection).await;
+        let Ok(user) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+
+        if !user.is_mail_verified{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: NOT_VERIFIED_MAIL,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+
+        let random_chars = gen_random_chars(gen_random_number(8, 10));
+        let hashed_password = Self::hash_pswd(&random_chars).unwrap();
+
+        /* sending mail */
+        let sent_pswd = mailreq::send_reset_pass_mail(APP_NAME, user.id, &forgot_pswd.mail, &random_chars).await;
+        let Ok(_) = sent_pswd else{
+            let err_resp = sent_pswd.unwrap_err();
+            return Err(err_resp);
+        };
+
+        // updating user 
+        match diesel::update(users.find(user.id))
+            .set(pswd.eq(hashed_password))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            wallet_background: updated_user.wallet_background.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::reset_password");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+        
+
+    }
+
+    pub async fn update_password(owner_id: i32, new_pass_request: NewPasswordRequest, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserData, PanelHttpResponse>{
+
+        let get_user = Self::find_by_id(owner_id, connection).await;
+        let Ok(user) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+
+        if user.mail.is_none() || (user.mail.is_some() && !user.is_mail_verified){
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: NOT_VERIFIED_MAIL,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+        let hashed_password = Self::hash_pswd(&new_pass_request.new_password).unwrap();
+
+        /* sending mail */
+        let sent_pswd = mailreq::send_new_pass_mail(APP_NAME, user.id, &user.mail.unwrap(), &new_pass_request.new_password).await;
+        let Ok(_) = sent_pswd else{
+            let err_resp = sent_pswd.unwrap_err();
+            return Err(err_resp);
+        };
+
+        // updating user 
+        match diesel::update(users.find(user.id))
+            .set(pswd.eq(hashed_password))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    
+                    Ok(
+                        UserData { 
+                            id: updated_user.id, 
+                            region: updated_user.region.clone(),
+                            username: updated_user.clone().username, 
+                            bio: updated_user.bio.clone(),
+                            avatar: updated_user.avatar.clone(),
+                            banner: updated_user.banner.clone(),
+                            wallet_background: updated_user.wallet_background.clone(),
+                            activity_code: updated_user.clone().activity_code, 
+                            twitter_username: updated_user.clone().twitter_username, 
+                            facebook_username: updated_user.clone().facebook_username, 
+                            discord_username: updated_user.clone().discord_username, 
+                            identifier: updated_user.clone().identifier, 
+                            user_role: {
+                                match updated_user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: updated_user.token_time,
+                            balance: updated_user.balance,
+                            last_login: { 
+                                if updated_user.last_login.is_some(){
+                                    Some(updated_user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: updated_user.created_at.to_string(),
+                            updated_at: updated_user.updated_at.to_string(),
+                            mail: updated_user.clone().mail,
+                            google_id: updated_user.clone().google_id,
+                            microsoft_id: updated_user.clone().microsoft_id,
+                            is_mail_verified: updated_user.is_mail_verified,
+                            is_phone_verified: updated_user.is_phone_verified,
+                            phone_number: updated_user.clone().phone_number,
+                            paypal_id: updated_user.clone().paypal_id,
+                            account_number: updated_user.clone().account_number,
+                            device_id: updated_user.clone().device_id,
+                            social_id: updated_user.clone().social_id,
+                            cid: updated_user.clone().cid,
+                            screen_cid: updated_user.clone().screen_cid,
+                            snowflake_id: updated_user.snowflake_id,
+                            stars: updated_user.stars,
+                            extra: updated_user.clone().extra,
+                        }
+                    )
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::updated_password");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+        
+
+    }
+
     pub async fn send_mail_verification_code_to(mail_owner_id: i32, user_mail: String, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
 
@@ -3825,6 +4058,25 @@ impl User{
                 Ok(HttpResponse::NotFound().json(resp))
             );
         };
+
+        let get_same_user = User::find_by_mail(&user_mail, connection).await;
+        let Ok(same_user) = get_same_user else{
+            let err_resp = get_same_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        if mail_owner_id != same_user.id{
+
+            let resp = Response{
+                data: Some(user_mail),
+                message: MAIL_OWNER_IS_NOT_CALLER,
+                status: 403,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            );
+        }
         
         //----- don't uncomment it since the user might not enter the code 
         //----- but server has saved his mail in db so he must request again for a new code

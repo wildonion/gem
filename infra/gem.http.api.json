@@ -2583,7 +2583,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"wildonion@123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"7^vBWcy+w\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2750,7 +2750,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNTYxMTk2OTkzOTk5MDAwLCJleHAiOjE3MDMxNTMxOTYsImlhdCI6MTcwMDU2MTE5Nn0.Xteu-yg5ntOCdpHIzLCW0rUYpFogNIxdWKKHUhc5HqorPV0Lw3TUiALozP28lxdFWjmebDVsaQnpnYwtQcXEMA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDA3NDYyNTkzMDU0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDA5MjYyNjAxNDM1MDAwLCJpYXQiOjE3MDM0MDc0NjI2MDE0MzUwMDB9.c27i_QwTopM7hV_1ZEP52ICyfWKAOWdegi8SsY42AzpSFGxOzvebEnTVQBlSjrM07ZzGbXjFOog1fogEifKWhw",
 													"type": "string"
 												}
 											]
@@ -2778,7 +2778,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwNTYxMTk2OTkzOTk5MDAwLCJleHAiOjE3MDMxNTMxOTYsImlhdCI6MTcwMDU2MTE5Nn0.Xteu-yg5ntOCdpHIzLCW0rUYpFogNIxdWKKHUhc5HqorPV0Lw3TUiALozP28lxdFWjmebDVsaQnpnYwtQcXEMA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDA3NDYyNTkzMDU0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDA5MjYyNjAxNDM1MDAwLCJpYXQiOjE3MDM0MDc0NjI2MDE0MzUwMDB9.c27i_QwTopM7hV_1ZEP52ICyfWKAOWdegi8SsY42AzpSFGxOzvebEnTVQBlSjrM07ZzGbXjFOog1fogEifKWhw",
 													"type": "string"
 												}
 											]
@@ -2787,7 +2787,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"user_mail\": \"abarmardeatashyne@gmail.com\",\n    \"verification_code\": \"57758401\"\n}",
+											"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"20131394\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2876,6 +2876,44 @@
 												"profile",
 												"update",
 												"bio"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update Password",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"new_password\": \"wildonion@123\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/profile/update/password",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"profile",
+												"update",
+												"password"
 											]
 										}
 									},
@@ -4984,6 +5022,36 @@
 										"update",
 										"balance",
 										"webhook"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Forgot Password",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"mail\": \"ea_pain@yahoo.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-health}}/profile/forgot-password",
+									"host": [
+										"{{panel-health}}"
+									],
+									"path": [
+										"profile",
+										"forgot-password"
 									]
 								}
 							},

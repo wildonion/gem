@@ -114,7 +114,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::edit_extra);
     config.service(apis::user::exports::upload_avatar);
     config.service(apis::user::exports::update_password);
-    config.service(apis::user::exports::forgot_password);
     config.service(apis::user::exports::upload_banner);
     config.service(apis::user::exports::upload_wallet_back);
     config.service(apis::user::exports::upload_private_gallery_back);
@@ -177,8 +176,9 @@ pub fn init_health(config: &mut web::ServiceConfig){
     config.service(apis::health::exports::check_token);
     config.service(apis::health::exports::get_tasks);
     config.service(apis::health::exports::logout);
-    config.service(apis::health::update_user_balance_webhook);
-    config.service(apis::health::is_user_kyced);
+    config.service(apis::health::exports::update_user_balance_webhook);
+    config.service(apis::health::exports::is_user_kyced);
+    config.service(apis::health::exports::forgot_password);
 
 }
 
@@ -195,11 +195,11 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::verify_twitter_task);
     config.service(apis::public::exports::check_users_task);
     config.service(apis::public::exports::get_x_requests);
-    config.service(apis::public::tasks_leaderboard);
-    config.service(apis::public::get_user_wallet_info);
-    config.service(apis::public::get_users_wallet_info);
-    config.service(apis::public::search);
-    config.service(apis::public::get_top_nfts);
-    config.service(apis::public::get_all_nfts);
+    config.service(apis::public::exports::tasks_leaderboard);
+    config.service(apis::public::exports::get_user_wallet_info);
+    config.service(apis::public::exports::get_users_wallet_info);
+    config.service(apis::public::exports::search);
+    config.service(apis::public::exports::get_top_nfts);
+    config.service(apis::public::exports::get_all_nfts);
 
 }

@@ -116,3 +116,153 @@ pub async fn send_mail(
     )
 
 }
+
+pub async fn send_reset_pass_mail(
+    APP_NAME: &str,
+    mail_owner_id: i32,
+    user_mail: &str,
+    new_pswd: &str,
+) -> Result<(), PanelHttpResponse>{
+
+    let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
+    let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
+    let smtp_server = std::env::var("SMTP_SERVER").unwrap();
+    let smtp_creds = Credentials::new(smtp_username.clone(), smtp_password);
+    
+    let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_server.as_str())
+        .unwrap()
+        .credentials(smtp_creds)
+        .build();
+
+    let from = format!("{}: <{}>", APP_NAME, smtp_username).parse::<Mailbox>();
+    let to = format!("{}: <{}>", mail_owner_id, user_mail).parse::<Mailbox>();
+
+    if from.is_err() || to.is_err(){
+
+        // let from_send_mail_error = from.unwrap_err();
+        // let to_send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
+        let final_err = format!("Invalid Sender Or Receiver Mail Address");
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: &final_err,
+            status: 417,
+            is_error: true
+        };
+        return Err(
+            Ok(HttpResponse::ExpectationFailed().json(resp))
+        );
+            
+    }
+
+    let subject = "Reset Password";
+    let body = format!("
+        <p>Use this password to login in {}: <b>{}</b></p>
+        <br>
+        <p><b>Change this password immediately after login</b></p>", 
+        APP_NAME, new_pswd);
+
+    let email = LettreMessage::builder()
+        .from(from.unwrap())
+        .to(to.unwrap())
+        .subject(subject)
+        .header(LettreContentType::TEXT_HTML)
+        .body(body)
+        .unwrap();
+
+    let get_mail_res = mailer.send(email).await;
+    let Ok(_) = get_mail_res else {
+
+        let send_mail_error = get_mail_res.unwrap_err();
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: &send_mail_error.to_string(),
+            status: 417,
+            is_error: true
+        };
+        return Err(
+            Ok(HttpResponse::ExpectationFailed().json(resp))
+        );
+    };
+
+    Ok(
+        ()
+    )
+
+}
+
+pub async fn send_new_pass_mail(
+    APP_NAME: &str,
+    mail_owner_id: i32,
+    user_mail: &str,
+    new_pswd: &str,
+) -> Result<(), PanelHttpResponse>{
+
+    let smtp_username = std::env::var("SMTP_USERNAME").unwrap();
+    let smtp_password = std::env::var("SMTP_PASSWORD").unwrap();
+    let smtp_server = std::env::var("SMTP_SERVER").unwrap();
+    let smtp_creds = Credentials::new(smtp_username.clone(), smtp_password);
+    
+    let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(smtp_server.as_str())
+        .unwrap()
+        .credentials(smtp_creds)
+        .build();
+
+    let from = format!("{}: <{}>", APP_NAME, smtp_username).parse::<Mailbox>();
+    let to = format!("{}: <{}>", mail_owner_id, user_mail).parse::<Mailbox>();
+
+    if from.is_err() || to.is_err(){
+
+        // let from_send_mail_error = from.unwrap_err();
+        // let to_send_mail_error = to.unwrap_err(); /* or this cause they have same error message */
+        let final_err = format!("Invalid Sender Or Receiver Mail Address");
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: &final_err,
+            status: 417,
+            is_error: true
+        };
+        return Err(
+            Ok(HttpResponse::ExpectationFailed().json(resp))
+        );
+            
+    }
+
+    let subject = "Reset Password";
+    let body = format!("
+        <p>Your {} Password Updated Successfully</p>
+        <br>
+        <p><br>Your current password: {}</b></p>", 
+        APP_NAME, new_pswd);
+
+    let email = LettreMessage::builder()
+        .from(from.unwrap())
+        .to(to.unwrap())
+        .subject(subject)
+        .header(LettreContentType::TEXT_HTML)
+        .body(body)
+        .unwrap();
+
+    let get_mail_res = mailer.send(email).await;
+    let Ok(_) = get_mail_res else {
+
+        let send_mail_error = get_mail_res.unwrap_err();
+
+        let resp = Response::<'_, &[u8]>{
+            data: Some(&[]),
+            message: &send_mail_error.to_string(),
+            status: 417,
+            is_error: true
+        };
+        return Err(
+            Ok(HttpResponse::ExpectationFailed().json(resp))
+        );
+    };
+
+    Ok(
+        ()
+    )
+
+}

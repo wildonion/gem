@@ -521,7 +521,7 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
-        /* converint the generated random ascii to char */
+        /* converting the generated random ascii to char */
         char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
     }).collect()
 }
@@ -529,8 +529,8 @@ pub fn gen_random_chars(size: u32) -> String{
 pub fn gen_random_chars_0_255(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{
-        /* converint the generated random ascii to char */
-        char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
+        /* converting the generated random ascii to char */
+        char::from_u32(rng.gen_range(0..255)).unwrap() // generating a char from the random output of type u32 using from_u32() method
     }).collect()
 }
 
