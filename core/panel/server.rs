@@ -27,6 +27,7 @@ macro_rules! server {
             use crate::events::subscribers::handlers::actors::ws::servers::ecq::EcqNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
             use crate::events::subscribers::handlers::actors::notif::pg::PgListenerActor;
+            use crate::events::subscribers::handlers::actors::notif::user::UserActionActor;
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
 
             
@@ -82,16 +83,20 @@ macro_rules! server {
             let chatroomlp_server_instance = ChatRoomLaunchpadServer::new(app_storage.clone()).start();
             let shared_ws_chatroomlp_server = Data::new(chatroomlp_server_instance.clone());
 
+            
+            let system_actor_instance = SystemActor{updated_users: HashMap::new()}.start();
+            let shared_system_actor_instance = Data::new(system_actor_instance.clone());
+            
             /* 
                 initializing the pg listener state before starting the server, we'll pass 
                 the initialized instance to the server app data as the shared state data 
                 so it can be shareable and loadable inside actix routers' threads
             */
-            let system_actor_instance = SystemActor{updated_users: HashMap::new()}.start();
-            let shared_system_actor_instance = Data::new(system_actor_instance.clone());
-            
             let pg_listener_instance = PgListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
             let shared_pg_listener_instance = Data::new(pg_listener_instance.clone());
+
+            let users_notifs_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
+            let shared_users_notifs_listener_instance = Data::new(users_notifs_listener_instance.clone());
 
 
             let shared_storage = Data::new(app_storage.clone());
@@ -130,6 +135,7 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_ws_chatroomlp_server.clone()))
                     .app_data(Data::clone(&shared_pg_listener_instance.clone()))
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
+                    .app_data(Data::clone(&shared_users_notifs_listener_instance.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))

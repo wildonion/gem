@@ -8,15 +8,14 @@ use crate::{*, models::users::UserWalletInfoResponse};
 pub struct UserNotif{
     wallet_info: UserWalletInfoResponse,
     notifs: Vec<NotifData>,
-    updated_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct NotifData{
-    event_id: String, // event_id is the id of an entity that caused this notif happened
     fired_at: Option<i64>,
     seen: bool,
     action_type: ActionType,
+    actioner_screen_cid: String,
     action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
 }
 
@@ -40,9 +39,9 @@ pub enum ActionType{
 impl UserNotif{
     fn set(&mut self, notif_data: NotifData) -> Self{
         self.notifs.push(notif_data);
-        let user_notif = UserNotif { wallet_info: self.wallet_info.clone(), notifs: self.notifs.clone(), updated_at: self.updated_at };
+        let UserNotif{ wallet_info, notifs } = self;
         UserNotif{
-            ..user_notif /* filling all the fields with the user_notif ones */
+            ..self.clone() /* filling all the fields with the self ones */
         }
     }
     fn get(&mut self) -> Self{

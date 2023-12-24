@@ -4059,13 +4059,24 @@ impl User{
             );
         };
 
-        let get_same_user = User::find_by_mail(&user_mail, connection).await;
-        let Ok(same_user) = get_same_user else{
-            let err_resp = get_same_user.unwrap_err();
-            return Err(err_resp);
-        };
+        let get_same_user_by_mail = User::find_by_mail(&user_mail, connection).await;
+        let get_same_user_by_identifier = User::find_by_identifier(&user_mail, connection).await;
 
-        if mail_owner_id != same_user.id{
+        if get_same_user_by_mail.is_err() && get_same_user_by_identifier.is_err(){
+
+            let resp = Response{
+                data: Some(user_mail),
+                message: USER_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );   
+        }
+
+        if (get_same_user_by_mail.is_ok() && mail_owner_id != get_same_user_by_mail.unwrap().id) || 
+            (get_same_user_by_identifier.is_ok() && mail_owner_id != get_same_user_by_identifier.unwrap().id){
 
             let resp = Response{
                 data: Some(user_mail),
@@ -4077,7 +4088,7 @@ impl User{
                 Ok(HttpResponse::Forbidden().json(resp))
             );
         }
-        
+
         //----- don't uncomment it since the user might not enter the code 
         //----- but server has saved his mail in db so he must request again for a new code
         // let get_same_user = User::find_by_mail(&user_mail, connection).await;

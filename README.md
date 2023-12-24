@@ -76,11 +76,7 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 
 ## 📘 Docs and Collections
 
-* [Engines](https://github.com/wildonion/gem/wiki/Engines)
-
-* [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
-
-* [Reveal Role](https://github.com/wildonion/gem/wiki/Reveal-Role)
+* Read More About [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
 
 * [TLPS](https://github.com/wildonion/gem/wiki/TLPs)
 

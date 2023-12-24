@@ -866,7 +866,7 @@ impl UserNft{
 
         /* parse the string fields to desire type */
         let amount = amount.parse::<i64>().unwrap();
-        let nft_id = nft_id.parse::<i32>().unwrap();
+        let nft_id = nft_id.parse::<i32>().unwrap(); 
 
         /* 
             nft_new_attributes and nft_new_extra are already in json string form
@@ -1404,7 +1404,7 @@ impl UserNft{
                             };
 
                             /* since there is no new nft we should update the old one in vector */
-                            let nft_position = decoded_nfts.iter().position(|nft| nft.current_owner_screen_cid == user_nft_data.clone().current_owner_screen_cid);
+                            let nft_position = decoded_nfts.iter().position(|nft| nft.id == user_nft_data.clone().id);
                             if nft_position.is_some(){
                                 decoded_nfts[nft_position.unwrap()] = user_nft_data.clone();
                             }
