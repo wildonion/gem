@@ -161,6 +161,13 @@ pub struct InsertNewUserFanRequest{
 
 impl UserFan{
 
+    pub async fn get_owners_with_lots_of_friends(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserFanData>, PanelHttpResponse>{
+
+        todo!()
+                
+    }
+
     pub async fn update_user_fans_data_with_this_user(latest_user_info: UserData,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserFan>, String>{

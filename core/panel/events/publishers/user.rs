@@ -15,7 +15,7 @@ pub struct NotifData{
     fired_at: Option<i64>,
     seen: bool,
     action_type: ActionType,
-    actioner_screen_cid: String, // it can be the user himself or others
+    actioner_screen_cid: String, // it can be the user himself or others caused the event to be happened
     action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
 }
 

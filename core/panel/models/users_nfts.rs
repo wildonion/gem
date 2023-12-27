@@ -736,6 +736,63 @@ impl UserNft{
 
     }
 
+    pub async fn get_owners_with_lots_of_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+
+            let from = limit.from.unwrap_or(0);
+            let to = limit.to.unwrap_or(10);
+    
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+            }
+    
+            /* get all nfts owned by the passed in current_owner */
+            let user_nfts = users_nfts
+                .order(users_nfts::created_at.desc())
+                .offset(from)
+                .limit((to - from) + 1)
+                .load::<UserNft>(connection);
+    
+            let Ok(all_nfts) = user_nfts else{
+    
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: NOT_FOUND_NFT,
+                    status: 404,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+    
+            };
+
+        todo!()
+
+    } 
+
+    pub async fn get_owners_with_which_has_most_likes_on_their_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+
+        todo!()
+
+    }
+
+    pub async fn get_owners_with_which_has_most_comments_on_their_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+
+        todo!()
+
+    }
+
     pub async fn get_all(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{
         

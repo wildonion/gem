@@ -166,6 +166,14 @@ pub struct GalleryExtraObjWithPriceAndImgPath{
 */
 impl UserPrivateGallery{
 
+
+    pub async fn get_owners_with_lots_of_galleries(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
+
+        todo!()
+                
+    }
+
     pub async fn upload_background(
         gal_id: i32, 
         screen_cid: &str,

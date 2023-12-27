@@ -138,6 +138,12 @@ pub struct InsertNewUserCollectionRequest{
 */
 impl UserCollection{
 
+    pub async fn get_owners_with_lots_of_collections(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+
+        todo!()
+                
+    }
 
     pub async fn get_all_minted_nfts_of_collection(col_id: i32, limit: web::Query<Limit>, caller_screen_cid: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -164,6 +170,18 @@ impl UserCollection{
             let error_resp = get_collection.unwrap_err();
             return Err(error_resp);
         };
+
+        if collection.owner_screen_cid != caller_screen_cid{
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: COLLECTION_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
 
         let nfts_ = collection.clone().nfts;
         let decoded_nfts = if nfts_.is_some(){
@@ -757,7 +775,7 @@ impl UserCollection{
                 .filter(owner_screen_cid.eq(screen_cid))
                 .load::<UserCollection>(connection);
         
-            let Ok(collections) = user_collections else{
+            let Ok(collections_) = user_collections else{
                 let resp = Response{
                     data: Some(screen_cid),
                     message: COLLECTION_NOT_FOUND_FOR,
@@ -769,54 +787,63 @@ impl UserCollection{
                 )
             };
                 
-            let mut cols = collections
-                    .into_iter()
-                    .map(|c|{
 
+            let mut minted_cols = vec![];
+            for col in collections_{
+
+                let nfts_ = {
+                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(col.id, connection);
+                    if get_minted_nfts_of_this_collection.is_ok(){
+                        let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
+                        if minted_nfts_of_this_collection.len() != 0{
+                            minted_nfts_of_this_collection.retain(|nft| nft.is_some());
+                            Some(
+                                serde_json::to_value(minted_nfts_of_this_collection).unwrap()
+                            )
+                        } else{
+                            // ignore pushing the collection into the vector, regardless of everything 
+                            // cause if the user has no minted nfts yet means that none of his nfts are
+                            // public and still his collection is inside the private gallery so no one  
+                            // must be able to see his collection data and info 
+                            continue;
+                        }
+                    } else{
                         Some(
-                            UserCollectionData{
-                                id: c.id,
-                                contract_address: c.contract_address,
-                                /* get all minted nfts for this collection */
-                                nfts: {
-                                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(c.id, connection);
-                                    if get_minted_nfts_of_this_collection.is_ok(){
-                                        let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
-                                        minted_nfts_of_this_collection.retain(|nft| nft.is_some());
-                                        Some(
-                                            serde_json::to_value(minted_nfts_of_this_collection).unwrap()
-                                        )
-                                    } else{
-                                        Some(
-                                            serde_json::to_value::<Vec<UserNftData>>(vec![]).unwrap()
-                                        )
-                                    }
-                                },
-                                col_name: c.col_name,
-                                symbol: c.symbol,
-                                owner_screen_cid: c.owner_screen_cid,
-                                metadata_updatable: c.metadata_updatable,
-                                base_uri: c.base_uri,
-                                royalties_share: c.royalties_share,
-                                royalties_address_screen_cid: c.royalties_address_screen_cid,
-                                collection_background: c.collection_background,
-                                extra: c.extra,
-                                col_description: c.col_description,
-                                created_at: c.created_at.to_string(),
-                                updated_at: c.updated_at.to_string(),
-                                freeze_metadata: c.freeze_metadata,
-                                contract_tx_hash: c.contract_tx_hash,
-                            }
+                            serde_json::to_value::<Vec<UserNftData>>(vec![]).unwrap()
                         )
-                        
+                    }
+                };
 
-                    })
-                    .collect::<Vec<Option<UserCollectionData>>>();
-        
-        cols.retain(|c| c.is_some());            
+                minted_cols.push(
+                    Some(
+                        UserCollectionData{
+                            id: col.id,
+                            contract_address: col.contract_address,
+                            /* get all minted nfts for this collection */
+                            nfts: nfts_,
+                            col_name: col.col_name,
+                            symbol: col.symbol,
+                            owner_screen_cid: col.owner_screen_cid,
+                            metadata_updatable: col.metadata_updatable,
+                            base_uri: col.base_uri,
+                            royalties_share: col.royalties_share,
+                            royalties_address_screen_cid: col.royalties_address_screen_cid,
+                            collection_background: col.collection_background,
+                            extra: col.extra,
+                            col_description: col.col_description,
+                            created_at: col.created_at.to_string(),
+                            updated_at: col.updated_at.to_string(),
+                            freeze_metadata: col.freeze_metadata,
+                            contract_tx_hash: col.contract_tx_hash,
+                        }
+                    )
+                )
+            }
+
+        minted_cols.retain(|c| c.is_some());            
         
         Ok(
-            cols
+            minted_cols
         )
 
     }
