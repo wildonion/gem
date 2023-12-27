@@ -2544,7 +2544,25 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/report-tasks/1/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"report-tasks",
+												"1",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
 										}
 									},
 									"response": []
@@ -3179,10 +3197,38 @@
 								{
 									"name": "Stripe Charge Wallet",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "POST",
 										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"user_id\": 0,\n    \"buyer_cid\": \"\",\n    \"tokens\": 10,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/cid/wallet/stripe/charge",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"cid",
+												"wallet",
+												"stripe",
+												"charge"
+											]
 										}
 									},
 									"response": []
@@ -3190,10 +3236,37 @@
 								{
 									"name": "Deposit",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "POST",
 										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"from_cid\": \"\",\n    \"recipient\": \"\",\n    \"amount\": 10,\n    \"nft_img_url\": \"\",\n    \"nft_name\": \"\",\n    \"nft_desc\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/deposit/to/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"deposit",
+												"to",
+												"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
+											]
 										}
 									},
 									"response": []
@@ -3201,10 +3274,37 @@
 								{
 									"name": "Withdraw",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "POST",
 										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"deposit_id\": 1,\n    \"recipient_cid\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/withdraw/from/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"withdraw",
+												"from",
+												"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
+											]
 										}
 									},
 									"response": []
@@ -3212,10 +3312,79 @@
 								{
 									"name": "Get User Deposits",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/deposit/get/all/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"deposit",
+												"get",
+												"all",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get Top Users",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/get/all/top/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"get",
+												"all",
+												"top",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
 										}
 									},
 									"response": []
@@ -3223,10 +3392,39 @@
 								{
 									"name": "Get User Withdrawals",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/withdraw/get/all/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"withdraw",
+												"get",
+												"all",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
 										}
 									},
 									"response": []
@@ -3275,10 +3473,40 @@
 								{
 									"name": "Get User Unpaid Checkouts",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/checkout/get/all/unpaid/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"checkout",
+												"get",
+												"all",
+												"unpaid",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
 										}
 									},
 									"response": []
@@ -3286,10 +3514,40 @@
 								{
 									"name": "Get User Paid Checkouts",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": ""
+											"raw": "{{panel-user}}/checkout/get/all/paid/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"checkout",
+												"get",
+												"all",
+												"paid",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
 										}
 									},
 									"response": []

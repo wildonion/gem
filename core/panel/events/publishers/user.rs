@@ -15,7 +15,7 @@ pub struct NotifData{
     fired_at: Option<i64>,
     seen: bool,
     action_type: ActionType,
-    actioner_screen_cid: String,
+    actioner_screen_cid: String, // it can be the user himself or others
     action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
 }
 
@@ -30,10 +30,13 @@ pub enum ActionType{
     MintNft, // mint nft is the default action type
     CreateCollection,
     UpdateCollection,
+    CreatePrivateGallery,
+    UpdatePrivateGallery,
     ListNft,
     DelistNft,
     BuyNft,
-    UnclaimedGiftCard
+    UnclaimedGiftCard,
+    DepositGiftCard
 }
 
 impl UserNotif{
@@ -69,14 +72,15 @@ impl NotifExt for UserNotif{
 
 }
 
-pub async fn publish_actions(){
+pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: NotifData){
 
     type Method = fn() -> i32;
-    fn run(param: impl Fn() -> ActionType, method: Method)
+    fn run<'lifteim>(param: impl Fn() -> ActionType, method: &'lifteim Method)
     // bounding generic Method to traits and lifetimes
     where Method: Send + Sync + 'static{}
-    fn execute<'f, F>(param: &'f F) -> () 
+    fn execute<'f, F>(param: &'f mut F) -> () 
     // bounding generic F to closure, lifetimes and other traits
     where F: Fn() -> ActionType + Send + Sync + 'static{}
+    
 
 }
