@@ -10,7 +10,7 @@ use crate::constants::{GALLERY_NOT_OWNED_BY, NFT_NOT_OWNED_BY, NFT_UPLOAD_PATH, 
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
-use super::users::{User, UserData};
+use super::users::{User, UserData, UserWalletInfoResponse};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest, UserPrivateGalleryData};
 use crate::schema::users_collections::dsl::*;
@@ -307,6 +307,13 @@ pub struct AddReactionRequest{
     pub is_like_downvote: Option<bool>,
     pub tx_signature: String,
     pub hash_data: String
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct NftOwnerCount{
+    pub owner_wallet_info: UserWalletInfoResponse,
+    pub minted_ones: usize,
+    pub none_minted_ones: usize
 }
 
 /* 
@@ -736,62 +743,67 @@ impl UserNft{
 
     }
 
-    pub async fn get_owners_with_lots_of_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+    pub async fn get_owners_with_lots_of_nfts(owners: Vec<UserData>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<NftOwnerCount>, PanelHttpResponse>{
+        
+        let mut nft_owner_map = vec![];
+        for owner in owners{
 
-            let from = limit.from.unwrap_or(0);
-            let to = limit.to.unwrap_or(10);
-    
-            if to < from {
-                let resp = Response::<'_, &[u8]>{
-                    data: Some(&[]),
-                    message: INVALID_QUERY_LIMIT,
-                    status: 406,
-                    is_error: true
-                };
-                return Err(
-                    Ok(HttpResponse::NotAcceptable().json(resp))
-                )
-            }
-    
-            /* get all nfts owned by the passed in current_owner */
-            let user_nfts = users_nfts
-                .order(users_nfts::created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)
-                .load::<UserNft>(connection);
-    
-            let Ok(all_nfts) = user_nfts else{
-    
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: NOT_FOUND_NFT,
-                    status: 404,
-                    is_error: true
-                };
-                return Err(
-                    Ok(HttpResponse::NotFound().json(resp))
-                )
-    
+            let owner_screen_cid_ = owner.screen_cid.unwrap();
+            let get_all_nfts_owned_by = UserNft::get_all_by_current_owner(&owner_screen_cid_, connection).await;
+            let Ok(nfts_owned_by) = get_all_nfts_owned_by else{
+                let err_resp = get_all_nfts_owned_by.unwrap_err();
+                return Err(err_resp);
             };
 
-        todo!()
+            let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();
+            let user_wallet_info = UserWalletInfoResponse{
+                username: user.username,
+                avatar: user.avatar,
+                bio: user.bio,
+                banner: user.banner,
+                mail: user.mail,
+                screen_cid: user.screen_cid,
+                extra: user.extra,
+                stars: user.stars,
+                created_at: user.created_at.to_string(),
+            };
+
+            let mut minted_ones = nfts_owned_by.clone()
+                .into_iter()
+                .map(|nft|{
+                    if nft.is_minted.is_some() && nft.is_minted.unwrap(){
+                        Some(nft)
+                    } else{
+                        None
+                    }
+                })
+                .collect::<Vec<Option<UserNftData>>>();
+            
+            minted_ones.retain(|nft| nft.is_some());
+
+            nft_owner_map.push(
+                NftOwnerCount{
+                    owner_wallet_info: user_wallet_info,
+                    minted_ones: minted_ones.len(),
+                    none_minted_ones: nfts_owned_by.len() - minted_ones.len(),
+                }
+            )
+        }
+
+        nft_owner_map.sort_by(|no1, no2|{
+
+            let no1_count = no1.minted_ones;
+            let no2_count = no2.minted_ones;
+
+            no2_count.cmp(&no1_count)
+
+        });
+        
+        Ok(nft_owner_map)
 
     } 
-
-    pub async fn get_owners_with_which_has_most_likes_on_their_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserNftData>, PanelHttpResponse>{
-
-        todo!()
-
-    }
-
-    pub async fn get_owners_with_which_has_most_comments_on_their_nfts(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserNftData>, PanelHttpResponse>{
-
-        todo!()
-
-    }
 
     pub async fn get_all(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{

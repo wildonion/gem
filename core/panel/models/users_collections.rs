@@ -8,7 +8,7 @@ use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
-use super::users::User;
+use super::users::{User, UserWalletInfoResponse, UserData};
 use super::users_fans::{FriendData, UserFan};
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
 use super::users_nfts::UserNftData;
@@ -131,6 +131,12 @@ pub struct InsertNewUserCollectionRequest{
     pub collection_background: String
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct CollectionOwnerCount{
+    pub owner_wallet_info: UserWalletInfoResponse,
+    pub collections_count: usize,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -138,10 +144,104 @@ pub struct InsertNewUserCollectionRequest{
 */
 impl UserCollection{
 
-    pub async fn get_owners_with_lots_of_collections(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_by_owner(owner: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
-        todo!()
+        /* get all nfts owned by the passed in current_owner */
+        let users_collections_ = users_collections
+            .filter(users_collections::owner_screen_cid.eq(owner))
+            .load::<UserCollection>(connection);
+
+        let Ok(all_collections) = users_collections_ else{
+
+            let resp = Response{
+                data: Some(owner),
+                message: COLLECTION_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+
+        };
+
+        Ok(
+            all_collections
+                .into_iter()
+                .map(|collection|{
+    
+                    UserCollectionData{
+                        id: collection.id,
+                        contract_address: collection.contract_address,
+                        nfts: collection.nfts,
+                        col_name: collection.col_name,
+                        symbol: collection.symbol,
+                        owner_screen_cid: collection.owner_screen_cid,
+                        metadata_updatable: collection.metadata_updatable,
+                        base_uri: collection.base_uri,
+                        royalties_share: collection.royalties_share,
+                        royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                        collection_background: collection.collection_background,
+                        extra: collection.extra,
+                        col_description: collection.col_description,
+                        created_at: collection.created_at.to_string(),
+                        updated_at: collection.updated_at.to_string(),
+                        freeze_metadata: collection.freeze_metadata,
+                        contract_tx_hash: collection.contract_tx_hash,
+                    }
+    
+                })
+                .collect::<Vec<UserCollectionData>>()
+        )
+
+    }
+
+    pub async fn get_owners_with_lots_of_collections(owners: Vec<UserData>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<CollectionOwnerCount>, PanelHttpResponse>{
+
+            let mut collection_owner_map = vec![];
+            for owner in owners{
+    
+                let owner_screen_cid_ = owner.screen_cid.unwrap();
+                let get_all_collections_owned_by = UserCollection::get_all_by_owner(&owner_screen_cid_, connection).await;
+                let Ok(collections_owned_by) = get_all_collections_owned_by else{
+                    let err_resp = get_all_collections_owned_by.unwrap_err();
+                    return Err(err_resp);
+                };
+    
+                let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();
+                let user_wallet_info = UserWalletInfoResponse{
+                    username: user.username,
+                    avatar: user.avatar,
+                    bio: user.bio,
+                    banner: user.banner,
+                    mail: user.mail,
+                    screen_cid: user.screen_cid,
+                    extra: user.extra,
+                    stars: user.stars,
+                    created_at: user.created_at.to_string(),
+                };
+    
+                collection_owner_map.push(
+                    CollectionOwnerCount{
+                        owner_wallet_info: user_wallet_info,
+                        collections_count: collections_owned_by.len()
+                    }
+                )
+            }
+    
+            collection_owner_map.sort_by(|col1, col2|{
+    
+                let col1_count = col1.collections_count;
+                let col2_count = col2.collections_count;
+    
+                col2_count.cmp(&col1_count)
+    
+            });
+            
+        Ok(collection_owner_map)
                 
     }
 

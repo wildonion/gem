@@ -9,7 +9,7 @@ use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
-use super::users::UserWalletInfoResponse;
+use super::users::{UserWalletInfoResponse, UserData};
 use super::users_collections::{UserCollection, UserCollectionData};
 use super::users_fans::{InvitationRequestData, UserFan, InvitationRequestDataResponse};
 use super::users_nfts::UserNftData;
@@ -159,6 +159,12 @@ pub struct GalleryExtraObjWithPriceAndImgPath{
     pub img_path: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct GalleryOwnerCount{
+    pub owner_wallet_info: UserWalletInfoResponse,
+    pub galleries_count: usize,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -167,10 +173,50 @@ pub struct GalleryExtraObjWithPriceAndImgPath{
 impl UserPrivateGallery{
 
 
-    pub async fn get_owners_with_lots_of_galleries(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
+    pub async fn get_owners_with_lots_of_galleries(owners: Vec<UserData>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<GalleryOwnerCount>, PanelHttpResponse>{
 
-        todo!()
+            let mut galleries_owner_map = vec![];
+            for owner in owners{
+    
+                let owner_screen_cid_ = owner.screen_cid.unwrap();
+                let get_all_galleries_owned_by = UserPrivateGallery::get_all_for_without_limit(&owner_screen_cid_, connection);
+                let Ok(galleries_owned_by) = get_all_galleries_owned_by else{
+                    let err_resp = get_all_galleries_owned_by.unwrap_err();
+                    return Err(err_resp);
+                };
+    
+                let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();
+                let user_wallet_info = UserWalletInfoResponse{
+                    username: user.username,
+                    avatar: user.avatar,
+                    bio: user.bio,
+                    banner: user.banner,
+                    mail: user.mail,
+                    screen_cid: user.screen_cid,
+                    extra: user.extra,
+                    stars: user.stars,
+                    created_at: user.created_at.to_string(),
+                };
+    
+                galleries_owner_map.push(
+                    GalleryOwnerCount{
+                        owner_wallet_info: user_wallet_info,
+                        galleries_count: galleries_owned_by.len()
+                    }
+                )
+            }
+    
+            galleries_owner_map.sort_by(|gal1, gal2|{
+    
+                let gal1_count = gal1.galleries_count;
+                let gal2_count = gal2.galleries_count;
+    
+                gal2_count.cmp(&gal1_count)
+    
+            });
+            
+        Ok(galleries_owner_map)
                 
     }
 

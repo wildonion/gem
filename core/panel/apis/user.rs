@@ -10094,7 +10094,6 @@ async fn get_top_users(
 
             let connection = &mut pg_pool.get().unwrap();
 
-
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
             match req.get_user(granted_role, connection){
                 Ok(token_data) => {
@@ -10104,10 +10103,10 @@ async fn get_top_users(
 
                     match User::get_top_users(connection, limit).await{
                         
-                        Ok(users_wallet_info) => {
+                        Ok(top_users_wallet_info) => {
                             resp!{
-                                Vec<UserWalletInfoResponse>, // the data type
-                                users_wallet_info, // response data
+                                TopUsers, // the data type
+                                top_users_wallet_info, // response data
                                 ACCESS_DENIED, // response message
                                 StatusCode::FORBIDDEN, // status code
                                 None::<Cookie<'_>>, // cookie

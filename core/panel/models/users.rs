@@ -17,10 +17,11 @@ use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
 use crate::constants::*;
-use super::users_collections::UserCollection;
-use super::users_fans::{UserFan, FriendData};
+use super::users_collections::{UserCollection, CollectionOwnerCount};
+use super::users_fans::{UserFan, FriendData, FriendOwnerCount};
+use super::users_galleries::GalleryOwnerCount;
 use super::users_mails::UserMail;
-use super::users_nfts::UserNft;
+use super::users_nfts::{UserNft, NftOwnerCount};
 use super::users_phones::UserPhone;
 use super::users_tasks::UserTask;
 
@@ -171,13 +172,10 @@ pub struct NewPasswordRequest{
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct TopUsers{
-    pub user_wallet_info: UserWalletInfoResponse,
-    pub minted_nfts: u64,
-    pub collections: u64,
-    pub friends: u64, 
-    pub none_minted_nfts: u64,
-    pub total_likes_on_his_nfts: u64,
-    pub total_comments_on_his_nfts: u64
+    pub nfts_info: Vec<NftOwnerCount>,
+    pub collections_info: Vec<CollectionOwnerCount>,
+    pub private_galleries_infos: Vec<GalleryOwnerCount>,
+    pub friends_info: Vec<FriendOwnerCount>,
 }
 
 
@@ -1024,77 +1022,46 @@ impl User{
 
     pub async fn get_top_users(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
         limit: web::Query<Limit>) 
-        -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
+        -> Result<TopUsers, PanelHttpResponse>{
 
-        let get_all_users = Self::get_all_balance_greater_than_100(connection, limit.clone()).await;
-        let Ok(all_users) = get_all_users else{
-            let err_resp = get_all_users.unwrap_err();
+        let get_users = User::get_all(connection, limit.clone()).await;
+        let Ok(all_users) = get_users else{
+            let err_resp = get_users.unwrap_err();
             return Err(err_resp);
         };
-
-        let get_owners_with_most_nfts = UserNft::get_owners_with_lots_of_nfts(limit.clone(), connection).await;
+            
+        let get_owners_with_most_nfts = UserNft::get_owners_with_lots_of_nfts(all_users.clone(), connection).await;
         let Ok(owners_with_most_nfts) = get_owners_with_most_nfts else{
             let err_resp = get_owners_with_most_nfts.unwrap_err();
             return Err(err_resp);
         };
 
-        let get_owners_with_most_collections = UserCollection::get_owners_with_lots_of_collections(limit.clone(), connection).await;
+        let get_owners_with_most_collections = UserCollection::get_owners_with_lots_of_collections(all_users.clone(), connection).await;
         let Ok(owners_with_most_collections) = get_owners_with_most_collections else{
             let err_resp = get_owners_with_most_collections.unwrap_err();
             return Err(err_resp);
         };
 
-        let get_owners_with_most_private_galleries = UserPrivateGallery::get_owners_with_lots_of_galleries(limit.clone(), connection).await;
+        let get_owners_with_most_private_galleries = UserPrivateGallery::get_owners_with_lots_of_galleries(all_users.clone(), connection).await;
         let Ok(owners_with_most_private_galleries) = get_owners_with_most_private_galleries else{
             let err_resp = get_owners_with_most_private_galleries.unwrap_err();
             return Err(err_resp);
         };
 
-        let get_owners_with_most_friends = UserFan::get_owners_with_lots_of_friends(limit.clone(), connection).await;
+        let get_owners_with_most_friends = UserFan::get_owners_with_lots_of_friends(all_users.clone(), limit.clone(), connection).await;
         let Ok(owners_with_most_friends) = get_owners_with_most_friends else{
             let err_resp = get_owners_with_most_friends.unwrap_err();
             return Err(err_resp);
         };
 
-        let get_owners_with_which_has_most_likes_on_their_nfts = UserNft::get_owners_with_which_has_most_likes_on_their_nfts(limit.clone(), connection).await;
-        let Ok(owners_with_which_has_most_likes_on_their_nfts) = get_owners_with_which_has_most_likes_on_their_nfts else{
-            let err_resp = get_owners_with_which_has_most_likes_on_their_nfts.unwrap_err();
-            return Err(err_resp);
-        };
-
-        let get_owners_with_which_has_most_comments_on_their_nfts = UserNft::get_owners_with_which_has_most_comments_on_their_nfts(limit.clone(), connection).await;
-        let Ok(owners_with_which_has_most_comments_on_their_nfts) = get_owners_with_which_has_most_comments_on_their_nfts else{
-            let err_resp = get_owners_with_which_has_most_comments_on_their_nfts.unwrap_err();
-            return Err(err_resp);
-        };
-
-
-
-        // TODO 
-        // it's based on those one who have friends, more nfts, 
-        // collections, likes, comments on their nfts
-        // ...
-        // fill the TopUsers struct, return Vec<TopUsers> in desc order
-        
-
         Ok(
-            all_users
-                .into_iter()
-                .map(|u| {
-                    UserWalletInfoResponse{
-                        username: u.username,
-                        avatar: u.avatar,
-                        bio: u.bio,
-                        banner: u.banner,
-                        mail: u.mail,
-                        screen_cid: u.screen_cid,
-                        extra: u.extra,
-                        stars: u.stars,
-                        created_at: u.created_at.to_string(),
-                    }
-                })
-                .collect::<Vec<UserWalletInfoResponse>>()
-        )
+            TopUsers{
+                nfts_info: owners_with_most_nfts,
+                collections_info: owners_with_most_collections,
+                private_galleries_infos: owners_with_most_private_galleries,
+                friends_info: owners_with_most_friends,
+            }
+        ) 
 
     }
 

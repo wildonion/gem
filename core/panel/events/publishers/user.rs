@@ -12,13 +12,18 @@ pub struct UserNotif{
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct NotifData{
+    actioner_wallet_info: UserWalletInfoResponse, // it can be the user himself or others caused the event to be happened
     fired_at: Option<i64>,
     seen: bool,
     action_type: ActionType,
-    actioner_screen_cid: String, // it can be the user himself or others caused the event to be happened
     action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
 }
 
+// gallery
+// collection
+// nft
+// friend
+// invitation requests
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub enum ActionType{
     InvitationRequestFrom,
@@ -81,6 +86,20 @@ pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: Noti
     fn execute<'f, F>(param: &'f mut F) -> () 
     // bounding generic F to closure, lifetimes and other traits
     where F: Fn() -> ActionType + Send + Sync + 'static{}
+
+    trait Interface{}
+    struct Instance{}
+    impl Interface for Instance{}
+    impl Interface for (){}
+    type BoxedTrait = Box<dyn FnOnce() -> ()>;
+    struct Test<F: Send + Sync + 'static + Clone + Default> where F: FnOnce() -> (){
+        pub data: F,
+        pub another_data: BoxedTrait
+    }
+    fn trait_as_ret_and_param_type(param: &mut impl FnOnce() -> ()) -> impl FnOnce() -> (){ ||{} }
+    fn trait_as_ret_type(instance_type: Instance) -> impl Interface{ instance_type }
+    fn trait_as_ret_type_1(instance_type: Instance) -> impl Interface{ () }
+    fn trait_as_param_type(param: impl FnOnce() -> ()){}
     
 
 }

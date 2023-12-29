@@ -159,12 +159,65 @@ pub struct InsertNewUserFanRequest{
     pub invitation_requests: Option<serde_json::Value>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct FriendOwnerCount{
+    pub owner_wallet_info: UserWalletInfoResponse,
+    pub friends_count: usize,
+}
+
 impl UserFan{
 
-    pub async fn get_owners_with_lots_of_friends(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserFanData>, PanelHttpResponse>{
+    pub async fn get_owners_with_lots_of_friends(owners: Vec<UserData>, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<FriendOwnerCount>, PanelHttpResponse>{
 
-        todo!()
+        let mut friends_owner_map = vec![];
+        for owner in owners{
+            let owner_screen_cid_ = owner.screen_cid.unwrap();
+            let get_all_owner_friends = UserFan::get_all_my_friends(&owner_screen_cid_, limit.clone(), connection).await;
+            let Ok(all_owner_friends) = get_all_owner_friends else{
+                let err_resp = get_all_owner_friends.unwrap_err();
+                return Err(err_resp);
+            };
+
+            let user_friends_data = all_owner_friends.friends;
+            let mut decoded_friends_data = if user_friends_data.is_some(){
+                serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
+            } else{
+                vec![]
+            }; 
+
+            let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();
+            let user_wallet_info = UserWalletInfoResponse{
+                username: user.username,
+                avatar: user.avatar,
+                bio: user.bio,
+                banner: user.banner,
+                mail: user.mail,
+                screen_cid: user.screen_cid,
+                extra: user.extra,
+                stars: user.stars,
+                created_at: user.created_at.to_string(),
+            };
+
+            friends_owner_map.push(
+                FriendOwnerCount{
+                    owner_wallet_info: user_wallet_info,
+                    friends_count: decoded_friends_data.len()
+                }
+            )
+        }
+
+        friends_owner_map.sort_by(|f1, f2|{
+
+            let f1_count = f1.friends_count;
+            let f2_count = f2.friends_count;
+
+            f2_count.cmp(&f1_count)
+
+        });
+        
+        Ok(friends_owner_map)
                 
     }
 
@@ -914,6 +967,7 @@ impl UserFan{
             let mut followings = vec![];
             for fan_data in fans_data{
 
+                // ignore the caller friends field 
                 if fan_data.user_screen_cid == who_screen_cid{
                     continue;
                 }
