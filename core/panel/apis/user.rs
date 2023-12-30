@@ -192,7 +192,7 @@ async fn request_mail_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -357,7 +357,7 @@ async fn verify_mail_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -502,7 +502,7 @@ async fn request_phone_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -676,7 +676,7 @@ async fn verify_phone_code(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -978,7 +978,7 @@ async fn verify_twitter_account(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1130,7 +1130,7 @@ pub async fn tasks_report(
                 };
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1242,7 +1242,7 @@ async fn charge_wallet_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1598,7 +1598,7 @@ async fn make_cid(
                 };
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1822,7 +1822,7 @@ async fn deposit(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2116,7 +2116,7 @@ async fn get_all_user_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2246,7 +2246,7 @@ async fn withdraw(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2505,7 +2505,7 @@ async fn get_all_user_withdrawals(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2633,7 +2633,7 @@ async fn get_all_user_unpaid_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2761,7 +2761,7 @@ async fn get_all_user_paid_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2889,7 +2889,7 @@ async fn get_recipient_unclaimed_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3018,7 +3018,7 @@ async fn edit_bio(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3128,7 +3128,7 @@ async fn edit_extra(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3239,7 +3239,7 @@ async fn upload_wallet_back(
     
     
                 /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-                match req.get_user(granted_role, connection){
+                match req.get_user(granted_role, connection).await{
                     Ok(token_data) => {
                         
                         let _id = token_data._id;
@@ -3351,7 +3351,7 @@ async fn upload_avatar(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3463,7 +3463,7 @@ async fn upload_banner(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3574,7 +3574,7 @@ async fn update_password(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3730,7 +3730,7 @@ async fn get_notifications(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -3960,7 +3960,7 @@ async fn create_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4145,7 +4145,7 @@ async fn update_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4335,7 +4335,7 @@ async fn remove_invited_friend_from_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4474,7 +4474,7 @@ async fn exit_from_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4612,7 +4612,7 @@ async fn send_private_gallery_invitation_request_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4763,7 +4763,7 @@ async fn get_all_private_galleries_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -4885,7 +4885,7 @@ async fn get_all_galleries_invited_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5010,7 +5010,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5135,7 +5135,7 @@ async fn get_user_unaccpeted_invitation_requests(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5259,7 +5259,7 @@ async fn get_user_unaccpeted_friend_requests(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5384,7 +5384,7 @@ async fn accept_invitation_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5523,7 +5523,7 @@ async fn enter_private_gallery(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5663,7 +5663,7 @@ async fn get_all_user_relations(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5787,7 +5787,7 @@ async fn accept_friend_request(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -5925,7 +5925,7 @@ async fn send_friend_request_to(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6064,7 +6064,7 @@ async fn remove_user_from_follower(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6203,7 +6203,7 @@ async fn remove_user_from_freind(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6342,7 +6342,7 @@ async fn get_all_my_friends(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6465,7 +6465,7 @@ async fn get_all_my_followings(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6588,7 +6588,7 @@ async fn get_all_my_followers(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6711,7 +6711,7 @@ async fn get_friend_suggestions_for_owner(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6836,7 +6836,7 @@ async fn get_all_public_collections_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -6961,7 +6961,7 @@ async fn get_all_private_galleries_general_info_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7088,7 +7088,7 @@ async fn get_all_public_collection_nfts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7213,7 +7213,7 @@ async fn get_all_private_collections_for(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7340,7 +7340,7 @@ async fn create_collection(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7530,7 +7530,7 @@ async fn update_collection(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7720,7 +7720,7 @@ async fn create_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -7909,7 +7909,7 @@ async fn create_nft_metadata_uri(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8112,7 +8112,7 @@ async fn upload_collection_banner(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8236,7 +8236,7 @@ async fn upload_private_gallery_back(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8361,7 +8361,7 @@ async fn update_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8550,7 +8550,7 @@ async fn add_reaction_to_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8738,7 +8738,7 @@ async fn buy_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -8928,7 +8928,7 @@ async fn mint_nft(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9117,7 +9117,7 @@ async fn get_all_user_reactions(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9240,7 +9240,7 @@ async fn get_all_nfts_owned_by(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9370,7 +9370,7 @@ async fn get_all_nft_reactions(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9493,7 +9493,7 @@ async fn register_clp_event(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9635,7 +9635,7 @@ async fn get_new_clp_event_info(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9742,7 +9742,7 @@ async fn get_all_user_clp_events_info(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9860,7 +9860,7 @@ async fn get_token_value(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -9978,7 +9978,7 @@ async fn get_gas_fee(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -10095,7 +10095,7 @@ async fn get_top_users(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

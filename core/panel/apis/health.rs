@@ -106,7 +106,7 @@ async fn check_token(
 
             let connection = &mut pg_pool.get().unwrap();
             
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -267,7 +267,7 @@ async fn logout(
                 }
             };
 
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -468,7 +468,7 @@ async fn get_tasks(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -675,7 +675,7 @@ async fn is_user_kyced(
 
             let connection = &mut pg_pool.get().unwrap();
 
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

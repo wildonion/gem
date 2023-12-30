@@ -107,7 +107,7 @@ async fn chatroomlp(
             let connection = &mut pg_pool.get().unwrap();
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;

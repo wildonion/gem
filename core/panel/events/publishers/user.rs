@@ -1,6 +1,7 @@
 
 
 
+use crate::constants::WS_SUBSCRIPTION_INTERVAL;
 use crate::{*, models::users::UserWalletInfoResponse};
 
 
@@ -58,16 +59,16 @@ impl UserNotif{
     }
 }
 
-pub trait NotifExt{
+pub trait NotifExt: Send + Sync{
     type Data;
     fn set_user_notif(&mut self, notif_data: NotifData) -> Self;
-    fn get_user_notif(&self) -> Vec<NotifData>;
+    async fn get_user_notif(&self) -> Vec<NotifData>;
 }
 
 impl NotifExt for UserNotif{
     type Data = Self;
 
-    fn get_user_notif(&self) -> Vec<NotifData> {
+    async fn get_user_notif(&self) -> Vec<NotifData> {
         self.notifs.clone()
     }
 
@@ -79,6 +80,7 @@ impl NotifExt for UserNotif{
 
 pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: NotifData){
 
+
     type Method = fn() -> i32;
     fn run<'lifteim>(param: impl Fn() -> ActionType, method: &'lifteim Method)
     // bounding generic Method to traits and lifetimes
@@ -87,7 +89,7 @@ pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: Noti
     // bounding generic F to closure, lifetimes and other traits
     where F: Fn() -> ActionType + Send + Sync + 'static{}
 
-    trait Interface{}
+    trait Interface: Send + Sync + 'static{}
     struct Instance{}
     impl Interface for Instance{}
     impl Interface for (){}

@@ -8,16 +8,39 @@ use crate::{*,
 
 
 
+/* 
 
+    read more: https://blog.rust-lang.org/2023/12/21/async-fn-rpit-in-traits.html
+
+    #[trait_variant::make(PassportSend: Send)] creates two versions of the trait: 
+    Passport for single-threaded executors and PassportSend for multithreaded 
+    work-stealing executors like so:
+    pub trait PassportSend: Send {
+        type Request;
+        async fn get_user(&self, role: Option<UserRole>, 
+            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<JWTClaims, PanelHttpResponse>;
+
+        fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<User, PanelHttpResponse>;
+    }
+
+    in the future this would be like:
+    trait PassportSend = Passport<get_user(): Send> + Send;
+
+*/
+#[trait_variant::make(PassportSend: Send)] // Passport trait must be Send so we can call its async method in tokio runtime threads
 pub trait Passport{
 
     type Request;
-    fn get_user(&self, role: Option<UserRole>, 
+    async fn get_user(&self, role: Option<UserRole>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<JWTClaims, PanelHttpResponse>;
 
     fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<User, PanelHttpResponse>;
+
+    async fn stream() -> impl Iterator<Item = String>; // the default type param of the Iterator trait has been set to String
 
 }
 
@@ -120,7 +143,7 @@ impl Passport for HttpRequest{
 
     }
 
-    fn get_user(&self, role: Option<UserRole>, 
+    async fn get_user(&self, role: Option<UserRole>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<JWTClaims, PanelHttpResponse>{
 
@@ -140,10 +163,15 @@ impl Passport for HttpRequest{
             in our case req is behind a pointer and we must clone it to pass 
             it to other scopes
         */
-        match User::passport_none_sync(req.clone(), role, connection){
+        match User::passport(req.clone(), role, connection).await{
             Ok(token_data) => Ok(token_data),
             Err(resp) => Err(resp)
         }
 
     }
+
+    async fn stream() -> impl Iterator<Item = String> {
+        vec![String::from("")].into_iter()
+    }
+
 }

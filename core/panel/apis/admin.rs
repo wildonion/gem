@@ -490,7 +490,7 @@ async fn register_new_user(
                 and if a type is behind a pointer we can't move it into a new scope we must either
                 clone it or borrow it
             */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -608,7 +608,7 @@ async fn edit_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -719,7 +719,7 @@ async fn delete_user(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -842,7 +842,7 @@ async fn get_users(
                 };
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -951,7 +951,7 @@ async fn register_new_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1075,7 +1075,7 @@ async fn delete_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1206,7 +1206,7 @@ async fn edit_task(
 
 
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1314,7 +1314,7 @@ async fn get_admin_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1424,7 +1424,7 @@ async fn get_users_tasks(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1534,7 +1534,7 @@ async fn add_twitter_account(
             let connection = &mut pg_pool.get().unwrap();
             
             /* --------- ONLY ADMIN CAN DO THIS LOGIC --------- */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1701,7 +1701,7 @@ async fn get_all_users_deposits(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1818,7 +1818,7 @@ async fn get_all_users_withdrawals(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -1935,7 +1935,7 @@ async fn get_all_users_checkouts(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
@@ -2051,7 +2051,7 @@ async fn get_clp_event(
 
 
             /* ------ ONLY USER CAN DO THIS LOGIC ------ */
-            match req.get_user(granted_role, connection){
+            match req.get_user(granted_role, connection).await{
                 Ok(token_data) => {
                     
                     let _id = token_data._id;
