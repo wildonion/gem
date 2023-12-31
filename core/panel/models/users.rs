@@ -880,7 +880,7 @@ impl User{
         let access_token = get_tokens.0.unwrap();
         let refresh_token = get_tokens.1.unwrap();
         
-        let cookie_value = format!("/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}");
+        let cookie_value = format!("/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refreshtoken={refresh_token:}");
         let mut cookie = Cookie::build("jwt", cookie_value)
                                     .same_site(cookie::SameSite::Strict)
                                     .secure(true)

@@ -221,6 +221,7 @@ pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
 pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
 
 
+pub static USER_CLP_EVENT_ALREADY_REGISTERED: &str = "User With This Screen Crypto Id Is Already Registered";
 pub static CLP_EVENT_NOT_REGISTERED_EVENT: &str = "User With This Screen Crypto Id Is Not Registered For This Event";
 pub static CLP_EVENT_HASNT_STARTED: &str = "Event Hasn't Started Yet";
 pub static USER_CLP_EVENT_NOT_FOUND_ANY: &str = "Found No User Clp Event Data";

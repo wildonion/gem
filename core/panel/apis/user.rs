@@ -7,7 +7,7 @@ use crate::events::publishers::user::{UserNotif, NotifExt};
 use crate::events::subscribers::handlers::actors::notif::pg::{PgListenerActor};
 use crate::events::subscribers::handlers::actors::notif::system::{SystemActor, GetSystemUsersMap};
 use crate::events::subscribers::handlers::actors::notif::user::{GetUsersNotifsMap, UserActionActor};
-use crate::models::clp_events::ClpEventData;
+use crate::models::clp_events::{ClpEventData, ClpEvent};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
@@ -9543,12 +9543,75 @@ async fn register_clp_event(
 
                     } else {
                         
+                        let register_clp_event_request = register_clp_event_request.to_owned();
+                        
+                        let get_clp_event = ClpEvent::find_by_id(register_clp_event_request.clp_event_id, connection).await;
+                        let Ok(clp_event) = get_clp_event else{
+                            let err_resp = get_clp_event.unwrap_err();
+                            return err_resp;
+                        };
 
-                        // kyc with deposited amount
-                        // user balance must be higher than the entry amount of the event
-                        // UserClp.insert()
-                        // ...
-                        todo!()
+                        
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                        /*
+                            followings are the param 
+                            must be passed to do the 
+                            kyc process on request data
+                            @params:
+                                - _id              : user id
+                                - from_cid         : user crypto id
+                                - tx_signature     : tx signature signed
+                                - hash_data        : sha256 hash of data generated in client app
+                                - deposited_amount : the amount of token must be deposited for this call
+                        */
+                        let is_request_verified = kyced::verify_request(
+                            _id, 
+                            &register_clp_event_request.participant_cid, 
+                            &register_clp_event_request.tx_signature, 
+                            &register_clp_event_request.hash_data, 
+                            Some(clp_event.mint_price),
+                            connection
+                        ).await;
+
+                        let Ok(user) = is_request_verified else{
+                            let error_resp = is_request_verified.unwrap_err();
+                            return error_resp; /* terminate the caller with an actix http response object */
+                        };
+                        
+
+                        let get_user_clp_event = UserClp::find_by_participant_and_event_id(_id, clp_event.id, connection).await;
+                        if get_user_clp_event.is_ok(){
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                USER_CLP_EVENT_ALREADY_REGISTERED, //// response message
+                                StatusCode::FOUND, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+                        }
+                        
+                        match UserClp::insert(
+                            clp_event.mint_price, 
+                            _id, 
+                            clp_event.id, 
+                            connection
+                        ).await{
+                            Ok(user_clp_data) => {
+
+                                resp!{
+                                    UserClp, //// the data type
+                                    user_clp_data, //// response data
+                                    CREATED, //// response message
+                                    StatusCode::OK, //// status code
+                                    None::<Cookie<'_>>, //// cookie
+                                }
+
+                            }, Err(resp) => {
+                                resp
+                            }
+                        }
 
                     }
 
@@ -9653,7 +9716,7 @@ async fn get_new_clp_event_info(
                             None::<Cookie<'_>>, //// cookie
                         }
                     }
-
+                
                     // clp_events schema
                     // return the latest clp in the stack
                     // ...

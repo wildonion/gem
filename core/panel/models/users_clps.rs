@@ -51,6 +51,7 @@ pub struct ClpEventsPerUser{
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 pub struct RegisterUserClpEventRequest{
+    pub participant_cid: String,
     pub clp_event_id: i32,
     pub entry_amount: Option<i64>,
     pub tx_signature: String,
@@ -69,11 +70,11 @@ pub struct InsertNewUserClp{
 
 impl UserClp{
 
-    pub async fn insert(register_clp_event_request: RegisterUserClpEventRequest, entrance_fee: i64,
-        participant_id: i32, event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn insert(entrance_fee: i64, participant_id: i32, event_id: i32, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserClp, PanelHttpResponse>{
 
-            match diesel::insert_into(users_clps)
+        match diesel::insert_into(users_clps)
             .values(&InsertNewUserClp{
                 clp_event_id: event_id,
                 user_id: participant_id,
@@ -93,7 +94,7 @@ impl UserClp{
 
                     /* custom error handler */
                     use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                     
+                    
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserClp::insert");
@@ -110,6 +111,7 @@ impl UserClp{
                     );
                 }
             }
+
     }
 
     pub async fn get_all_users_clps(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
