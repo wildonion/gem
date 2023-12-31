@@ -4,7 +4,31 @@
 /* ------------------------------- */
 /* publisher and subscriber actors */
 /* ------------------------------- */
+// tools => tokio,actix,redis,libp2p,ipfs,mpsc,macro dsl
 /* 
+
+    • generally pubsub realtime monitoring, streaming and push notification over an mpsc receiver/redis subscriber/tcp listener 
+        can be done inside actor worker interval inside tokio::spawn() using while let some syntax
+    • actor based pubsub workers in server/client (like tcp,tonic,http) for realtime streaming over receiver/subscriber and monitoring like grafana
+    • start actors globally in a place when the server is being built
+    • share the started actor between threads as an app data state in this case the data must be Arc<Mutex<Actor>> + Send + Sync + 'static
+    • initialize a global in memory map based db using static Lazy<Arc<Mutex<Actor>>> send sync 'static
+    • local pubsub pattern (using actix actor worker and the broker crate with mpsc channel)
+        publisher actor  ➙ publish/fire/emit/trigger event data using actix broker 
+        subscriber actor ➙ stream/subscribe over/to incoming message data from publisher in an interval in tokio::spawn while let some and mpsc
+    • redis pubsub pattern
+        publisher actor  ➙ publish/fire/emit/trigger event data using redis actor in an interval then break once a subscriber receives it
+        subscriber actor ➙ stream/subscribe over/to incoming stringified data from redis in an interval in tokio::spawn while let some and mpsc
+    • tokio tcp streaming pattern
+        publisher actor  ➙ publish/fire/emit/trigger event data using tokio tcp client actor
+        subscriber actor ➙ stream/subscribe over/to incoming utf8 data from client in an interval in tokio::spawn while let some and mpsc
+    • actix ws http streaming pattern
+        publisher actor  ➙ publish/fire/emit/trigger event data using ws client actor
+        subscriber actor ➙ stream/subscribe over/to incoming stream: Payload, payload: Multiaprt data from client in an interval in tokio::spawn while let some and mpsc
+    • http api must be triggered by frontend every 5 seconds in which we send message to subscriber actor worker to 
+        get all user notifications from redis and send it as the json response back to the caller
+
+
     look at apis/erm.rs and apis/clp.rs routes for http ws streamers
     and https://github.com/wildonion/zoomate for tcp, rpc streamer
     handlers, each, ran in a separate threadpool to start listening

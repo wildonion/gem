@@ -98,6 +98,13 @@ macro_rules! server {
             let users_notifs_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
             let shared_users_notifs_listener_instance = Data::new(users_notifs_listener_instance.clone());
 
+            //------------------------------------
+            //--- starting the tcp listener actor
+            //------------------------------------
+            // let tcp_server_addr = format!("{}:{}", host, port);
+            // events::subscribers::handlers::
+            //     actors::tcp::listener::
+            //         TcpListenerActor::new(&tcp_server_addr).start();
 
             let shared_storage = Data::new(app_storage.clone());
 

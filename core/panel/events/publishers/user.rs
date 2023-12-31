@@ -23,8 +23,7 @@ pub struct NotifData{
 // gallery
 // collection
 // nft
-// friend
-// invitation requests
+// friend and invitation requests
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub enum ActionType{
     InvitationRequestFrom,
@@ -80,28 +79,6 @@ impl NotifExt for UserNotif{
 
 pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: NotifData){
 
-
-    type Method = fn() -> i32;
-    fn run<'lifteim>(param: impl Fn() -> ActionType, method: &'lifteim Method)
-    // bounding generic Method to traits and lifetimes
-    where Method: Send + Sync + 'static{}
-    fn execute<'f, F>(param: &'f mut F) -> () 
-    // bounding generic F to closure, lifetimes and other traits
-    where F: Fn() -> ActionType + Send + Sync + 'static{}
-
-    trait Interface: Send + Sync + 'static{}
-    struct Instance{}
-    impl Interface for Instance{}
-    impl Interface for (){}
-    type BoxedTrait = Box<dyn FnOnce() -> ()>;
-    struct Test<F: Send + Sync + 'static + Clone + Default> where F: FnOnce() -> (){
-        pub data: F,
-        pub another_data: BoxedTrait
-    }
-    fn trait_as_ret_and_param_type(param: &mut impl FnOnce() -> ()) -> impl FnOnce() -> (){ ||{} }
-    fn trait_as_ret_type(instance_type: Instance) -> impl Interface{ instance_type }
-    fn trait_as_ret_type_1(instance_type: Instance) -> impl Interface{ () }
-    fn trait_as_param_type(param: impl FnOnce() -> ()){}
     
 
 }
