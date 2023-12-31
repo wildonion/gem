@@ -29,7 +29,7 @@ use crate::models::clp_events::ClpEvent;
     diesel migration redo                       ---> drop tables 
 
 */
-#[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
+#[derive(Identifiable, Selectable, Queryable, Associations, Debug, Serialize, Deserialize)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(ClpEvent))]
 #[diesel(table_name=users_clps)]

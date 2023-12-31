@@ -9608,7 +9608,8 @@ async fn register_clp_event(
                                     None::<Cookie<'_>>, //// cookie
                                 }
 
-                            }, Err(resp) => {
+                            }, 
+                            Err(resp) => {
                                 resp
                             }
                         }
