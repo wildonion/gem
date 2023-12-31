@@ -68,6 +68,8 @@ async fn chatroomlp(
     
     let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
     let (json_data, files) = multipartreq::extract(arced_payload).await.unwrap();
+    // now we can map the json_data Value into a desired structure
+    // ...
     
     let storage = storage.as_ref().to_owned();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
@@ -149,7 +151,7 @@ async fn chatroomlp(
                         resp!{
                             &[u8], // the data type
                             &[], // response data
-                            CLP_EVENT_NOT_REGISTERED_EVENT, // response message
+                            CLP_EVENT_HASNT_STARTED, // response message
                             StatusCode::NOT_ACCEPTABLE, // status code
                             None::<Cookie<'_>>, // cookie
                         }
@@ -202,18 +204,22 @@ async fn chatroomlp(
                     if !users
                         .into_iter()
                         .any(|u| u.screen_cid.unwrap() == walletreq::evm::get_keccak256_from(user_cid.clone())) 
-                        
+                        // ------------------------------
+                        // he must be in this event alrady    
+                        // ------------------------------
                         ||
-                        
+                        // ------------------------------
+                        // or he must have this event in his event histroy 
+                        // ------------------------------
                         !all_users_clps
                             .into_iter()
-                            .any(|uclp| uclp.user_id == user.id)
+                            .any(|uclp| uclp.user_id == user.id && uclp.clp_event_id == chat_room)
                         {
 
                             resp!{
                                 &[u8], // the data type
                                 &[], // response data
-                                CLP_EVENT_HASNT_STARTED, // response message
+                                CLP_EVENT_NOT_REGISTERED_EVENT, // response message
                                 StatusCode::FORBIDDEN, // status code
                                 None::<Cookie<'_>>, // cookie
                             }

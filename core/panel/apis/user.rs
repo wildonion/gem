@@ -9,7 +9,7 @@ use crate::events::subscribers::handlers::actors::notif::system::{SystemActor, G
 use crate::events::subscribers::handlers::actors::notif::user::{GetUsersNotifsMap, UserActionActor};
 use crate::models::clp_events::ClpEventData;
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
-use crate::models::users_clps::UserClp;
+use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::UserDepositData;
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, FriendData, UserRelations, EnterPrivateGalleryRequest, RemoveFriend, RemoveFollower};
@@ -9448,6 +9448,7 @@ async fn get_all_nft_reactions(
 #[passport(user)]
 async fn register_clp_event(
     req: HttpRequest,
+    register_clp_event_request: web::Json<RegisterUserClpEventRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -9545,7 +9546,7 @@ async fn register_clp_event(
 
                         // kyc with deposited amount
                         // user balance must be higher than the entry amount of the event
-                        // update users_clps schema
+                        // UserClp.insert()
                         // ...
                         todo!()
 

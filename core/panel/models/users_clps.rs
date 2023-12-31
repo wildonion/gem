@@ -49,8 +49,68 @@ pub struct ClpEventsPerUser{
     pub clp_events: Vec<ClpEventData>
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+pub struct RegisterUserClpEventRequest{
+    pub clp_event_id: i32,
+    pub entry_amount: Option<i64>,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+#[derive(Insertable)]
+#[diesel(table_name=users_clps)]
+pub struct InsertNewUserClp{
+    pub clp_event_id: i32,
+    pub user_id: i32,
+    pub entry_amount: Option<i64>,
+}
+
 
 impl UserClp{
+
+    pub async fn insert(register_clp_event_request: RegisterUserClpEventRequest, entrance_fee: i64,
+        participant_id: i32, event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserClp, PanelHttpResponse>{
+
+            match diesel::insert_into(users_clps)
+            .values(&InsertNewUserClp{
+                clp_event_id: event_id,
+                user_id: participant_id,
+                entry_amount: Some(entrance_fee),
+            })
+            .returning(UserClp::as_returning())
+            .get_result::<UserClp>(connection)
+            {
+                Ok(user_clp) => {
+
+                    Ok(user_clp)
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserClp::insert");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+                }
+            }
+    }
 
     pub async fn get_all_users_clps(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<UserClp>, PanelHttpResponse>{
