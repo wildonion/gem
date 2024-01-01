@@ -269,7 +269,6 @@ async fn update_rendezvous_event_img(
                     };
 
                     let img = std::sync::Arc::new(tokio::sync::Mutex::new(img));
-
                     let get_event_img_path = multipartreq::store_file(
                         EVENT_UPLOAD_PATH, &format!("{}", event_id), 
                         "event", 
@@ -2132,9 +2131,9 @@ pub mod exports{
     pub use super::end_clp_event;
     pub use super::update_clp_event;
     */
-    // pub use super::request_ecq;  // `<---rendezvous jwt--->` rendezvous hyper server
+    // pub use super::request_ecq; 
     pub use super::get_clp_event;
-    pub use super::reveal_role; // `<---rendezvous jwt--->` rendezvous hyper server
+    pub use super::reveal_role;
     pub use super::login;
     pub use super::register_new_user;
     pub use super::register_new_task; 
@@ -2143,7 +2142,7 @@ pub mod exports{
     pub use super::edit_user;
     pub use super::delete_user;
     pub use super::add_twitter_account;
-    pub use super::update_rendezvous_event_img; // `<---rendezvous jwt--->` rendezvous hyper server
+    pub use super::update_rendezvous_event_img;
     pub use super::get_all_users_checkouts;
     pub use super::get_users;
     pub use super::get_admin_tasks;

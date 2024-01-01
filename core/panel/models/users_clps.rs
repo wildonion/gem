@@ -2,6 +2,7 @@
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
+use actix::Addr;
 use actix_web::web::Query;
 use chrono::NaiveDateTime;
 use crate::adapters::nftport;
@@ -59,6 +60,14 @@ pub struct RegisterUserClpEventRequest{
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+pub struct CancelUserClpEventRequest{
+    pub participant_cid: String,
+    pub clp_event_id: i32,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 #[derive(Insertable)]
 #[diesel(table_name=users_clps)]
 pub struct InsertNewUserClp{
@@ -69,6 +78,99 @@ pub struct InsertNewUserClp{
 
 
 impl UserClp{
+
+    pub async fn cancel_reservation(participant_id: i32, event_id: i32, redis_client: redis::Client,
+        redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+        ) -> Result<UserData, PanelHttpResponse>{
+        
+        match Self::delete_by_participant_and_event_id(participant_id, event_id, connection).await{
+            Ok(num_deleted) => {
+                
+                let get_user = User::find_by_id(participant_id, connection).await;
+                let Ok(user) = get_user else{
+                    let err_resp = get_user.unwrap_err();
+                    return Err(err_resp);
+                };
+
+                // if we have a deleted row 
+                if num_deleted > 0 {
+
+                    // payback the participant with the entrance_fee
+                    let get_user_clp_event = Self::find_by_participant_and_event_id(participant_id, event_id, connection).await;
+                    let Ok(user_clp_event) = get_user_clp_event else{
+                        let err_resp = get_user_clp_event.unwrap_err();
+                        return Err(err_resp);
+                    };
+
+                    let new_balance = user.balance.unwrap() - user_clp_event.entry_amount.unwrap();
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+                    let Ok(updated_user_data) = update_user_balance else{
+
+                        let err_resp = update_user_balance.unwrap_err();
+                        return Err(err_resp);
+                        
+                    };
+
+                    Ok(updated_user_data)
+
+                } else{
+
+                    Ok(
+                        UserData{ 
+                            id: user.id, 
+                            region: user.region.clone(),
+                            username: user.username, 
+                            bio: user.bio.clone(),
+                            avatar: user.avatar.clone(),
+                            banner: user.banner.clone(),
+                            wallet_background: user.wallet_background.clone(),
+                            activity_code: user.activity_code,
+                            twitter_username: user.twitter_username, 
+                            facebook_username: user.facebook_username, 
+                            discord_username: user.discord_username, 
+                            identifier: user.identifier, 
+                            user_role: {
+                                match user.user_role.clone(){
+                                    UserRole::Admin => "Admin".to_string(),
+                                    UserRole::User => "User".to_string(),
+                                    _ => "Dev".to_string(),
+                                }
+                            },
+                            token_time: user.token_time,
+                            balance: user.balance,
+                            last_login: { 
+                                if user.last_login.is_some(){
+                                    Some(user.last_login.unwrap().to_string())
+                                } else{
+                                    Some("".to_string())
+                                }
+                            },
+                            created_at: user.created_at.to_string(),
+                            updated_at: user.updated_at.to_string(),
+                            mail: user.mail,
+                            google_id: user.google_id,
+                            microsoft_id: user.microsoft_id,
+                            is_mail_verified: user.is_mail_verified,
+                            is_phone_verified: user.is_phone_verified,
+                            phone_number: user.phone_number,
+                            paypal_id: user.paypal_id,
+                            account_number: user.account_number,
+                            device_id: user.device_id,
+                            social_id: user.social_id,
+                            cid: user.cid,
+                            screen_cid: user.screen_cid,
+                            snowflake_id: user.snowflake_id,
+                            stars: user.stars,
+                            extra: user.extra,
+                        }
+                    )
+                }
+            },
+            Err(resp) => Err(resp)
+        }
+
+    }
 
     pub async fn insert(entrance_fee: i64, participant_id: i32, event_id: i32, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
@@ -193,7 +295,7 @@ impl UserClp{
             .filter(users_clps::clp_event_id.eq(event_id))
             .first::<UserClp>(connection);
                         
-        let Ok(user) = single_user_clp else{
+        let Ok(user_clp) = single_user_clp else{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: USER_CLP_EVENT_NOT_FOUND,
@@ -205,7 +307,36 @@ impl UserClp{
             );
         };
 
-        Ok(user)
+        Ok(user_clp)
+        
+    }
+
+    pub async fn delete_by_participant_and_event_id(participant_id: i32, event_id: i32,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<usize, PanelHttpResponse>{
+
+        match diesel::delete(users_clps
+            .filter(users_clps::user_id.eq(participant_id)))
+            .filter(users_clps::clp_event_id.eq(event_id))
+            .execute(connection)
+            {
+                Ok(num_deleted) => Ok(num_deleted),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(
+                            HttpResponse::InternalServerError().json(resp)
+                        )
+                    );
+
+                }
+            }
         
     }
     

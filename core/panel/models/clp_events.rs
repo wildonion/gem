@@ -3,7 +3,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
 use crate::adapters::nftport;
-use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NOT_FOUND};
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NOT_FOUND, USER_CLP_EVENT_NOT_FOUND};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::User;
@@ -102,6 +102,52 @@ impl ClpEvent{
             Ok(event)
 
         }
+
+    pub async fn get_latest(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<ClpEventData, PanelHttpResponse>{
+
+        // fetch the latest event which is not locked yet and it's close to get started
+        let not_locked_clp_events = clp_events::table
+            .filter(is_locked.eq(false))
+            .order(clp_events::start_at.asc()) // get the one which is about to start earlier 
+            .first::<ClpEvent>(connection);
+                        
+        let Ok(clp_event) = not_locked_clp_events else{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: USER_CLP_EVENT_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(
+            ClpEventData{
+                id: clp_event.id,
+                contract_address: clp_event.contract_address,
+                event_name: clp_event.event_name,
+                symbol: clp_event.symbol,
+                max_supply: clp_event.max_supply,
+                mint_price: clp_event.mint_price,
+                presale_mint_price: clp_event.presale_mint_price,
+                tokens_per_mint: clp_event.tokens_per_mint,
+                start_at: clp_event.start_at,
+                expire_at: clp_event.expire_at,
+                is_locked: clp_event.is_locked,
+                owner_screen_cid: clp_event.owner_screen_cid,
+                event_background: clp_event.event_background,
+                extra: clp_event.extra,
+                event_description: clp_event.event_description,
+                contract_tx_hash: clp_event.contract_tx_hash,
+                created_at: clp_event.created_at,
+                updated_at: clp_event.updated_at,
+            }
+        )
+
+    }
 
 
 }
