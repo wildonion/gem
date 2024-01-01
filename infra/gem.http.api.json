@@ -2052,7 +2052,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0NjQ3NDgwMWIzNDE4YjgwNWE3NDI1NCJ9LCJhY2Nlc3NfbGV2ZWwiOjEsImV4cCI6MTcwMTUzOTMxMiwiaWF0IjoxNjk4OTQ3MzEyfQ.UKsIDBCFr8v-kIXai6Ustq59kaM8ttz0zU-FArIe_IblX9kMyHAV0snPmdoiN3JeqGaFE2zrt-ZqM59bPqqYSQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwNjcyNTQwNSwiaWF0IjoxNzA0MTMzNDA1fQ.-I32hzcpWqXTfp1k8w60NjeUiuwe6g5d05uhY2clcICVMbURi_RjuKUpLTuo1LPPt8kGtxvNgACh4FgIgh6CEQ",
 											"type": "string"
 										}
 									]
@@ -2065,7 +2065,7 @@
 										{
 											"key": "img",
 											"type": "file",
-											"src": "/Users/wildonion/Desktop/deadkings.jpeg"
+											"src": "/Users/wildonion/Desktop/consep.jpeg"
 										}
 									]
 								},
@@ -5107,8 +5107,7 @@
 							"name": "Advieh",
 							"item": []
 						}
-					],
-					"description": "# Authorization\n\nOnce a user gets logged using one of the `/login/gmail` , `/login` or `/login/{identifier}` APIs, the successful response contains a cookie in form `::` which has the JWT value before the `::`, later on the JWT value must be passed in to the **Authorization** header of each secured API to grand the access for the call.\n\n> Note that we can either pass JWT or cookie contains the JWT value in auth header of the secured APIs, both ways the lifetime of JWT and cookie is 30 days."
+					]
 				},
 				{
 					"name": "Dev APIs",
