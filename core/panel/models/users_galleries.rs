@@ -178,12 +178,17 @@ impl UserPrivateGallery{
 
             let mut galleries_owner_map = vec![];
             for owner in owners{
-    
+                
+                if owner.screen_cid.is_none(){
+                    continue;
+                }
+                
                 let owner_screen_cid_ = owner.screen_cid.unwrap();
                 let get_all_galleries_owned_by = UserPrivateGallery::get_all_for_without_limit(&owner_screen_cid_, connection);
-                let Ok(galleries_owned_by) = get_all_galleries_owned_by else{
-                    let err_resp = get_all_galleries_owned_by.unwrap_err();
-                    return Err(err_resp);
+                let galleries_owned_by = if get_all_galleries_owned_by.is_ok(){
+                    get_all_galleries_owned_by.unwrap()
+                } else{
+                    vec![]
                 };
     
                 let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();

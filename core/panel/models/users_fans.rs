@@ -173,11 +173,17 @@ impl UserFan{
 
         let mut friends_owner_map = vec![];
         for owner in owners{
+
+            if owner.screen_cid.is_none(){
+                continue;
+            }
+            
             let owner_screen_cid_ = owner.screen_cid.unwrap();
             let get_all_owner_friends = UserFan::get_all_my_friends(&owner_screen_cid_, limit.clone(), connection).await;
-            let Ok(all_owner_friends) = get_all_owner_friends else{
-                let err_resp = get_all_owner_friends.unwrap_err();
-                return Err(err_resp);
+            let all_owner_friends = if get_all_owner_friends.is_ok(){
+                get_all_owner_friends.unwrap()
+            } else{
+                UserFanData::default()
             };
 
             let user_friends_data = all_owner_friends.friends;

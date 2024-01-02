@@ -3791,9 +3791,10 @@ async fn get_notifications(
 
 }
 
-/* 
+/* >_______________________________________________________________________________
     this api must gets called by player with his conse rendezvous hyper server JWT 
     passed in to the request header 
+    _______________________________________________________________________________
 */
 #[post("/rendezvous/player/{player_id}/upload/avatar")]
 async fn upload_rendezvous_player_avatar(

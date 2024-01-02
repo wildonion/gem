@@ -750,11 +750,16 @@ impl UserNft{
         let mut nft_owner_map = vec![];
         for owner in owners{
 
+            if owner.screen_cid.is_none(){
+                continue;
+            }
+            
             let owner_screen_cid_ = owner.screen_cid.unwrap();
             let get_all_nfts_owned_by = UserNft::get_all_by_current_owner(&owner_screen_cid_, connection).await;
-            let Ok(nfts_owned_by) = get_all_nfts_owned_by else{
-                let err_resp = get_all_nfts_owned_by.unwrap_err();
-                return Err(err_resp);
+            let nfts_owned_by = if get_all_nfts_owned_by.is_ok(){
+                get_all_nfts_owned_by.unwrap()
+            } else{
+                vec![]
             };
 
             let user = User::find_by_screen_cid(&owner_screen_cid_, connection).await.unwrap();
