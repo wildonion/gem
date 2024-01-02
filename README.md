@@ -39,12 +39,12 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 🧙‍♂️ KYC gRPC SERVER                              ==> grpcs://rpc.conse.app/kyc.KycService/Verify
 
 # Push Notification WS Routes
-`wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
-`wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
-`wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
+wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488
+wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488
+wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488
 
 # Chatroom Launchpad WS Route
-`wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1/?r1pubkey=0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16&r1signature=0x20260426e5000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c2266726f6d5f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c22616d6f756e74223a357d3045022100d49e8716ef150129b612c65ef8e798e8fac73577fc8df1d4664674488b89f86d02203f62c3c5776ed393a4d0a761714d9f1e52185c5b24c4a3afe03b7903aa5186af`
+wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1/?r1pubkey=0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16&r1signature=0x20260426e5000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c2266726f6d5f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c22616d6f756e74223a357d3045022100d49e8716ef150129b612c65ef8e798e8fac73577fc8df1d4664674488b89f86d02203f62c3c5776ed393a4d0a761714d9f1e52185c5b24c4a3afe03b7903aa5186af
 ```
 
 ### 🗃️ Directory and Structure Explained
@@ -205,72 +205,3 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
-
-## 🧐 WrapUps 
-
-* basically if you want to execute an sql file into a database you can run the following commands:
-    - step 1: ```bash docker cp run.sql postgres:run.sql```
-    - step 2: ```bash docker exec -it postgres psql -U postgres -d conse -f /run.sql```
-
-* front-end can access the image of an event through the address `https://api.panel.conse.app/assets/images/events/{image_path}` like so: `https://api.panel.conse.app/assets/images/events/event64c93cc7d19645f57fd9f98d-img1692289627686439.jpg` and banner of a user through the address `https://api.panel.conse.app/assets/images/avatars/{image_path}` like so: `https://api.panel.conse.app/assets/images/avatars/avatar12-img1692289627686439.jpg` and `https://api.panel.conse.app/assets/images/banners/banner12-img1692289627686439.jpg`
-
-* we must mount the `assets` directory from the `conse-panel-pg` and `conse-panel-mongo` containers into the host then into the `nginx` container and finally load the assets inside the `api.panel.conse.app.conf` file from `/etc/nginx/assets/` path, by doing the following, any changes made in the `/app/assets` directory of the conse panel containers will be reflected in the `$(pwd)/assets/` directory on the host and because this same host directory is also mounted to the nginx container, changes will also be reflected in the `/etc/nginx/assets` directory of the nginx container:
-```bash
-# mount from conse panel containers into host: 
-... -v $(pwd)/assets/:/app/assets ...
-# mount from host into the nginx container 
-... -v $(pwd)/assets/:/etc/nginx/assets ...
-```
-
-* based on the last wrapup the `assets` directory can be accessible through the `https://api.panel.conse.app/assets/` address.
-
-* the logic flow of an HTTP API body should be the following:
-
-> make sure that you're passing the JWT into the request header, you've defined the request body strucutre and storage (diesel, mongodb or redis) schemas. 
-
-```rust
-
-//----> route: /a/sexy/route/wildonion/0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D/12/?from=0&to=10
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Limit{
-    pub from: Option<i64>,
-    pub to: Option<i64>
-}
-
-async fn api()
-#[post("/a/sexy/route/{sexy-param}/{another-sexy-param-id}/?from=0&to=10")]
-async fn api(
-        req: HttpRequest,  
-        app_storage: web::Data<Option<Arc<Storage>>>,
-        req_body: web::Json<ReqBody>,
-        limit: web::Path<Limit>,
-        a_sexy_param: web::Path<(String, i32)>
-        stream: web::Payload,
-        payload: Multipart,
-    ) -> PanelHttpResponse{
-
-
-    /* extracting storage objects (none async redis, redis async, redis pubsub conn, postgres and mongodb) */
-    // ...
-
-    /* extracting required roles */
-    // ...
-
-    /* matching over extracted storage object */
-    // ...
-        
-        /* passport checking over extracted roles */
-        // ...
-            
-            /* redis rate limit checker */ 
-            // ...
-
-                /* kyc verification process */
-                // ...
-                    
-                    /* api body and code flow responses */ 
-                    // ...
-
-}
-```
