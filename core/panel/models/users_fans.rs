@@ -24,7 +24,7 @@ use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest
     friends                              ---> those one who have sent requests to user_screen_cid
     invitation_requests                  ---> those one who have sent invitation requests of their own gallery to user_screen_cid
     
-    >_ user_screen_cid can accept each request he wants inside friends field
+    >_ user_screen_cid can accept each request he wants inside the friends field
     >_ friends are the ones inside `friends` field who have sent requests to each other and both of them accepted each other's request
     >_ followers are the ones inside `friends` field who their requests are accepted by the user_screen_cid
     >_ followings are the ones inside `friends` field who you've send request to them and they've accepted your request 
@@ -167,7 +167,7 @@ pub struct FriendOwnerCount{
 
 impl UserFan{
 
-    pub async fn get_owners_with_lots_of_friends(owners: Vec<UserData>, limit: web::Query<Limit>,
+    pub async fn get_owners_with_lots_of_followers(owners: Vec<UserData>, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<FriendOwnerCount>, PanelHttpResponse>{
 
@@ -179,7 +179,7 @@ impl UserFan{
             }
             
             let owner_screen_cid_ = owner.screen_cid.unwrap();
-            let get_all_owner_friends = UserFan::get_all_my_friends(&owner_screen_cid_, limit.clone(), connection).await;
+            let get_all_owner_friends = UserFan::get_all_my_followers(&owner_screen_cid_, limit.clone(), connection).await;
             let all_owner_friends = if get_all_owner_friends.is_ok(){
                 get_all_owner_friends.unwrap()
             } else{

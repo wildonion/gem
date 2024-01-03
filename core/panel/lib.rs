@@ -53,6 +53,7 @@
         write parser using decl_macro
         changing and analysing the AST logics of methods at compile time before getting into their body
         bind rust code to other langs and extending code in rust using macros
+        extend the user code by adding some code into his already coded logic at compile time
     
 
 */

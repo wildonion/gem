@@ -2601,7 +2601,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"7^vBWcy+w\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2615,6 +2615,36 @@
 											],
 											"path": [
 												"login"
+											]
+										},
+										"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
+									},
+									"response": []
+								},
+								{
+									"name": "Signup With Identifier and Password",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/signup",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"signup"
 											]
 										},
 										"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
@@ -3357,7 +3387,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNDIxMjYwMjQxMjc2NDEyNSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDIxNDQwMjQxMjg1NTQwOSwiaWF0IjoxNzA0MjEyNjAyNDEyODU1NDA5fQ.jUPBBKAYKJE64U4Cqh23fzyvGuXWhFSxfwYeVfAhGHIobv8gB7KLH-aiO64Dot77-TmhtMDP2UxRMMFpAMx4cA",
 													"type": "string"
 												}
 											]

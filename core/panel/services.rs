@@ -93,6 +93,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_gas_fee);
     config.service(apis::user::exports::login);
     config.service(apis::user::exports::login_with_identifier_and_password);
+    config.service(apis::user::exports::signup_with_identifier_and_password);
     config.service(apis::user::exports::login_with_gmail);
     config.service(apis::user::exports::login_with_microsoft);
     config.service(apis::user::exports::verify_twitter_account);

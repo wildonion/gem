@@ -814,6 +814,63 @@ async fn login_with_identifier_and_password(
                 },
                 Err(resp) => {
 
+                    resp!{
+                        String, // the data type
+                        login_info.identifier, // response data
+                        WRONG_IDENTIFIER, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                }
+            }
+        },
+        None => {
+            
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[post("/signup")]
+async fn signup_with_identifier_and_password(
+        req: HttpRequest, 
+        user_login_info: web::Json<UserLoginInfoRequest>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+            
+            let connection = &mut pg_pool.get().unwrap();
+            let login_info = user_login_info.to_owned();
+
+            match User::find_by_identifier(&login_info.identifier.to_owned(), connection).await{
+                Ok(user) => {
+
+                    resp!{
+                        String, // the data type
+                        login_info.identifier, // response data
+                        IDENTIFIER_ALREADY_EXISTS, // response message
+                        StatusCode::NOT_ACCEPTABLE, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+
                     /* USER NOT FOUND response */
                     // resp
                     
@@ -10402,8 +10459,8 @@ async fn get_top_users(
                             resp!{
                                 TopUsers, // the data type
                                 top_users_wallet_info, // response data
-                                ACCESS_DENIED, // response message
-                                StatusCode::FORBIDDEN, // status code
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
                                 None::<Cookie<'_>>, // cookie
                             }
 
@@ -10484,6 +10541,7 @@ pub mod exports{
     pub use super::get_notifications;
     pub use super::login;
     pub use super::login_with_identifier_and_password;
+    pub use super::signup_with_identifier_and_password;
     pub use super::login_with_gmail;
     pub use super::login_with_microsoft;
     pub use super::verify_twitter_account;

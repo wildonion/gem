@@ -79,6 +79,5 @@ impl NotifExt for UserNotif{
 
 pub async fn publish_actions(user_info: UserWalletInfoResponse, notif_data: NotifData){
 
-    
 
 }

@@ -20,7 +20,13 @@ pub static CONFIG: Lazy<std::sync::Arc<Context<Env>>> = Lazy::new(||{
 
 });
 
-pub static STORAGE: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
+/* 
+    code order execution and synchronization in multithreaded based envs
+    like having static lazy arced mutex data without having deadlocks and 
+    race conditions using std::sync tokio::sync objects like 
+    semaphore,arc,mutex,rwlock,mpsc
+*/
+pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
     let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
     let db_port = env::var("DB_PORT").expect("⚠️ no db port variable set");
@@ -136,6 +142,8 @@ pub static USER_TASK_HAS_ALREADY_BEEN_INSERTED: &str = "The User Task Has Alread
 pub static NOT_A_TWITTER_TASK: &str = "Not A Twitter Tasks";
 pub static INVALID_TWITTER_TASK_NAME: &str = "Invalid Twitter Task Type";
 pub static WRONG_PASSWORD: &str = "Wrong Password";
+pub static WRONG_IDENTIFIER: &str = "Identifier Is Not Exists, Please Signup";
+pub static IDENTIFIER_ALREADY_EXISTS: &str = "This Identifier Is Already Exists";
 pub static NOT_FOUND_COOKIE_EXP: &str = "No Expiration Time Found In Cookie";
 pub static EXPIRED_COOKIE: &str = "Cookie Has Been Expired";
 pub static EXPIRED_JWT: &str = "JWT Has Been Expired, Use Refresh Token To Generate A New Set Of Keys";

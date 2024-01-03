@@ -175,7 +175,7 @@ pub struct TopUsers{
     pub nfts_info: Vec<NftOwnerCount>,
     pub collections_info: Vec<CollectionOwnerCount>,
     pub private_galleries_infos: Vec<GalleryOwnerCount>,
-    pub friends_info: Vec<FriendOwnerCount>,
+    pub followers_info: Vec<FriendOwnerCount>,
 }
 
 
@@ -1048,9 +1048,9 @@ impl User{
             return Err(err_resp);
         };
 
-        let get_owners_with_most_friends = UserFan::get_owners_with_lots_of_friends(all_users.clone(), limit.clone(), connection).await;
-        let Ok(owners_with_most_friends) = get_owners_with_most_friends else{
-            let err_resp = get_owners_with_most_friends.unwrap_err();
+        let get_owners_with_most_followers = UserFan::get_owners_with_lots_of_followers(all_users.clone(), limit.clone(), connection).await;
+        let Ok(owners_with_most_followers) = get_owners_with_most_followers else{
+            let err_resp = get_owners_with_most_followers.unwrap_err();
             return Err(err_resp);
         };
 
@@ -1059,7 +1059,7 @@ impl User{
                 nfts_info: owners_with_most_nfts,
                 collections_info: owners_with_most_collections,
                 private_galleries_infos: owners_with_most_private_galleries,
-                friends_info: owners_with_most_friends,
+                followers_info: owners_with_most_followers,
             }
         ) 
 
