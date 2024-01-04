@@ -8,6 +8,14 @@ use tokio::io::AsyncWriteExt; // for writing to socket asyncly allows us to call
 use log::{info, error};
 
 
+
+/* >___________________________________________________________________________________
+    pubsub streaming over raw tcp based source like grpc,tcp,http,ws,redis and mpsc 
+    receiver to decode data like stream: Payload, payload: Multipart, utf8 bytes with 
+    actor worker inside tokio::spawn() using while let some syntax to map and store the 
+    multipart and payload bytes into structure (serde json value) and file in server
+*/
+
 pub struct TcpListenerActor{
     pub addr: String,
 }
@@ -57,15 +65,14 @@ impl TcpListenerActor{
                         Ok(rcvd_bytes) if rcvd_bytes == 0 => return,
                         Ok(rcvd_bytes) => {
                 
-                            let string_event_data = std::str::from_utf8(&buffer[..rcvd_bytes]).unwrap();
+                            let string_event_data = std::str::from_utf8(&buffer[..rcvd_bytes]).unwrap(); // map the fulfilled buffer into str
                             info!("📺 received event data from peer: {}", string_event_data);
 
-                            let send_tcp_server_data = String::from("write me into the socket");
-                            if let Err(why) = api_streamer.write_all(&send_tcp_server_data.as_bytes()).await{
+                            if let Err(why) = api_streamer.write_all(&string_event_data.as_bytes()).await{
                                 error!("❌ failed to write to api_streamer; {}", why);
                                 return;
                             } else{
-                                info!("🗃️ sent {}, wrote {} bytes to api_streamer", send_tcp_server_data.clone(), send_tcp_server_data.len());
+                                info!("🗃️ sent {}, wrote {} bytes to api_streamer", string_event_data, string_event_data.len());
                                 return;
                             }
                         

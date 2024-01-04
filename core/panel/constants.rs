@@ -21,9 +21,9 @@ pub static CONFIG: Lazy<std::sync::Arc<Context<Env>>> = Lazy::new(||{
 });
 
 /* 
-    code order execution and synchronization in multithreaded based envs
-    like having static lazy arced mutex data without having deadlocks and 
-    race conditions using std::sync tokio::sync objects like 
+    code order execution and synchronization in multithreaded based envs like
+    actor worker like having static lazy arced mutex data without having deadlocks 
+    and race conditions using std::sync tokio::sync objects like 
     semaphore,arc,mutex,rwlock,mpsc
 */
 pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
@@ -47,6 +47,24 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
     );
 
     app_storage
+
+});
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// static lazy arced mutexed and pinned box type
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+pub static Db: Lazy<std::sync::Arc<tokio::sync::Mutex<
+    std::pin::Pin<Box<dyn futures::Future<Output = HashMap<u32, String>> + Send + Sync + 'static>>
+    >>> = 
+Lazy::new(||{
+
+    std::sync::Arc::new(
+        tokio::sync::Mutex::new(
+            Box::pin(async move{
+                HashMap::new()
+            })
+        )
+    )
 
 });
 

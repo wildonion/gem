@@ -15,7 +15,6 @@ pub struct UserNotif{
 pub struct NotifData{
     actioner_wallet_info: UserWalletInfoResponse, // it can be the user himself or others caused the event to be happened
     fired_at: Option<i64>,
-    seen: bool,
     action_type: ActionType,
     action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
 }
@@ -45,12 +44,14 @@ pub enum ActionType{
 }
 
 impl UserNotif{
+
     fn set(&mut self, notif_data: NotifData) -> Self{
         self.notifs.push(notif_data);
         let UserNotif{ wallet_info, notifs } = self;
-        UserNotif{
+        let notif_isntance = UserNotif{
             ..self.clone() /* filling all the fields with the self ones */
-        }
+        };
+        self.clone()
     }
     fn get(&mut self) -> Self{
         let this = UserNotif { ..Default::default() };
