@@ -50,11 +50,14 @@ impl Actor for PgListenerActor{
     fn started(&mut self, ctx: &mut Self::Context) {
 
         info!("PgListenerActor -> started subscription interval");
-        
-        ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+
+        // no need to run the subscription process in actor interval
+        // cause we're subscribing in the loop using while let Some 
+        // syntax with redis async
+        // ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
             
-            let mut this = actor.clone();
-            let app_storage = actor.app_storage.clone().unwrap(); // don't borrow it by using as_ref() cause app_storage is going to be moved out of closure and we can't move if it gets borrowed using as_ref()
+            let mut this = self.clone();
+            let app_storage = self.app_storage.clone().unwrap(); // don't borrow it by using as_ref() cause app_storage is going to be moved out of closure and we can't move if it gets borrowed using as_ref()
             let get_sqlx_pg_listener = app_storage.get_sqlx_pg_listener_none_async().unwrap();
             let redis_async_pubsub = app_storage.get_async_redis_pubsub_conn_sync().unwrap();
 
@@ -65,7 +68,7 @@ impl Actor for PgListenerActor{
                
             });
 
-        });
+        // });
     }
 }
 

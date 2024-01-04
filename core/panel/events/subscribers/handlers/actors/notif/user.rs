@@ -36,10 +36,10 @@ impl Actor for UserActionActor{
         info!("UserActionActor -> started subscription interval");
 
         /* start subscription interval in tokio::spawn() using while let Some()... syntax */
-        ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+        // ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
 
-            let mut this = actor.clone();
-            let app_storage = actor.app_storage.clone().unwrap();
+            let mut this = self.clone();
+            let app_storage = self.app_storage.clone().unwrap();
             let redis_pubsub_async = app_storage.get_async_redis_pubsub_conn_sync().unwrap();
 
             // start subscribing to redis `user_actions` topic
@@ -49,7 +49,7 @@ impl Actor for UserActionActor{
 
             });
 
-        });
+        // });
 
     }
     
