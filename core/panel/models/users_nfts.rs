@@ -107,6 +107,7 @@ pub struct UserNftData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserNftRequest{
     pub caller_cid: String,
+    pub col_id: i32,
     pub buyer_screen_cid: Option<String>,
     pub transfer_to_screen_cid: Option<String>,
     pub amount: i64, // amount of gas fee for this call
@@ -154,6 +155,7 @@ pub struct UpdateUserNft{
 pub struct NewUserNftRequest{
     pub caller_cid: String,
     pub amount: i64,
+    pub col_id: i32,
     pub contract_address: String,
     pub nft_name: String,
     pub nft_description: String,
@@ -168,6 +170,7 @@ pub struct NewUserNftRequest{
 pub struct CreateNftMetadataUriRequest{
     pub caller_cid: String,
     pub amount: String,
+    pub col_id: i32,
     pub nft_id: String,
     pub nft_new_attributes: String,
     pub nft_new_extra: String,
@@ -300,6 +303,7 @@ pub struct NftReactionData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct AddReactionRequest{
     pub caller_cid: String,
+    pub col_id: i32,
     pub nft_onchain_id: String,
     pub reaction_type: String, // comment or like or dislike
     pub comment_content: Option<String>,
@@ -935,7 +939,7 @@ impl UserNft{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
-        let CreateNftMetadataUriRequest{ caller_cid, amount, nft_id, nft_new_attributes, nft_new_extra, nft_new_name, nft_new_description, tx_signature, hash_data }
+        let CreateNftMetadataUriRequest{ caller_cid, amount, nft_id, nft_new_attributes, nft_new_extra, nft_new_name, nft_new_description, tx_signature, hash_data, col_id }
             = asset_info;
 
         /* parse the string fields to desire type */
@@ -979,14 +983,14 @@ impl UserNft{
         }
 
         /* find a collection data with the passed in contract address */
-        let get_collection = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await;
+        let get_collection = UserCollection::find_by_id(col_id, connection).await;
         let Ok(collection_data) = get_collection else{
             let err_resp = get_collection.unwrap_err();
             return Err(err_resp);
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &collection_data.contract_address, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, col_id, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -1030,7 +1034,8 @@ impl UserNft{
             tx_hash: nft_info.tx_hash, 
             tx_signature, 
             hash_data,
-            nft_id, 
+            nft_id,
+            col_id, 
         };
 
         /* start uploading nft onchain */
@@ -1167,14 +1172,14 @@ impl UserNft{
         -> Result<UserNftData, PanelHttpResponse>{
             
         /* find a collection data with the passed in contract address */
-        let get_collection = UserCollection::find_by_contract_address(&asset_info.contract_address, connection).await;
+        let get_collection = UserCollection::find_by_id(asset_info.col_id, connection).await;
         let Ok(collection_data) = get_collection else{
             let err_resp = get_collection.unwrap_err();
             return Err(err_resp);
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &collection_data.contract_address, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -1285,7 +1290,7 @@ impl UserNft{
                         royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
                         collection_background: collection_data.clone().collection_background,
                         extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap(),
+                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
                         col_description: collection_data.clone().col_description,
                     };
 
@@ -1327,7 +1332,7 @@ impl UserNft{
                                         };
 
                                         /* since there is no new collection we should update the old one in vector */
-                                        let collection_position = decoded_cols.iter().position(|c| c.contract_address == collection_data.clone().contract_address);
+                                        let collection_position = decoded_cols.iter().position(|c| c.id == collection_data.clone().id);
                                         if collection_position.is_some(){
                                             decoded_cols[collection_position.unwrap()] = user_collection_data;
                                         }
@@ -1493,7 +1498,7 @@ impl UserNft{
                         royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
                         collection_background: collection_data.clone().collection_background,
                         extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap(),
+                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
                         col_description: collection_data.clone().col_description,
                     };
 
@@ -1535,7 +1540,7 @@ impl UserNft{
                                         };
 
                                         /* since there is no new collection we should update the old one in vector */
-                                        let collection_position = decoded_cols.iter().position(|c| c.contract_address == collection_data.clone().contract_address);
+                                        let collection_position = decoded_cols.iter().position(|c| c.id == collection_data.clone().id);
                                         if collection_position.is_some(){
                                             decoded_cols[collection_position.unwrap()] = user_collection_data;
                                         }
@@ -1641,14 +1646,14 @@ impl UserNft{
         };
 
         /* find a collection data with the passed in contract address */
-        let get_collection = UserCollection::find_by_contract_address(&nft_data.contract_address, connection).await;
+        let get_collection = UserCollection::find_by_id(add_reaction_request.col_id, connection).await;
         let Ok(collection_data) = get_collection else{
             let err_resp = get_collection.unwrap_err();
             return Err(err_resp);
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_contract_address(&nft_data.contract_address, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, add_reaction_request.col_id, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -1853,6 +1858,7 @@ impl UserNft{
             hash_data: String::from(""),
             attributes: nft_data.attributes,
             nft_id: nft_data.id,
+            col_id: add_reaction_request.col_id,
         };
 
 
@@ -1895,14 +1901,14 @@ impl UserNft{
             };
 
             /* find a collection data with the passed in contract address */
-            let get_collection = UserCollection::find_by_contract_address(&nft_data.contract_address, connection).await;
+            let get_collection = UserCollection::find_by_id(buy_nft_request.col_id, connection).await;
             let Ok(collection_data) = get_collection else{
                 let err_resp = get_collection.unwrap_err();
                 return Err(err_resp);
             };
 
             /* find a gallery data with the passed in owner screen address */
-            let get_gallery = UserPrivateGallery::find_by_contract_address(&nft_data.contract_address, connection).await;
+            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, buy_nft_request.col_id, connection).await;
             let Ok(gallery_data) = get_gallery else{
                 let err_resp = get_gallery.unwrap_err();
                 return Err(err_resp);
@@ -2261,14 +2267,14 @@ impl UserNft{
             };
 
             /* find a collection data with the passed in contract address */
-            let get_collection = UserCollection::find_by_contract_address(&nft_data.contract_address, connection).await;
+            let get_collection = UserCollection::find_by_id(mint_nft_request.col_id, connection).await;
             let Ok(collection_data) = get_collection else{
                 let err_resp = get_collection.unwrap_err();
                 return Err(err_resp);
             };
 
             /* find a gallery data with the passed in owner screen address */
-            let get_gallery = UserPrivateGallery::find_by_contract_address(&nft_data.contract_address, connection).await;
+            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, mint_nft_request.col_id, connection).await;
             let Ok(gallery_data) = get_gallery else{
                 let err_resp = get_gallery.unwrap_err();
                 return Err(err_resp);
@@ -2426,14 +2432,14 @@ impl UserNft{
 
 
         /* find a collection data with the passed in contract address */
-        let get_collection = UserCollection::find_by_contract_address(&nft_data.contract_address, connection).await;
+        let get_collection = UserCollection::find_by_id(asset_info.col_id, connection).await;
         let Ok(collection_data) = get_collection else{
             let err_resp = get_collection.unwrap_err();
             return Err(err_resp);
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_contract_address(&collection_data.owner_screen_cid, &nft_data.contract_address, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);

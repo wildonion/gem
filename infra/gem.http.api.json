@@ -2522,82 +2522,6 @@
 								}
 							},
 							"response": []
-						},
-						{
-							"name": "Create Nft Product Collection",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"gallery_id\": 0,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"YouWho Nft Product Gallery Collection4\",\n    \"symbol\": \"YWNPGC4\",\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 250, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/collection/create",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"collection",
-										"create"
-									]
-								},
-								"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
-							},
-							"response": []
-						},
-						{
-							"name": "Update Nft Product Collection",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{panel-user}}/collection/update",
-									"host": [
-										"{{panel-user}}"
-									],
-									"path": [
-										"collection",
-										"update"
-									]
-								},
-								"description": "**onchain updates**\n\n- freeze_metadata\n- owner_address\n- royalties_address\n- royalties_share\n- base_uri"
-							},
-							"response": []
 						}
 					]
 				},
@@ -4747,7 +4671,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ], // must fill this \n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"col_id\": 1,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ], // must fill this \n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4834,6 +4758,11 @@
 													"key": "hash_data",
 													"value": "",
 													"type": "text"
+												},
+												{
+													"key": "col_id",
+													"value": "1",
+													"type": "text"
 												}
 											]
 										},
@@ -4869,7 +4798,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"onchain\",\n    \"transfer_to_screen_cid\": \"0x79fcb507988a227a98ab68fe044193dfeca7a968\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"col_id\": 1,\n    \"amount\": 2,\n    \"nft_id\": 4,\n    \"event_type\": \"onchain\",\n    \"transfer_to_screen_cid\": \"0x79fcb507988a227a98ab68fe044193dfeca7a968\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // onchain\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": true, // onchain\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4907,7 +4836,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"amount\": 10,\n    \"nft_id\": 4,\n    \"event_type\": \"buy\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": true,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": [\n            {\n                \"value\": \"Clean\",\n                \"trait_type\": \"Background\"\n            },\n            {\n                \"value\": \"Rare\",\n                \"trait_type\": \"Type\"\n            },\n            {\n                \"value\": \"Clean\",\n                \"trait_type\": \"Packaging\"\n            },\n            {\n                \"value\": \"OG\",\n                \"trait_type\": \"Personality\"\n            }\n        ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"col_id\": 1,\n    \"amount\": 10,\n    \"nft_id\": 4,\n    \"event_type\": \"buy\",\n    \"buyer_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": \"126824823888680544453\",\n    \"is_minted\": true,\n    \"is_listed\": true,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20,\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": [\n            {\n                \"value\": \"Clean\",\n                \"trait_type\": \"Background\"\n            },\n            {\n                \"value\": \"Rare\",\n                \"trait_type\": \"Type\"\n            },\n            {\n                \"value\": \"Clean\",\n                \"trait_type\": \"Packaging\"\n            },\n            {\n                \"value\": \"OG\",\n                \"trait_type\": \"Personality\"\n            }\n        ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4945,7 +4874,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"nft_id\": 4,\n    \"amount\": 5,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // must fill this\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20, // mint with primary price of 20 tokens, this must be the one in db\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"col_id\": 1,\n    \"nft_id\": 4,\n    \"amount\": 5,\n    \"event_type\": \"mint\",\n    \"buyer_screen_cid\": null,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"metadata_uri\": \"ipfs://bafkreicde54oq6qs75w22qghuja6u7obaxqfiqd3n2ffzg5sxr7rly62rm\", // must fill this\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"onchain_id\": null,\n    \"is_minted\": false,\n    \"is_listed\": false,\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 20, // mint with primary price of 20 tokens, this must be the one in db\n    \"freeze_metadata\": false,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ],\n    \"comments\": null,\n    \"likes\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4983,7 +4912,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"nft_onchain_id\": \"126824823888680544453\",\n    \"reaction_type\": \"comment\",\n    \"comment_content\": \"a very wild comment\",\n    \"is_like_upvote\": null,\n    \"is_like_downvote\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"03bdb3b637192a69e99fef1f46a1acf22735de58505936ac986cf3f59fc9aeb054\",\n    \"col_id\": 1,\n    \"nft_onchain_id\": \"126824823888680544453\",\n    \"reaction_type\": \"comment\",\n    \"comment_content\": \"a very wild comment\",\n    \"is_like_upvote\": null,\n    \"is_like_downvote\": null,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5156,6 +5085,82 @@
 												}
 											]
 										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Nft Product Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"gallery_id\": 0,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"YouWho Nft Product Gallery Collection4\",\n    \"symbol\": \"YWNPGC4\",\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 250, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/create",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"create"
+											]
+										},
+										"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Nft Product Collection",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/collection/update",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"update"
+											]
+										},
+										"description": "**onchain updates**\n\n- freeze_metadata\n- owner_address\n- royalties_address\n- royalties_share\n- base_uri"
 									},
 									"response": []
 								}

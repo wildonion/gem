@@ -515,37 +515,35 @@ impl UserPrivateGallery{
                                 .into_iter()
                                 .map(|mut c|{
 
-                                        /* return those none minted ones */
-                                        if c.nfts.is_some(){
-                                            let col_nfts = c.nfts;
-                                            let decoded_nfts = if col_nfts.is_some(){
-                                                serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
-                                            } else{
-                                                vec![]
-                                            };
-                                            
-                                            let mut none_minted_nfts = decoded_nfts
-                                                .into_iter()
-                                                .map(|nft|{
-                                                    /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                                                    if nft.current_owner_screen_cid == screen_cid.to_string() &&
-                                                        nft.is_minted.unwrap_or(false) == false{
-                                                        Some(nft)
-                                                    } else{
-                                                        None
-                                                    }
-                                                }).collect::<Vec<Option<UserNftData>>>();
-    
-                                            
-                                            none_minted_nfts.retain(|nft| nft.is_some());
-                                            c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
-                                            
-                                            c
-                    
+                                    /* return those none minted ones */
+                                    if c.nfts.is_some(){
+                                        let col_nfts = c.nfts;
+                                        let decoded_nfts = if col_nfts.is_some(){
+                                            serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
                                         } else{
-                                            c
-                                        }
-                                    
+                                            vec![]
+                                        };
+                                        
+                                        let mut none_minted_nfts = decoded_nfts
+                                            .into_iter()
+                                            .map(|nft|{
+                                                /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                                if nft.is_minted.unwrap_or(false) == false{
+                                                    Some(nft)
+                                                } else{
+                                                    None
+                                                }
+                                            }).collect::<Vec<Option<UserNftData>>>();
+
+                                        
+                                        none_minted_nfts.retain(|nft| nft.is_some());
+                                        c.nfts = Some(serde_json::to_value(none_minted_nfts).unwrap());
+                                        
+                                        c
+                
+                                    } else{
+                                        c
+                                    }
                                 })
                                 .collect::<Vec<UserCollectionData>>();
 
@@ -1049,6 +1047,65 @@ impl UserPrivateGallery{
 
             for col in decoded_cols{
                 if col.contract_address == col_contract_address.to_string(){
+
+                    /* terminate the caller with the found gallery data */
+                    return Ok(
+                        UserPrivateGalleryData{ 
+                            id: gallery.id, 
+                            owner_screen_cid: gallery.owner_screen_cid, 
+                            collections: gallery.collections, 
+                            gal_name: gallery.gal_name, 
+                            gal_description: gallery.gal_description, 
+                            invited_friends: gallery.invited_friends, 
+                            extra: gallery.extra, 
+                            gallery_background: gallery.gallery_background,
+                            created_at: gallery.created_at.to_string(), 
+                            updated_at: gallery.updated_at.to_string() 
+                        }
+                    )
+                }
+            }
+
+        }
+
+        Ok(UserPrivateGalleryData::default()) /* terminate the caller with a default gallery data */
+
+    }
+
+    pub async fn find_by_owner_and_collection_id(gallery_owner: &str, col_id: i32,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+
+        let user_galleries_data = users_galleries
+            .filter(users_galleries::owner_screen_cid.eq(gallery_owner))
+            .load::<UserPrivateGallery>(connection);
+
+        let Ok(galleries_info) = user_galleries_data else{
+
+            let resp = Response{
+                data: Some(gallery_owner),
+                message: NO_GALLERY_FOUND_FOR_COL_OWNER,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        for gallery in galleries_info{
+            
+            let cols = gallery.collections.clone();
+            let decoded_cols = if cols.is_some(){
+                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+            } else{
+                vec![]
+            };
+
+            for col in decoded_cols{
+                if col.id == col_id{
 
                     /* terminate the caller with the found gallery data */
                     return Ok(

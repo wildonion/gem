@@ -76,9 +76,6 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_checkouts);
     config.service(apis::admin::exports::get_all_users_withdrawals);
     config.service(apis::admin::exports::get_clp_event);
-    config.service(apis::admin::exports::create_collection);
-    config.service(apis::admin::exports::update_collection);
-    config.service(apis::admin::exports::upload_collection_banner);
 
 
 }
@@ -163,6 +160,9 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::cancel_clp_event);
     config.service(apis::user::exports::get_notifications);
     config.service(apis::user::exports::get_top_users);
+    config.service(apis::user::exports::create_collection);
+    config.service(apis::user::exports::update_collection);
+    config.service(apis::user::exports::upload_collection_banner);
 
 
 }

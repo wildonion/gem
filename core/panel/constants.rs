@@ -184,6 +184,8 @@ pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of T
 pub static NO_GALLERY_FOUND_FOR: &str = "No Gallery Found For This User";
 pub static NO_GALLERY_FOUND_FOR_COL_OWNER: &str = "No Gallery Found For This Collection Owner";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";
+pub static COLLECTION_NOT_FOUND: &str = "No Collection Found";
+pub static CANT_GET_RANDOM_COLLECTION: &str = "Can't Put Nft In A Random Collection";
 pub static NO_FANS_FOUND: &str = "User With This Screen Crypto Id Has No Fans Yet";
 pub static NO_USER_FANS: &str = "Found No User Fan Data";
 pub static COLLECTION_NOT_FOUND_OF: &str = "No Collection Found With This Id";
@@ -273,6 +275,13 @@ pub static WS_INVALID_PATH: &str = "Invalid Path Params";
 pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";
 pub static WS_UPDATE_CLP_ROOM_ISSUE: &str = "Can't Update Chat Room";
 pub static WS_EMPTY_R1_KEYS: &str = "Secp256r1 Public Key and Signature Can't Be Empty";
+
+
+pub static COLLECTIONS: &[&str] = &[
+    "0xe9da82a8018c603b9434fb004bb880c6f36d1d9f",
+    "0x6979ca5495feda3a1b4a321d92bad17db98661c8",
+    "0xb28b5dcb0da37cd20880dacba1581bb3015f55e1",
+];
 
 pub mod subnets{
 
