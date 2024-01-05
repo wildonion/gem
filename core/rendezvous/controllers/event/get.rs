@@ -1092,6 +1092,30 @@ pub async fn god_single(req: Request<Body>) -> RendezvousResult<hyper::Response<
                                 };
                                 
                                 event_doc.image_path = Some(redis_event_filename);
+
+                                let mut updated_player = vec![];
+                                for mut player in event_doc.players.unwrap_or(vec![]){
+                                    
+                                    let player_id = player._id.clone().to_string();
+                                    let player_filename_key = format!("{player_id:}-img");
+                                    let redis_result_player_filename: RedisResult<String> = redis_conn.get(player_filename_key.as_str()).await;
+                                    let mut redis_player_filename = match redis_result_player_filename{
+                                        Ok(data) => {
+                                            data
+                                        },
+                                        Err(e) => {
+                                            String::from("")
+                                        }
+                                    };
+
+                                    player.avatar_path = Some(redis_player_filename);
+
+                                    updated_player.push(player);
+
+                                }
+
+                                event_doc.players = Some(updated_player);
+
                                 
                                 let response_body = misc::app::Response::<schemas::event::EventInfo>{
                                     message: FETCHED,

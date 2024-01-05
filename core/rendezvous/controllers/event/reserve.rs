@@ -8,6 +8,8 @@
 
 use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
+use redis::AsyncCommands;
+use redis::RedisResult;
 use routerify::prelude::*;
 use crate::middlewares;
 use crate::misc;
@@ -57,6 +59,8 @@ pub async fn mock_reservation(req: Request<Body>) -> RendezvousResult<hyper::Res
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<std::sync::Arc<redis::Client>>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -103,6 +107,21 @@ pub async fn mock_reservation(req: Request<Body>) -> RendezvousResult<hyper::Res
                                                 role_name: None,
                                                 role_id: None,
                                                 side_id: None,
+                                                avatar_path: {
+                                                    let player_id = _id.clone().unwrap().to_string();
+                                                    let player_filename_key = format!("{player_id:}-img");
+                                                    let redis_result_player_filename: RedisResult<String> = redis_conn.get(player_filename_key.as_str()).await;
+                                                    let mut redis_player_filename = match redis_result_player_filename{
+                                                        Ok(data) => {
+                                                            data
+                                                        },
+                                                        Err(e) => {
+                                                            String::from("")
+                                                        }
+                                                    };
+
+                                                    Some(redis_player_filename)
+                                                }
                                             };
                                             let updated_players = event_doc.add_player(init_player_info).await; // add new player info into the existing players vector of the passed in event_id
                                             let serialized_updated_players = bson::to_bson(&updated_players).unwrap(); // we have to serialize the updated_players to BSON Document object in order to update the players field inside the collection

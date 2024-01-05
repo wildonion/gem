@@ -646,6 +646,7 @@ pub struct ReservePlayerInfoResponseWithRoleName{
   pub role_name: Option<String>,
   pub role_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
   pub side_id: Option<ObjectId>, // this field can be None at initialization which is the moment that a participant reserve an event
+  pub avatar_path: Option<String>
 }
 
 

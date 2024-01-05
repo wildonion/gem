@@ -19,6 +19,8 @@ use mongodb::bson::{self, oid::ObjectId, doc}; // self referes to the bson struc
 use hyper::http::Uri;
 use mongodb::options::FindOneAndUpdateOptions;
 use mongodb::options::ReturnDocument;
+use redis::AsyncCommands;
+use redis::RedisResult;
 use std::env;
 use std::str::FromStr;
 
@@ -1322,6 +1324,8 @@ pub async fn get_single(req: Request<Body>) -> RendezvousResult<hyper::Response<
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<std::sync::Arc<redis::Client>>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     
     match middlewares::auth::pass(req).await{
         Ok((token_data, req)) => { // the decoded token and the request object will be returned from the function call since the Copy and Clone trait is not implemented for the hyper Request and Response object thus we can't have the borrowed form of the req object by passing it into the pass() function therefore it'll be moved and we have to return it from the pass() function   
@@ -1381,6 +1385,21 @@ pub async fn get_single(req: Request<Body>) -> RendezvousResult<hyper::Response<
                                                             status: user_doc.status,
                                                             role_id: user_doc.role_id,
                                                             side_id: user_doc.side_id,
+                                                            avatar_path: {
+                                                                let player_id = user_doc._id.clone().unwrap().to_string();
+                                                                let player_filename_key = format!("{player_id:}-img");
+                                                                let redis_result_player_filename: RedisResult<String> = redis_conn.get(player_filename_key.as_str()).await;
+                                                                let mut redis_player_filename = match redis_result_player_filename{
+                                                                    Ok(data) => {
+                                                                        data
+                                                                    },
+                                                                    Err(e) => {
+                                                                        String::from("")
+                                                                    }
+                                                                };
+
+                                                                Some(redis_player_filename)
+                                                            },
                                                         };
                                                         let res = Response::builder(); // creating a new response cause we didn't find any available route
                                                         let response_body = misc::app::Response::<schemas::game::ReservePlayerInfoResponseWithRoleName>{
