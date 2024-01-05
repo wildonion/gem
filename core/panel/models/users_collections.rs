@@ -3,7 +3,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix::Addr;
 use chrono::NaiveDateTime;
- 
+use crate::schema::users_galleries::dsl::users_galleries;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT};
 use crate::misc::{Response, Limit};
@@ -67,13 +67,33 @@ pub struct UserCollectionData{
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct CollectionInfoResponse{
+    pub id: i32,
+    pub contract_address: String,
+    pub col_name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String,
+    pub metadata_updatable: Option<bool>,
+    pub freeze_metadata: Option<bool>,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
+    pub collection_background: String,
+    pub extra: Option<serde_json::Value>,
+    pub col_description: String,
+    pub contract_tx_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UpdateUserCollectionRequest{
     pub collection_id: i32,
     pub gallery_id: i32,
     pub amount: i64,
     pub freeze_metadata: bool,
     pub nfts: Option<serde_json::Value>,
-    pub owner_cid: String,
+    pub caller_screen_cid: String,
     pub base_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,
@@ -103,7 +123,7 @@ pub struct NewUserCollectionRequest{
     pub amount: i64,
     pub col_name: String,
     pub symbol: String,
-    pub owner_cid: String,
+    pub caller_screen_cid: String,
     pub metadata_updatable: Option<bool>,
     pub base_uri: String,
     pub royalties_share: i32, // in-app token amount
@@ -198,6 +218,105 @@ impl UserCollection{
 
     }
 
+    pub fn get_all_nfts_of_collection(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<UserCollectionData, PanelHttpResponse>{
+
+        /* get all nfts owned by the passed in current_owner */
+        let users_collection = users_collections
+            .filter(users_collections::id.eq(col_id))
+            .first::<UserCollection>(connection);
+
+        let Ok(col_info) = users_collection else{
+
+            let resp = Response{
+                data: Some(col_id),
+                message: COLLECTION_NOT_FOUND_OF,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+
+        };
+
+        Ok(
+            UserCollectionData{
+                id: col_info.id,
+                contract_address: col_info.contract_address,
+                nfts: col_info.nfts,
+                col_name: col_info.col_name,
+                symbol: col_info.symbol,
+                owner_screen_cid: col_info.owner_screen_cid,
+                metadata_updatable: col_info.metadata_updatable,
+                freeze_metadata: col_info.freeze_metadata,
+                base_uri: col_info.base_uri,
+                royalties_share: col_info.royalties_share,
+                royalties_address_screen_cid: col_info.royalties_address_screen_cid,
+                collection_background: col_info.collection_background,
+                extra: col_info.extra,
+                col_description: col_info.col_description,
+                contract_tx_hash: col_info.contract_tx_hash,
+                created_at: col_info.created_at.to_string(),
+                updated_at: col_info.updated_at.to_string(),
+            }
+        )
+
+    } 
+
+    pub async fn get_all_nft_product_collections_by_owner(owner: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<CollectionInfoResponse>, PanelHttpResponse>{
+
+        /* get all nfts owned by the passed in current_owner */
+        let users_collections_ = users_collections
+            .filter(users_collections::owner_screen_cid.eq(owner))
+            .load::<UserCollection>(connection);
+
+        let Ok(all_collections) = users_collections_ else{
+
+            let resp = Response{
+                data: Some(owner),
+                message: COLLECTION_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+
+        };
+
+        Ok(
+            all_collections
+                .into_iter()
+                .map(|collection|{
+    
+                    CollectionInfoResponse{
+                        id: collection.id,
+                        contract_address: collection.contract_address,
+                        col_name: collection.col_name,
+                        symbol: collection.symbol,
+                        owner_screen_cid: collection.owner_screen_cid,
+                        metadata_updatable: collection.metadata_updatable,
+                        base_uri: collection.base_uri,
+                        royalties_share: collection.royalties_share,
+                        royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                        collection_background: collection.collection_background,
+                        extra: collection.extra,
+                        col_description: collection.col_description,
+                        created_at: collection.created_at.to_string(),
+                        updated_at: collection.updated_at.to_string(),
+                        freeze_metadata: collection.freeze_metadata,
+                        contract_tx_hash: collection.contract_tx_hash,
+                    }
+    
+                })
+                .collect::<Vec<CollectionInfoResponse>>()
+        )
+
+    }
+
     pub async fn get_owners_with_lots_of_collections(owners: Vec<UserData>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<CollectionOwnerCount>, PanelHttpResponse>{
 
@@ -276,18 +395,6 @@ impl UserCollection{
             return Err(error_resp);
         };
 
-        if collection.owner_screen_cid != caller_screen_cid{
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: COLLECTION_NOT_OWNED_BY,
-                status: 403,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
-            )
-        }
-
         let nfts_ = collection.clone().nfts;
         let decoded_nfts = if nfts_.is_some(){
             serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
@@ -299,7 +406,8 @@ impl UserCollection{
             .into_iter()
             .map(|nft|{
                 /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                if nft.is_minted.unwrap_or(false) == true{
+                if 
+                    nft.is_minted.unwrap_or(false) == true{
                     Some(nft)
                 } else{
                     None
@@ -567,8 +675,8 @@ impl UserCollection{
             )
         }
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -582,84 +690,145 @@ impl UserCollection{
             )
         }
 
-        let user_collections = users_collections
+       match users_collections
             .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
-            .filter(owner_screen_cid.eq(caller_screen_cid))
-            .load::<UserCollection>(connection);
-        
-        
-        let Ok(collections) = user_collections else{
-            let resp = Response::<String>{
-                data: Some(caller_screen_cid.to_string()),
-                message: COLLECTION_NOT_FOUND_FOR,
-                status: 404,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            )
-        };
-        
-        Ok(
-            
-            collections
-                .into_iter()
-                .map(|c|{
+            .load::<UserCollection>(connection)
+        {
+            Ok(all_cols) => {
 
-                    UserCollectionData{
-                        id: c.id,
-                        contract_address: c.contract_address,
-                        nfts: {
-                            /* return those none minted ones */
-                            if c.nfts.is_some(){
-                                let col_nfts = c.nfts;
-                                let decoded_nfts = if col_nfts.is_some(){
-                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
-                                } else{
-                                    vec![]
-                                };
-                                
-                                let mut none_minted_nfts = decoded_nfts
-                                    .into_iter()
-                                    .map(|nft|{
-                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
-                                        if nft.is_minted.unwrap_or(false) == false{
-                                            Some(nft)
-                                        } else{
-                                            None
-                                        }
-                                    }).collect::<Vec<Option<UserNftData>>>();
-                                
-                                none_minted_nfts.retain(|nft| nft.is_some());
-                                
-                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
-                                Some(encoded_nfts)
-        
+                let mut private_collections = vec![];
+                for c in all_cols{
+
+                    let nfts_ = {
+
+                        if c.nfts.is_some(){
+                            let col_nfts = c.nfts;
+                            let decoded_nfts = if col_nfts.is_some(){
+                                serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
                             } else{
-                                c.nfts
+                                vec![]
+                            };
+                            
+                            let mut none_minted_nfts = decoded_nfts
+                                .into_iter()
+                                .map(|nft|{
+                                    /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                    if nft.current_owner_screen_cid == caller_screen_cid.to_string() &&
+                                        nft.is_minted.unwrap_or(false) == false{
+                                        Some(nft)
+                                    } else{
+                                        None
+                                    }
+                                }).collect::<Vec<Option<UserNftData>>>();
+                            
+                            none_minted_nfts.retain(|nft| nft.is_some());
+
+                            /* sorting nfts in desc order */
+                            none_minted_nfts.sort_by(|nft1, nft2|{
+                                /* 
+                                    cannot move out of `*nft1` which is behind a shared reference
+                                    move occurs because `*nft1` has type `std::option::Option<UserNftData>`, 
+                                    which does not implement the `Copy` trait and unwrap() takes the 
+                                    ownership of the instance.
+                                    also we must create a longer lifetime for `UserNftData::default()` by 
+                                    putting it inside a type so we can take a reference to it and pass the 
+                                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                                */
+                                let nft1_default = UserNftData::default();
+                                let nft2_default = UserNftData::default();
+                                let nft1 = nft1.as_ref().unwrap_or(&nft1_default);
+                                let nft2 = nft2.as_ref().unwrap_or(&nft2_default);
+
+                                let nft1_created_at = NaiveDateTime
+                                    ::parse_from_str(&nft1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                                    .unwrap();
+
+                                let nft2_created_at = NaiveDateTime
+                                    ::parse_from_str(&nft2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                                    .unwrap();
+
+                                nft2_created_at.cmp(&nft1_created_at)
+
+                            });
+                            
+                            /*  
+                                first we need to slice the current vector convert that type into 
+                                another vector, the reason behind doing this is becasue we can't
+                                call to_vec() on the slice directly since the lifetime fo the slice
+                                will be dropped while is getting used we have to create a longer 
+                                lifetime then call to_vec() on that type
+                            */
+                            let sliced = if none_minted_nfts.len() > to{
+                                let data = &none_minted_nfts[from..to+1];
+                                data.to_vec()
+                            } else{
+                                let data = &none_minted_nfts[from..none_minted_nfts.len()];
+                                data.to_vec()
+                            };
+
+                            sliced.to_owned()
+                        } else{
+                            continue;
+                        }
+                    };
+
+                    if nfts_.is_empty(){
+                        continue;
+                    } else{
+                        private_collections.push(
+                            UserCollectionData{
+                                id: c.id,
+                                contract_address: c.contract_address,
+                                nfts: Some(serde_json::to_value(nfts_).unwrap()),
+                                col_name: c.col_name,
+                                symbol: c.symbol,
+                                owner_screen_cid: c.owner_screen_cid,
+                                metadata_updatable: c.metadata_updatable,
+                                base_uri: c.base_uri,
+                                royalties_share: c.royalties_share,
+                                royalties_address_screen_cid: c.royalties_address_screen_cid,
+                                collection_background: c.collection_background,
+                                extra: c.extra,
+                                col_description: c.col_description,
+                                created_at: c.created_at.to_string(),
+                                updated_at: c.updated_at.to_string(),
+                                freeze_metadata: c.freeze_metadata,
+                                contract_tx_hash: c.contract_tx_hash,
                             }
-                        },
-                        col_name: c.col_name,
-                        symbol: c.symbol,
-                        owner_screen_cid: c.owner_screen_cid,
-                        metadata_updatable: c.metadata_updatable,
-                        base_uri: c.base_uri,
-                        royalties_share: c.royalties_share,
-                        royalties_address_screen_cid: c.royalties_address_screen_cid,
-                        collection_background: c.collection_background,
-                        extra: c.extra,
-                        col_description: c.col_description,
-                        created_at: c.created_at.to_string(),
-                        updated_at: c.updated_at.to_string(),
-                        freeze_metadata: c.freeze_metadata,
-                        contract_tx_hash: c.contract_tx_hash,
+                        )
                     }
 
-                })
-                .collect::<Vec<UserCollectionData>>()
-        )
+                }
+
+                Ok(private_collections)
+
+            },
+            Err(e) => {
+
+                let resp_err = &e.to_string();
+
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                 
+                let error_content = &e.to_string();
+                let error_content = error_content.as_bytes().to_vec();  
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserCollection::get_all_private_collections_for");
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: resp_err,
+                    status: 500,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
 
     }
 
@@ -853,103 +1022,127 @@ impl UserCollection{
 
     }
 
-    pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>, caller_screen_cid: &str,
+    pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserCollectionData>>, PanelHttpResponse>{
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
-
-        if to < from {
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: INVALID_QUERY_LIMIT,
-                status: 406,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotAcceptable().json(resp))
-            )
-        }
-
-
-            let user_collections = users_collections
-                .order(created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)
-                .filter(owner_screen_cid.eq(screen_cid))
-                .load::<UserCollection>(connection);
-        
-            let Ok(collections_) = user_collections else{
-                let resp = Response{
-                    data: Some(screen_cid),
-                    message: COLLECTION_NOT_FOUND_FOR,
-                    status: 404,
+            let from = limit.from.unwrap_or(0) as usize;
+            let to = limit.to.unwrap_or(10) as usize;
+    
+            if to < from {
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: INVALID_QUERY_LIMIT,
+                    status: 406,
                     is_error: true
                 };
                 return Err(
-                    Ok(HttpResponse::NotFound().json(resp))
-                )
-            };
-                
-
-            let mut minted_cols = vec![];
-            for col in collections_{
-
-                let nfts_ = {
-                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(col.id, connection);
-                    if get_minted_nfts_of_this_collection.is_ok(){
-                        let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
-                        if minted_nfts_of_this_collection.len() != 0{
-                            minted_nfts_of_this_collection.retain(|nft| nft.is_some());
-                            Some(
-                                serde_json::to_value(minted_nfts_of_this_collection).unwrap()
-                            )
-                        } else{
-                            // ignore pushing the collection into the vector, regardless of everything 
-                            // cause if the user has no minted nfts yet means that none of his nfts are
-                            // public and still his collection is inside the private gallery so no one  
-                            // must be able to see his collection data and info 
-                            continue;
-                        }
-                    } else{
-                        Some(
-                            serde_json::to_value::<Vec<UserNftData>>(vec![]).unwrap()
-                        )
-                    }
-                };
-
-                minted_cols.push(
-                    Some(
-                        UserCollectionData{
-                            id: col.id,
-                            contract_address: col.contract_address,
-                            /* get all minted nfts for this collection */
-                            nfts: nfts_,
-                            col_name: col.col_name,
-                            symbol: col.symbol,
-                            owner_screen_cid: col.owner_screen_cid,
-                            metadata_updatable: col.metadata_updatable,
-                            base_uri: col.base_uri,
-                            royalties_share: col.royalties_share,
-                            royalties_address_screen_cid: col.royalties_address_screen_cid,
-                            collection_background: col.collection_background,
-                            extra: col.extra,
-                            col_description: col.col_description,
-                            created_at: col.created_at.to_string(),
-                            updated_at: col.updated_at.to_string(),
-                            freeze_metadata: col.freeze_metadata,
-                            contract_tx_hash: col.contract_tx_hash,
-                        }
-                    )
+                    Ok(HttpResponse::NotAcceptable().json(resp))
                 )
             }
+    
+           match users_collections
+                .order(created_at.desc())
+                .load::<UserCollection>(connection)
+            {
+                Ok(all_cols) => {
+                    
+                    let mut minted_cols = vec![];
+                    for col in all_cols{
 
-        minted_cols.retain(|c| c.is_some());            
-        
-        Ok(
-            minted_cols
-        )
+                        let nfts_ = {
+                            let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(col.id, connection);
+                            if get_minted_nfts_of_this_collection.is_ok(){
+                                let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
+                                if minted_nfts_of_this_collection.len() != 0{
+                                    minted_nfts_of_this_collection.retain(|nft| nft.is_some());
+                                    let mut onlyownernfts = vec![];
+                                    for nftinfo in minted_nfts_of_this_collection{
+                                        let nft_ = nftinfo.unwrap();
+                                        if nft_.current_owner_screen_cid == screen_cid.to_string(){
+                                            onlyownernfts.push(nft_);
+                                        }
+                                    }
+
+                                    onlyownernfts
+                                    
+                                } else{
+                                    // ignore pushing the collection into the vector, regardless of everything 
+                                    // cause if the user has no minted nfts yet means that none of his nfts are
+                                    // public and still his collection is inside the private gallery so no one  
+                                    // must be able to see his collection data and info 
+                                    continue;
+                                }
+                            } else{
+                                continue;
+                            }
+                        };
+
+                        if nfts_.is_empty(){
+                            continue;
+                        }
+
+                        minted_cols.push(
+                            Some(
+                                UserCollectionData{
+                                    id: col.id,
+                                    contract_address: col.contract_address,
+                                    /* get all minted nfts for this collection */
+                                    nfts: Some(
+                                        serde_json::to_value(nfts_).unwrap()
+                                    ),
+                                    col_name: col.col_name,
+                                    symbol: col.symbol,
+                                    owner_screen_cid: col.owner_screen_cid,
+                                    metadata_updatable: col.metadata_updatable,
+                                    base_uri: col.base_uri,
+                                    royalties_share: col.royalties_share,
+                                    royalties_address_screen_cid: col.royalties_address_screen_cid,
+                                    collection_background: col.collection_background,
+                                    extra: col.extra,
+                                    col_description: col.col_description,
+                                    created_at: col.created_at.to_string(),
+                                    updated_at: col.updated_at.to_string(),
+                                    freeze_metadata: col.freeze_metadata,
+                                    contract_tx_hash: col.contract_tx_hash,
+                                }
+                            )
+                        )
+                    }
+
+                    minted_cols.retain(|c| c.is_some());            
+                    
+                    Ok(
+                        minted_cols
+                    )
+    
+    
+                },
+                Err(e) => {
+    
+                    let resp_err = &e.to_string();
+    
+    
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserCollection::get_all_public_collections_for");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+    
+                }
+            }
 
     }
 
@@ -974,42 +1167,29 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
-        let caller_screen_cid = walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid);
-        /* caller must be in db */
-        let Ok(user) = User::find_by_screen_cid(
-            &caller_screen_cid, connection).await 
-            else{
-                let resp = Response{
-                    data: Some(new_col_info.owner_cid),
-                    message: USER_SCREEN_CID_NOT_FOUND,
-                    status: 404,
-                    is_error: true
-                };
-                return Err(
-                    Ok(HttpResponse::NotFound().json(resp))
-                );
-        };
+        let caller_screen_cid = new_col_info.clone().caller_screen_cid;
+        
 
         /* caller must be the gallery owner */
-        let get_gallery_data = UserPrivateGallery::find_by_id(new_col_info.clone().gallery_id, connection).await;
-        let Ok(gallery_data) = get_gallery_data else{
+        // let get_gallery_data = UserPrivateGallery::find_by_id(new_col_info.clone().gallery_id, connection).await;
+        // let Ok(gallery_data) = get_gallery_data else{
 
-            let err_resp = get_gallery_data.unwrap_err();
-            return Err(err_resp);
-        };
+        //     let err_resp = get_gallery_data.unwrap_err();
+        //     return Err(err_resp);
+        // };
 
-        if gallery_data.owner_screen_cid != caller_screen_cid{
+        // if gallery_data.owner_screen_cid != caller_screen_cid{
     
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: GALLERY_NOT_OWNED_BY,
-                status: 403,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
-            )
-        }
+        //     let resp = Response::<'_, &[u8]>{
+        //         data: Some(&[]),
+        //         message: GALLERY_NOT_OWNED_BY,
+        //         status: 403,
+        //         is_error: true
+        //     };
+        //     return Err(
+        //         Ok(HttpResponse::Forbidden().json(resp))
+        //     )
+        // }
         
         /* getting onchain contract information */
         let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client.clone(), new_col_info.clone()).await;
@@ -1062,20 +1242,21 @@ impl UserCollection{
             charged for since we already have paid the fee when we created 
             the contract collection
         */
-        let new_balance = user.balance.unwrap() - new_col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
-        let Ok(updated_user_data) = update_user_balance else{
+        // admin will call this so don't need to charge him
+        // let new_balance = user.balance.unwrap() - new_col_info.amount;
+        // let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+        // let Ok(updated_user_data) = update_user_balance else{
 
-            let err_resp = update_user_balance.unwrap_err();
-            return Err(err_resp);
+        //     let err_resp = update_user_balance.unwrap_err();
+        //     return Err(err_resp);
             
-        };
+        // };
 
         let new_col_data = InsertNewUserCollectionRequest{
             col_name: new_col_info.clone().col_name,
             symbol: new_col_info.clone().symbol,
             contract_address: contract_onchain_address, /* NEW */
-            owner_screen_cid: walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid),
+            owner_screen_cid: caller_screen_cid,
             metadata_updatable: new_col_info.clone().metadata_updatable,
             base_uri: new_col_info.clone().base_uri,
             royalties_share: new_col_info.clone().royalties_share,
@@ -1097,8 +1278,8 @@ impl UserCollection{
 
                         extra: fetched_collection_data.clone().extra,
                         id: fetched_collection_data.clone().id,
-                        contract_address: fetched_collection_data.clone().contract_address,
                         nfts: fetched_collection_data.clone().nfts,
+                        contract_address: fetched_collection_data.clone().contract_address,
                         col_name: fetched_collection_data.clone().col_name,
                         symbol: fetched_collection_data.clone().symbol,
                         owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
@@ -1115,42 +1296,45 @@ impl UserCollection{
                     };
 
                     /* updating gallery data */
-                    let new_gal_data = UpdateUserPrivateGalleryRequest{
-                        collections: {
-                            let cols = gallery_data.collections;
-                            let mut decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
+                    // let new_gal_data = UpdateUserPrivateGalleryRequest{
+                    //     collections: {
+                    //         let cols = gallery_data.collections;
+                    //         let mut decoded_cols = if cols.is_some(){
+                    //             serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                    //         } else{
+                    //             vec![]
+                    //         };
 
-                            /* since this is new collection we have to push */
-                            decoded_cols.push(user_collection_data.clone());
+                    //         /* since this is new collection we have to push */
+                    //         decoded_cols.push(user_collection_data.clone());
 
-                            Some(
-                                serde_json::to_value(decoded_cols).unwrap()
-                            )
-                        },
-                        gal_name: gallery_data.gal_name,
-                        gal_description: gallery_data.gal_description,
-                        invited_friends: gallery_data.invited_friends,
-                        extra: gallery_data.extra,
-                        owner_cid: new_col_info.clone().owner_cid,
-                        tx_signature: String::from(""),
-                        hash_data: String::from(""),
-                    };
+                    //         Some(
+                    //             serde_json::to_value(decoded_cols).unwrap()
+                    //         )
+                    //     },
+                    //     gal_name: gallery_data.gal_name,
+                    //     gal_description: gallery_data.gal_description,
+                    //     invited_friends: gallery_data.invited_friends,
+                    //     extra: gallery_data.extra,
+                    //     owner_cid: new_col_info.clone().owner_cid,
+                    //     tx_signature: String::from(""),
+                    //     hash_data: String::from(""),
+                    // };
 
-                    /* update gallery with new collection */
-                    match UserPrivateGallery::update(
-                        &fetched_collection_data.owner_screen_cid, 
-                        new_gal_data, 
-                        gallery_data.id, 
-                        connection
-                    ).await{
+                    // /* update gallery with new collection */
+                    // match UserPrivateGallery::update(
+                    //     &fetched_collection_data.owner_screen_cid, 
+                    //     new_gal_data, 
+                    //     gallery_data.id, 
+                    //     connection
+                    // ).await{
 
-                        Ok(updated_gal) => Ok(user_collection_data),
-                        Err(resp) => Err(resp)
-                    }
+                    //     Ok(updated_gal) => Ok(user_collection_data),
+                    //     Err(resp) => Err(resp)
+                    // }
+
+
+                    Ok(user_collection_data)
 
 
                 },
@@ -1197,22 +1381,22 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
-        let collection_owner_screen_cid = walletreq::evm::get_keccak256_from(col_info.clone().owner_cid);
+        let collection_owner_screen_cid = col_info.clone().caller_screen_cid;
         
-        /* caller must be in db */
-        let Ok(user) = User::find_by_screen_cid(
-            &collection_owner_screen_cid, connection).await 
-            else{
-                let resp = Response{
-                    data: Some(col_info.owner_cid),
-                    message: USER_SCREEN_CID_NOT_FOUND,
-                    status: 404,
-                    is_error: true
-                };
-                return Err(
-                    Ok(HttpResponse::NotFound().json(resp))
-                );
-        };
+        // /* caller must be in db */
+        // let Ok(user) = User::find_by_screen_cid(
+        //     &collection_owner_screen_cid, connection).await 
+        //     else{
+        //         let resp = Response{
+        //             data: Some(col_info.owner_cid),
+        //             message: USER_SCREEN_CID_NOT_FOUND,
+        //             status: 404,
+        //             is_error: true
+        //         };
+        //         return Err(
+        //             Ok(HttpResponse::NotFound().json(resp))
+        //         );
+        // };
 
         /* getting collection data */
         let get_collection_data = Self::find_by_id(col_info.collection_id, connection).await;
@@ -1239,26 +1423,26 @@ impl UserCollection{
         }
 
         /* getting gallery data */        
-        let get_gallery_data = UserPrivateGallery::find_by_id(col_info.gallery_id, connection).await;
-        let Ok(gallery_data) = get_gallery_data else{
+        // let get_gallery_data = UserPrivateGallery::find_by_id(col_info.gallery_id, connection).await;
+        // let Ok(gallery_data) = get_gallery_data else{
 
-            let err_resp = get_gallery_data.unwrap_err();
-            return Err(err_resp);
-        };
+        //     let err_resp = get_gallery_data.unwrap_err();
+        //     return Err(err_resp);
+        // };
 
-        /* caller must be the gallery owner */
-        if gallery_data.owner_screen_cid != collection_owner_screen_cid{
+        // /* caller must be the gallery owner */
+        // if gallery_data.owner_screen_cid != collection_owner_screen_cid{
     
-            let resp = Response::<'_, &[u8]>{
-                data: Some(&[]),
-                message: GALLERY_NOT_OWNED_BY,
-                status: 403,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
-            )
-        }
+        //     let resp = Response::<'_, &[u8]>{
+        //         data: Some(&[]),
+        //         message: GALLERY_NOT_OWNED_BY,
+        //         status: 403,
+        //         is_error: true
+        //     };
+        //     return Err(
+        //         Ok(HttpResponse::Forbidden().json(resp))
+        //     )
+        // }
         
         col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
             collection_data.freeze_metadata.unwrap() == true &&
@@ -1318,14 +1502,15 @@ impl UserCollection{
             charged for since we already have paid the fee when we updated  
             the contract collection
         */
-        let new_balance = user.balance.unwrap() - col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
-        let Ok(updated_user_data) = update_user_balance else{
+        // admin will call this so don't need to charge him
+        // let new_balance = user.balance.unwrap() - col_info.amount;
+        // let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+        // let Ok(updated_user_data) = update_user_balance else{
 
-            let err_resp = update_user_balance.unwrap_err();
-            return Err(err_resp);
+        //     let err_resp = update_user_balance.unwrap_err();
+        //     return Err(err_resp);
             
-        };
+        // };
 
         /* if the onchain data was ok we simply update the record based on the data updated onchain */
         let new_col_data = UpdateUserCollection{
@@ -1368,49 +1553,80 @@ impl UserCollection{
                         contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
                     };
 
-                    /* updating gallery data */
-                    let new_gal_data = UpdateUserPrivateGalleryRequest{
-                        collections: {
-                            let cols = gallery_data.collections;
-                            let mut decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
+                    /* updating all gallery data */
+                    match users_galleries
+                        .load::<UserPrivateGallery>(connection)
+                    {
+                        Ok(all_users_galleries) => {
 
-                            
-                            /* since there is no new collection we should update the old one in vector */
-                            let collection_position = decoded_cols.iter().position(|c| c.contract_address == user_collection_data.clone().contract_address);
-                            if collection_position.is_some(){
-                                decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
+                            for gallery_data in all_users_galleries{
+                                let new_gal_data = UpdateUserPrivateGalleryRequest{
+                                    collections: {
+                                        let cols = gallery_data.collections;
+                                        let mut decoded_cols = if cols.is_some(){
+                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
+                                        } else{
+                                            vec![]
+                                        };
+
+                                        
+                                        /* since there is no new collection we should update the old one in vector */
+                                        let collection_position = decoded_cols.iter().position(|c| c.contract_address == user_collection_data.clone().contract_address);
+                                        if collection_position.is_some(){
+                                            decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
+                                        }
+
+                                        Some(
+                                            serde_json::to_value(decoded_cols).unwrap()
+                                        )
+                                    },
+                                    gal_name: gallery_data.gal_name,
+                                    gal_description: gallery_data.gal_description,
+                                    invited_friends: gallery_data.invited_friends,
+                                    extra: gallery_data.extra,
+                                    owner_cid: col_info.clone().caller_screen_cid,
+                                    tx_signature: String::from(""),
+                                    hash_data: String::from(""),
+                                };
+
+                                /* update gallery with new collection */
+                                UserPrivateGallery::update(
+                                    &fetched_collection_data.owner_screen_cid, 
+                                    new_gal_data, 
+                                    gallery_data.id, 
+                                    connection
+                                ).await;
                             }
 
-                            Some(
-                                serde_json::to_value(decoded_cols).unwrap()
-                            )
+                            Ok(user_collection_data)
+
                         },
-                        gal_name: gallery_data.gal_name,
-                        gal_description: gallery_data.gal_description,
-                        invited_friends: gallery_data.invited_friends,
-                        extra: gallery_data.extra,
-                        owner_cid: col_info.clone().owner_cid,
-                        tx_signature: String::from(""),
-                        hash_data: String::from(""),
-                    };
+                        Err(e) => {
 
-                    /* update gallery with new collection */
-                    match UserPrivateGallery::update(
-                        &fetched_collection_data.owner_screen_cid, 
-                        new_gal_data, 
-                        gallery_data.id, 
-                        connection
-                    ).await{
+                            let resp_err = &e.to_string();
 
-                        Ok(updated_gal) => Ok(user_collection_data),
-                        Err(resp) => Err(resp)
+
+                            /* custom error handler */
+                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            
+                            let error_content = &e.to_string();
+                            let error_content = error_content.as_bytes().to_vec();  
+                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserCollection::users_galleries::load");
+                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                            let resp = Response::<&[u8]>{
+                                data: Some(&[]),
+                                message: resp_err,
+                                status: 500,
+                                is_error: true,
+                            };
+                            return Err(
+                                Ok(HttpResponse::InternalServerError().json(resp))
+                            );
+
+                        }
                     }
-
-
+                    
                 },
                 Err(e) => {
 

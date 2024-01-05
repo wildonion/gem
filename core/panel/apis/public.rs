@@ -4,7 +4,7 @@
 
 
 use crate::*;
-use crate::models::users_collections::UserCollectionData;
+use crate::models::users_collections::{UserCollectionData, UserCollection, CollectionInfoResponse};
 use crate::models::users_nfts::{UserNftData, UserNft, NftLike, LikeUserInfo, UserLikeStat, NftUpvoterLikes};
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::models::users_galleries::{UserPrivateGallery, UserPrivateGalleryData};
@@ -500,6 +500,57 @@ async fn get_user_wallet_info(
                     resp!{
                         UserWalletInfoResponse, // the data type
                         user_info, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
+            }
+            
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
+#[get("/nft/get/collections/for/{col_owner}")]
+async fn get_nft_product_collections(
+        req: HttpRequest,
+        col_owner: web::Path<String>,
+        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = &mut pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+            match UserCollection::get_all_nft_product_collections_by_owner(&col_owner.to_owned(), connection).await{
+
+                Ok(collection_info) => {
+
+                    resp!{
+                        Vec<CollectionInfoResponse>, // the data type
+                        collection_info, // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
@@ -1139,4 +1190,5 @@ pub mod exports{
     pub use super::search;
     pub use super::get_top_nfts;
     pub use super::get_all_nfts;
+    pub use super::get_nft_product_collections;
 }

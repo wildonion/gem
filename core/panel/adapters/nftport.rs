@@ -304,7 +304,7 @@ pub async fn start_minting_card_process(
                 let mint_tx_hash = mint_response.transaction_hash;
 
                 /* sleep till the transaction gets confirmed on blockchain */
-                tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
                 let token_id_string = {
         
@@ -582,7 +582,7 @@ pub async fn create_collection(
     let NewUserCollectionRequest{ 
         col_name, 
         symbol, 
-        owner_cid, 
+        caller_screen_cid, 
         metadata_updatable, 
         base_uri, 
         royalties_share, 
@@ -590,12 +590,11 @@ pub async fn create_collection(
         .. /* don't care about the rest of the fields */ 
     } = new_collection_request;
 
-    let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
     let mut collection_data = HashMap::new();
     collection_data.insert("chain", "polygon");
     collection_data.insert("name", &col_name);
     collection_data.insert("symbol", &symbol);
-    collection_data.insert("owner_address", owner_screen_cid);
+    collection_data.insert("owner_address", &caller_screen_cid);
     
     let mu = format!("{}", metadata_updatable.unwrap());
     collection_data.clone().insert("metadata_updatable", mu.as_str());
@@ -660,7 +659,7 @@ pub async fn create_collection(
     if collection_creation.response == String::from("OK"){
 
         /* sleep till the transaction gets confirmed on blockchain */
-        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
         /* getting the deployed contract address */
         let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);
@@ -708,7 +707,7 @@ pub async fn update_collection(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
     let UpdateUserCollectionRequest{ 
-        owner_cid, 
+        caller_screen_cid, 
         base_uri, 
         royalties_share, 
         royalties_address_screen_cid, 
@@ -716,7 +715,6 @@ pub async fn update_collection(
         .. /* don't care about the rest of the fields */
     } = update_collection_request;
 
-    let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
     let mut collection_data = HashMap::new();
     collection_data.insert("chain", "polygon");
     collection_data.insert("contract_address", &contract_address);
@@ -783,7 +781,7 @@ pub async fn update_collection(
     /* log caching using redis */
     let collection_update = get_collection_update_response_json.unwrap();
     info!("✅ NftPortUpdateCollectionContractResponse: {:#?}", collection_update.clone());
-    let collection_update_logs_key = format!("OwnerAddress:{}|Log:NftPortUpdateCollectionContractResponse|Time:{}", owner_screen_cid, chrono::Local::now().to_string());
+    let collection_update_logs_key = format!("OwnerAddress:{}|Log:NftPortUpdateCollectionContractResponse|Time:{}", caller_screen_cid, chrono::Local::now().to_string());
     let _: RedisResult<String> = redis_conn.set(collection_update_logs_key, serde_json::to_string_pretty(&collection_update).unwrap()).await;
 
 
@@ -993,7 +991,7 @@ pub async fn mint_nft(
             let mint_tx_hash = mint_response.transaction_hash;
 
             /* sleep till the transaction gets confirmed on blockchain */
-            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
             let token_id_string = {
     

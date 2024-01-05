@@ -1981,14 +1981,7 @@
 							"name": "Login",
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MCwiaXNfcmVmcmVzaCI6dHJ1ZSwiZXhwIjoxNzAxMzYzNDIyMzU5MzY3MDAwLCJpYXQiOjE3MDEzNjE2MDczNjI1NDMwMDB9.vfoAgIFxh0GVFQho_m-jaY2LTeZVpEJf3b1OKcM7gnY9Aopfh8VidFGUnxQKSHYcJUoRWnccg7wR9PVxeGmHxg",
-											"type": "string"
-										}
-									]
+									"type": "noauth"
 								},
 								"method": "POST",
 								"header": [],
@@ -2529,6 +2522,82 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Create Nft Product Collection",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"gallery_id\": 0,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"YouWho Nft Product Gallery Collection4\",\n    \"symbol\": \"YWNPGC4\",\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 250, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/collection/create",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"collection",
+										"create"
+									]
+								},
+								"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
+							},
+							"response": []
+						},
+						{
+							"name": "Update Nft Product Collection",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-user}}/collection/update",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"collection",
+										"update"
+									]
+								},
+								"description": "**onchain updates**\n\n- freeze_metadata\n- owner_address\n- royalties_address\n- royalties_share\n- base_uri"
+							},
+							"response": []
 						}
 					]
 				},
@@ -2601,7 +2670,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain_@yahoo.com\",\n    \"password\": \"123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2631,7 +2700,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain_@yahoo.com\",\n    \"password\": \"123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2899,7 +2968,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTUxNzk2MzM5OTc2MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTUzNTk2MzQxOTQzMDAwLCJpYXQiOjE3MDIxNTE3OTYzNDE5NDMwMDB9.xveZOqFfHOZJAh4fEwcNSc6Kuw_p7Vs4wTeHa7KrUnzHOtKoFEBnzZ6DAZCX_g6v8ikh2nZC_B7hqFCKJEZYAw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0Mzc0Mzc2NjUxMzA2MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0Mzc2MTc2NjU5MDEyMDAwLCJpYXQiOjE3MDQzNzQzNzY2NTkwMTIwMDB9.OOAKAUl08hGQEXV7-DYV2SWv_Tk1mVMUqZl6zyTEQ-D4492kIDhQScOm22enGQhL9Q76ySYIqeBgVkCw_d7qsw",
 													"type": "string"
 												}
 											]
@@ -2908,7 +2977,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"bio\": \"the sexeist\"\n}",
+											"raw": "{\n    \"bio\": \"the sexeiseee\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4622,44 +4691,6 @@
 									"response": []
 								},
 								{
-									"name": "Create Collection",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"gallery_id\": 1,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"Degods Collection\",\n    \"symbol\": \"DGC\",\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 100, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": null,\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/collection/create",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"collection",
-												"create"
-											]
-										},
-										"description": "**You can also upload the collection background in this API, the field is** **`img.`**"
-									},
-									"response": []
-								},
-								{
 									"name": "Upload Collection Background",
 									"request": {
 										"auth": {
@@ -4696,44 +4727,6 @@
 												"background"
 											]
 										}
-									},
-									"response": []
-								},
-								{
-									"name": "Update Collection",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-													"type": "string"
-												}
-											]
-										},
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 1,\n    \"freeze_metadata\": true,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"extra\": [{\n        \"price_history\": [100, 200, 250]\n    }],\n    \"col_description\": \"Most Amazing Degods collection\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/collection/update",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"collection",
-												"update"
-											]
-										},
-										"description": "**onchain updates**\n\n- freeze_metadata\n- owner_address\n- royalties_address\n- royalties_share\n- base_uri"
 									},
 									"response": []
 								},
@@ -5541,6 +5534,30 @@
 											"key": "to",
 											"value": "10"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Nft Product Collections",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/nft/get/collections/for/0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"nft",
+										"get",
+										"collections",
+										"for",
+										"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2"
 									]
 								}
 							},

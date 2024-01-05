@@ -76,6 +76,10 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_checkouts);
     config.service(apis::admin::exports::get_all_users_withdrawals);
     config.service(apis::admin::exports::get_clp_event);
+    config.service(apis::admin::exports::create_collection);
+    config.service(apis::admin::exports::update_collection);
+    config.service(apis::admin::exports::upload_collection_banner);
+
 
 }
 
@@ -143,8 +147,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_my_friends);
     config.service(apis::user::exports::get_all_my_followers);
     config.service(apis::user::exports::get_all_my_followings);
-    config.service(apis::user::exports::create_collection);
-    config.service(apis::user::exports::update_collection);
     config.service(apis::user::exports::create_nft);
     config.service(apis::user::exports::update_nft);
     config.service(apis::user::exports::buy_nft);
@@ -154,7 +156,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_user_reactions);
     config.service(apis::user::exports::get_all_nft_reactions);
     config.service(apis::user::exports::get_all_nfts_owned_by);
-    config.service(apis::user::exports::upload_collection_banner);
     config.service(apis::user::exports::create_nft_metadata_uri);
     config.service(apis::user::exports::get_new_clp_event_info);
     config.service(apis::user::exports::get_all_user_clp_events_info);
@@ -205,5 +206,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::search);
     config.service(apis::public::exports::get_top_nfts);
     config.service(apis::public::exports::get_all_nfts);
+    config.service(apis::public::exports::get_nft_product_collections);
 
 }
