@@ -98,6 +98,7 @@ pub static NO_CHECKOUT_FOUND: &str = "No Any Checkout Found With This Session Id
 pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Deposit Yet";
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";
 pub static NOT_VERIFIED_MAIL: &str = "Mail Is Not Verified";
+pub static OLD_PASSWORD_INCORRECT: &str = "Old Password Is Incorrect";
 pub static MAIL_VERIFICATION_CODE_SENT: &str = "Mail Verification Code Has Benn Sent Successfully";
 pub static MAIL_RESET_PASSWORD_SENT: &str = "New Password Has Benn Mailed Successfully";
 pub static NEW_PASSWORD_UPDATED: &str = "New Password Has Benn Updated Successfully";

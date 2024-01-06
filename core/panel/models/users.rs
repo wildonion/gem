@@ -168,6 +168,7 @@ pub struct ForgotPasswordRequest{
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct NewPasswordRequest{
     pub new_password: String,
+    pub old_password: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
@@ -4103,6 +4104,19 @@ impl User{
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: NOT_VERIFIED_MAIL,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+        let is_old_password_correct = user.verify_pswd(&new_pass_request.old_password).unwrap();
+        if !is_old_password_correct{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: OLD_PASSWORD_INCORRECT,
                 status: 406,
                 is_error: true
             };

@@ -135,7 +135,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjYzMTVmOTlhODk3OGQ3NjFlOTdhOWIzYSJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjk0NjE5NTc5LCJpYXQiOjE2NjMwODM1Nzl9.mcmbMJdhqvD8ycV0kOpJt6Q-1uNiimfW9giLv4dinJVssTagQQ4kLUFFgEQPU2yXMmQu-kg7Tso0yBW_MVTwNg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwNzA3NTMxMSwiaWF0IjoxNzA0NDgzMzExfQ.VGFUND_qMk4U4rAPvOk-j7BxIrDWPW3dUMAvLn4O_6JqWLSo0pwWDWiUJaOLnG1w2gbh0FG2QGD273pWn5_KUQ",
 											"type": "string"
 										}
 									]
@@ -2855,7 +2855,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxNzI2NzEwODQ5MjQwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxNzI4NTEwODQ5MjkzMDAwLCJpYXQiOjE3MDE3MjY3MTA4NDkyOTMwMDB9.hxDG0dphcsp4aLsqML_dWF-_4BJaoqUUtNlVJThZ16Bff-jyj8mC_a23noZAdxEK5A_AtoRwlKQ9giuckKFd-w",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
 													"type": "string"
 												}
 											]
@@ -2939,7 +2939,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"new_password\": \"wildonion@123\"\n}",
+											"raw": "{\n    \"new_password\": \"wildonion@123\",\n    \"old_password\": \"wildonion@123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4125,7 +4125,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk5Nzc4Mzc3NDAxODE4MDAwLCJleHAiOjE3MDIzNzAzNzcsImlhdCI6MTY5OTc3ODM3N30.N2XsvNi2f_Y71NnBgPWm-l9XfiNvLlaZnlyrYo2eU04mC3v8xBhjegUdzSosdxwrjcQvljsngX4u_tenuCjJSw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
 													"type": "string"
 												}
 											]
@@ -5096,7 +5096,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNDQxNTIzMjQ3NjMyODAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDQxNzAzMjQ3Nzk4OTAwMCwiaWF0IjoxNzA0NDE1MjMyNDc3OTg5MDAwfQ.y5us9kR58ElYGWcMXdjEh9n0NP9ASN1xmw7St7ayRup2spHnX9xi3xZ7zoxPjdcg8fQc-FM5N5sH2DipLJBQpg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
 													"type": "string"
 												}
 											]
@@ -5105,7 +5105,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"gallery_id\": 0,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"YouWho Nft Product Gallery Collection4\",\n    \"symbol\": \"YWNPGC4\",\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 250, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"gallery_id\": 1,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"col_name\": \"DeadKing Collections\",\n    \"symbol\": \"DKC\",\n    \"owner_cid\": \"025c3a22d60956cb37dbe2fa299a3eeb34fc9078958b3f2c7442dbfd64e6c7deb5\",\n    \"metadata_updatable\": true,\n    \"base_uri\": \"\",\n    \"royalties_share\": 250, // in-app token amount | 100 means 1%\n    \"royalties_address_screen_cid\": \"0xbeacc380afc620b7003e63089679a4d51a601038\",\n    \"extra\": null,\n    \"col_description\": \"DeadKings\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5143,7 +5143,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"caller_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
