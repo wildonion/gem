@@ -166,11 +166,15 @@ pub struct NewUserNftRequest{
     pub hash_data: String,
 }
 
+/* 
+    all fields must be String in order to create the json value 
+    then we'll map some fields into their own type  
+*/
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct CreateNftMetadataUriRequest{
     pub caller_cid: String,
     pub amount: String,
-    pub col_id: i32,
+    pub col_id: String,
     pub nft_id: String,
     pub nft_new_attributes: String,
     pub nft_new_extra: String,
@@ -942,9 +946,10 @@ impl UserNft{
         let CreateNftMetadataUriRequest{ caller_cid, amount, nft_id, nft_new_attributes, nft_new_extra, nft_new_name, nft_new_description, tx_signature, hash_data, col_id }
             = asset_info;
 
-        /* parse the string fields to desire type */
+        /* parse the string fields to their own type */
         let amount = amount.parse::<i64>().unwrap();
         let nft_id = nft_id.parse::<i32>().unwrap(); 
+        let col_id = col_id.parse::<i32>().unwrap(); 
 
         /* 
             nft_new_attributes and nft_new_extra are already in json string form

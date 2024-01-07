@@ -50,14 +50,13 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
 });
 
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-// static lazy arced mutexed and pinned box type
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-pub static Db: Lazy<std::sync::Arc<tokio::sync::Mutex<
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// static lazy arced mutexed and pinned box future type
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+pub static DbS3: Lazy<std::sync::Arc<tokio::sync::Mutex<
     std::pin::Pin<Box<dyn futures::Future<Output = HashMap<u32, String>> + Send + Sync + 'static>>
     >>> = 
 Lazy::new(||{
-
     std::sync::Arc::new(
         tokio::sync::Mutex::new(
             Box::pin(async move{
@@ -65,7 +64,6 @@ Lazy::new(||{
             })
         )
     )
-
 });
 
 pub static INVALID_SIGNATURE: &str = "Invalid Signature";
@@ -161,8 +159,8 @@ pub static USER_TASK_HAS_ALREADY_BEEN_INSERTED: &str = "The User Task Has Alread
 pub static NOT_A_TWITTER_TASK: &str = "Not A Twitter Tasks";
 pub static INVALID_TWITTER_TASK_NAME: &str = "Invalid Twitter Task Type";
 pub static WRONG_PASSWORD: &str = "Wrong Password";
-pub static WRONG_IDENTIFIER: &str = "Identifier Is Not Exists, Please Signup";
-pub static IDENTIFIER_ALREADY_EXISTS: &str = "This Identifier Is Already Exists";
+pub static WRONG_IDENTIFIER: &str = "Mail Is Not Exists, Please Signup";
+pub static IDENTIFIER_ALREADY_EXISTS: &str = "Mail Is Already Exists";
 pub static NOT_FOUND_COOKIE_EXP: &str = "No Expiration Time Found In Cookie";
 pub static EXPIRED_COOKIE: &str = "Cookie Has Been Expired";
 pub static EXPIRED_JWT: &str = "JWT Has Been Expired, Use Refresh Token To Generate A New Set Of Keys";
