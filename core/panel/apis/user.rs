@@ -2179,7 +2179,7 @@ async fn get_all_user_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.cid.is_none(){
                         resp!{
@@ -2568,7 +2568,7 @@ async fn get_all_user_withdrawals(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.cid.is_none(){
                         resp!{
@@ -2696,7 +2696,7 @@ async fn get_all_user_unpaid_checkouts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.cid.is_none(){
                         resp!{
@@ -2824,7 +2824,7 @@ async fn get_all_user_paid_checkouts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.cid.is_none(){
                         resp!{
@@ -2952,7 +2952,7 @@ async fn get_recipient_unclaimed_deposits(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.cid.is_none(){
                         resp!{
@@ -4676,7 +4676,7 @@ async fn send_private_gallery_invitation_request_to(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -4827,7 +4827,7 @@ async fn get_all_private_galleries_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -4949,7 +4949,7 @@ async fn get_all_galleries_invited_to(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -5074,7 +5074,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -5199,7 +5199,7 @@ async fn get_user_unaccpeted_invitation_requests(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -5323,7 +5323,7 @@ async fn get_user_unaccpeted_friend_requests(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -5727,7 +5727,7 @@ async fn get_all_user_relations(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -6406,7 +6406,7 @@ async fn get_all_my_friends(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -6529,7 +6529,7 @@ async fn get_all_my_followings(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -6652,7 +6652,7 @@ async fn get_all_my_followers(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -6775,7 +6775,7 @@ async fn get_friend_suggestions_for_owner(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -6900,7 +6900,7 @@ async fn get_all_public_collections_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -7025,7 +7025,7 @@ async fn get_all_private_galleries_general_info_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -7152,7 +7152,7 @@ async fn upload_collection_banner(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -7657,7 +7657,7 @@ async fn get_all_public_collection_nfts(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -7782,7 +7782,7 @@ async fn get_all_private_collections_for(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -8300,7 +8300,7 @@ async fn upload_private_gallery_back(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -9181,7 +9181,7 @@ async fn get_all_user_reactions(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -9304,7 +9304,7 @@ async fn get_all_nfts_owned_by(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -9316,7 +9316,7 @@ async fn get_all_nfts_owned_by(
                         }
                     }
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let get_user = User::find_by_screen_cid(&who_screen_cid.to_owned(), connection).await;
                     let Ok(user) = get_user else{
                         let err_resp = get_user.unwrap_err();
@@ -9434,7 +9434,7 @@ async fn get_all_nft_reactions(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -9984,7 +9984,7 @@ async fn get_new_clp_event_info(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -10100,7 +10100,7 @@ async fn get_all_user_clp_events_info(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -10218,7 +10218,7 @@ async fn get_token_value(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -10336,7 +10336,7 @@ async fn get_gas_fee(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    /* caller must have an screen_cid */
+                    /* caller must have an screen_cid or has created a wallet */
                     let user = User::find_by_id(_id, connection).await.unwrap();
                     if user.screen_cid.is_none(){
                         resp!{
@@ -10582,6 +10582,6 @@ pub mod exports{
     pub use super::charge_wallet_request; /**** buy in-app token ****/
     pub use super::register_clp_event;
     pub use super::cancel_clp_event;
-    // pub use super::request_advieh_collection; // ---- charge user based on available plans
+    // pub use super::request_advieh_campaign; // ---- charge user based on available plans
     // ...
 }

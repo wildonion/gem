@@ -50,9 +50,7 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
 });
 
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // static lazy arced mutexed and pinned box future type
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 pub static DbS3: Lazy<std::sync::Arc<tokio::sync::Mutex<
     std::pin::Pin<Box<dyn futures::Future<Output = HashMap<u32, String>> + Send + Sync + 'static>>
     >>> = 
@@ -276,6 +274,7 @@ pub static WS_UPDATE_CLP_ROOM_ISSUE: &str = "Can't Update Chat Room";
 pub static WS_EMPTY_R1_KEYS: &str = "Secp256r1 Public Key and Signature Can't Be Empty";
 
 
+// Nft product contract addresses created in nftport dashboard
 pub static COLLECTIONS: &[&str] = &[
     "0xe9da82a8018c603b9434fb004bb880c6f36d1d9f",
     "0x6979ca5495feda3a1b4a321d92bad17db98661c8",
@@ -284,6 +283,8 @@ pub static COLLECTIONS: &[&str] = &[
 
 pub mod subnets{
 
+// returning a reference to a type requires a valid lifetime
+// and since we don't have &self in here we're using 'static lifetime
 pub const fn get_ir_ips() -> &'static [&'static str]{
 
         &[
