@@ -69,7 +69,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTY5NTI5NTY4NSwiaWF0IjoxNjkyNzAzNjg1fQ.Xhjf1ZotAEzKkPNelzKvmXji6gXDTo4mTK5XjrWloAOIVARAH-qsP2nMz3aFHxv2P2iz6ucIrqq8Cs2stgrpPA",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwNzIwNjU5OSwiaWF0IjoxNzA0NjE0NTk5fQ.QoI3P6YeR1O-KAVfpIYwaAQf8lTvgXzv2hbJZ7RCZw_oFQkSRx0tFdaHL8wk41w2Ucs8t90qSQpfBlEeJ7cgHw",
 											"type": "string"
 										}
 									]
@@ -78,7 +78,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"_id\": \"64e3aa002f82de61ac1db820\"\r\n}",
+									"raw": "{\r\n    \"_id\": \"654299ca215c097357d8e3a4\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -217,7 +217,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJ1c2VybmFtZSI6ImRldiIsImFjY2Vzc19sZXZlbCI6MCwiZXhwIjoxNjkxNTk0NzAyLCJpYXQiOjE2ODkwMDI3MDJ9.yNNy3SOsM3wCXiaBqqAdBn3lDU03xrQCII3KWjikRJnrwI3X4-I7GpaYJCHdvzedCYbm38jD_--qsSMrlyPgXQ",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOnsiJG9pZCI6IjY0YWJjMDVjOGRhNjE5ZGEzMjNhM2I1NyJ9LCJhY2Nlc3NfbGV2ZWwiOjAsImV4cCI6MTcwNzIwNjU5OSwiaWF0IjoxNzA0NjE0NTk5fQ.QoI3P6YeR1O-KAVfpIYwaAQf8lTvgXzv2hbJZ7RCZw_oFQkSRx0tFdaHL8wk41w2Ucs8t90qSQpfBlEeJ7cgHw",
 											"type": "string"
 										}
 									]
@@ -5169,7 +5169,151 @@
 						},
 						{
 							"name": "Chatroom Launchpad",
-							"item": []
+							"item": [
+								{
+									"name": "Register Clp Event",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"participant_cid\": \"\",\n    \"clp_event_id\": 1,\n    \"entry_amount\": 2,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/clp/register",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"clp",
+												"register"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Cancel Clp Event",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"participant_cid\": \"\",\n    \"clp_event_id\": 1,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/clp/cancel",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"clp",
+												"cancel"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get New Clp Event Info",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/clp/get/new",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"clp",
+												"get",
+												"new"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get All User Clp Event Infos",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQwNDI5NjI5OTM1MDAwLCJleHAiOjE3MDE1MzI0MjksImlhdCI6MTY5ODk0MDQyOX0.0wDnseP-y7WQyonoqqldPCbAzXJuH8ofiMPrhj8hNVhfP62OiZUFlRFpT21cGrOJBuW0GoXcSe0uX0--7MoxtQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/clp/get/all/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"clp",
+												"get",
+												"all",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
 						},
 						{
 							"name": "Advieh",

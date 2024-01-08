@@ -1260,4 +1260,550 @@
   "is_disabled": false,
   "created_at": 1700232930,
   "updated_at": 1700232930
+},
+{
+  "_id": {
+    "$oid": "659ac4242f4ab34ceee5740f"
+  },
+  "name": "cp/شهروند ساده",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac40a2f4ab34ceee5740e",
+  "is_disabled": false,
+  "created_at": 1704641572,
+  "updated_at": 1704641572
+},
+{
+  "_id": {
+    "$oid": "659ac4332f4ab34ceee57410"
+  },
+  "name": "cp/دکتر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac40a2f4ab34ceee5740e",
+  "is_disabled": false,
+  "created_at": 1704641587,
+  "updated_at": 1704641587
+},
+{
+  "_id": {
+    "$oid": "659ac4442f4ab34ceee57411"
+  },
+  "name": "cp/کاراگاه",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac40a2f4ab34ceee5740e",
+  "is_disabled": false,
+  "created_at": 1704641604,
+  "updated_at": 1704641604
+},
+{
+  "_id": {
+    "$oid": "659ac45a2f4ab34ceee57412"
+  },
+  "name": "cp/مافیای ساده",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac40a2f4ab34ceee5740e",
+  "is_disabled": false,
+  "created_at": 1704641626,
+  "updated_at": 1704641626
+},
+{
+  "_id": {
+    "$oid": "659ac46d2f4ab34ceee57413"
+  },
+  "name": "cp/پدرخوانده",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac40a2f4ab34ceee5740e",
+  "is_disabled": false,
+  "created_at": 1704641645,
+  "updated_at": 1704641645
+},
+{
+  "_id": {
+    "$oid": "659ac52f2f4ab34ceee57415"
+  },
+  "name": "cp/پریزاد",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704641839,
+  "updated_at": 1704641839
+},
+{
+  "_id": {
+    "$oid": "659ac54b2f4ab34ceee57416"
+  },
+  "name": "cp/کیلر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704641867,
+  "updated_at": 1704641867
+},
+{
+  "_id": {
+    "$oid": "659ac58a2f4ab34ceee57417"
+  },
+  "name": "cp/ریپر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704641930,
+  "updated_at": 1704641930
+},
+{
+  "_id": {
+    "$oid": "659ac5cf2f4ab34ceee57418"
+  },
+  "name": "cp/چخماق",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704641999,
+  "updated_at": 1704641999
+},
+{
+  "_id": {
+    "$oid": "659ac5ff2f4ab34ceee57419"
+  },
+  "name": "cp/بازجو",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642047,
+  "updated_at": 1704642047
+},
+{
+  "_id": {
+    "$oid": "659ac60e2f4ab34ceee5741a"
+  },
+  "name": "cp/قاضی",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642062,
+  "updated_at": 1704642062
+},
+{
+  "_id": {
+    "$oid": "659ac61b2f4ab34ceee5741b"
+  },
+  "name": "cp/بمبر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642075,
+  "updated_at": 1704642075
+},
+{
+  "_id": {
+    "$oid": "659ac6352f4ab34ceee5741c"
+  },
+  "name": "cp/استاد",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642101,
+  "updated_at": 1704642101
+},
+{
+  "_id": {
+    "$oid": "659ac64f2f4ab34ceee5741d"
+  },
+  "name": "cp/دبل",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642127,
+  "updated_at": 1704642127
+},
+{
+  "_id": {
+    "$oid": "659ac65d2f4ab34ceee5741e"
+  },
+  "name": "cp/فرمانده",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642141,
+  "updated_at": 1704642141
+},
+{
+  "_id": {
+    "$oid": "659ac66a2f4ab34ceee5741f"
+  },
+  "name": "cp/کاتب",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642154,
+  "updated_at": 1704642154
+},
+{
+  "_id": {
+    "$oid": "659ac67a2f4ab34ceee57420"
+  },
+  "name": "cp/لیدر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642170,
+  "updated_at": 1704642170
+},
+{
+  "_id": {
+    "$oid": "659ac68e2f4ab34ceee57421"
+  },
+  "name": "cp/تک تیرانداز",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642190,
+  "updated_at": 1704642190
+},
+{
+  "_id": {
+    "$oid": "659ac6a82f4ab34ceee57422"
+  },
+  "name": "cp/کشیش",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642216,
+  "updated_at": 1704642216
+},
+{
+  "_id": {
+    "$oid": "659ac6b82f4ab34ceee57423"
+  },
+  "name": "cp/محافظ",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642232,
+  "updated_at": 1704642232
+},
+{
+  "_id": {
+    "$oid": "659ac6c92f4ab34ceee57424"
+  },
+  "name": "cp/نگهبان",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642249,
+  "updated_at": 1704642249
+},
+{
+  "_id": {
+    "$oid": "659ac6db2f4ab34ceee57425"
+  },
+  "name": "cp/روانشناس",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642267,
+  "updated_at": 1704642267
+},
+{
+  "_id": {
+    "$oid": "659ac6f02f4ab34ceee57426"
+  },
+  "name": "cp/کیمیا",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642288,
+  "updated_at": 1704642288
+},
+{
+  "_id": {
+    "$oid": "659ac7002f4ab34ceee57427"
+  },
+  "name": "cp/تراز",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642304,
+  "updated_at": 1704642304
+},
+{
+  "_id": {
+    "$oid": "659ac70f2f4ab34ceee57428"
+  },
+  "name": "cp/تفنگدار",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642319,
+  "updated_at": 1704642319
+},
+{
+  "_id": {
+    "$oid": "659ac71c2f4ab34ceee57429"
+  },
+  "name": "cp/آهنگر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642332,
+  "updated_at": 1704642332
+},
+{
+  "_id": {
+    "$oid": "659ac7302f4ab34ceee5742a"
+  },
+  "name": "cp/کابوی",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642352,
+  "updated_at": 1704642352
+},
+{
+  "_id": {
+    "$oid": "659ac7412f4ab34ceee5742b"
+  },
+  "name": "cp/دکتر ویژه",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642369,
+  "updated_at": 1704642369
+},
+{
+  "_id": {
+    "$oid": "659ac7522f4ab34ceee5742c"
+  },
+  "name": "cp/فداکار",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642386,
+  "updated_at": 1704642386
+},
+{
+  "_id": {
+    "$oid": "659ac7622f4ab34ceee5742d"
+  },
+  "name": "cp/رویین تن",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642402,
+  "updated_at": 1704642402
+},
+{
+  "_id": {
+    "$oid": "659ac7802f4ab34ceee5742e"
+  },
+  "name": "cp/ناتاشا",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642432,
+  "updated_at": 1704642432
+},
+{
+  "_id": {
+    "$oid": "659ac78f2f4ab34ceee5742f"
+  },
+  "name": "cp/شاه کش",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642447,
+  "updated_at": 1704642447
+},
+{
+  "_id": {
+    "$oid": "659ac79f2f4ab34ceee57430"
+  },
+  "name": "cp/جاسوس",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642463,
+  "updated_at": 1704642463
+},
+{
+  "_id": {
+    "$oid": "659ac7ad2f4ab34ceee57431"
+  },
+  "name": "cp/دزد",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642477,
+  "updated_at": 1704642477
+},
+{
+  "_id": {
+    "$oid": "659ac7c22f4ab34ceee57432"
+  },
+  "name": "cp/یاکوزا",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642498,
+  "updated_at": 1704642498
+},
+{
+  "_id": {
+    "$oid": "659ac82d2f4ab34ceee57433"
+  },
+  "name": "cp/وکیل",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642605,
+  "updated_at": 1704642605
+},
+{
+  "_id": {
+    "$oid": "659ac83a2f4ab34ceee57434"
+  },
+  "name": "cp/مرد قوی",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642618,
+  "updated_at": 1704642618
+},
+{
+  "_id": {
+    "$oid": "659ac8542f4ab34ceee57435"
+  },
+  "name": "cp/طرد شده",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642644,
+  "updated_at": 1704642644
+},
+{
+  "_id": {
+    "$oid": "659ac86d2f4ab34ceee57436"
+  },
+  "name": "cp/روانی",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642669,
+  "updated_at": 1704642669
+},
+{
+  "_id": {
+    "$oid": "659ac87a2f4ab34ceee57437"
+  },
+  "name": "cp/افسونگر",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642682,
+  "updated_at": 1704642682
+},
+{
+  "_id": {
+    "$oid": "659ac8da2f4ab34ceee57438"
+  },
+  "name": "cp/تروریست",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642778,
+  "updated_at": 1704642778
+},
+{
+  "_id": {
+    "$oid": "659ac8e82f4ab34ceee57439"
+  },
+  "name": "cp/خرابکار",
+  "rate": 1,
+  "desc": "",
+  "abilities": 100,
+  "side_id": "659ac4ed2f4ab34ceee57414",
+  "is_disabled": false,
+  "created_at": 1704642792,
+  "updated_at": 1704642792
 }]
