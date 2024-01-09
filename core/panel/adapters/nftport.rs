@@ -304,7 +304,7 @@ pub async fn start_minting_card_process(
                 let mint_tx_hash = mint_response.transaction_hash;
 
                 /* sleep till the transaction gets confirmed on blockchain */
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
 
                 let token_id_string = {
         
@@ -934,7 +934,20 @@ pub async fn mint_nft(
         mint_data.insert("chain", "polygon");
         mint_data.insert("contract_address", &asset_info.contract_address);
         mint_data.insert("metadata_uri", &metadata_uri);
-        mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
+        /* ---------------------------------------------------------------------------------
+            first mint to contract owner then transfer to owner in transfer and buy apis,
+            in our scenario we have 3 onchain collection contracts created by the owner
+            of the app and they will be used to mint nfts on them, collections on the other 
+            hand will be stored in db and a random contract address will be assigned to them 
+            as long as we're using nftport DONT mint nft to the current_owner_screen_cid
+            cause in order to transfer the nft later on after it gets minted the transfer 
+            transaction can only be allowed for tokens minted to the contract owner thus
+            first mint to the contract owner then transfer from the contract owner to the
+            second user which can be done in raw transfer or buy apis, also note that we 
+            can only transfer the nft once.
+        */
+        // mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
+        mint_data.insert("mint_to_address", &asset_info.contract_address);
         let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
         let res = reqwest::Client::new()
             .post(nftport_mint_endpoint.as_str())
@@ -993,7 +1006,7 @@ pub async fn mint_nft(
             let mint_tx_hash = mint_response.transaction_hash;
 
             /* sleep till the transaction gets confirmed on blockchain */
-            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
 
             let token_id_string = {
     
