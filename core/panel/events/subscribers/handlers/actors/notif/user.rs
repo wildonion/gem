@@ -75,17 +75,29 @@ impl UserActionActor{
         // send the received data to mpsc channel to 
         // receive it outside of the tokio::spawn()
         // ...
-
         // some how resset all user notifs or get those onse 
         // which have been fired recently, sort by fired at
-
         // update self.users_notifs
 
+        let (user_notif_sender, mut user_notif_receiver) = 
+            tokio::sync::mpsc::channel::<UserNotif>(1024);
         
+        tokio::spawn(async move{
 
-        let notif_data = NotifData::default();
-        let mut user_notif = UserNotif::default();
-        user_notif.set_user_notif(notif_data);
+            let notif_data = NotifData::default();
+            let mut user_notif = UserNotif::default();
+            user_notif.set_user_notif(notif_data);
+
+            if let Err(why) = user_notif_sender.send(user_notif).await{
+                error!("can't send user notif sender due to: {}", why.to_string());
+            }
+        
+        });
+
+        while let Some(notif_data) = user_notif_receiver.recv().await{
+
+        }
+
         
     }
 

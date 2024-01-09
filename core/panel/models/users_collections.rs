@@ -5,7 +5,7 @@ use actix::Addr;
 use chrono::NaiveDateTime;
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::adapters::nftport;
-use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS};
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_IS_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::{User, UserWalletInfoResponse, UserData};
@@ -748,6 +748,151 @@ impl UserCollection{
             .offset(from)
             .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(caller_screen_cid))
+            .load::<UserCollection>(connection);
+        
+        
+        let Ok(collections) = user_collections else{
+            let resp = Response::<String>{
+                data: Some(caller_screen_cid.to_string()),
+                message: COLLECTION_NOT_FOUND_FOR,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+        };
+        
+        Ok(
+            
+            collections
+                .into_iter()
+                .map(|c|{
+
+                    UserCollectionData{
+                        id: c.id,
+                        contract_address: c.contract_address,
+                        nfts: {
+                            /* return those none minted ones */
+                            if c.nfts.is_some(){
+                                let col_nfts = c.nfts;
+                                let decoded_nfts = if col_nfts.is_some(){
+                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
+                                
+                                let mut none_minted_nfts = decoded_nfts
+                                    .into_iter()
+                                    .map(|nft|{
+                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                        if nft.is_minted.unwrap_or(false) == false{
+                                            Some(nft)
+                                        } else{
+                                            None
+                                        }
+                                    }).collect::<Vec<Option<UserNftData>>>();
+                                
+                                none_minted_nfts.retain(|nft| nft.is_some());
+                                
+                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
+                                Some(encoded_nfts)
+        
+                            } else{
+                                c.nfts
+                            }
+                        },
+                        col_name: c.col_name,
+                        symbol: c.symbol,
+                        owner_screen_cid: c.owner_screen_cid,
+                        metadata_updatable: c.metadata_updatable,
+                        base_uri: c.base_uri,
+                        royalties_share: c.royalties_share,
+                        royalties_address_screen_cid: c.royalties_address_screen_cid,
+                        collection_background: c.collection_background,
+                        extra: c.extra,
+                        col_description: c.col_description,
+                        created_at: c.created_at.to_string(),
+                        updated_at: c.updated_at.to_string(),
+                        freeze_metadata: c.freeze_metadata,
+                        contract_tx_hash: c.contract_tx_hash,
+                    }
+
+                })
+                .collect::<Vec<UserCollectionData>>()
+        )
+
+    }
+
+    pub async fn get_all_private_collections_for_invited_friends(caller_screen_cid: &str, owner_screen_cid_: &str, 
+        gal_id: i32, limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
+            
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let Ok(gallery_data) = get_gallery_data else{
+            let error_resp = get_gallery_data.unwrap_err();
+            return Err(error_resp);
+        };
+
+        if gallery_data.owner_screen_cid != owner_screen_cid_{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
+
+        let inv_frds = gallery_data.invited_friends;
+        if inv_frds.is_none(){
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_HAS_NO_INVITED_FRIENDS_YET,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        let friends_ = inv_frds.unwrap();
+        if !friends_.contains(&Some(caller_screen_cid.to_string())){
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: CALLER_IS_CANT_VIEW_GALLERY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+        }
+
+        let from = limit.from.unwrap_or(0);
+        let to = limit.to.unwrap_or(10);
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+        let user_collections = users_collections
+            .order(created_at.desc())
+            .offset(from)
+            .limit((to - from) + 1)
+            .filter(owner_screen_cid.eq(owner_screen_cid_))
             .load::<UserCollection>(connection);
         
         

@@ -2365,6 +2365,9 @@ impl UserNft{
                 }
                 let nft_price = get_nft_price.unwrap();
 
+                // charge user before minting then if minting goes wrong we'll payback the user
+                // ...
+                
                 /* 
                     update minter balance (nft price + onchain gas fee) 
                     do this before minting the nft since the nft might 

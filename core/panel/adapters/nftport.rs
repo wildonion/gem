@@ -946,8 +946,8 @@ pub async fn mint_nft(
             second user which can be done in raw transfer or buy apis, also note that we 
             can only transfer the nft once.
         */
-        // mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
-        mint_data.insert("mint_to_address", &asset_info.contract_address);
+        // mint_data.insert("mint_to_address", &asset_info.contract_address);
+        mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
         let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
         let res = reqwest::Client::new()
             .post(nftport_mint_endpoint.as_str())

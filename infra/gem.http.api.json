@@ -4161,6 +4161,52 @@
 									"response": []
 								},
 								{
+									"name": "Get All Private Collections For Invited Friends",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/collection/firends-view/get/all/private/in-gallery/1/for/0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2/?from=0&to=10",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"collection",
+												"firends-view",
+												"get",
+												"all",
+												"private",
+												"in-gallery",
+												"1",
+												"for",
+												"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2",
+												""
+											],
+											"query": [
+												{
+													"key": "from",
+													"value": "0"
+												},
+												{
+													"key": "to",
+													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Get All Public Collections For",
 									"request": {
 										"auth": {
