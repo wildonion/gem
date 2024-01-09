@@ -1216,6 +1216,10 @@ impl UserNft{
             to pay them back, actually this is the gas fee that they must be 
             charged for since we already have paid the fee when we did the 
             onchain process
+
+            also we're charging the user in here instead of charging him in create metadata
+            api since if anything goes wrong in the second api the nft metadata won't be created
+            on the chain but it has been created in db
         */
         let new_balance = user.balance.unwrap() - asset_info.amount;
         let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
@@ -2361,12 +2365,30 @@ impl UserNft{
                 }
                 let nft_price = get_nft_price.unwrap();
 
+                /* 
+                    update minter balance (nft price + onchain gas fee) 
+                    do this before minting the nft since the nft might 
+                    gets minted on chain but after that user has not enough 
+                    balance to charge him
+                */
+                let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
+                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                let Ok(updated_user_data) = update_user_balance else{
+
+                    let err_resp = update_user_balance.unwrap_err();
+                    return Err(err_resp);
+                    
+                };
 
                 let (new_tx_hash, token_id, status) = 
                     nftport::mint_nft(redis_client.clone(), mint_nft_request.clone()).await;
 
                 if status == 1{
                     
+                    // if anything goes wrong payback the user
+                    let new_balance = user.balance.unwrap() + nft_price;
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
                         message: CANT_MINT_NFT,
@@ -2384,17 +2406,6 @@ impl UserNft{
                 mint_nft_request.current_owner_screen_cid = caller_screen_cid;
                 mint_nft_request.is_listed = Some(false);
                 mint_nft_request.current_price = Some(0);
-
-
-                /* update minter balance (nft price + onchain gas fee) */
-                let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
-                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
-                let Ok(updated_user_data) = update_user_balance else{
-
-                    let err_resp = update_user_balance.unwrap_err();
-                    return Err(err_resp);
-                    
-                };
                 
                 Self::update_nft_col_gal(
                     collection_data, 
