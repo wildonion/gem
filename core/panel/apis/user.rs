@@ -3736,10 +3736,11 @@ async fn update_password(
 
 }
 
-#[post("/profile/notifs/get")]
+#[post("/profile/notifs/get/")]
 #[passport(user)]
 async fn get_notifications(
     req: HttpRequest,
+    limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     users_notifs_subscriber_actor: web::Data<Addr<UserActionActor>>,
 ) -> PanelHttpResponse{
@@ -3798,6 +3799,21 @@ async fn get_notifications(
                         .await
                         .unwrap();
 
+                    let from = limit.from.unwrap_or(0) as usize;
+                    let to = limit.to.unwrap_or(10) as usize;
+            
+                    if to < from {
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: INVALID_QUERY_LIMIT,
+                            status: 406,
+                            is_error: true
+                        };
+                        return 
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        
+                    }
+
                     let mut user_notifs = Default::default();
                     let users_notifs = get_users_notifs.0;
                     if users_notifs.is_some(){
@@ -3806,6 +3822,28 @@ async fn get_notifications(
                         user_notifs = notifs.get(&_id).unwrap_or(&UserNotif::default()).to_owned();
                     };
                     
+                    let mut all_user_notifs = user_notifs.get_user_notifs().await;
+
+                    all_user_notifs.sort_by(|n1, n2|{
+    
+                        let n1_fired_at = n1.fired_at;
+                        let n2_fired_at = n2.fired_at;
+            
+                        n2_fired_at.cmp(&n1_fired_at)
+            
+                    });
+
+                    let sliced = if all_user_notifs.len() > to{
+                        let data = &all_user_notifs[from..to+1];
+                        data.to_vec()
+                    } else{
+                        let data = &all_user_notifs[from..all_user_notifs.len()];
+                        data.to_vec()
+                    };
+
+                    // updating the user notif data with the sorted one to respond the user with that
+                    user_notifs.update_new_slice_notifs(sliced);
+
                     resp!{
                         UserNotif, // the data type
                         user_notifs, // response data
@@ -7856,8 +7894,7 @@ async fn get_all_private_collections_for(
 #[passport(user)]
 async fn get_all_private_collections_for_invited_friends(
     req: HttpRequest,
-    gal_id: web::Path<i32>,
-    who_screen_cid: web::Path<String>,
+    gal_id_who_screen_cid: web::Path<(i32, String)>,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -7922,10 +7959,13 @@ async fn get_all_private_collections_for_invited_friends(
                         }
                     }
 
-                    let gal_id = gal_id.to_owned();
+                    // caller must be invited into the gallery by the owner
+                    let gal_id_who_screen_cid = gal_id_who_screen_cid.to_owned();
+                    let gal_id = gal_id_who_screen_cid.0;
+                    let who_screen_cid = gal_id_who_screen_cid.1;
                     match UserCollection::get_all_private_collections_for_invited_friends(
-                        &user.screen_cid.unwrap(),
-                        &who_screen_cid.to_owned(),
+                        &user.screen_cid.unwrap(), // caller 
+                        &who_screen_cid.to_owned(), // owner
                         gal_id,
                         limit, connection).await{
                         
