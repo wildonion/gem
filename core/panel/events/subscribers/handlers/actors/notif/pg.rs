@@ -130,7 +130,7 @@ impl PgListenerActor{
         /* 
             on user update subscription process is done using the redis async subscriber inside a tokio 
             threadpool which subscribes asyncly to the incoming future io object streams 
-            from the passed in channel contains updated data over users tables
+            from the passed in channel that contains updated data over users tables
         */
         tokio::spawn(async move{
 
