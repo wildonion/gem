@@ -721,6 +721,7 @@ pub async fn update_collection(
     collection_data.insert("chain", "polygon");
     collection_data.insert("contract_address", &contract_address);
 
+    // this field must be filled with either true or false
     let fzm = &format!("{}", freeze_metadata);
     collection_data.insert("freeze_metadata", fzm);
     
