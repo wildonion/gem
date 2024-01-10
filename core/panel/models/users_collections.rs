@@ -1618,7 +1618,7 @@ impl UserCollection{
         // base_uri depends on freeze_metadata and metadata_updatable fields
         col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
             collection_data.freeze_metadata.unwrap() == true &&
-            collection_data.metadata_updatable.is_some() || 
+            collection_data.metadata_updatable.is_some() && 
             collection_data.metadata_updatable.unwrap() != true{
             
             /* 

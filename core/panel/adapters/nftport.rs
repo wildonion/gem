@@ -218,9 +218,9 @@ pub async fn start_minting_card_process(
                 
             /* log caching using redis */
             let cloned_err_resp_vec = err_resp_vec.clone();
-            let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+            let err_resp_str = get_upload_meta_response_json.unwrap_err().to_string();
             let upload_mata_logs_key_err = format!("ERROR=>NftPortUploadMetadataResponse|Time:{}", chrono::Local::now().to_string());
-            let ـ : RedisResult<String> = redis_conn.set(upload_mata_logs_key_err, err_resp_str).await;
+            let ـ : RedisResult<String> = redis_conn.set(upload_mata_logs_key_err, err_resp_str.as_str()).await;
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -279,9 +279,9 @@ pub async fn start_minting_card_process(
                     
                 /* log caching using redis */
                 let cloned_err_resp_vec = err_resp_vec.clone();
-                let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+                let err_resp_str = get_mint_response_json.unwrap_err().to_string();
                 let mint_logs_key_err = format!("ERROR=>NftPortMintResponse|Time:{}", chrono::Local::now().to_string());
-                let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str).await;
+                let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str.as_str()).await;
 
                 /* custom error handler */
                 use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -341,9 +341,9 @@ pub async fn start_minting_card_process(
                             
                         /* log caching using redis */
                         let cloned_err_resp_vec = err_resp_vec.clone();
-                        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+                        let err_resp_str = get_nft_response_json.unwrap_err().to_string();
                         let get_nft_logs_key_err = format!("ERROR=>NftPortGetNftResponse|Time:{}", chrono::Local::now().to_string());
-                        let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
+                        let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str.as_str()).await;
 
                         /* custom error handler */
                         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -459,9 +459,9 @@ pub async fn start_transferring_card_process(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_transfer_response_json.unwrap_err().to_string();
         let transfer_nft_logs_key_err = format!("ERROR=>NftPortTransferResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -637,9 +637,9 @@ pub async fn create_collection(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_collection_creation_response_json.unwrap_err().to_string();
         let collection_creation_logs_key_err = format!("ERROR=>NftPortCreateCollectionContractResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(collection_creation_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(collection_creation_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -767,9 +767,9 @@ pub async fn update_collection(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_collection_update_response_json.unwrap_err().to_string();
         let collection_update_logs_key_err = format!("ERROR=>NftPortUpdateCollectionContractResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(collection_update_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(collection_update_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -881,9 +881,9 @@ pub async fn upload_nft_to_ipfs<N>(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_upload_response_json.unwrap_err().to_string();
         let upload_logs_key_err = format!("ERROR=>NftPortUploadMetadataToIpfsResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -981,9 +981,9 @@ pub async fn mint_nft(
                 
             /* log caching using redis */
             let cloned_err_resp_vec = err_resp_vec.clone();
-            let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+            let err_resp_str = get_mint_response_json.unwrap_err().to_string();
             let mint_logs_key_err = format!("ERROR=>NftPortMintResponse|Time:{}", chrono::Local::now().to_string());
-            let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str).await;
+            let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str.as_str()).await;
 
             /* custom error handler */
             use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -1043,9 +1043,9 @@ pub async fn mint_nft(
                         
                     /* log caching using redis */
                     let cloned_err_resp_vec = err_resp_vec.clone();
-                    let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+                    let err_resp_str = get_nft_response_json.unwrap_err().to_string();
                     let get_nft_logs_key_err = format!("ERROR=>NftPortGetNftResponse|Time:{}", chrono::Local::now().to_string());
-                    let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
+                    let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str.as_str()).await;
 
                     /* custom error handler */
                     use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -1153,9 +1153,9 @@ pub async fn transfer_nft(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_transfer_response_json.unwrap_err().to_string();
         let transfer_nft_logs_key_err = format!("ERROR=>NftPortTransferResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
@@ -1242,9 +1242,9 @@ pub async fn update_nft(
             
         /* log caching using redis */
         let cloned_err_resp_vec = err_resp_vec.clone();
-        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let err_resp_str = get_update_response_json.unwrap_err().to_string();
         let update_nft_logs_key_err = format!("ERROR=>NftPortUpdateNftResponse|Time:{}", chrono::Local::now().to_string());
-        let ـ : RedisResult<String> = redis_conn.set(update_nft_logs_key_err, err_resp_str).await;
+        let ـ : RedisResult<String> = redis_conn.set(update_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
         use error::{ErrorKind, ThirdPartyApiError, PanelError};
