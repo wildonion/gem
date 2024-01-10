@@ -138,14 +138,15 @@ pub async fn calculate_gas_in_token(redis_client: redis::Client) -> Result<i64, 
     let amount_of_token_to_be_burned = gas_price_in_usd / (current_token_value as f64 / 10000000.0);
     let amount_of_token_to_be_burned_i64 = (amount_of_token_to_be_burned * 10000000.0).round() as i64;
     
-    info!(" ---> amount_of_token_to_be_burned {}", amount_of_token_to_be_burned_i64);
-    info!(" ---> current_token_value {}", current_token_value);
-    info!(" ---> gas_price_in_usd {}", gas_price_in_usd);
+    info!(" ---> 💸 amount_of_token_to_be_burned {}", amount_of_token_to_be_burned_i64);
+    info!(" ---> 💰 current_token_value {}", current_token_value);
+    info!(" ---> 💵 gas_price_in_usd {}", gas_price_in_usd);
 
     Ok(
 
+        // the default onchain fee is 2 which costs approximately $2
         if amount_of_token_to_be_burned_i64 == 0{
-            1
+            2
         } else{
             amount_of_token_to_be_burned_i64
         }
