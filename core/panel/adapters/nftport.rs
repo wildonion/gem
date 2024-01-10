@@ -660,7 +660,7 @@ pub async fn create_collection(
     if collection_creation.response == String::from("OK"){
 
         /* sleep till the transaction gets confirmed on blockchain */
-        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
 
         /* getting the deployed contract address */
         let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);

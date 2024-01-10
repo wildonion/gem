@@ -99,6 +99,7 @@ pub struct UpdateUserCollectionRequest{
     pub royalties_address_screen_cid: String,
     pub extra: Option<serde_json::Value>,
     pub col_description: String,
+    pub col_name: String,
     pub tx_signature: String,
     pub hash_data: String,
 }
@@ -114,6 +115,7 @@ pub struct UpdateUserCollection{
     pub collection_background: String,
     pub extra: Option<serde_json::Value>,
     pub contract_tx_hash: String,
+    pub col_name: String,
     pub col_description: String,
 }
 
@@ -1055,7 +1057,8 @@ impl UserCollection{
             extra: collection_data.clone().extra,
             col_description: collection_data.clone().col_description,
             freeze_metadata: collection_data.clone().freeze_metadata,
-            contract_tx_hash: collection_data.contract_tx_hash.unwrap_or(String::from("")),
+            contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
+            col_name: collection_data.clone().col_name,
         };
     
         match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
@@ -1315,52 +1318,7 @@ impl UserCollection{
                 Ok(HttpResponse::Forbidden().json(resp))
             )
         }
-        
-        /* getting onchain contract information */
-        // let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client.clone(), new_col_info.clone()).await;
-        
-        // if status == 1 && contract_onchain_address == String::from("") && 
-        //     contract_create_tx_hash == String::from(""){
 
-        //     let resp = Response::<&[u8]>{
-        //         data: Some(&[]),
-        //         message: CANT_CREATE_COLLECTION_ONCHAIN,
-        //         status: 417,
-        //         is_error: true
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::ExpectationFailed().json(resp))
-        //     )
-        // }
-
-        // if !contract_create_tx_hash.starts_with("0x"){
-
-        //     let resp = Response::<&[u8]>{
-        //         data: Some(&[]),
-        //         message: INVALID_CONTRACT_TX_HASH,
-        //         status: 417,
-        //         is_error: true
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::ExpectationFailed().json(resp))
-        //     )
-        // } 
-
-        // if status == 1 && contract_onchain_address == String::from("") && 
-        //     contract_create_tx_hash.starts_with("0x"){
-
-        //     let resp = Response::<&[u8]>{
-        //         data: Some(&[]),
-        //         message: CANT_GET_CONTRACT_ADDRESS,
-        //         status: 417,
-        //         is_error: true
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::ExpectationFailed().json(resp))
-        //     )
-        // }   
-    
-        
         /* 
             update user balance frist, if anything goes wrong they can call us 
             to pay them back, actually this is the gas fee that they must be 
@@ -1368,19 +1326,96 @@ impl UserCollection{
             the contract collection
         */
         let new_balance = user.balance.unwrap() - new_col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
             return Err(err_resp);
             
         };
+        
+        /* getting onchain contract information */
+        let (contract_onchain_address, contract_create_tx_hash, status) = nftport::create_collection(redis_client.clone(), new_col_info.clone()).await;
+        
+        if status == 1 && contract_onchain_address == String::from("") && 
+            contract_create_tx_hash == String::from(""){
+            
+            // if anything goes wrong payback the user
+            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+    
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
 
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: CANT_CREATE_COLLECTION_ONCHAIN,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        }
+
+        if !contract_create_tx_hash.starts_with("0x"){
+
+            // if anything goes wrong payback the user
+            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+    
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: INVALID_CONTRACT_TX_HASH,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        } 
+
+        if status == 1 && contract_onchain_address == String::from("") && 
+            contract_create_tx_hash.starts_with("0x"){
+
+            // if anything goes wrong payback the user
+            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+    
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: CANT_GET_CONTRACT_ADDRESS,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        }  
+        
+        // use random collections
         let random_collection = COLLECTIONS.choose(&mut rand::thread_rng());
+    
         let new_col_data = InsertNewUserCollectionRequest{
             col_name: new_col_info.clone().col_name,
             symbol: new_col_info.clone().symbol,
-            contract_address: random_collection.unwrap_or(&"").to_string(), /* NEW */
+            // contract_address: random_collection.unwrap_or(&"").to_string(), /* NEW */
+            contract_address: contract_onchain_address, /* NEW */
             owner_screen_cid: walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid),
             metadata_updatable: new_col_info.clone().metadata_updatable,
             base_uri: new_col_info.clone().base_uri,
@@ -1388,7 +1423,7 @@ impl UserCollection{
             royalties_address_screen_cid: new_col_info.clone().royalties_address_screen_cid,
             extra: new_col_info.clone().extra,
             col_description: new_col_info.clone().col_description,
-            contract_tx_hash: String::from(""),
+            contract_tx_hash: contract_create_tx_hash,
             collection_background: String::from(""), /* will be updated later */
         };
     
@@ -1564,58 +1599,6 @@ impl UserCollection{
                 Ok(HttpResponse::Forbidden().json(resp))
             )
         }
-        
-        // col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
-        //     collection_data.freeze_metadata.unwrap() == true &&
-        //     collection_data.metadata_updatable.is_some() || 
-        //     collection_data.metadata_updatable.unwrap() != true{
-            
-        //     /* 
-        //         just ignore the base_uri, can't update base_uri since contract is frozen 
-        //         and metadata_updatable is false
-        //     */
-        //     String::from("") 
-
-        // } else{
-        //     /* 
-        //         contract is not frozen and metadata_updatable is true 
-        //         hence we can update base_uri 
-        //     */
-        //     col_info.base_uri 
-        // };
-
-        // /* updating onchain contract information */
-        // let (contract_update_tx_hash, status) = nftport::update_collection(
-        //     redis_client.clone(), 
-        //     col_info.clone(), 
-        //     collection_data.contract_address.clone()).await;
-        
-        // if status == 1 && contract_update_tx_hash == String::from(""){
-
-        //     let resp = Response::<&[u8]>{
-        //         data: Some(&[]),
-        //         message: CANT_UPDATE_COLLECTION_ONCHAIN,
-        //         status: 417,
-        //         is_error: true
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::ExpectationFailed().json(resp))
-        //     )
-        // }  
-
-        // if !contract_update_tx_hash.starts_with("0x"){
-
-        //     let resp = Response::<&[u8]>{
-        //         data: Some(&[]),
-        //         message: INVALID_CONTRACT_TX_HASH,
-        //         status: 417,
-        //         is_error: true
-        //     };
-        //     return Err(
-        //         Ok(HttpResponse::ExpectationFailed().json(resp))
-        //     )
-        // }
-
 
         /* 
             updating user balance frist, if anything goes wrong they can call us 
@@ -1624,7 +1607,7 @@ impl UserCollection{
             the contract collection
         */
         let new_balance = user.balance.unwrap() - col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -1632,17 +1615,89 @@ impl UserCollection{
             
         };
 
+        // base_uri depends on freeze_metadata and metadata_updatable fields
+        col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
+            collection_data.freeze_metadata.unwrap() == true &&
+            collection_data.metadata_updatable.is_some() || 
+            collection_data.metadata_updatable.unwrap() != true{
+            
+            /* 
+                just ignore the base_uri, can't update base_uri since contract is frozen 
+                and metadata_updatable is false
+            */
+            String::from("") 
+
+        } else{
+            /* 
+                contract is not frozen and metadata_updatable is true 
+                hence we can update base_uri 
+            */
+            col_info.base_uri 
+        };
+
+        /* updating onchain contract information */
+        let (contract_update_tx_hash, status) = nftport::update_collection(
+            redis_client.clone(), 
+            col_info.clone(), 
+            collection_data.contract_address.clone()).await;
+        
+        if status == 1 && contract_update_tx_hash == String::from(""){
+
+            let new_balance = user.balance.unwrap() + col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: CANT_UPDATE_COLLECTION_ONCHAIN,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        }  
+
+        if !contract_update_tx_hash.starts_with("0x"){
+
+            let new_balance = user.balance.unwrap() + col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: INVALID_CONTRACT_TX_HASH,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        }
+
+
         /* if the onchain data was ok we simply update the record based on the data updated onchain */
         let new_col_data = UpdateUserCollection{
             nfts: col_info.clone().nfts,
             base_uri: col_info.clone().base_uri,
             royalties_share: col_info.clone().royalties_share,
             royalties_address_screen_cid: col_info.clone().royalties_address_screen_cid,
-            collection_background: collection_data.collection_background,
+            collection_background: collection_data.clone().collection_background,
             extra: col_info.clone().extra,
             col_description: col_info.clone().col_description,
             freeze_metadata: Some(col_info.clone().freeze_metadata),
-            contract_tx_hash: collection_data.contract_tx_hash.unwrap_or(String::from("")),
+            contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
+            col_name: col_info.clone().col_name,
         };
     
         match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))

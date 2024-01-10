@@ -4,7 +4,7 @@
 
 # 🛞 Rust Both Core Monolithic and Micro-service Stateful Backend APIs and Engines
 
-Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), NFT gallery on top of **Polygon** with the following engines as its core backend: 
+Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), NFT based galleries on top of **Polygon** with the following engines as its core backend: 
 - chatroom launchpad feature to mint generated AI based NFT images to users based on their chats in each launchpad events.
 - **pubsub** pattern to reveal player in-game roles inside the rendezvous service using redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.

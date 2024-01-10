@@ -1301,6 +1301,7 @@ impl UserNft{
                         extra: collection_data.clone().extra,
                         contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
                         col_description: collection_data.clone().col_description,
+                        col_name: collection_data.clone().col_name
                     };
 
                     match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
@@ -1509,6 +1510,7 @@ impl UserNft{
                         extra: collection_data.clone().extra,
                         contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
                         col_description: collection_data.clone().col_description,
+                        col_name: collection_data.clone().col_name,
                     };
 
                     match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))

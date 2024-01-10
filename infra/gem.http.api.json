@@ -5189,7 +5189,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"collection_id\": 1,\n    \"gallery_id\": 0,\n    \"freeze_metadata\": false,\n    \"nfts\": null,\n    \"amount\": 2, // gas fee of creating collection onchain\n    \"owner_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"base_uri\": \"\", // freeze_metadata must be false in order to update this\n    \"royalties_share\": 250, // in-app token amount | 250 means 2.5%\n    \"royalties_address_screen_cid\": \"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2\",\n    \"extra\": null,\n    \"col_description\": \"YouWho Nft Product Contract\",\n    \"col_name\": \"\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
