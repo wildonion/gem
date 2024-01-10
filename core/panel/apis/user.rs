@@ -9547,11 +9547,11 @@ async fn get_all_nfts_owned_by(
 
 }
 
-#[get("/nft/{nft_onchain_id}/reaction/get/all")]
+#[get("/nft/{nft_id}/reaction/get/all")]
 #[passport(user)]
 async fn get_all_nft_reactions(
     req: HttpRequest,
-    nft_onchain_id: web::Path<String>,
+    nft_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
@@ -9615,9 +9615,9 @@ async fn get_all_nft_reactions(
                         }
                     }
 
-                    let nft_onchain_id = nft_onchain_id.to_owned();
+                    let nft_id = nft_id.to_owned();
                     match UserNft::get_all_nft_reactions(
-                        &nft_onchain_id,
+                        nft_id,
                         connection).await{
                         Ok(nft_reaction_data) => {
 

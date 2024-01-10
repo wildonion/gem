@@ -4996,13 +4996,13 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/nft/4695224979303015/reaction/get/all",
+											"raw": "{{panel-user}}/nft/2/reaction/get/all",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
 												"nft",
-												"4695224979303015",
+												"2",
 												"reaction",
 												"get",
 												"all"

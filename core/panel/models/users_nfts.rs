@@ -48,7 +48,7 @@ pub struct UserNft{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NftComment{
-    pub nft_onchain_id: String,
+    pub nft_id: i32,
     pub content: String,
     pub owner_screen_cid: String,
     pub owner_username: String,
@@ -58,7 +58,7 @@ pub struct NftComment{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NftLike{
-    pub nft_onchain_id: String,
+    pub nft_id: i32,
     pub upvoter_screen_cids: Vec<LikeUserInfo>,
     pub downvoter_screen_cids: Vec<LikeUserInfo>,
 }
@@ -78,7 +78,7 @@ pub struct LikeUserInfo{
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserLikeStat{
-    pub nft_onchain_id: String,
+    pub nft_id: i32,
     pub is_upvote: bool,
 }
 
@@ -290,7 +290,7 @@ pub struct InsertNewUserNftRequest{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserReactionData{
     pub nft_metadata_uri: String,
-    pub nft_onchain_addres: Option<String>,
+    pub nft_id: Option<i32>,
     pub comments: Vec<NftComment>,
     pub likes: Vec<UserLikeStat>,
 }
@@ -298,7 +298,7 @@ pub struct UserReactionData{
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct NftReactionData{
     pub nft_metadata_uri: String,
-    pub nft_onchain_addres: Option<String>,
+    pub nft_id: Option<i32>,
     pub nft_created_at: String,
     pub comments: Vec<NftComment>,
     pub likes: Vec<NftLike>,
@@ -308,7 +308,7 @@ pub struct NftReactionData{
 pub struct AddReactionRequest{
     pub caller_cid: String,
     pub col_id: i32,
-    pub nft_onchain_id: String,
+    pub nft_id: i32,
     pub reaction_type: String, // comment or like or dislike
     pub comment_content: Option<String>,
     pub is_like_upvote: Option<bool>,
@@ -557,7 +557,7 @@ impl UserNft{
                             let like_stat_data = if like.upvoter_screen_cids.into_iter().any(|u| u.screen_cid == caller_screen_cid.to_string()){
                                     Some(
                                         UserLikeStat{
-                                            nft_onchain_id: like.nft_onchain_id,
+                                            nft_id: like.nft_id,
                                             is_upvote: true,
                                         }
                                     )
@@ -565,7 +565,7 @@ impl UserNft{
 
                                     Some(
                                         UserLikeStat{
-                                            nft_onchain_id: like.nft_onchain_id,
+                                            nft_id: like.nft_id,
                                             is_upvote: false,
                                         }
                                     )
@@ -591,7 +591,7 @@ impl UserNft{
                                         comments: owner_comments,
                                         likes: owner_likes,
                                         nft_metadata_uri: nft.metadata_uri,
-                                        nft_onchain_addres: nft.onchain_id,
+                                        nft_id: Some(nft.id),
                                     }
                                 )
                             )
@@ -632,18 +632,18 @@ impl UserNft{
         
     }
 
-    pub async fn get_all_nft_reactions(nft_onchain_id: &str, 
+    pub async fn get_all_nft_reactions(nft_id: i32, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<NftReactionData, PanelHttpResponse>{
         
         let get_nft = users_nfts
-            .filter(users_nfts::onchain_id.eq(nft_onchain_id))
+            .filter(users_nfts::id.eq(nft_id))
             .first::<UserNft>(connection);
         
         
         let Ok(nft) = get_nft else{
-            let resp = Response::<String>{
-                data: Some(nft_onchain_id.to_string()),
+            let resp = Response::<i32>{
+                data: Some(nft_id),
                 message: NFT_ONCHAINID_NOT_FOUND,
                 status: 404,
                 is_error: true
@@ -671,14 +671,14 @@ impl UserNft{
         
         let mut this_nft_comments = vec![];
         for comment in decoded_comments{
-            if comment.nft_onchain_id == nft_onchain_id{
+            if comment.nft_id == nft_id{
                 this_nft_comments.push(comment);
             }
         } 
 
         let mut this_nft_likes = vec![];
         for like in decoded_likes{
-            if like.nft_onchain_id == nft_onchain_id{
+            if like.nft_id == nft_id{
                 this_nft_likes.push(like);
             }
         } 
@@ -689,7 +689,7 @@ impl UserNft{
                 comments: this_nft_comments, 
                 likes: this_nft_likes,
                 nft_metadata_uri: nft.metadata_uri,
-                nft_onchain_addres: nft.onchain_id,
+                nft_id: Some(nft.id),
                 nft_created_at: nft.created_at.to_string(),
             }
         )
@@ -1650,7 +1650,7 @@ impl UserNft{
             return Err(err_resp);
         };
 
-        let get_nft = UserNft::find_by_onchain_id(&add_reaction_request.nft_onchain_id, connection).await;
+        let get_nft = UserNft::find_by_id(add_reaction_request.nft_id, connection).await;
         let Ok(nft_data) = get_nft else{
             let err_resp = get_nft.unwrap_err();
             return Err(err_resp);
@@ -1700,7 +1700,7 @@ impl UserNft{
 
                     decoded_comments.push(
                         NftComment{ 
-                            nft_onchain_id: add_reaction_request.clone().nft_onchain_id, 
+                            nft_id: add_reaction_request.clone().nft_id, 
                             content: add_reaction_request.clone().comment_content.unwrap(), 
                             owner_screen_cid: caller_screen_cid.clone(), 
                             published_at: chrono::Local::now().timestamp(),
@@ -1726,7 +1726,7 @@ impl UserNft{
 
                 let this_nft_position = mutable_decoded_likes
                     .iter()
-                    .position(|nft| nft.nft_onchain_id == add_reaction_request.nft_onchain_id);
+                    .position(|nft| nft.nft_id == add_reaction_request.nft_id);
 
                 if add_reaction_request.is_like_upvote.is_some() && 
                     add_reaction_request.is_like_upvote.unwrap() == true &&
@@ -1781,7 +1781,7 @@ impl UserNft{
 
                         mutable_decoded_likes.push(
                             NftLike{ 
-                                nft_onchain_id: add_reaction_request.clone().nft_onchain_id, 
+                                nft_id: add_reaction_request.clone().nft_id, 
                                 upvoter_screen_cids: vec![
                                     LikeUserInfo{ 
                                         screen_cid: caller_screen_cid.clone(), 
@@ -1848,7 +1848,7 @@ impl UserNft{
                     } else{
                         mutable_decoded_likes.push(
                             NftLike{ 
-                                nft_onchain_id: add_reaction_request.nft_onchain_id, 
+                                nft_id: add_reaction_request.nft_id, 
                                 upvoter_screen_cids: vec![],
                                 downvoter_screen_cids: vec![
                                     LikeUserInfo{ 
