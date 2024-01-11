@@ -4,10 +4,9 @@
 
 /*
     > ----------------------------------------------------
-    |            ERM NOTIF SUBSCRIPTIONS WS APIS
+    |            ROM NOTIF SUBSCRIPTIONS WS APIS
     | ----------------------------------------------------
-    |   E: ECQ
-    |   R: Reveal Role
+    |   RO: Reveal Role
     |   M: MMR
     |
 
@@ -28,7 +27,7 @@ use s3req::Storage;
 use crate::events::{
     subscribers::handlers::actors::ws::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
     subscribers::handlers::actors::ws::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
-    subscribers::handlers::actors::ws::sessions::sessionerm::WsNotifSession,
+    subscribers::handlers::actors::ws::sessions::sessionrom::WsNotifSession,
 };
 use actix::prelude::*;
 
@@ -69,7 +68,7 @@ use actix::prelude::*;
 
 */
 #[get("/{user_id}/{notif_room}")]
-async fn sub_to_erm(
+async fn sub_to_rom(
     req: HttpRequest, 
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
@@ -257,5 +256,5 @@ pub mod exports{
         which will be used to extract the utf8 bytes from the 
         payload asyncly
     */
-    pub use super::sub_to_erm;
+    pub use super::sub_to_rom;
 }

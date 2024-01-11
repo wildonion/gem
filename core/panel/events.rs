@@ -29,7 +29,7 @@
         get all user notifications from redis and send it as the json response back to the caller
 
 
-    look at apis/erm.rs and apis/clp.rs routes for http ws streamers
+    look at apis/rom.rs and apis/clp.rs routes for http ws streamers
     and https://github.com/wildonion/zoomate for tcp, rpc streamer
     handlers, each, ran in a separate threadpool to start listening
     

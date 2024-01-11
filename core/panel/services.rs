@@ -27,7 +27,7 @@ use crate::*;
 */
 pub fn init_ws_notif(config: &mut web::ServiceConfig){
 
-    config.service(apis::erm::exports::sub_to_erm);
+    config.service(apis::rom::exports::sub_to_rom);
     config.service(apis::clp::exports::chatroomlp);
 
 
