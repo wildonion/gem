@@ -7588,7 +7588,7 @@ async fn update_collection(
                             &update_user_collection_request.owner_cid, 
                             &update_user_collection_request.tx_signature, 
                             &update_user_collection_request.hash_data, 
-                            Some(update_user_collection_request.amount),
+                            None,
                             connection
                         ).await;
 

@@ -1615,21 +1615,6 @@ impl UserCollection{
             )
         }
 
-        /* 
-            updating user balance frist, if anything goes wrong they can call us 
-            to pay them back, actually this is the gas fee that they must be 
-            charged for since we already have paid the fee when we updated  
-            the contract collection
-        */
-        let new_balance = user.balance.unwrap() - col_info.amount;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
-        let Ok(updated_user_balance_data) = update_user_balance else{
-
-            let err_resp = update_user_balance.unwrap_err();
-            return Err(err_resp);
-            
-        };
-
         // base_uri depends on freeze_metadata and metadata_updatable fields
         col_info.base_uri = if collection_data.freeze_metadata.is_some() && 
             collection_data.freeze_metadata.unwrap() == true &&
@@ -1658,15 +1643,6 @@ impl UserCollection{
         
         if status == 1 && contract_update_tx_hash == String::from(""){
 
-            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
-            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
-            let Ok(updated_user_data) = update_user_balance else{
-
-                let err_resp = update_user_balance.unwrap_err();
-                return Err(err_resp);
-                
-            };
-
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: CANT_UPDATE_COLLECTION_ONCHAIN,
@@ -1680,15 +1656,6 @@ impl UserCollection{
 
         if status == 2 && contract_update_tx_hash == String::from(""){
 
-            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
-            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
-            let Ok(updated_user_data) = update_user_balance else{
-
-                let err_resp = update_user_balance.unwrap_err();
-                return Err(err_resp);
-                
-            };
-
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN,
@@ -1701,15 +1668,6 @@ impl UserCollection{
         } 
 
         if !contract_update_tx_hash.starts_with("0x"){
-
-            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
-            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
-            let Ok(updated_user_data) = update_user_balance else{
-
-                let err_resp = update_user_balance.unwrap_err();
-                return Err(err_resp);
-                
-            };
 
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
@@ -1810,15 +1768,6 @@ impl UserCollection{
 
                 },
                 Err(e) => {
-
-                    let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
-                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
-                    let Ok(updated_user_data) = update_user_balance else{
-
-                        let err_resp = update_user_balance.unwrap_err();
-                        return Err(err_resp);
-                        
-                    };
 
                     let resp_err = &e.to_string();
 
