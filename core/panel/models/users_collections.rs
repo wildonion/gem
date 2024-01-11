@@ -1327,7 +1327,7 @@ impl UserCollection{
         */
         let new_balance = user.balance.unwrap() - new_col_info.amount;
         let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
-        let Ok(updated_user_data) = update_user_balance else{
+        let Ok(updated_user_balance_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
             return Err(err_resp);
@@ -1341,7 +1341,7 @@ impl UserCollection{
             contract_create_tx_hash == String::from(""){
             
             // if anything goes wrong payback the user
-            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + new_col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
     
@@ -1364,7 +1364,7 @@ impl UserCollection{
         if !contract_create_tx_hash.starts_with("0x"){
 
             // if anything goes wrong payback the user
-            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + new_col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
     
@@ -1388,7 +1388,7 @@ impl UserCollection{
             contract_create_tx_hash.starts_with("0x"){
 
             // if anything goes wrong payback the user
-            let new_balance = user.balance.unwrap() + new_col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + new_col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
     
@@ -1502,6 +1502,15 @@ impl UserCollection{
                 },
                 Err(e) => {
 
+                    let new_balance = updated_user_balance_data.balance.unwrap() + new_col_info.amount;
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+                    let Ok(updated_user_data) = update_user_balance else{
+            
+                        let err_resp = update_user_balance.unwrap_err();
+                        return Err(err_resp);
+                        
+                    };
+
                     let resp_err = &e.to_string();
 
 
@@ -1614,7 +1623,7 @@ impl UserCollection{
         */
         let new_balance = user.balance.unwrap() - col_info.amount;
         let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
-        let Ok(updated_user_data) = update_user_balance else{
+        let Ok(updated_user_balance_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
             return Err(err_resp);
@@ -1649,7 +1658,7 @@ impl UserCollection{
         
         if status == 1 && contract_update_tx_hash == String::from(""){
 
-            let new_balance = user.balance.unwrap() + col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
 
@@ -1671,7 +1680,7 @@ impl UserCollection{
 
         if status == 2 && contract_update_tx_hash == String::from(""){
 
-            let new_balance = user.balance.unwrap() + col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
             let Ok(updated_user_data) = update_user_balance else{
 
@@ -1693,7 +1702,7 @@ impl UserCollection{
 
         if !contract_update_tx_hash.starts_with("0x"){
 
-            let new_balance = user.balance.unwrap() + col_info.amount;
+            let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
             let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
             let Ok(updated_user_data) = update_user_balance else{
 
@@ -1801,6 +1810,15 @@ impl UserCollection{
 
                 },
                 Err(e) => {
+
+                    let new_balance = updated_user_balance_data.balance.unwrap() + col_info.amount;
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
+                    let Ok(updated_user_data) = update_user_balance else{
+
+                        let err_resp = update_user_balance.unwrap_err();
+                        return Err(err_resp);
+                        
+                    };
 
                     let resp_err = &e.to_string();
 

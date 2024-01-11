@@ -2037,19 +2037,19 @@ async fn deposit(
 
                         mint_tx_hash = tx_hash; // moving into another type
                         token_id = tid;
+
+                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
+                        let Ok(updated_user_balance_data) = update_user_balance else{
+
+                            let err_resp = update_user_balance.unwrap_err();
+                            return err_resp;
+                            
+                        };
                         
                         if !mint_tx_hash.is_empty(){
                             
                             match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, connection).await{
                                 Ok(user_deposit_data) => {
-
-                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
-                                    let Ok(updated_user_data) = update_user_balance else{
-
-                                        let err_resp = update_user_balance.unwrap_err();
-                                        return err_resp;
-                                        
-                                    };
 
                                     resp!{
                                         UserDepositData, // the data type
@@ -2072,6 +2072,15 @@ async fn deposit(
 
                             
                         } else{
+
+                            let new_balance = updated_user_balance_data.balance.unwrap() + deposit_object.amount;
+                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
+                            let Ok(updated_user_data) = update_user_balance else{
+
+                                let err_resp = update_user_balance.unwrap_err();
+                                return err_resp;
+                                
+                            };
 
                             resp!{
                                 &[u8], // the data type
@@ -2425,20 +2434,20 @@ async fn withdraw(
                         }
 
                         transfer_tx_hash = res_transfer.0; // moving into another type
-                        
+
+                        let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
+                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
+                        let Ok(updated_user_balance_data) = update_user_balance else{
+
+                            let err_resp = update_user_balance.unwrap_err();
+                            return err_resp;
+                            
+                        };
+
                         if !transfer_tx_hash.is_empty(){
 
                             match UserWithdrawal::insert(withdraw.to_owned(), transfer_tx_hash, connection).await{
                                 Ok(user_withdrawal_data) => {
-                                    
-                                    let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
-                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
-                                    let Ok(updated_user_data) = update_user_balance else{
-
-                                        let err_resp = update_user_balance.unwrap_err();
-                                        return err_resp;
-                                        
-                                    };
                                     
                                     resp!{
                                         UserWithdrawalData, // the data type
@@ -2463,6 +2472,15 @@ async fn withdraw(
                                 
 
                         } else{
+
+                            let new_balance = updated_user_balance_data.balance.unwrap() - deposit_info.amount;
+                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
+                            let Ok(updated_user_balance_data) = update_user_balance else{
+
+                                let err_resp = update_user_balance.unwrap_err();
+                                return err_resp;
+                                
+                            };
 
                             resp!{
                                 &[u8], // the data type
@@ -9683,6 +9701,7 @@ async fn register_clp_event(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -9865,6 +9884,8 @@ async fn register_clp_event(
                             clp_event.mint_price, 
                             _id, 
                             clp_event.id, 
+                            redis_client.clone(),
+                            redis_actix_actor,
                             connection
                         ).await{
                             Ok(user_clp_data) => {
@@ -9932,6 +9953,7 @@ async fn cancel_clp_event(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -10068,17 +10090,18 @@ async fn cancel_clp_event(
                             }
                         }
                         
-                        match UserClp::insert(
-                            clp_event.mint_price, 
+                        match UserClp::cancel_reservation(
                             _id, 
                             clp_event.id, 
+                            redis_client.clone(),
+                            redis_actix_actor,
                             connection
                         ).await{
-                            Ok(user_clp_data) => {
+                            Ok(user_data) => {
 
                                 resp!{
-                                    UserClp, //// the data type
-                                    user_clp_data, //// response data
+                                    UserData, //// the data type
+                                    user_data, //// response data
                                     CREATED, //// response message
                                     StatusCode::OK, //// status code
                                     None::<Cookie<'_>>, //// cookie

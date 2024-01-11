@@ -103,7 +103,7 @@ impl UserClp{
                         return Err(err_resp);
                     };
 
-                    let new_balance = user.balance.unwrap() - user_clp_event.entry_amount.unwrap();
+                    let new_balance = user.balance.unwrap() + user_clp_event.entry_amount.unwrap();
                     let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
                     let Ok(updated_user_data) = update_user_balance else{
 
@@ -172,9 +172,24 @@ impl UserClp{
 
     }
 
-    pub async fn insert(entrance_fee: i64, participant_id: i32, event_id: i32, 
+    pub async fn insert(entrance_fee: i64, participant_id: i32, event_id: i32, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserClp, PanelHttpResponse>{
+
+        let get_user = User::find_by_id(participant_id, connection).await;
+        let Ok(user) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let new_balance = user.balance.unwrap() - entrance_fee;
+        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
+        let Ok(updated_user_balance_data) = update_user_balance else{
+
+            let err_resp = update_user_balance.unwrap_err();
+            return Err(err_resp);
+            
+        };
 
         match diesel::insert_into(users_clps)
             .values(&InsertNewUserClp{
@@ -191,6 +206,15 @@ impl UserClp{
 
                 },
                 Err(e) => {
+
+                    let new_balance = updated_user_balance_data.balance.unwrap() - entrance_fee;
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+                    let Ok(updated_user_balance_data) = update_user_balance else{
+
+                        let err_resp = update_user_balance.unwrap_err();
+                        return Err(err_resp);
+                        
+                    };
 
                     let resp_err = &e.to_string();
 
