@@ -5,7 +5,7 @@ use actix::Addr;
 use chrono::NaiveDateTime;
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::adapters::nftport;
-use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET};
+use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET, CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use super::users::{User, UserWalletInfoResponse, UserData};
@@ -1418,6 +1418,12 @@ impl UserCollection{
             contract_address: contract_onchain_address, /* NEW */
             owner_screen_cid: walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid),
             metadata_updatable: new_col_info.clone().metadata_updatable,
+            /* 
+                remember to use a valid url if u want to fill this field since nftport 
+                wille append the base_uri to eah nft metadata_uri address like so:
+                https://onions.ioipfs://bafkreifvsdjrvezjfg67fcy6bwhjbjoxh6uxnm6ob4nm6z22tci6fe6sge
+                so it's better to pass this empty
+            */
             base_uri: new_col_info.clone().base_uri,
             royalties_share: new_col_info.clone().royalties_share,
             royalties_address_screen_cid: new_col_info.clone().royalties_address_screen_cid,
@@ -1662,6 +1668,28 @@ impl UserCollection{
                 Ok(HttpResponse::ExpectationFailed().json(resp))
             )
         }  
+
+        if status == 2 && contract_update_tx_hash == String::from(""){
+
+            let new_balance = user.balance.unwrap() + col_info.amount;
+            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+            let Ok(updated_user_data) = update_user_balance else{
+
+                let err_resp = update_user_balance.unwrap_err();
+                return Err(err_resp);
+                
+            };
+
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN,
+                status: 417,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::ExpectationFailed().json(resp))
+            )
+        } 
 
         if !contract_update_tx_hash.starts_with("0x"){
 
