@@ -6,7 +6,7 @@
    |
    | - thread safe app state syncing
    | - pubsub pattern syncing
-   | - wasm and smart contract based design pattern
+   | - wasm and smart contract based design pattern (call db reducer methods directly)
    | - in wasm contexts we can't have async and std crates
    |
 */

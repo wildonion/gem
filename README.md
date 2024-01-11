@@ -7,7 +7,6 @@
 Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), NFT based galleries on top of **Polygon** with the following engines as its core backend: 
 - chatroom launchpad feature to mint generated AI based NFT images to users based on their chats in each launchpad events.
 - **pubsub** pattern to reveal player in-game roles inside the rendezvous service using redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
-- event collaboration queue (**ECQ**) system in which admins or game managers can share their registered events and collaborate with other admins.
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
 
 ## 🚟 Infra Route and API Endpoints
@@ -41,7 +40,6 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 # Push Notification WS Routes
 wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488
 wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488
-wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488
 
 # Chatroom Launchpad WS Route
 wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928b4707a9d014381d75ec19f946b78a28164cc6/8ef4637573c6ef6170c817ad22fc4e45de4eae1b86fbe26f19986d49e9c4e24a3fe7d5f6fef58b2ae6a160ca058c41c401401ecc509f8afffe30035e0ad7451f1c/b051b639719983d5062cb8bdb5f57afffb4a634c8c8a6b9e957f583ee1087ea1/?r1pubkey=0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16&r1signature=0x20260426e5000000470000007b22726563697069656e745f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c2266726f6d5f636964223a223078353534353433333230303030303032643636383266386637303330663839626539316537356235363034653134633032366437656338393363346265366465316432323161396533323961353962386465653266616433623136222c22616d6f756e74223a357d3045022100d49e8716ef150129b612c65ef8e798e8fac73577fc8df1d4664674488b89f86d02203f62c3c5776ed393a4d0a761714d9f1e52185c5b24c4a3afe03b7903aa5186af
