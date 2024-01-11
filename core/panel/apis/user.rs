@@ -9782,6 +9782,34 @@ async fn register_clp_event(
                             return err_resp;
                         };
 
+                        /** ----------------------------------------------- */
+                        /** the is_locked field will be updated by crontab */ 
+                        /** ----------------------------------------------- */ 
+                        // means it has been started already and can't register any more
+                        if clp_event.is_locked{
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                CLP_EVENT_IS_LOCKED, //// response message
+                                StatusCode::NOT_ACCEPTABLE, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+                        }
+
+                        /** ----------------------------------------------- */
+                        /** the expire_at field will be updated by crontab */ 
+                        /** ----------------------------------------------- */
+                        // means it has been expired already and can't register any more
+                        if chrono::Local::now().timestamp() > clp_event.expire_at{
+                            resp!{
+                                &[u8], //// the data type
+                                &[], //// response data
+                                CLP_EVENT_IS_EXPIRED, //// response message
+                                StatusCode::NOT_ACCEPTABLE, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+                        }
+
                         if clp_event.max_supply as usize == current_users_in_this_event.len(){
                             resp!{
                                 &[u8], //// the data type

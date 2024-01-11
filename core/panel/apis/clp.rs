@@ -144,8 +144,9 @@ async fn chatroomlp(
                     };
 
                     // if the event hasn't started yet they must not be allowed to enter to start chat
+                    // also the event is not locked yet, the event must be locked so they can start to chat
                     let now = chrono::Local::now().timestamp();
-                    if now < clp_event.start_at{
+                    if now < clp_event.start_at && !clp_event.is_locked{
 
                         resp!{
                             &[u8], // the data type
