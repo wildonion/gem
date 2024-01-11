@@ -52,6 +52,7 @@ impl UserChat{
 
     }
 
+    /* use the following method for ai summarization to generate a title */
     pub async fn get_all_chats_of(user_screen_cid: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<UserChat>, PanelHttpResponse>{

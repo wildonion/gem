@@ -2,7 +2,7 @@
 
 
 /*  > ------------------------------------------------------------------------------------------------------------------
-    | websocket session actor to receive push notif subscription from redis subscriber of role, mmr and ecq publishers 
+    | websocket session actor to receive push notif subscription from redis subscriber of role and mmr publishers 
     | -----------------------------------------------------------------------------------------------------------------
     | contains: message structures and their handlers + WS realtime stream message handler
     |
@@ -25,11 +25,6 @@ use crate::events::subscribers::handlers::actors::ws::servers::{
         Message as MmrMessage, 
         MmrNotifServer, Disconnect as MmrNotifServerDisconnectMessage,
         Connect as MmrNotifServerConnectMessage, JoinForPushNotif as MmrNotifServerJoinMessage
-    },
-    ecq::{
-        Message as EcqMessage, 
-        EcqNotifServer, Disconnect as EcqNotifServerDisconnectMessage,
-        Connect as EcqNotifServerConnectMessage, JoinForPushNotif as EcqNotifServerJoinMessage
     },
     role::{
         Message as RoleMessage, 
@@ -67,7 +62,6 @@ pub(crate) struct WsNotifSession{
     pub peer_name: Option<String>, // user mongodb id
     pub ws_role_notif_actor_address: Addr<RoleNotifServer>, // the role notif actor server address,
     pub ws_mmr_notif_actor_address: Addr<MmrNotifServer>, // the mmr notif actor server address,
-    pub ws_ecq_notif_actor_address: Addr<EcqNotifServer>, // the ecq notif actor server address,
     pub app_storage: Option<Arc<Storage>>,
     pub is_subscription_interval_started: bool
 }
@@ -166,23 +160,6 @@ impl WsNotifSession{
             }
 
         });
-
-    }
-
-    /* 
-        @notif_room                  : the current event room which contains this peer or session
-        @session_id                  : the id of the current session to notify it about the subscribed topic
-        @peer_name                   : the unique identifier of the peer or session, usually is the id
-        @redis_async_pubsubconn      : redis pubsub connection
-        @ws_role_notif_actor_address : the role notif actor which is used to send message to an specific peer or seesion
-    */
-    pub async fn ecq_subscription(notif_room: &'static str, session_id: usize,
-        peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
-        ws_role_notif_actor_address: Addr<RoleNotifServer>){
-
-
-        todo!()
-        
 
     }
 
@@ -435,59 +412,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
 
                             info!("💡 --- role subscription interval is already started, will notify this session if the role changes");
 
-                        },
-                        /* ------------------------------------*/
-                        /*    JOIN TO RECEIVE ECQ PUSH NOTIF   */
-                        /* ------------------------------------*/
-                        "/join-ecq" => {
-                            
-                            /* communicating with ecq notif server actor (notifs/ecq.rs) */
-                            
-                            self.ws_ecq_notif_actor_address.do_send(EcqNotifServerJoinMessage{id: self.id, event_name: self.notif_room});
-                            let joined_msg = format!("ready to receive push notif subscriptions constantly from admin in event room [{}]", self.notif_room);
-                            ctx.text(joined_msg);
-
-                            /* 
-                                if the interval is not already started we'll start it and set the flag to true 
-                                otherwise we won't do this on second /join command, which prevents from adding 
-                                more interval to the actor state.
-                            */
-                            if !self.is_subscription_interval_started{
-                                
-                                info!("💡 --- starting ecq subscription interval in the background for peer [{}] in room: [{}]", self.peer_name.as_ref().unwrap(), self.notif_room.clone());
-                                
-                                /* 
-                                    start subscription interval for this joined session, since ctx is not Send 
-                                    we couldn't put the interval part inside the tokio::spawn()
-                                */
-                                ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
-                                    
-                                    actor.is_subscription_interval_started = true;
-                                    info!("💡 --- subscribing to roles at interval [{}]", chrono::Local::now().timestamp_nanos_opt().unwrap());
-                                    
-                                    /* cloning the types that they need to be captured inside tokio::spawn() */
-                                    let notif_room = actor.notif_room;
-                                    let redis_async_pubsubconn = actor.app_storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn_sync().unwrap();
-                                    let ws_ecq_notif_actor_address = actor.ws_ecq_notif_actor_address.clone();
-                                    let peer_name = actor.peer_name.clone();
-                                    let session_id = actor.id; /* random id of this session */
-                                    
-                                    
-                                    tokio::spawn(async move{
-        
-
-                                        
-                                        /* 
-                                            dual event setup:
-                                            event collaboration notifs and setup
-                                        */
-
-
-
-                                    });
-                                });
-                            }
-                        
                         },
                         /* ------------------------------------*/
                         /*    JOIN TO RECEIVE MMR PUSH NOTIF   */

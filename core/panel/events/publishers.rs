@@ -13,7 +13,6 @@
     actix actor to publish/fire/emit/broadcast topics and notifs 
 */
 
-pub mod ecq;
 pub mod role;
 pub mod mmr;
 pub mod pg;

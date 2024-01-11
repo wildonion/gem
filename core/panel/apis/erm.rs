@@ -27,9 +27,8 @@ use s3req::Storage;
  
 use crate::events::{
     subscribers::handlers::actors::ws::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
-    subscribers::handlers::actors::ws::servers::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
     subscribers::handlers::actors::ws::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
-    subscribers::handlers::actors::ws::sessions::sessionrole::WsNotifSession,
+    subscribers::handlers::actors::ws::sessions::sessionerm::WsNotifSession,
 };
 use actix::prelude::*;
 
@@ -41,7 +40,7 @@ use actix::prelude::*;
     
     an specific user can join an specific event room to subscribe to what ws actors 
     will be sent in different parts of the app so this route will be used to receive 
-    push notif from admin reveal roles, mmr and ecq engines, here is the example connect 
+    push notif from admin reveal roles and mmr engines, here is the example connect 
     address and make sure that client is passing the rendezvous server JWT to the header 
     request like `Bearer JWT`:
     
@@ -51,7 +50,6 @@ use actix::prelude::*;
     production APIs:
         `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
         `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
-        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/ecq-64b82757d916781c6d689488`
 
     NOTE: we just have to make sure that the user is already inside the event 
             and did the reservation process for the event.
@@ -60,7 +58,6 @@ use actix::prelude::*;
     also there is a path in this route which is the event room that must be connected to 
     and is the name of the notification room which can be one of the following:
     
-    `ecq-{event_id}`,        ----- /join-ecq
     `mmr-{event_id}`,        ----- /join-mmr
     `reveal-role-{event_id}` ----- /join-roles
 
@@ -79,7 +76,6 @@ async fn sub_to_erm(
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
     ws_mmr_notif_server: web::Data<Addr<MmrNotifServer>>,
-    ws_ecq_notif_server: web::Data<Addr<EcqNotifServer>>,
 ) -> PanelHttpResponse {
 
 
@@ -114,7 +110,6 @@ async fn sub_to_erm(
                         let notif_room_str = string_to_static_str(notif_room.clone());
                         let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
                         let ws_mmr_notif_actor_address = ws_mmr_notif_server.get_ref().to_owned();
-                        let ws_ecq_notif_actor_address = ws_ecq_notif_server.get_ref().to_owned();
 
 
                         /* 
@@ -163,24 +158,6 @@ async fn sub_to_erm(
                             }
                         };
 
-                        let update_ecq_notif_room_result = ws_ecq_notif_actor_address
-                            .send(EcqUpdateNotifRoom{
-                                notif_room: notif_room_str, 
-                                peer_name: user_id.clone()
-                            })
-                            .await;
-
-                        let Ok(_) = update_ecq_notif_room_result else{
-                        
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                WS_UPDATE_NOTIF_ROOM_ISSUE, // response message
-                                StatusCode::REQUEST_TIMEOUT, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        };
-
                         /* 
                             --------------------------------
                             STARTING THE WEBSOCKET SESSION
@@ -190,7 +167,6 @@ async fn sub_to_erm(
 
                         let resp = {
                                 if notif_room.clone().starts_with("reveal-role-") || 
-                                notif_room.starts_with("ecq-") ||
                                 notif_room.starts_with("mmr-") {
                                 /* 
                                     starting an actor based ws connection for the passed in peer 
@@ -208,7 +184,6 @@ async fn sub_to_erm(
                                         notif_room: notif_room_str,
                                         ws_role_notif_actor_address,
                                         ws_mmr_notif_actor_address,
-                                        ws_ecq_notif_actor_address,
                                         app_storage: storage.clone(),
                                         is_subscription_interval_started: false
                                     }, 

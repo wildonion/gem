@@ -10,6 +10,8 @@
     https://github.com/wildonion/gvm/blob/main/src/lib.rs
 
     complete proc macros in lib.rs
+    scoring, ranking and suggestion algos for nfts, galleries, users, collections
+    based on stars field of the user
 
 */
 

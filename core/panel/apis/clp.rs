@@ -27,7 +27,6 @@ use s3req::Storage;
  
 use crate::events::{
     subscribers::handlers::actors::ws::servers::mmr::{MmrNotifServer, UpdateNotifRoom as MmrUpdateNotifRoom},
-    subscribers::handlers::actors::ws::servers::ecq::{EcqNotifServer, UpdateNotifRoom as EcqUpdateNotifRoom},
     subscribers::handlers::actors::ws::servers::role::{RoleNotifServer, UpdateNotifRoom as RoleUpdateNotifRoom},
 };
 use actix::prelude::*;

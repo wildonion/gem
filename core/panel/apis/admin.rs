@@ -2132,7 +2132,6 @@ pub mod exports{
     pub use super::end_clp_event;
     pub use super::update_clp_event;
     */
-    // pub use super::request_ecq; 
     pub use super::get_clp_event;
     pub use super::reveal_role;
     pub use super::login;

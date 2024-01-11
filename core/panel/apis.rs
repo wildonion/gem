@@ -13,7 +13,7 @@
     |   user   ---> all apis with user access 
     |   health ---> all apis related to server health
     |   public ---> all public apis
-    |   erm    ---> all websocket reveal role, ecq and mmr subscription apis with user access
+    |   erm    ---> all websocket reveal role and mmr subscription apis with user access
     |   clp    ---> all websocket chatroom launchpad apis with user access
     |
     |

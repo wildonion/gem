@@ -24,7 +24,6 @@ macro_rules! server {
             use crate::constants::*;
             use crate::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
-            use crate::events::subscribers::handlers::actors::ws::servers::ecq::EcqNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
             use crate::events::subscribers::handlers::actors::notif::pg::PgListenerActor;
             use crate::events::subscribers::handlers::actors::notif::user::UserActionActor;
@@ -76,9 +75,6 @@ macro_rules! server {
             
             let mmr_notif_server_instance = MmrNotifServer::new(app_storage.clone()).start();
             let shared_ws_mmr_notif_server = Data::new(mmr_notif_server_instance.clone());
-
-            let ecq_notif_server_instance = EcqNotifServer::new(app_storage.clone()).start();
-            let shared_ws_ecq_notif_server = Data::new(ecq_notif_server_instance.clone());
 
             let chatroomlp_server_instance = ChatRoomLaunchpadServer::new(app_storage.clone()).start();
             let shared_ws_chatroomlp_server = Data::new(chatroomlp_server_instance.clone());
@@ -138,7 +134,6 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_storage.clone()))
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_mmr_notif_server.clone()))
-                    .app_data(Data::clone(&shared_ws_ecq_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_chatroomlp_server.clone()))
                     .app_data(Data::clone(&shared_pg_listener_instance.clone()))
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
