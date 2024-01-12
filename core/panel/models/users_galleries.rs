@@ -5,6 +5,7 @@ use actix::Addr;
 use chrono::NaiveDateTime;
  
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER, GALLERY_UPLOAD_PATH};
+use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
@@ -1191,7 +1192,7 @@ impl UserPrivateGallery{
 
 impl UserPrivateGallery{
 
-    pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest,
+    pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
@@ -1203,8 +1204,20 @@ impl UserPrivateGallery{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
         };
+        
 
         let caller_screen_cid = walletreq::evm::get_keccak256_from(caller_cid.clone());
+        let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+            let resp_err = get_user.unwrap_err();
+            return Err(resp_err);
+        };
+
+        let get_gal_owner = User::find_by_screen_cid(&gallery_data.owner_screen_cid, connection).await;
+        let Ok(gal_owner) = get_gal_owner else{
+            let resp_err = get_gal_owner.unwrap_err();
+            return Err(resp_err);
+        };
 
         let inv_frds = gallery_data.invited_friends;
         if inv_frds.is_some(){
@@ -1226,7 +1239,52 @@ impl UserPrivateGallery{
             };
 
             // only owner can update
-            Self::update(&gallery_data.owner_screen_cid, updated_gal_data, gal_id, connection).await
+            match Self::update(&gallery_data.owner_screen_cid, updated_gal_data, redis_actor.clone(), gal_id, connection).await{
+                Ok(updated_gallery_data) => {
+
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
+                    };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: gal_owner.username,
+                        avatar: gal_owner.avatar,
+                        bio: gal_owner.bio,
+                        banner: gal_owner.banner,
+                        mail: gal_owner.mail,
+                        screen_cid: gal_owner.screen_cid,
+                        extra: gal_owner.extra,
+                        stars: gal_owner.stars,
+                        created_at: gal_owner.created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::ExitFromPrivateGalleryRequest,
+                            action_data: serde_json::to_value(updated_gallery_data.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                    Ok(updated_gallery_data)
+                },
+                Err(err) => Err(err)
+            }
 
         } else{
 
@@ -1249,13 +1307,20 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, 
+    pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
+            let gal_owner = walletreq::evm::get_keccak256_from(new_gallery_info.owner_cid);
+            let get_user = User::find_by_screen_cid(&gal_owner, connection).await;
+            let Ok(user) = get_user else{
+
+                let resp_err = get_user.unwrap_err();
+                return Err(resp_err);
+            };
 
             let new_gal_info = InsertNewUserPrivateGalleryRequest{
-                owner_screen_cid: walletreq::evm::get_keccak256_from(new_gallery_info.owner_cid),
+                owner_screen_cid: gal_owner,
                 gal_name: new_gallery_info.gal_name,
                 gal_description: new_gallery_info.gal_description,
                 gallery_background: String::from(""),
@@ -1281,6 +1346,45 @@ impl UserPrivateGallery{
                         created_at: fetched_gallery_data.created_at.to_string(),
                         updated_at: fetched_gallery_data.updated_at.to_string(),
                     };
+
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
+                    };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::CreatePrivateGallery,
+                            action_data: serde_json::to_value(user_private_gallery_data.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(user_private_gallery_data)
 
@@ -1316,7 +1420,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest,
+    pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
         
@@ -1374,7 +1478,7 @@ impl UserPrivateGallery{
             };
 
             /* note that gallery_owner_screen_cid and to_screen_cid must be each other's friends */
-            UserFan::push_invitation_request_for(&to_screen_cid, invitation_request_data, connection).await
+            UserFan::push_invitation_request_for(&to_screen_cid, redis_actor.clone(), invitation_request_data, connection).await
 
         } else{
             let resp_msg = format!("{gallery_owner_cid:} Is Not A Friend Of {to_screen_cid:}");
@@ -1424,6 +1528,12 @@ impl UserPrivateGallery{
         let get_friend_info = User::find_by_screen_cid(&friend_screen_cid, connection).await;
         let Ok(friend_info) = get_friend_info else{
             let err_resp = get_friend_info.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let get_gal_owner = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+        let Ok(gal_owner) = get_gal_owner else{
+            let err_resp = get_gal_owner.unwrap_err();
             return Err(err_resp);
         };
 
@@ -1477,7 +1587,52 @@ impl UserPrivateGallery{
                 hash_data,
             }; 
 
-            Self::update(&caller_screen_cid, updated_gal_data, gal_id, connection).await
+            match Self::update(&caller_screen_cid, updated_gal_data, redis_actor.clone(), gal_id, connection).await{
+                Ok(update_gallery_data) => {
+
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: gal_owner.username,
+                        avatar: gal_owner.avatar,
+                        bio: gal_owner.bio,
+                        banner: gal_owner.banner,
+                        mail: gal_owner.mail,
+                        screen_cid: gal_owner.screen_cid,
+                        extra: gal_owner.extra,
+                        stars: gal_owner.stars,
+                        created_at: gal_owner.created_at.to_string(),
+                    };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: friend_info.username,
+                        avatar: friend_info.avatar,
+                        bio: friend_info.bio,
+                        banner: friend_info.banner,
+                        mail: friend_info.mail,
+                        screen_cid: friend_info.screen_cid,
+                        extra: friend_info.extra,
+                        stars: friend_info.stars,
+                        created_at: friend_info.created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::RemoveInvitedFriendFrom,
+                            action_data: serde_json::to_value(update_gallery_data.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                    Ok(update_gallery_data)
+                },
+                Err(err) => Err(err),
+            }
 
         } else{
 
@@ -1503,7 +1658,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
+    pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
         gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
@@ -1514,6 +1669,12 @@ impl UserPrivateGallery{
         };
 
         if gallery_data.owner_screen_cid == caller_screen_cid{
+
+            let get_user = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+            let Ok(user) = get_user else{
+                let err_resp = get_user.unwrap_err();
+                return Err(err_resp);
+            };
 
             let update_gal_data = UpdateUserPrivateGallery{
                 owner_screen_cid: caller_screen_cid.to_string(),
@@ -1531,19 +1692,61 @@ impl UserPrivateGallery{
                 {
                 
                     Ok(g) => {
-                        Ok(
-                            UserPrivateGalleryData{
-                                id: g.id,
-                                owner_screen_cid: g.owner_screen_cid,
-                                collections: g.collections,
-                                gal_name: g.gal_name,
-                                gal_description: g.gal_description,
-                                invited_friends: g.invited_friends,
-                                extra: g.extra,
-                                gallery_background: g.gallery_background,
-                                created_at: g.created_at.to_string(),
-                                updated_at: g.updated_at.to_string(),
+
+                        let gallery_data = UserPrivateGalleryData{
+                            id: g.id,
+                            owner_screen_cid: g.owner_screen_cid,
+                            collections: g.collections,
+                            gal_name: g.gal_name,
+                            gal_description: g.gal_description,
+                            invited_friends: g.invited_friends,
+                            extra: g.extra,
+                            gallery_background: g.gallery_background,
+                            created_at: g.created_at.to_string(),
+                            updated_at: g.updated_at.to_string(),
+                        };
+
+                        /** -------------------------------------------------------------------- */
+                        /** ----------------- publish new event data to `on_user_action` channel */
+                        /** -------------------------------------------------------------------- */
+                        // if the actioner is the user himself we'll notify user with something like:
+                        // u've just done that action!
+                        let actioner_wallet_info = UserWalletInfoResponse{
+                            username: user.clone().username,
+                            avatar: user.clone().avatar,
+                            bio: user.clone().bio,
+                            banner: user.clone().banner,
+                            mail: user.clone().mail,
+                            screen_cid: user.clone().screen_cid,
+                            extra: user.clone().extra,
+                            stars: user.clone().stars,
+                            created_at: user.clone().created_at.to_string(),
+                        };
+                        let user_wallet_info = UserWalletInfoResponse{
+                            username: user.clone().username,
+                            avatar: user.clone().avatar,
+                            bio: user.clone().bio,
+                            banner: user.clone().banner,
+                            mail: user.clone().mail,
+                            screen_cid: user.clone().screen_cid,
+                            extra: user.clone().extra,
+                            stars: user.clone().stars,
+                            created_at: user.clone().created_at.to_string(),
+                        };
+                        let user_notif_info = SingleUserNotif{
+                            wallet_info: user_wallet_info,
+                            notif: NotifData{
+                                actioner_wallet_info,
+                                fired_at: Some(chrono::Local::now().timestamp()),
+                                action_type: ActionType::UpdatePrivateGallery,
+                                action_data: serde_json::to_value(gallery_data.clone()).unwrap()
                             }
+                        };
+                        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                        events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                        
+                        Ok(
+                            gallery_data
                         )
 
                     },
@@ -1588,89 +1791,5 @@ impl UserPrivateGallery{
 
     }
 
-    pub fn update_none_async(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
-        gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
-        
-        let get_gallery_info = Self::find_by_id_none_sync(gal_id, connection);
-        let Ok(gallery_data) = get_gallery_info else{
-            let error_resp = get_gallery_info.unwrap_err();
-            return Err(error_resp);
-        };
-
-        if gallery_data.owner_screen_cid == caller_screen_cid{
-
-            let update_gal_data = UpdateUserPrivateGallery{
-                owner_screen_cid: caller_screen_cid.to_string(),
-                collections: new_gallery_info.collections,
-                gal_name: new_gallery_info.gal_name,
-                gal_description: new_gallery_info.gal_description,
-                invited_friends: new_gallery_info.invited_friends,
-                extra: new_gallery_info.extra,
-            };
-            
-            match diesel::update(users_galleries.find(gallery_data.id))
-                .set(&update_gal_data)
-                .returning(UserPrivateGallery::as_returning())
-                .get_result(connection)
-                {
-                
-                    Ok(g) => {
-                        Ok(
-                            UserPrivateGalleryData{
-                                id: g.id,
-                                owner_screen_cid: g.owner_screen_cid,
-                                collections: g.collections,
-                                gal_name: g.gal_name,
-                                gal_description: g.gal_description,
-                                invited_friends: g.invited_friends,
-                                extra: g.extra,
-                                gallery_background: g.gallery_background,
-                                created_at: g.created_at.to_string(),
-                                updated_at: g.updated_at.to_string(),
-                            }
-                        )
-
-                    },
-                    Err(e) => {
-                        
-                        let resp_err = &e.to_string();
-
-                        /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                            
-                        let error_content = &e.to_string();
-                        let error_content = error_content.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserGallery::update_none_async");
-                        let error_buffer = error_instance.write_sync(); /* write to file also returns the full filled buffer from the error  */
-
-                        let resp = Response::<&[u8]>{
-                            data: Some(&[]),
-                            message: resp_err,
-                            status: 500,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::InternalServerError().json(resp))
-                        );
-                    }
-                
-                }
-            
-        } else{
-
-            let resp = Response::<'_, &str>{
-                data: Some(caller_screen_cid),
-                message: GALLERY_NOT_OWNED_BY,
-                status: 403,
-                is_error: true
-            };
-
-            return Err(
-                Ok(HttpResponse::Forbidden().json(resp))
-            )
-        }
-
-    }
 
 }

@@ -6,47 +6,51 @@ use crate::constants::WS_SUBSCRIPTION_INTERVAL;
 use crate::{*, models::users::UserWalletInfoResponse};
 
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct UserNotif{
     wallet_info: UserWalletInfoResponse,
     notifs: Vec<NotifData>,
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct SingleUserNotif{
     pub wallet_info: UserWalletInfoResponse,
     pub notif: NotifData
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct NotifData{
-    actioner_wallet_info: UserWalletInfoResponse, // it can be the user himself or others caused the event to be happened
+    pub actioner_wallet_info: UserWalletInfoResponse, // it can be the user himself or others caused the event to be happened
     pub fired_at: Option<i64>,
-    action_type: ActionType,
-    action_data: serde_json::Value, // we don't know the exact type of action_data, so we've used json value
+    pub action_type: ActionType, // event type
+    pub action_data: serde_json::Value, // event data, we don't know the exact type of action_data, so we've used json value
 }
 
-// gallery
-// collection
-// nft
-// friend and invitation requests
-#[derive(Serialize, Deserialize, Clone, Default)]
+// followings are the whole events that might get triggered or fired
+// in the whole platform 
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub enum ActionType{
     InvitationRequestFrom,
     FriendRequestFrom,
+    AcceptFriendRequest,
+    AcceptInvitationRequest,
+    RemoveInvitedFriendFrom,
     LikeNft,
+    DislikeNft,
     CommentNft,
     CreateNft,
     #[default]
     MintNft, // mint nft is the default action type
+    ListNft,
+    DelistNft,
+    TransferNft,
+    UpdateOnchainNft,
+    BuyNft,
     CreateCollection,
     UpdateCollection,
     CreatePrivateGallery,
     UpdatePrivateGallery,
-    ListNft,
-    DelistNft,
-    BuyNft,
-    UnclaimedGiftCard,
+    ExitFromPrivateGalleryRequest,
     DepositGiftCard
 }
 
@@ -61,7 +65,7 @@ impl UserNotif{
         self.clone()
     }
     fn get(&mut self) -> Self{
-        let this = UserNotif { ..Default::default() };
+        let this = UserNotif { ..self.clone() };
         this
     }
 }
@@ -88,7 +92,7 @@ impl NotifExt for UserNotif{
 
     fn set_user_wallet_info(&mut self, wallet_info: UserWalletInfoResponse) -> Self {
         self.wallet_info = wallet_info;
-        self.clone()
+        self.get()
     }
 
     fn set_user_notif(&mut self, new_notif: NotifData) -> Self { // since the set() method of the UserNotif instance is mutable this method must be mutable too

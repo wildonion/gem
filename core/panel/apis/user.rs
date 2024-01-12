@@ -2048,7 +2048,7 @@ async fn deposit(
                         
                         if !mint_tx_hash.is_empty(){
                             
-                            match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, connection).await{
+                            match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, redis_actix_actor, connection).await{
                                 Ok(user_deposit_data) => {
 
                                     resp!{
@@ -3754,7 +3754,7 @@ async fn update_password(
 
 }
 
-#[post("/profile/notifs/get/")]
+#[get("/profile/notifs/get/")]
 #[passport(user)]
 async fn get_notifications(
     req: HttpRequest,
@@ -3812,10 +3812,9 @@ async fn get_notifications(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    let get_users_notifs = users_notifs_subscriber_actor
-                        .send(GetUsersNotifsMap)
-                        .await
-                        .unwrap();
+                    let redis_key = format!("user_notif_{}", _id);
+                    let get_users_notifs: String = redis_client.clone().get(redis_key).unwrap();
+                    let mut user_notifs = serde_json::from_str::<UserNotif>(&get_users_notifs).unwrap();
 
                     let from = limit.from.unwrap_or(0) as usize;
                     let to = limit.to.unwrap_or(10) as usize;
@@ -3832,16 +3831,14 @@ async fn get_notifications(
                         
                     }
 
-                    let mut user_notifs = Default::default();
-                    let users_notifs = get_users_notifs.0;
-                    if users_notifs.is_some(){
-                        let notifs = users_notifs.unwrap();
-                        /* get all notifications related to the passed in _id */
-                        user_notifs = notifs.get(&_id).unwrap_or(&UserNotif::default()).to_owned();
-                    };
-                    
-                    let mut all_user_notifs = user_notifs.get_user_notifs().await;
+                    // sending message to users_notifs_subscriber_actor to 
+                    // get its latest state which contains the whole app notifs
+                    // let get_users_notifs = users_notifs_subscriber_actor
+                    //     .send(GetUsersNotifsMap)
+                    //     .await
+                    //     .unwrap();
 
+                    let mut all_user_notifs = user_notifs.get_user_notifs().await;
                     all_user_notifs.sort_by(|n1, n2|{
     
                         let n1_fired_at = n1.fired_at;
@@ -4154,7 +4151,7 @@ async fn create_private_gallery(
                             return error_resp; /* terminate the caller with an actix http response object */
                         };
 
-                        match UserPrivateGallery::insert(create_private_gallery_request_object, connection).await{
+                        match UserPrivateGallery::insert(create_private_gallery_request_object, redis_actix_actor, connection).await{
                             Ok(gallery_data) => {
 
                                 resp!{
@@ -4221,6 +4218,7 @@ async fn update_private_gallery(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -4341,6 +4339,7 @@ async fn update_private_gallery(
                         match UserPrivateGallery::update(&walletreq::evm::get_keccak256_from(
                             update_private_gallery_request_object.clone().owner_cid), 
                             update_private_gallery_request_object, 
+                            redis_actix_actor,
                             gal_id.to_owned(), 
                             connection).await{
                            
@@ -4550,6 +4549,7 @@ async fn exit_from_private_gallery(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -4624,7 +4624,7 @@ async fn exit_from_private_gallery(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserPrivateGallery::exit_from_private_gallery(exit_from_private_gallery, connection).await{
+                    match UserPrivateGallery::exit_from_private_gallery(exit_from_private_gallery, redis_actix_actor, connection).await{
                         Ok(gallery_data) => {
 
                             resp!{
@@ -4688,6 +4688,7 @@ async fn send_private_gallery_invitation_request_to(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -4774,7 +4775,7 @@ async fn send_private_gallery_invitation_request_to(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserPrivateGallery::send_invitation_request_to(send_invitation_request, connection).await{
+                    match UserPrivateGallery::send_invitation_request_to(send_invitation_request, redis_actix_actor, connection).await{
                         Ok(invitation_data) => {
 
                             resp!{
@@ -5863,6 +5864,7 @@ async fn accept_friend_request(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -5937,7 +5939,7 @@ async fn accept_friend_request(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::accept_friend_request(accept_friend_request, connection).await{
+                    match UserFan::accept_friend_request(accept_friend_request, redis_actix_actor, connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -6001,6 +6003,7 @@ async fn send_friend_request_to(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -6075,7 +6078,7 @@ async fn send_friend_request_to(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::send_friend_request_to(send_friend_request_to, connection).await{
+                    match UserFan::send_friend_request_to(send_friend_request_to, redis_actix_actor, connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -6279,6 +6282,7 @@ async fn remove_user_from_freind(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -6353,7 +6357,7 @@ async fn remove_user_from_freind(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::remove_freind(remove_friend_request, connection).await{
+                    match UserFan::remove_freind(remove_friend_request, redis_actix_actor.clone(), connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -7164,6 +7168,7 @@ async fn upload_collection_banner(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -7224,6 +7229,7 @@ async fn upload_collection_banner(
                         col_id.to_owned(), 
                         &user.screen_cid.unwrap(),
                         img,
+                        redis_actix_actor.clone(),
                         connection).await{
                         Ok(user_collection_data) => {
 
@@ -8241,6 +8247,7 @@ async fn create_nft_metadata_uri(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -8376,6 +8383,7 @@ async fn create_nft_metadata_uri(
                             create_nft_metadata_uri_request,
                             files,
                             redis_client.clone(), 
+                            redis_actix_actor.clone(),
                             connection).await{
                             Ok(user_nft_data) => {
     
@@ -8757,6 +8765,7 @@ async fn add_reaction_to_nft(
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
     /* 
           ------------------------------------- 
@@ -8877,6 +8886,7 @@ async fn add_reaction_to_nft(
 
                         match UserNft::add_reaction_to_nft(
                             user_add_nft_reaction,
+                            redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
 

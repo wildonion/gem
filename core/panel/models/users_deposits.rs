@@ -1,12 +1,15 @@
 
 
+use actix::Addr;
 use crate::*;
+use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::users_deposits;
 use crate::constants::*;
 use crate::models::users::{User, UserData, UserRole};
 use crate::schema::users_deposits::dsl::*;
+use super::users::UserWalletInfoResponse;
 
 
 
@@ -81,7 +84,24 @@ pub struct UserDepositData{
 */
 impl UserDeposit{
 
-    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, polygon_recipient_address: String, nft_url: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, 
+        polygon_recipient_address: String, nft_url: String, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+
+        let depositor_screen_cid = &walletreq::evm::get_keccak256_from(user_deposit_request.clone().from_cid);
+        let get_user = User::find_by_screen_cid(&depositor_screen_cid.clone(), connection).await;
+        let Ok(user) = get_user else{
+
+            let resp_err = get_user.unwrap_err();
+            return Err(resp_err);
+        };
+            
+        let get_recipient = User::find_by_screen_cid(&polygon_recipient_address.clone(), connection).await;
+        let Ok(recipient) = get_recipient else{
+
+            let resp_err = get_recipient.unwrap_err();
+            return Err(resp_err);
+        };
 
         let new_user_deposit = NewUserDeposit{
             from_cid: user_deposit_request.from_cid,
@@ -101,7 +121,7 @@ impl UserDeposit{
             {
                 Ok(user_deposit) => {
 
-                    Ok(UserDepositData{ 
+                    let ud = UserDepositData{ 
                         id: user_deposit.id, 
                         from_cid: user_deposit.from_cid, 
                         recipient_screen_cid: user_deposit.recipient_screen_cid,
@@ -112,7 +132,50 @@ impl UserDeposit{
                         signature: user_deposit.tx_signature,
                         mint_tx_hash: user_deposit.mint_tx_hash,
                         iat: user_deposit.iat.to_string()
-                    })
+                    };
+
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.username,
+                        avatar: user.avatar,
+                        bio: user.bio,
+                        banner: user.banner,
+                        mail: user.mail,
+                        screen_cid: user.screen_cid,
+                        extra: user.extra,
+                        stars: user.stars,
+                        created_at: user.created_at.to_string(),
+                    };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: recipient.username,
+                        avatar: recipient.avatar,
+                        bio: recipient.bio,
+                        banner: recipient.banner,
+                        mail: recipient.mail,
+                        screen_cid: recipient.screen_cid,
+                        extra: recipient.extra,
+                        stars: recipient.stars,
+                        created_at: recipient.created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::DepositGiftCard,
+                            action_data: serde_json::to_value(ud.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                    Ok(
+                        ud
+                    )
 
                 },
                 Err(e) => {

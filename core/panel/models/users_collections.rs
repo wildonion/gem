@@ -3,6 +3,7 @@ use rand::seq::SliceRandom;
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix::Addr;
 use chrono::NaiveDateTime;
+use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET, CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN};
@@ -975,6 +976,7 @@ impl UserCollection{
         col_id: i32,
         caller_screen_cid: &str,
         mut img: Multipart, 
+        redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
@@ -1123,6 +1125,7 @@ impl UserCollection{
                     match UserPrivateGallery::update(
                         &fetched_collection_data.owner_screen_cid, 
                         new_gal_data, 
+                        redis_actor.clone(),
                         gallery_data.id, 
                         connection
                     ).await{
@@ -1491,11 +1494,55 @@ impl UserCollection{
                     match UserPrivateGallery::update(
                         &fetched_collection_data.owner_screen_cid, 
                         new_gal_data, 
+                        redis_actor.clone(),
                         gallery_data.id, 
                         connection
                     ).await{
 
-                        Ok(updated_gal) => Ok(user_collection_data),
+                        Ok(updated_gal) => {
+
+                            /** -------------------------------------------------------------------- */
+                            /** ----------------- publish new event data to `on_user_action` channel */
+                            /** -------------------------------------------------------------------- */
+                            // if the actioner is the user himself we'll notify user with something like:
+                            // u've just done that action!
+                            let actioner_wallet_info = UserWalletInfoResponse{
+                                username: user.clone().username,
+                                avatar: user.clone().avatar,
+                                bio: user.clone().bio,
+                                banner: user.clone().banner,
+                                mail: user.clone().mail,
+                                screen_cid: user.clone().screen_cid,
+                                extra: user.clone().extra,
+                                stars: user.clone().stars,
+                                created_at: user.clone().created_at.to_string(),
+                            };
+                            let user_wallet_info = UserWalletInfoResponse{
+                                username: user.clone().username,
+                                avatar: user.clone().avatar,
+                                bio: user.clone().bio,
+                                banner: user.clone().banner,
+                                mail: user.clone().mail,
+                                screen_cid: user.clone().screen_cid,
+                                extra: user.clone().extra,
+                                stars: user.clone().stars,
+                                created_at: user.clone().created_at.to_string(),
+                            };
+                            let user_notif_info = SingleUserNotif{
+                                wallet_info: user_wallet_info,
+                                notif: NotifData{
+                                    actioner_wallet_info,
+                                    fired_at: Some(chrono::Local::now().timestamp()),
+                                    action_type: ActionType::CreateCollection,
+                                    action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
+                                }
+                            };
+                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                            Ok(user_collection_data)
+                        
+                        },
                         Err(resp) => Err(resp)
                     }
 
@@ -1757,11 +1804,54 @@ impl UserCollection{
                     match UserPrivateGallery::update(
                         &fetched_collection_data.owner_screen_cid, 
                         new_gal_data, 
+                        redis_actor.clone(),
                         gallery_data.id, 
                         connection
                     ).await{
 
-                        Ok(updated_gal) => Ok(user_collection_data),
+                        Ok(updated_gal) => {
+                            
+                            /** -------------------------------------------------------------------- */
+                            /** ----------------- publish new event data to `on_user_action` channel */
+                            /** -------------------------------------------------------------------- */
+                            // if the actioner is the user himself we'll notify user with something like:
+                            // u've just done that action!
+                            let actioner_wallet_info = UserWalletInfoResponse{
+                                username: user.clone().username,
+                                avatar: user.clone().avatar,
+                                bio: user.clone().bio,
+                                banner: user.clone().banner,
+                                mail: user.clone().mail,
+                                screen_cid: user.clone().screen_cid,
+                                extra: user.clone().extra,
+                                stars: user.clone().stars,
+                                created_at: user.clone().created_at.to_string(),
+                            };
+                            let user_wallet_info = UserWalletInfoResponse{
+                                username: user.clone().username,
+                                avatar: user.clone().avatar,
+                                bio: user.clone().bio,
+                                banner: user.clone().banner,
+                                mail: user.clone().mail,
+                                screen_cid: user.clone().screen_cid,
+                                extra: user.clone().extra,
+                                stars: user.clone().stars,
+                                created_at: user.clone().created_at.to_string(),
+                            };
+                            let user_notif_info = SingleUserNotif{
+                                wallet_info: user_wallet_info,
+                                notif: NotifData{
+                                    actioner_wallet_info,
+                                    fired_at: Some(chrono::Local::now().timestamp()),
+                                    action_type: ActionType::UpdateCollection,
+                                    action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
+                                }
+                            };
+                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            
+                            Ok(user_collection_data)
+                        },
                         Err(resp) => Err(resp)
                     }
 

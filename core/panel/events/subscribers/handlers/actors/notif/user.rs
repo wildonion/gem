@@ -48,12 +48,14 @@ impl Actor for UserActionActor{
 
             let mut this = self.clone();
             let app_storage = self.app_storage.clone().unwrap();
-            let redis_pubsub_async = app_storage.get_async_redis_pubsub_conn_sync().unwrap();
+            let redis_pubsub_async = app_storage.clone().get_async_redis_pubsub_conn_sync().unwrap();
 
             // start subscribing to redis `user_actions` topic
             tokio::spawn(async move{
 
-                this.redis_subscribe(app_storage, redis_pubsub_async).await;
+                this.redis_subscribe(app_storage, 
+                    redis_pubsub_async
+                ).await;
 
             });
 
@@ -80,7 +82,8 @@ impl UserActionActor{
         let pool_conn = app_storage.get_pgdb().await;
         let connection = &mut pool_conn.unwrap().get().unwrap();
         let redis_async_pubsubconn = redis_async_pubsubconn.clone();
-        let mut users_notifs_data = self.users_notifs.clone();
+        let redis_client = app_storage.as_ref().get_redis().await.unwrap();
+        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
         let (user_notif_sender, mut user_notif_receiver) = 
             tokio::sync::mpsc::channel::<SingleUserNotif>(1024);
@@ -154,37 +157,22 @@ impl UserActionActor{
                 user.id
             };
 
-            let mut user_notif = UserNotif::default();
-            let updated_user_notif = user_notif
+            let redis_key = format!("user_notif_{}", user_id);
+
+            // updating redis state
+            let get_users_notifs: String = redis_client.clone().get(redis_key.clone()).unwrap();
+            let mut user_notifs = serde_json::from_str::<UserNotif>(&get_users_notifs).unwrap();
+
+            let updated_user_notif = user_notifs
                 .set_user_notif(notif_data.notif)
                 .set_user_wallet_info(notif_data.wallet_info);
-            if users_notifs_data.is_some(){
-                users_notifs_data.clone().unwrap().insert(
-                    user_id,
-                    updated_user_notif
-                );
-            }
+            
+            // caching in redis
+            let stringified_user_notif = serde_json::to_string_pretty(&updated_user_notif).unwrap();
+            let ـ : RedisResult<String> = redis_conn.set(redis_key, stringified_user_notif).await;
 
         }
-
-        // update users_notifs data of this actor with the latest notif
-        self.users_notifs = users_notifs_data;
         
     }
 
-}
-
-/* 
-    this handler will be used to send message to this actor from /profile/notifs/get api 
-    to receive the user notifs
-*/
-impl Handler<GetUsersNotifsMap> for UserActionActor{
-    
-    type Result = UsersNotifs;
-
-    fn handle(&mut self, msg: GetUsersNotifsMap, ctx: &mut Self::Context) -> Self::Result {
-        
-        let users_notifs = self.users_notifs.clone();
-        UsersNotifs(users_notifs)
-    }
 }

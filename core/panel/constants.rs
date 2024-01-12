@@ -203,6 +203,7 @@ pub static CANT_TRANSFER_NFT: &str = "Can't Transfer The Nft At The Moment, Try 
 pub static CANT_UPDATE_NFT: &str = "Can't Update Nft Onchain At The Moment, Try Later";
 pub static INVALID_NFT_EVENT_TYPE: &str = "Invalid Nft Event Type";
 pub static CALLER_IS_NOT_BUYER: &str = "Caller Of This Method Is Not The Buyer";
+pub static NFT_IS_NOT_OWNED_BY_THE_PASSED_IN_OWNER: &str = "Wrong Nft Owner Has Been Passed";
 pub static NFT_IS_NOT_LISTED_YET: &str = "Nft Is Not Listed Yet";
 pub static NFT_IS_NOT_MINTED_YET: &str = "Nft Must Be Minted First";
 pub static NFT_PRICE_IS_EMPTY: &str = "Nft Price Is Empty";

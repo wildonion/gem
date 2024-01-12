@@ -4646,7 +4646,7 @@ impl Id{
                             extra: None,
                             tx_signature: hex::encode(&signed_data.signature.0),
                             hash_data: sign_res.clone().1,
-                        }, connection).await;
+                        }, redis_actor.clone(), connection).await;
                     
                     let Ok(new_gal) = create_new_gal else{
                         let error_resp = create_new_gal.unwrap_err();

@@ -7,6 +7,7 @@ use actix::Addr;
 
 use crate::*;
 use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND, INVALID_GALLERY_PRICE};
+use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
@@ -345,7 +346,7 @@ impl UserFan{
 
     }
 
-    pub async fn accept_friend_request(accept_friend_request: AcceptFriendRequest,
+    pub async fn accept_friend_request(accept_friend_request: AcceptFriendRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
 
@@ -357,6 +358,20 @@ impl UserFan{
         let Ok(user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
             return Err(resp_error);
+        };
+
+        let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+
+            let resp_err = get_user.unwrap_err();
+            return Err(resp_err);
+        };
+
+        let get_friend = User::find_by_screen_cid(&friend_screen_cid.clone(), connection).await;
+        let Ok(friend_info) = get_friend else{
+
+            let resp_err = get_friend.unwrap_err();
+            return Err(resp_err);
         };
 
         let user_friends_data = user_fan_data.friends;
@@ -379,10 +394,56 @@ impl UserFan{
             }
         }
 
-        Self::update(&owner_screen_cid, UpdateUserFanData{ 
+        match Self::update(&owner_screen_cid, UpdateUserFanData{ 
             friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), /* encoding the updated decoded_friends_data back to serde json value */
             invitation_requests: user_fan_data.invitation_requests
-        }, connection).await
+        }, connection).await{
+
+            Ok(user_fan_data) => {
+                
+                /** -------------------------------------------------------------------- */
+                /** ----------------- publish new event data to `on_user_action` channel */
+                /** -------------------------------------------------------------------- */
+                let actioner_wallet_info = UserWalletInfoResponse{
+                    username: user.username,
+                    avatar: user.avatar,
+                    bio: user.bio,
+                    banner: user.banner,
+                    mail: user.mail,
+                    screen_cid: user.screen_cid,
+                    extra: user.extra,
+                    stars: user.stars,
+                    created_at: user.created_at.to_string(),
+                };
+                let user_wallet_info = UserWalletInfoResponse{
+                    username: friend_info.username,
+                    avatar: friend_info.avatar,
+                    bio: friend_info.bio,
+                    banner: friend_info.banner,
+                    mail: friend_info.mail,
+                    screen_cid: friend_info.screen_cid,
+                    extra: friend_info.extra,
+                    stars: friend_info.stars,
+                    created_at: friend_info.created_at.to_string(),
+                };
+                let user_notif_info = SingleUserNotif{
+                    wallet_info: user_wallet_info,
+                    notif: NotifData{
+                        actioner_wallet_info,
+                        fired_at: Some(chrono::Local::now().timestamp()),
+                        action_type: ActionType::AcceptFriendRequest,
+                        action_data: serde_json::to_value(user_fan_data.clone()).unwrap()
+                    }
+                };
+                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                Ok(
+                    user_fan_data
+                )
+            },
+            Err(err) => Err(err)
+        }        
         
 
     }
@@ -1109,7 +1170,7 @@ impl UserFan{
 
     }
 
-    pub async fn remove_freind(remove_friend_request: RemoveFriend,
+    pub async fn remove_freind(remove_friend_request: RemoveFriend, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         
@@ -1148,18 +1209,24 @@ impl UserFan{
                                     if inv_frd.unwrap_or(String::from("")) == frd.screen_cid{
                                         let frd_idx = inv_frds.iter().position(|invfrd| *invfrd.clone().unwrap() == frd.screen_cid).unwrap();
                                         inv_frds.remove(frd_idx);
-                                        // update private gallery
-                                        UserPrivateGallery::update_none_async(&gallery.clone().owner_screen_cid, 
-                                            UpdateUserPrivateGalleryRequest{
-                                                owner_cid: owner_cid.clone(),
-                                                collections: gallery.clone().collections,
-                                                gal_name: gallery.clone().gal_name,
-                                                gal_description: gallery.clone().gal_description,
-                                                invited_friends: Some(inv_frds.clone()),
-                                                extra: gallery.clone().extra,
-                                                tx_signature: String::from(""),
-                                                hash_data: String::from(""),
-                                            }, gallery.clone().id, connection);
+                                        futures::executor::block_on( // we can't use .await in none async context thus we're using block_on() method
+                                            // update private gallery
+                                            UserPrivateGallery::update(&gallery.clone().owner_screen_cid, 
+                                                UpdateUserPrivateGalleryRequest{
+                                                        owner_cid: owner_cid.clone(),
+                                                        collections: gallery.clone().collections,
+                                                        gal_name: gallery.clone().gal_name,
+                                                        gal_description: gallery.clone().gal_description,
+                                                        invited_friends: Some(inv_frds.clone()),
+                                                        extra: gallery.clone().extra,
+                                                        tx_signature: String::from(""),
+                                                        hash_data: String::from(""),
+                                                    }, 
+                                                    redis_actor.clone(),
+                                                    gallery.clone().id,
+                                                    connection)
+                                                
+                                        );
                                         
                                     }
                                 }
@@ -1195,7 +1262,7 @@ impl UserFan{
 
     }
 
-    pub async fn send_friend_request_to(send_friend_request: SendFriendRequest,
+    pub async fn send_friend_request_to(send_friend_request: SendFriendRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         
@@ -1218,7 +1285,7 @@ impl UserFan{
             return Err(resp_err);
         };
 
-        let user_screen_cid_ = friend_info.screen_cid.unwrap();
+        let user_screen_cid_ = friend_info.clone().screen_cid.unwrap();
         match Self::get_user_fans_data_for(&user_screen_cid_, connection).await{
 
             /* already inserted just update the friends field */
@@ -1265,8 +1332,8 @@ impl UserFan{
                             screen_cid: caller_screen_cid.clone(), // caller is sending request to user_screen_cid
                             requested_at: chrono::Local::now().timestamp(), 
                             is_accepted: false,
-                            username: user.username,
-                            user_avatar: user.avatar, 
+                            username: user.clone().username,
+                            user_avatar: user.clone().avatar, 
                         };
 
                         Some(serde_json::to_value(vec![friend_data]).unwrap())
@@ -1281,16 +1348,55 @@ impl UserFan{
                     .get_result::<UserFan>(connection)
                     {
                         Ok(user_fan_data) => {
+
+                            let fan_info = UserFanData{ 
+                                id: user_fan_data.id, 
+                                user_screen_cid: user_fan_data.user_screen_cid, 
+                                friends: user_fan_data.friends, 
+                                invitation_requests: user_fan_data.invitation_requests, 
+                                created_at: user_fan_data.created_at.to_string(), 
+                                updated_at: user_fan_data.updated_at.to_string() 
+                            };
+
+                            /** -------------------------------------------------------------------- */
+                            /** ----------------- publish new event data to `on_user_action` channel */
+                            /** -------------------------------------------------------------------- */
+                            let actioner_wallet_info = UserWalletInfoResponse{
+                                username: user.username,
+                                avatar: user.avatar,
+                                bio: user.bio,
+                                banner: user.banner,
+                                mail: user.mail,
+                                screen_cid: user.screen_cid,
+                                extra: user.extra,
+                                stars: user.stars,
+                                created_at: user.created_at.to_string(),
+                            };
+                            let user_wallet_info = UserWalletInfoResponse{
+                                username: friend_info.username,
+                                avatar: friend_info.avatar,
+                                bio: friend_info.bio,
+                                banner: friend_info.banner,
+                                mail: friend_info.mail,
+                                screen_cid: friend_info.screen_cid,
+                                extra: friend_info.extra,
+                                stars: friend_info.stars,
+                                created_at: friend_info.created_at.to_string(),
+                            };
+                            let user_notif_info = SingleUserNotif{
+                                wallet_info: user_wallet_info,
+                                notif: NotifData{
+                                    actioner_wallet_info,
+                                    fired_at: Some(chrono::Local::now().timestamp()),
+                                    action_type: ActionType::FriendRequestFrom,
+                                    action_data: serde_json::to_value(fan_info.clone()).unwrap()
+                                }
+                            };
+                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
         
                             Ok(
-                                UserFanData{ 
-                                    id: user_fan_data.id, 
-                                    user_screen_cid: user_fan_data.user_screen_cid, 
-                                    friends: user_fan_data.friends, 
-                                    invitation_requests: user_fan_data.invitation_requests, 
-                                    created_at: user_fan_data.created_at.to_string(), 
-                                    updated_at: user_fan_data.updated_at.to_string() 
-                                }
+                                fan_info
                             )
         
                         },
@@ -1330,15 +1436,24 @@ impl UserFan{
         in an interval and check for new unaccepted ones. use get_user_unaccpeted_invitation_requests 
         method to fetch those ones that their `is_accepted` are false.
     */
-    pub async fn push_invitation_request_for(owner_screen_cid: &str, 
+    pub async fn push_invitation_request_for(owner_screen_cid: &str, redis_actor: Addr<RedisActor>,
         invitation_request_data: InvitationRequestData,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
         
+        let request_sender = invitation_request_data.clone().from_screen_cid;
+
         let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
         let Ok(user) = get_user else{
 
             let resp_err = get_user.unwrap_err();
+            return Err(resp_err);
+        };
+
+        let get_request_sender_info = User::find_by_screen_cid(&request_sender.clone(), connection).await;
+        let Ok(request_sender_info) = get_request_sender_info else{
+
+            let resp_err = get_request_sender_info.unwrap_err();
             return Err(resp_err);
         };
         
@@ -1348,8 +1463,6 @@ impl UserFan{
             let error_resp = get_user_fan_data.unwrap_err();
             return Err(error_resp);
         };
-
-        let request_sender = invitation_request_data.clone().from_screen_cid;
 
         let check_we_are_friend = Self::are_we_friends(
             &request_sender, 
@@ -1389,16 +1502,55 @@ impl UserFan{
                 return Err(resp_err);
             };
 
-            Ok(
-                InvitationRequestDataResponse{
-                    to_screen_cid: owner_screen_cid.to_string(),
-                    from_screen_cid: request_sender,
-                    requested_at: invitation_request_data.requested_at,
-                    gallery_id: invitation_request_data.gallery_id,
-                    is_accepted: invitation_request_data.is_accepted,
-                    username: invitation_request_data.username,
-                    user_avatar: invitation_request_data.user_avatar
+            let invitation_request_data_response = InvitationRequestDataResponse{
+                to_screen_cid: owner_screen_cid.to_string(),
+                from_screen_cid: request_sender,
+                requested_at: invitation_request_data.requested_at,
+                gallery_id: invitation_request_data.gallery_id,
+                is_accepted: invitation_request_data.is_accepted,
+                username: invitation_request_data.username,
+                user_avatar: invitation_request_data.user_avatar
+            };
+
+            /** -------------------------------------------------------------------- */
+            /** ----------------- publish new event data to `on_user_action` channel */
+            /** -------------------------------------------------------------------- */
+            let actioner_wallet_info = UserWalletInfoResponse{
+                username: request_sender_info.username,
+                avatar: request_sender_info.avatar,
+                bio: request_sender_info.bio,
+                banner: request_sender_info.banner,
+                mail: request_sender_info.mail,
+                screen_cid: request_sender_info.screen_cid,
+                extra: request_sender_info.extra,
+                stars: request_sender_info.stars,
+                created_at: request_sender_info.created_at.to_string(),
+            };
+            let user_wallet_info = UserWalletInfoResponse{
+                username: user.username,
+                avatar: user.avatar,
+                bio: user.bio,
+                banner: user.banner,
+                mail: user.mail,
+                screen_cid: user.screen_cid,
+                extra: user.extra,
+                stars: user.stars,
+                created_at: user.created_at.to_string(),
+            };
+            let user_notif_info = SingleUserNotif{
+                wallet_info: user_wallet_info,
+                notif: NotifData{
+                    actioner_wallet_info,
+                    fired_at: Some(chrono::Local::now().timestamp()),
+                    action_type: ActionType::InvitationRequestFrom,
+                    action_data: serde_json::to_value(invitation_request_data_response.clone()).unwrap()
                 }
+            };
+            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+            
+            Ok(
+                invitation_request_data_response
             )
 
 
@@ -1440,6 +1592,13 @@ impl UserFan{
                 Ok(HttpResponse::InternalServerError().json(resp))
             );
         }
+
+        let get_request_sender_info = User::find_by_screen_cid(&from_screen_cid.clone(), connection).await;
+        let Ok(request_sender_info) =get_request_sender_info else{
+
+            let resp_err = get_request_sender_info.unwrap_err();
+            return Err(resp_err);
+        };
         
         let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
         let Ok(user_fan_data) = get_user_fan else{
@@ -1509,9 +1668,50 @@ impl UserFan{
                         extra: gallery.extra,
                         tx_signature,
                         hash_data,
-                    }, gal_id, connection).await{
+                    }, redis_actor.clone(), gal_id, connection).await{
 
-                        Ok(_) => Ok(updated_user_fan_data),
+                        Ok(_) => {
+                            
+                            /** -------------------------------------------------------------------- */
+                            /** ----------------- publish new event data to `on_user_action` channel */
+                            /** -------------------------------------------------------------------- */
+                            let actioner_wallet_info = UserWalletInfoResponse{
+                                username: user.username,
+                                avatar: user.avatar,
+                                bio: user.bio,
+                                banner: user.banner,
+                                mail: user.mail,
+                                screen_cid: user.screen_cid,
+                                extra: user.extra,
+                                stars: user.stars,
+                                created_at: user.created_at.to_string(),
+                            };
+                            let user_wallet_info = UserWalletInfoResponse{
+                                username: request_sender_info.username,
+                                avatar: request_sender_info.avatar,
+                                bio: request_sender_info.bio,
+                                banner: request_sender_info.banner,
+                                mail: request_sender_info.mail,
+                                screen_cid: request_sender_info.screen_cid,
+                                extra: request_sender_info.extra,
+                                stars: request_sender_info.stars,
+                                created_at: request_sender_info.created_at.to_string(),
+                            };
+                            let user_notif_info = SingleUserNotif{
+                                wallet_info: user_wallet_info,
+                                notif: NotifData{
+                                    actioner_wallet_info,
+                                    fired_at: Some(chrono::Local::now().timestamp()),
+                                    action_type: ActionType::AcceptInvitationRequest,
+                                    action_data: serde_json::to_value(updated_user_fan_data.clone()).unwrap()
+                                }
+                            };
+                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            
+                            Ok(updated_user_fan_data)
+                        
+                        },
                         Err(resp) => return Err(resp),
                     }
 
@@ -1672,7 +1872,7 @@ impl UserFan{
                         extra: gallery.extra,
                         tx_signature,
                         hash_data,
-                    }, gal_id, connection).await{
+                    }, redis_actor.clone(), gal_id, connection).await{
 
                         Ok(_) => Ok(updated_user_fan_data),
                         Err(resp) => {
