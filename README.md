@@ -9,6 +9,12 @@ Conse is a crypto based friendly gathering **Game Event Manager**, advertising p
 - **pubsub** pattern to reveal player in-game roles inside the rendezvous service using redis publisher and subscriber and websocket server to notify players of new roles once the server subscribed to the revealed roles topic.
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
 
+### 🥪 Conse Panel Architecture Diagram
+
+<p align="center">
+    <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
+</p>
+
 ## 🚟 Infra Route and API Endpoints
 
 > Ensure that any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
@@ -72,7 +78,7 @@ wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928
 * `scripts`: deployment scripts
 * `test`: gem test codes like admin and dev password generator script
 
-## 📘 Docs and Collections
+## 📘 Docs, ERDs, Schemas and Collections
 
 * Read More About [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
 
@@ -83,6 +89,10 @@ wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928
 * [Websocket Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/65619b4947e9207e30af90fa?action=share&creator=22927035)
 
 * [gRPC Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/65619a9b26e3b575756a3ee5?action=share&creator=22927035)
+
+* [Conse Rendezvous Mongodb ERD Schema](https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG)
+
+* [Conse Panel Postgres ERD Schema](https://github.com/wildonion/gem/blob/master/infra/panel.png)
 
 ## 🛠️ Development Setup
 
@@ -181,25 +191,3 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 # ---- rebuild conse panel docker container only 
 ./rebuildpanel.sh
 ```
-    
-## 🪟 Schemas and ERDs
-
-> Note that to regenerate the ERD from the postgres database just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
-
-### 🥪 Conse Panel Postgres ERD Schema
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/panel.png">
-</p>
-
-### 🍢 Conse Rendezvous Mongodb ERD Schema
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/conse.schema.PNG">
-</p>
-
-### 🖼️ Conse Panel Websocket Architecture Diagram
-
-<p align="center">
-    <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
-</p>

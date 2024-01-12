@@ -79,6 +79,8 @@
 
 ## 🎢 Development Wrapups
 
+* to regenerate the ERD from the postgres database, **from the root of the project**, just run ```sqlant postgresql://postgres:<PASSWORD>@localhost/conse > infra/panel.uml && java -jar infra/plantuml.jar infra/panel.uml```.
+
 * two docker instances of panel service will be built, one contains the postgres and the other mongodb as their database storage framework which are accessible on port **7443** and port **7444** respectively.
 
 * if you want to extend the last table fields first update its `up.sql` file then run ```diesel migration redo``` and finally ```diesel migration run```, to regenerate all tables run ```diesel migration redo -n 3``` which **3** refers to the number of tables we've created so far.

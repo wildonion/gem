@@ -27,8 +27,11 @@ pub struct CheckKycRequest{
 pub struct UserWalletInfoResponse{
     pub username: String,
     pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub banner: Option<String>,
     pub mail: Option<String>, /* unique */
     pub screen_cid: Option<String>, /* keccak256 */
+    pub extra: Option<serde_json::Value>,
     pub stars: Option<i64>,
     pub created_at: String,
 }
