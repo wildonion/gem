@@ -2594,7 +2594,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain_@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5019,7 +5019,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTA5MjAyNDAwNjU1NDMyNiwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTA5MzgyNDAwNjc0ODMxMSwiaWF0IjoxNzA1MDkyMDI0MDA2NzQ4MzExfQ.3YWb4YulVv0hgjm--2OTMw1IIGibppXvi13-ldQcOdK7oVusryJDFCLSJ08m954B7BB5fOfZ2hZ6Z0Yljrl5bA",
 													"type": "string"
 												}
 											]
