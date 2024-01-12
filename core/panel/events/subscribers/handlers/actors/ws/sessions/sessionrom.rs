@@ -81,7 +81,7 @@ impl WsNotifSession{
         ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
         /* cloning vars that are going to be captured by tokio::spawn(async move{}) cause we need their owned types */
-        let cloned_notif_room = notif_room.clone();
+        let cloned_notif_room = notif_room;
         let redis_async_pubsubconn = redis_async_pubsubconn.clone();
         let ws_role_notif_actor_address = ws_role_notif_actor_address.clone();
         let peer_name = peer_name.clone();
