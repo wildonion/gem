@@ -1,0 +1,2 @@
+code: 65535 | message: duplicate key value violates unique constraint "users_device_id_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_device_id_key\""))) | time: 1705142790950 | method name: Id::save
+code: 65535 | message: duplicate key value violates unique constraint "users_device_id_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_device_id_key\""))) | time: 1705146147855 | method name: Id::save

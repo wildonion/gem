@@ -1596,6 +1596,18 @@ impl User{
             CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
+        if !misc::is_password_valid(&password){
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: REGEX_PASSWORD_ISSUE,
+                status: 406,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        };
+
         let pass = User::hash_pswd(password.as_str()).unwrap();
         let new_user = NewUser{
             /* 
@@ -4635,24 +4647,6 @@ impl Id{
                     
                     info!("✅ valid signature");
 
-                    /* ----------------------------------------------- */
-                    /* creating a default private gallery for the user */
-                    /* ----------------------------------------------- */
-                    let create_new_gal = UserPrivateGallery::insert(
-                        NewUserPrivateGalleryRequest{
-                            owner_cid: wallet.secp256k1_public_key.as_ref().unwrap().to_string(),
-                            gal_name: format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
-                            gal_description: format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
-                            extra: None,
-                            tx_signature: hex::encode(&signed_data.signature.0),
-                            hash_data: sign_res.clone().1,
-                        }, redis_actor.clone(), connection).await;
-                    
-                    let Ok(new_gal) = create_new_gal else{
-                        let error_resp = create_new_gal.unwrap_err();
-                        return Err(error_resp);
-                    };
-
                 } else{ 
                     
                     // can't create private gallery then :(
@@ -4712,49 +4706,42 @@ impl Id{
             );  
         };
 
+        match diesel::update(users.find(self.user_id))
+            .set(
+                (   
+                    /* 
+                        can't return heap data of type String we must clone them or use their 
+                        borrowed form or return the static version of their slice like &'static str
+                    */
+                    username.eq(self.username.clone()),
+                    region.eq(self.region.clone()),
+                    device_id.eq(self.device_id.clone()),
+                    cid.eq(self.new_cid.clone().unwrap()),
+                    screen_cid.eq(self.screen_cid.clone().unwrap()),
+                    snowflake_id.eq(self.new_snowflake_id),
+                )
+            )
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
 
-        /* 
-            first update user balance and if that was successfull 
-            we'll save the crypto id otherwise user cant call the 
-            make_cid api again to build it until we hit the jackpot!
-        */
+                    /* ----------------------------------------------- */
+                    /* --------- publish updated user to redis channel */
+                    /* ----------------------------------------------- */
+                    /* 
+                        once the user updates his info we'll publish new updated user to redis channel and in
+                        other parts we start to subscribe to the new updated user topic then once we receive 
+                        the new user we'll start updating user fans and user nfts 
+                    */
+                    
+                    let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                    events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
-        let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
-        match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
+                    let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
+                    match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
 
-            Ok(updated_user_data) => {
-
-                /* ----------------------------------------------- */
-                /* --------- publish updated user to redis channel */
-                /* ----------------------------------------------- */
-                /* 
-                    once the user updates his info we'll publish new updated user to redis channel and in
-                    other parts we start to subscribe to the new updated user topic then once we receive 
-                    the new user we'll start updating user fans and user nfts 
-                */
-                
-                let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
-                events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
-
-                match diesel::update(users.find(self.user_id))
-                    .set(
-                        (   
-                            /* 
-                                can't return heap data of type String we must clone them or use their 
-                                borrowed form or return the static version of their slice like &'static str
-                            */
-                            username.eq(self.username.clone()),
-                            region.eq(self.region.clone()),
-                            device_id.eq(self.device_id.clone()),
-                            cid.eq(self.new_cid.clone().unwrap()),
-                            screen_cid.eq(self.screen_cid.clone().unwrap()),
-                            snowflake_id.eq(self.new_snowflake_id),
-                        )
-                    )
-                    .returning(FetchUser::as_returning())
-                    .get_result(connection)
-                    {
-                        Ok(updated_user) => {
+                        Ok(updated_user_data) => {
 
                             /* ----------------------------------------------- */
                             /* --------- publish updated user to redis channel */
@@ -4765,90 +4752,86 @@ impl Id{
                                 the new user we'll start updating user fans and user nfts 
                             */
                             
-                            let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                            let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
                             events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                             Ok(
                                 UserIdResponse { 
-                                    id: updated_user.id, 
-                                    region: updated_user.clone().region.unwrap(),
-                                    username: updated_user.clone().username, 
-                                    activity_code: updated_user.clone().activity_code, 
-                                    twitter_username: updated_user.clone().twitter_username, 
-                                    facebook_username: updated_user.clone().facebook_username, 
-                                    discord_username: updated_user.clone().discord_username, 
-                                    identifier: updated_user.clone().identifier, 
-                                    user_role: {
-                                        match updated_user.user_role.clone(){
-                                            UserRole::Admin => "Admin".to_string(),
-                                            UserRole::User => "User".to_string(),
-                                            _ => "Dev".to_string(),
-                                        }
-                                    },
-                                    token_time: updated_user.token_time,
-                                    balance: updated_user.balance,
-                                    last_login: if updated_user.last_login.is_some(){
-                                            Some(updated_user.last_login.unwrap().to_string())
+                                    id: updated_user_data.id, 
+                                    region: updated_user_data.clone().region.unwrap(),
+                                    username: updated_user_data.clone().username, 
+                                    activity_code: updated_user_data.clone().activity_code, 
+                                    twitter_username: updated_user_data.clone().twitter_username, 
+                                    facebook_username: updated_user_data.clone().facebook_username, 
+                                    discord_username: updated_user_data.clone().discord_username, 
+                                    identifier: updated_user_data.clone().identifier, 
+                                    user_role: updated_user_data.user_role.clone(),
+                                    token_time: updated_user_data.clone().token_time,
+                                    balance: updated_user_data.clone().balance,
+                                    last_login: if updated_user_data.clone().last_login.is_some(){
+                                            Some(updated_user_data.clone().last_login.unwrap().to_string())
                                         } else{
                                             Some("".to_string())
                                         }
                                     ,
-                                    created_at: updated_user.created_at.to_string(),
-                                    updated_at: updated_user.updated_at.to_string(),
-                                    mail: updated_user.clone().mail,
-                                    google_id: updated_user.clone().google_id,
-                                    microsoft_id: updated_user.clone().microsoft_id,
-                                    is_mail_verified: updated_user.clone().is_mail_verified,
-                                    is_phone_verified: updated_user.clone().is_phone_verified,
-                                    phone_number: updated_user.clone().phone_number,
-                                    paypal_id: updated_user.clone().paypal_id,
-                                    account_number: updated_user.clone().account_number,
-                                    device_id: updated_user.clone().device_id,
-                                    social_id: updated_user.clone().social_id,
-                                    cid: updated_user.clone().cid,
+                                    created_at: updated_user_data.clone().created_at.to_string(),
+                                    updated_at: updated_user_data.clone().updated_at.to_string(),
+                                    mail: updated_user_data.clone().mail,
+                                    google_id: updated_user_data.clone().google_id,
+                                    microsoft_id: updated_user_data.clone().microsoft_id,
+                                    is_mail_verified: updated_user_data.clone().is_mail_verified,
+                                    is_phone_verified: updated_user_data.clone().is_phone_verified,
+                                    phone_number: updated_user_data.clone().phone_number,
+                                    paypal_id: updated_user_data.clone().paypal_id,
+                                    account_number: updated_user_data.clone().account_number,
+                                    device_id: updated_user_data.clone().device_id,
+                                    social_id: updated_user_data.clone().social_id,
+                                    cid: updated_user_data.clone().cid,
                                     screen_cid: self.screen_cid.clone(),
                                     signer: self.signer.clone(),
                                     mnemonic: self.mnemonic.clone(),
-                                    snowflake_id: updated_user.clone().snowflake_id,
-                                    stars: updated_user.clone().stars,
-                                    bio: updated_user.clone().bio,
-                                    avatar: updated_user.clone().avatar,
-                                    banner: updated_user.clone().banner,
-                                    wallet_background: updated_user.clone().wallet_background,
-                                    extra: updated_user.clone().extra,
+                                    snowflake_id: updated_user_data.clone().snowflake_id,
+                                    stars: updated_user_data.clone().stars,
+                                    bio: updated_user_data.clone().bio,
+                                    avatar: updated_user_data.clone().avatar,
+                                    banner: updated_user_data.clone().banner,
+                                    wallet_background: updated_user_data.clone().wallet_background,
+                                    extra: updated_user_data.clone().extra,
                                 }
                             )
-                        },
-                        Err(e) => {
                             
-                            let resp_err = &e.to_string();
 
-
-                            /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                            let error_content = &e.to_string();
-                            let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");
-                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: resp_err,
-                                status: 500,
-                                is_error: true,
-                            };
-                            return Err(
-                                Ok(HttpResponse::InternalServerError().json(resp))
-                            );
-
+                        },
+                        Err(resp) => {
+                            Err(resp) /* because error part of this method is the actix result response */
                         }
                     }
 
-            },
-            Err(resp) => {
-                Err(resp) /* because error part of this method is the actix result response */
+                },
+                Err(e) => {
+                    
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
             }
-        }
 
     
     }

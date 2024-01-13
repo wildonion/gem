@@ -518,6 +518,27 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 
 }
 
+pub fn is_password_valid(s: &str) -> bool {
+    let mut has_whitespace = false;
+    let mut has_upper = false;
+    let mut has_lower = false;
+    let mut has_digit = false;
+    let mut has_special_char = false;
+
+    // the bitwise OR assignment ( |= ) operator performs bitwise OR 
+    // on the two operands and assigns the result to the left operand
+    // false | true = true, false | false = false
+    for c in s.chars() {
+        has_whitespace |= c.is_whitespace();
+        has_lower |= c.is_lowercase();
+        has_upper |= c.is_uppercase();
+        has_digit |= c.is_digit(10);
+        has_special_char |= c.is_ascii_punctuation();
+    }
+
+    !has_whitespace && has_special_char && has_upper && has_lower && has_digit && s.len() >= 8
+}
+
 pub fn gen_random_chars(size: u32) -> String{
     let mut rng = rand::thread_rng();
     (0..size).map(|_|{

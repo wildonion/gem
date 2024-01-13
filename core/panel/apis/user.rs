@@ -1769,16 +1769,33 @@ async fn make_cid(
                             return resp;
                         };
 
-
                         /* 
                             saveing the new Id into db, also if we're here means 
                             that we're creating a new Id for the user since on the 
                             second request it'll return the founded user info
                         */
-                        let save_user_data = new_id.save(redis_client.to_owned(), redis_actix_actor, connection).await;
+                        let save_user_data = new_id.save(redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
                         let Ok(user_data) = save_user_data else{
                             let resp = save_user_data.unwrap_err();
                             return resp;
+                        };
+
+                        /* ----------------------------------------------- */
+                        /* creating a default private gallery for the user */
+                        /* ----------------------------------------------- */
+                        let create_new_gal = UserPrivateGallery::insert(
+                            NewUserPrivateGalleryRequest{
+                                owner_cid: new_id.clone().new_cid.unwrap_or(String::from("")),
+                                gal_name: format!("{} with {} first private gallery", new_id.username, new_id.clone().screen_cid.unwrap_or(String::from(""))),
+                                gal_description: format!("{} with {} first private gallery", new_id.username, new_id.clone().screen_cid.unwrap_or(String::from(""))),
+                                extra: None,
+                                tx_signature: String::from(""),
+                                hash_data: String::from(""),
+                            }, redis_actix_actor.clone(), connection).await;
+                        
+                        let Ok(new_gal) = create_new_gal else{
+                            let error_resp = create_new_gal.unwrap_err();
+                            return error_resp;
                         };
                         
                         resp!{
