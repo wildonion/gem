@@ -536,6 +536,8 @@ pub fn is_password_valid(s: &str) -> bool {
         has_special_char |= c.is_ascii_punctuation();
     }
 
+    // if one of the criteria becomes false the return value will be false
+    // since there are && between them 
     !has_whitespace && has_special_char && has_upper && has_lower && has_digit && s.len() >= 8
 }
 
