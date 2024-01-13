@@ -459,8 +459,8 @@ impl UserNft{
 
     }
 
-    pub async fn get_all_nfts_owned_by(caller_screen_cid: &str, limit: web::Query<Limit>) 
-        -> Result<OnchainNfts, PanelHttpResponse>{
+    pub async fn get_all_nfts_owned_by(caller_screen_cid: &str, limit: web::Query<Limit>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<OnchainNfts, PanelHttpResponse>{
 
         
         let from = limit.from.unwrap_or(0);
@@ -492,7 +492,7 @@ impl UserNft{
         }
 
         Ok(
-            nftport::get_nfts_owned_by(caller_screen_cid, from, to).await
+            nftport::get_nfts_owned_by(caller_screen_cid, from, to, connection).await
         )
         
 
@@ -2335,7 +2335,7 @@ impl UserNft{
                 return Err(err_resp);
             };
 
-            let get_nft_owner = User::find_by_screen_cid(&caller_screen_cid, connection).await;
+            let get_nft_owner = User::find_by_screen_cid(&nft_data.current_owner_screen_cid, connection).await;
             let Ok(nft_owner) = get_nft_owner else{
                 let err_resp = get_nft_owner.unwrap_err();
                 return Err(err_resp);
@@ -2431,32 +2431,47 @@ impl UserNft{
                 }
                 let nft_price = get_nft_price.unwrap();
 
-                // charge user before minting then if minting goes wrong we'll payback the user
-                // ...
-                
-                /* 
-                    update minter balance (nft price + onchain gas fee) 
-                    do this before minting the nft since the nft might 
-                    gets minted on chain but after that user has not enough 
-                    balance to charge him
-                */
-                let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
-                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                let Ok(updated_user_balance_data) = update_user_balance else{
 
-                    let err_resp = update_user_balance.unwrap_err();
-                    return Err(err_resp);
+                let mut minter_is_owner = false;
+                if nft_data.current_owner_screen_cid == caller_screen_cid{
+                    minter_is_owner = true;
+                }
+
+                let mut uubd = None::<UserData>;
+                if !minter_is_owner{
+                    // charge user before minting then if minting goes wrong we'll payback the user
+                    // ...
                     
-                };
+                    /* 
+                        update minter balance (nft price + onchain gas fee) 
+                        do this before minting the nft since the nft might 
+                        gets minted on chain but after that user has not enough 
+                        balance to charge him
+                    */
+                    let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
+                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                    let Ok(updated_user_balance_data) = update_user_balance else{
+                        
+                        let err_resp = update_user_balance.unwrap_err();
+                        return Err(err_resp);
+                        
+                    };
+
+                    uubd = Some(updated_user_balance_data);
+
+                }
 
                 let (new_tx_hash, token_id, status) = 
                     nftport::mint_nft(redis_client.clone(), mint_nft_request.clone()).await;
 
                 if status == 1{
-                    
-                    // if anything goes wrong payback the user
-                    let new_balance = updated_user_balance_data.balance.unwrap() + nft_price;
-                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+
+                    if uubd.is_some(){
+                        // if anything goes wrong payback the user
+                        let new_balance = uubd.unwrap().balance.unwrap() + nft_price;
+                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+    
+                    }
 
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),

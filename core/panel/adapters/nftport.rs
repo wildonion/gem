@@ -23,6 +23,8 @@ use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
 
+use self::models::users_nfts::{UserNft, UserNftData};
+
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortMintResponse{
@@ -92,7 +94,7 @@ pub struct NftPortCreateCollectionContractResponse{
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct OnchainNfts{
-    pub onchain_nfts: Option<serde_json::Value>
+    pub onchain_nfts: Vec<UserNftData>
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -929,7 +931,7 @@ pub async fn mint_nft(
 
     if !asset_info.metadata_uri.is_empty(){
 
-        let metadata_uri = asset_info.metadata_uri;
+        let metadata_uri = asset_info.clone().metadata_uri;
 
         /* mint request */
         let mut mint_data = HashMap::new();
@@ -949,7 +951,9 @@ pub async fn mint_nft(
             can only transfer the nft once.
         */
         // mint_data.insert("mint_to_address", &asset_info.contract_address);
-        mint_data.insert("mint_to_address", &asset_info.current_owner_screen_cid);
+        
+        let minter_screen_cid = walletreq::evm::get_keccak256_from(asset_info.clone().caller_cid);
+        mint_data.insert("mint_to_address", &minter_screen_cid);
         let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
         let res = reqwest::Client::new()
             .post(nftport_mint_endpoint.as_str())
@@ -1427,7 +1431,8 @@ pub async fn get_nft_onchain_metadata_uri<N>(
 
 }
 
-pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> OnchainNfts{
+pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> OnchainNfts{
 
     /* -----------------------------------------------------------------
         > in those case that we don't want to create a separate struct 
@@ -1450,9 +1455,21 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64) -> O
         .await
         .unwrap();
 
+    let mut nfts_owned_by = vec![];
+    if res_value["nfts"].is_array(){
+        let onchain_nfts = res_value["nfts"].as_array().unwrap();
+        for nft in onchain_nfts{
+            if nft["token_id"].is_string(){
+                let token_id = nft["token_id"].as_str().unwrap();
+                let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap();
+                nfts_owned_by.push(nft_info);
+            }
+        }
+    }
+
     /* return the response directly to the client without mapping it into the struct */
     OnchainNfts{
-        onchain_nfts: Some(res_value)
+        onchain_nfts: nfts_owned_by
     }
 
 
