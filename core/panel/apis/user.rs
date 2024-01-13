@@ -3830,7 +3830,9 @@ async fn get_notifications(
                     let role = token_data.user_role;
 
                     let redis_key = format!("user_notif_{}", _id);
-                    let get_users_notifs: String = redis_client.clone().get(redis_key).unwrap();
+                    let get_users_notifs: String = redis_client.clone().get(redis_key).unwrap_or(
+                        serde_json::to_string_pretty(&UserNotif::default()).unwrap()
+                    );
                     let mut user_notifs = serde_json::from_str::<UserNotif>(&get_users_notifs).unwrap();
 
                     let from = limit.from.unwrap_or(0) as usize;

@@ -160,7 +160,9 @@ impl UserActionActor{
             let redis_key = format!("user_notif_{}", user_id);
 
             // updating redis state
-            let get_users_notifs: String = redis_client.clone().get(redis_key.clone()).unwrap();
+            let get_users_notifs: String = redis_client.clone().get(redis_key.clone()).unwrap_or(
+                serde_json::to_string_pretty(&UserNotif::default()).unwrap()
+            );
             let mut user_notifs = serde_json::from_str::<UserNotif>(&get_users_notifs).unwrap();
 
             let updated_user_notif = user_notifs
