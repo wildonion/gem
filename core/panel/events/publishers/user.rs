@@ -4,6 +4,8 @@
 use actix::Addr;
 use crate::constants::WS_SUBSCRIPTION_INTERVAL;
 use crate::{*, models::users::UserWalletInfoResponse};
+use self::models::users::{UserData, User};
+use self::models::users_fans::FriendData;
 
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
@@ -191,5 +193,62 @@ pub async fn publish(
     });
 
     return;
+
+}
+
+pub async fn publish_nft_list_event_2_all_nft_owner_friends(
+    friends: Vec<FriendData>,
+    redis_actor: Addr<RedisActor>,
+    channel: &str, 
+    nft_owner: User,
+    action_data_value: serde_json::Value,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+){
+
+    for friend in friends{
+
+        /** -------------------------------------------------------------------- */
+        /** ----------------- publish new event data to `on_user_action` channel */
+        /** -------------------------------------------------------------------- */
+        // the actioner is the nft owner himself 
+        let actioner_wallet_info = UserWalletInfoResponse{
+            username: nft_owner.clone().username,
+            avatar: nft_owner.clone().avatar,
+            bio: nft_owner.clone().bio,
+            banner: nft_owner.clone().banner,
+            mail: nft_owner.clone().mail,
+            screen_cid: nft_owner.clone().screen_cid,
+            extra: nft_owner.clone().extra,
+            stars: nft_owner.clone().stars,
+            created_at: nft_owner.clone().created_at.to_string(),
+        };
+
+        let friend_info = User::find_by_screen_cid(&friend.screen_cid, connection).await.unwrap();
+
+        // notify his friend about the event 
+        let user_wallet_info = UserWalletInfoResponse{
+            username: friend_info.username,
+            avatar: friend_info.avatar,
+            bio: friend_info.bio,
+            banner: friend_info.banner,
+            mail: friend_info.mail,
+            screen_cid: friend_info.screen_cid,
+            extra: friend_info.extra,
+            stars: friend_info.stars,
+            created_at: friend_info.created_at.to_string(),
+        };
+        let user_notif_info = SingleUserNotif{
+            wallet_info: user_wallet_info,
+            notif: NotifData{
+                actioner_wallet_info,
+                fired_at: Some(chrono::Local::now().timestamp()),
+                action_type: ActionType::ListNft,
+                action_data: action_data_value.clone()
+            }
+        };
+        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+        self::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+    }
 
 }

@@ -879,6 +879,71 @@ impl UserFan{
 
     }
 
+    pub async fn get_all_my_friends_without_limit(owner_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    -> Result<UserFanData, PanelHttpResponse>{
+
+        let user_fan_data = users_fans
+            .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
+            .first::<UserFan>(connection);
+
+        let Ok(fan_data) = user_fan_data else{
+
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: NO_FANS_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        let friends_data = fan_data.clone().friends;
+        let decoded_friends_data = if friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut both_friend_data_arr = vec![];
+        for fd in decoded_friends_data{
+            
+            let check_we_are_friend = Self::are_we_friends(
+                &fd.screen_cid, 
+                owner_screen_cid, connection).await;
+            
+            let are_we_friend = check_we_are_friend.unwrap_or(false);
+            
+            if are_we_friend{
+
+                both_friend_data_arr.push(fd);
+            } 
+        }
+
+        Ok(
+            UserFanData{
+                id: fan_data.id,
+                user_screen_cid: fan_data.user_screen_cid,
+                friends: {
+
+                    if both_friend_data_arr.is_empty(){
+                        Some(serde_json::to_value(both_friend_data_arr).unwrap())
+                    } else{
+                        
+                        Some(serde_json::to_value(both_friend_data_arr).unwrap())
+                    }
+                },
+                invitation_requests: fan_data.invitation_requests,
+                created_at: fan_data.created_at.to_string(),
+                updated_at: fan_data.updated_at.to_string(),
+            }
+        )
+
+    }
+
     /* -------------------- 
     // get those ones inside the owner friend data who
     // the owner has accepted their requests

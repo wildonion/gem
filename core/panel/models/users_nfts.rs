@@ -13,6 +13,7 @@ use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
 use super::users::{User, UserData, UserWalletInfoResponse};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
+use super::users_fans::{UserFan, FriendData};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest, UserPrivateGalleryData};
 use crate::schema::users_collections::dsl::*;
 use crate::schema::users_collections;
@@ -2842,6 +2843,27 @@ impl UserNft{
                     connection).await{
                         Ok(updated_user_nft_data) => {
 
+                            let get_nft_owner_friends = UserFan::get_all_my_friends_without_limit(&user.clone().screen_cid.unwrap(), connection).await;
+                            if get_nft_owner_friends.is_ok(){
+                                let nft_owner_friends = get_nft_owner_friends.unwrap();
+                                let friends_data = nft_owner_friends.clone().friends;
+                                let decoded_friends_data = if friends_data.is_some(){
+                                    serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
+
+                                // publish the list event to all nft owner friends
+                                events::publishers::user::publish_nft_list_event_2_all_nft_owner_friends(
+                                    decoded_friends_data, 
+                                    redis_actor.clone(), 
+                                    "on_user_action", 
+                                    user.clone(),
+                                    serde_json::to_value(updated_user_nft_data.clone()).unwrap(),
+                                    connection
+                                ).await;
+                            }
+
                             actioner_wallet_info = UserWalletInfoResponse{
                                 username: user.clone().username,
                                 avatar: user.clone().avatar,
@@ -2853,6 +2875,7 @@ impl UserNft{
                                 stars: user.clone().stars,
                                 created_at: user.clone().created_at.to_string(),
                             };
+
                             user_wallet_info = UserWalletInfoResponse{
                                 username: user.clone().username,
                                 avatar: user.clone().avatar,
@@ -2864,7 +2887,7 @@ impl UserNft{
                                 stars: user.clone().stars,
                                 created_at: user.clone().created_at.to_string(),
                             };
-
+                            
                             action_data = updated_user_nft_data.clone();
                             Ok(updated_user_nft_data)
                         },
