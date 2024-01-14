@@ -775,10 +775,36 @@ impl UserCollection{
                     UserCollectionData{
                         id: c.id,
                         contract_address: c.contract_address,
-                        // send all nfts (minted and none minted ones) to the owner
-                        // cause he has right to see all his nfts event if he's not 
-                        // the owner of them 
-                        nfts: c.nfts,
+                        nfts: {
+                            /* return those none minted ones */
+                            if c.nfts.is_some(){
+                                let col_nfts = c.nfts;
+                                let decoded_nfts = if col_nfts.is_some(){
+                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                };
+
+                                let mut none_minted_nfts = decoded_nfts
+                                    .into_iter()
+                                    .map(|nft|{
+                                        /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
+                                        if nft.is_minted.unwrap_or(false) == false{
+                                            Some(nft)
+                                        } else{
+                                            None
+                                        }
+                                    }).collect::<Vec<Option<UserNftData>>>();
+
+                                none_minted_nfts.retain(|nft| nft.is_some());
+
+                                let encoded_nfts = serde_json::to_value(none_minted_nfts).unwrap();
+                                Some(encoded_nfts)
+
+                            } else{
+                                c.nfts
+                            }
+                        },
                         col_name: c.col_name,
                         symbol: c.symbol,
                         owner_screen_cid: c.owner_screen_cid,
