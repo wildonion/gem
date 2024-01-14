@@ -2,7 +2,7 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-# 🛞 Rust Both Core Monolithic and Micro-service Stateful Backend APIs and Engines
+---
 
 Conse is a crypto based friendly gathering **Game Event Manager**, advertising platform (**advieh**), NFT based galleries on top of **Polygon** with the following engines as its core backend: 
 - actor based pubsub push notification structure to notify different parts of the app on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
