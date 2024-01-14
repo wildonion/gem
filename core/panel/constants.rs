@@ -50,7 +50,10 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
 });
 
-// static lazy arced mutexed and pinned box future type
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// s3 code order execution using sync objects: 
+// static lazy arced mutexed and pinned box future db type, send sync static
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 pub static DbS3: Lazy<std::sync::Arc<tokio::sync::Mutex<
     std::pin::Pin<Box<dyn futures::Future<Output = HashMap<u32, String>> + Send + Sync + 'static>>
     >>> = 

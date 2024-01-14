@@ -84,8 +84,6 @@ wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928
 
 * Read More About [Push Notification Strategy](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)
 
-* [TLPS](https://github.com/wildonion/gem/wiki/TLPs)
-
 * [HTTP Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&creator=22927035)
 
 * [Websocket Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/65619b4947e9207e30af90fa?action=share&creator=22927035)

@@ -46,7 +46,9 @@ impl Actor for UserActionActor{
         /* start subscription interval in tokio::spawn() using while let Some()... syntax */
         // ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
 
-            let mut this = self.clone();
+            // self must be cloned to prevent self from moving 
+            // since it's going to be moved into tokio::spawn() scope
+            let mut this = self.clone(); 
             let app_storage = self.app_storage.clone().unwrap();
             let redis_pubsub_async = app_storage.clone().get_async_redis_pubsub_conn_sync().unwrap();
 
@@ -139,7 +141,9 @@ impl UserActionActor{
                 let decoded_user_notif = serde_json::from_str::<SingleUserNotif>(&stringified_update_user).unwrap();
 
                 info!("got user notif payload on `on_user_action` channel at time {}", chrono::Local::now().timestamp());
-    
+                
+                // sending the decoded data into an mpsc jobq channel to update 
+                // redis outside of tokio::spawn() threadpool
                 if let Err(why) = user_notif_sender.send(decoded_user_notif).await{
                     error!("can't send user notif sender due to: {}", why.to_string());
                 }
@@ -148,6 +152,8 @@ impl UserActionActor{
 
         });
 
+        // streaming over mpsc jobq channel to receive notif data constantly
+        // from the sender and then update the redis later 
         while let Some(notif_data) = user_notif_receiver.recv().await{
 
             let user_id = {
@@ -159,7 +165,7 @@ impl UserActionActor{
 
             let redis_key = format!("user_notif_{}", user_id);
 
-            // updating redis state
+            // reading from redis
             let get_users_notifs: String = redis_client.clone().get(redis_key.clone()).unwrap_or(
                 serde_json::to_string_pretty(&UserNotif::default()).unwrap()
             );
@@ -169,7 +175,7 @@ impl UserActionActor{
                 .set_user_notif(notif_data.notif)
                 .set_user_wallet_info(notif_data.wallet_info);
             
-            // caching in redis
+            // updating/caching in redis
             let stringified_user_notif = serde_json::to_string_pretty(&updated_user_notif).unwrap();
             let ـ : RedisResult<String> = redis_conn.set(redis_key, stringified_user_notif).await;
 
