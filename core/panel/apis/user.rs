@@ -9417,7 +9417,7 @@ async fn get_all_nfts_owned_by(
                     };
 
                     match UserNft::get_all_nfts_owned_by(
-                        &user.screen_cid.unwrap(),
+                        &who_screen_cid.to_owned(),
                         limit, connection).await{
                         Ok(user_nfts) => {
 
