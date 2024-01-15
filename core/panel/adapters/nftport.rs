@@ -23,7 +23,9 @@ use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
 
+use self::models::users_collections::{UserCollectionData, UserCollection};
 use self::models::users_nfts::{UserNft, UserNftData};
+use self::schema::users_collections::col_description;
 
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -94,7 +96,33 @@ pub struct NftPortCreateCollectionContractResponse{
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct OnchainNfts{
-    pub onchain_nfts: Vec<UserNftData>
+    pub onchain_nfts: Vec<NftColInfo>
+}
+
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftColInfo{
+    pub col_data: UserCollectionDataGeneralInfo,
+    pub nfts_data: UserNftData
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UserCollectionDataGeneralInfo{
+    pub id: i32,
+    pub contract_address: String,
+    pub col_name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String,
+    pub metadata_updatable: Option<bool>,
+    pub freeze_metadata: Option<bool>,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
+    pub collection_background: String,
+    pub extra: Option<serde_json::Value>,
+    pub col_description: String,
+    pub contract_tx_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -1462,7 +1490,30 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
             if nft["token_id"].is_string(){
                 let token_id = nft["token_id"].as_str().unwrap();
                 let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap();
-                nfts_owned_by.push(nft_info);
+                nfts_owned_by.push(NftColInfo{
+                    col_data: {
+                        let col_info = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await.unwrap();
+                        UserCollectionDataGeneralInfo{
+                            id: col_info.id,
+                            contract_address: col_info.contract_address,
+                            col_name: col_info.col_name,
+                            symbol: col_info.symbol,
+                            owner_screen_cid: col_info.owner_screen_cid,
+                            metadata_updatable: col_info.metadata_updatable,
+                            freeze_metadata: col_info.freeze_metadata,
+                            base_uri: col_info.base_uri,
+                            royalties_share: col_info.royalties_share,
+                            royalties_address_screen_cid: col_info.royalties_address_screen_cid,
+                            collection_background: col_info.collection_background,
+                            extra: col_info.extra,
+                            col_description: col_info.col_description,
+                            contract_tx_hash: col_info.contract_tx_hash,
+                            created_at: col_info.created_at.to_string(),
+                            updated_at: col_info.updated_at.to_string(),
+                        }
+                    },
+                    nfts_data: nft_info,
+                });
             }
         }
     }
