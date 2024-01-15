@@ -2082,6 +2082,7 @@ impl UserNft{
                             User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap(),
                             User::find_by_screen_cid(&seller, connection).await.unwrap(),
                             User::find_by_screen_cid(&royalty_owner, connection).await.unwrap(),
+                            buy_nft_request.amount,
                             nft_price as i64,
                             pay_to_seller as i64,
                             royalty_amount as i64,
@@ -2269,6 +2270,7 @@ impl UserNft{
         user: User, 
         seller_info: User, 
         royalty_owner_info: User,
+        gas_fee: i64,
         nft_price: i64,
         pay_to_seller: i64,
         royalty_amount: i64,
@@ -2281,7 +2283,7 @@ impl UserNft{
         /* -------------- update balances -------------- */
         /* --------------------------------------------- */
         /* update buyer balance (nft price + onchain gas fee) */
-        let new_balance = user.balance.unwrap() + nft_price as i64;
+        let new_balance = user.balance.unwrap() + (nft_price as i64 + gas_fee);
         let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
         let Ok(updated_user_data) = update_user_balance else{
 
@@ -2469,7 +2471,7 @@ impl UserNft{
 
                     if uubd.is_some(){
                         // if anything goes wrong payback the user
-                        let new_balance = uubd.unwrap().balance.unwrap() + nft_price;
+                        let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
                         let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
     
                     }
