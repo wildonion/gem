@@ -8388,7 +8388,7 @@ async fn create_nft_metadata_uri(
                             &create_nft_metadata_uri_request.caller_cid, 
                             &create_nft_metadata_uri_request.tx_signature, 
                             &create_nft_metadata_uri_request.hash_data, 
-                            Some(create_nft_metadata_uri_request.amount.parse::<i64>().unwrap()),
+                            None,
                             connection
                         ).await;
 
