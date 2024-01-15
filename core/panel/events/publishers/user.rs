@@ -29,7 +29,8 @@ pub struct NotifData{
 }
 
 // followings are the whole events that might get triggered or fired
-// in the whole platform 
+// in the whole platform, the size of the enum is the size of its 
+// largest variant + usize tag which is a pointer points to the currnt variant
 #[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub enum ActionType{
     InvitationRequestFrom,
@@ -76,7 +77,7 @@ impl UserNotif{
 // multithreaded work-stealing executors
 // cause we have an async method that may
 // gets sovled inside tokio spawn threadpool
-#[trait_variant::make(NotifExtSend: Send)] 
+#[trait_variant::make(NotifExtSend: Send)] /* make NotifExt trait sendable so we can call its async method in other threads */
 pub trait NotifExt: Sync{
     type Data;
     fn set_user_notif(&mut self, notif_data: NotifData) -> Self;

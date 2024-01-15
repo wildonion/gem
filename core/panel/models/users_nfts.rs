@@ -251,6 +251,7 @@ impl NftExt for UpdateUserNftRequest{
         self as UpdateUserNftRequest
     }
 
+    /* the transfer process can be either a buy or raw transfer */
     fn get_recipient_screen_cid(&self) -> String {
         
         /* 
