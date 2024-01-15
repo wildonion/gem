@@ -21,6 +21,8 @@ macro_rules! server {
             use actix_web::{web, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
+            use crate::config::{Env as ConfigEnv, Context};
+            use crate::config::EnvExt;
             use crate::constants::*;
             use crate::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
@@ -78,7 +80,6 @@ macro_rules! server {
 
             let chatroomlp_server_instance = ChatRoomLaunchpadServer::new(app_storage.clone()).start();
             let shared_ws_chatroomlp_server = Data::new(chatroomlp_server_instance.clone());
-
             
             let system_actor_instance = SystemActor{updated_users: HashMap::new()}.start();
             let shared_system_actor_instance = Data::new(system_actor_instance.clone());
@@ -94,15 +95,35 @@ macro_rules! server {
             let users_notifs_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
             let shared_users_notifs_listener_instance = Data::new(users_notifs_listener_instance.clone());
 
-            //------------------------------------
+            let shared_storage = Data::new(app_storage.clone());
+
+
             //--- starting the tcp listener actor
-            //------------------------------------
             // let tcp_server_addr = format!("{}:{}", host, port);
             // events::subscribers::handlers::
             //     actors::tcp::listener::
             //         TcpListenerActor::new(&tcp_server_addr).start();
 
-            let shared_storage = Data::new(app_storage.clone());
+            // setting up the whole app state data
+            let mut app_state = AppState::init();
+            app_state.app_sotrage = app_storage.clone();
+            app_state.subscriber_actors = Some(
+                SubscriberActors{
+                    clp_actor: chatroomlp_server_instance.clone(),
+                    role_actor: role_notif_server_instance.clone(),
+                    mmr_actor: mmr_notif_server_instance.clone(),
+                    user_actor: users_notifs_listener_instance.clone(),
+                    system_actor: system_actor_instance.clone(),
+                    pg_actor: pg_listener_instance.clone()
+                }
+            );
+            app_state.config = {
+                let env = ConfigEnv::default();
+                let ctx_env = env.get_vars();
+                std::sync::Arc::new(ctx_env)
+            };
+            let shared_state_app = Data::new(app_state.clone());
+
 
             /*  
                 we can have a global like data by sharing it between different parts of the app
@@ -138,6 +159,7 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_pg_listener_instance.clone()))
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
                     .app_data(Data::clone(&shared_users_notifs_listener_instance.clone()))
+                    .app_data(Data::clone(&shared_state_app.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))

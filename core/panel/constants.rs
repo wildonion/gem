@@ -2,11 +2,18 @@
 
 
 
+use actix::Addr;
 use futures::executor::block_on;
 use s3req::Storage;
 use config::{Env, Context};
 use config::EnvExt;
 use crate::*;
+use self::events::subscribers::handlers::actors::notif::pg::PgListenerActor;
+use self::events::subscribers::handlers::actors::notif::system::SystemActor;
+use self::events::subscribers::handlers::actors::notif::user::UserActionActor;
+use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
+use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
+use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
 
 pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
@@ -54,9 +61,10 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 // s3 code order execution using sync objects: 
 // static lazy arced mutexed and pinned box future db type, send sync static
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-pub static DbS3: Lazy<std::sync::Arc<tokio::sync::Mutex<
-    std::pin::Pin<Box<dyn futures::Future<Output = HashMap<u32, String>> + Send + Sync + 'static>>
-    >>> = 
+type DbS3Type = Lazy<std::sync::Arc<tokio::sync::Mutex<
+    std::pin::Pin<Box<dyn futures::Future<Output = HashMap<String, String>> + Send + Sync + 'static>>
+    >>>;
+pub static DbS3: DbS3Type = 
 Lazy::new(||{
     std::sync::Arc::new(
         tokio::sync::Mutex::new(
@@ -66,6 +74,47 @@ Lazy::new(||{
         )
     )
 });
+
+
+/* 
+    this structure will be used to share all data that we want to 
+    send them globally between actix routers' threads, this can be
+    done by passing an instance of the AppState to the app_data() 
+    method so it can be shared between threads safely once the server
+    gets started and in api method param we can have app_state: web::Data<AppState>
+*/
+#[derive(Clone)]
+pub struct AppState{
+    pub config: std::sync::Arc<Context<Env>>,
+    pub app_sotrage: Option<Arc<Storage>>,
+    pub subscriber_actors: Option<SubscriberActors>,
+    pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>>
+}
+
+#[derive(Clone)]
+pub struct SubscriberActors{
+    pub clp_actor: Addr<ChatRoomLaunchpadServer>,
+    pub role_actor: Addr<RoleNotifServer>,
+    pub mmr_actor: Addr<MmrNotifServer>,
+    pub user_actor: Addr<UserActionActor>,
+    pub system_actor: Addr<SystemActor>,
+    pub pg_actor: Addr<PgListenerActor>
+}
+
+impl AppState{
+    pub fn init() -> Self{
+        AppState{
+            config: std::sync::Arc::new(Context::default()),
+            app_sotrage: None,
+            subscriber_actors: None,
+            ramdb: std::sync::Arc::new(
+                    tokio::sync::Mutex::new(
+                            HashMap::new()
+                    )
+                )
+        }
+    }
+}
 
 pub static INVALID_SIGNATURE: &str = "Invalid Signature";
 pub static INVALID_TOKEN_AMOUNT: &str = "Minimum Token Amounts Must Be 5";
