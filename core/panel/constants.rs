@@ -234,6 +234,7 @@ pub static GRPC_SERVER_STARTED: &str = "gRPC Listener Started Successfully";
 pub static GALLERY_NOT_FOUND: &str = "No Gallery Found With This Id";
 pub static NO_GALLERY_FOUND: &str = "No Gallery Found";
 pub static GALLERY_NOT_OWNED_BY: &str = "Gallery Is Not Owned By The Caller Of This Method";
+pub static FRIEND_IS_NOT_INVITED_YET: &str = "Friend Has Not Been Invited Yet";
 pub static NO_GALLERY_FOUND_FOR: &str = "No Gallery Found For This User";
 pub static NO_GALLERY_FOUND_FOR_COL_OWNER: &str = "No Gallery Found For This Collection Owner";
 pub static COLLECTION_NOT_FOUND_FOR: &str = "No Collection Found For This User";

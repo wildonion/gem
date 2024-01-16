@@ -10,6 +10,8 @@ use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
+use self::constants::FRIEND_IS_NOT_INVITED_YET;
+
 use super::users::{UserWalletInfoResponse, UserData};
 use super::users_collections::{UserCollection, UserCollectionData, CollectionInfoResponse};
 use super::users_fans::{InvitationRequestData, UserFan, InvitationRequestDataResponse};
@@ -1225,6 +1227,18 @@ impl UserPrivateGallery{
             if friends_.contains(&Some(caller_screen_cid.to_string())){
                 let scid_idx = friends_.iter().position(|scid| *scid == Some(caller_screen_cid.to_string())).unwrap();
                 friends_.remove(scid_idx);
+            } else{
+
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: FRIEND_IS_NOT_INVITED_YET,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+
             }
 
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
@@ -1550,6 +1564,18 @@ impl UserPrivateGallery{
             if friends_.contains(&Some(friend_screen_cid.to_string())){
                 let scid_idx = friends_.iter().position(|scid| *scid == Some(friend_screen_cid.to_string())).unwrap();
                 friends_.remove(scid_idx);
+            } else{
+
+                let resp = Response::<'_, &[u8]>{
+                    data: Some(&[]),
+                    message: FRIEND_IS_NOT_INVITED_YET,
+                    status: 406,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotAcceptable().json(resp))
+                )
+
             }
 
             // also remove from redis and pyback the friend_screen_cid with enterance fee 
