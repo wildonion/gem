@@ -612,6 +612,52 @@ impl UserCollection{
         )
 
     }
+
+    pub fn find_by_contract_address_none_async(col_contract_address: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCollectionData, PanelHttpResponse>{
+
+        let user_collection = users_collections
+            .filter(users_collections::contract_address.eq(col_contract_address))
+            .first::<UserCollection>(connection);
+
+        let Ok(collection) = user_collection else{
+
+            let resp = Response{
+                data: Some(col_contract_address),
+                message: COLLECTION_NOT_FOUND_FOR_CONTRACT,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserCollectionData{
+                id: collection.id,
+                contract_address: collection.contract_address,
+                nfts: collection.nfts,
+                col_name: collection.col_name,
+                symbol: collection.symbol,
+                owner_screen_cid: collection.owner_screen_cid,
+                metadata_updatable: collection.metadata_updatable,
+                base_uri: collection.base_uri,
+                royalties_share: collection.royalties_share,
+                royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                collection_background: collection.collection_background,
+                extra: collection.extra,
+                col_description: collection.col_description,
+                created_at: collection.created_at.to_string(),
+                updated_at: collection.updated_at.to_string(),
+                freeze_metadata: collection.freeze_metadata,
+                contract_tx_hash: collection.contract_tx_hash,
+            }
+        )
+
+    }
     
     pub fn find_by_id_none_async(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{

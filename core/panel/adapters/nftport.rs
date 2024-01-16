@@ -24,7 +24,7 @@ use crate::models::users_tasks::UserTask;
 use actix::Addr;
 
 use self::models::users_collections::{UserCollectionData, UserCollection};
-use self::models::users_nfts::{UserNft, UserNftData};
+use self::models::users_nfts::{UserNft, UserNftData, UserCollectionDataGeneralInfo, NftColInfo};
 use self::schema::users_collections::col_description;
 
 
@@ -99,31 +99,6 @@ pub struct OnchainNfts{
     pub onchain_nfts: Vec<NftColInfo>
 }
 
-#[derive(Clone, Serialize, Deserialize, Default, Debug)]
-pub struct NftColInfo{
-    pub col_data: UserCollectionDataGeneralInfo,
-    pub nfts_data: UserNftData
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct UserCollectionDataGeneralInfo{
-    pub id: i32,
-    pub contract_address: String,
-    pub col_name: String,
-    pub symbol: String,
-    pub owner_screen_cid: String,
-    pub metadata_updatable: Option<bool>,
-    pub freeze_metadata: Option<bool>,
-    pub base_uri: String,
-    pub royalties_share: i32,
-    pub royalties_address_screen_cid: String,
-    pub collection_background: String,
-    pub extra: Option<serde_json::Value>,
-    pub col_description: String,
-    pub contract_tx_hash: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUpdateCollectionContractResponse{

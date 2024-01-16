@@ -78,6 +78,32 @@ pub struct LikeUserInfo{
     pub avatar: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct NftColInfo{
+    pub col_data: UserCollectionDataGeneralInfo,
+    pub nfts_data: UserNftData
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct UserCollectionDataGeneralInfo{
+    pub id: i32,
+    pub contract_address: String,
+    pub col_name: String,
+    pub symbol: String,
+    pub owner_screen_cid: String,
+    pub metadata_updatable: Option<bool>,
+    pub freeze_metadata: Option<bool>,
+    pub base_uri: String,
+    pub royalties_share: i32,
+    pub royalties_address_screen_cid: String,
+    pub collection_background: String,
+    pub extra: Option<serde_json::Value>,
+    pub col_description: String,
+    pub contract_tx_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserLikeStat{
     pub nft_id: i32,
