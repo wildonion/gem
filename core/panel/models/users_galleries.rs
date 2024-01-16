@@ -1537,6 +1537,9 @@ impl UserPrivateGallery{
             return Err(err_resp);
         };
 
+        let mut updated_friend_balance = None;
+        let mut global_gal_price = 0;
+
         /* 
             since we've moved the gallery_data.invited_friends into inv_frds 
             thus to return the old data we'll use inv_frds 
@@ -1572,8 +1575,8 @@ impl UserPrivateGallery{
                 
                 // payback friend_screen_cid with the gallery price
                 let new_balance = friend_info.balance.unwrap() + gprice;
-                let update_user_balance = User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                
+                updated_friend_balance = Some(User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+                global_gal_price = gprice;
             }
 
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
@@ -1631,7 +1634,15 @@ impl UserPrivateGallery{
 
                     Ok(update_gallery_data)
                 },
-                Err(err) => Err(err),
+                Err(err) => {
+                    
+                    if updated_friend_balance.is_some(){
+                        let new_balance = updated_friend_balance.unwrap().balance.unwrap() - global_gal_price;
+                        let updated_friend_balance = Some(User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+                    }
+
+                    Err(err)
+                },
             }
 
         } else{

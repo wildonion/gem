@@ -1817,6 +1817,11 @@ impl UserFan{
             let resp_error = get_gallery_data.unwrap_err();
             return Err(resp_error);
         };
+
+        let user = User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap();
+        let owner = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
+        let mut updated_user_balance = None;
+        let mut updated_owner_balance = None;
         
 
         /* ---- considering gallery entry price ---- */
@@ -1842,25 +1847,6 @@ impl UserFan{
             return Err(
                 Ok(HttpResponse::InternalServerError().json(resp))
             );
-        }
-
-        let user = User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap();
-        // update balance of the one who accepted the request
-        // cause he must pay for the entry price of the gallery
-        let new_balance = user.balance.unwrap() - g_entry_price;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-        if update_user_balance.is_err(){
-            let err_resp = update_user_balance.unwrap_err();
-            return Err(err_resp);
-        }
-
-        let owner = User::find_by_screen_cid(&owner_screen_cid, connection).await.unwrap();
-        // update balance of the owner
-        let new_owner_balance = owner.balance.unwrap() + g_entry_price;
-        let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-        if update_owner_balance.is_err(){
-            let err_resp = update_owner_balance.unwrap_err();
-            return Err(err_resp);
         }
 
         if !decoded_invitation_request_data
@@ -1919,8 +1905,20 @@ impl UserFan{
                     let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
                 }
 
-                // push this caller into invited_friends anyways!
+                // if caller_screen_cid has not been invited yet means that
+                // gallery owner didn't send request to him and he's entering 
+                // by paing the fee so we charge him
                 if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
+                    
+                    // update balance of the one who accepted the request
+                    // cause he must pay for the entry price of the gallery
+                    let new_balance = user.balance.unwrap() - g_entry_price;
+                    updated_user_balance = Some(User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+            
+                    // update balance of the owner
+                    let new_owner_balance = owner.balance.unwrap() + g_entry_price;
+                    updated_owner_balance = Some(User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+
                     invited_friends.push(Some(caller_screen_cid.to_string()));
                 }
 
@@ -1942,13 +1940,15 @@ impl UserFan{
                         Ok(_) => Ok(updated_user_fan_data),
                         Err(resp) => {
                             
-                            // revert the payment process, pay the gallery price back the user 
-                            let new_balance = user.balance.unwrap() + g_entry_price;
-                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                            
-                            // charge the owner for the gallery price
-                            let new_owner_balance = owner.balance.unwrap() - g_entry_price;
-                            let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                            if updated_user_balance.is_some() && updated_owner_balance.is_some(){
+                                // revert the payment process, pay the gallery price back the user 
+                                let new_balance = updated_user_balance.unwrap().balance.unwrap() + g_entry_price;
+                                let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                                
+                                // charge the owner for the gallery price
+                                let new_owner_balance = updated_owner_balance.unwrap().balance.unwrap() - g_entry_price;
+                                let updated_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                            }
                             
                             return Err(resp)
                         },
