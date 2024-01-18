@@ -9,13 +9,13 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 
 ### 🍔 Technical Features
 
-- create crypto id or **EVM** based wallet to store onchain digital assets
+- an event managing and reservation system with reveal-role functionality
+
+- crypto id or **EVM** based wallet to store onchain digital assets
 
 - buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards
 
-- create private galleries to sell **NFTs** in art work collections by inviting friends
-
-- buy digital assets and **NFTs** using in-app token
+- multiple private galleries to sell **NFTs** in various art work collections by inviting friends
 
 - chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats
 
