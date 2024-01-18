@@ -2594,7 +2594,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2624,7 +2624,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain_@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2641,60 +2641,6 @@
 											]
 										},
 										"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
-									},
-									"response": []
-								},
-								{
-									"name": "Login With Gmail",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"gavatar\": \"\",\n    \"gid\": \"\",\n    \"gusername\": \"\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/login/gmail",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"login",
-												"gmail"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Login With Microsoft",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"avatar\": \"\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{panel-user}}/login/microsoft",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"login",
-												"microsoft"
-											]
-										}
 									},
 									"response": []
 								},
@@ -2855,7 +2801,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA1MTQ2MDY0MTA5NzIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA1MTQ3ODY0MTE2NTkzMDAwLCJpYXQiOjE3MDUxNDYwNjQxMTY1OTMwMDB9.G6Rmj_k5VZaksKA5YW_1gOmNRAcmAB_TcdMIgEUYJVlJdOvF13vVrmWhUWAiwOpTOUNldc04fG6cK8bT1PliQQ",
 													"type": "string"
 												}
 											]
@@ -2864,7 +2810,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"username\": \"king\",\n    \"device_id\": \"1111\"\n}",
+											"raw": "{\n    \"username\": \"wildonion\",\n    \"device_id\": \"11112\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3006,7 +2952,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAyMTM4NDU0ODk3MDgxMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAyMTQwMjU0ODk4MjMzMDAwLCJpYXQiOjE3MDIxMzg0NTQ4OTgyMzMwMDB9.fVOQk_mj9iYaxfaNP9BAneel9MHVyPAwAZAjWlHZBvJE2qtZIIg3LCE6JuQ1fUNajuYQaLUjDz740lfzxyWBog",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA1MTQxNDI0NDc3NDU4MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA1MTQzMjI0NDg0Mzc4MDAwLCJpYXQiOjE3MDUxNDE0MjQ0ODQzNzgwMDB9.YXbcxK0ZnJpYQXO8oF_sD1HfLO-VZ3hyChasXtVzsunPZtQBuqh6UsJMKi0742J3B5Wva0-Pu6-jKklQjjnQcA",
 													"type": "string"
 												}
 											]
@@ -3019,7 +2965,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": "/Users/wildonion/Desktop/onion.png"
+													"src": "/Users/wildonion/Desktop/gal.avif"
 												}
 											]
 										},
@@ -3663,7 +3609,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk5Nzc4Mzc3NDAxODE4MDAwLCJleHAiOjE3MDIzNzAzNzcsImlhdCI6MTY5OTc3ODM3N30.N2XsvNi2f_Y71NnBgPWm-l9XfiNvLlaZnlyrYo2eU04mC3v8xBhjegUdzSosdxwrjcQvljsngX4u_tenuCjJSw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA1MTQxNDI0NDc3NDU4MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA1MTQzMjI0NDg0Mzc4MDAwLCJpYXQiOjE3MDUxNDE0MjQ0ODQzNzgwMDB9.YXbcxK0ZnJpYQXO8oF_sD1HfLO-VZ3hyChasXtVzsunPZtQBuqh6UsJMKi0742J3B5Wva0-Pu6-jKklQjjnQcA",
 													"type": "string"
 												}
 											]
@@ -3676,7 +3622,7 @@
 												{
 													"key": "img",
 													"type": "file",
-													"src": "/Users/wildonion/Desktop/consep.jpeg"
+													"src": "/Users/wildonion/Desktop/gal.avif"
 												}
 											]
 										},
@@ -4125,7 +4071,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTE3OTcyNzMxMTg0NTYwNywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTE4MTUyNzMxMTk0MjcwOSwiaWF0IjoxNzA1MTc5NzI3MzExOTQyNzA5fQ.YmsBqR0W6dTixO6b1XpxAsP_qhEYe1uOQx4d2jWcMHavh7f9L_Dvueii0KpYZjbEyODAACoIduRvrr7FPf-C5g",
 													"type": "string"
 												}
 											]
@@ -5019,7 +4965,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTA5MjAyNDAwNjU1NDMyNiwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTA5MzgyNDAwNjc0ODMxMSwiaWF0IjoxNzA1MDkyMDI0MDA2NzQ4MzExfQ.3YWb4YulVv0hgjm--2OTMw1IIGibppXvi13-ldQcOdK7oVusryJDFCLSJ08m954B7BB5fOfZ2hZ6Z0Yljrl5bA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQzLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTE2MzA5NDE5ODA1OTMzMSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTE2NDg5NDE5ODA3OTAxNSwiaWF0IjoxNzA1MTYzMDk0MTk4MDc5MDE1fQ.qgmYEf2TdmgowC0q2RAnmsbbqdo8ZBiRIQsLqbPSC0x2k7CYapTntQ-IY_QzjGQu7kVhk9uFAD42P46GeFBOvw",
 													"type": "string"
 												}
 											]
@@ -5775,14 +5721,7 @@
 							"name": "Get Top Nfts (Most Liked)",
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-											"type": "string"
-										}
-									]
+									"type": "noauth"
 								},
 								"method": "GET",
 								"header": [],
@@ -5813,14 +5752,7 @@
 							"name": "Get All Minted Nfts",
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
-											"type": "string"
-										}
-									]
+									"type": "noauth"
 								},
 								"method": "GET",
 								"header": [],

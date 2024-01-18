@@ -28,7 +28,6 @@ phonereq = { path = "core/phonereq", name = "phonereq"}
 s3req = { path = "core/s3req", name = "s3req"}
 multipartreq = { path = "core/multipartreq", name = "multipartreq" }
 gastracker = { path = "core/gastracker", name = "gastracker" }
-oauth2 = "4.4.2"
 async-std = "1.12.0"
 futures = "0.3"
 futures-util = "0.3"

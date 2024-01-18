@@ -7,11 +7,24 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 - chatroom launchpad feature to mint generated AI based NFT images to users based on their chats in each launchpad events.
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
 
+## 🍔 Technical Features
+
+- create crypto id or **EVM** based wallet to store onchain digital assets
+
+- buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards
+
+- create private galleries to sell **NFTs** in art work collections by inviting friends
+
+- buy digital assets and **NFTs** using in-app token
+
+- chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats
+
 ### 🥪 Conse Panel Architecture Diagram
 
 <p align="center">
     <img src="https://github.com/wildonion/gem/blob/master/infra/arch.jpg">
 </p>
+
 
 ## 🚟 Infra Route and API Endpoints
 
