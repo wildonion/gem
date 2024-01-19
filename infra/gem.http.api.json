@@ -2737,7 +2737,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDA3NDYyNTkzMDU0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDA5MjYyNjAxNDM1MDAwLCJpYXQiOjE3MDM0MDc0NjI2MDE0MzUwMDB9.c27i_QwTopM7hV_1ZEP52ICyfWKAOWdegi8SsY42AzpSFGxOzvebEnTVQBlSjrM07ZzGbXjFOog1fogEifKWhw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjgsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA1Njc3Mzg0NTExMTY4MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA1Njc5MTg0NTE3ODM2MDAwLCJpYXQiOjE3MDU2NzczODQ1MTc4MzYwMDB9.s6zIAenC3mx0LULB3KySdt6C4dyA2-5UXyf1Arv65I7u_YNACbyJI48sRdyg0zo-kypsS0VK2fdbprMNoXcL8w",
 													"type": "string"
 												}
 											]
@@ -2765,7 +2765,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDA3NDYyNTkzMDU0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDA5MjYyNjAxNDM1MDAwLCJpYXQiOjE3MDM0MDc0NjI2MDE0MzUwMDB9.c27i_QwTopM7hV_1ZEP52ICyfWKAOWdegi8SsY42AzpSFGxOzvebEnTVQBlSjrM07ZzGbXjFOog1fogEifKWhw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjgsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA1Njc3Mzg0NTExMTY4MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA1Njc5MTg0NTE3ODM2MDAwLCJpYXQiOjE3MDU2NzczODQ1MTc4MzYwMDB9.s6zIAenC3mx0LULB3KySdt6C4dyA2-5UXyf1Arv65I7u_YNACbyJI48sRdyg0zo-kypsS0VK2fdbprMNoXcL8w",
 													"type": "string"
 												}
 											]
@@ -2774,7 +2774,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"user_mail\": \"ea_pain@yahoo.com\",\n    \"verification_code\": \"20131394\"\n}",
+											"raw": "{\n    \"user_mail\": \"erfan@youwho.online\",\n    \"verification_code\": \"59233868\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3103,6 +3103,39 @@
 									"response": []
 								},
 								{
+									"name": "Get Google Oauth Session",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/sessions/oauth/google?code=&state=",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"sessions",
+												"oauth",
+												"google"
+											],
+											"query": [
+												{
+													"key": "code",
+													"value": ""
+												},
+												{
+													"key": "state",
+													"value": ""
+												}
+											]
+										},
+										"description": "> Note: The `usd` field in response need to gets divided by **10000000** to extract the exact amount of token based in **USD.**"
+									},
+									"response": []
+								},
+								{
 									"name": "Get Token Value",
 									"request": {
 										"auth": {
@@ -3118,9 +3151,9 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-public}}/get-token-value/5",
+											"raw": "{{panel-user}}/get-token-value/5",
 											"host": [
-												"{{panel-public}}"
+												"{{panel-user}}"
 											],
 											"path": [
 												"get-token-value",
@@ -3147,9 +3180,9 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-public}}/get-gas-fee",
+											"raw": "{{panel-user}}/get-gas-fee",
 											"host": [
-												"{{panel-public}}"
+												"{{panel-user}}"
 											],
 											"path": [
 												"get-gas-fee"
@@ -5271,7 +5304,8 @@
 							"name": "Advieh",
 							"item": []
 						}
-					]
+					],
+					"description": "Setup a google login on a gmail account (application homepage, privacy policy and terms of service) to obtain `client_id` and `client_secret` note you must setup a `redirect_url` that would be used to redirect client application after a successful login to that url to obtain **JWT,** it must be registered inside the server and setup with the full path inside the google panel like `https://api.panel.conse.app/user/sessions/oauth/google`\n\nCurrently the `redirect_url` has been setup on `/user/sessions/oauth/google` route on the server which is a **GET** request and accepts`code` and `state` query params which will be passed by the client via the google oauth process."
 				},
 				{
 					"name": "Dev APIs",
@@ -5851,7 +5885,12 @@
 								}
 							},
 							"response": []
-						},
+						}
+					]
+				},
+				{
+					"name": "XBot",
+					"item": [
 						{
 							"name": "X Bot Get App Rate Limit Info",
 							"request": {

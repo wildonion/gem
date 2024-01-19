@@ -15,7 +15,7 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 
 - buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards
 
-- multiple private galleries to sell **NFTs** in various art work collections by inviting friends
+- build multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends
 
 - chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats
 
