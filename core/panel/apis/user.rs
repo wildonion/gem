@@ -3,10 +3,10 @@
 
 use crate::*;
 use crate::adapters::stripe::{create_product, create_price, create_session, StripeCreateCheckoutSessionData};
-use crate::events::publishers::user::{UserNotif, NotifExt};
-use crate::events::subscribers::handlers::actors::notif::pg::{PgListenerActor};
+use crate::events::publishers::action::{UserNotif, NotifExt};
+use crate::events::subscribers::handlers::actors::notif::user::{UserListenerActor};
 use crate::events::subscribers::handlers::actors::notif::system::{SystemActor, GetSystemUsersMap};
-use crate::events::subscribers::handlers::actors::notif::user::{GetUsersNotifsMap, UserActionActor};
+use crate::events::subscribers::handlers::actors::notif::action::{GetUsersNotifsMap, UserActionActor};
 use crate::models::clp_events::{ClpEventData, ClpEvent};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest, CancelUserClpEventRequest};

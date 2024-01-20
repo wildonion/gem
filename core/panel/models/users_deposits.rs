@@ -2,7 +2,7 @@
 
 use actix::Addr;
 use crate::*;
-use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
+use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::users_deposits;
@@ -171,7 +171,7 @@ impl UserDeposit{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(
                         ud

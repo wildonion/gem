@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix::Addr;
 use chrono::NaiveDateTime;
-use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
+use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::schema::users_galleries::dsl::users_galleries;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET, CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN};
@@ -1602,7 +1602,7 @@ impl UserCollection{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                             Ok(user_collection_data)
                         
@@ -1924,7 +1924,7 @@ impl UserCollection{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                             
                             Ok(user_collection_data)
                         },

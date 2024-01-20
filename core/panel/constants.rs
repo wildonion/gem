@@ -8,9 +8,9 @@ use s3req::Storage;
 use config::{Env, Context};
 use config::EnvExt;
 use crate::*;
-use self::events::subscribers::handlers::actors::notif::pg::PgListenerActor;
+use self::events::subscribers::handlers::actors::notif::user::UserListenerActor;
 use self::events::subscribers::handlers::actors::notif::system::SystemActor;
-use self::events::subscribers::handlers::actors::notif::user::UserActionActor;
+use self::events::subscribers::handlers::actors::notif::action::UserActionActor;
 use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
@@ -98,7 +98,7 @@ pub struct SubscriberActors{
     pub mmr_actor: Addr<MmrNotifServer>,
     pub user_actor: Addr<UserActionActor>,
     pub system_actor: Addr<SystemActor>,
-    pub pg_actor: Addr<PgListenerActor>
+    pub pg_actor: Addr<UserListenerActor>
 }
 
 impl AppState{

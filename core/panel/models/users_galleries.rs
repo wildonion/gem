@@ -5,7 +5,7 @@ use actix::Addr;
 use chrono::NaiveDateTime;
  
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER, GALLERY_UPLOAD_PATH};
-use crate::events::publishers::user::{SingleUserNotif, NotifData, ActionType};
+use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
@@ -1301,7 +1301,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(updated_gallery_data)
                 },
@@ -1406,7 +1406,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(user_private_gallery_data)
 
@@ -1664,7 +1664,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(update_gallery_data)
                 },
@@ -1788,7 +1788,7 @@ impl UserPrivateGallery{
                             }
                         };
                         let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                        events::publishers::user::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                        events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                         
                         Ok(
                             gallery_data

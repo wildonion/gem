@@ -27,8 +27,8 @@ macro_rules! server {
             use crate::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
-            use crate::events::subscribers::handlers::actors::notif::pg::PgListenerActor;
-            use crate::events::subscribers::handlers::actors::notif::user::UserActionActor;
+            use crate::events::subscribers::handlers::actors::notif::user::UserListenerActor;
+            use crate::events::subscribers::handlers::actors::notif::action::UserActionActor;
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
 
             
@@ -89,7 +89,7 @@ macro_rules! server {
                 the initialized instance to the server app data as the shared state data 
                 so it can be shareable and loadable inside actix routers' threads
             */
-            let pg_listener_instance = PgListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
+            let pg_listener_instance = UserListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
             let shared_pg_listener_instance = Data::new(pg_listener_instance.clone());
 
             let users_notifs_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();

@@ -593,7 +593,7 @@ impl User{
         */
         
         let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
-        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
         let resp = Response{
             data: Some(user_login_data),
@@ -1935,7 +1935,7 @@ impl User{
                     the new user we'll start updating user fans and user nfts 
                 */
                 let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                 
                 Ok(updated_user)
             
@@ -2070,7 +2070,7 @@ impl User{
                         the new user we'll start updating user fans and user nfts 
                     */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2187,7 +2187,7 @@ impl User{
                         the new user we'll start updating user fans and user nfts 
                     */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2316,7 +2316,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2445,7 +2445,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2574,7 +2574,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2749,7 +2749,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                     
                     Ok(
                         UserData { 
@@ -3203,7 +3203,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                     
                     Ok(())
                 },
@@ -3281,7 +3281,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -3538,7 +3538,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                         Ok(
                             UserData { 
@@ -3663,7 +3663,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -4001,7 +4001,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -4125,7 +4125,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -4751,7 +4751,7 @@ impl Id{
                             */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                            events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                            events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
@@ -4963,7 +4963,7 @@ impl Id{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                     let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
                     match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
@@ -4980,7 +4980,7 @@ impl Id{
                             */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
-                            events::publishers::pg::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+                            events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                             Ok(
                                 UserIdResponse { 
