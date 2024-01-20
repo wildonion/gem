@@ -540,12 +540,16 @@ impl UserFan{
             will be dropped while is getting used we have to create a longer 
             lifetime then call to_vec() on that type
         */
-        let sliced = if unaccepted_ones.len() > to{
-            let data = &unaccepted_ones[from..to+1];
-            data.to_vec()
+        let sliced = if from < unaccepted_ones.len(){
+            if unaccepted_ones.len() > to{
+                let data = &unaccepted_ones[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &unaccepted_ones[from..unaccepted_ones.len()];
+                data.to_vec()
+            }
         } else{
-            let data = &unaccepted_ones[from..unaccepted_ones.len()];
-            data.to_vec()
+            vec![]
         };
 
         Ok(
@@ -638,12 +642,16 @@ impl UserFan{
             will be dropped while is getting used we have to create a longer 
             lifetime then call to_vec() on that type
         */
-        let sliced = if unaccepted_ones.len() > to{
-            let data = &unaccepted_ones[from..to+1];
-            data.to_vec()
+        let sliced = if from < unaccepted_ones.len(){
+            if unaccepted_ones.len() > to{
+                let data = &unaccepted_ones[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &unaccepted_ones[from..unaccepted_ones.len()];
+                data.to_vec()
+            }
         } else{
-            let data = &unaccepted_ones[from..unaccepted_ones.len()];
-            data.to_vec()
+            vec![]
         };
 
         Ok(
@@ -860,12 +868,16 @@ impl UserFan{
                             will be dropped while is getting used we have to create a longer 
                             lifetime then call to_vec() on that type
                         */
-                        let sliced = if both_friend_data_arr.len() > to{
-                            let data = &both_friend_data_arr[from..to+1];
-                            data.to_vec()
+                        let sliced = if from < both_friend_data_arr.len(){
+                            if both_friend_data_arr.len() > to{
+                                let data = &both_friend_data_arr[from..to+1];
+                                data.to_vec()
+                            } else{
+                                let data = &both_friend_data_arr[from..both_friend_data_arr.len()];
+                                data.to_vec()
+                            }
                         } else{
-                            let data = &both_friend_data_arr[from..both_friend_data_arr.len()];
-                            data.to_vec()
+                            vec![]
                         };
     
                         Some(serde_json::to_value(sliced).unwrap())
@@ -1034,12 +1046,16 @@ impl UserFan{
                             will be dropped while is getting used we have to create a longer 
                             lifetime then call to_vec() on that type
                         */
-                        let sliced = if owner_followers.len() > to{
-                            let data = &owner_followers[from..to+1];
-                            data.to_vec()
+                        let sliced = if from < owner_followers.len(){
+                            if owner_followers.len() > to{
+                                let data = &owner_followers[from..to+1];
+                                data.to_vec()
+                            } else{
+                                let data = &owner_followers[from..owner_followers.len()];
+                                data.to_vec()
+                            }
                         } else{
-                            let data = &owner_followers[from..owner_followers.len()];
-                            data.to_vec()
+                            vec![]
                         };
     
                         Some(serde_json::to_value(sliced).unwrap())

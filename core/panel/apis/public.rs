@@ -646,7 +646,6 @@ async fn get_top_nfts(
             let connection = &mut pg_pool.get().unwrap();
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-
             let from = limit.from.unwrap_or(0) as usize;
             let to = limit.to.unwrap_or(10) as usize;
 
@@ -733,12 +732,16 @@ async fn get_top_nfts(
                 })
                 .collect::<Vec<NftColInfo>>();
 
-            let sliced = if top_nfts.len() > to{
-                let data = &top_nfts[from..to+1];
-                data.to_vec()
+            let sliced = if from < top_nfts.len(){
+                if top_nfts.len() > to{
+                    let data = &top_nfts[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &top_nfts[from..top_nfts.len()];
+                    data.to_vec()
+                }
             } else{
-                let data = &top_nfts[from..top_nfts.len()];
-                data.to_vec()
+                vec![]
             };
             
             resp!{
@@ -838,12 +841,16 @@ async fn get_all_nfts(
             let mut rng = rand::thread_rng();
             minted_ones.shuffle(&mut rng);
 
-            let sliced = if minted_ones.len() > to{
-                let data = &minted_ones[from..to+1];
-                data.to_vec()
+            let sliced = if from < minted_ones.len(){
+                if minted_ones.len() > to{
+                    let data = &minted_ones[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &minted_ones[from..minted_ones.len()];
+                    data.to_vec()
+                }
             } else{
-                let data = &minted_ones[from..minted_ones.len()];
-                data.to_vec()
+                vec![]
             };
 
             resp!{
@@ -1199,29 +1206,41 @@ async fn search(
                 call to_vec() on the slice directly since the lifetime fo the slice
                 will be dropped while is getting used we have to create a longer 
                 lifetime then call to_vec() on that type
-            */
-            let found_collections = if found_collections.len() > to{
-                let data = &found_collections[from..to+1];
-                data.to_vec()
+            */            
+            let found_collections = if from < found_collections.len(){
+                if found_collections.len() > to{
+                    let data = &found_collections[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &found_collections[from..found_collections.len()];
+                    data.to_vec()
+                }
             } else{
-                let data = &found_collections[from..found_collections.len()];
-                data.to_vec()
+                vec![]
             };
 
-            let found_nfts = if found_nfts.len() > to{
-                let data = &found_nfts[from..to+1];
-                data.to_vec()
+            let found_nfts = if from < found_nfts.len(){
+                if found_nfts.len() > to{
+                    let data = &found_nfts[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &found_nfts[from..found_nfts.len()];
+                    data.to_vec()
+                }
             } else{
-                let data = &found_nfts[from..found_nfts.len()];
-                data.to_vec()
+                vec![]
             };
 
-            let users_info = if users_info.len() > to{
-                let data = &users_info[from..to+1];
-                data.to_vec()
+            let users_info = if from < users_info.len(){
+                if users_info.len() > to{
+                    let data = &users_info[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &users_info[from..users_info.len()];
+                    data.to_vec()
+                }
             } else{
-                let data = &users_info[from..users_info.len()];
-                data.to_vec()
+                vec![]
             };
 
             let mut matched_data = HashMap::new();

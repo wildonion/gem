@@ -791,12 +791,16 @@ impl UserPrivateGallery{
 
         gals.retain(|upgig| upgig.is_some());
 
-        let sliced = if gals.len() > to{
-            let data = &gals[from..to+1];
-            data.to_vec()
+        let sliced = if from < gals.len(){
+            if gals.len() > to{
+                let data = &gals[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &gals[from..gals.len()];
+                data.to_vec()
+            }
         } else{
-            let data = &gals[from..gals.len()];
-            data.to_vec()
+            vec![]
         };
         
 
@@ -919,12 +923,16 @@ impl UserPrivateGallery{
             will be dropped while is getting used we have to create a longer 
             lifetime then call to_vec() on that type
         */
-        let sliced = if friends_wallet_data.len() > to{
-            let data = &friends_wallet_data[from..to+1];
-            data.to_vec()
+        let sliced = if from < friends_wallet_data.len(){
+            if friends_wallet_data.len() > to{
+                let data = &friends_wallet_data[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &friends_wallet_data[from..friends_wallet_data.len()];
+                data.to_vec()
+            }
         } else{
-            let data = &friends_wallet_data[from..friends_wallet_data.len()];
-            data.to_vec()
+            vec![]
         };
         
         Ok(

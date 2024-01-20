@@ -128,7 +128,17 @@ async fn get_admin_data(
                                 
                             }
 
-                            let limited_all_god_events = &all_god_events[from..to].to_vec();
+                            let limited_all_god_events = if from < all_god_events.len(){
+                                if all_god_events.len() > to{
+                                    let data = &all_god_events[from..to+1];
+                                    data.to_vec()
+                                } else{
+                                    let data = &all_god_events[from..all_god_events.len()];
+                                    data.to_vec()
+                                }
+                            } else{
+                                vec![]
+                            };
 
                             resp!{
                                 Vec<EventInfo>, // the data type
@@ -278,7 +288,17 @@ async fn get_user_data(
                                 
                             }
 
-                            let limited_player_events = &player_events[from..to].to_vec();
+                            let limited_player_events = if from < player_events.len(){
+                                if player_events.len() > to{
+                                    let data = &player_events[from..to+1];
+                                    data.to_vec()
+                                } else{
+                                    let data = &player_events[from..player_events.len()];
+                                    data.to_vec()
+                                }
+                            } else{
+                                vec![]
+                            };
 
                             resp!{
                                 Vec<PlayerEventInfo>, // the data type

@@ -9,6 +9,8 @@ use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, COLLECTION_NOT_FOUND, COLLECTIONS, CALLER_CANT_VIEW_GALLERY, GALLERY_HAS_NO_INVITED_FRIENDS_YET, CANT_UPDATE_FROZEN_COLLECTION_ONCHAIN};
 use crate::misc::{Response, Limit};
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
+use self::constants::COLLECTION_ROYALTY_IS_EXCEEDED;
+
 use super::users::{User, UserWalletInfoResponse, UserData};
 use super::users_fans::{FriendData, UserFan};
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
@@ -509,12 +511,16 @@ impl UserCollection{
             will be dropped while is getting used we have to create a longer 
             lifetime then call to_vec() on that type
         */
-        let sliced = if minted_ones.len() > to{
-            let data = &minted_ones[from..to+1];
-            data.to_vec()
+        let sliced = if from < minted_ones.len(){
+            if minted_ones.len() > to{
+                let data = &minted_ones[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &minted_ones[from..minted_ones.len()];
+                data.to_vec()
+            }
         } else{
-            let data = &minted_ones[from..minted_ones.len()];
-            data.to_vec()
+            vec![]
         };
 
         Ok(
@@ -1331,6 +1337,18 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
+        if new_col_info.royalties_share > 50000{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: COLLECTION_ROYALTY_IS_EXCEEDED,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
         let caller_screen_cid = walletreq::evm::get_keccak256_from(new_col_info.clone().owner_cid);
         /* caller must be in db */
         let Ok(user) = User::find_by_screen_cid(
@@ -1645,6 +1663,18 @@ impl UserCollection{
         redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
+        if col_info.royalties_share > 50000{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: COLLECTION_ROYALTY_IS_EXCEEDED,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
         let collection_owner_screen_cid = walletreq::evm::get_keccak256_from(col_info.clone().owner_cid);
         
         /* caller must be in db */

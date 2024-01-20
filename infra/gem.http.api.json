@@ -5305,7 +5305,7 @@
 							"item": []
 						}
 					],
-					"description": "Setup a google login on a gmail account (application homepage, privacy policy and terms of service) to obtain `client_id` and `client_secret` note you must setup a `redirect_url` that would be used to redirect client application after a successful login to that url to obtain **JWT,** it must be registered inside the server and setup with the full path inside the google panel like `https://api.panel.conse.app/user/sessions/oauth/google`\n\nCurrently the `redirect_url` has been setup on `/user/sessions/oauth/google` route on the server which is a **GET** request and accepts`code` and `state` query params which will be passed by the client via the google oauth process."
+					"description": "Setup a google login on a gmail account (_authorized domains, application homepage, privacy policy and terms of service_) to obtain `client_id` and `client_secret` note that you must setup a `redirect_url` that would be used to redirect client application after a successful login to that in order to obtain **JWT,** it must be registered inside the server and setup with the full path inside the google panel like `https://api.panel.conse.app/user/sessions/oauth/google`\n\nCurrently the `redirect_url` has been setup on `/user/sessions/oauth/google` route on the server which is a **GET** request and accepts`code` and `state` query params which will be passed by the client via the google oauth process."
 				},
 				{
 					"name": "Dev APIs",
