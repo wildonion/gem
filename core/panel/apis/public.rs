@@ -731,22 +731,10 @@ async fn get_top_nfts(
 
                 })
                 .collect::<Vec<NftColInfo>>();
-
-            let sliced = if from < top_nfts.len(){
-                if top_nfts.len() > to{
-                    let data = &top_nfts[from..to+1];
-                    data.to_vec()
-                } else{
-                    let data = &top_nfts[from..top_nfts.len()];
-                    data.to_vec()
-                }
-            } else{
-                vec![]
-            };
             
             resp!{
                 Vec<NftColInfo>, // the data type
-                sliced, // response data
+                top_nfts, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie
@@ -841,21 +829,9 @@ async fn get_all_nfts(
             let mut rng = rand::thread_rng();
             minted_ones.shuffle(&mut rng);
 
-            let sliced = if from < minted_ones.len(){
-                if minted_ones.len() > to{
-                    let data = &minted_ones[from..to+1];
-                    data.to_vec()
-                } else{
-                    let data = &minted_ones[from..minted_ones.len()];
-                    data.to_vec()
-                }
-            } else{
-                vec![]
-            };
-
             resp!{
                 Vec<NftColInfo>, // the data type
-                sliced, // response data
+                minted_ones, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie
