@@ -336,6 +336,17 @@ pub struct NewUser<'l> {
     pub pswd: &'l str,
 }
 
+#[derive(Insertable)]
+#[diesel(table_name=users)]
+pub struct NewGooleUser<'l> {
+    pub username: &'l str,
+    pub identifier: &'l str,
+    pub activity_code: &'l str,
+    pub user_role: UserRole,
+    pub avatar: Option<&'l str>,
+    pub pswd: &'l str,
+}
+
 #[derive(Insertable, AsChangeset)]
 #[diesel(table_name=users)]
 #[derive(Clone, Debug)]
@@ -409,12 +420,104 @@ pub struct IpInfoResponse{
     
 }
 
+/** ------------------------------------ */
+/**       GOOGLE OAUTH STRUCTURES        */
+/** ------------------------------------ */
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct GoogleQueryCode {
+    pub code: String,
+    pub state: String,
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct GoogleOAuthResponse{
+    pub access_token: String,
+    pub id_token: String
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct GoogleUserResult{
+    pub id: String,
+    pub email: String,
+    pub verified_email: bool,
+    pub name: String,
+    pub given_name: String,
+    pub family_name: String,
+    pub picture: String,
+    pub locale: String,
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
     and pass its encoded form (utf8 bytes) directly through the socket to the client 
 */
 impl User{
+
+    pub async fn request_google_token(authorization_code: &str)
+        -> Result<GoogleOAuthResponse, PanelHttpResponse>{
+
+        let google_client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID").unwrap();
+        let google_client_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET").unwrap();
+        let google_redirect_url = std::env::var("GOOGLE_OAUTH_REDIRECT_URL").unwrap();
+        let google_oauth2_url = std::env::var("GOOGLE_OAUTH_ACCESS_TOKEN_URL").unwrap();
+        
+        let client = reqwest::Client::new();
+        let params = &[ // array of tuples it can also be a map 
+            ("grant_type", "authorization_code"),
+            ("redirect_uri", google_redirect_url.as_str()),
+            ("client_id", google_client_id.as_str()),
+            ("code", authorization_code),
+            ("client_secret", google_client_secret.as_str())
+        ];
+
+        // first check the status then decode into the desired structure
+        let res = client.post(google_oauth2_url).form(params).send().await.unwrap();
+        if res.status().is_success(){ // all status from 200 up to 299
+            let oauth_response = res.json::<GoogleOAuthResponse>().await.unwrap();
+            Ok(oauth_response)
+        } else{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: &res.status().to_string(),
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+    
+    }
+
+    pub async fn get_google_user(oauth_response: GoogleOAuthResponse) 
+        -> Result<GoogleUserResult, PanelHttpResponse>{
+            
+        let GoogleOAuthResponse{access_token, id_token} = oauth_response;
+        let google_oauth_user_info = std::env::var("GOOGLE_OAUTH_USER_INFO_URL").unwrap();
+        let client = reqwest::Client::new();
+        let mut url = reqwest::Url::parse(google_oauth_user_info.as_str()).unwrap();
+        url.query_pairs_mut().append_pair("alt", "json");
+        url.query_pairs_mut().append_pair("access_token", &access_token);
+
+        // first check the status then decode into the desired structure
+        let res = client.get(url).bearer_auth(id_token).send().await.unwrap();
+        if res.status().is_success(){ // all status from 200 up to 299
+            let user_info = res.json::<GoogleUserResult>().await.unwrap();
+            Ok(user_info)
+        } else{
+            let resp = Response::<&[u8]>{
+                data: Some(&[]),
+                message: &res.status().to_string(),
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            );
+        }
+
+    }
 
     pub async fn get_user_data_response_with_cookie(&self, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
@@ -1325,6 +1428,33 @@ impl User{
 
     }
 
+    pub async fn find_by_identifier_or_mail(identifier_login: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(
+                identifier.eq(identifier_login.to_string())
+                .or(mail.eq(identifier_login.to_string()))
+            )
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(identifier_login),
+                message: USER_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(
+            user
+        )
+
+    }
+
     pub async fn find_by_id(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
@@ -1540,54 +1670,6 @@ impl User{
     
     }
 
-    pub async fn login_by_gmail_info(gmail_info: UserLoginWithGmailRequest, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(UserData, Cookie), PanelHttpResponse>{
-
-        // find by gid, gusername and gmail
-        // if there wasn't any then validate the new input 
-        // ...
-
-        /* ----------------------------------------------- */
-        /* --------- publish updated user to redis channel */
-        /* ----------------------------------------------- */
-        /* 
-            once the user updates his info we'll publish new updated user to redis channel and in
-            other parts we start to subscribe to the new updated user topic then once we receive 
-            the new user we'll start updating user fans and user nfts 
-        */
-        // 
-        // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
-        // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
-
-        todo!()
-
-    }
-
-    pub async fn login_by_microsoft_info(microsoft_info: UserLoginWithMicrosoftRequest, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<(UserData, Cookie), PanelHttpResponse>{
-
-        // find by mid, musername and mail
-        // if there wasn't any then validate the new input 
-        // ...
-
-        /* ----------------------------------------------- */
-        /* --------- publish updated user to redis channel */
-        /* ----------------------------------------------- */
-        /* 
-            once the user updates his info we'll publish new updated user to redis channel and in
-            other parts we start to subscribe to the new updated user topic then once we receive 
-            the new user we'll start updating user fans and user nfts 
-        */
-        // 
-        // let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
-        // events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
-
-        todo!() 
-        
-    }
-
     pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_random_chars(gen_random_number(5, 11));
@@ -1739,6 +1821,151 @@ impl User{
                 }
             }
     
+    }
+
+    pub async fn insert_new_google_user(user: GoogleUserResult, 
+            connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+            redis_client: &RedisClient
+        ) -> Result<User, PanelHttpResponse>{
+
+        let new_user = NewGooleUser{
+            username: user.name.as_str(),
+            identifier: &user.email, // we should insert this into the identifier since mail field must be verified later by the user himself
+            user_role: UserRole::User,
+            avatar: Some(&user.picture),
+            activity_code: "",
+            pswd: "",
+        };
+
+        match diesel::insert_into(users::table)
+            .values(&new_user)
+            .execute(connection)
+            {
+                Ok(affected_row) => {
+                    
+                    if affected_row >= 1{
+
+                        let user = User::find_by_identifier(&user.email, connection).await.unwrap();
+                        Ok(user)
+                    } else{
+                        Ok(User::default())
+                    }
+                
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::insert_new_google_user");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn update_user_with_google_info(user: GoogleUserResult, user_id: i32, 
+        redis_actor: Addr<RedisActor>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_client: &RedisClient
+    ) -> Result<User, PanelHttpResponse>{
+
+    
+        let get_user = User::find_by_id(user_id, connection).await;
+        let Ok(user_info) = get_user else{
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        // we must check these on every google login update since
+        // user might have not updated the username field yet and 
+        // updated the avatar with his own picture
+        let updated_avatar = if user_info.avatar.is_some() && !user_info.clone().avatar.unwrap().is_empty(){
+            user_info.avatar.unwrap()
+        } else{
+            user.clone().picture
+        };
+
+        let updated_username = if !user_info.username.is_empty(){
+            user_info.username
+        } else{
+            user.clone().name
+        };
+
+        match diesel::update(users.find(user_id))
+            .set(
+                    (   // when we're trying to update a user we're pretty sure 
+                        // that this user is already loggedin with google and 
+                        // his mail is verified thus we update both identifier 
+                        // and mail fields 
+                        username.eq(updated_username),
+                        identifier.eq(&user.email),
+                        mail.eq(&user.email),
+                        avatar.eq(updated_avatar)
+
+                    )
+            )
+            .returning(User::as_returning())
+            .get_result(connection)
+        {
+            
+            Ok(updated_user) => {
+                
+                /* ----------------------------------------------- */
+                /* --------- publish updated user to redis channel */
+                /* ----------------------------------------------- */
+                /* 
+                    once the user updates his info we'll publish new updated user to redis channel and in
+                    other parts we start to subscribe to the new updated user topic then once we receive 
+                    the new user we'll start updating user fans and user nfts 
+                */
+                let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
+                events::publishers::pg::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                
+                Ok(updated_user)
+            
+            },
+            Err(e) => {
+
+                let resp_err = &e.to_string();
+
+
+                /* custom error handler */
+                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    
+                let error_content = &e.to_string();
+                let error_content = error_content.as_bytes().to_vec();  
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::update_user_with_google_info");
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: resp_err,
+                    status: 500,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
+
     }
 
     pub async fn insert_new_user(user: NewUserInfoRequest, 

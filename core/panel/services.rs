@@ -95,8 +95,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::login);
     config.service(apis::user::exports::login_with_identifier_and_password);
     config.service(apis::user::exports::signup_with_identifier_and_password);
-    config.service(apis::user::exports::login_with_gmail);
-    config.service(apis::user::exports::login_with_microsoft);
     config.service(apis::user::exports::verify_twitter_account);
     config.service(apis::user::exports::tasks_report);
     config.service(apis::user::exports::make_cid);
@@ -159,6 +157,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::register_clp_event);
     config.service(apis::user::exports::cancel_clp_event);
     config.service(apis::user::exports::get_notifications);
+    config.service(apis::user::exports::session_oauth_google);
     config.service(apis::user::exports::get_top_users);
     config.service(apis::user::exports::create_collection);
     config.service(apis::user::exports::update_collection);

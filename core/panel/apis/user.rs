@@ -917,59 +917,87 @@ async fn signup_with_identifier_and_password(
 
 }
 
-#[post("/login/gmail")]
-async fn login_with_gmail(
+#[get("/sessions/oauth/google")]
+async fn session_oauth_google(
         req: HttpRequest,
-        user_gmail_request: web::Json<UserLoginWithGmailRequest>,
-        storage: web::Data<Option<Arc<Storage>>>,
+        google_query: web::Query<GoogleQueryCode>,
+        app_state: web::Data<AppState>
     ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned();
-    match storage.unwrap().clone().get_pgdb().await{
+    let storage = app_state.app_sotrage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+    
+    match storage.clone().unwrap().get_pgdb().await{
 
         Some(pg_pool) => {
 
             let connection = &mut pg_pool.get().unwrap();
 
-            let user_gmail_request = user_gmail_request.to_owned();
+            let code = &google_query.code;
+            let state = &google_query.state;
 
-            
-            // User::login_by_gmail_info();
-            todo!()
-
-        },
-        None => {
-        
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
+            if code.is_empty(){
+                resp!{
+                    &[u8], // the data type
+                    &[], // response data
+                    GOOGLE_AUTH_CODE_IS_EMPTY, // response message
+                    StatusCode::NOT_ACCEPTABLE, // status code
+                    None::<Cookie<'_>>, // cookie
+                }
             }
-        }
-    }
 
-}
+            // request google oauth access token with the passed in code
+            let get_google_token = User::request_google_token(&code).await;
+            let Ok(google_token) = get_google_token else{
+                let err_resp = get_google_token.unwrap_err();
+                return err_resp;
+            };
 
-#[post("/login/microsoft")]
-async fn login_with_microsoft(
-        req: HttpRequest,
-        user_microsoft_request: web::Json<UserLoginWithMicrosoftRequest>,
-        storage: web::Data<Option<Arc<Storage>>>,
-    ) -> PanelHttpResponse{
+            // fetching a google user info with the passed in fetched token info
+            let get_google_user = User::get_google_user(google_token).await;
+            let Ok(google_user_info) = get_google_user else{
+                let err_resp = get_google_user.unwrap_err();
+                return err_resp;
+            };
 
-    let storage = storage.as_ref().to_owned();
-    match storage.unwrap().clone().get_pgdb().await{
+            // find a user in db with the google mail in both identifier and mail fields, otherwise insert a new one
+            let get_user = User::find_by_identifier_or_mail(&google_user_info.email, connection).await;
+            let user_data = match get_user{
 
-        Some(pg_pool) => {
+                // match takes the ownership of its right side operand
+                // cause it returns the actual data in its Ok or Some
+                // arm if anything goes well
+                Ok(user_info) => {
+    
+                    // update user info with google user info 
+                    let update_user = User::update_user_with_google_info(google_user_info, user_info.id, redis_actix_actor.clone(), connection, redis_client).await;
+                    let Ok(user_info) = update_user else{
+                        let err_resp = update_user.unwrap_err();
+                        return err_resp;
+                    };
+    
+                    user_info
+                }, 
+                Err(resp) => {
 
-            let connection = &mut pg_pool.get().unwrap();
+                    // insert a new user with google user info
+                    let get_new_user = User::insert_new_google_user(google_user_info, connection, redis_client).await;
+                    let Ok(user_info) = get_new_user else{
+                        let err_resp = get_new_user.unwrap_err();
+                        return err_resp;
+                    };
+    
+                    user_info
+                }
+            };
 
-            let user_microsoft_request = user_microsoft_request.to_owned();
-            
-            // User::login_by_microsoft_info();
-            todo!()
+            // generate cookie containing both jwts and send response
+            user_data.get_user_data_response_with_cookie(
+                redis_client.clone(), 
+                redis_actix_actor, 
+                connection)
+            .await.unwrap()
 
         },
         None => {
@@ -3867,12 +3895,16 @@ async fn get_notifications(
             
                     });
 
-                    let sliced = if all_user_notifs.len() > to{
-                        let data = &all_user_notifs[from..to+1];
-                        data.to_vec()
+                    let sliced = if from < all_user_notifs.len(){
+                        if all_user_notifs.len() > to{
+                            let data = &all_user_notifs[from..to+1];
+                            data.to_vec()
+                        } else{
+                            let data = &all_user_notifs[from..all_user_notifs.len()];
+                            data.to_vec()
+                        }
                     } else{
-                        let data = &all_user_notifs[from..all_user_notifs.len()];
-                        data.to_vec()
+                        vec![]
                     };
 
                     // updating the user notif data with the sorted one to respond the user with that
@@ -10665,14 +10697,13 @@ pub mod exports{
     pub use super::get_friend_suggestions_for_owner;
     pub use super::get_all_private_collections_for_invited_friends;
     pub use super::get_notifications;
+    pub use super::session_oauth_google;
     pub use super::create_collection;
     pub use super::update_collection;
     pub use super::upload_collection_banner;
     pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::signup_with_identifier_and_password;
-    pub use super::login_with_gmail;
-    pub use super::login_with_microsoft;
     pub use super::verify_twitter_account;
     pub use super::edit_bio;
     pub use super::edit_extra;
