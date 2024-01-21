@@ -2118,20 +2118,8 @@ async fn get_clp_event(
 }
 
 pub mod exports{
-    /* 
-    ---------------------------------------------------
-    ----- crontab will call this api every 5 mins -----
-    ---------------------------------------------------
-        0 - summerize users' chats and generate n titles
-        2 - generate nft based images for those titles
-        3 - generate a mapping between titles and images using ai
-        4 - store them on ipfs,
-        5 - mint ai generated pictures to users screen_cids inside the chat
-    pub use super::start_new_clp_event; // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
-    pub use super::update_clp_event; // https://docs.nftport.xyz/reference/update-nft-collection-contract
-    pub use super::end_clp_event; // call this using crontab every 5 seconds to check that the event is expired or not if now > clp_event.expire_at then start generating titles, images and mint them
-    pub use super::lock_clp_event; // call this using crontab every 5 seconds to lock the event if now > clp_event.start_at then lock the event so they can't register for the event
-    */
+    // pub use super::start_new_clp_event; // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+    // pub use super::update_clp_event; // https://docs.nftport.xyz/reference/update-nft-collection-contract
     pub use super::get_clp_event;
     pub use super::reveal_role;
     pub use super::login;

@@ -9739,9 +9739,9 @@ async fn register_clp_event(
                             return err_resp;
                         };
 
-                        /** ----------------------------------------------- */
-                        /** the is_locked field will be updated by crontab */ 
-                        /** ----------------------------------------------- */ 
+                        /** ------------------------------------------------------------------ */
+                        /** the is_locked field will be updated by clp subscriber actor worker */ 
+                        /** ------------------------------------------------------------------ */ 
                         // means it has been started already and can't register any more
                         if clp_event.is_locked{
                             resp!{
@@ -9753,9 +9753,9 @@ async fn register_clp_event(
                             }
                         }
 
-                        /** ----------------------------------------------- */
-                        /** the expire_at field will be updated by crontab */ 
-                        /** ----------------------------------------------- */
+                        /** ------------------------------------------------------------------ */
+                        /** the expire_at field will be updated by clp subscriber actor worker */ 
+                        /** ------------------------------------------------------------------ */
                         // means it has been expired already and can't register any more
                         if chrono::Local::now().timestamp() > clp_event.expire_at{
                             resp!{

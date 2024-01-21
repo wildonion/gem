@@ -2,8 +2,12 @@
 
 
 use crate::*;
+use openai_api_rs::v1::image::ImageGenerationRequest;
+use openai_api_rs::v1::chat_completion::{self, ChatCompletionRequest};
+use openai_api_rs::v1::common::GPT4;
 
-// openai dalle
+
+
 pub mod generate{
 
     // generate nft like image based on the user's summarization

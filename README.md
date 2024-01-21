@@ -9,15 +9,15 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 
 ### 🍔 Technical Features
 
-- an event managing and reservation system with reveal-role functionality
+- an event managing and reservation system with reveal-role functionality.
 
-- crypto id or **EVM** based wallet to store onchain digital assets
+- crypto id or **EVM** based wallet to store onchain digital assets.
 
-- buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards
+- buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards.
 
-- build multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends
+- build multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
 
-- chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats
+- chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats in each event.
 
 ## 🥪 Panel Architecture
 
