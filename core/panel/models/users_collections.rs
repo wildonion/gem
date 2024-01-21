@@ -427,8 +427,8 @@ impl UserCollection{
                 
     }
 
-    pub async fn get_all_minted_nfts_of_collection(col_id: i32, limit: web::Query<Limit>, caller_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all_minted_nfts_of_collection(col_id: i32, limit: web::Query<Limit>, 
+        caller_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserNftData>>, PanelHttpResponse>{
 
 
@@ -1602,7 +1602,7 @@ impl UserCollection{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                             Ok(user_collection_data)
                         
@@ -1924,7 +1924,7 @@ impl UserCollection{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                             
                             Ok(user_collection_data)
                         },

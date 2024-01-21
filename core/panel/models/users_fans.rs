@@ -436,7 +436,7 @@ impl UserFan{
                     }
                 };
                 let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                 Ok(
                     user_fan_data
@@ -1474,7 +1474,7 @@ impl UserFan{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
         
                             Ok(
                                 fan_info
@@ -1628,7 +1628,7 @@ impl UserFan{
                 }
             };
             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
             
             Ok(
                 invitation_request_data_response
@@ -1788,7 +1788,7 @@ impl UserFan{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                             
                             Ok(updated_user_fan_data)
                         

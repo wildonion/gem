@@ -1301,7 +1301,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(updated_gallery_data)
                 },
@@ -1406,7 +1406,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(user_private_gallery_data)
 
@@ -1664,7 +1664,7 @@ impl UserPrivateGallery{
                         }
                     };
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                     Ok(update_gallery_data)
                 },
@@ -1788,7 +1788,7 @@ impl UserPrivateGallery{
                             }
                         };
                         let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                        events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                        events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                         
                         Ok(
                             gallery_data

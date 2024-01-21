@@ -108,7 +108,7 @@ impl NotifExt for UserNotif{
 
 }
 
-pub async fn publish(
+pub async fn emit(
     redis_actor: Addr<RedisActor>,
     channel: &str, 
     stringified_data: &str, // stringified data of SingleUserNotif struct instance
@@ -197,7 +197,7 @@ pub async fn publish(
 
 }
 
-pub async fn publish_nft_list_event_2_all_nft_owner_friends(
+pub async fn emit_nft_list_event_2_all_nft_owner_friends(
     friends: Vec<FriendData>,
     redis_actor: Addr<RedisActor>,
     channel: &str, 
@@ -248,7 +248,7 @@ pub async fn publish_nft_list_event_2_all_nft_owner_friends(
             }
         };
         let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-        self::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+        self::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
     }
 

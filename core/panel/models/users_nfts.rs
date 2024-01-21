@@ -1303,7 +1303,7 @@ impl UserNft{
                                             }
                                         };
                                         let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                                        events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                                        events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                                         
                                         
                                         Ok(user_nft_data)
@@ -1891,7 +1891,7 @@ impl UserNft{
                     }
                 };
                 let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                 Ok(updated_user_nft_data)
             },
@@ -2193,7 +2193,7 @@ impl UserNft{
                                     }
                                 };
                                 let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                                events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                                 Ok(updated_user_nft_data)
                             },
@@ -2565,7 +2565,7 @@ impl UserNft{
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
                             Ok(updated_user_nft_data)
 
@@ -2898,7 +2898,7 @@ impl UserNft{
                                 };
 
                                 // publish the list event to all nft owner friends
-                                events::publishers::action::publish_nft_list_event_2_all_nft_owner_friends(
+                                events::publishers::action::emit_nft_list_event_2_all_nft_owner_friends(
                                     decoded_friends_data, 
                                     redis_actor.clone(), 
                                     "on_user_action", 
@@ -3126,7 +3126,7 @@ impl UserNft{
                 }
             };
             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-            events::publishers::action::publish(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
             res /* contains updated nft in ok part */
 
