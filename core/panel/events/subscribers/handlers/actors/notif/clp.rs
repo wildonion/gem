@@ -46,7 +46,7 @@ impl ClpEventSchedulerActor{
         tokio::spawn(async move{
             
             /* 
-                once the actor gets started we'll run a checker every 5 seconds 
+                once the actor gets started we'll do the followings every 5 seconds 
                 constantly to check the followings:
                 1 - check that the event is expired or not if now > clp_event.expire_at then start generating titles, images and mint them
                     in this case:

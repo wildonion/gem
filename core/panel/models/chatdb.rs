@@ -40,15 +40,15 @@ impl UserChat{
         let vars = config.vars.clone();
         
         
-        
         // TODO - store text in chatdb by calling wasm methods
         // TODO - consider n.chat per user limit
         // TODO - test themis wasm in js
         // ...
 
 
-
-        todo!()
+        Ok(
+            UserChat::default()
+        )
 
     }
 
@@ -63,7 +63,9 @@ impl UserChat{
                 return Err(err_resp);
             };
 
-            todo!()
+            Ok(
+                vec![]
+            )
 
         }
 

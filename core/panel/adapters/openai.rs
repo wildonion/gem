@@ -10,6 +10,7 @@ use openai_api_rs::v1::common::GPT4;
 
 pub mod generate{
 
+
     // generate nft like image based on the user's summarization
     // ...
 } 

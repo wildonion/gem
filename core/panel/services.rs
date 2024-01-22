@@ -76,6 +76,8 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::exports::get_all_users_checkouts);
     config.service(apis::admin::exports::get_all_users_withdrawals);
     config.service(apis::admin::exports::get_clp_event);
+    config.service(apis::admin::exports::start_new_clp_event);
+    config.service(apis::admin::exports::update_clp_event);
 
 
 }
