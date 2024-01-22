@@ -783,8 +783,8 @@ impl UserCollection{
             )
         }
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -800,8 +800,6 @@ impl UserCollection{
 
         let user_collections = users_collections
             .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(caller_screen_cid))
             .load::<UserCollection>(connection);
         
@@ -818,9 +816,7 @@ impl UserCollection{
             )
         };
         
-        Ok(
-            
-            collections
+        let mut cols = collections
                 .into_iter()
                 .map(|c|{
 
@@ -874,7 +870,38 @@ impl UserCollection{
                     }
 
                 })
-                .collect::<Vec<UserCollectionData>>()
+                .collect::<Vec<UserCollectionData>>();
+
+            cols.sort_by(|col1, col2|{
+
+                let col1_created_at = NaiveDateTime
+                    ::parse_from_str(&col1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let col2_created_at = NaiveDateTime
+                    ::parse_from_str(&col2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                col2_created_at.cmp(&col1_created_at)
+
+            });
+            
+
+        let sliced = if from < cols.len(){
+            if cols.len() > to{
+                let data = &cols[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &cols[from..cols.len()];
+                data.to_vec()
+            }
+        } else{
+            vec![]
+        };
+
+
+        Ok(
+            sliced
         )
 
     }
@@ -928,8 +955,8 @@ impl UserCollection{
             )
         }
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -945,8 +972,6 @@ impl UserCollection{
 
         let user_collections = users_collections
             .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(owner_screen_cid_))
             .load::<UserCollection>(connection);
         
@@ -963,7 +988,7 @@ impl UserCollection{
             )
         };
         
-        Ok(
+        let mut cols =
             
             collections
                 .into_iter()
@@ -1019,7 +1044,39 @@ impl UserCollection{
                     }
 
                 })
-                .collect::<Vec<UserCollectionData>>()
+                .collect::<Vec<UserCollectionData>>();
+        
+
+        cols.sort_by(|col1, col2|{
+
+            let col1_created_at = NaiveDateTime
+                ::parse_from_str(&col1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let col2_created_at = NaiveDateTime
+                ::parse_from_str(&col2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            col2_created_at.cmp(&col1_created_at)
+
+        });
+            
+
+        let sliced = if from < cols.len(){
+            if cols.len() > to{
+                let data = &cols[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &cols[from..cols.len()];
+                data.to_vec()
+            }
+        } else{
+            vec![]
+        };
+
+
+        Ok(
+            sliced
         )
 
     }
@@ -1221,8 +1278,8 @@ impl UserCollection{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserCollectionData>>, PanelHttpResponse>{
 
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -1239,8 +1296,6 @@ impl UserCollection{
 
             let user_collections = users_collections
                 .order(created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)
                 .filter(owner_screen_cid.eq(screen_cid))
                 .load::<UserCollection>(connection);
         
@@ -1311,8 +1366,35 @@ impl UserCollection{
 
         minted_cols.retain(|c| c.is_some());            
         
+        minted_cols.sort_by(|col1, col2|{
+
+            let col1_created_at = NaiveDateTime
+                ::parse_from_str(col1.clone().unwrap().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let col2_created_at = NaiveDateTime
+                ::parse_from_str(col2.clone().unwrap().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            col2_created_at.cmp(&col1_created_at)
+
+        });      
+        
+        let sliced = if from < minted_cols.len(){
+            if minted_cols.len() > to{
+                let data = &minted_cols[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &minted_cols[from..minted_cols.len()];
+                data.to_vec()
+            }
+        } else{
+            vec![]
+        };
+
+
         Ok(
-            minted_cols
+            sliced
         )
 
     }

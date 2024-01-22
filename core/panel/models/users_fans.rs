@@ -4,6 +4,7 @@
  
 
 use actix::Addr;
+use chrono::NaiveDateTime;
 
 use crate::*;
 use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND, INVALID_GALLERY_PRICE};
@@ -1077,8 +1078,8 @@ impl UserFan{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserFanData>, PanelHttpResponse>{
 
-            let from = limit.from.unwrap_or(0);
-            let to = limit.to.unwrap_or(10);
+            let from = limit.from.unwrap_or(0) as usize;
+            let to = limit.to.unwrap_or(10) as usize;
 
             if to < from {
                 let resp = Response::<'_, &[u8]>{
@@ -1094,8 +1095,6 @@ impl UserFan{
 
             let all_fans_data = users_fans
                 .order(created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)    
                 .load::<UserFan>(connection);
 
             let Ok(fans_data) = all_fans_data else{
@@ -1145,10 +1144,36 @@ impl UserFan{
 
             }
 
+            followings.sort_by(|uf1, uf2|{
+
+                let uf1_created_at = NaiveDateTime
+                    ::parse_from_str(uf1.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                let uf2_created_at = NaiveDateTime
+                    ::parse_from_str(uf2.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                uf2_created_at.cmp(&uf1_created_at)
+    
+            });      
+            
+            let sliced = if from < followings.len(){
+                if followings.len() > to{
+                    let data = &followings[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &followings[from..followings.len()];
+                    data.to_vec()
+                }
+            } else{
+                vec![]
+            };
+
             // can't return UserFanData cause user might have no one send him a request yet
             // so there is no record for who_screen_cid yet thus users_fans would be empty.
             Ok(
-                followings
+                sliced
             ) 
 
         }

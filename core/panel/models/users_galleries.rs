@@ -325,8 +325,8 @@ impl UserPrivateGallery{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryInfoData>, PanelHttpResponse>{
         
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -349,8 +349,6 @@ impl UserPrivateGallery{
             /* fetch all owner galleries */
             let user_galleries = users_galleries
                 .order(created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)
                 .filter(owner_screen_cid.eq(screen_cid))
                 .load::<UserPrivateGallery>(connection);
             
@@ -366,8 +364,7 @@ impl UserPrivateGallery{
                 )
             };
 
-            Ok(
-                galleries
+            let mut gals = galleries
                     .into_iter()
                     /* 
                         map takes an FnMut closure so it captures env vars mutably and 
@@ -426,8 +423,38 @@ impl UserPrivateGallery{
                             updated_at: g.updated_at.to_string(),
                         }
             
-                    }).collect::<Vec<UserPrivateGalleryInfoData>>()
+                    }).collect::<Vec<UserPrivateGalleryInfoData>>();
+            
+            gals.sort_by(|gal1, gal2|{
+
+                let gal1_created_at = NaiveDateTime
+                    ::parse_from_str(gal1.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                let gal2_created_at = NaiveDateTime
+                    ::parse_from_str(gal2.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                gal2_created_at.cmp(&gal1_created_at)
+    
+            });      
+            
+            let sliced = if from < gals.len(){
+                if gals.len() > to{
+                    let data = &gals[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &gals[from..gals.len()];
+                    data.to_vec()
+                }
+            } else{
+                vec![]
+            };
+
+            Ok(
+                sliced
             )
+
         } else{
             
             let resp_msg = format!("{caller_screen_cid:} Is Not A Friend Of {screen_cid:}");
@@ -453,8 +480,8 @@ impl UserPrivateGallery{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
         
-        let from = limit.from.unwrap_or(0);
-        let to = limit.to.unwrap_or(10);
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
 
         if to < from {
             let resp = Response::<'_, &[u8]>{
@@ -471,8 +498,6 @@ impl UserPrivateGallery{
         /* fetch all owner galleries */
         let user_galleries = users_galleries
             .order(created_at.desc())
-            .offset(from)
-            .limit((to - from) + 1)
             .filter(owner_screen_cid.eq(screen_cid))
             .load::<UserPrivateGallery>(connection);
         
@@ -493,8 +518,7 @@ impl UserPrivateGallery{
             )
         };
 
-        Ok(
-            galleries
+        let mut gals = galleries
                 .into_iter()
                 /* 
                     map takes an FnMut closure so it captures env vars mutably and 
@@ -562,7 +586,38 @@ impl UserPrivateGallery{
                         updated_at: g.updated_at.to_string(),
                     }
         
-                }).collect::<Vec<UserPrivateGalleryData>>()
+                }).collect::<Vec<UserPrivateGalleryData>>();
+
+        /* sorting wallet data in desc order */
+        gals.sort_by(|g1, g2|{
+
+            let g1_created_at = NaiveDateTime
+                ::parse_from_str(&g1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let g2_created_at = NaiveDateTime
+                ::parse_from_str(&g2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            g2_created_at.cmp(&g1_created_at)
+
+        });
+        
+        let sliced = if from < gals.len(){
+            if gals.len() > to{
+                let data = &gals[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &gals[from..gals.len()];
+                data.to_vec()
+            }
+        } else{
+            vec![]
+        };
+        
+
+        Ok(
+            sliced   
         )
 
     }

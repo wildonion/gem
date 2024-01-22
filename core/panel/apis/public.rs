@@ -660,7 +660,7 @@ async fn get_top_nfts(
                 
             }
 
-            let get_nfts = UserNft::get_all(limit, connection).await;
+            let get_nfts = UserNft::get_all(connection).await;
             let Ok(nfts) = get_nfts else{
                 let err_resp = get_nfts.unwrap_err();
                 return err_resp;
@@ -677,14 +677,12 @@ async fn get_top_nfts(
                 };  
                 
                 for like in decoded_likes{
-                    if nft.is_minted.is_some() && nft.is_minted.unwrap(){
-                        nft_like_map.push(
-                            NftUpvoterLikes{
-                                id: nft.id,
-                                upvoter_screen_cids: like.upvoter_screen_cids.len() as u64
-                            }
-                        );
-                    }
+                    nft_like_map.push(
+                        NftUpvoterLikes{
+                            id: nft.id,
+                            upvoter_screen_cids: like.upvoter_screen_cids.len() as u64
+                        }
+                    );
                 }
 
             }
@@ -731,10 +729,23 @@ async fn get_top_nfts(
 
                 })
                 .collect::<Vec<NftColInfo>>();
+
+
+            let sliced = if from < top_nfts.len(){
+                if top_nfts.len() > to{
+                    let data = &top_nfts[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &top_nfts[from..top_nfts.len()];
+                    data.to_vec()
+                }
+            } else{
+                vec![]
+            };
             
             resp!{
                 Vec<NftColInfo>, // the data type
-                top_nfts, // response data
+                sliced, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie
@@ -772,13 +783,6 @@ async fn get_all_nfts(
             let connection = &mut pg_pool.get().unwrap();
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-
-            let get_nfts = UserNft::get_all(limit.clone(), connection).await;
-            let Ok(nfts) = get_nfts else{
-                let err_resp = get_nfts.unwrap_err();
-                return err_resp;
-            };
-
             let from = limit.from.unwrap_or(0) as usize;
             let to = limit.to.unwrap_or(10) as usize;
 
@@ -792,6 +796,12 @@ async fn get_all_nfts(
                 return Ok(HttpResponse::NotAcceptable().json(resp));
                 
             }
+
+            let get_nfts = UserNft::get_all(connection).await;
+            let Ok(nfts) = get_nfts else{
+                let err_resp = get_nfts.unwrap_err();
+                return err_resp;
+            };
 
             let mut minted_ones = vec![];
             for nft in nfts{
@@ -829,9 +839,21 @@ async fn get_all_nfts(
             let mut rng = rand::thread_rng();
             minted_ones.shuffle(&mut rng);
 
+            let sliced = if from < minted_ones.len(){
+                if minted_ones.len() > to{
+                    let data = &minted_ones[from..to+1];
+                    data.to_vec()
+                } else{
+                    let data = &minted_ones[from..minted_ones.len()];
+                    data.to_vec()
+                }
+            } else{
+                vec![]
+            };
+
             resp!{
                 Vec<NftColInfo>, // the data type
-                minted_ones, // response data
+                sliced, // response data
                 FETCHED, // response message
                 StatusCode::OK, // status code
                 None::<Cookie<'_>>, // cookie

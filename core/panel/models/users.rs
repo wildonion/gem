@@ -24,6 +24,7 @@ use super::users_mails::UserMail;
 use super::users_nfts::{UserNft, NftOwnerCount};
 use super::users_phones::UserPhone;
 use super::users_tasks::UserTask;
+use chrono::NaiveDateTime;
 
 
 
@@ -756,137 +757,6 @@ impl User{
 
     }
 
-    pub fn passport_none_sync(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
-
-        let mut jwt_token = ""; 
-
-        let Some(authen_header) = req.headers().get("Authorization") else{
-
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: NOT_FOUND_COOKIE_VALUE_OR_JWT,
-                status: 404,
-                is_error: true,
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            );
-
-        };
-
-        let auth_header_value = authen_header.to_str().unwrap();
-        if auth_header_value.starts_with("bearer") ||
-            auth_header_value.starts_with("Bearer"){
-
-            jwt_token = auth_header_value[6..auth_header_value.len()].trim();
-
-        }
-
-
-        /* decoding the jwt */
-        let token_result = User::decode_token(jwt_token);
-        
-        match token_result{
-            Ok(token) => {
-
-                /* cookie time is not expired yet */
-                let token_data = token.claims;
-                let _id = token_data._id;
-                let role = token_data.user_role.clone();
-                let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
-                let exp_time = token_data.exp;
-
-                if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
-                    let resp = Response{
-                        data: Some(_id.to_owned()),
-                        message: EXPIRED_JWT,
-                        status: 406,
-                        is_error: true,
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    );
-                } 
-
-                /* fetch user info based on the data inside jwt */ 
-                let single_user = users
-                    .filter(id.eq(_id))
-                    .first::<User>(connection);
-
-                if single_user.is_err(){
-                    let resp = Response{
-                        data: Some(_id.to_owned()),
-                        message: USER_NOT_FOUND,
-                        status: 404,
-                        is_error: true,
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotFound().json(resp))
-                    );
-                }
-
-                let user = single_user.unwrap();
-
-                /* 
-                    check that the user is authorized with the 
-                    passed in role and the one inside the jwt
-                    since some of the routes require role guard 
-                */
-                if pass_role.is_some(){
-                    if user.user_role != pass_role.unwrap() &&
-                        user.user_role != role{
-                        let resp = Response{
-                            data: Some(_id.to_owned()),
-                            message: ACCESS_DENIED,
-                            status: 403,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::Forbidden().json(resp))
-                        );
-                    } 
-                }
-
-                /*
-                    if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
-                    into the request header means that the user did a logout or did a login again since by logging 
-                    out the token time will be set to zero and by logging in again a new token time will be initialized.
-                */
-                if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
-                    user.token_time.unwrap() != _token_time || 
-                    user.token_time.unwrap() == 0{ /* user did a logout! */
-                    
-                    let resp = Response{
-                        data: Some(_id.to_owned()),
-                        message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
-                        status: 403,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::Forbidden().json(resp))
-                    );
-                    
-                }
-
-                /* returning token data, if we're here means that nothing went wrong */
-                return Ok(token_data);
-
-            },
-            Err(e) => {
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: &e.to_string(),
-                    status: 500,
-                    is_error: true,
-                };
-                return Err(
-                    Ok(HttpResponse::InternalServerError().json(resp))
-                );
-            }
-        }
-
-    }
-
     fn generate_tokens(&self, _token_time: i64) -> (
         Result<String, jsonwebtoken::errors::Error>,
         Result<String, jsonwebtoken::errors::Error>
@@ -1251,8 +1121,8 @@ impl User{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
 
-            let from = limit.from.unwrap_or(0);
-            let to = limit.to.unwrap_or(10);
+            let from = limit.from.unwrap_or(0) as usize;
+            let to = limit.to.unwrap_or(10) as usize;
     
             if to < from {
                 let resp = Response::<'_, &[u8]>{
@@ -1268,8 +1138,6 @@ impl User{
             
             match users
                 .order(created_at.desc())
-                .offset(from)
-                .limit((to - from) + 1)
                 .load::<User>(connection)
             {
                 Ok(all_users) => {
@@ -1328,9 +1196,40 @@ impl User{
                         }
 
                     }
+                    
+                    
+                    suggestions.sort_by(|s1, s2|{
+
+                        let s1_created_at = NaiveDateTime
+                            ::parse_from_str(&s1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                            .unwrap();
+
+                        let s2_created_at = NaiveDateTime
+                            ::parse_from_str(&s2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                            .unwrap();
+
+                        s2_created_at.cmp(&s1_created_at)
+        
+                    });
+                    
+
+                    let sliced = if from < suggestions.len(){
+                        if suggestions.len() > to{
+                            let data = &suggestions[from..to+1];
+                            data.to_vec()
+                        } else{
+                            let data = &suggestions[from..suggestions.len()];
+                            data.to_vec()
+                        }
+                    } else{
+                        vec![]
+                    };
+
+
                     Ok(
-                        suggestions
+                        sliced
                     )
+
 
                 },
                 Err(e) => {
