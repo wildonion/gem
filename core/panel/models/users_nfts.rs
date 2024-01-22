@@ -831,7 +831,7 @@ impl UserNft{
 
     pub async fn create_nft_metadata_uri(
         asset_info: CreateNftMetadataUriRequest,
-        files: HashMap<String, Vec<u8>>, 
+        files: HashMap<String, Vec<u8>>, // a map between filenames and their utf8 bytes
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -948,13 +948,14 @@ impl UserNft{
                 udpate_nft_request.clone()
             ).await;
         
-        let Ok(nft_metadata_uri) = get_nft_metadata_uri else{
+        let Ok((nft_metadata_uri, nft_img_path)) = get_nft_metadata_uri else{
 
             let err_resp = get_nft_metadata_uri.unwrap_err();
             return Err(err_resp);
         };
 
-        udpate_nft_request.metadata_uri = nft_metadata_uri;
+        let nft_img = format!("{}::{}", nft_metadata_uri, nft_img_path);
+        udpate_nft_request.metadata_uri = nft_img;
 
         Self::update_nft_col_gal(
             collection_data, 

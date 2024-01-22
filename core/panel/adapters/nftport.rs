@@ -1301,7 +1301,7 @@ type Files = HashMap<String, Vec<u8>>;
 pub async fn get_nft_onchain_metadata_uri<N>(
     file: (String, Vec<u8>), /* the filename and its bytes */
     redis_client: redis::Client, 
-    asset_info: N) -> Result<String, PanelHttpResponse>
+    asset_info: N) -> Result<(String, String), PanelHttpResponse>
     where N: NftExt + Clone + Send + Sync + 'static, 
     Files: Clone + Send + Sync + 'static,
         <N as NftExt>::AssetInfo: Send + Sync + 'static{ /* also the AssetInfo, the dynamic type, in trait must be bounded to Send Sync 'static */
@@ -1393,11 +1393,12 @@ pub async fn get_nft_onchain_metadata_uri<N>(
     let (metadata_uri_sender, mut metadata_uri_receiver)
         = tokio::sync::mpsc::channel::<String>(1024);
     let asset_data = asset_info.clone();
+    let nft_img = nft_img_path.clone();
     tokio::spawn(async move{
 
         let final_metadata_uri = self::upload_nft_to_ipfs(
             redis_client.clone(), 
-            nft_img_path,
+            nft_img,
             asset_data
         ).await;
 
@@ -1430,7 +1431,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
 
     }
 
-    Ok(nft_metadata_uri)
+    Ok((nft_metadata_uri, nft_img_path))
 
 }
 
