@@ -14,6 +14,7 @@ use hyper::{header, StatusCode, Body, Response, Request};
 use log::info;
 use mongodb::bson::doc;
 use mongodb::Client;
+use redis::AsyncCommands;
 use std::env;
 
 
@@ -34,6 +35,8 @@ pub async fn main(req: Request<Body>) -> RendezvousResult<hyper::Response<Body>,
     let res = Response::builder();
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
     let db = &req.data::<Client>().unwrap().to_owned();
+    let redis_client = &req.data::<std::sync::Arc<redis::Client>>().unwrap().to_owned();
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
     let whole_body_bytes = hyper::body::to_bytes(req.into_body()).await?; // to read the full body we have to use body::to_bytes or body::aggregate to collect all tcp IO stream of future chunk bytes or chunks which is of type utf8 bytes to concatenate the buffers from a body into a single Bytes asynchronously
     match serde_json::from_reader(whole_body_bytes.reader()){ // read the bytes of the filled buffer with hyper incoming body from the client by calling the reader() method from the Buf trait
@@ -62,7 +65,7 @@ pub async fn main(req: Request<Body>) -> RendezvousResult<hyper::Response<Body>,
                                                 let now = Utc::now().timestamp_nanos_opt().unwrap() / 1_000_000_000; // nano to sec
                                                 let user_response = schemas::auth::LoginResponse{
                                                     _id: user_doc._id,
-                                                    access_token: token,
+                                                    access_token: token.clone(),
                                                     username: user_doc.username,
                                                     phone: user_doc.phone,
                                                     access_level: user_doc.access_level,
@@ -75,6 +78,9 @@ pub async fn main(req: Request<Body>) -> RendezvousResult<hyper::Response<Body>,
                                                     wallet_address: user_doc.wallet_address,
                                                     balance: user_doc.balance
                                                 };
+
+                                                let user_jwt_key = format!("jwt-{}", user_doc._id.unwrap().to_string());
+                                                let _: () = redis_conn.set(user_jwt_key, token).await.unwrap();
                                             
                                                 resp!{
                                                     schemas::auth::LoginResponse, // the data type

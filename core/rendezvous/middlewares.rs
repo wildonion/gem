@@ -58,12 +58,36 @@ pub mod auth{
     use crate::constants::*;
     use log::{info, error};
     use hyper::{Method, Body};
+    use redis::AsyncCommands;
     use crate::misc::jwt;
     use jsonwebtoken::TokenData;
     
 
 
     pub async fn pass(req: hyper::Request<Body>) -> Result<(TokenData<jwt::Claims>, hyper::Request<Body>), String>{ // the return type is a Result of type TokenData claims and hyper::Request body
+        
+        use dotenv::dotenv;
+        dotenv().expect("⚠️ .env file not found");
+        /* -=-=-=-=-=-=-=-=-=-=-= REDIS SETUP -=-=-=-=-=-=-=-=-=-=-= */
+
+        let redis_password = std::env::var("REDIS_PASSWORD").unwrap_or("".to_string());
+        let redis_username = std::env::var("REDIS_USERNAME").unwrap_or("".to_string());
+        let redis_host = std::env::var("REDIS_HOST").unwrap_or("localhost".to_string());
+        let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string()).parse::<u64>().unwrap();
+
+        let redis_conn_url = if !redis_password.is_empty(){
+            format!("redis://:{}@{}:{}", redis_password, redis_host, redis_port)
+        } else if !redis_password.is_empty() && !redis_username.is_empty(){
+            format!("redis://{}:{}@{}:{}", redis_username, redis_password, redis_host, redis_port)
+        } else{
+            format!("redis://{}:{}", redis_host, redis_port)
+        };
+
+        let redis_client = redis::Client::open(redis_conn_url.as_str()).unwrap();
+        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+        
+        /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+        
         let mut authenticate_pass: bool = false;
         let mut user_data_inside_token: Option<TokenData<jwt::Claims>> = None;
         let mut jwt_error: Option<jsonwebtoken::errors::Error> = None;
@@ -83,6 +107,14 @@ pub mod auth{
                             let token = authen_str[6..authen_str.len()].trim();
                             match jwt::deconstruct(token).await{
                                 Ok(token_data) => {
+
+                                    // this must be saved in redis when user do a login
+                                    let user_jwt_key = format!("jwt-{}", token_data.claims._id.unwrap().to_string());
+                                    let user_jwt: String = redis_conn.get(user_jwt_key).await.unwrap();
+                                    if user_jwt.is_empty() || user_jwt != token.to_string(){ // user did a logout
+                                        return Err(NOT_FOUND_TOKEN.to_string()); // terminate this scope
+                                    }
+
                                     authenticate_pass = true; // means we've found the token inside the request header and decoded successfully 
                                     user_data_inside_token = Some(token_data);
                                 },
