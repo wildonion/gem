@@ -30,6 +30,8 @@ use crate::schema::users_tasks;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use self::models::clp_events::UpdateClpEventRequest;
+
 
 
 /*
@@ -2121,7 +2123,8 @@ async fn get_clp_event(
 #[passport(admin)]
 async fn start_new_clp_event(
     req: HttpRequest,
-    app_state: web::Data<AppState>
+    app_state: web::Data<AppState>,
+    update_clp_event_request: web::Json<UpdateClpEventRequest>
 ) -> PanelHttpResponse{
     
     let storage = app_state.app_sotrage.as_ref().to_owned();
@@ -2174,6 +2177,19 @@ async fn start_new_clp_event(
 
                     
                     // https://docs.nftport.xyz/reference/deploy-nft-collection-contract
+                    // https://docs.nftport.xyz/docs/how-to-create-an-nft-collection-contract
+                    /*  
+
+                        if you set base_uri now, the collection will be revealed immediately upon deployment. 
+                        if you want to reveal the collection later, do the following:
+                            1 - before deployment, upload the placeholder image to IPFS using https://docs.nftport.xyz/reference/upload-file-to-ipfs
+                            2 - before deployment, upload a single placeholder metadata JSON using https://docs.nftport.xyz/reference/upload-metadata-to-ipfs
+                            3 - when deploying, keep the base_uri empty and set prereveal_token_uri to the URL of the metadata file you just uploaded to IPFS.
+                            4 - when you are ready to reveal your collection, use Update a deployed collection contract to set the base_uri to the location of the IPFS metadata directory created in Step 2.
+
+                    */
+                    
+                     
                     todo!()
 
 
@@ -2271,6 +2287,7 @@ async fn update_clp_event(
 
                     
                     // https://docs.nftport.xyz/reference/update-nft-collection-contract
+                    // https://docs.nftport.xyz/reference/get_user_contracts_collection_v0_me_contracts_collections_get -> useful for presale minting whitelist addresses
                     todo!()
 
 

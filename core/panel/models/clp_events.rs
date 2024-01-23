@@ -26,14 +26,14 @@ pub struct ClpEvent{
     pub id: i32,
     pub contract_address: String,
     pub nfts: Option<serde_json::Value>, /* pg key, value based json binary object */
-    pub event_name: String,
-    pub symbol: String,
-    pub max_supply: i32,
+    pub event_name: String, /////////////// IMPORTANT
+    pub symbol: String, /////////////// IMPORTANT
+    pub max_supply: i32, /////////////// IMPORTANT
     pub team_reserve: i32,
-    pub mint_price: i64,
+    pub mint_price: i64, /////////////// IMPORTANT minting price per NFT, in units of the chain's native token
     pub presale_mint_price: i64,
-    pub tokens_per_mint: i32,
-    pub owner_screen_cid: String,
+    pub tokens_per_mint: i32, /////////////// IMPORTANT
+    pub owner_screen_cid: String, /////////////// IMPORTANT
     pub treasury_address: String,
     pub public_mint_start_date: String,
     pub metadata_updatable: Option<bool>,
@@ -41,6 +41,32 @@ pub struct ClpEvent{
     pub base_uri: String,
     pub presale_mint_start_date: String,
     pub presale_whitelisted_addresses: Option<Vec<Option<String>>>,
+    pub prereveal_token_uri: String, /////////////// IMPORTANT before generating all AI images this must be filled with an ipfs url contains a thumbnail for each nft
+    pub royalties_share: i32, /////////////// IMPORTANT
+    pub royalties_address_screen_cid: String, /////////////// IMPORTANT
+    pub event_background: String,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub event_description: String,
+    pub contract_tx_hash: Option<String>,
+    pub start_at: i64,
+    pub expire_at: i64,
+    pub is_locked: bool,
+    pub created_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct UpdateClpEventRequest{
+    pub id: i32,
+    pub contract_address: String,
+    pub owner_screen_cid: String,
+    pub event_name: String,
+    pub mint_price: i64,
+    pub presale_mint_price: i64,
+    pub public_mint_start_date: String,
+    pub base_uri: String, /////////////// IMPORTANT after generating all AI images this must be updated with an ipfs url contains all nft images info
+    pub presale_mint_start_date: String,
+    pub presale_whitelisted_addresses: Option<Vec<Option<String>>>, // list of addresses whitelisted for the presale. Maximum amount of addresses supported is 4000.
     pub prereveal_token_uri: String,
     pub royalties_share: i32,
     pub royalties_address_screen_cid: String,

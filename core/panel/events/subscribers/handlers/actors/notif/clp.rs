@@ -53,8 +53,8 @@ impl ClpEventSchedulerActor{
                     1 - summerize users' chats and generate n titles
                     2 - generate nft based images for those titles
                     3 - generate a mapping between titles and images using ai
-                    4 - store them on ipfs,
-                    5 - mint ai generated pictures to users screen_cids inside the chat
+                    4 - store all generated nfts + metadata on ipfs, then update collection base_uri
+                    5 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
                 2 - lock the event if now > clp_event.start_at then lock the event so they can't register for the event 
             */
 
