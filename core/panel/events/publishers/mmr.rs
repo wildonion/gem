@@ -11,7 +11,7 @@
 
     complete proc macros in lib.rs
     scoring, ranking and suggestion algos for nfts, galleries, users, collections
-    based on stars field of the user
+    based on stars field of the user, how much he has interacted with other users' stuffs
 
 */
 
@@ -25,14 +25,14 @@ use uuid::Uuid;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PlayerRank{
+pub struct UserRank{
     pub screen_cid: String, /* crypto id usally public address */
     pub events: Vec<String>, 
     pub rank: u16, /* this is the stars field in users table */
 }
 
 
-impl PlayerRank{
+impl UserRank{
 
     fn calculate(&self){
 
@@ -51,7 +51,5 @@ impl PlayerRank{
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CurrentMatch{
     pub event_id: String,
-    pub players: Vec<PlayerRank>,
-    pub room_id: String,
-    pub is_locked: bool
+    pub users: Vec<UserRank>,
 }
