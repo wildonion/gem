@@ -316,6 +316,7 @@ pub static NO_LATEST_CLP_EVENT: &str = "No Upcoming Event Yet";
 pub static USER_CLP_EVENT_NOT_FOUND_ANY: &str = "Found No User Clp Event Data";
 pub static USER_CLP_EVENT_NOT_FOUND: &str = "Found No User Clp With This Data";
 pub static CLP_EVENT_NOT_FOUND: &str = "Found No Clp Event With This Id";
+pub static NO_CLP_EVENT: &str = "Found No Clp Event";
 
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 

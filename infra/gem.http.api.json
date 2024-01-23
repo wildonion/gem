@@ -2115,6 +2115,120 @@
 							"response": []
 						},
 						{
+							"name": "Start New Chatroom Launchpad",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"event_name\": \"\",\n    \"symbol\": \"\",\n    \"max_supply\": 10000,\n    \"team_reserve\": 10,\n    \"mint_price\": 10,\n    \"tokens_per_mint\": 1,\n    \"owner_screen_cid\": \"\",\n    \"treasury_address\": \"\",\n    \"public_mint_start_date\": \"\",\n    \"prereveal_token_uri\": \"\",\n    \"royalties_share\": 250,\n    \"royalties_address_screen_cid\": \"\",\n    \"extra\": [{}],\n    \"event_description\": \"\",\n    \"start_at\": 0,\n    \"expire_at\": 0\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/clp/start",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"clp",
+										"start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Chatroom Launchpad",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": 1,\n    \"contract_address\": \"\",\n    \"base_uri\": \"\",\n    \"public_mint_start_date\": \"\",\n    \"prereveal_token_uri\": \"\",\n    \"mint_price\": 1,\n    \"royalties_share\": \"\",\n    \"royalties_address_screen_cid\": \"\",\n    \"extra\": [{}],\n    \"event_description\": \"\",\n    \"start_at\": 0,\n    \"expire_at\": 0,\n    \"is_locked\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/clp/update",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"clp",
+										"update"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Chatroom Launchpad Background",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJuYW1lIjoiYWRtaW55Iiwid2FsbGV0IjpudWxsLCJ1c2VyX3JvbGUiOiJBZG1pbiIsInRva2VuX3RpbWUiOjE2OTA5Njk3ODM1MDM1MTUwMDAsImV4cCI6MTY5MzU2MTc4MywiaWF0IjoxNjkwOTY5NzgzfQ.6gKlAMKaKeK-Q_YhP3umr-le4oIkGAgxNmdmSAW7w6tWO-oBSddc2Hy_x2_QOh4t8NItBPj3QqE1ajYDzeX7wg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "",
+											"type": "file",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-admin}}/clp/1/update/background",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"clp",
+										"1",
+										"update",
+										"background"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Edit User",
 							"request": {
 								"auth": {
@@ -2146,6 +2260,16 @@
 						{
 							"name": "Delete User",
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQzLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MjgzMjM5MDQ2NjY5NiwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0NDYzMjM5MDU3NDAwOCwiaWF0IjoxNzA1OTQyODMyMzkwNTc0MDA4fQ.r-4uTnd3d-pQpuVsXPw9BkKogCx6M4RMZ6cium9WRYHAGGHBo9oHe8oINzzBV6G1GZbg2PjqKEBHGDnyk6USdA",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [],
 								"url": {
@@ -2293,6 +2417,74 @@
 									],
 									"path": [
 										"update-env-vars"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Chatroom Launchpad",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/clp/get/1",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"clp",
+										"get",
+										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Chatroom Launchpad",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-user}}/clp/get/?from=0&to=10",
+									"host": [
+										"{{panel-user}}"
+									],
+									"path": [
+										"clp",
+										"get",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
 									]
 								}
 							},
@@ -2534,6 +2726,16 @@
 								{
 									"name": "Report User Tasks",
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQzLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MjgzMjM5MDQ2NjY5NiwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0NDYzMjM5MDU3NDAwOCwiaWF0IjoxNzA1OTQyODMyMzkwNTc0MDA4fQ.r-4uTnd3d-pQpuVsXPw9BkKogCx6M4RMZ6cium9WRYHAGGHBo9oHe8oINzzBV6G1GZbg2PjqKEBHGDnyk6USdA",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
@@ -4062,7 +4264,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQzLCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MjgzMjM5MDQ2NjY5NiwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0NDYzMjM5MDU3NDAwOCwiaWF0IjoxNzA1OTQyODMyMzkwNTc0MDA4fQ.r-4uTnd3d-pQpuVsXPw9BkKogCx6M4RMZ6cium9WRYHAGGHBo9oHe8oINzzBV6G1GZbg2PjqKEBHGDnyk6USdA",
 													"type": "string"
 												}
 											]
@@ -4104,7 +4306,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTE3OTcyNzMxMTg0NTYwNywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTE4MTUyNzMxMTk0MjcwOSwiaWF0IjoxNzA1MTc5NzI3MzExOTQyNzA5fQ.YmsBqR0W6dTixO6b1XpxAsP_qhEYe1uOQx4d2jWcMHavh7f9L_Dvueii0KpYZjbEyODAACoIduRvrr7FPf-C5g",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
 													"type": "string"
 												}
 											]
@@ -4147,7 +4349,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0NTYyODk3MjY4MDkwMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0NTY0Njk3MjgwMDk1MDAwLCJpYXQiOjE3MDQ1NjI4OTcyODAwOTUwMDB9.CVTPNRFTr0YQqpcuRynXgRfoDvoLEXj5rlpcOeq6HWV59t008m4rOA1g61GU9jeYrrkDtby0ktE9gZc7cuEnKQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
 													"type": "string"
 												}
 											]
@@ -4193,7 +4395,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
 													"type": "string"
 												}
 											]
@@ -4523,7 +4725,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAxODA3Mjc1MTU0NDIyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAxODA5MDc1MTU3MzIwMDAwLCJpYXQiOjE3MDE4MDcyNzUxNTczMjAwMDB9.4qqDiVr-N1Z1kjsHegdg8pqugc7u2Ts4BTVfV8ok8M0WDVYn33DgltuAEtrE6hgejNwtlmKBoLx4IQCsfG3kEw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
 													"type": "string"
 												}
 											]
@@ -4606,7 +4808,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
 													"type": "string"
 												}
 											]
