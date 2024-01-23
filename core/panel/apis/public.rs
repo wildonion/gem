@@ -836,8 +836,22 @@ async fn get_all_nfts(
 
             }
             
-            let mut rng = rand::thread_rng();
-            minted_ones.shuffle(&mut rng);
+            // let mut rng = rand::thread_rng();
+            // minted_ones.shuffle(&mut rng);
+
+            minted_ones.sort_by(|nftcol1, nftcol2|{
+
+                let nftcol1_created_at = NaiveDateTime
+                    ::parse_from_str(&nftcol1.nfts_data.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let nftcol2_created_at = NaiveDateTime
+                    ::parse_from_str(&nftcol2.nfts_data.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                nftcol2_created_at.cmp(&nftcol1_created_at)
+
+            });
 
             let sliced = if from < minted_ones.len(){
                 if minted_ones.len() > to{
