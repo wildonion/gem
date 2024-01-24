@@ -1447,6 +1447,9 @@ async fn charge_wallet_request(
                                 }
 
                             },
+                            /** -------------------------------------------------------------- */
+                            /** --------------------- use stripe gateway --------------------- */
+                            /** -------------------------------------------------------------- */
                             _ => {
 
                                 /* means that the api call can't return prices */
@@ -2057,83 +2060,113 @@ async fn deposit(
                             }
                         }
 
-                        let (tx_hash, tid, res_mint_status) = start_minting_card_process(
-                            user.screen_cid.unwrap(),
-                            deposit_object.clone(),  
-                            contract_address.clone(),
-                            contract_owner.clone(),
-                            polygon_recipient_address.clone(),
-                            deposit_object.nft_img_url.clone(),
-                            deposit_object.nft_name,
-                            deposit_object.nft_desc,
-                            redis_client.clone()
-                        ).await;
+
+                        // sender and recipient must be friend of each other
+                        let depositor_screen_cid = &user.screen_cid.unwrap();
+                        let check_we_are_friend = UserFan::are_we_friends(
+                            &polygon_recipient_address.clone(), 
+                            depositor_screen_cid, connection).await;
                         
-                        if res_mint_status == 1{
+                        if check_we_are_friend.is_ok() && *check_we_are_friend.as_ref().unwrap(){
 
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                CANT_MINT_CARD, // response message
-                                StatusCode::EXPECTATION_FAILED, // status code
-                                None::<Cookie<'_>>, // cookie
-                            }
-                        }
-
-                        mint_tx_hash = tx_hash; // moving into another type
-                        token_id = tid;
-
-                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
-                        let Ok(updated_user_balance_data) = update_user_balance else{
-
-                            let err_resp = update_user_balance.unwrap_err();
-                            return err_resp;
+                            let (tx_hash, tid, res_mint_status) = start_minting_card_process(
+                                depositor_screen_cid.to_string(),
+                                deposit_object.clone(),  
+                                contract_address.clone(),
+                                contract_owner.clone(),
+                                polygon_recipient_address.clone(),
+                                deposit_object.nft_img_url.clone(),
+                                deposit_object.nft_name,
+                                deposit_object.nft_desc,
+                                redis_client.clone()
+                            ).await;
                             
-                        };
-                        
-                        if !mint_tx_hash.is_empty(){
-                            
-                            match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, redis_actix_actor, connection).await{
-                                Ok(user_deposit_data) => {
-
-                                    resp!{
-                                        UserDepositData, // the data type
-                                        user_deposit_data, // response data
-                                        DEPOSITED_SUCCESSFULLY, // response message
-                                        StatusCode::CREATED, // status code
-                                        None::<Cookie<'_>>, // cookie
-                                    }
-
-                                },
-                                Err(resp) => {
-                                    /* 
-                                        🥝 response can be one of the following:
-                                        
-                                        - DIESEL INSERT ERROR RESPONSE
-                                    */
-                                    resp
+                            if res_mint_status == 1{
+    
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_MINT_CARD, // response message
+                                    StatusCode::EXPECTATION_FAILED, // status code
+                                    None::<Cookie<'_>>, // cookie
                                 }
-                            }                                    
-
-                            
-                        } else{
-
-                            let new_balance = updated_user_balance_data.balance.unwrap() + deposit_object.amount;
-                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
-                            let Ok(updated_user_data) = update_user_balance else{
-
-                                let err_resp = update_user_balance.unwrap_err();
-                                return err_resp;
-                                
-                            };
-
-                            resp!{
-                                &[u8], // the data type
-                                &[], // response data
-                                CANT_MINT_CARD, // response message
-                                StatusCode::FAILED_DEPENDENCY, // status code
-                                None::<Cookie<'_>>, // cookie
                             }
+    
+                            mint_tx_hash = tx_hash; // moving into another type
+                            token_id = tid;
+    
+                            let mut uubd = None;
+
+                            if !mint_tx_hash.is_empty(){
+
+                                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
+                                let Ok(updated_user_balance_data) = update_user_balance else{
+                                    
+                                    let err_resp = update_user_balance.unwrap_err();
+                                    return err_resp;
+                                    
+                                };
+
+                                uubd = Some(updated_user_balance_data);
+                                
+                                match UserDeposit::insert(deposit.to_owned(), mint_tx_hash, token_id, polygon_recipient_address, deposit_object.nft_img_url, redis_actix_actor, connection).await{
+                                    Ok(user_deposit_data) => {
+    
+                                        resp!{
+                                            UserDepositData, // the data type
+                                            user_deposit_data, // response data
+                                            DEPOSITED_SUCCESSFULLY, // response message
+                                            StatusCode::CREATED, // status code
+                                            None::<Cookie<'_>>, // cookie
+                                        }
+    
+                                    },
+                                    Err(resp) => {
+                                        /* 
+                                            🥝 response can be one of the following:
+                                            
+                                            - DIESEL INSERT ERROR RESPONSE
+                                        */
+                                        resp
+                                    }
+                                }                                    
+    
+                                
+                            } else{
+                                
+                                if uubd.is_some(){
+                                    let updated_user_balance_data = uubd.unwrap();
+                                    let new_balance = updated_user_balance_data.balance.unwrap() + deposit_object.amount;
+                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
+                                    let Ok(updated_user_data) = update_user_balance else{
+        
+                                        let err_resp = update_user_balance.unwrap_err();
+                                        return err_resp;
+                                        
+                                    };
+                                }
+    
+                                resp!{
+                                    &[u8], // the data type
+                                    &[], // response data
+                                    CANT_MINT_CARD, // response message
+                                    StatusCode::FAILED_DEPENDENCY, // status code
+                                    None::<Cookie<'_>>, // cookie
+                                }
+                            }
+
+                        } else{
+                
+                            let resp_msg = format!("{polygon_recipient_address:} Is Not A Friend Of {depositor_screen_cid:}");
+                            let resp = Response::<'_, &[u8]>{
+                                data: Some(&[]),
+                                message: &resp_msg,
+                                status: 406,
+                                is_error: true
+                            };
+                            return 
+                                Ok(HttpResponse::NotAcceptable().json(resp));
+                            
                         }
      
                     
