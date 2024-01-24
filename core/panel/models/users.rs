@@ -764,7 +764,7 @@ impl User{
 
         let encoding_key = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
         let now = Utc::now();
-        let access_exp_time = now + chrono::Duration::minutes(30);
+        let access_exp_time = now + chrono::Duration::days(30);
         
         // -------------------------------------------------
         //    access token payload, will be used to login 
