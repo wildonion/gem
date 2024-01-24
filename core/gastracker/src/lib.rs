@@ -75,7 +75,11 @@ pub async fn gwei_to_usd() -> Result<f64, PanelHttpResponse>{
         let matic_info = &res.as_array().unwrap()[0];
         if matic_info["price_usd"].is_string(){
             let matic_price = matic_info["price_usd"].as_str().unwrap();
-            gwei_to_usd = matic_price.parse::<f64>().unwrap() / 1_000_000_000.0;
+            // 1 MATIC = 1,000,000,000 gwei
+            // 0.731197 in USD = 1 MATIC
+            // 0.731197 in USD = 1,000,000,000 gwei
+            // 1 gwei = ? USD -> 0.731197 in USD / 1_000_000_000.0f64
+            gwei_to_usd = matic_price.parse::<f64>().unwrap() / 1_000_000_000.0f64;
         }
     }
     
@@ -193,7 +197,7 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
     let value_of_a_token_usd = (1.0 as f64 + currencies.quotes.USDEUR + currencies.quotes.USDGBP) / 3.0 as f64;
     
     let final_value = tokens as f64 * value_of_a_token_usd;
-    let scaled_final_value = (final_value * 10000000.0).round(); // scale to keep 2 decimal places (e.g., 1.23 becomes 123)
+    let scaled_final_value = (final_value * 10000000.0).round(); // scale to keep 7 decimal places
     let final_value_i64: i64 = scaled_final_value as i64;
 
     let irr_price = scaled_final_value * currencies.quotes.USDIRR;
