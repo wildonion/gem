@@ -3406,7 +3406,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA2MDk5NTc0ODg2NzY0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA2MTAxMzc0ODg4OTc4MDAwLCJpYXQiOjE3MDYwOTk1NzQ4ODg5NzgwMDB9.PxQGgxYERFtFqzZh5A8yQnCjgucgZ5X2-636fMf7SrMQ9wI5OHzv_YVhjqys4sYC8D7WcyJC9-p_fku948JxpQ",
 													"type": "string"
 												}
 											]
@@ -3415,7 +3415,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"user_id\": 0,\n    \"buyer_cid\": \"\",\n    \"tokens\": 10,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"user_id\": 5,\n    \"buyer_cid\": \"02c3cd4afaecb6dc7c44500d73c55c4ac244689701cfe120592b2a4576f25ffa73\",\n    \"tokens\": 10,\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3462,14 +3462,14 @@
 											}
 										},
 										"url": {
-											"raw": "{{panel-user}}/deposit/to/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
+											"raw": "{{panel-user}}/deposit/to/0x35e81902dd457f44bae08112c386d9104f1e1ad4",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
 												"deposit",
 												"to",
-												"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
+												"0x35e81902dd457f44bae08112c386d9104f1e1ad4"
 											]
 										}
 									},
@@ -3500,14 +3500,14 @@
 											}
 										},
 										"url": {
-											"raw": "{{panel-user}}/withdraw/from/0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e",
+											"raw": "{{panel-user}}/withdraw/from/0x35e81902dd457f44bae08112c386d9104f1e1ad4",
 											"host": [
 												"{{panel-user}}"
 											],
 											"path": [
 												"withdraw",
 												"from",
-												"0x5a298eE7B1EDA4de9fBf18905974b059221CaC2e"
+												"0x35e81902dd457f44bae08112c386d9104f1e1ad4"
 											]
 										}
 									},
@@ -6172,7 +6172,7 @@
 					]
 				}
 			],
-			"description": "# WebSocket Push Notif Subscription\n\nan specific user can join an specific event room to subscribe to what ws actors will be sent in different parts of the app so this route will be used to receive push notif from admin reveal roles and mmr engines, here is the example connect address and make sure that client is passing the **rendezvous server JWT** to the header request like `Bearer JWT`:\n\n**local API:**\n\n`http(ws)://localhost:7442/subscribe/`\n\n**production APIs:**\n\n- `https(wss)://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`\n- `https(wss)://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`\n    \n\n**NOTE:** _we just have to make sure that the user is already inside the event and did the reservation process for the event._\n\nclient must be connect to this route then we have a full duplex communication channel also there is a path in this route which is the event room that must be connected to and is the name of the notification room which can be one of the following:\n\n- `mmr-{event_id}`, ----- /join-mmr\n- `reveal-role-{event_id}` ----- /join-roles\n    \n\nusers after participating in an event we'll redirect them to the event page after that the client must call this route with the passed in event id like so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection will be stablished to this server which will send the subscribed redis topics to the channel that contains event peers."
+			"description": "# WebSocket Push Notif Subscription\n\nan specific user can join an specific event room to subscribe to what ws actors will be sent in different parts of the app so this route will be used to receive push notif from admin reveal roles and mmr engines, here is the example connect address and make sure that client is passing the **rendezvous server JWT** to the header request like `Bearer JWT`:\n\n**local API:**\n\n`ws://localhost:7442/subscribe/`\n\n**production APIs:**\n\n- `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`\n- `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`\n    \n\n**NOTE:** _we just have to make sure that the user is already inside the event and did the reservation process for the event._\n\nclient must be connect to this route then we have a full duplex communication channel also there is a path in this route which is the event room that must be connected to and is the name of the notification room which can be one of the following:\n\n- `mmr-{event_id}`, ----- /join-mmr\n- `reveal-role-{event_id}` ----- /join-roles\n    \n\nusers after participating in an event we'll redirect them to the event page after that the client must call this route with the passed in event id like so: `/{user_id}/reveal-role-{notif_room}` in which a new full duplex ws connection will be stablished to this server which will send the subscribed redis topics to the channel that contains event peers."
 		}
 	],
 	"event": [
