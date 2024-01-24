@@ -20,3 +20,6 @@ CREATE TABLE IF NOT EXISTS users_collections (
 );
 
 SELECT diesel_manage_updated_at('users_collections');
+
+INSERT INTO "users_collections" ("contract_address", "nfts", "col_name", "symbol", "owner_screen_cid", "metadata_updatable", "freeze_metadata", "base_uri", "royalties_share", "royalties_address_screen_cid", "collection_background", "extra", "col_description", "contract_tx_hash", "created_at", "updated_at") VALUES
+('0x35e81902dd457f44bae08112c386d9104f1e1ad4',	NULL,	'YouWho Gift Card',	'YWGC',	'0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2',	't',	'f',	'',	250,	'0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2',	'',	NULL,	'YouWho Gift Card Collection',	'0xf35b2e15d2671610c795659f37479204d6e16daa98768f10c57adbecba71e497',	'2024-01-24 18:35:06.540236+00',	'2024-01-24 18:35:06.540236+00');

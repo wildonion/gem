@@ -22,9 +22,9 @@ use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
-
+use crate::models::users_nfts::OnchainNftColInfo;
 use self::models::users_collections::{UserCollectionData, UserCollection};
-use self::models::users_nfts::{UserNft, UserNftData, UserCollectionDataGeneralInfo, NftColInfo};
+use self::models::users_nfts::{NftColInfo, UserCollectionDataGeneralInfo, UserNft, UserNftData};
 use self::schema::users_collections::col_description;
 
 
@@ -96,7 +96,7 @@ pub struct NftPortCreateCollectionContractResponse{
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct OnchainNfts{
-    pub onchain_nfts: Vec<NftColInfo>
+    pub onchain_nfts: Vec<OnchainNftColInfo>
 }
 
 
@@ -1464,11 +1464,24 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
         let onchain_nfts = res_value["nfts"].as_array().unwrap();
         for nft in onchain_nfts{
             if nft["token_id"].is_string(){
+                
                 let token_id = nft["token_id"].as_str().unwrap();
-                let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap();
-                nfts_owned_by.push(NftColInfo{
+                let get_nft_info = UserNft::find_by_onchain_id(token_id, connection).await;
+                
+                let mut nft_info_value = serde_json::to_value(serde_json::Value::default()).unwrap();
+                let col_info = if get_nft_info.is_err(){
+                    // it's a gift card nft
+                    nft_info_value = nft.to_owned();
+                    let contract_address = std::env::var("GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS").unwrap();
+                    UserCollection::find_by_contract_address(&contract_address, connection).await.unwrap()
+                } else{
+                    let contract_address = get_nft_info.as_ref().unwrap().clone().contract_address;
+                    nft_info_value = serde_json::to_value(get_nft_info.unwrap()).unwrap();
+                    UserCollection::find_by_contract_address(&contract_address, connection).await.unwrap()
+                };
+
+                nfts_owned_by.push(OnchainNftColInfo{
                     col_data: {
-                        let col_info = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await.unwrap();
                         UserCollectionDataGeneralInfo{
                             id: col_info.id,
                             contract_address: col_info.contract_address,
@@ -1488,7 +1501,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
                             updated_at: col_info.updated_at.to_string(),
                         }
                     },
-                    nfts_data: nft_info,
+                    nfts_data: nft_info_value,
                 });
             }
         }

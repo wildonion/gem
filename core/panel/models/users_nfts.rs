@@ -84,6 +84,12 @@ pub struct NftColInfo{
     pub nfts_data: UserNftData
 }
 
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct OnchainNftColInfo{
+    pub col_data: UserCollectionDataGeneralInfo,
+    pub nfts_data: serde_json::Value
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserCollectionDataGeneralInfo{
     pub id: i32,
