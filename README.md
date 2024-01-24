@@ -38,6 +38,7 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 # ---------------------------------------------------------------------------------------------------
 🎙️ HOSTED ON                                    ==> Digitalocean
 🥛 WEBSOCKET PUSH NOTIFICATION ROUTE            ==> wss://event.panel.conse.app/subscribe/
+🥛 WEBSOCKET HHTP PUSH NOTIFICATION ROUTE       ==> https://event.panel.conse.app/subscribe/
 🌍 MAIN SITE                                    ==> https://conse.app/
 👨🏻‍⚖️ ADMIN PANEL                                  ==> https://panel.conse.app/
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/

@@ -44,11 +44,11 @@ use actix::prelude::*;
     request like `Bearer JWT`:
     
     local API:
-        ws://localhost:7442/subscribe/
+        http(ws)://localhost:7442/subscribe/
     
     production APIs:
-        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
-        `wss://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
+        `https(wss)://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/reveal-role-64b82757d916781c6d689488`
+        `https(wss)://event.panel.conse.app/subscribe/64b827fad916781c6d68948a/mmr-64b82757d916781c6d689488`
 
     NOTE: we just have to make sure that the user is already inside the event 
             and did the reservation process for the event.

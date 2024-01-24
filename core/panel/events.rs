@@ -4,7 +4,6 @@
 /* ------------------------------- */
 /* publisher and subscriber actors */
 /* ------------------------------- */
-// tools => tokio,actix,redis,libp2p,ipfs,mpsc,macro dsl
 /* 
 
     • generally pubsub realtime monitoring, streaming and push notification over an mpsc receiver/redis subscriber/tcp listener 
@@ -78,6 +77,12 @@
         redis and in publisher actor we can send a message from different parts of the 
         app to tell the actor publish the data or notification to the source 
         channel like redis
+
+    >_note: 
+        worker threadpool contains multiple spawned threads and a jobq to share data between 
+        its threads to avoid race conditions and deadlocks, actors have their own worker threadpool 
+        to run heavy tasks concurrently and message mailbox to communicate with different parts 
+        of the app and other actors asyncly like fetching an state of an actor during its execution
           
 */
 

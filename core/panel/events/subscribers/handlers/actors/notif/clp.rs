@@ -6,7 +6,6 @@
 use actix::{AsyncContext, Context};
 use s3req::Storage;
 use crate::{*, constants::CONFIG};
-
 use self::constants::WS_SUBSCRIPTION_INTERVAL;
 
 
@@ -43,6 +42,7 @@ impl ClpEventSchedulerActor{
 
         let pg_pool = app_storage.get_pgdb().await.unwrap();
         let connection = &mut pg_pool.get().unwrap();
+
         tokio::spawn(async move{
             
             /* 
