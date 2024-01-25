@@ -5228,7 +5228,8 @@
 													"value": "10"
 												}
 											]
-										}
+										},
+										"description": "# Action Types:\n\n- InvitationRequestFrom,\n- FriendRequestFrom,\n- AcceptFriendRequest,\n- AcceptInvitationRequest,\n- RemoveInvitedFriendFrom,\n- LikeNft,\n- DislikeNft,\n- CommentNft,\n- CreateNft,\n- MintNft,\n- ListNft,\n- DelistNft,\n- TransferNft,\n- UpdateOnchainNft,\n- BuyNft,\n- CreateCollection,\n- UpdateCollection,\n- CreatePrivateGallery,\n- UpdatePrivateGallery,\n- ExitFromPrivateGalleryRequest,\n- DepositGiftCard"
 									},
 									"response": []
 								},
