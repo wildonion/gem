@@ -2372,7 +2372,7 @@ impl UserNft{
     /*  --------------------------------------------------------------------------------
         Note: Transferring is possible only if the token is owned by the contract owner 
         and the token has not been transferred/sold yet, so the following operation can 
-        only be done once after minting.
+        only be done once after minting means only the contract owner can buy his own nft
         --------------------------------------------------------------------------------
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
@@ -3118,7 +3118,7 @@ impl UserNft{
             /*  --------------------------------------------------------------------------------
                 Note: Transferring is possible only if the token is owned by the contract owner 
                 and the token has not been transferred/sold yet, so the following operation can 
-                only be done once after minting.
+                only be done once after minting means only the contract owner can transfer his own nft
                 --------------------------------------------------------------------------------
             */
             "transfer" => {
