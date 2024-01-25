@@ -933,9 +933,9 @@ impl User{
 
         let single_user = users
             .filter(
-                username.eq(recipient_info.to_string())
-                .or(mail.eq(recipient_info.to_string()))
-                .or(screen_cid.eq(recipient_info.to_string()))
+                username.eq(recipient_info.to_string().to_lowercase())
+                .or(mail.eq(recipient_info.to_string().to_lowercase()))
+                .or(screen_cid.eq(recipient_info.to_string().to_lowercase()))
             )
             .first::<User>(connection);
                         
