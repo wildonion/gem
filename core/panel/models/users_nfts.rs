@@ -11,6 +11,8 @@ use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
+use self::constants::APP_NAME;
+
 use super::users::{User, UserData, UserWalletInfoResponse};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
 use super::users_fans::{UserFan, FriendData};
@@ -200,6 +202,25 @@ pub struct NewUserNftRequest{
     pub hash_data: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NewUserGiftCardNftRequest{
+    pub caller_cid: String,
+    pub amount: i64,
+    pub col_id: i32,
+    pub onchain_id: String,
+    pub owner_screen_cid: String,
+    pub contract_address: String,
+    pub nft_name: String,
+    pub nft_description: String,
+    pub current_price: i64,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub metadata_uri: String,
+    pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub mint_tx_hash: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 /* 
     all fields must be String in order to create the json value 
     then we'll map some fields into their own type  
@@ -318,6 +339,22 @@ pub struct InsertNewUserNftRequest{
     pub nft_description: String,
     pub metadata_uri: String,
     pub current_price: i64,
+    pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
+    pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
+}
+
+#[derive(Insertable)]
+#[diesel(table_name=users_nfts)]
+pub struct InsertNewUserGiftCardNftRequest{
+    pub contract_address: String,
+    pub onchain_id: String,
+    pub current_owner_screen_cid: String,
+    pub nft_name: String,
+    pub nft_description: String,
+    pub metadata_uri: String,
+    pub current_price: i64,
+    pub tx_hash: String,
+    pub is_minted: Option<bool>,
     pub extra: Option<serde_json::Value>, /* pg key, value based json binary object */
     pub attributes: Option<serde_json::Value>, /* pg key, value based json binary object */
 }
@@ -1056,6 +1093,229 @@ impl UserNft{
 }
 
 impl UserNft{
+
+    pub async fn store_gift_card(asset_info: NewUserGiftCardNftRequest,
+        redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserNftData, PanelHttpResponse>{
+            
+
+        let minter_screen_cid = asset_info.clone().owner_screen_cid;
+        
+        /* find a collection data with the passed in contract address */
+        let get_collection = UserCollection::find_by_id(asset_info.col_id, connection).await;
+        let Ok(collection_data) = get_collection else{
+            let err_resp = get_collection.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let depositor_screen_cid = walletreq::evm::get_keccak256_from(asset_info.caller_cid);
+        let get_user = User::find_by_screen_cid(&depositor_screen_cid, connection).await;
+        let Ok(user) = get_user else{
+
+            let err_resp = get_user.unwrap_err();
+            return Err(err_resp);
+        };
+
+        let new_insert_nft = InsertNewUserGiftCardNftRequest{
+            contract_address: collection_data.clone().contract_address,
+            onchain_id: asset_info.onchain_id,
+            current_owner_screen_cid: asset_info.owner_screen_cid,
+            nft_name: asset_info.nft_name,
+            nft_description: asset_info.nft_description,
+            current_price: asset_info.current_price,
+            metadata_uri: asset_info.metadata_uri,
+            extra: asset_info.extra,
+            is_minted: Some(true),
+            tx_hash: asset_info.mint_tx_hash,
+            attributes: asset_info.attributes,
+        };
+
+        /* inserting new nft */
+        match diesel::insert_into(users_nfts)
+            .values(&new_insert_nft)
+            .returning(UserNft::as_returning())
+            .get_result::<UserNft>(connection)
+            {
+                Ok(fetched_nft_data) => {
+                    
+                    let user_nft_data = UserNftData{
+                        id: fetched_nft_data.clone().id,
+                        contract_address: fetched_nft_data.clone().contract_address,
+                        current_owner_screen_cid: fetched_nft_data.clone().current_owner_screen_cid,
+                        metadata_uri: fetched_nft_data.clone().metadata_uri,
+                        extra: fetched_nft_data.clone().extra,
+                        onchain_id: fetched_nft_data.clone().onchain_id,
+                        nft_name: fetched_nft_data.clone().nft_name,
+                        is_minted: fetched_nft_data.clone().is_minted,
+                        nft_description: fetched_nft_data.clone().nft_description,
+                        current_price: fetched_nft_data.clone().current_price,
+                        is_listed: fetched_nft_data.clone().is_listed,
+                        freeze_metadata: fetched_nft_data.clone().freeze_metadata,
+                        comments: fetched_nft_data.clone().comments,
+                        likes: fetched_nft_data.clone().likes,
+                        tx_hash: fetched_nft_data.clone().tx_hash,
+                        created_at: fetched_nft_data.clone().created_at.to_string(),
+                        updated_at: fetched_nft_data.clone().updated_at.to_string(),
+                        attributes: fetched_nft_data.attributes,
+                    };
+
+                    /* updating collection data with newly nft */
+                    let new_collection_data = UpdateUserCollection{
+                        nfts: {
+                            let nfts_ = collection_data.clone().nfts;
+                            let mut decoded_nfts = if nfts_.is_some(){
+                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            /* since this is new nft we have to push */
+                            decoded_nfts.push(user_nft_data.clone());
+
+                            Some(
+                                serde_json::to_value(decoded_nfts).unwrap()
+                            )
+                        },
+                        freeze_metadata: collection_data.clone().freeze_metadata,
+                        base_uri: collection_data.clone().base_uri,
+                        royalties_share: collection_data.clone().royalties_share,
+                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
+                        collection_background: collection_data.clone().collection_background,
+                        extra: collection_data.clone().extra,
+                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
+                        col_description: collection_data.clone().col_description,
+                        col_name: collection_data.clone().col_name
+                    };
+
+                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
+                        .set(&new_collection_data)
+                        .returning(UserCollection::as_returning())
+                        .get_result::<UserCollection>(connection)
+                        {
+                            Ok(fetched_collection_data) => {
+                                
+                                let user_collection_data = UserCollectionData{
+                                    id: fetched_collection_data.clone().id,
+                                    contract_address: fetched_collection_data.clone().contract_address,
+                                    nfts: fetched_collection_data.clone().nfts,
+                                    col_name: fetched_collection_data.clone().col_name,
+                                    symbol: fetched_collection_data.clone().symbol,
+                                    owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
+                                    metadata_updatable: fetched_collection_data.clone().metadata_updatable,
+                                    freeze_metadata: fetched_collection_data.clone().freeze_metadata,
+                                    base_uri: fetched_collection_data.clone().base_uri,
+                                    royalties_share: fetched_collection_data.clone().royalties_share,
+                                    royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
+                                    collection_background: fetched_collection_data.clone().collection_background,
+                                    extra: fetched_collection_data.clone().extra,
+                                    col_description: fetched_collection_data.clone().col_description,
+                                    contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
+                                    created_at: fetched_collection_data.clone().created_at.to_string(),
+                                    updated_at: fetched_collection_data.clone().updated_at.to_string(),
+                                };
+
+
+                                /** -------------------------------------------------------------------- */
+                                /** ----------------- publish new event data to `on_user_action` channel */
+                                /** -------------------------------------------------------------------- */
+                                // if the actioner is the user himself we'll notify user with something like:
+                                // u've just done that action!
+                                let actioner_wallet_info = UserWalletInfoResponse{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    extra: user.clone().extra,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                };
+                                let user_wallet_info = UserWalletInfoResponse{
+                                    username: String::from(APP_NAME),
+                                    avatar: None,
+                                    bio: None,
+                                    banner: None,
+                                    mail: None,
+                                    screen_cid: Some(minter_screen_cid),
+                                    extra: None,
+                                    stars: None,
+                                    created_at: String::from(""),
+                                };
+                                let user_notif_info = SingleUserNotif{
+                                    wallet_info: user_wallet_info,
+                                    notif: NotifData{
+                                        actioner_wallet_info,
+                                        fired_at: Some(chrono::Local::now().timestamp()),
+                                        action_type: ActionType::MintNft,
+                                        action_data: serde_json::to_value(user_nft_data.clone()).unwrap()
+                                    }
+                                };
+                                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                  
+
+                                Ok(
+                                    user_nft_data
+                                )
+                                
+                            },
+                            Err(e) => {
+
+                                let resp_err = &e.to_string();
+            
+            
+                                /* custom error handler */
+                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                
+                                let error_content = &e.to_string();
+                                let error_content = error_content.as_bytes().to_vec();  
+                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::store_gift_card");
+                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+            
+                                let resp = Response::<&[u8]>{
+                                    data: Some(&[]),
+                                    message: resp_err,
+                                    status: 500,
+                                    is_error: true
+                                };
+                                return Err(
+                                    Ok(HttpResponse::InternalServerError().json(resp))
+                                );
+            
+                            }
+                        }
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::store_gift_card_insert_into");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+
+    }
 
     pub async fn insert(asset_info: NewUserNftRequest,
         redis_client: redis::Client, redis_actor: Addr<RedisActor>,

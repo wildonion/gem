@@ -2078,7 +2078,9 @@ async fn deposit(
                                 deposit_object.nft_img_url.clone(),
                                 deposit_object.nft_name,
                                 deposit_object.nft_desc,
-                                redis_client.clone()
+                                redis_client.clone(),
+                                redis_actix_actor.clone(), 
+                                connection
                             ).await;
                             
                             if res_mint_status == 1{
@@ -2497,7 +2499,9 @@ async fn withdraw(
                             contract_address.to_owned(), 
                             token_id,
                             polygon_recipient_address,
-                            redis_client.clone()
+                            redis_client.clone(),
+                            redis_actix_actor.clone(), 
+                            connection
                         ).await;
 
                         if res_transfer.1 == 1{

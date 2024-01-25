@@ -3,29 +3,27 @@
 
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::*;
 use crate::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
 use crate::schema::users::identifier;
-use crate::schema::users_nfts::nft_description;
+use crate::schema::users_nfts::{self, nft_description};
 use actix_web::web::Query;
 use mongodb::bson::oid::ObjectId;
 use redis_async::client::PubsubConnection;
 use serde_json::json;
- 
-use crate::*;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_FILE_TYPE};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::models::users::{NewIdRequest, IpInfoResponse, User};
 use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
-use crate::models::users_nfts::OnchainNftColInfo;
+use crate::models::users_nfts::NewUserGiftCardNftRequest;
 use self::models::users_collections::{UserCollectionData, UserCollection};
-use self::models::users_nfts::{NftColInfo, UserCollectionDataGeneralInfo, UserNft, UserNftData};
+use self::models::users_nfts::{UserNft, UserNftData, UserCollectionDataGeneralInfo, NftColInfo};
 use self::schema::users_collections::col_description;
+use crate::schema::users_nfts::dsl::*;
 
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -96,7 +94,7 @@ pub struct NftPortCreateCollectionContractResponse{
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct OnchainNfts{
-    pub onchain_nfts: Vec<OnchainNftColInfo>
+    pub onchain_nfts: Vec<NftColInfo>
 }
 
 
@@ -146,13 +144,15 @@ pub struct NftPortUploadFileToIpfsData{
 pub async fn start_minting_card_process(
     sender_screen_cid: String,
     deposit_object: NewUserDepositRequest, 
-    contract_address: String,
+    giftcard_contract_address: String,
     contract_owner: String,
     polygon_recipient_address: String,
     nft_img_url: String,
-    nft_name: String,
+    giftcard_nft_name: String,
     nft_desc: String,
-    redis_client: redis::Client
+    redis_client: redis::Client,
+    redis_actor: Addr<RedisActor>,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
 ) -> (String, String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
@@ -177,7 +177,7 @@ pub async fn start_minting_card_process(
     if !nft_img_url.is_empty(){
 
         // let metadata_uri = metadata_uri.ipfs_url;
-        let metadata_uri = nft_img_url; // front has already uploaded the img of nft in ipfs
+        let giftcard_metadata_uri = nft_img_url; // front has already uploaded the img of nft in ipfs
 
         /* upload metadata to ipfs */
         let mut custom_fields = HashMap::new();
@@ -185,10 +185,10 @@ pub async fn start_minting_card_process(
         custom_fields.insert("sender".to_string(), sender_screen_cid.clone());
         custom_fields.insert("recipient".to_string(), polygon_recipient_address.clone());
         let upload_data = NftPortUploadMetadataRequest{
-            name: nft_name,
-            description: nft_desc,
-            file_url: metadata_uri,
-            custom_fields,
+            name: giftcard_nft_name.clone(),
+            description: nft_desc.clone(),
+            file_url: giftcard_metadata_uri.clone(),
+            custom_fields: custom_fields.clone(),
         };
 
         let nftport_upload_meta_endpoint = format!("https://api.nftport.xyz/v0/metadata");
@@ -248,7 +248,7 @@ pub async fn start_minting_card_process(
             /* mint request */
             let mut mint_data = HashMap::new();
             mint_data.insert("chain", "polygon");
-            mint_data.insert("contract_address", &contract_address);
+            mint_data.insert("contract_address", &giftcard_contract_address);
             mint_data.insert("metadata_uri", &upload_meta_response.metadata_uri);
             mint_data.insert("mint_to_address", &contract_owner);
             let nftport_mint_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
@@ -370,7 +370,7 @@ pub async fn start_minting_card_process(
 
                         let token_id = get_nft_response.token_id;
                         info!("✅ Nft Minted With Id: {}", token_id.clone());
-                        info!("✅ Nft Is Inside Contract: {}", contract_address.clone());
+                        info!("✅ Nft Is Inside Contract: {}", giftcard_contract_address.clone());
 
                         token_id
                         
@@ -382,6 +382,35 @@ pub async fn start_minting_card_process(
                 };
                 
                 if mint_tx_hash.starts_with("0x"){
+
+                    // store nft in db 
+                    let store_giftcard = UserNft::store_gift_card(
+                        NewUserGiftCardNftRequest{
+                            caller_cid: {
+                                User::find_by_screen_cid(&sender_screen_cid, connection).await.unwrap().cid.unwrap()
+                            },
+                            amount: 0,
+                            col_id: {
+                                let col_info = UserCollection::find_by_contract_address(&giftcard_contract_address, connection).await.unwrap();
+                                col_info.id
+                            },
+                            onchain_id: token_id_string.clone(),
+                            contract_address: giftcard_contract_address,
+                            nft_name: giftcard_nft_name,
+                            nft_description: nft_desc,
+                            current_price: deposit_object.amount,
+                            extra: Some(serde_json::to_value(vec![custom_fields]).unwrap()),
+                            metadata_uri: giftcard_metadata_uri,
+                            attributes: None,
+                            tx_signature: String::from(""),
+                            hash_data: String::from(""),
+                            owner_screen_cid: contract_owner,
+                            mint_tx_hash: mint_tx_hash.clone(),
+                        }, redis_client, redis_actor, connection).await;
+                    if store_giftcard.is_err(){
+                        return (String::from(""), String::from(""), 1);
+                    }
+                    
                     return (mint_tx_hash, token_id_string, 0);
                 } else{
                     return (String::from(""), String::from(""), 1);
@@ -410,10 +439,12 @@ pub async fn start_minting_card_process(
 }
 
 pub async fn start_transferring_card_process( 
-    contract_address: String,
+    giftcard_contract_address: String,
     token_id: String,
     polygon_recipient_address: String,
-    redis_client: redis::Client
+    redis_client: redis::Client,
+    redis_actor: Addr<RedisActor>,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
 ) -> (String, u8){
     
     /* 
@@ -429,7 +460,7 @@ pub async fn start_transferring_card_process(
 
     let mut transfer_data = HashMap::new();
     transfer_data.insert("chain", "polygon");
-    transfer_data.insert("contract_address", &contract_address);
+    transfer_data.insert("contract_address", &giftcard_contract_address);
     transfer_data.insert("token_id", &token_id);
     transfer_data.insert("transfer_to_address", &polygon_recipient_address);
     let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/mints/transfers");
@@ -489,6 +520,16 @@ pub async fn start_transferring_card_process(
         let transfer_tx_hash = transfer_response.transaction_hash;
 
         if transfer_tx_hash.starts_with("0x"){
+
+            // update nft 
+            let nft = UserNft::find_by_onchain_id(&token_id.clone(), connection).await.unwrap();
+            diesel::update(users_nfts.find(nft.id))
+                .set((users_nfts::current_owner_screen_cid.eq(polygon_recipient_address), users_nfts::tx_hash.eq(transfer_tx_hash.clone())))
+                .returning(UserNft::as_returning())
+                .get_result::<UserNft>(connection)
+                .unwrap();
+            
+
             return (transfer_tx_hash, 0);
         } else{
             return (String::from(""), 1);
@@ -707,7 +748,7 @@ pub async fn create_collection(
 pub async fn update_collection(
     redis_client: redis::Client,
     update_collection_request: UpdateUserCollectionRequest,
-    contract_address: String,
+    contract_address_: String,
 ) -> (String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
@@ -717,17 +758,17 @@ pub async fn update_collection(
         base_uri, 
         royalties_share, 
         royalties_address_screen_cid, 
-        freeze_metadata,
+        freeze_metadata: freeze_metadata_,
         .. /* don't care about the rest of the fields */
     } = update_collection_request;
 
     let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid);
     let mut collection_data = HashMap::new();
     collection_data.insert("chain", "polygon");
-    collection_data.insert("contract_address", &contract_address);
+    collection_data.insert("contract_address", &contract_address_);
 
     // this field must be filled with either true or false
-    let fzm = &format!("{}", freeze_metadata);
+    let fzm = &format!("{}", freeze_metadata_);
     collection_data.insert("freeze_metadata", fzm);
     
     /* 
@@ -934,13 +975,13 @@ pub async fn mint_nft(
 
     if !asset_info.metadata_uri.is_empty(){
 
-        let metadata_uri = asset_info.clone().metadata_uri;
+        let metadata_uri_ = asset_info.clone().metadata_uri;
 
         /* mint request */
         let mut mint_data = HashMap::new();
         mint_data.insert("chain", "polygon");
         mint_data.insert("contract_address", &asset_info.contract_address);
-        mint_data.insert("metadata_uri", &metadata_uri);
+        mint_data.insert("metadata_uri", &metadata_uri_);
         /* ---------------------------------------------------------------------------------
             first mint to contract owner then transfer to owner in transfer and buy apis,
             in our scenario we have 3 onchain collection contracts created by the owner
@@ -1122,12 +1163,12 @@ pub async fn transfer_nft(
         return (String::from(""), 1);
     }
 
-    let contract_address = asset_info.clone().contract_address;
+    let contract_address_ = asset_info.clone().contract_address;
     let token_id = asset_info.clone().onchain_id.unwrap();
 
     let mut transfer_data = HashMap::new();
     transfer_data.insert("chain", "polygon");
-    transfer_data.insert("contract_address", &contract_address);
+    transfer_data.insert("contract_address", &contract_address_);
     transfer_data.insert("token_id", &token_id);
     transfer_data.insert("transfer_to_address", &transfer_to);
     let nftport_transfer_endpoint = format!("https://api.nftport.xyz/v0/mints/transfers");
@@ -1208,17 +1249,17 @@ pub async fn update_nft(
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
     let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
-    let contract_address = asset_info.clone().contract_address;
+    let contract_address_ = asset_info.clone().contract_address;
     let token_id = asset_info.clone().onchain_id.unwrap();
-    let metadata_uri = asset_info.clone().metadata_uri;
-    let freeze_metadata = format!("{}", asset_info.clone().freeze_metadata.unwrap());
+    let metadata_uri_ = asset_info.clone().metadata_uri;
+    let freeze_metadata_ = format!("{}", asset_info.clone().freeze_metadata.unwrap());
 
     let mut update_data = HashMap::new();
     update_data.insert("chain", "polygon");
-    update_data.insert("contract_address", &contract_address);
+    update_data.insert("contract_address", &contract_address_);
     update_data.insert("token_id", &token_id);
-    update_data.insert("metadata_uri", &metadata_uri);
-    update_data.insert("freeze_metadata", &freeze_metadata);
+    update_data.insert("metadata_uri", &metadata_uri_);
+    update_data.insert("freeze_metadata", &freeze_metadata_);
     let nftport_update_endpoint = format!("https://api.nftport.xyz/v0/mints/customizable");
     let res = reqwest::Client::new()
         .put(nftport_update_endpoint.as_str())
@@ -1464,24 +1505,11 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
         let onchain_nfts = res_value["nfts"].as_array().unwrap();
         for nft in onchain_nfts{
             if nft["token_id"].is_string(){
-                
                 let token_id = nft["token_id"].as_str().unwrap();
-                let get_nft_info = UserNft::find_by_onchain_id(token_id, connection).await;
-                
-                let mut nft_info_value = serde_json::to_value(serde_json::Value::default()).unwrap();
-                let col_info = if get_nft_info.is_err(){
-                    // it's a gift card nft
-                    nft_info_value = nft.to_owned();
-                    let contract_address = std::env::var("GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS").unwrap();
-                    UserCollection::find_by_contract_address(&contract_address, connection).await.unwrap()
-                } else{
-                    let contract_address = get_nft_info.as_ref().unwrap().clone().contract_address;
-                    nft_info_value = serde_json::to_value(get_nft_info.unwrap()).unwrap();
-                    UserCollection::find_by_contract_address(&contract_address, connection).await.unwrap()
-                };
-
-                nfts_owned_by.push(OnchainNftColInfo{
+                let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap();
+                nfts_owned_by.push(NftColInfo{
                     col_data: {
+                        let col_info = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await.unwrap();
                         UserCollectionDataGeneralInfo{
                             id: col_info.id,
                             contract_address: col_info.contract_address,
@@ -1501,7 +1529,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
                             updated_at: col_info.updated_at.to_string(),
                         }
                     },
-                    nfts_data: nft_info_value,
+                    nfts_data: nft_info,
                 });
             }
         }
