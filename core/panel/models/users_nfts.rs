@@ -3157,107 +3157,119 @@ impl UserNft{
                     ); 
 
                 }
-                    
-                let recipient = asset_info.clone().transfer_to_screen_cid.unwrap();
 
                 /* make sure that there is a user with this screen cid in the app */
-                let get_recipient = User::find_by_screen_cid(&recipient, connection).await;
-                let Ok(recipient_info) = get_recipient else{
-
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: RECIPIENT_SCREEN_CID_NOT_FOUND,
-                        status: 406,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    ); 
+                let recipient = asset_info.clone().transfer_to_screen_cid.unwrap();
+                let find_recipient_screen_cid = User::find_by_username_or_mail_or_scid(&recipient, connection).await;
+                let Ok(recipient_info) = find_recipient_screen_cid else{
                     
-                };
-
-                /* if any update goes well we charge the user for onchain gas fee */
-                let new_balance = user.balance.unwrap() - asset_info.amount;
-                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                let Ok(updated_user_balance_data) = update_user_balance else{
-
-                    let err_resp = update_user_balance.unwrap_err();
+                    let err_resp = find_recipient_screen_cid.unwrap_err();
                     return Err(err_resp);
-                    
                 };
 
-
-                let (new_tx_hash, status) = 
-                    nftport::transfer_nft(
-                        redis_client.clone(), 
-                        asset_info.clone()
-                    ).await;
-
-                if status == 1{
+                // check that nft owner and recipient_info are friend
+                let nft_owner_screen_cid = user.clone().screen_cid.unwrap();
+                let recipient_info_screen_cid = recipient_info.clone().screen_cid.unwrap();
+                let check_we_are_friend = UserFan::are_we_friends(
+                    &nft_owner_screen_cid, 
+                    &recipient_info_screen_cid, connection).await;
+                
+                if check_we_are_friend.is_ok() && *check_we_are_friend.as_ref().unwrap(){
 
                     /* if any update goes well we charge the user for onchain gas fee */
-                    let new_balance = updated_user_balance_data.balance.unwrap() + asset_info.amount;
+                    let new_balance = user.balance.unwrap() - asset_info.amount;
                     let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                    let Ok(updated_user_data) = update_user_balance else{
+                    let Ok(updated_user_balance_data) = update_user_balance else{
 
                         let err_resp = update_user_balance.unwrap_err();
                         return Err(err_resp);
                         
                     };
-                    
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: CANT_TRANSFER_NFT,
-                        status: 417,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::ExpectationFailed().json(resp))
-                    );
-                }
 
-                asset_info.tx_hash = Some(new_tx_hash); /* updating tx hash with the latest onchain update */
-                asset_info.current_owner_screen_cid = recipient; 
-                asset_info.is_listed = Some(false); /* set is_listed to false for new owner */
-                asset_info.current_price = Some(0); /* set current_price to false for new owner */
-                
-                match Self::update_nft_col_gal(
-                    collection_data, 
-                    gallery_data, 
-                    asset_info.clone(), 
-                    redis_actor.clone(),
-                    connection).await{
-                        Ok(updated_user_nft_data) => {
+                    asset_info.transfer_to_screen_cid = Some(recipient_info_screen_cid.clone());
+                    let (new_tx_hash, status) = 
+                        nftport::transfer_nft(
+                            redis_client.clone(), 
+                            asset_info.clone()
+                        ).await;
 
-                            actioner_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            user_wallet_info = UserWalletInfoResponse{
-                                username: recipient_info.username,
-                                avatar: recipient_info.avatar,
-                                bio: recipient_info.bio,
-                                banner: recipient_info.banner,
-                                mail: recipient_info.mail,
-                                screen_cid: recipient_info.screen_cid,
-                                extra: recipient_info.extra,
-                                stars: recipient_info.stars,
-                                created_at: recipient_info.created_at.to_string(),
-                            };
+                    if status == 1{
 
-                            action_data = updated_user_nft_data.clone();
-                            Ok(updated_user_nft_data)
-                        },
-                        Err(err) => Err(err)
+                        /* if any update goes well we charge the user for onchain gas fee */
+                        let new_balance = updated_user_balance_data.balance.unwrap() + asset_info.amount;
+                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                        let Ok(updated_user_data) = update_user_balance else{
+
+                            let err_resp = update_user_balance.unwrap_err();
+                            return Err(err_resp);
+                            
+                        };
+                        
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: CANT_TRANSFER_NFT,
+                            status: 417,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::ExpectationFailed().json(resp))
+                        );
                     }
 
+                    asset_info.tx_hash = Some(new_tx_hash); /* updating tx hash with the latest onchain update */
+                    asset_info.current_owner_screen_cid = recipient_info_screen_cid; 
+                    asset_info.is_listed = Some(false); /* set is_listed to false for new owner */
+                    asset_info.current_price = Some(0); /* set current_price to false for new owner */
+                    
+                    match Self::update_nft_col_gal(
+                        collection_data, 
+                        gallery_data, 
+                        asset_info.clone(), 
+                        redis_actor.clone(),
+                        connection).await{
+                            Ok(updated_user_nft_data) => {
+
+                                actioner_wallet_info = UserWalletInfoResponse{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    extra: user.clone().extra,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                };
+                                user_wallet_info = UserWalletInfoResponse{
+                                    username: recipient_info.username,
+                                    avatar: recipient_info.avatar,
+                                    bio: recipient_info.bio,
+                                    banner: recipient_info.banner,
+                                    mail: recipient_info.mail,
+                                    screen_cid: recipient_info.screen_cid,
+                                    extra: recipient_info.extra,
+                                    stars: recipient_info.stars,
+                                    created_at: recipient_info.created_at.to_string(),
+                                };
+
+                                action_data = updated_user_nft_data.clone();
+                                Ok(updated_user_nft_data)
+                            },
+                            Err(err) => Err(err)
+                        }
+
+                } else{
+
+                    let resp_msg = format!("{recipient_info_screen_cid:} Is Not A Friend Of {nft_owner_screen_cid:}");
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: &resp_msg,
+                        status: 406,
+                        is_error: true
+                    };
+                    return 
+                        Err(Ok(HttpResponse::NotAcceptable().json(resp)));
+                }
 
             },
             "delist" => { 
