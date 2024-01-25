@@ -3,6 +3,7 @@
 
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::events::publishers::action::ActionType;
 use crate::*;
 use crate::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
@@ -15,7 +16,7 @@ use redis_async::client::PubsubConnection;
 use serde_json::json;
 use crate::constants::{CHARSET, APP_NAME, THIRDPARTYAPI_ERROR_CODE, TWITTER_24HOURS_LIMITED, NFT_UPLOAD_PATH, NFT_UPLOAD_ISSUE, EMPTY_NFT_IMG, UNSUPPORTED_FILE_TYPE};
 use crate::events::publishers::role::PlayerRoleInfo;
-use crate::models::users::{NewIdRequest, IpInfoResponse, User};
+use crate::models::users::{IpInfoResponse, NewIdRequest, User, UserWalletInfoResponse};
 use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
@@ -24,6 +25,7 @@ use self::models::users_collections::{UserCollectionData, UserCollection};
 use self::models::users_nfts::{UserNft, UserNftData, UserCollectionDataGeneralInfo, NftColInfo};
 use self::schema::users_collections::col_description;
 use crate::schema::users_nfts::dsl::*;
+use crate::events::publishers::action::{SingleUserNotif, NotifData};
 
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
@@ -523,14 +525,66 @@ pub async fn start_transferring_card_process(
 
             // update nft 
             let nft = UserNft::find_by_onchain_id(&token_id.clone(), connection).await.unwrap();
-            diesel::update(users_nfts.find(nft.id))
-                .set((users_nfts::current_owner_screen_cid.eq(polygon_recipient_address), users_nfts::tx_hash.eq(transfer_tx_hash.clone())))
+            match diesel::update(users_nfts.find(nft.id))
+                .set((users_nfts::current_owner_screen_cid.eq(polygon_recipient_address.clone()), users_nfts::tx_hash.eq(transfer_tx_hash.clone())))
                 .returning(UserNft::as_returning())
                 .get_result::<UserNft>(connection)
-                .unwrap();
+                {
+
+                    Ok(updated_user_nft_data) => {
+
+                        let user = User::find_by_screen_cid(&polygon_recipient_address, connection).await.unwrap();
+
+                        /** -------------------------------------------------------------------- */
+                        /** ----------------- publish new event data to `on_user_action` channel */
+                        /** -------------------------------------------------------------------- */
+                        // if the actioner is the user himself we'll notify user with something like:
+                        // u've just done that action!
+                        let actioner_wallet_info = UserWalletInfoResponse{
+                            username: user.clone().username,
+                            avatar: user.clone().avatar,
+                            bio: user.clone().bio,
+                            banner: user.clone().banner,
+                            mail: user.clone().mail,
+                            screen_cid: user.clone().screen_cid,
+                            extra: user.clone().extra,
+                            stars: user.clone().stars,
+                            created_at: user.clone().created_at.to_string(),
+                        };
+                        let user_wallet_info = UserWalletInfoResponse{
+                            username: user.clone().username,
+                            avatar: user.clone().avatar,
+                            bio: user.clone().bio,
+                            banner: user.clone().banner,
+                            mail: user.clone().mail,
+                            screen_cid: user.clone().screen_cid,
+                            extra: user.clone().extra,
+                            stars: user.clone().stars,
+                            created_at: user.clone().created_at.to_string(),
+                        };
+                        let user_notif_info = SingleUserNotif{
+                            wallet_info: user_wallet_info,
+                            notif: NotifData{
+                                actioner_wallet_info,
+                                fired_at: Some(chrono::Local::now().timestamp()),
+                                action_type: ActionType::TransferNft,
+                                action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
+                            }
+                        };
+                        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                        events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                        
+                        return (transfer_tx_hash, 0);
+
+                    },
+                    Err(resp) => {
+                        
+                        return (String::from(""), 1);
+                    
+                    }
+                }
             
 
-            return (transfer_tx_hash, 0);
         } else{
             return (String::from(""), 1);
         }
