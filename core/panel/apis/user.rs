@@ -1407,8 +1407,7 @@ async fn charge_wallet_request(
                             return error_resp; /* terminate the caller with an actix http response object */
                         };
 
-                        if charge_wallet_request_object.tokens < 0 &&
-                            charge_wallet_request_object.tokens < 5{
+                        if charge_wallet_request_object.tokens < 5{
 
                                 resp!{
                                     i32, // the data type
@@ -1463,10 +1462,9 @@ async fn charge_wallet_request(
                                     }
                                 }
                                 /* 
-                                    stripe will divide the amount by 100 in checkout page to get the precision 
-                                    like if we have 50000 this will show $500 in checkout page as the default price
+                                    stripe will divide the amount by 100 in checkout page to get the cent value
                                 */
-                                let usd_token_price = token_price.0; 
+                                let usd_token_price = token_price.0;
 
                                 /*  -------------------------------------------------------------
                                     note that we don't store the product, price and session data
