@@ -77,6 +77,20 @@ pub struct UserDepositData{
     pub iat: String
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct UserDepositDataWithWalletInfo{
+    pub id: i32,
+    pub from_wallet_info: UserWalletInfoResponse,
+    pub recipient_wallet_info: UserWalletInfoResponse,
+    pub nft_id: String,
+    pub nft_img_url: String,
+    pub is_claimed: bool,
+    pub amount: i64,
+    pub mint_tx_hash: String,
+    pub signature: String, 
+    pub iat: String
+}
+
 /* 
     the error part of the following methods is of type Result<actix_web::HttpResponse, actix_web::Error>
     since in case of errors we'll terminate the caller with an error response like return Err(actix_ok_resp); 
@@ -241,7 +255,8 @@ impl UserDeposit{
     }
 
     pub async fn get_all_for(user_cid: String, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -281,10 +296,39 @@ impl UserDeposit{
             deposits
                 .into_iter()
                 .map(|d| {
-                    UserDepositData{
+                    UserDepositDataWithWalletInfo{
                         id: d.id,
-                        from_cid: d.from_cid,
-                        recipient_screen_cid: d.recipient_screen_cid,
+                        from_wallet_info: {
+                            let from_screen_cid = walletreq::evm::get_keccak256_from(user_cid.clone());
+                            let user = User::find_by_screen_cid_none_async(&from_screen_cid, connection).unwrap();
+                            UserWalletInfoResponse{
+                                username: user.username,
+                                avatar: user.avatar,
+                                bio: user.bio,
+                                banner: user.banner,
+                                mail: user.mail,
+                                screen_cid: user.screen_cid,
+                                extra: user.extra,
+                                stars: user.stars,
+                                created_at: user.created_at.to_string(),
+                            }
+                        },
+                        recipient_wallet_info: {
+                            {
+                                let user = User::find_by_screen_cid_none_async(&d.recipient_screen_cid, connection).unwrap();
+                                UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    extra: user.extra,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                }
+                            }
+                        },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
@@ -293,7 +337,7 @@ impl UserDeposit{
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),
                     }
-                }).collect::<Vec<UserDepositData>>()
+                }).collect::<Vec<UserDepositDataWithWalletInfo>>()
         )
 
 
@@ -351,7 +395,8 @@ impl UserDeposit{
     }
 
     pub async fn get_all(limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -390,10 +435,39 @@ impl UserDeposit{
             deposits
                 .into_iter()
                 .map(|d| {
-                    UserDepositData{
+                    UserDepositDataWithWalletInfo{
                         id: d.id,
-                        from_cid: d.from_cid,
-                        recipient_screen_cid: d.recipient_screen_cid,
+                        from_wallet_info: {
+                            let from_screen_cid = walletreq::evm::get_keccak256_from(d.from_cid.clone());
+                            let user = User::find_by_screen_cid_none_async(&from_screen_cid, connection).unwrap();
+                            UserWalletInfoResponse{
+                                username: user.username,
+                                avatar: user.avatar,
+                                bio: user.bio,
+                                banner: user.banner,
+                                mail: user.mail,
+                                screen_cid: user.screen_cid,
+                                extra: user.extra,
+                                stars: user.stars,
+                                created_at: user.created_at.to_string(),
+                            }
+                        },
+                        recipient_wallet_info: {
+                            {
+                                let user = User::find_by_screen_cid_none_async(&d.recipient_screen_cid, connection).unwrap();
+                                UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    extra: user.extra,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                }
+                            }
+                        },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
@@ -402,7 +476,7 @@ impl UserDeposit{
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),
                     }
-                }).collect::<Vec<UserDepositData>>()
+                }).collect::<Vec<UserDepositDataWithWalletInfo>>()
         )
 
 
@@ -410,7 +484,8 @@ impl UserDeposit{
 
 
     pub async fn get_unclaimeds_for(user_screen_cid: String, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserDepositData>, PanelHttpResponse>{
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -451,10 +526,39 @@ impl UserDeposit{
             deposits
                 .into_iter()
                 .map(|d| {
-                    UserDepositData{
+                    UserDepositDataWithWalletInfo{
                         id: d.id,
-                        from_cid: d.from_cid,
-                        recipient_screen_cid: d.recipient_screen_cid,
+                        from_wallet_info: {
+                            let from_screen_cid = walletreq::evm::get_keccak256_from(d.from_cid.clone());
+                            let user = User::find_by_screen_cid_none_async(&from_screen_cid, connection).unwrap();
+                            UserWalletInfoResponse{
+                                username: user.username,
+                                avatar: user.avatar,
+                                bio: user.bio,
+                                banner: user.banner,
+                                mail: user.mail,
+                                screen_cid: user.screen_cid,
+                                extra: user.extra,
+                                stars: user.stars,
+                                created_at: user.created_at.to_string(),
+                            }
+                        },
+                        recipient_wallet_info: {
+                            {
+                                let user = User::find_by_screen_cid_none_async(&d.recipient_screen_cid, connection).unwrap();
+                                UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    extra: user.extra,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                }
+                            }
+                        },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_id: d.nft_id.to_string(),
@@ -463,7 +567,7 @@ impl UserDeposit{
                         signature: d.tx_signature,
                         iat: d.iat.to_string(),
                     }
-                }).collect::<Vec<UserDepositData>>()
+                }).collect::<Vec<UserDepositDataWithWalletInfo>>()
         )
 
 

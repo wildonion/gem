@@ -13,7 +13,7 @@ use crate::events::publishers::role::{PlayerRoleInfo, Reveal};
 use crate::models::clp_events::{ClpEvent, NewClpEventRequest};
 use crate::models::users_checkouts::{UserCheckout, UserCheckoutData};
 use crate::models::users_collections::{NewUserCollectionRequest, UserCollectionData, UserCollection, UpdateUserCollectionRequest, CollectionInfoResponse};
-use crate::models::users_deposits::{UserDeposit, UserDepositData};
+use crate::models::users_deposits::{UserDeposit, UserDepositData, UserDepositDataWithWalletInfo};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::passport::Passport;
@@ -1713,7 +1713,7 @@ async fn get_all_users_deposits(
                         Ok(user_deposits) => {
 
                             resp!{
-                                Vec<UserDepositData>, // the data type
+                                Vec<UserDepositDataWithWalletInfo>, // the data type
                                 user_deposits, // response data
                                 FETCHED, // response message
                                 StatusCode::OK, // status code

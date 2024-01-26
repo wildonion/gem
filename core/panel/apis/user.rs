@@ -11,7 +11,7 @@ use crate::models::clp_events::{ClpEventData, ClpEvent};
 use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserCheckout};
 use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest, CancelUserClpEventRequest};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
-use crate::models::users_deposits::UserDepositData;
+use crate::models::users_deposits::{UserDepositData, UserDepositDataWithWalletInfo};
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, FriendData, UserRelations, EnterPrivateGalleryRequest, RemoveFriend, RemoveFollower};
 use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
 use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
@@ -37,7 +37,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
- 
 use crate::adapters::nftport::*;
 
 
@@ -2282,7 +2281,7 @@ async fn get_all_user_deposits(
                         Ok(user_deposits) => {
 
                             resp!{
-                                Vec<UserDepositData>, // the data type
+                                Vec<UserDepositDataWithWalletInfo>, // the data type
                                 user_deposits, // response data
                                 FETCHED, // response message
                                 StatusCode::OK, // status code
@@ -3069,7 +3068,7 @@ async fn get_recipient_unclaimed_deposits(
                         Ok(user_unclaimeds) => {
 
                             resp!{
-                                Vec<UserDepositData>, // the data type
+                                Vec<UserDepositDataWithWalletInfo>, // the data type
                                 user_unclaimeds, // response data
                                 FETCHED, // response message
                                 StatusCode::OK, // status code
