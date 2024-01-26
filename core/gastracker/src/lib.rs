@@ -35,6 +35,23 @@ pub struct Quote{
     pub USDIRR: f64,
 }
 
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct CurrencyLayerResponseGbp{
+    pub success: bool,
+    pub terms: String,
+    pub privacy: String,
+    pub timestamp: i64,
+    pub source: String,
+    pub quotes: QuoteGbp
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
+pub struct QuoteGbp{
+    /* following need to be uppercase cause the response fields are uppercase */
+    pub GBPEUR: f64,
+    pub GBPUSD: f64,
+    pub GBPIRR: f64,
+}
 
 /* >_
     use serde_json::Value codec in case that we don't know the type of data 
@@ -206,6 +223,61 @@ pub async fn calculate_token_value(tokens: i64, redis_client: redis::Client) -> 
 
 
     (final_value_i64, final_irr_price_i64)
+
+
+}
+
+// ------------------------------------------
+// calculate token value to usd based on:
+// 1 token = 1 pence or 0.01 pound
+// 100 tokens = 1 GBP or 100 pences
+// 100 tokens = 1.27 USD
+// 250 tokens = 250 * 1.27 / 100
+// ------------------------------------------
+pub async fn calculate_token_value_gbp_based(tokens: i64, redis_client: redis::Client) -> f64{
+
+    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+    let currencty_layer_secret_key = std::env::var("CURRENCY_LAYER_TOKEN").unwrap();
+    let endpoint = format!("http://apilayer.net/api/live?access_key={}&currencies=EUR,USD,IRR&source=GBP&format=1", currencty_layer_secret_key);
+    let res = reqwest::Client::new()
+        .get(endpoint.as_str())
+        .send()
+        .await;
+
+    let get_currencies_response = &mut res.unwrap();
+    let get_currencies_response_bytes = get_currencies_response.chunk().await.unwrap();
+    let err_resp_vec = get_currencies_response_bytes.unwrap().to_vec();
+    let get_currencies_response_json = serde_json::from_slice::<CurrencyLayerResponseGbp>(&err_resp_vec);
+    
+    /* 
+        if we're here means that we couldn't map the bytes into the CurrencyLayerResponseGbp 
+        and perhaps we have errors in response from the currency layer
+    */
+    if get_currencies_response_json.is_err(){
+        
+        /* log caching using redis */
+        let cloned_err_resp_vec = err_resp_vec.clone();
+        let err_resp_str = std::str::from_utf8(cloned_err_resp_vec.as_slice()).unwrap();
+        let get_currencies_logs_key_err = format!("ERROR=>CurrencyLayerResponseGbp|Time:{}", chrono::Local::now().to_string());
+        let ـ : RedisResult<String> = redis_conn.set(get_currencies_logs_key_err, err_resp_str).await;
+
+        error!("serde decoding currecny layer response error: {}", err_resp_str);
+
+        return 0.0;
+
+    }
+    
+    let currencies = get_currencies_response_json.unwrap();
+    let gbp_to_usd = currencies.quotes.GBPUSD;
+
+    // 1 GBP = 1.27 USD
+    // 1 GBP = 100 token
+    // 100 token = 1.27 USD
+    // 250 = ? usd
+    let rounded_value = (gbp_to_usd * 100.0).round() as i64; // scale to keep 2 decimal places
+    let final_usd_value = (rounded_value as f64 / 100.0) as f64; // this is the dollar price of 1 GBP
+    let tokens_value = (tokens as f64 * final_usd_value) / 100.0;
+    tokens_value
 
 
 }

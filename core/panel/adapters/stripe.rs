@@ -139,6 +139,11 @@ pub async fn create_price(
     price_data.insert("currency".to_string(), "usd".to_string());
     price_data.insert("product".to_string(), product_id.to_string());
 
+    //---- considering the amount of each token to be 1 pence or 0.01 pound
+    //---- which 1 token would be 1 pound or 100 pences
+    // price_data.insert("unit_amount".to_string(), String::from("1")); // price of each token in cent
+    // price_data.insert("currency".to_string(), "gbp".to_string());
+
     let stripe_create_price_endpoint = format!("https://api.stripe.com/v1/prices");
     let res = reqwest::Client::new()
         .post(stripe_create_price_endpoint.as_str())
