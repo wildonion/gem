@@ -130,12 +130,12 @@ pub async fn create_price(
     /* create price */
     let stripe_test_secret_key = env::var("STRIPE_SECRET_KEY").unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
-
-    let usd_token_decimal = usd_token_price as f64 / 10000000.0;
-    let usd_token_price_in_cents = (usd_token_decimal * 100.0).round() as i64; // 1 dollar is 100 cents
+    
+    let token_price = gastracker::calculate_token_value(1, redis_client.clone()).await.0 as f64 / 10000000.0;
+    let usd_token_price_in_cents = (token_price * 100.0).round() as i64; // 1 dollar is 100 cents
 
     let mut price_data = HashMap::new();
-    price_data.insert("unit_amount".to_string(), usd_token_price_in_cents.to_string());
+    price_data.insert("unit_amount".to_string(), usd_token_price_in_cents.to_string()); // price of each token in cent
     price_data.insert("currency".to_string(), "usd".to_string());
     price_data.insert("product".to_string(), product_id.to_string());
 
