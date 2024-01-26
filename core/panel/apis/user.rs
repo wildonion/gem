@@ -14,7 +14,7 @@ use crate::models::users_collections::{UserCollection, UserCollectionData, NewUs
 use crate::models::users_deposits::{UserDepositData, UserDepositDataWithWalletInfo};
 use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, FriendData, UserRelations, EnterPrivateGalleryRequest, RemoveFriend, RemoveFollower};
 use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
-use crate::models::users_nfts::{UserNftData, NewUserNftRequest, UpdateUserNftRequest, UserNft, UserReactionData, NftReactionData, AddReactionRequest, CreateNftMetadataUriRequest};
+use crate::models::users_nfts::{AddReactionRequest, CreateNftMetadataUriRequest, NewUserNftRequest, NftReactionData, UpdateUserNftRequest, UserNft, UserNftData, UserNftDataWithWalletInfo, UserReactionData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
 use crate::passport::Passport; /* loading Passport macro to use get_user() method on HttpRequest object */
@@ -22,6 +22,7 @@ use crate::resp;
 use crate::constants::*;
 use crate::misc::*;
 use actix::Addr;
+use chrono::NaiveDateTime;
 use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -55,7 +56,7 @@ use crate::adapters::nftport::*;
 /* 
     >-------------------------------------------------------------------------
     There are access and refresh tokens in cookie response in form of 
-        /accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:} 
+        /accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refreshtoken={refresh_token:} 
     once the access token gets expired we can pass refresh token into 
     the request header in place of access token to get a new set of 
     keys on behalf of user, instead of redirecting client to the 
@@ -10698,6 +10699,362 @@ async fn get_top_users(
 
 }
 
+#[get("/nft/get/{asset_id}")]
+#[passport(user)]
+async fn get_single_nft(
+    req: HttpRequest,  
+    asset_id: web::Path<i32>,    
+    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse {
+
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserNft::find_by_id(asset_id.to_owned(), connection).await{
+                        
+                        Ok(user_nft_data) => {
+                            resp!{
+                                UserNftDataWithWalletInfo, // the data type
+                                UserNftDataWithWalletInfo{ 
+                                    id: user_nft_data.id, 
+                                    contract_address: user_nft_data.contract_address, 
+                                    current_owner_wallet_info: {
+                                        let user = User::find_by_screen_cid(&user_nft_data.current_owner_screen_cid, connection).await.unwrap();
+                                        UserWalletInfoResponse{
+                                            username: user.username,
+                                            avatar: user.avatar,
+                                            bio: user.bio,
+                                            banner: user.banner,
+                                            mail: user.mail,
+                                            screen_cid: user.screen_cid,
+                                            extra: user.extra,
+                                            stars: user.stars,
+                                            created_at: user.created_at.to_string(),
+                                        }
+                                    }, 
+                                    metadata_uri: user_nft_data.metadata_uri, 
+                                    extra: user_nft_data.extra, 
+                                    onchain_id: user_nft_data.onchain_id, 
+                                    nft_name: user_nft_data.nft_name, 
+                                    is_minted: user_nft_data.is_minted, 
+                                    nft_description: user_nft_data.nft_description, 
+                                    current_price: user_nft_data.current_price, 
+                                    is_listed: user_nft_data.is_listed, 
+                                    freeze_metadata: user_nft_data.freeze_metadata, 
+                                    comments: user_nft_data.comments, 
+                                    likes: user_nft_data.likes, 
+                                    tx_hash: user_nft_data.tx_hash, 
+                                    created_at: user_nft_data.created_at.to_string(), 
+                                    updated_at: user_nft_data.updated_at.to_string(),
+                                    attributes: user_nft_data.attributes, 
+                                }, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[get("/nft/get/")]
+#[passport(user)]
+async fn get_nfts_owned_by(
+    req: HttpRequest,  
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse {
+
+
+    let storage = storage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+
+                    let from = limit.from.unwrap_or(0) as usize;
+                    let to = limit.to.unwrap_or(10) as usize;
+
+                    if to < from {
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: INVALID_QUERY_LIMIT,
+                            status: 406,
+                            is_error: true
+                        };
+                        return 
+                            Ok(HttpResponse::NotAcceptable().json(resp));
+                    }
+
+                    match UserNft::get_all_by_current_owner(&user.screen_cid.unwrap(), connection).await{
+                        
+                        Ok(mut user_nfts_data) => {
+
+                            user_nfts_data.sort_by(|nft1, nft2|{
+
+                                let nft1_created_at = NaiveDateTime
+                                    ::parse_from_str(nft1.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                                    .unwrap();
+                    
+                                let nft2_created_at = NaiveDateTime
+                                    ::parse_from_str(nft2.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                                    .unwrap();
+                    
+                                nft2_created_at.cmp(&nft1_created_at)
+                    
+                            });      
+                            
+                            let sliced = if from < user_nfts_data.len(){
+                                if user_nfts_data.len() > to{
+                                    let data = &user_nfts_data[from..to+1];
+                                    data.to_vec()
+                                } else{
+                                    let data = &user_nfts_data[from..user_nfts_data.len()];
+                                    data.to_vec()
+                                }
+                            } else{
+                                vec![]
+                            };
+
+
+                            resp!{
+                                Vec<UserNftDataWithWalletInfo>, // the data type
+                                {
+                                    sliced
+                                        .into_iter()
+                                        .map(|user_nft_data|{
+                                            UserNftDataWithWalletInfo{ 
+                                                id: user_nft_data.id, 
+                                                contract_address: user_nft_data.contract_address, 
+                                                current_owner_wallet_info: {
+                                                    let user = User::find_by_screen_cid_none_async(&user_nft_data.current_owner_screen_cid, connection).unwrap();
+                                                    UserWalletInfoResponse{
+                                                        username: user.username,
+                                                        avatar: user.avatar,
+                                                        bio: user.bio,
+                                                        banner: user.banner,
+                                                        mail: user.mail,
+                                                        screen_cid: user.screen_cid,
+                                                        extra: user.extra,
+                                                        stars: user.stars,
+                                                        created_at: user.created_at.to_string(),
+                                                    }
+                                                }, 
+                                                metadata_uri: user_nft_data.metadata_uri, 
+                                                extra: user_nft_data.extra, 
+                                                onchain_id: user_nft_data.onchain_id, 
+                                                nft_name: user_nft_data.nft_name, 
+                                                is_minted: user_nft_data.is_minted, 
+                                                nft_description: user_nft_data.nft_description, 
+                                                current_price: user_nft_data.current_price, 
+                                                is_listed: user_nft_data.is_listed, 
+                                                freeze_metadata: user_nft_data.freeze_metadata, 
+                                                comments: user_nft_data.comments, 
+                                                likes: user_nft_data.likes, 
+                                                tx_hash: user_nft_data.tx_hash, 
+                                                created_at: user_nft_data.created_at.to_string(), 
+                                                updated_at: user_nft_data.updated_at.to_string(),
+                                                attributes: user_nft_data.attributes, 
+                                            }
+                                        })
+                                        .collect::<Vec<UserNftDataWithWalletInfo>>()
+                                }, // response data
+                                FETCHED, // response message
+                                StatusCode::OK, // status code
+                                None::<Cookie<'_>>, // cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
 
 
 pub mod exports{
@@ -10730,6 +11087,8 @@ pub mod exports{
     pub use super::get_all_user_clp_events_info;
     pub use super::get_friend_suggestions_for_owner;
     pub use super::get_all_private_collections_for_invited_friends;
+    pub use super::get_single_nft;
+    pub use super::get_nfts_owned_by;
     pub use super::get_notifications;
     pub use super::session_oauth_google;
     pub use super::create_collection;

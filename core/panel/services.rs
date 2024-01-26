@@ -166,6 +166,8 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::create_collection);
     config.service(apis::user::exports::update_collection);
     config.service(apis::user::exports::upload_collection_banner);
+    config.service(apis::user::exports::get_nfts_owned_by);
+    config.service(apis::user::exports::get_single_nft);
 
 
 }
