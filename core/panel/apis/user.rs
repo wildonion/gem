@@ -12,7 +12,7 @@ use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserChec
 use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest, CancelUserClpEventRequest};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::{UserDepositData, UserDepositDataWithWalletInfo};
-use crate::models::users_fans::{InvitationRequestDataResponse, AcceptInvitationRequest, UserFanData, UserFan, AcceptFriendRequest, InvitationRequestData, SendFriendRequest, FriendData, UserRelations, EnterPrivateGalleryRequest, RemoveFriend, RemoveFollower};
+use crate::models::users_fans::{AcceptFriendRequest, AcceptInvitationRequest, EnterPrivateGalleryRequest, FriendData, InvitationRequestData, InvitationRequestDataResponse, RemoveFollower, RemoveFriend, SendFriendRequest, UserFan, UserFanData, UserFanDataWithWalletInfo, UserRelations};
 use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
 use crate::models::users_nfts::{AddReactionRequest, CreateNftMetadataUriRequest, NewUserNftRequest, NftReactionData, UpdateUserNftRequest, UserNft, UserNftData, UserNftDataWithWalletInfo, UserReactionData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -6695,7 +6695,7 @@ async fn get_all_my_followings(
                         Ok(followings) => {
 
                             resp!{
-                                Vec<UserFanData>, //// the data type
+                                Vec<UserFanDataWithWalletInfo>, //// the data type
                                 followings, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code

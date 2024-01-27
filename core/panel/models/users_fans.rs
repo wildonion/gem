@@ -28,8 +28,8 @@ use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest
     
     >_ user_screen_cid can accept each request he wants inside the friends field
     >_ friends are the ones inside `friends` field who have sent requests to each other and both of them accepted each other's request
-    >_ followers are the ones inside `friends` field who their requests are accepted by the user_screen_cid
-    >_ followings are the ones inside `friends` field who you've send request to them and they've accepted your request 
+    >_ followers are the ones inside `friends` field who their requests are accepted by the user_screen_cid but they're not friend with each other
+    >_ followings are the ones inside `friends` field who you've send request to them and are friend with each other
     
 */
 #[derive(Queryable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -59,7 +59,7 @@ pub struct UserRelations{
     pub user_info: UserWalletInfoResponse,
     pub followers: UserFanData,
     pub friends: UserFanData,
-    pub followings: Vec<UserFanData>
+    pub followings: Vec<UserFanDataWithWalletInfo>
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -98,6 +98,17 @@ pub struct InvitationRequestDataResponse{
 pub struct UserFanData{
     pub id: i32,
     pub user_screen_cid: String,
+    pub friends: Option<serde_json::Value>,
+    pub invitation_requests: Option<serde_json::Value>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq)]
+pub struct UserFanDataWithWalletInfo{
+    pub id: i32,
+    pub user_wallet_info: UserWalletInfoResponse,
     pub friends: Option<serde_json::Value>,
     pub invitation_requests: Option<serde_json::Value>,
     pub created_at: String,
@@ -959,7 +970,8 @@ impl UserFan{
 
     /* -------------------- 
     // get those ones inside the owner friend data who
-    // the owner has accepted their requests
+    // the owner has accepted their requests but they
+    // must not be friend with each other
     -------------------- */
     pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -1006,16 +1018,27 @@ impl UserFan{
             vec![]
         }; 
 
-        let mut owner_followers = decoded_friends_data
-            .into_iter()
-            .map(|frd| {
-                if frd.is_accepted{
-                    Some(frd)
-                } else{
-                    None
-                }
-            })
-            .collect::<Vec<Option<FriendData>>>();
+        let mut owner_followers = vec![];
+        for dfrd in decoded_friends_data{
+            // owner_screen_cid and frd.screen_cid must not be friend already
+            let are_we_friends = Self::are_we_friends(
+                &owner_screen_cid, 
+                &dfrd.screen_cid, 
+                connection
+            ).await;
+
+            if are_we_friends.is_ok() && are_we_friends.unwrap(){
+                continue;
+            } 
+            
+            if dfrd.is_accepted{
+                owner_followers.push(Some(dfrd));
+            } else{
+                owner_followers.push(None);
+            }
+            
+        }
+
         owner_followers.retain(|frd| frd.is_some());
 
         Ok(
@@ -1071,12 +1094,12 @@ impl UserFan{
 
     /* -------------------- 
     // get those ones inside the users_fans table who
-    // have owner in their friend data (or) they have 
-    // accepted the owner request
+    // have owner in their friend data and are friend 
+    // we each other
     -------------------- */
     pub async fn get_all_my_followings(who_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserFanData>, PanelHttpResponse>{
+        -> Result<Vec<UserFanDataWithWalletInfo>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0) as usize;
             let to = limit.to.unwrap_or(10) as usize;
@@ -1127,12 +1150,36 @@ impl UserFan{
                 }; 
                 
                 for friend in decoded_friends_data{
-                    // if friend.screen_cid == who_screen_cid && friend.is_accepted{
+                    
+                    // who_screen_cid and friend.screen_cid must not be friend already
+                    let are_we_friends = Self::are_we_friends(
+                        &who_screen_cid, 
+                        &friend.screen_cid, 
+                        connection
+                    ).await;
+
+                    if are_we_friends.is_ok() && are_we_friends.unwrap(){
+                        continue;
+                    }
+                    
                     if friend.screen_cid == who_screen_cid{
                         followings.push({
-                            UserFanData{
+                            UserFanDataWithWalletInfo{
                                 id: fan_data.id,
-                                user_screen_cid: fan_data.clone().user_screen_cid,
+                                user_wallet_info: {
+                                    let user = User::find_by_screen_cid(&fan_data.clone().user_screen_cid, connection).await.unwrap();
+                                    UserWalletInfoResponse{
+                                        username: user.username,
+                                        avatar: user.avatar,
+                                        bio: user.bio,
+                                        banner: user.banner,
+                                        mail: user.mail,
+                                        screen_cid: user.screen_cid,
+                                        extra: user.extra,
+                                        stars: user.stars,
+                                        created_at: user.created_at.to_string(),
+                                    }
+                                },
                                 friends: fan_data.clone().friends,
                                 invitation_requests: fan_data.clone().invitation_requests,
                                 created_at: fan_data.created_at.to_string(),
