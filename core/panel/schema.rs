@@ -59,6 +59,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    token_stats (id) {
+        id -> Int4,
+        user_id -> Int4,
+        usd_token_price -> Int8,
+        requested_tokens -> Int8,
+        requested_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::Userrole;
 
@@ -267,6 +277,7 @@ diesel::joinable!(users_tasks -> users (user_id));
 diesel::allow_tables_to_appear_in_same_query!(
     clp_events,
     tasks,
+    token_stats,
     users,
     users_checkouts,
     users_clps,

@@ -39,6 +39,8 @@ use models::users::{Id, NewIdRequest, UserIdResponse};
 use models::users_deposits::{NewUserDepositRequest, UserDeposit};
 use models::users_withdrawals::NewUserWithdrawRequest;
 use crate::adapters::nftport::*;
+use crate::models::token_stats::TokenStatInfoRequest;
+use self::models::token_stats::TokenStatInfo;
 
 
 
@@ -10428,6 +10430,17 @@ async fn get_token_value(
                         the exact amount of token based in USD.
                     */
                     let value = gastracker::calculate_token_value(tokens.to_owned(), redis_client.clone()).await;
+                    
+                    if let Err(resp) = TokenStatInfo::save(
+                        TokenStatInfoRequest{
+                            user_id: _id,
+                            requested_tokens: tokens.to_owned(),
+                            usd_token_price: value.0,
+                        },
+                        connection).await{
+                            error!("can't store token stat info into db, check the log file (TokenStatInfo::save)");
+                        }
+                    
                     resp!{
                         GetTokenValueResponse, // the data type
                         GetTokenValueResponse{

@@ -20,6 +20,7 @@
     |   users_clps        ---> methods of postgres users_clps table
     |   clp_events        ---> methods of postgres clp_events table
     |   chatdb            ---> methods of spacetimdb chatdb server
+    |   token_stats       ---> methods of postgres token_stats table
     |
 */
 
@@ -39,3 +40,4 @@ pub mod users_fans;
 pub mod users_clps;
 pub mod clp_events;
 pub mod chatdb;
+pub mod token_stats;
