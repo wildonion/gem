@@ -162,24 +162,10 @@ pub async fn start_minting_card_process(
     /* upload card to ipfs */
     let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
 
-    /* ---------------------------- we're using the ifps nft_img_url ----------------------------
-    let (metadata_uri, res_metadata_uri_status) = upload_file_to_ipfs(&nftport_token, redis_client.clone()).await;
-        
-    if res_metadata_uri_status == 1{
-        return (String::from(""), String::from(""), 1);
-    }
-
-    /* log caching using redis */
-    let upload_logs_key = format!("Sender:{}|Log:NftPortUploadFileToIpfsData|Time:{}", sender_screen_cid.clone(), chrono::Local::now().to_string());
-    let ـ : RedisResult<String> = redis_conn.set(upload_logs_key, serde_json::to_string_pretty(&metadata_uri).unwrap()).await;
-    info!("✅ NftPortUploadFileToIpfsData: {:#?}", metadata_uri.clone());
-    if metadata_uri.response == String::from("OK"){
-    --------------------------------------------------------------------------------------- */
-
     if !nft_img_url.is_empty(){
 
         // let metadata_uri = metadata_uri.ipfs_url;
-        let giftcard_metadata_uri = nft_img_url; // front has already uploaded the img of nft in ipfs
+        let giftcard_metadata_uri = nft_img_url; // front has already uploaded the img of nft on ipfs using nftstorage
 
         /* upload metadata to ipfs */
         let mut custom_fields = HashMap::new();
@@ -402,7 +388,7 @@ pub async fn start_minting_card_process(
                             nft_description: nft_desc,
                             current_price: deposit_object.amount,
                             extra: Some(serde_json::to_value(vec![custom_fields]).unwrap()),
-                            metadata_uri: giftcard_metadata_uri, // TODO - upload_meta_response.metadata_uri::nft_pic_in_server
+                            metadata_uri: giftcard_metadata_uri,
                             attributes: None,
                             tx_signature: String::from(""),
                             hash_data: String::from(""),
