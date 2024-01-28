@@ -1709,7 +1709,9 @@ impl UserFan{
 
         } else{
 
-            let resp_msg = format!("{request_sender:} Is Not A Friend Of {owner_screen_cid:}");
+            let request_sender_username = request_sender_info.clone().username;
+            let owner_username = user.clone().username;
+            let resp_msg = format!("{request_sender_username:} Is Not A Friend Of {owner_username:}");
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &resp_msg,
@@ -1803,6 +1805,8 @@ impl UserFan{
                     vec![]
                 };
 
+                // push the one who has accepted the request into the invited_friends
+                // of the gallery owner if it wasn't already in there
                 if !invited_friends.contains(&Some(owner_screen_cid.to_string())){
                     invited_friends.push(Some(owner_screen_cid.to_string()));
                 }

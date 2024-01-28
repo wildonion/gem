@@ -2393,8 +2393,15 @@ impl UserNft{
 
     /*  --------------------------------------------------------------------------------
         Note: Transferring is possible only if the token is owned by the contract owner 
-        and the token has not been transferred/sold yet, so the following operation can 
-        only be done once after minting means only the contract owner can buy his own nft
+        and the token has not been transferred/sold yet, in other words nft can be transferred 
+        once and it can be transferred if the token has been minted to to the contract owner so 
+        ✅ following scenario is correct
+        only owner: create nft, mint nft then list
+        only other: buy
+        ❌ but the following is not:
+        owner: create nft
+        other: mint then list 
+        owner or other: buy
         --------------------------------------------------------------------------------
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
@@ -2483,6 +2490,27 @@ impl UserNft{
                         return Err(
                             Ok(HttpResponse::NotAcceptable().json(resp))
                         );
+                    }
+
+                    // buyer and nft owner must be friend of each other
+                    let check_we_are_friend = UserFan::are_we_friends(
+                        &buyer_screen_cid, 
+                        &current_nft_owner_screen_cid, connection).await;
+                    
+                    if check_we_are_friend.is_err() || !*check_we_are_friend.as_ref().unwrap(){
+
+                        let buyer_username = user.clone().username;
+                        let nft_owner_username = User::find_by_screen_cid(&current_nft_owner_screen_cid, connection).await.unwrap().username;
+                        let resp_msg = format!("{buyer_username:} Is Not A Friend Of {nft_owner_username:}");
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: &resp_msg,
+                            status: 406,
+                            is_error: true
+                        };
+                        return 
+                            Err(Ok(HttpResponse::NotAcceptable().json(resp)));
+                            
                     }
 
                     let get_nft_price = buy_nft_request.current_price;
@@ -3139,8 +3167,15 @@ impl UserNft{
 
             /*  --------------------------------------------------------------------------------
                 Note: Transferring is possible only if the token is owned by the contract owner 
-                and the token has not been transferred/sold yet, so the following operation can 
-                only be done once after minting means only the contract owner can transfer his own nft
+                and the token has not been transferred/sold yet, in other words nft can be transferred 
+                once and it can be transferred if the token has been minted to to the contract owner so
+                ✅ following scenario is correct
+                only owner: create nft, mint nft then list
+                only other: buy
+                ❌ but the following is not:
+                owner: create nft
+                other: mint then list 
+                owner or other: buy
                 --------------------------------------------------------------------------------
             */
             "transfer" => {
@@ -3282,7 +3317,9 @@ impl UserNft{
 
                 } else{
 
-                    let resp_msg = format!("{recipient_info_screen_cid:} Is Not A Friend Of {nft_owner_screen_cid:}");
+                    let recipient_username = recipient_info.clone().username;
+                    let nft_owner_username = user.clone().username;
+                    let resp_msg = format!("{recipient_username:} Is Not A Friend Of {nft_owner_username:}");
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
                         message: &resp_msg,

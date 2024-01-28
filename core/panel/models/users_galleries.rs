@@ -457,7 +457,9 @@ impl UserPrivateGallery{
 
         } else{
             
-            let resp_msg = format!("{caller_screen_cid:} Is Not A Friend Of {screen_cid:}");
+            let caller_username = User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap().username;
+            let owner_username = User::find_by_screen_cid(&screen_cid, connection).await.unwrap().username;
+            let resp_msg = format!("{caller_username:} Is Not A Friend Of {owner_username:}");
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &resp_msg,
@@ -823,6 +825,7 @@ impl UserPrivateGallery{
             })
             .collect::<Vec<Option<UserPrivateGalleryInfoDataInvited>>>();
 
+        gals.retain(|gal| gal.is_some());
 
         /* sorting wallet data in desc order */
         gals.sort_by(|g1, g2|{
@@ -1257,6 +1260,7 @@ impl UserPrivateGallery{
 
 impl UserPrivateGallery{
 
+    // if the user wants to exit from the gallery we won't payback him
     pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
@@ -1558,7 +1562,10 @@ impl UserPrivateGallery{
             UserFan::push_invitation_request_for(&to_screen_cid, redis_actor.clone(), invitation_request_data, connection).await
 
         } else{
-            let resp_msg = format!("{gallery_owner_cid:} Is Not A Friend Of {to_screen_cid:}");
+
+            let gal_owner_username = User::find_by_screen_cid(&gallery_owner_screen_cid, connection).await.unwrap().username;
+            let to_username = User::find_by_screen_cid(&to_screen_cid, connection).await.unwrap().username;
+            let resp_msg = format!("{gal_owner_username:} Is Not A Friend Of {to_username:}");
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: &resp_msg,

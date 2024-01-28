@@ -2062,7 +2062,7 @@ async fn deposit(
 
 
                         // sender and recipient must be friend of each other
-                        let depositor_screen_cid = &user.screen_cid.unwrap();
+                        let depositor_screen_cid = &user.screen_cid.as_ref().unwrap();
                         let check_we_are_friend = UserFan::are_we_friends(
                             &polygon_recipient_address.clone(), 
                             depositor_screen_cid, connection).await;
@@ -2159,7 +2159,9 @@ async fn deposit(
 
                         } else{
                 
-                            let resp_msg = format!("{polygon_recipient_address:} Is Not A Friend Of {depositor_screen_cid:}");
+                            let recipient_username = recipient_info.clone().username;
+                            let depositor_username = user.clone().username;
+                            let resp_msg = format!("{recipient_username:} Is Not A Friend Of {depositor_username:}");
                             let resp = Response::<'_, &[u8]>{
                                 data: Some(&[]),
                                 message: &resp_msg,
