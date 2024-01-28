@@ -878,6 +878,53 @@ impl UserNft{
 
     }
 
+    pub fn find_by_onchain_id_none_async(onchain_id_: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserNftData, PanelHttpResponse>{
+
+        let user_nft = users_nfts
+            .filter(users_nfts::onchain_id.eq(onchain_id_))
+            .first::<UserNft>(connection);
+
+        let Ok(nft) = user_nft else{
+
+            let resp = Response{
+                data: Some(onchain_id_),
+                message: NFT_NOT_FOUND_OF,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        Ok(
+            UserNftData{ 
+                id: nft.id, 
+                contract_address: nft.contract_address, 
+                current_owner_screen_cid: nft.current_owner_screen_cid, 
+                metadata_uri: nft.metadata_uri, 
+                extra: nft.extra, 
+                onchain_id: nft.onchain_id, 
+                nft_name: nft.nft_name, 
+                is_minted: nft.is_minted, 
+                nft_description: nft.nft_description, 
+                current_price: nft.current_price, 
+                is_listed: nft.is_listed, 
+                freeze_metadata: nft.freeze_metadata, 
+                comments: nft.comments, 
+                likes: nft.likes, 
+                tx_hash: nft.tx_hash, 
+                created_at: nft.created_at.to_string(), 
+                updated_at: nft.updated_at.to_string(),
+                attributes: nft.attributes, 
+            }
+        )
+
+    }
+
     pub async fn create_nft_metadata_uri(
         asset_info: CreateNftMetadataUriRequest,
         files: HashMap<String, Vec<u8>>, // a map between filenames and their utf8 bytes

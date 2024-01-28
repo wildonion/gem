@@ -10,6 +10,7 @@ use crate::constants::*;
 use crate::models::users::{User, UserData, UserRole};
 use crate::schema::users_deposits::dsl::*;
 use super::users::UserWalletInfoResponse;
+use super::users_nfts::{UserNft, UserNftData};
 
 
 
@@ -82,7 +83,7 @@ pub struct UserDepositDataWithWalletInfo{
     pub id: i32,
     pub from_wallet_info: UserWalletInfoResponse,
     pub recipient_wallet_info: UserWalletInfoResponse,
-    pub nft_id: String,
+    pub nft_data: UserNftData,
     pub nft_img_url: String,
     pub is_claimed: bool,
     pub amount: i64,
@@ -331,7 +332,10 @@ impl UserDeposit{
                         },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
-                        nft_id: d.nft_id.to_string(),
+                        nft_data: {
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            nft
+                        },
                         nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
@@ -470,7 +474,10 @@ impl UserDeposit{
                         },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
-                        nft_id: d.nft_id.to_string(),
+                        nft_data: {
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            nft
+                        },
                         nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
@@ -561,7 +568,10 @@ impl UserDeposit{
                         },
                         is_claimed: d.is_claimed,
                         amount: d.amount,
-                        nft_id: d.nft_id.to_string(),
+                        nft_data: {
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            nft
+                        },
                         nft_img_url: d.nft_img_url.to_string(),
                         mint_tx_hash: d.mint_tx_hash,
                         signature: d.tx_signature,
