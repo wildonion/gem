@@ -402,7 +402,7 @@ pub async fn start_minting_card_process(
                             nft_description: nft_desc,
                             current_price: deposit_object.amount,
                             extra: Some(serde_json::to_value(vec![custom_fields]).unwrap()),
-                            metadata_uri: giftcard_metadata_uri,
+                            metadata_uri: giftcard_metadata_uri, // TODO - upload_meta_response.metadata_uri::nft_pic_in_server
                             attributes: None,
                             tx_signature: String::from(""),
                             hash_data: String::from(""),
@@ -1029,13 +1029,22 @@ pub async fn mint_nft(
 
     if !asset_info.metadata_uri.is_empty(){
 
+        // metadata_uri_ contains the ipfs and the image path on the server
+        // so we have to split it by :: to extract the ipfs url to store 
+        // that only onchain otherwise nftport will say:
+        // `The amount of data to be saved on the blockchain is too large. 
+        // Try making the request smaller by using shorter texts or setting 
+        // a base_uri in the contract for long metadata URIs or by reducing 
+        // the batch size for batch transactions.`
         let metadata_uri_ = asset_info.clone().metadata_uri;
+        let mut splitted_metadata_uri_ = metadata_uri_.split("::");
+        let ipfs_metadata_uri_ = splitted_metadata_uri_.next().unwrap();
 
         /* mint request */
         let mut mint_data = HashMap::new();
         mint_data.insert("chain", "polygon");
         mint_data.insert("contract_address", &asset_info.contract_address);
-        mint_data.insert("metadata_uri", &metadata_uri_);
+        mint_data.insert("metadata_uri", ipfs_metadata_uri_);
         
         let minter_screen_cid = walletreq::evm::get_keccak256_from(asset_info.clone().caller_cid);
         mint_data.insert("mint_to_address", &minter_screen_cid);
