@@ -9,7 +9,7 @@
     https://github.com/wildonion/zoomate/blob/main/src/lib.rs
     https://github.com/wildonion/gvm/blob/main/src/lib.rs
 
-    complete proc macros in lib.rs
+    complete proc macros in lib.rs as a plugin
     scoring, ranking and suggestion algos for nfts, galleries, users, collections
     based on stars field of the user, how much he has interacted with other users' stuffs
 
