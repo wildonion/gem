@@ -184,3 +184,14 @@ impl UserActionActor{
     }
 
 }
+
+impl Handler<GetUsersNotifsMap> for UserActionActor{
+
+    type Result = UsersNotifs;
+
+    fn handle(&mut self, msg: GetUsersNotifsMap, ctx: &mut Self::Context) -> Self::Result {
+        
+        todo!()
+
+    }
+}

@@ -3917,13 +3917,14 @@ async fn get_notifications(
                         
                     }
 
-                    // sending an async message to users_action_subscriber_actor 
-                    // to get its latest state which contains the whole app notifs
-                    // for all users
-                    // let get_users_notifs = users_action_subscriber_actor
-                    //     .send(GetUsersNotifsMap)
-                    //     .await
-                    //     .unwrap();
+                    // sending an async message to users_action_subscriber_actor to get its latest 
+                    // state which contains the whole app notifs for all users
+                    /* 
+                        let get_users_notifs = users_action_subscriber_actor
+                            .send(GetUsersNotifsMap)
+                            .await
+                            .unwrap();
+                    */
 
                     let mut all_user_notifs = user_notifs.get_user_notifs().await;
                     all_user_notifs.sort_by(|n1, n2|{
