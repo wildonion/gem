@@ -17,7 +17,7 @@ is a crypto based friendly gathering **Game Event Manager**, advertising platfor
 
 - build multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
 
-- chatroom launchpad to mint **AI** generated **NFTs** based on participants' chats in each event.
+- chatroom launchpad to mint **AI** generated **NFTs** based on summarization of participants' chats in each event.
 
 ## 🥪 Panel Architecture
 
