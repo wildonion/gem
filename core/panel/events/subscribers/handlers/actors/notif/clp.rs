@@ -5,7 +5,7 @@
 
 use actix::{AsyncContext, Context};
 use s3req::Storage;
-use crate::{*, constants::CONFIG};
+use crate::*;
 use self::constants::WS_SUBSCRIPTION_INTERVAL;
 
 

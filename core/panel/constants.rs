@@ -19,13 +19,6 @@ pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
 
-pub static CONFIG: Lazy<std::sync::Arc<Context<Env>>> = Lazy::new(||{
-
-    let env = Env::default();
-    let ctx_env = env.get_vars();
-    std::sync::Arc::new(ctx_env)
-
-});
 
 /* 
     code order execution and synchronization in multithreaded based envs like
@@ -96,9 +89,9 @@ pub struct SubscriberActors{
     pub clp_actor: Addr<ChatRoomLaunchpadServer>,
     pub role_actor: Addr<RoleNotifServer>,
     pub mmr_actor: Addr<MmrNotifServer>,
-    pub user_actor: Addr<UserActionActor>,
+    pub action_actor: Addr<UserActionActor>,
     pub system_actor: Addr<SystemActor>,
-    pub pg_actor: Addr<UserListenerActor>
+    pub user_actor: Addr<UserListenerActor>
 }
 
 impl AppState{

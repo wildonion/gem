@@ -3844,14 +3844,14 @@ async fn get_notifications(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    users_notifs_subscriber_actor: web::Data<Addr<UserActionActor>>,
+    users_action_subscriber_actor: web::Data<Addr<UserActionActor>>,
 ) -> PanelHttpResponse{
 
     let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
-    let users_notifs_subscriber_actor = users_notifs_subscriber_actor.get_ref().to_owned();
+    let users_action_subscriber_actor = users_action_subscriber_actor.get_ref().to_owned();
     
     /* 
           ------------------------------------- 
@@ -3917,9 +3917,10 @@ async fn get_notifications(
                         
                     }
 
-                    // sending message to users_notifs_subscriber_actor to 
-                    // get its latest state which contains the whole app notifs
-                    // let get_users_notifs = users_notifs_subscriber_actor
+                    // sending an async message to users_action_subscriber_actor 
+                    // to get its latest state which contains the whole app notifs
+                    // for all users
+                    // let get_users_notifs = users_action_subscriber_actor
                     //     .send(GetUsersNotifsMap)
                     //     .await
                     //     .unwrap();

@@ -12,6 +12,8 @@
     | 4 - return the new AST as a new TokenStream to the compiler to update the method or struct field at compile time
     |
 
+    _> the input to all methods is of type TokenStream which is the extracted tokens
+       of the actual Rust codes that can be used to build the AST later by compiler
 
     https://veykril.github.io/tlborm/introduction.html
     https://blog.logrocket.com/procedural-macros-in-rust/
@@ -150,7 +152,9 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
     /* 
         generating a token stream from granted_roles variable, 
         quote generates new AST or token stream from Rust codes
-        that can be returned to the proc macro caller.
+        that can be returned to the proc macro caller since quote
+        generates a token stream which is the return type of this
+        proc macro methods
     */
     let new_stmt = syn::parse2(
         quote!{ /* building new token stream from the Rust token codes */
@@ -166,14 +170,15 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     ).unwrap();
 
-    /* inject the granted_roles into the api body at compile time */
+    /* injecting the granted_roles into the api body at compile time */
     api_ast.block.stmts.insert(0, new_stmt);
     
     /* 
-        return the newly generated AST by the quote of the input api Rust code  
-        which contains the updated and compiled codes of the function body
+        returning the newly generated AST by the quote of the input api Rust code  
+        which contains the updated and compiled codes of the function body, at this
+        stage we're building new token stream from the updated api_ast Rust token codes
     */
-    TokenStream::from(quote!(#api_ast)) /* building new token stream from the updated api_ast Rust token codes */
+    TokenStream::from(quote!(#api_ast))
 
 
 }

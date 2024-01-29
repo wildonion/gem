@@ -62,15 +62,13 @@ macro_rules! server {
             /*  
                                         SETTING UP SHARED STATE DATA
                 
-                make sure we're starting the RoleNotifServer, MmrNotifServer, EcqNotifServer and ChatRoomLaunchpadServer 
-                actor in here and pass the actor isntance to the routers' threadpool in order to move them between 
-                different apis, otherwise each actor will be started each time by calling the related websocket route 
-                and the their last state will be lost.
-
+                make sure we're starting all the actors in here and pass the actor isntance to the routers' 
+                threadpool in order to move them between different apis, otherwise each actor will be started 
+                each time by calling the related websocket route and the their last state will be lost.
                 following servers need to be started globally so we can share them between actix threads 
                 and push new ws session actor inside subscription routes into their sessions field, also 
                 each server is an actor which allow us to communicate with them asyncly and concurrently 
-                within the different parts of the app by message sending logic  
+                within the different parts of the app by message sending logic.
             */
             let role_notif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
             let shared_ws_role_notif_server = Data::new(role_notif_server_instance.clone());
@@ -84,16 +82,11 @@ macro_rules! server {
             let system_actor_instance = SystemActor{updated_users: HashMap::new()}.start();
             let shared_system_actor_instance = Data::new(system_actor_instance.clone());
             
-            /* 
-                initializing the pg listener state before starting the server, we'll pass 
-                the initialized instance to the server app data as the shared state data 
-                so it can be shareable and loadable inside actix routers' threads
-            */
-            let pg_listener_instance = UserListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
-            let shared_pg_listener_instance = Data::new(pg_listener_instance.clone());
+            let user_listener_instance = UserListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
+            let shared_user_listener_instance = Data::new(user_listener_instance.clone());
 
-            let users_notifs_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
-            let shared_users_notifs_listener_instance = Data::new(users_notifs_listener_instance.clone());
+            let users_action_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
+            let shared_users_action_listener_instance = Data::new(users_action_listener_instance.clone());
 
             let shared_storage = Data::new(app_storage.clone());
 
@@ -112,9 +105,9 @@ macro_rules! server {
                     clp_actor: chatroomlp_server_instance.clone(),
                     role_actor: role_notif_server_instance.clone(),
                     mmr_actor: mmr_notif_server_instance.clone(),
-                    user_actor: users_notifs_listener_instance.clone(),
+                    action_actor: users_action_listener_instance.clone(),
                     system_actor: system_actor_instance.clone(),
-                    pg_actor: pg_listener_instance.clone()
+                    user_actor: user_listener_instance.clone()
                 }
             );
             app_state.config = {
@@ -156,9 +149,9 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_mmr_notif_server.clone()))
                     .app_data(Data::clone(&shared_ws_chatroomlp_server.clone()))
-                    .app_data(Data::clone(&shared_pg_listener_instance.clone()))
+                    .app_data(Data::clone(&shared_user_listener_instance.clone()))
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
-                    .app_data(Data::clone(&shared_users_notifs_listener_instance.clone()))
+                    .app_data(Data::clone(&shared_users_action_listener_instance.clone()))
                     .app_data(Data::clone(&shared_state_app.clone()))
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())

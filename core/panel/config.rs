@@ -30,7 +30,6 @@ pub struct Env{
     pub IO_BUFFER_SIZE: String,  
     pub FILE_SIZE: String,  
     pub EVENT_EXPIRATION: String,  
-    pub PASTEL_ID: String,  
     pub GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS: String,  
     pub GIFT_CARD_POLYGON_NFT_OWNER_ADDRESS: String,  
     pub XBOT_KEY: String,  
@@ -80,7 +79,7 @@ pub struct Env{
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Context<C>{
-    pub vars: C
+    vars: C
 
 }
 pub trait EnvExt{
@@ -121,7 +120,6 @@ impl EnvExt for Env{
                 IO_BUFFER_SIZE: std::env::var("IO_BUFFER_SIZE").unwrap(),
                 FILE_SIZE: std::env::var("FILE_SIZE").unwrap(),
                 EVENT_EXPIRATION: env::var("EVENT_EXPIRATION").unwrap(),
-                PASTEL_ID: std::env::var("PASTEL_ID").unwrap(),
                 GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS: std::env::var("GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS").unwrap(),
                 GIFT_CARD_POLYGON_NFT_OWNER_ADDRESS: std::env::var("GIFT_CARD_POLYGON_NFT_OWNER_ADDRESS").unwrap(),
                 XBOT_KEY: std::env::var("XBOT_KEY").unwrap(),
