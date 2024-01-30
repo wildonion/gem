@@ -2539,27 +2539,6 @@ impl UserNft{
                         );
                     }
 
-                    // buyer and nft owner must be friend of each other
-                    let check_we_are_friend = UserFan::are_we_friends(
-                        &buyer_screen_cid, 
-                        &current_nft_owner_screen_cid, connection).await;
-                    
-                    if check_we_are_friend.is_err() || !*check_we_are_friend.as_ref().unwrap(){
-
-                        let buyer_username = user.clone().username;
-                        let nft_owner_username = User::find_by_screen_cid(&current_nft_owner_screen_cid, connection).await.unwrap().username;
-                        let resp_msg = format!("{buyer_username:} Is Not A Friend Of {nft_owner_username:}");
-                        let resp = Response::<'_, &[u8]>{
-                            data: Some(&[]),
-                            message: &resp_msg,
-                            status: 406,
-                            is_error: true
-                        };
-                        return 
-                            Err(Ok(HttpResponse::NotAcceptable().json(resp)));
-                            
-                    }
-
                     let get_nft_price = buy_nft_request.current_price;
                     if get_nft_price.is_none(){
 
@@ -3136,7 +3115,17 @@ impl UserNft{
                             Ok(updated_user_nft_data)
 
                         },
-                        Err(err) => Err(err)
+                        Err(err) => {
+                            
+                            if uubd.is_some(){
+                                // if anything goes wrong payback the user
+                                let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
+                                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+            
+                            }
+
+                            Err(err)
+                        }
                     }
 
 
