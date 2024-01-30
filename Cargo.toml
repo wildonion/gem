@@ -39,9 +39,9 @@ rustls = "0.22"
 hyper = { version = "0.14", features = ["full"] }
 reqwest = { version = "0.11", features = ["json", "blocking", "stream", "multipart"] }
 actix-redis = "0.13.0"
-actix-session = { version = "0.8", features = ["redis-actor-session"] }
+actix-session = { version = "0.9", features = ["redis-actor-session"] }
 actix = "0.13"
-actix-cors = "0.6"
+actix-cors = "0.7"
 actix-web = { version = "4", features = ["openssl"] }
 actix-multipart = "0.6"
 actix-web-actors = "4.2"
@@ -95,8 +95,8 @@ sqlx = { version = "0.7", features = [
   "json",
   "uuid"
   ]}
-trait-variant = "0.1.0"
-openai-api-rs = "4.0.1"
+trait-variant = "0.1.1"
+openai-api-rs = "4.0.5"
 
 [lib]
 proc-macro = true
