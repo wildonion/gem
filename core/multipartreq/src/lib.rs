@@ -144,6 +144,10 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
 
 }
 
+/** 
+ * this method extract a multipart data types which contains formdata fields
+ * and all multipart images inside the form
+*/
 pub async fn extract(
     payload: std::sync::Arc<tokio::sync::Mutex<Multipart>>
 ) -> Result<(serde_json::Value, HashMap<String, Vec<u8>>), PanelHttpResponse>{

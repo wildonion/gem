@@ -104,7 +104,7 @@ impl UserActionActor{
                 because they'll receive in a blocking manner, thus we must 
                 use tokio::spawn() to do so.
 
-                subscribing to on_user_update pubsub channel asyncly and constantly using async redis
+                subscribing to on_user_action pubsub channel asyncly and constantly using async redis
                 by streaming over the incoming future tasks topics to decode the published topics
             
             !!! 🚨 */
