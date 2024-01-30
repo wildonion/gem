@@ -333,7 +333,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_data: {
-                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap_or(UserNftData::default());
                             nft
                         },
                         nft_img_url: d.nft_img_url.to_string(),
@@ -475,7 +475,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_data: {
-                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap_or(UserNftData::default());
                             nft
                         },
                         nft_img_url: d.nft_img_url.to_string(),
@@ -569,7 +569,7 @@ impl UserDeposit{
                         is_claimed: d.is_claimed,
                         amount: d.amount,
                         nft_data: {
-                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap();
+                            let nft = UserNft::find_by_onchain_id_none_async(&d.nft_id, connection).unwrap_or(UserNftData::default());
                             nft
                         },
                         nft_img_url: d.nft_img_url.to_string(),
