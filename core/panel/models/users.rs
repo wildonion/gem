@@ -17,6 +17,8 @@ use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
 use crate::constants::*;
+use self::events::publishers::action::{ActionType, NotifData, SingleUserNotif};
+
 use super::users_collections::{UserCollection, CollectionOwnerCount};
 use super::users_fans::{UserFan, FriendData, FriendOwnerCount};
 use super::users_galleries::GalleryOwnerCount;
@@ -3180,7 +3182,47 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: updated_user.clone().username,
+                        avatar: updated_user.clone().avatar,
+                        bio: updated_user.clone().bio,
+                        banner: updated_user.clone().banner,
+                        mail: updated_user.clone().mail,
+                        screen_cid: updated_user.clone().screen_cid,
+                        extra: updated_user.clone().extra,
+                        stars: updated_user.clone().stars,
+                        created_at: updated_user.clone().created_at.to_string(),
+                    };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: updated_user.clone().username,
+                        avatar: updated_user.clone().avatar,
+                        bio: updated_user.clone().bio,
+                        banner: updated_user.clone().banner,
+                        mail: updated_user.clone().mail,
+                        screen_cid: updated_user.clone().screen_cid,
+                        extra: updated_user.clone().extra,
+                        stars: updated_user.clone().stars,
+                        created_at: updated_user.clone().created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::UpdateBalance,
+                            action_data: serde_json::to_value(updated_user.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
 
                     Ok(
                         UserData { 

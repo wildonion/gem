@@ -54,7 +54,8 @@ pub enum ActionType{
     CreatePrivateGallery,
     UpdatePrivateGallery,
     ExitFromPrivateGalleryRequest,
-    DepositGiftCard
+    DepositGiftCard,
+    UpdateBalance
 }
 
 impl UserNotif{
