@@ -3012,6 +3012,7 @@ impl UserNft{
                 }
 
                 let mut uubd = None::<UserData>;
+                let mut owner_uubd = None::<UserData>;
                 if !minter_is_owner{
                     // charge user before minting then if minting goes wrong we'll payback the user
                     // ...
@@ -3023,15 +3024,13 @@ impl UserNft{
                         balance to charge him
                     */
                     let new_balance = user.balance.unwrap() - (nft_price + mint_nft_request.amount);
-                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                    let Ok(updated_user_balance_data) = update_user_balance else{
-                        
-                        let err_resp = update_user_balance.unwrap_err();
-                        return Err(err_resp);
-                        
-                    };
+                    let updated_user_balance_data = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+
+                    let new_balance = nft_owner.balance.unwrap() + nft_price;
+                    let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
 
                     uubd = Some(updated_user_balance_data);
+                    owner_uubd = Some(updated_owner_balance);
 
                 }
 
@@ -3040,10 +3039,13 @@ impl UserNft{
 
                 if status == 1{
 
-                    if uubd.is_some(){
+                    if uubd.is_some() && owner_uubd.is_some(){
                         // if anything goes wrong payback the user
                         let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
-                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+                        let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+
+                        let new_balance = owner_uubd.unwrap().balance.unwrap() - nft_price;
+                        let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor, connection).await;
     
                     }
 
@@ -3117,10 +3119,13 @@ impl UserNft{
                         },
                         Err(err) => {
                             
-                            if uubd.is_some(){
+                            if uubd.is_some() && owner_uubd.is_some(){
                                 // if anything goes wrong payback the user
                                 let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
-                                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+                                let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+        
+                                let new_balance = owner_uubd.unwrap().balance.unwrap() - nft_price;
+                                let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor, connection).await;
             
                             }
 
