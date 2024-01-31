@@ -1622,6 +1622,7 @@ impl UserPrivateGallery{
         };
 
         let mut updated_friend_balance = None;
+        let mut updated_gal_owner_balance = None;
         let mut global_gal_price = 0;
 
         /* 
@@ -1648,6 +1649,8 @@ impl UserPrivateGallery{
 
             }
 
+            /** -------------------------------------------------------------------------------------------- */
+            /** ------------------------------ gallery entrance redis caching ------------------------------ */
             // also remove from redis and pyback the friend_screen_cid with enterance fee 
             let mut conn = redis_client.get_async_connection().await.unwrap();
             let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
@@ -1672,8 +1675,14 @@ impl UserPrivateGallery{
                 // payback friend_screen_cid with the gallery price
                 let new_balance = friend_info.balance.unwrap() + gprice;
                 updated_friend_balance = Some(User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+                
+                let new_balance = gal_owner.balance.unwrap() - gprice;
+                updated_gal_owner_balance = Some(User::update_balance(gal_owner.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+
                 global_gal_price = gprice;
             }
+            /** -------------------------------------------------------------------------------------------- */
+            /** -------------------------------------------------------------------------------------------- */
 
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
                 owner_cid: caller_cid,
@@ -1735,6 +1744,9 @@ impl UserPrivateGallery{
                     if updated_friend_balance.is_some(){
                         let new_balance = updated_friend_balance.unwrap().balance.unwrap() - global_gal_price;
                         let updated_friend_balance = Some(User::update_balance(friend_info.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+                    
+                        let new_balance = updated_gal_owner_balance.unwrap().balance.unwrap() - global_gal_price;
+                        let updated_gal_owner_balance = Some(User::update_balance(gal_owner.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
                     }
 
                     Err(err)

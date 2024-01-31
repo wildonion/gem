@@ -1941,6 +1941,8 @@ impl UserFan{
             );
         }
 
+        // don't push new invitation request to the caller related field
+        // since the caller might be gets invited by gallery owner request
         if !decoded_invitation_request_data
                 .clone()
                 .into_iter()
@@ -1973,33 +1975,46 @@ impl UserFan{
                     vec![]
                 };
 
+                /** -------------------------------------------------------------------------------------------- */
+                /** ------------------------------ gallery entrance redis caching ------------------------------ */
                 // caching the gallery entrance fees in redis, we'll use this to payback the caller_screen_cid
                 // when the owner wants to remove the caller_screen_cid from his gallery 
                 let mut conn = redis_client.get_async_connection().await.unwrap();
                 let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
-                if get_galleries_with_entrance_fee.is_ok(){
-                    let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&get_galleries_with_entrance_fee.unwrap()).unwrap();
-                    // also at the time of entering we have to cache the enterance fee so later on 
-                    // we should be able to payback the user with this fee once the owner kicks him out
-                    // cause the owner might have updated the gallery entery price
-                    let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
-                    if get_friend_scids.is_some(){
-                        let mut friend_scids = get_friend_scids.clone().unwrap().0.clone();
-                        if !friend_scids.contains(&caller_screen_cid.to_string()){
-                            friend_scids.push(caller_screen_cid.to_string());
+                let updated_redis_gals = match get_galleries_with_entrance_fee{
+                    Ok(galleries_with_entrance_fee) if !galleries_with_entrance_fee.is_empty() => {
+                        let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&galleries_with_entrance_fee).unwrap();
+                        // also at the time of entering we have to cache the enterance fee so later on 
+                        // we should be able to payback the user with this fee once the owner kicks him out
+                        // cause the owner might have updated the gallery entery price
+                        let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
+                        if get_friend_scids.is_some(){
+                            let mut friend_scids = get_friend_scids.clone().unwrap().0.clone();
+                            if !friend_scids.contains(&caller_screen_cid.to_string()){
+                                friend_scids.push(caller_screen_cid.to_string());
+                            }
+                            galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), g_entry_price));
+                        } else{
+                            galleries_with_entrance_fee.insert(gal_id, (vec![caller_cid], g_entry_price));
                         }
-                        galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), g_entry_price));
-                    } else{
-                        galleries_with_entrance_fee.insert(gal_id, (vec![caller_cid], g_entry_price));
+                        galleries_with_entrance_fee
+                    },
+                    _ => {
+                        let mut gals: HashMap<i32, (Vec<String>, i64)> = HashMap::new();
+                        gals.insert(gal_id, (vec![caller_cid], g_entry_price));
+                        gals
                     }
+                };
 
-                    let stringified_ = serde_json::to_string_pretty(&galleries_with_entrance_fee).unwrap();
-                    let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
-                }
+                let stringified_ = serde_json::to_string_pretty(&updated_redis_gals).unwrap();
+                let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
+                /** -------------------------------------------------------------------------------------------- */
+                /** -------------------------------------------------------------------------------------------- */
 
                 // if caller_screen_cid has not been invited yet means that
                 // gallery owner didn't send request to him and he's entering 
-                // by paing the fee so we charge him
+                // by paing the fee so we charge him so we'll push him into 
+                // invited_friends field
                 if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
                     
                     // update balance of the one who accepted the request
