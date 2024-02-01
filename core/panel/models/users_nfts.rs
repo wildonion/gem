@@ -2449,6 +2449,7 @@ impl UserNft{
         owner: create nft
         other: mint then list 
         owner or other: buy
+        means that only owner can transfer or list nft for sell and only once!
         --------------------------------------------------------------------------------
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
@@ -3217,6 +3218,7 @@ impl UserNft{
                 owner: create nft
                 other: mint then list 
                 owner or other: buy
+                means that only owner can transfer or list nft for sell and only once!
                 --------------------------------------------------------------------------------
             */
             "transfer" => {
