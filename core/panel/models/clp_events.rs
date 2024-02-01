@@ -26,7 +26,6 @@ use crate::schema::clp_events;
 pub struct ClpEvent{
     pub id: i32,
     pub contract_address: String,
-    pub nfts: Option<serde_json::Value>,
     pub event_name: String, 
     pub symbol: String, 
     pub max_supply: i32, 

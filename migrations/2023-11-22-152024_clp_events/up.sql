@@ -2,7 +2,6 @@
 CREATE TABLE IF NOT EXISTS clp_events (
   id SERIAL PRIMARY KEY,
   contract_address VARCHAR NOT NULL,
-  nfts JSONB,
   event_name VARCHAR NOT NULL,
   symbol VARCHAR NOT NULL,
   max_supply INTEGER NOT NULL,

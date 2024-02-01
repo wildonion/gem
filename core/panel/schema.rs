@@ -10,7 +10,6 @@ diesel::table! {
     clp_events (id) {
         id -> Int4,
         contract_address -> Varchar,
-        nfts -> Nullable<Jsonb>,
         event_name -> Varchar,
         symbol -> Varchar,
         max_supply -> Int4,

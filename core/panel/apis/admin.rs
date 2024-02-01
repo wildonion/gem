@@ -2305,6 +2305,8 @@ async fn start_new_clp_event(
                             3 - when deploying, keep the base_uri empty and set prereveal_token_uri to the URL of the metadata file you just uploaded to IPFS.
                             4 - when you are ready to reveal your collection, use Update a deployed collection contract to set the base_uri to the location of the IPFS metadata directory created in Step 2.
 
+                        store collection info in clp_events table
+                        store all its nfts after minting in nfts table
                     */
                     
                      
