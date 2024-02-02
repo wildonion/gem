@@ -101,6 +101,11 @@ impl UserListenerActor{
         after insert or update or delete on users
         for each row execute function triggered_change_notification();
 
+        difference between mpsc and subscriber is that mpsc doens't have channel
+        and once we have the receiver we can start receiving data from the sender
+        but subscriber needs a channel to start subscribing to in order to receive
+        the data from that channel in which the publisher has published
+
     */
     pub async fn sqlx_subscribe(&mut self, sqlx_pg_listener: Arc<tokio::sync::Mutex<PgListener>>){
 
@@ -199,15 +204,28 @@ impl UserListenerActor{
 
                 info!("updateing `users_nfts` and `users_fans` tables with new user data");
                 
+                // ------------------------------------------------------------------------------
+                ////// calling the following methods is useless since we have likes and comments
+                ////// in two deifferent tables right now and they're storing the user_id only
+                ////// so if a user does an update on his info there is no need to update the 
+                ////// likes and comments cause we'll get the username and avatar every time
+                ////// we need to fetch them from users table directly 
+                // ------------------------------------------------------------------------------
                 // trigger the update process of user nfts likes and comments with this user
-                if let Err(why) = UserNft::update_nft_reactions_with_this_user(decoded_user.clone(), connection).await{
-                    error!("can't update `users_nfts` table due to: {}", why);
-                };
+                // if let Err(why) = UserNft::update_nft_reactions_with_this_user(decoded_user.clone(), connection).await{
+                //     error!("can't update `users_nfts` table due to: {}", why);
+                // };
 
+                // ------------------------------------------------------------------------------
+                ////// calling the following methods is useless since we have related tables right now and they're 
+                ////// storing the user_id only so if a user does an update on his info there is no need 
+                ////// to update the user info cause we'll get the username and avatar every time
+                ////// we need to fetch them from users table directly 
+                // ------------------------------------------------------------------------------
                 // trigger the update process of user fans friends and invitation requests with this user
-                if let Err(why) = UserFan::update_user_fans_data_with_this_user(decoded_user.clone(), connection).await{
-                    error!("can't update `users_fans` table due to: {}", why);
-                };
+                // if let Err(why) = UserFan::update_user_fans_data_with_this_user(decoded_user.clone(), connection).await{
+                //     error!("can't update `users_fans` table due to: {}", why);
+                // };
                 
                 info!("finished updating `users_nfts` and `users_fans` tables");
                 //----------------------------------------------------------------------
