@@ -41,6 +41,26 @@ diesel::table! {
 }
 
 diesel::table! {
+    nfts_comments (id) {
+        id -> Int4,
+        user_id -> Int4,
+        nft_id -> Int4,
+        content -> Varchar,
+        published_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    nfts_likes (id) {
+        id -> Int4,
+        user_id -> Int4,
+        nft_id -> Int4,
+        is_upvote -> Bool,
+        published_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     tasks (id) {
         id -> Int4,
         task_name -> Varchar,
@@ -275,6 +295,8 @@ diesel::joinable!(users_tasks -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     clp_events,
+    nfts_comments,
+    nfts_likes,
     tasks,
     token_stats,
     users,

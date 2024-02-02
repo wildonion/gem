@@ -103,7 +103,7 @@ impl Passport for HttpRequest{
                             } 
 
 
-                            let get_user = User::find_by_id_none_sync(_id, connection);
+                            let get_user = User::find_by_id_none_async(_id, connection);
                             let Ok(user) = get_user else{
                                 let err_resp = get_user.unwrap_err();
                                 return Err(err_resp);

@@ -21,6 +21,8 @@
     |   clp_events        ---> methods of postgres clp_events table
     |   chatdb            ---> methods of spacetimdb chatdb server
     |   token_stats       ---> methods of postgres token_stats table
+    |   nfts_likes        ---> methods of postgres nfts_likes table
+    |   nfts_comments     ---> methods of postgres nfts_comments table
     |
 */
 
@@ -41,3 +43,5 @@ pub mod users_clps;
 pub mod clp_events;
 pub mod chatdb;
 pub mod token_stats;
+pub mod nfts_comments;
+pub mod nfts_likes;
