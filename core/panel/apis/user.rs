@@ -4431,6 +4431,7 @@ async fn update_private_gallery(
                         match UserPrivateGallery::update(&walletreq::evm::get_keccak256_from(
                             update_private_gallery_request_object.clone().owner_cid), 
                             update_private_gallery_request_object, 
+                            redis_client.clone(),
                             redis_actix_actor,
                             gal_id.to_owned(), 
                             connection).await{
@@ -4716,7 +4717,7 @@ async fn exit_from_private_gallery(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserPrivateGallery::exit_from_private_gallery(exit_from_private_gallery, redis_actix_actor, connection).await{
+                    match UserPrivateGallery::exit_from_private_gallery(exit_from_private_gallery, redis_client.clone(), redis_actix_actor, connection).await{
                         Ok(gallery_data) => {
 
                             resp!{
@@ -4867,7 +4868,7 @@ async fn send_private_gallery_invitation_request_to(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserPrivateGallery::send_invitation_request_to(send_invitation_request, redis_actix_actor, connection).await{
+                    match UserPrivateGallery::send_invitation_request_to(send_invitation_request, redis_client.clone(), redis_actix_actor, connection).await{
                         Ok(invitation_data) => {
 
                             resp!{
@@ -4988,7 +4989,7 @@ async fn get_all_private_galleries_for(
                         }
                     }
 
-                    match UserPrivateGallery::get_all_for(&user.screen_cid.unwrap(), limit, connection).await{
+                    match UserPrivateGallery::get_all_for(&user.screen_cid.unwrap(), limit, redis_client.clone(), connection).await{
                         
                         Ok(galleries) => {
 
@@ -5112,6 +5113,7 @@ async fn get_all_galleries_invited_to(
 
                     match UserPrivateGallery::get_all_galleries_invited_to(
                         &user.screen_cid.unwrap(), 
+                        redis_client.clone(),
                         limit, connection).await{
                         
                         Ok(galleries) => {
@@ -5238,7 +5240,8 @@ async fn get_invited_friends_wallet_data_of_gallery(
                     match UserPrivateGallery::get_invited_friends_wallet_data_of_gallery(
                         &user.screen_cid.unwrap(),
                         gal_id.to_owned(),
-                        limit, connection).await{
+                        limit, redis_client.clone(),
+                        connection).await{
                         
                         Ok(friends_wallet_data) => {
 
@@ -6449,7 +6452,7 @@ async fn remove_user_from_freind(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::remove_freind(remove_friend_request, redis_actix_actor.clone(), connection).await{
+                    match UserFan::remove_freind(remove_friend_request, redis_client.clone(), redis_actix_actor.clone(), connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -7193,7 +7196,7 @@ async fn get_all_private_galleries_general_info_for(
                     match UserPrivateGallery::get_all_general_info_for(
                         &who_screen_cid.to_owned(), 
                         &user.screen_cid.unwrap(),
-                        limit, connection).await{
+                        limit, redis_client.clone(), connection).await{
                         
                         Ok(private_galleries) => {
 
@@ -7322,6 +7325,7 @@ async fn upload_collection_banner(
                         &user.screen_cid.unwrap(),
                         img,
                         redis_actix_actor.clone(),
+                        redis_client.clone(),
                         connection).await{
                         Ok(user_collection_data) => {
 
@@ -7952,7 +7956,7 @@ async fn get_all_private_collections_for(
                     match UserCollection::get_all_private_collections_for(
                         &user.screen_cid.unwrap(),
                         gal_id,
-                        limit, connection).await{
+                        limit, redis_client.clone(), connection).await{
                         
                         Ok(collections) => {
 
@@ -8083,7 +8087,7 @@ async fn get_all_private_collections_for_invited_friends(
                         &user.screen_cid.unwrap(), // caller 
                         &who_screen_cid.to_owned(), // owner
                         gal_id,
-                        limit, connection).await{
+                        limit, redis_client.clone(), connection).await{
                         
                         Ok(collections) => {
 
@@ -8603,6 +8607,7 @@ async fn upload_private_gallery_back(
                         gal_id.to_owned(), 
                         &user.screen_cid.unwrap(), // this must be the gallery owner
                         img,
+                        redis_client.clone(),
                         connection).await{
                         Ok(user_private_gallery_data) => {
 
@@ -8978,6 +8983,7 @@ async fn add_reaction_to_nft(
 
                         match UserNft::add_reaction_to_nft(
                             user_add_nft_reaction,
+                            redis_client.clone(),
                             redis_actix_actor,
                             connection).await{
                             Ok(user_nft_data) => {
@@ -10663,7 +10669,7 @@ async fn get_top_users(
                     let _id = token_data._id;
                     let role = token_data.user_role;
 
-                    match User::get_top_users(connection, limit).await{
+                    match User::get_top_users(connection, redis_client.clone(), limit).await{
                         
                         Ok(top_users_wallet_info) => {
                             resp!{
