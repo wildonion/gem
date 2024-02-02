@@ -997,6 +997,7 @@ impl User{
     }
 
     pub async fn get_top_users(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+        redis_client: RedisClient,
         limit: web::Query<Limit>) 
         -> Result<TopUsers, PanelHttpResponse>{
 
@@ -1018,7 +1019,7 @@ impl User{
             return Err(err_resp);
         };
 
-        let get_owners_with_most_private_galleries = UserPrivateGallery::get_owners_with_lots_of_galleries(all_users.clone(), connection).await;
+        let get_owners_with_most_private_galleries = UserPrivateGallery::get_owners_with_lots_of_galleries(all_users.clone(), redis_client.clone(), connection).await;
         let Ok(owners_with_most_private_galleries) = get_owners_with_most_private_galleries else{
             let err_resp = get_owners_with_most_private_galleries.unwrap_err();
             return Err(err_resp);
@@ -1378,7 +1379,7 @@ impl User{
 
     }
 
-    pub fn find_by_id_none_sync(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub fn find_by_id_none_async(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::id.eq(doer_id))
