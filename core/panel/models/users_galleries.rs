@@ -1486,13 +1486,13 @@ impl UserPrivateGallery{
                                     serde_json::to_value(&cols).unwrap()
                                 )
                             },
-                            gal_name: todo!(),
-                            gal_description: todo!(),
-                            invited_friends: todo!(),
-                            extra: todo!(),
-                            gallery_background: todo!(),
-                            created_at: todo!(),
-                            updated_at: todo!(),
+                            gal_name: updated_gallery_data.gal_name,
+                            gal_description: updated_gallery_data.gal_description,
+                            invited_friends: updated_gallery_data.invited_friends,
+                            extra: updated_gallery_data.extra,
+                            gallery_background: updated_gallery_data.gallery_background,
+                            created_at: updated_gallery_data.created_at.to_string(),
+                            updated_at: updated_gallery_data.updated_at.to_string(),
                         }
                     )
                 },
