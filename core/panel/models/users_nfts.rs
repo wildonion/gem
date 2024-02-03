@@ -11,8 +11,11 @@ use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
-use self::constants::APP_NAME;
+use self::constants::{APP_NAME, NO_NFT_FOUND_IN_COLLECTION};
+use self::schema::nfts_comments;
 
+use super::nfts_comments::NewNftCommentRequest;
+use super::nfts_likes::NewNftLikeRequest;
 use super::users::{User, UserData, UserWalletInfoResponse};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
 use super::users_fans::{UserFan, FriendData};
@@ -433,19 +436,19 @@ impl UserNft{
             .order(users_nfts::created_at.desc())
             .load::<UserNft>(connection)
             {
-                Ok(nfts_) => {
+                Ok(mut nfts_) => {
 
                     let mut updated_nfts = vec![];
-                    for nft in nfts_{
+                    for nft in &mut nfts_{
 
-                        let nft_comments = nft.comments;
+                        let nft_comments = nft.construct_comments(connection);
                         let mut decoded_comments = if nft_comments.is_some(){
                             serde_json::from_value::<Vec<NftComment>>(nft_comments.clone().unwrap()).unwrap()
                         } else{
                             vec![]
                         };
 
-                        let nft_likes = nft.likes;
+                        let nft_likes = nft.construct_likes(connection);
                         let mut decoded_likes = if nft_likes.is_some(){
                             serde_json::from_value::<Vec<NftLike>>(nft_likes.clone().unwrap()).unwrap()
                         } else{
@@ -599,7 +602,7 @@ impl UserNft{
             .first::<UserNft>(connection);
         
         
-        let Ok(nft) = get_nft else{
+        let Ok(mut nft) = get_nft else{
             let resp = Response::<i32>{
                 data: Some(nft_id),
                 message: NFT_ONCHAINID_NOT_FOUND,
@@ -612,14 +615,14 @@ impl UserNft{
         };
 
 
-        let nft_comments = nft.comments;
+        let nft_comments = nft.construct_comments(connection);
         let decoded_comments = if nft_comments.is_some(){
             serde_json::from_value::<Vec<NftComment>>(nft_comments.clone().unwrap()).unwrap()
         } else{
             vec![]
         };
 
-        let nft_likes = nft.likes;
+        let nft_likes = nft.construct_likes(connection);
         let decoded_likes = if nft_likes.is_some(){
             serde_json::from_value::<Vec<NftLike>>(nft_likes.clone().unwrap()).unwrap()
         } else{
@@ -680,27 +683,82 @@ impl UserNft{
         Ok(
             all_nfts
                 .into_iter()
-                .map(|nft|{
+                .map(|mut nft|{
     
                     UserNftData{ 
                         id: nft.id, 
-                        contract_address: nft.contract_address, 
-                        current_owner_screen_cid: nft.current_owner_screen_cid, 
-                        metadata_uri: nft.metadata_uri, 
-                        extra: nft.extra, 
-                        onchain_id: nft.onchain_id, 
-                        nft_name: nft.nft_name, 
-                        is_minted: nft.is_minted, 
-                        nft_description: nft.nft_description, 
-                        current_price: nft.current_price, 
-                        is_listed: nft.is_listed, 
-                        freeze_metadata: nft.freeze_metadata, 
-                        comments: nft.comments, 
-                        likes: nft.likes, 
-                        tx_hash: nft.tx_hash, 
-                        created_at: nft.created_at.to_string(), 
-                        updated_at: nft.updated_at.to_string(),
-                        attributes: nft.attributes, 
+                        contract_address: nft.clone().contract_address, 
+                        current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                        metadata_uri: nft.clone().metadata_uri, 
+                        extra: nft.clone().extra, 
+                        onchain_id: nft.clone().onchain_id, 
+                        nft_name: nft.clone().nft_name, 
+                        is_minted: nft.clone().is_minted, 
+                        nft_description: nft.clone().nft_description, 
+                        current_price: nft.clone().current_price, 
+                        is_listed: nft.clone().is_listed, 
+                        freeze_metadata: nft.clone().freeze_metadata, 
+                        comments: nft.clone().construct_comments(connection), 
+                        likes: nft.clone().construct_likes(connection),  
+                        tx_hash: nft.clone().tx_hash, 
+                        created_at: nft.clone().created_at.to_string(), 
+                        updated_at: nft.clone().updated_at.to_string(),
+                        attributes: nft.clone().attributes, 
+                    }
+    
+                })
+                .collect::<Vec<UserNftData>>()
+        )
+
+    }
+
+    pub fn get_all_inside_contract_none_async(col_addr: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserNftData>, PanelHttpResponse>{
+
+        /* get all nfts inside the passed in contract address */
+        let user_nfts = users_nfts
+            .filter(users_nfts::contract_address.eq(col_addr))
+            .load::<UserNft>(connection);
+
+        let Ok(all_nfts) = user_nfts else{
+
+            let resp = Response{
+                data: Some(col_addr),
+                message: NO_NFT_FOUND_IN_COLLECTION,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        Ok(
+            all_nfts
+                .into_iter()
+                .map(|mut nft|{
+    
+                    UserNftData{ 
+                        id: nft.id, 
+                        contract_address: nft.clone().contract_address, 
+                        current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                        metadata_uri: nft.clone().metadata_uri, 
+                        extra: nft.clone().extra, 
+                        onchain_id: nft.clone().onchain_id, 
+                        nft_name: nft.clone().nft_name, 
+                        is_minted: nft.clone().is_minted, 
+                        nft_description: nft.clone().nft_description, 
+                        current_price: nft.clone().current_price, 
+                        is_listed: nft.clone().is_listed, 
+                        freeze_metadata: nft.clone().freeze_metadata, 
+                        comments: nft.clone().construct_comments(connection), 
+                        likes: nft.clone().construct_likes(connection),  
+                        tx_hash: nft.clone().tx_hash, 
+                        created_at: nft.clone().created_at.to_string(), 
+                        updated_at: nft.clone().updated_at.to_string(),
+                        attributes: nft.clone().attributes, 
                     }
     
                 })
@@ -802,27 +860,27 @@ impl UserNft{
         Ok(
             all_nfts
                 .into_iter()
-                .map(|nft|{
+                .map(|mut nft|{
     
                     UserNftData{ 
                         id: nft.id, 
-                        contract_address: nft.contract_address, 
-                        current_owner_screen_cid: nft.current_owner_screen_cid, 
-                        metadata_uri: nft.metadata_uri, 
-                        extra: nft.extra, 
-                        onchain_id: nft.onchain_id, 
-                        nft_name: nft.nft_name, 
-                        is_minted: nft.is_minted, 
-                        nft_description: nft.nft_description, 
-                        current_price: nft.current_price, 
-                        is_listed: nft.is_listed, 
-                        freeze_metadata: nft.freeze_metadata, 
-                        comments: nft.comments, 
-                        likes: nft.likes, 
-                        tx_hash: nft.tx_hash, 
-                        created_at: nft.created_at.to_string(), 
-                        updated_at: nft.updated_at.to_string(),
-                        attributes: nft.attributes, 
+                        contract_address: nft.clone().contract_address, 
+                        current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                        metadata_uri: nft.clone().metadata_uri, 
+                        extra: nft.clone().extra, 
+                        onchain_id: nft.clone().onchain_id, 
+                        nft_name: nft.clone().nft_name, 
+                        is_minted: nft.clone().is_minted, 
+                        nft_description: nft.clone().nft_description, 
+                        current_price: nft.clone().current_price, 
+                        is_listed: nft.clone().is_listed, 
+                        freeze_metadata: nft.clone().freeze_metadata, 
+                        comments: nft.clone().construct_comments(connection), 
+                        likes: nft.clone().construct_likes(connection), 
+                        tx_hash: nft.clone().tx_hash, 
+                        created_at: nft.clone().created_at.to_string(), 
+                        updated_at: nft.clone().updated_at.to_string(),
+                        attributes: nft.clone().attributes, 
                     }
     
                 })
@@ -839,7 +897,7 @@ impl UserNft{
             .filter(users_nfts::onchain_id.eq(onchain_id_))
             .first::<UserNft>(connection);
 
-        let Ok(nft) = user_nft else{
+        let Ok(mut nft) = user_nft else{
 
             let resp = Response{
                 data: Some(onchain_id_),
@@ -856,23 +914,23 @@ impl UserNft{
         Ok(
             UserNftData{ 
                 id: nft.id, 
-                contract_address: nft.contract_address, 
-                current_owner_screen_cid: nft.current_owner_screen_cid, 
-                metadata_uri: nft.metadata_uri, 
-                extra: nft.extra, 
-                onchain_id: nft.onchain_id, 
-                nft_name: nft.nft_name, 
-                is_minted: nft.is_minted, 
-                nft_description: nft.nft_description, 
-                current_price: nft.current_price, 
-                is_listed: nft.is_listed, 
-                freeze_metadata: nft.freeze_metadata, 
-                comments: nft.comments, 
-                likes: nft.likes, 
-                tx_hash: nft.tx_hash, 
-                created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string(),
-                attributes: nft.attributes, 
+                contract_address: nft.clone().contract_address, 
+                current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                metadata_uri: nft.clone().metadata_uri, 
+                extra: nft.clone().extra, 
+                onchain_id: nft.clone().onchain_id, 
+                nft_name: nft.clone().nft_name, 
+                is_minted: nft.clone().is_minted, 
+                nft_description: nft.clone().nft_description, 
+                current_price: nft.clone().current_price, 
+                is_listed: nft.clone().is_listed, 
+                freeze_metadata: nft.clone().freeze_metadata, 
+                comments: nft.clone().construct_comments(connection), 
+                likes: nft.clone().construct_likes(connection), 
+                tx_hash: nft.clone().tx_hash, 
+                created_at: nft.clone().created_at.to_string(), 
+                updated_at: nft.clone().updated_at.to_string(),
+                attributes: nft.clone().attributes, 
             }
         )
 
@@ -886,7 +944,7 @@ impl UserNft{
             .filter(users_nfts::onchain_id.eq(onchain_id_))
             .first::<UserNft>(connection);
 
-        let Ok(nft) = user_nft else{
+        let Ok(mut nft) = user_nft else{
 
             let resp = Response{
                 data: Some(onchain_id_),
@@ -903,23 +961,23 @@ impl UserNft{
         Ok(
             UserNftData{ 
                 id: nft.id, 
-                contract_address: nft.contract_address, 
-                current_owner_screen_cid: nft.current_owner_screen_cid, 
-                metadata_uri: nft.metadata_uri, 
-                extra: nft.extra, 
-                onchain_id: nft.onchain_id, 
-                nft_name: nft.nft_name, 
-                is_minted: nft.is_minted, 
-                nft_description: nft.nft_description, 
-                current_price: nft.current_price, 
-                is_listed: nft.is_listed, 
-                freeze_metadata: nft.freeze_metadata, 
-                comments: nft.comments, 
-                likes: nft.likes, 
-                tx_hash: nft.tx_hash, 
-                created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string(),
-                attributes: nft.attributes, 
+                contract_address: nft.clone().contract_address, 
+                current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                metadata_uri: nft.clone().metadata_uri, 
+                extra: nft.clone().extra, 
+                onchain_id: nft.clone().onchain_id, 
+                nft_name: nft.clone().nft_name, 
+                is_minted: nft.clone().is_minted, 
+                nft_description: nft.clone().nft_description, 
+                current_price: nft.clone().current_price, 
+                is_listed: nft.clone().is_listed, 
+                freeze_metadata: nft.clone().freeze_metadata, 
+                comments: nft.clone().construct_comments(connection), 
+                likes: nft.clone().construct_likes(connection), 
+                tx_hash: nft.clone().tx_hash, 
+                created_at: nft.clone().created_at.to_string(), 
+                updated_at: nft.clone().updated_at.to_string(),
+                attributes: nft.clone().attributes, 
             }
         )
 
@@ -985,7 +1043,7 @@ impl UserNft{
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, col_id, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, col_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -1053,10 +1111,9 @@ impl UserNft{
         let nft_img = format!("{}::{}", nft_metadata_uri, nft_img_path);
         udpate_nft_request.metadata_uri = nft_img;
 
-        Self::update_nft_col_gal(
-            collection_data, 
-            gallery_data, 
+        Self::update_nft(
             udpate_nft_request, 
+            redis_client.clone(),
             redis_actor.clone(),
             connection
         ).await
@@ -1072,7 +1129,7 @@ impl UserNft{
             .filter(users_nfts::id.eq(asset_id))
             .first::<UserNft>(connection);
 
-        let Ok(nft) = user_nft else{
+        let Ok(mut nft) = user_nft else{
 
             let resp = Response{
                 data: Some(asset_id),
@@ -1089,23 +1146,23 @@ impl UserNft{
         Ok(
             UserNftData{ 
                 id: nft.id, 
-                contract_address: nft.contract_address, 
-                current_owner_screen_cid: nft.current_owner_screen_cid, 
-                metadata_uri: nft.metadata_uri, 
-                extra: nft.extra, 
-                onchain_id: nft.onchain_id, 
-                nft_name: nft.nft_name, 
-                is_minted: nft.is_minted, 
-                nft_description: nft.nft_description, 
-                current_price: nft.current_price, 
-                is_listed: nft.is_listed, 
-                freeze_metadata: nft.freeze_metadata, 
-                comments: nft.comments, 
-                likes: nft.likes, 
-                tx_hash: nft.tx_hash, 
-                created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string(),
-                attributes: nft.attributes, 
+                contract_address: nft.clone().contract_address, 
+                current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                metadata_uri: nft.clone().metadata_uri, 
+                extra: nft.clone().extra, 
+                onchain_id: nft.clone().onchain_id, 
+                nft_name: nft.clone().nft_name, 
+                is_minted: nft.clone().is_minted, 
+                nft_description: nft.clone().nft_description, 
+                current_price: nft.clone().current_price, 
+                is_listed: nft.clone().is_listed, 
+                freeze_metadata: nft.clone().freeze_metadata, 
+                comments: nft.clone().construct_comments(connection), 
+                likes: nft.clone().construct_likes(connection),  
+                tx_hash: nft.clone().tx_hash, 
+                created_at: nft.clone().created_at.to_string(), 
+                updated_at: nft.clone().updated_at.to_string(),
+                attributes: nft.clone().attributes, 
             }
         )
 
@@ -1119,7 +1176,7 @@ impl UserNft{
             .filter(users_nfts::id.eq(asset_id))
             .first::<UserNft>(connection);
 
-        let Ok(nft) = user_nft else{
+        let Ok(mut nft) = user_nft else{
 
             let resp = Response{
                 data: Some(asset_id),
@@ -1136,23 +1193,23 @@ impl UserNft{
         Ok(
             UserNftData{ 
                 id: nft.id, 
-                contract_address: nft.contract_address, 
-                current_owner_screen_cid: nft.current_owner_screen_cid, 
-                metadata_uri: nft.metadata_uri, 
-                extra: nft.extra, 
-                onchain_id: nft.onchain_id, 
-                nft_name: nft.nft_name, 
-                is_minted: nft.is_minted, 
-                nft_description: nft.nft_description, 
-                current_price: nft.current_price, 
-                is_listed: nft.is_listed, 
-                freeze_metadata: nft.freeze_metadata, 
-                comments: nft.comments, 
-                likes: nft.likes, 
-                tx_hash: nft.tx_hash, 
-                created_at: nft.created_at.to_string(), 
-                updated_at: nft.updated_at.to_string(),
-                attributes: nft.attributes, 
+                contract_address: nft.clone().contract_address, 
+                current_owner_screen_cid: nft.clone().current_owner_screen_cid, 
+                metadata_uri: nft.clone().metadata_uri, 
+                extra: nft.clone().extra, 
+                onchain_id: nft.clone().onchain_id, 
+                nft_name: nft.clone().nft_name, 
+                is_minted: nft.clone().is_minted, 
+                nft_description: nft.clone().nft_description, 
+                current_price: nft.clone().current_price, 
+                is_listed: nft.clone().is_listed, 
+                freeze_metadata: nft.clone().freeze_metadata, 
+                comments: nft.clone().construct_comments(connection), 
+                likes: nft.clone().construct_likes(connection), 
+                tx_hash: nft.clone().tx_hash, 
+                created_at: nft.clone().created_at.to_string(), 
+                updated_at: nft.clone().updated_at.to_string(),
+                attributes: nft.clone().attributes, 
             }
         )
 
@@ -1206,7 +1263,7 @@ impl UserNft{
             .returning(UserNft::as_returning())
             .get_result::<UserNft>(connection)
             {
-                Ok(fetched_nft_data) => {
+                Ok(mut fetched_nft_data) => {
                     
                     let user_nft_data = UserNftData{
                         id: fetched_nft_data.clone().id,
@@ -1221,140 +1278,56 @@ impl UserNft{
                         current_price: fetched_nft_data.clone().current_price,
                         is_listed: fetched_nft_data.clone().is_listed,
                         freeze_metadata: fetched_nft_data.clone().freeze_metadata,
-                        comments: fetched_nft_data.clone().comments,
-                        likes: fetched_nft_data.clone().likes,
+                        comments: fetched_nft_data.construct_comments(connection),
+                        likes: fetched_nft_data.construct_likes(connection),
                         tx_hash: fetched_nft_data.clone().tx_hash,
                         created_at: fetched_nft_data.clone().created_at.to_string(),
                         updated_at: fetched_nft_data.clone().updated_at.to_string(),
                         attributes: fetched_nft_data.attributes,
                     };
 
-                    /* updating collection data with newly nft */
-                    let new_collection_data = UpdateUserCollection{
-                        nfts: {
-                            let nfts_ = collection_data.clone().nfts;
-                            let mut decoded_nfts = if nfts_.is_some(){
-                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            /* since this is new nft we have to push */
-                            decoded_nfts.push(user_nft_data.clone());
-
-                            Some(
-                                serde_json::to_value(decoded_nfts).unwrap()
-                            )
-                        },
-                        freeze_metadata: collection_data.clone().freeze_metadata,
-                        base_uri: collection_data.clone().base_uri,
-                        royalties_share: collection_data.clone().royalties_share,
-                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
-                        collection_background: collection_data.clone().collection_background,
-                        extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
-                        col_description: collection_data.clone().col_description,
-                        col_name: collection_data.clone().col_name
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
                     };
-
-                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
-                        .set(&new_collection_data)
-                        .returning(UserCollection::as_returning())
-                        .get_result::<UserCollection>(connection)
-                        {
-                            Ok(fetched_collection_data) => {
-                                
-                                let user_collection_data = UserCollectionData{
-                                    id: fetched_collection_data.clone().id,
-                                    contract_address: fetched_collection_data.clone().contract_address,
-                                    nfts: fetched_collection_data.clone().nfts,
-                                    col_name: fetched_collection_data.clone().col_name,
-                                    symbol: fetched_collection_data.clone().symbol,
-                                    owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
-                                    metadata_updatable: fetched_collection_data.clone().metadata_updatable,
-                                    freeze_metadata: fetched_collection_data.clone().freeze_metadata,
-                                    base_uri: fetched_collection_data.clone().base_uri,
-                                    royalties_share: fetched_collection_data.clone().royalties_share,
-                                    royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
-                                    collection_background: fetched_collection_data.clone().collection_background,
-                                    extra: fetched_collection_data.clone().extra,
-                                    col_description: fetched_collection_data.clone().col_description,
-                                    contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
-                                    created_at: fetched_collection_data.clone().created_at.to_string(),
-                                    updated_at: fetched_collection_data.clone().updated_at.to_string(),
-                                };
-
-
-                                /** -------------------------------------------------------------------- */
-                                /** ----------------- publish new event data to `on_user_action` channel */
-                                /** -------------------------------------------------------------------- */
-                                // if the actioner is the user himself we'll notify user with something like:
-                                // u've just done that action!
-                                let actioner_wallet_info = UserWalletInfoResponse{
-                                    username: user.clone().username,
-                                    avatar: user.clone().avatar,
-                                    bio: user.clone().bio,
-                                    banner: user.clone().banner,
-                                    mail: user.clone().mail,
-                                    screen_cid: user.clone().screen_cid,
-                                    extra: user.clone().extra,
-                                    stars: user.clone().stars,
-                                    created_at: user.clone().created_at.to_string(),
-                                };
-                                let user_wallet_info = UserWalletInfoResponse{
-                                    username: String::from(APP_NAME),
-                                    avatar: None,
-                                    bio: None,
-                                    banner: None,
-                                    mail: None,
-                                    screen_cid: Some(minter_screen_cid),
-                                    extra: None,
-                                    stars: None,
-                                    created_at: String::from(""),
-                                };
-                                let user_notif_info = SingleUserNotif{
-                                    wallet_info: user_wallet_info,
-                                    notif: NotifData{
-                                        actioner_wallet_info,
-                                        fired_at: Some(chrono::Local::now().timestamp()),
-                                        action_type: ActionType::MintNft,
-                                        action_data: serde_json::to_value(user_nft_data.clone()).unwrap()
-                                    }
-                                };
-                                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-                  
-
-                                Ok(
-                                    user_nft_data
-                                )
-                                
-                            },
-                            Err(e) => {
-
-                                let resp_err = &e.to_string();
-            
-            
-                                /* custom error handler */
-                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                                
-                                let error_content = &e.to_string();
-                                let error_content = error_content.as_bytes().to_vec();  
-                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::store_gift_card");
-                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-            
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: resp_err,
-                                    status: 500,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::InternalServerError().json(resp))
-                                );
-            
-                            }
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: String::from(APP_NAME),
+                        avatar: None,
+                        bio: None,
+                        banner: None,
+                        mail: None,
+                        screen_cid: Some(minter_screen_cid),
+                        extra: None,
+                        stars: None,
+                        created_at: String::from(""),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::MintNft,
+                            action_data: serde_json::to_value(user_nft_data.clone()).unwrap()
                         }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                    Ok(
+                        user_nft_data
+                    )                  
 
                 },
                 Err(e) => {
@@ -1367,7 +1340,7 @@ impl UserNft{
                     
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::store_gift_card_insert_into");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::store_gift_card");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1399,7 +1372,7 @@ impl UserNft{
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -1491,180 +1464,7 @@ impl UserNft{
                         attributes: fetched_nft_data.attributes,
                     };
 
-                    /* updating collection data with newly nft */
-                    let new_collection_data = UpdateUserCollection{
-                        nfts: {
-                            let nfts_ = collection_data.clone().nfts;
-                            let mut decoded_nfts = if nfts_.is_some(){
-                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            /* since this is new nft we have to push */
-                            decoded_nfts.push(user_nft_data.clone());
-
-                            Some(
-                                serde_json::to_value(decoded_nfts).unwrap()
-                            )
-                        },
-                        freeze_metadata: collection_data.clone().freeze_metadata,
-                        base_uri: collection_data.clone().base_uri,
-                        royalties_share: collection_data.clone().royalties_share,
-                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
-                        collection_background: collection_data.clone().collection_background,
-                        extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
-                        col_description: collection_data.clone().col_description,
-                        col_name: collection_data.clone().col_name
-                    };
-
-                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
-                        .set(&new_collection_data)
-                        .returning(UserCollection::as_returning())
-                        .get_result::<UserCollection>(connection)
-                        {
-                            Ok(fetched_collection_data) => {
-                                
-                                let user_collection_data = UserCollectionData{
-                                    id: fetched_collection_data.clone().id,
-                                    contract_address: fetched_collection_data.clone().contract_address,
-                                    nfts: fetched_collection_data.clone().nfts,
-                                    col_name: fetched_collection_data.clone().col_name,
-                                    symbol: fetched_collection_data.clone().symbol,
-                                    owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
-                                    metadata_updatable: fetched_collection_data.clone().metadata_updatable,
-                                    freeze_metadata: fetched_collection_data.clone().freeze_metadata,
-                                    base_uri: fetched_collection_data.clone().base_uri,
-                                    royalties_share: fetched_collection_data.clone().royalties_share,
-                                    royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
-                                    collection_background: fetched_collection_data.clone().collection_background,
-                                    extra: fetched_collection_data.clone().extra,
-                                    col_description: fetched_collection_data.clone().col_description,
-                                    contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
-                                    created_at: fetched_collection_data.clone().created_at.to_string(),
-                                    updated_at: fetched_collection_data.clone().updated_at.to_string(),
-                                };
-
-                                /* updating gallery data with the updated collection */
-                                let new_gal_data = UpdateUserPrivateGalleryRequest{
-                                    collections: {
-                                        let cols = gallery_data.collections;
-                                        let mut decoded_cols = if cols.is_some(){
-                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                        } else{
-                                            vec![]
-                                        };
-
-                                        /* since there is no new collection we should update the old one in vector */
-                                        let collection_position = decoded_cols.iter().position(|c| c.id == collection_data.clone().id);
-                                        if collection_position.is_some(){
-                                            decoded_cols[collection_position.unwrap()] = user_collection_data;
-                                        }
-
-                                        Some(
-                                            serde_json::to_value(decoded_cols).unwrap()
-                                        )
-                                    },
-                                    gal_name: gallery_data.gal_name,
-                                    gal_description: gallery_data.gal_description,
-                                    invited_friends: gallery_data.invited_friends,
-                                    extra: gallery_data.extra,
-                                    owner_cid: asset_info.caller_cid,
-                                    tx_signature: String::from(""),
-                                    hash_data: String::from(""),
-                                };
-
-                                /* update gallery with new collection */
-                                match UserPrivateGallery::update(
-                                    &fetched_collection_data.owner_screen_cid, 
-                                    new_gal_data, 
-                                    redis_actor.clone(),
-                                    gallery_data.id, 
-                                    connection
-                                ).await{
-
-                                    Ok(updated_gal) => {
-                                        
-                                        /** -------------------------------------------------------------------- */
-                                        /** ----------------- publish new event data to `on_user_action` channel */
-                                        /** -------------------------------------------------------------------- */
-                                        // if the actioner is the user himself we'll notify user with something like:
-                                        // u've just done that action!
-                                        let actioner_wallet_info = UserWalletInfoResponse{
-                                            username: user.clone().username,
-                                            avatar: user.clone().avatar,
-                                            bio: user.clone().bio,
-                                            banner: user.clone().banner,
-                                            mail: user.clone().mail,
-                                            screen_cid: user.clone().screen_cid,
-                                            extra: user.clone().extra,
-                                            stars: user.clone().stars,
-                                            created_at: user.clone().created_at.to_string(),
-                                        };
-                                        let user_wallet_info = UserWalletInfoResponse{
-                                            username: user.username,
-                                            avatar: user.avatar,
-                                            bio: user.bio,
-                                            banner: user.banner,
-                                            mail: user.mail,
-                                            screen_cid: user.screen_cid,
-                                            extra: user.extra,
-                                            stars: user.stars,
-                                            created_at: user.created_at.to_string(),
-                                        };
-                                        let user_notif_info = SingleUserNotif{
-                                            wallet_info: user_wallet_info,
-                                            notif: NotifData{
-                                                actioner_wallet_info,
-                                                fired_at: Some(chrono::Local::now().timestamp()),
-                                                action_type: ActionType::CreateNft,
-                                                action_data: serde_json::to_value(user_nft_data.clone()).unwrap()
-                                            }
-                                        };
-                                        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                                        events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-                                        
-                                        
-                                        Ok(user_nft_data)
-                                    },
-                                    Err(resp) => Err(resp)
-                                }
-                            },
-                            Err(e) => {
-
-                                let new_balance = updated_user_balance_data.balance.unwrap() + asset_info.amount;
-                                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor, connection).await;
-                                let Ok(updated_user_balance_data) = update_user_balance else{
-
-                                    let err_resp = update_user_balance.unwrap_err();
-                                    return Err(err_resp);
-                                    
-                                };
-
-                                let resp_err = &e.to_string();
-            
-            
-                                /* custom error handler */
-                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                                
-                                let error_content = &e.to_string();
-                                let error_content = error_content.as_bytes().to_vec();  
-                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::insert_update_collection");
-                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-            
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: resp_err,
-                                    status: 500,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::InternalServerError().json(resp))
-                                );
-            
-                            }
-                        }
+                    Ok(user_nft_data)
 
                 },
                 Err(e) => {
@@ -1686,7 +1486,7 @@ impl UserNft{
                     
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::insert_insert_nft");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::insert");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1705,10 +1505,9 @@ impl UserNft{
 
     }
 
-    pub async fn update_nft_col_gal(
-        collection_data: UserCollectionData, 
-        gallery_data: UserPrivateGalleryData, 
+    pub async fn update_nft(
         udpate_nft_request: UpdateUserNftRequest, 
+        redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
@@ -1731,13 +1530,13 @@ impl UserNft{
             attributes: udpate_nft_request.attributes,
         };
         
-        /* inserting new nft */
+        /* update nft */
         match diesel::update(users_nfts.find(udpate_nft_request.nft_id))
             .set(&update_nft_data)
             .returning(UserNft::as_returning())
             .get_result::<UserNft>(connection)
             {
-                Ok(fetched_nft_data) => {
+                Ok(mut fetched_nft_data) => {
                     
                     let user_nft_data = UserNftData{
                         id: fetched_nft_data.clone().id,
@@ -1752,139 +1551,15 @@ impl UserNft{
                         current_price: fetched_nft_data.clone().current_price,
                         is_listed: fetched_nft_data.clone().is_listed,
                         freeze_metadata: fetched_nft_data.clone().freeze_metadata,
-                        comments: fetched_nft_data.clone().comments,
-                        likes: fetched_nft_data.clone().likes,
+                        comments: fetched_nft_data.construct_comments(connection),
+                        likes: fetched_nft_data.construct_likes(connection),
                         tx_hash: fetched_nft_data.clone().tx_hash,
                         created_at: fetched_nft_data.clone().created_at.to_string(),
                         updated_at: fetched_nft_data.clone().updated_at.to_string(),
                         attributes: fetched_nft_data.attributes,
                     };
 
-                    /* updating collection data with newly nft */
-                    let new_collection_data = UpdateUserCollection{
-                        nfts: {
-                            let nfts_ = collection_data.clone().nfts;
-                            let mut decoded_nfts = if nfts_.is_some(){
-                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            /* since there is no new nft we should update the old one in vector */
-                            let nft_position = decoded_nfts.iter().position(|nft| nft.id == user_nft_data.clone().id);
-                            if nft_position.is_some(){
-                                decoded_nfts[nft_position.unwrap()] = user_nft_data.clone();
-                            }
-
-                            Some(
-                                serde_json::to_value(decoded_nfts).unwrap()
-                            )
-                        },
-                        freeze_metadata: collection_data.clone().freeze_metadata,
-                        base_uri: collection_data.clone().base_uri,
-                        royalties_share: collection_data.clone().royalties_share,
-                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
-                        collection_background: collection_data.clone().collection_background,
-                        extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
-                        col_description: collection_data.clone().col_description,
-                        col_name: collection_data.clone().col_name,
-                    };
-
-                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
-                        .set(&new_collection_data)
-                        .returning(UserCollection::as_returning())
-                        .get_result::<UserCollection>(connection)
-                        {
-                            Ok(fetched_collection_data) => {
-                                
-                                let user_collection_data = UserCollectionData{
-                                    id: fetched_collection_data.clone().id,
-                                    contract_address: fetched_collection_data.clone().contract_address,
-                                    nfts: fetched_collection_data.clone().nfts,
-                                    col_name: fetched_collection_data.clone().col_name,
-                                    symbol: fetched_collection_data.clone().symbol,
-                                    owner_screen_cid: fetched_collection_data.clone().owner_screen_cid,
-                                    metadata_updatable: fetched_collection_data.clone().metadata_updatable,
-                                    freeze_metadata: fetched_collection_data.clone().freeze_metadata,
-                                    base_uri: fetched_collection_data.clone().base_uri,
-                                    royalties_share: fetched_collection_data.clone().royalties_share,
-                                    royalties_address_screen_cid: fetched_collection_data.clone().royalties_address_screen_cid,
-                                    collection_background: fetched_collection_data.clone().collection_background,
-                                    extra: fetched_collection_data.clone().extra,
-                                    col_description: fetched_collection_data.clone().col_description,
-                                    contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
-                                    created_at: fetched_collection_data.clone().created_at.to_string(),
-                                    updated_at: fetched_collection_data.clone().updated_at.to_string(),
-                                };
-
-                                /* updating gallery data with the updated collection */
-                                let new_gal_data = UpdateUserPrivateGalleryRequest{
-                                    collections: {
-                                        let cols = gallery_data.collections;
-                                        let mut decoded_cols = if cols.is_some(){
-                                            serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                        } else{
-                                            vec![]
-                                        };
-
-                                        /* since there is no new collection we should update the old one in vector */
-                                        let collection_position = decoded_cols.iter().position(|c| c.id == collection_data.clone().id);
-                                        if collection_position.is_some(){
-                                            decoded_cols[collection_position.unwrap()] = user_collection_data;
-                                        }
-
-                                        Some(
-                                            serde_json::to_value(decoded_cols).unwrap()
-                                        )
-                                    },
-                                    gal_name: gallery_data.gal_name,
-                                    gal_description: gallery_data.gal_description,
-                                    invited_friends: gallery_data.invited_friends,
-                                    extra: gallery_data.extra,
-                                    owner_cid: udpate_nft_request.caller_cid,
-                                    tx_signature: String::from(""),
-                                    hash_data: String::from(""),
-                                };
-
-                                /* update gallery with new collection */
-                                match UserPrivateGallery::update(
-                                    &fetched_collection_data.owner_screen_cid, 
-                                    new_gal_data, 
-                                    redis_actor.clone(),
-                                    gallery_data.id, 
-                                    connection
-                                ).await{
-
-                                    Ok(updated_gal) => Ok(user_nft_data),
-                                    Err(resp) => Err(resp)
-                                }
-                            },
-                            Err(e) => {
-
-                                let resp_err = &e.to_string();
-            
-            
-                                /* custom error handler */
-                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                                
-                                let error_content = &e.to_string();
-                                let error_content = error_content.as_bytes().to_vec();  
-                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_col_gal");
-                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-            
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: resp_err,
-                                    status: 500,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::InternalServerError().json(resp))
-                                );
-            
-                            }
-                        }
+                    Ok(user_nft_data)
 
                 },
                 Err(e) => {
@@ -1897,7 +1572,7 @@ impl UserNft{
                     
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_col_gal");
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                     let resp = Response::<&[u8]>{
@@ -1916,154 +1591,111 @@ impl UserNft{
     
     }
 
-    pub async fn update_nft_col(
-        collection_data: UserCollectionData, 
-        udpate_nft_request: UpdateUserNftRequest, 
-        redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserNftData, PanelHttpResponse>{
+    pub fn construct_comments(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
 
-        
-        let update_nft_data = UpdateUserNft{
-            current_owner_screen_cid: udpate_nft_request.current_owner_screen_cid,
-            metadata_uri: udpate_nft_request.metadata_uri,
-            extra: udpate_nft_request.extra,
-            onchain_id: udpate_nft_request.onchain_id,
-            nft_name: udpate_nft_request.nft_name,
-            is_minted: udpate_nft_request.is_minted,
-            nft_description: udpate_nft_request.nft_description,
-            current_price: udpate_nft_request.current_price,
-            is_listed: udpate_nft_request.is_listed,
-            freeze_metadata: udpate_nft_request.freeze_metadata,
-            comments: udpate_nft_request.comments,
-            likes: udpate_nft_request.likes,
-            tx_hash: udpate_nft_request.tx_hash,
-            attributes: udpate_nft_request.attributes,
+        let get_all_nft_comments = models::nfts_comments::NftComment::get_all_for_nft(self.id, connection);
+        let all_comments = if get_all_nft_comments.is_ok(){
+            get_all_nft_comments.unwrap()
+        } else{
+            vec![]
         };
-        
-        /* inserting new nft */
-        match diesel::update(users_nfts.find(udpate_nft_request.nft_id))
-            .set(&update_nft_data)
-            .returning(UserNft::as_returning())
-            .get_result::<UserNft>(connection)
-            {
-                Ok(fetched_nft_data) => {
-                    
-                    let user_nft_data = UserNftData{
-                        id: fetched_nft_data.clone().id,
-                        contract_address: fetched_nft_data.clone().contract_address,
-                        current_owner_screen_cid: fetched_nft_data.clone().current_owner_screen_cid,
-                        metadata_uri: fetched_nft_data.clone().metadata_uri,
-                        extra: fetched_nft_data.clone().extra,
-                        onchain_id: fetched_nft_data.clone().onchain_id,
-                        nft_name: fetched_nft_data.clone().nft_name,
-                        is_minted: fetched_nft_data.clone().is_minted,
-                        nft_description: fetched_nft_data.clone().nft_description,
-                        current_price: fetched_nft_data.clone().current_price,
-                        is_listed: fetched_nft_data.clone().is_listed,
-                        freeze_metadata: fetched_nft_data.clone().freeze_metadata,
-                        comments: fetched_nft_data.clone().comments,
-                        likes: fetched_nft_data.clone().likes,
-                        tx_hash: fetched_nft_data.clone().tx_hash,
-                        created_at: fetched_nft_data.clone().created_at.to_string(),
-                        updated_at: fetched_nft_data.clone().updated_at.to_string(),
-                        attributes: fetched_nft_data.attributes,
-                    };
-
-                    /* updating collection data with newly nft */
-                    let new_collection_data = UpdateUserCollection{
-                        nfts: {
-                            let nfts_ = collection_data.clone().nfts;
-                            let mut decoded_nfts = if nfts_.is_some(){
-                                serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            /* since there is no new nft we should update the old one in vector */
-                            let nft_position = decoded_nfts.iter().position(|nft| nft.id == user_nft_data.clone().id);
-                            if nft_position.is_some(){
-                                decoded_nfts[nft_position.unwrap()] = user_nft_data.clone();
-                            }
-
-                            Some(
-                                serde_json::to_value(decoded_nfts).unwrap()
-                            )
-                        },
-                        freeze_metadata: collection_data.clone().freeze_metadata,
-                        base_uri: collection_data.clone().base_uri,
-                        royalties_share: collection_data.clone().royalties_share,
-                        royalties_address_screen_cid: collection_data.clone().royalties_address_screen_cid,
-                        collection_background: collection_data.clone().collection_background,
-                        extra: collection_data.clone().extra,
-                        contract_tx_hash: collection_data.clone().contract_tx_hash.unwrap_or(String::from("")),
-                        col_description: collection_data.clone().col_description,
-                        col_name: collection_data.clone().col_name,
-                    };
-
-                    match diesel::update(users_collections.filter(users_collections::id.eq(collection_data.id)))
-                        .set(&new_collection_data)
-                        .returning(UserCollection::as_returning())
-                        .get_result::<UserCollection>(connection)
-                        {
-                            Ok(fetched_collection_data) => Ok(user_nft_data),
-                            Err(e) => {
-
-                                let resp_err = &e.to_string();
             
-            
-                                /* custom error handler */
-                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                                
-                                let error_content = &e.to_string();
-                                let error_content = error_content.as_bytes().to_vec();  
-                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_col");
-                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-            
-                                let resp = Response::<&[u8]>{
-                                    data: Some(&[]),
-                                    message: resp_err,
-                                    status: 500,
-                                    is_error: true
-                                };
-                                return Err(
-                                    Ok(HttpResponse::InternalServerError().json(resp))
-                                );
-            
-                            }
-                        }
-
-                },
-                Err(e) => {
-
-                    let resp_err = &e.to_string();
-
-
-                    /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                    
-                    let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserNft::update_nft_col");
-                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: resp_err,
-                        status: 500,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-
+        let mut this_nft_comments = vec![];   
+        for comment in all_comments{
+            this_nft_comments.push(
+                NftComment{ 
+                    nft_id: comment.nft_id, 
+                    content: comment.content.clone(), 
+                    owner_screen_cid: {
+                        User::find_by_id_none_async(comment.user_id, connection).unwrap().screen_cid.unwrap()
+                    }, 
+                    published_at: comment.published_at.timestamp(),
+                    owner_username: {
+                        User::find_by_id_none_async(comment.user_id, connection).unwrap().username
+                    },
+                    owner_avatar: {
+                        User::find_by_id_none_async(comment.user_id, connection).unwrap().avatar
+                    },
                 }
-            }
+            )
+        }
 
-    
+        Some(
+            serde_json::to_value(&this_nft_comments).unwrap()
+        )
+        
     }
 
-    pub async fn add_reaction_to_nft(add_reaction_request: AddReactionRequest, redis_actor: Addr<RedisActor>,
+    pub fn construct_likes(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+
+        let mut this_nft_likes = vec![];
+
+        // get all upvote likes related to this nft
+        let get_all_upvote_nft_likes = models::nfts_likes::NftLike::get_all_upvotes_for_nft(self.id, connection);
+        let upvote_likes = if get_all_upvote_nft_likes.is_ok(){
+            get_all_upvote_nft_likes.unwrap()
+        } else{
+            vec![]
+        };
+
+        // get all downvote likes related to this nft
+        let get_all_downvote_nft_likes = models::nfts_likes::NftLike::get_all_downvotes_for_nft(self.id, connection);
+        let downvote_likes = if get_all_downvote_nft_likes.is_ok(){
+            get_all_downvote_nft_likes.unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut upvote_users = vec![];
+        for upvote_like in upvote_likes{
+            upvote_users.push(
+                LikeUserInfo{ 
+                    screen_cid: {
+                        User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().screen_cid.unwrap()
+                    }, 
+                    username: {
+                        User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().username
+                    }, 
+                    avatar: {
+                        User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().avatar
+                    }
+                }
+            )
+        }
+
+        let mut downvote_users = vec![];
+        for downvote_like in downvote_likes{
+            downvote_users.push(
+                LikeUserInfo{ 
+                    screen_cid: {
+                        User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().screen_cid.unwrap()
+                    }, 
+                    username: {
+                        User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().username
+                    }, 
+                    avatar: {
+                        User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().avatar
+                    }
+                }
+            )
+        }
+
+        // single element
+        this_nft_likes.push(
+            NftLike{
+                nft_id: self.id,
+                upvoter_screen_cids: upvote_users,
+                downvoter_screen_cids: downvote_users,
+            }
+        );
+
+        Some(
+            serde_json::to_value(&this_nft_likes).unwrap()
+        )
+
+    }
+
+    pub async fn add_reaction_to_nft(add_reaction_request: AddReactionRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
         
@@ -2095,11 +1727,6 @@ impl UserNft{
             return Err(err_resp);
         };
 
-        let mut need_to_update_gallery = true;
-        let giftcard_contract_address = std::env::var("GIFT_CARD_POLYGON_NFT_CONTRACT_ADDRESS").unwrap();
-        if collection_data.contract_address == giftcard_contract_address{
-            need_to_update_gallery = false;
-        }
         
         let updated_nft_data = UpdateUserNftRequest{
             caller_cid: add_reaction_request.clone().caller_cid,
@@ -2119,180 +1746,16 @@ impl UserNft{
             is_listed: nft_data.is_listed,
             freeze_metadata: nft_data.freeze_metadata,
             comments: {
-                let nft_comments = nft_data.comments;
-                let mut decoded_comments = if nft_comments.is_some(){
-                    serde_json::from_value::<Vec<NftComment>>(nft_comments.unwrap()).unwrap()
-                } else{
-                    vec![]
-                };
-
-                if add_reaction_request.comment_content.is_some() && add_reaction_request.reaction_type == "comment"{
-
-                    decoded_comments.push(
-                        NftComment{ 
-                            nft_id: add_reaction_request.clone().nft_id, 
-                            content: add_reaction_request.clone().comment_content.unwrap(), 
-                            owner_screen_cid: caller_screen_cid.clone(), 
-                            published_at: chrono::Local::now().timestamp(),
-                            owner_username: user.clone().username,
-                            owner_avatar: user.clone().avatar,
-                        }
-                    );
-
-                }
-
-                Some(serde_json::to_value(decoded_comments).unwrap())
+                let empty_comments: Vec<NftComment> = vec![];
+                Some(
+                    serde_json::to_value(&empty_comments).unwrap()
+                )
             },
-            likes: {
-
-                let nft_likes = nft_data.likes;
-                let mut decoded_likes = if nft_likes.is_some(){
-                    serde_json::from_value::<Vec<NftLike>>(nft_likes.unwrap()).unwrap()
-                } else{
-                    vec![]
-                };
-
-                let mutable_decoded_likes = &mut decoded_likes;
-
-                let this_nft_position = mutable_decoded_likes
-                    .iter()
-                    .position(|nft| nft.nft_id == add_reaction_request.nft_id);
-
-                if add_reaction_request.is_like_upvote.is_some() && 
-                    add_reaction_request.is_like_upvote.unwrap() == true &&
-                    add_reaction_request.reaction_type == "like"{
-
-                    if this_nft_position.is_some(){
-                        /* 
-                            getting a mutable pointer to the found NftLike instance inside mutable_decoded_likes
-                            means that if we mutate the instance in other scopes the actual type inside 
-                            the vector will be mutated too
-                        */
-                        
-                        let mut this_nft_likes = mutable_decoded_likes[this_nft_position.unwrap()].clone();
-                        
-                        let caller = caller_screen_cid.clone();
-                        if this_nft_likes.clone().upvoter_screen_cids.is_empty(){
-                            this_nft_likes.upvoter_screen_cids.push(
-                                LikeUserInfo{ 
-                                    screen_cid: caller.clone(), 
-                                    username: user.clone().username, 
-                                    avatar: user.clone().avatar 
-                                }
-                            );
-                        }
-                        
-                        for upvote in this_nft_likes.clone().upvoter_screen_cids{
-                            if upvote.screen_cid != caller{
-                                this_nft_likes.upvoter_screen_cids.push(
-                                    LikeUserInfo{ 
-                                        screen_cid: caller.clone(), 
-                                        username: user.clone().username, 
-                                        avatar: user.clone().avatar 
-                                    }
-                                );
-                            }
-                        }
-
-                        /* remove the caller from downvoters if there was any since he liked the nft */
-                        if this_nft_likes.clone().downvoter_screen_cids
-                            .into_iter()
-                            .any(|u| u.screen_cid == caller_screen_cid.clone()){
-
-                                let downvoter_position_scid = this_nft_likes.downvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
-                                if downvoter_position_scid.is_some(){
-                                    this_nft_likes.downvoter_screen_cids.remove(downvoter_position_scid.unwrap());
-                                }
-                            }
-
-                        mutable_decoded_likes[this_nft_position.unwrap()] = this_nft_likes;
-
-                    } else{
-
-                        mutable_decoded_likes.push(
-                            NftLike{ 
-                                nft_id: add_reaction_request.clone().nft_id, 
-                                upvoter_screen_cids: vec![
-                                    LikeUserInfo{ 
-                                        screen_cid: caller_screen_cid.clone(), 
-                                        username: user.clone().username, 
-                                        avatar: user.clone().avatar 
-                                    }
-                                ],
-                                downvoter_screen_cids: vec![]
-                            }
-                        )
-                    }
-        
-                }
-        
-                if add_reaction_request.is_like_downvote.is_some() && 
-                    add_reaction_request.is_like_downvote.unwrap() == true &&
-                    add_reaction_request.reaction_type == "dislike"{
-        
-                    if this_nft_position.is_some(){
-                        /* 
-                            getting a mutable pointer to the found NftLike instance inside mutable_decoded_likes
-                            means that if we mutate the instance in other scopes the actual type inside 
-                            the vector will be mutated too
-                        */
-                        let mut this_nft_likes = mutable_decoded_likes[this_nft_position.unwrap()].clone();
-
-                        let caller = caller_screen_cid.clone();
-                        if this_nft_likes.clone().downvoter_screen_cids.is_empty(){
-                            this_nft_likes.downvoter_screen_cids.push(
-                                LikeUserInfo{ 
-                                    screen_cid: caller.clone(), 
-                                    username: user.clone().username, 
-                                    avatar: user.clone().avatar 
-                                }
-                            );
-                        }
-
-                        for downvote in this_nft_likes.clone().downvoter_screen_cids{
-                            if downvote.screen_cid != caller{
-                                this_nft_likes.downvoter_screen_cids.push(
-                                    LikeUserInfo{ 
-                                        screen_cid: caller.clone(), 
-                                        username: user.clone().username, 
-                                        avatar: user.clone().avatar 
-                                    }
-                                );
-                            }
-                        }
-
-                        /* remove the caller from upvoters if there was any since he disliked the nft */
-                        if this_nft_likes.clone().upvoter_screen_cids
-                            .into_iter()
-                            .any(|u| u.screen_cid == caller_screen_cid.clone()){
-
-                                let upvoter_position_scid = this_nft_likes.upvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
-                                if upvoter_position_scid.is_some(){
-                                    this_nft_likes.upvoter_screen_cids.remove(upvoter_position_scid.unwrap());
-                                }
-                            }
-
-                        
-                        mutable_decoded_likes[this_nft_position.unwrap()] = this_nft_likes;
-
-                    } else{
-                        mutable_decoded_likes.push(
-                            NftLike{ 
-                                nft_id: add_reaction_request.nft_id, 
-                                upvoter_screen_cids: vec![],
-                                downvoter_screen_cids: vec![
-                                    LikeUserInfo{ 
-                                        screen_cid: caller_screen_cid.clone(), 
-                                        username: user.clone().username, 
-                                        avatar: user.clone().avatar 
-                                    }
-                                ]
-                            }
-                        )
-                    }
-                }
-
-                Some(serde_json::to_value(mutable_decoded_likes).unwrap())
+            likes:{
+                let empty_likes: Vec<NftLike> = vec![];
+                Some(
+                    serde_json::to_value(&empty_likes).unwrap()
+                )
             },
             tx_hash: nft_data.tx_hash,
             tx_signature: String::from(""),
@@ -2302,138 +1765,365 @@ impl UserNft{
             col_id: add_reaction_request.col_id,
         };
 
-        if need_to_update_gallery{
+        // finally update the nft
+        match Self::update_nft(
+            updated_nft_data, 
+            redis_client.clone(),
+            redis_actor.clone(),
+            connection
+        ).await{
+            Ok(updated_user_nft_data) => {
 
-            /* find a gallery data with the passed in owner screen address */
-            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, add_reaction_request.col_id, connection).await;
-            let Ok(gallery_data) = get_gallery else{
-                let err_resp = get_gallery.unwrap_err();
-                return Err(err_resp);
-            };
+                let nft_data = UserNftData{
+                    id: updated_user_nft_data.id,
+                    contract_address: updated_user_nft_data.contract_address,
+                    current_owner_screen_cid: updated_user_nft_data.current_owner_screen_cid,
+                    metadata_uri: updated_user_nft_data.metadata_uri,
+                    extra: updated_user_nft_data.extra,
+                    attributes: updated_user_nft_data.attributes,
+                    onchain_id: updated_user_nft_data.onchain_id,
+                    nft_name: updated_user_nft_data.nft_name,
+                    is_minted: updated_user_nft_data.is_minted,
+                    nft_description: updated_user_nft_data.nft_description,
+                    current_price: updated_user_nft_data.current_price,
+                    is_listed: updated_user_nft_data.is_listed,
+                    freeze_metadata: updated_user_nft_data.freeze_metadata,
+                    comments: {
+                         
+                        let mut this_nft_comments = vec![];
+                        if add_reaction_request.comment_content.is_some() && add_reaction_request.reaction_type == "comment"{
 
-            match Self::update_nft_col_gal(
-                collection_data, 
-                gallery_data, 
-                updated_nft_data, 
-                redis_actor.clone(),
-                connection
-            ).await{
-                Ok(updated_user_nft_data) => {
-    
-                    /** -------------------------------------------------------------------- */
-                    /** ----------------- publish new event data to `on_user_action` channel */
-                    /** -------------------------------------------------------------------- */
-                    let actioner_wallet_info = UserWalletInfoResponse{
-                        username: user.username,
-                        avatar: user.avatar,
-                        bio: user.bio,
-                        banner: user.banner,
-                        mail: user.mail,
-                        screen_cid: user.screen_cid,
-                        extra: user.extra,
-                        stars: user.stars,
-                        created_at: user.created_at.to_string(),
-                    };
-                    let user_wallet_info = UserWalletInfoResponse{
-                        username: nft_owner.username,
-                        avatar: nft_owner.avatar,
-                        bio: nft_owner.bio,
-                        banner: nft_owner.banner,
-                        mail: nft_owner.mail,
-                        screen_cid: nft_owner.screen_cid,
-                        extra: nft_owner.extra,
-                        stars: nft_owner.stars,
-                        created_at: nft_owner.created_at.to_string(),
-                    };
-                    let user_notif_info = SingleUserNotif{
-                        wallet_info: user_wallet_info,
-                        notif: NotifData{
-                            actioner_wallet_info,
-                            fired_at: Some(chrono::Local::now().timestamp()),
-                            action_type: match add_reaction_request.clone().reaction_type.as_str(){
-                                "comment" => {
-                                    ActionType::CommentNft
-                                },
-                                "like" => {
-                                    ActionType::LikeNft
-                                },
-                                _ => {
-                                    ActionType::DislikeNft
-                                }
-                            },
-                            action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
+                            // first insert a new comment 
+                            let get_inserted_comment = models::nfts_comments::NftComment::insert(
+                                NewNftCommentRequest{
+                                    user_id: user.id,
+                                    nft_id: nft_data.id,
+                                    content: add_reaction_request.clone().comment_content.unwrap(),
+                                }, connection).await; 
+                                
+                            let Ok(inserted_comment) = get_inserted_comment else{
+                                let err_resp = get_inserted_comment.unwrap_err();
+                                return Err(err_resp);
+                            };
+                            
+                            // then get all comments related to this nft
+                            let get_all_nft_comments = models::nfts_comments::NftComment::get_all_for_nft(updated_user_nft_data.id, connection);
+                            let all_comments = if get_all_nft_comments.is_ok(){
+                                get_all_nft_comments.unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            for comment in all_comments{
+                                this_nft_comments.push(
+                                    NftComment{ 
+                                        nft_id: comment.nft_id, 
+                                        content: comment.content.clone(), 
+                                        owner_screen_cid: {
+                                            User::find_by_id(comment.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                        }, 
+                                        published_at: comment.published_at.timestamp(),
+                                        owner_username: {
+                                            User::find_by_id(comment.user_id, connection).await.unwrap().username
+                                        },
+                                        owner_avatar: {
+                                            User::find_by_id(comment.user_id, connection).await.unwrap().avatar
+                                        },
+                                    }
+                                )
+                            }
+        
                         }
-                    };
-                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-    
-                    Ok(updated_user_nft_data)
-                },
-                Err(err) => Err(err)
-            }
-        } else{
+        
+                        Some(serde_json::to_value(this_nft_comments).unwrap())
+                    },
+                    likes: {
+                        
+                        let mut this_nft_likes = vec![];
 
-            // since gift card contract has no private gallery 
-            match Self::update_nft_col(
-                collection_data, 
-                updated_nft_data, 
-                redis_actor.clone(),
-                connection
-            ).await{
-                Ok(updated_user_nft_data) => {
-    
-                    /** -------------------------------------------------------------------- */
-                    /** ----------------- publish new event data to `on_user_action` channel */
-                    /** -------------------------------------------------------------------- */
-                    let actioner_wallet_info = UserWalletInfoResponse{
-                        username: user.username,
-                        avatar: user.avatar,
-                        bio: user.bio,
-                        banner: user.banner,
-                        mail: user.mail,
-                        screen_cid: user.screen_cid,
-                        extra: user.extra,
-                        stars: user.stars,
-                        created_at: user.created_at.to_string(),
-                    };
-                    let user_wallet_info = UserWalletInfoResponse{
-                        username: nft_owner.username,
-                        avatar: nft_owner.avatar,
-                        bio: nft_owner.bio,
-                        banner: nft_owner.banner,
-                        mail: nft_owner.mail,
-                        screen_cid: nft_owner.screen_cid,
-                        extra: nft_owner.extra,
-                        stars: nft_owner.stars,
-                        created_at: nft_owner.created_at.to_string(),
-                    };
-                    let user_notif_info = SingleUserNotif{
-                        wallet_info: user_wallet_info,
-                        notif: NotifData{
-                            actioner_wallet_info,
-                            fired_at: Some(chrono::Local::now().timestamp()),
-                            action_type: match add_reaction_request.clone().reaction_type.as_str(){
-                                "comment" => {
-                                    ActionType::CommentNft
-                                },
-                                "like" => {
-                                    ActionType::LikeNft
-                                },
-                                _ => {
-                                    ActionType::DislikeNft
+                        // get all upvote likes related to this nft
+                        let get_all_upvote_nft_likes = models::nfts_likes::NftLike::get_all_upvotes_for_nft(updated_user_nft_data.id, connection);
+                        let upvote_likes = if get_all_upvote_nft_likes.is_ok(){
+                            get_all_upvote_nft_likes.unwrap()
+                        } else{
+                            vec![]
+                        };
+
+                        // get all downvote likes related to this nft
+                        let get_all_downvote_nft_likes = models::nfts_likes::NftLike::get_all_downvotes_for_nft(updated_user_nft_data.id, connection);
+                        let downvote_likes = if get_all_downvote_nft_likes.is_ok(){
+                            get_all_downvote_nft_likes.unwrap()
+                        } else{
+                            vec![]
+                        };
+
+                        let mut upvote_users = vec![];
+                        for upvote_like in upvote_likes{
+                            upvote_users.push(
+                                LikeUserInfo{ 
+                                    screen_cid: {
+                                        User::find_by_id(upvote_like.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                    }, 
+                                    username: {
+                                        User::find_by_id(upvote_like.user_id, connection).await.unwrap().username
+                                    }, 
+                                    avatar: {
+                                        User::find_by_id(upvote_like.user_id, connection).await.unwrap().avatar
+                                    }
                                 }
-                            },
-                            action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
+                            )
                         }
-                    };
-                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-    
-                    Ok(updated_user_nft_data)
-                },
-                Err(err) => Err(err)
-            }
 
+                        let mut downvote_users = vec![];
+                        for downvote_like in downvote_likes{
+                            downvote_users.push(
+                                LikeUserInfo{ 
+                                    screen_cid: {
+                                        User::find_by_id(downvote_like.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                    }, 
+                                    username: {
+                                        User::find_by_id(downvote_like.user_id, connection).await.unwrap().username
+                                    }, 
+                                    avatar: {
+                                        User::find_by_id(downvote_like.user_id, connection).await.unwrap().avatar
+                                    }
+                                }
+                            )
+                        }
+
+                        // single element
+                        this_nft_likes.push(
+                            NftLike{
+                                nft_id: updated_user_nft_data.id,
+                                upvoter_screen_cids: upvote_users,
+                                downvoter_screen_cids: downvote_users,
+                            }
+                        );
+
+                        // getting a mutable pointer to all likes fetched from db
+                        let mutable_likes = &mut this_nft_likes;
+                        let this_nft_position = mutable_likes
+                            .iter()
+                            .position(|nft| nft.nft_id == add_reaction_request.nft_id);
+        
+                        if add_reaction_request.is_like_upvote.is_some() && 
+                            add_reaction_request.is_like_upvote.unwrap() == true &&
+                            add_reaction_request.reaction_type == "like"{
+        
+                            if this_nft_position.is_some(){
+                                /* 
+                                    getting a mutable pointer to the found NftLike instance inside mutable_likes
+                                    means that if we mutate the instance in other scopes the actual type inside 
+                                    the vector will be mutated too
+                                */
+                                
+                                let mut this_nft_likes = mutable_likes[this_nft_position.unwrap()].clone();
+                                
+                                let caller = caller_screen_cid.clone();
+                                if this_nft_likes.clone().upvoter_screen_cids.is_empty(){
+                                    this_nft_likes.upvoter_screen_cids.push(
+                                        LikeUserInfo{ 
+                                            screen_cid: caller.clone(), 
+                                            username: user.clone().username, 
+                                            avatar: user.clone().avatar 
+                                        }
+                                    );
+                                }
+                                
+                                for upvote in this_nft_likes.clone().upvoter_screen_cids{
+                                    if upvote.screen_cid != caller{
+                                        this_nft_likes.upvoter_screen_cids.push(
+                                            LikeUserInfo{ 
+                                                screen_cid: caller.clone(), 
+                                                username: user.clone().username, 
+                                                avatar: user.clone().avatar 
+                                            }
+                                        );
+                                    }
+                                }
+        
+                                /* remove the caller from downvoters if there was any since he liked the nft */
+                                if this_nft_likes.clone().downvoter_screen_cids
+                                    .into_iter()
+                                    .any(|u| u.screen_cid == caller_screen_cid.clone()){
+        
+                                        let downvoter_position_scid = this_nft_likes.downvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
+                                        if downvoter_position_scid.is_some(){
+                                            this_nft_likes.downvoter_screen_cids.remove(downvoter_position_scid.unwrap());
+                                        }
+                                    }
+        
+                                mutable_likes[this_nft_position.unwrap()] = this_nft_likes;
+        
+                            } else{
+        
+                                mutable_likes.push(
+                                    NftLike{ 
+                                        nft_id: add_reaction_request.clone().nft_id, 
+                                        upvoter_screen_cids: vec![
+                                            LikeUserInfo{ 
+                                                screen_cid: caller_screen_cid.clone(), 
+                                                username: user.clone().username, 
+                                                avatar: user.clone().avatar 
+                                            }
+                                        ],
+                                        downvoter_screen_cids: vec![]
+                                    }
+                                )
+                            }
+
+
+                            // upsert like
+                            let get_upserted_like_info = models::nfts_likes::NftLike::upsert(
+                                NewNftLikeRequest{
+                                    user_id: user.id,
+                                    nft_id: nft_data.id,
+                                    is_upvote: true,
+                                }, connection).await;
+                            
+                            let Ok(upserted_like_info) = get_upserted_like_info else{
+                                let err_resp = get_upserted_like_info.unwrap_err();
+                                return Err(err_resp);
+                            };
+                
+                        }
+                
+                        if add_reaction_request.is_like_downvote.is_some() && 
+                            add_reaction_request.is_like_downvote.unwrap() == true &&
+                            add_reaction_request.reaction_type == "dislike"{
+                
+                            if this_nft_position.is_some(){
+                                /* 
+                                    getting a mutable pointer to the found NftLike instance inside mutable_likes
+                                    means that if we mutate the instance in other scopes the actual type inside 
+                                    the vector will be mutated too
+                                */
+                                let mut this_nft_likes = mutable_likes[this_nft_position.unwrap()].clone();
+        
+                                let caller = caller_screen_cid.clone();
+                                if this_nft_likes.clone().downvoter_screen_cids.is_empty(){
+                                    this_nft_likes.downvoter_screen_cids.push(
+                                        LikeUserInfo{ 
+                                            screen_cid: caller.clone(), 
+                                            username: user.clone().username, 
+                                            avatar: user.clone().avatar 
+                                        }
+                                    );
+                                }
+        
+                                for downvote in this_nft_likes.clone().downvoter_screen_cids{
+                                    if downvote.screen_cid != caller{
+                                        this_nft_likes.downvoter_screen_cids.push(
+                                            LikeUserInfo{ 
+                                                screen_cid: caller.clone(), 
+                                                username: user.clone().username, 
+                                                avatar: user.clone().avatar 
+                                            }
+                                        );
+                                    }
+                                }
+        
+                                /* remove the caller from upvoters if there was any since he disliked the nft */
+                                if this_nft_likes.clone().upvoter_screen_cids
+                                    .into_iter()
+                                    .any(|u| u.screen_cid == caller_screen_cid.clone()){
+        
+                                        let upvoter_position_scid = this_nft_likes.upvoter_screen_cids.iter().position(|u| &u.screen_cid == &caller_screen_cid);
+                                        if upvoter_position_scid.is_some(){
+                                            this_nft_likes.upvoter_screen_cids.remove(upvoter_position_scid.unwrap());
+                                        }
+                                    }
+        
+                                
+                                mutable_likes[this_nft_position.unwrap()] = this_nft_likes;
+        
+                            } else{
+                                mutable_likes.push(
+                                    NftLike{ 
+                                        nft_id: add_reaction_request.nft_id, 
+                                        upvoter_screen_cids: vec![],
+                                        downvoter_screen_cids: vec![
+                                            LikeUserInfo{ 
+                                                screen_cid: caller_screen_cid.clone(), 
+                                                username: user.clone().username, 
+                                                avatar: user.clone().avatar 
+                                            }
+                                        ]
+                                    }
+                                )
+                            }
+
+                            // upsert like
+                            let get_upserted_like_info = models::nfts_likes::NftLike::upsert(
+                                NewNftLikeRequest{
+                                    user_id: user.id,
+                                    nft_id: nft_data.id,
+                                    is_upvote: false,
+                                }, connection).await;
+                            
+                            let Ok(upserted_like_info) = get_upserted_like_info else{
+                                let err_resp = get_upserted_like_info.unwrap_err();
+                                return Err(err_resp);
+                            };
+                        }
+        
+                        Some(serde_json::to_value(mutable_likes).unwrap())
+                    },
+                    tx_hash: updated_user_nft_data.tx_hash,
+                    created_at: updated_user_nft_data.created_at,
+                    updated_at: updated_user_nft_data.updated_at,
+                };
+
+                /** -------------------------------------------------------------------- */
+                /** ----------------- publish new event data to `on_user_action` channel */
+                /** -------------------------------------------------------------------- */
+                let actioner_wallet_info = UserWalletInfoResponse{
+                    username: user.username,
+                    avatar: user.avatar,
+                    bio: user.bio,
+                    banner: user.banner,
+                    mail: user.mail,
+                    screen_cid: user.screen_cid,
+                    extra: user.extra,
+                    stars: user.stars,
+                    created_at: user.created_at.to_string(),
+                };
+                let user_wallet_info = UserWalletInfoResponse{
+                    username: nft_owner.username,
+                    avatar: nft_owner.avatar,
+                    bio: nft_owner.bio,
+                    banner: nft_owner.banner,
+                    mail: nft_owner.mail,
+                    screen_cid: nft_owner.screen_cid,
+                    extra: nft_owner.extra,
+                    stars: nft_owner.stars,
+                    created_at: nft_owner.created_at.to_string(),
+                };
+                let user_notif_info = SingleUserNotif{
+                    wallet_info: user_wallet_info,
+                    notif: NotifData{
+                        actioner_wallet_info,
+                        fired_at: Some(chrono::Local::now().timestamp()),
+                        action_type: match add_reaction_request.clone().reaction_type.as_str(){
+                            "comment" => {
+                                ActionType::CommentNft
+                            },
+                            "like" => {
+                                ActionType::LikeNft
+                            },
+                            _ => {
+                                ActionType::DislikeNft
+                            }
+                        },
+                        action_data: serde_json::to_value(nft_data.clone()).unwrap()
+                    }
+                };
+                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+
+                Ok(nft_data)
+            },
+            Err(err) => Err(err)
         }
 
     }
@@ -2483,7 +2173,7 @@ impl UserNft{
             };
 
             /* find a gallery data with the passed in owner screen address */
-            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, buy_nft_request.col_id, connection).await;
+            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, buy_nft_request.col_id, redis_client.clone(), connection).await;
             let Ok(gallery_data) = get_gallery else{
                 let err_resp = get_gallery.unwrap_err();
                 return Err(err_resp);
@@ -2687,10 +2377,9 @@ impl UserNft{
                     buy_nft_request.current_price = Some(0);
 
 
-                    match Self::update_nft_col_gal(
-                        collection_data, 
-                        gallery_data, 
+                    match Self::update_nft(
                         buy_nft_request.clone(), 
+                        redis_client.clone(),
                         redis_actor.clone(),
                         connection).await{
 
@@ -2924,7 +2613,7 @@ impl UserNft{
             };
 
             /* find a gallery data with the passed in owner screen address */
-            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, mint_nft_request.col_id, connection).await;
+            let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, mint_nft_request.col_id, redis_client.clone(), connection).await;
             let Ok(gallery_data) = get_gallery else{
                 let err_resp = get_gallery.unwrap_err();
                 return Err(err_resp);
@@ -3068,10 +2757,9 @@ impl UserNft{
                 mint_nft_request.is_listed = Some(false);
                 mint_nft_request.current_price = Some(0);
                 
-                match Self::update_nft_col_gal(
-                    collection_data, 
-                    gallery_data, 
+                match Self::update_nft(
                     mint_nft_request.clone(),
+                    redis_client.clone(),
                     redis_actor.clone(), 
                     connection).await{
                         Ok(updated_user_nft_data) => {
@@ -3176,7 +2864,7 @@ impl UserNft{
         };
 
         /* find a gallery data with the passed in owner screen address */
-        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, connection).await;
+        let get_gallery = UserPrivateGallery::find_by_owner_and_collection_id(&collection_data.owner_screen_cid, asset_info.col_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery else{
             let err_resp = get_gallery.unwrap_err();
             return Err(err_resp);
@@ -3321,10 +3009,9 @@ impl UserNft{
                     asset_info.is_listed = Some(false); /* set is_listed to false for new owner */
                     asset_info.current_price = Some(0); /* set current_price to false for new owner */
                     
-                    match Self::update_nft_col_gal(
-                        collection_data, 
-                        gallery_data, 
+                    match Self::update_nft(
                         asset_info.clone(), 
+                        redis_client.clone(),
                         redis_actor.clone(),
                         connection).await{
                             Ok(updated_user_nft_data) => {
@@ -3392,10 +3079,9 @@ impl UserNft{
 
                 asset_info.is_listed = Some(false);
 
-                match Self::update_nft_col_gal(
-                    collection_data, 
-                    gallery_data, 
+                match Self::update_nft(
                     asset_info.clone(), 
+                    redis_client.clone(),
                     redis_actor.clone(),
                     connection).await{
                         Ok(updated_user_nft_data) => {
@@ -3462,10 +3148,9 @@ impl UserNft{
 
                 asset_info.is_listed = Some(true);
 
-                match Self::update_nft_col_gal(
-                    collection_data, 
-                    gallery_data, 
+                match Self::update_nft(
                     asset_info.clone(), 
+                    redis_client.clone(),
                     redis_actor.clone(),
                     connection).await{
                         Ok(updated_user_nft_data) => {
@@ -3635,10 +3320,9 @@ impl UserNft{
 
                 asset_info.tx_hash = Some(new_tx_hash);
 
-                match Self::update_nft_col_gal(
-                    collection_data, 
-                    gallery_data, 
+                match Self::update_nft(
                     asset_info.clone(), 
+                    redis_client.clone(),
                     redis_actor.clone(),
                     connection).await{
                         Ok(updated_user_nft_data) => {

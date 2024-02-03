@@ -201,7 +201,7 @@ impl NftLike{
                                 
                                 let error_content = &e.to_string();
                                 let error_content = error_content.as_bytes().to_vec();  
-                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "NftLike::updatenft");
+                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "NftLike::upsert");
                                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
                                 let resp = Response::<&[u8]>{

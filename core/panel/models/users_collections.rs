@@ -14,7 +14,7 @@ use self::constants::COLLECTION_ROYALTY_IS_EXCEEDED;
 use super::users::{User, UserWalletInfoResponse, UserData};
 use super::users_fans::{FriendData, UserFan};
 use super::users_galleries::{UserPrivateGalleryData, UserPrivateGallery, UpdateUserPrivateGallery, UpdateUserPrivateGalleryRequest};
-use super::users_nfts::UserNftData;
+use super::users_nfts::{UserNft, UserNftData};
 use crate::schema::users_collections::dsl::*;
 use crate::schema::users_collections;
 
@@ -199,8 +199,18 @@ impl UserCollection{
     
                     UserCollectionData{
                         id: collection.id,
-                        contract_address: collection.contract_address,
-                        nfts: collection.nfts,
+                        contract_address: collection.clone().contract_address,
+                        nfts: {
+                            let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                            let nfts_ = if get_nfts.is_ok(){
+                                get_nfts.unwrap()
+                            } else{
+                                vec![]
+                            };
+                            Some(
+                                serde_json::to_value(&nfts_).unwrap()
+                            )
+                        },
                         col_name: collection.col_name,
                         symbol: collection.symbol,
                         owner_screen_cid: collection.owner_screen_cid,
@@ -252,8 +262,18 @@ impl UserCollection{
     
                     UserCollectionData{
                         id: collection.id,
-                        contract_address: collection.contract_address,
-                        nfts: collection.nfts,
+                        contract_address: collection.clone().contract_address,
+                        nfts: {
+                            let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                            let nfts_ = if get_nfts.is_ok(){
+                                get_nfts.unwrap()
+                            } else{
+                                vec![]
+                            };
+                            Some(
+                                serde_json::to_value(&nfts_).unwrap()
+                            )
+                        },
                         col_name: collection.col_name,
                         symbol: collection.symbol,
                         owner_screen_cid: collection.owner_screen_cid,
@@ -301,8 +321,18 @@ impl UserCollection{
         Ok(
             UserCollectionData{
                 id: col_info.id,
-                contract_address: col_info.contract_address,
-                nfts: col_info.nfts,
+                contract_address: col_info.clone().contract_address,
+                nfts: {
+                    let get_nfts = UserNft::get_all_inside_contract_none_async(&col_info.contract_address, connection);
+                    let nfts_ = if get_nfts.is_ok(){
+                        get_nfts.unwrap()
+                    } else{
+                        vec![]
+                    };
+                    Some(
+                        serde_json::to_value(&nfts_).unwrap()
+                    )
+                },
                 col_name: col_info.col_name,
                 symbol: col_info.symbol,
                 owner_screen_cid: col_info.owner_screen_cid,
@@ -453,14 +483,14 @@ impl UserCollection{
             return Err(error_resp);
         };
 
-        let nfts_ = collection.clone().nfts;
-        let decoded_nfts = if nfts_.is_some(){
-            serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
+        let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+        let nfts_ = if get_nfts.is_ok(){
+            get_nfts.unwrap()
         } else{
             vec![]
         };
 
-        let mut minted_ones = decoded_nfts
+        let mut minted_ones = nfts_
             .into_iter()
             .map(|nft|{
                 /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -534,25 +564,18 @@ impl UserCollection{
 
     }
 
-    pub fn get_all_pure_minted_nfts_of(col_id: i32,
+    pub fn get_all_pure_minted_nfts_of_collection_with_address(col_addr: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserNftData>>, PanelHttpResponse>{
 
 
-        let get_collection = Self::find_by_id_none_async(col_id, connection);
-        let Ok(collection) = get_collection else{
-            let error_resp = get_collection.unwrap_err();
+        let get_nfts = UserNft::get_all_inside_contract_none_async(col_addr, connection);
+        let Ok(nfts_) = get_nfts else{
+            let error_resp = get_nfts.unwrap_err();
             return Err(error_resp);
         };
 
-        let nfts_ = collection.clone().nfts;
-        let decoded_nfts = if nfts_.is_some(){
-            serde_json::from_value::<Vec<UserNftData>>(nfts_.clone().unwrap()).unwrap()
-        } else{
-            vec![]
-        };
-
-        let mut minted_ones = decoded_nfts
+        let mut minted_ones = nfts_
             .into_iter()
             .map(|nft|{
                 /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -598,8 +621,18 @@ impl UserCollection{
         Ok(
             UserCollectionData{
                 id: collection.id,
-                contract_address: collection.contract_address,
-                nfts: collection.nfts,
+                contract_address: collection.clone().contract_address,
+                nfts: {
+                    let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                    let nfts_ = if get_nfts.is_ok(){
+                        get_nfts.unwrap()
+                    } else{
+                        vec![]
+                    };
+                    Some(
+                        serde_json::to_value(&nfts_).unwrap()
+                    )
+                },
                 col_name: collection.col_name,
                 symbol: collection.symbol,
                 owner_screen_cid: collection.owner_screen_cid,
@@ -644,54 +677,18 @@ impl UserCollection{
         Ok(
             UserCollectionData{
                 id: collection.id,
-                contract_address: collection.contract_address,
-                nfts: collection.nfts,
-                col_name: collection.col_name,
-                symbol: collection.symbol,
-                owner_screen_cid: collection.owner_screen_cid,
-                metadata_updatable: collection.metadata_updatable,
-                base_uri: collection.base_uri,
-                royalties_share: collection.royalties_share,
-                royalties_address_screen_cid: collection.royalties_address_screen_cid,
-                collection_background: collection.collection_background,
-                extra: collection.extra,
-                col_description: collection.col_description,
-                created_at: collection.created_at.to_string(),
-                updated_at: collection.updated_at.to_string(),
-                freeze_metadata: collection.freeze_metadata,
-                contract_tx_hash: collection.contract_tx_hash,
-            }
-        )
-
-    }
-    
-    pub fn find_by_id_none_async(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserCollectionData, PanelHttpResponse>{
-
-        let user_collection = users_collections
-            .filter(users_collections::id.eq(col_id))
-            .first::<UserCollection>(connection);
-
-        let Ok(collection) = user_collection else{
-
-            let resp = Response{
-                data: Some(col_id),
-                message: COLLECTION_NOT_FOUND_OF,
-                status: 404,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            )
-
-        };
-
-
-        Ok(
-            UserCollectionData{
-                id: collection.id,
-                contract_address: collection.contract_address,
-                nfts: collection.nfts,
+                contract_address: collection.clone().contract_address,
+                nfts: {
+                    let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                    let nfts_ = if get_nfts.is_ok(){
+                        get_nfts.unwrap()
+                    } else{
+                        vec![]
+                    };
+                    Some(
+                        serde_json::to_value(&nfts_).unwrap()
+                    )
+                },
                 col_name: collection.col_name,
                 symbol: collection.symbol,
                 owner_screen_cid: collection.owner_screen_cid,
@@ -736,8 +733,74 @@ impl UserCollection{
         Ok(
             UserCollectionData{
                 id: collection.id,
-                contract_address: collection.contract_address,
-                nfts: collection.nfts,
+                contract_address: collection.clone().contract_address,
+                nfts: {
+                    let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                    let nfts_ = if get_nfts.is_ok(){
+                        get_nfts.unwrap()
+                    } else{
+                        vec![]
+                    };
+                    Some(
+                        serde_json::to_value(&nfts_).unwrap()
+                    )
+                },
+                col_name: collection.col_name,
+                symbol: collection.symbol,
+                owner_screen_cid: collection.owner_screen_cid,
+                metadata_updatable: collection.metadata_updatable,
+                base_uri: collection.base_uri,
+                royalties_share: collection.royalties_share,
+                royalties_address_screen_cid: collection.royalties_address_screen_cid,
+                collection_background: collection.collection_background,
+                extra: collection.extra,
+                col_description: collection.col_description,
+                created_at: collection.created_at.to_string(),
+                updated_at: collection.updated_at.to_string(),
+                freeze_metadata: collection.freeze_metadata,
+                contract_tx_hash: collection.contract_tx_hash,
+            }
+        )
+
+    }
+
+    pub fn find_by_id_none_async(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserCollectionData, PanelHttpResponse>{
+
+        let user_collection = users_collections
+            .filter(users_collections::id.eq(col_id))
+            .first::<UserCollection>(connection);
+
+        let Ok(collection) = user_collection else{
+
+            let resp = Response{
+                data: Some(col_id),
+                message: COLLECTION_NOT_FOUND_OF,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+
+        Ok(
+            UserCollectionData{
+                id: collection.id,
+                contract_address: collection.clone().contract_address,
+                nfts: {
+                    let get_nfts = UserNft::get_all_inside_contract_none_async(&collection.contract_address, connection);
+                    let nfts_ = if get_nfts.is_ok(){
+                        get_nfts.unwrap()
+                    } else{
+                        vec![]
+                    };
+                    Some(
+                        serde_json::to_value(&nfts_).unwrap()
+                    )
+                },
                 col_name: collection.col_name,
                 symbol: collection.symbol,
                 owner_screen_cid: collection.owner_screen_cid,
@@ -761,10 +824,10 @@ impl UserCollection{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_all_private_collections_for(caller_screen_cid: &str, gal_id: i32,
-        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
             
-        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
@@ -822,18 +885,19 @@ impl UserCollection{
 
                     UserCollectionData{
                         id: c.id,
-                        contract_address: c.contract_address,
+                        contract_address: c.clone().contract_address,
                         nfts: {
                             /* return those none minted ones */
                             if c.nfts.is_some(){
-                                let col_nfts = c.nfts;
-                                let decoded_nfts = if col_nfts.is_some(){
-                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                
+                                let get_nfts = UserNft::get_all_inside_contract_none_async(&c.contract_address, connection);
+                                let nfts_ = if get_nfts.is_ok(){
+                                    get_nfts.unwrap()
                                 } else{
                                     vec![]
                                 };
 
-                                let mut none_minted_nfts = decoded_nfts
+                                let mut none_minted_nfts = nfts_
                                     .into_iter()
                                     .map(|nft|{
                                         /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -907,10 +971,10 @@ impl UserCollection{
     }
 
     pub async fn get_all_private_collections_for_invited_friends(caller_screen_cid: &str, owner_screen_cid_: &str, 
-        gal_id: i32, limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        gal_id: i32, limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
             
-        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
@@ -996,18 +1060,19 @@ impl UserCollection{
 
                     UserCollectionData{
                         id: c.id,
-                        contract_address: c.contract_address,
+                        contract_address: c.clone().contract_address,
                         nfts: {
                             /* return those none minted ones */
                             if c.nfts.is_some(){
-                                let col_nfts = c.nfts;
-                                let decoded_nfts = if col_nfts.is_some(){
-                                    serde_json::from_value::<Vec<UserNftData>>(col_nfts.unwrap()).unwrap()
+                                
+                                let get_nfts = UserNft::get_all_inside_contract_none_async(&c.contract_address, connection);
+                                let nfts_ = if get_nfts.is_ok(){
+                                    get_nfts.unwrap()
                                 } else{
                                     vec![]
                                 };
                                 
-                                let mut none_minted_nfts = decoded_nfts
+                                let mut none_minted_nfts = nfts_
                                     .into_iter()
                                     .map(|nft|{
                                         /* if we couldn't unwrap the is_minted means it's not minted yet and it's false */
@@ -1086,6 +1151,7 @@ impl UserCollection{
         caller_screen_cid: &str,
         mut img: Multipart, 
         redis_actor: Addr<RedisActor>,
+        redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
@@ -1121,7 +1187,7 @@ impl UserCollection{
         }
 
         /* getting gallery data */        
-        let get_gallery_data = UserPrivateGallery::find_by_owner_and_contract_address(&caller_screen_cid, &collection_data.contract_address, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_owner_and_contract_address(&caller_screen_cid, &collection_data.contract_address, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
 
             let err_resp = get_gallery_data.unwrap_err();
@@ -1200,49 +1266,7 @@ impl UserCollection{
                         contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
                     };
 
-                    /* updating gallery data */
-                    let new_gal_data = UpdateUserPrivateGalleryRequest{
-                        collections: {
-                            let cols = gallery_data.collections;
-                            let mut decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            
-                            /* since there is no new collection we should update the old one in vector */
-                            let collection_position = decoded_cols.iter().position(|c| c.id == user_collection_data.clone().id);
-                            if collection_position.is_some(){
-                                decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
-                            }
-
-                            Some(
-                                serde_json::to_value(decoded_cols).unwrap()
-                            )
-                        },
-                        gal_name: gallery_data.gal_name,
-                        gal_description: gallery_data.gal_description,
-                        invited_friends: gallery_data.invited_friends,
-                        extra: gallery_data.extra,
-                        owner_cid: user.cid.unwrap(),
-                        tx_signature: String::from(""),
-                        hash_data: String::from(""),
-                    };
-
-                    /* update gallery with new collection */
-                    match UserPrivateGallery::update(
-                        &fetched_collection_data.owner_screen_cid, 
-                        new_gal_data, 
-                        redis_actor.clone(),
-                        gallery_data.id, 
-                        connection
-                    ).await{
-
-                        Ok(updated_gal) => Ok(user_collection_data),
-                        Err(resp) => Err(resp)
-                    }
-
+                    Ok(user_collection_data)
 
                 },
                 Err(e) => {
@@ -1316,7 +1340,7 @@ impl UserCollection{
             for col in collections_{
 
                 let nfts_ = {
-                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of(col.id, connection);
+                    let get_minted_nfts_of_this_collection = Self::get_all_pure_minted_nfts_of_collection_with_address(&col.contract_address, connection);
                     if get_minted_nfts_of_this_collection.is_ok(){
                         let mut minted_nfts_of_this_collection = get_minted_nfts_of_this_collection.unwrap();
                         if minted_nfts_of_this_collection.len() != 0{
@@ -1448,7 +1472,7 @@ impl UserCollection{
         };
 
         /* caller must be the gallery owner */
-        let get_gallery_data = UserPrivateGallery::find_by_id(new_col_info.clone().gallery_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(new_col_info.clone().gallery_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
 
             let err_resp = get_gallery_data.unwrap_err();
@@ -1610,88 +1634,65 @@ impl UserCollection{
                         contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
                     };
 
-                    /* updating gallery data */
-                    let new_gal_data = UpdateUserPrivateGalleryRequest{
-                        collections: {
-                            let cols = gallery_data.collections;
-                            let mut decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
+                    // ------------------------------------------------
+                    // get collection ids from redis for this gallery 
+                    // ------------------------------------------------
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let empty_vec_of_ids: Vec<i32> = vec![];
+                    let get_gal_collections: String = redis_conn.get(new_col_info.gallery_id).await.unwrap_or(
+                        serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                    );
+                    let mut gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                    // ----------------------------------------------------
+                    // store this collection id into redis for this gallery 
+                    // ----------------------------------------------------
+                    gal_collections.push(user_collection_data.id);
+                    let ـ : RedisResult<String> = redis_conn.set(new_col_info.gallery_id, 
+                        serde_json::to_string(&gal_collections).unwrap()
+                    ).await;
 
-                            /* since this is new collection we have to push */
-                            decoded_cols.push(user_collection_data.clone());
 
-                            Some(
-                                serde_json::to_value(decoded_cols).unwrap()
-                            )
-                        },
-                        gal_name: gallery_data.gal_name,
-                        gal_description: gallery_data.gal_description,
-                        invited_friends: gallery_data.invited_friends,
-                        extra: gallery_data.extra,
-                        owner_cid: new_col_info.clone().owner_cid,
-                        tx_signature: String::from(""),
-                        hash_data: String::from(""),
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
                     };
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::CreateCollection,
+                            action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
-                    /* update gallery with new collection */
-                    match UserPrivateGallery::update(
-                        &fetched_collection_data.owner_screen_cid, 
-                        new_gal_data, 
-                        redis_actor.clone(),
-                        gallery_data.id, 
-                        connection
-                    ).await{
-
-                        Ok(updated_gal) => {
-
-                            /** -------------------------------------------------------------------- */
-                            /** ----------------- publish new event data to `on_user_action` channel */
-                            /** -------------------------------------------------------------------- */
-                            // if the actioner is the user himself we'll notify user with something like:
-                            // u've just done that action!
-                            let actioner_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            let user_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            let user_notif_info = SingleUserNotif{
-                                wallet_info: user_wallet_info,
-                                notif: NotifData{
-                                    actioner_wallet_info,
-                                    fired_at: Some(chrono::Local::now().timestamp()),
-                                    action_type: ActionType::CreateCollection,
-                                    action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
-                                }
-                            };
-                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-
-                            Ok(user_collection_data)
-                        
-                        },
-                        Err(resp) => Err(resp)
-                    }
-
+                    Ok(user_collection_data)
+                    
                 },
                 Err(e) => {
 
@@ -1799,7 +1800,7 @@ impl UserCollection{
         }
 
         /* getting gallery data */        
-        let get_gallery_data = UserPrivateGallery::find_by_id(col_info.gallery_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(col_info.gallery_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
 
             let err_resp = get_gallery_data.unwrap_err();
@@ -1927,91 +1928,47 @@ impl UserCollection{
                         freeze_metadata: fetched_collection_data.clone().freeze_metadata,
                         contract_tx_hash: fetched_collection_data.clone().contract_tx_hash,
                     };
-
-                    /* updating gallery data */
-                    let new_gal_data = UpdateUserPrivateGalleryRequest{
-                        collections: {
-                            let cols = gallery_data.collections;
-                            let mut decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
-
-                            
-                            /* since there is no new collection we should update the old one in vector */
-                            let collection_position = decoded_cols.iter().position(|c| c.id == user_collection_data.clone().id);
-                            if collection_position.is_some(){
-                                decoded_cols[collection_position.unwrap()] = user_collection_data.clone();
-                            }
-
-                            Some(
-                                serde_json::to_value(decoded_cols).unwrap()
-                            )
-                        },
-                        gal_name: gallery_data.gal_name,
-                        gal_description: gallery_data.gal_description,
-                        invited_friends: gallery_data.invited_friends,
-                        extra: gallery_data.extra,
-                        owner_cid: col_info.clone().owner_cid,
-                        tx_signature: String::from(""),
-                        hash_data: String::from(""),
+           
+                    /** -------------------------------------------------------------------- */
+                    /** ----------------- publish new event data to `on_user_action` channel */
+                    /** -------------------------------------------------------------------- */
+                    // if the actioner is the user himself we'll notify user with something like:
+                    // u've just done that action!
+                    let actioner_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
                     };
-
-                    /* update gallery with new collection */
-                    match UserPrivateGallery::update(
-                        &fetched_collection_data.owner_screen_cid, 
-                        new_gal_data, 
-                        redis_actor.clone(),
-                        gallery_data.id, 
-                        connection
-                    ).await{
-
-                        Ok(updated_gal) => {
-                            
-                            /** -------------------------------------------------------------------- */
-                            /** ----------------- publish new event data to `on_user_action` channel */
-                            /** -------------------------------------------------------------------- */
-                            // if the actioner is the user himself we'll notify user with something like:
-                            // u've just done that action!
-                            let actioner_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            let user_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            let user_notif_info = SingleUserNotif{
-                                wallet_info: user_wallet_info,
-                                notif: NotifData{
-                                    actioner_wallet_info,
-                                    fired_at: Some(chrono::Local::now().timestamp()),
-                                    action_type: ActionType::UpdateCollection,
-                                    action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
-                                }
-                            };
-                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-                            
-                            Ok(user_collection_data)
-                        },
-                        Err(resp) => Err(resp)
-                    }
+                    let user_wallet_info = UserWalletInfoResponse{
+                        username: user.clone().username,
+                        avatar: user.clone().avatar,
+                        bio: user.clone().bio,
+                        banner: user.clone().banner,
+                        mail: user.clone().mail,
+                        screen_cid: user.clone().screen_cid,
+                        extra: user.clone().extra,
+                        stars: user.clone().stars,
+                        created_at: user.clone().created_at.to_string(),
+                    };
+                    let user_notif_info = SingleUserNotif{
+                        wallet_info: user_wallet_info,
+                        notif: NotifData{
+                            actioner_wallet_info,
+                            fired_at: Some(chrono::Local::now().timestamp()),
+                            action_type: ActionType::UpdateCollection,
+                            action_data: serde_json::to_value(user_collection_data.clone()).unwrap()
+                        }
+                    };
+                    let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                    events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                    
+                    Ok(user_collection_data)
 
 
                 },

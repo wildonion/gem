@@ -176,7 +176,8 @@ pub struct GalleryOwnerCount{
 impl UserPrivateGallery{
 
 
-    pub async fn get_owners_with_lots_of_galleries(owners: Vec<UserData>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_owners_with_lots_of_galleries(owners: Vec<UserData>, redis_client: RedisClient,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<GalleryOwnerCount>, PanelHttpResponse>{
 
             let mut galleries_owner_map = vec![];
@@ -187,7 +188,7 @@ impl UserPrivateGallery{
                 }
                 
                 let owner_screen_cid_ = owner.screen_cid.unwrap();
-                let get_all_galleries_owned_by = UserPrivateGallery::get_all_for_without_limit(&owner_screen_cid_, connection);
+                let get_all_galleries_owned_by = UserPrivateGallery::get_all_for_without_limit(&owner_screen_cid_, redis_client.clone(), connection);
                 let galleries_owned_by = if get_all_galleries_owned_by.is_ok(){
                     get_all_galleries_owned_by.unwrap()
                 } else{
@@ -232,10 +233,11 @@ impl UserPrivateGallery{
         gal_id: i32, 
         screen_cid: &str,
         mut img: Multipart, 
+        redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
             
-        let Ok(gallery) = Self::find_by_id(gal_id, connection).await else{
+        let Ok(gallery) = Self::find_by_id(gal_id, redis_client.clone(), connection).await else{
             let resp = Response{
                 data: Some(gal_id),
                 message: GALLERY_NOT_FOUND,
@@ -282,7 +284,28 @@ impl UserPrivateGallery{
                         UserPrivateGalleryData{
                             id: updated_gallery.id,
                             owner_screen_cid: updated_gallery.owner_screen_cid,
-                            collections: updated_gallery.collections,
+                            collections: {
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_conn.get(updated_gallery.id).await.unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                        )
+                                    }
+                                }
+                                Some(
+                                    serde_json::to_value(&all_gal_collections).unwrap()
+                                )
+                            },
                             gal_name: updated_gallery.gal_name,
                             gal_description: updated_gallery.gal_description,
                             invited_friends: updated_gallery.invited_friends,
@@ -322,7 +345,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn get_all_general_info_for(screen_cid: &str, caller_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        mut redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryInfoData>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0) as usize;
@@ -377,14 +400,25 @@ impl UserPrivateGallery{
                             id: g.id,
                             owner_screen_cid: g.owner_screen_cid,
                             collections: {
-                                let cols = g.collections;
-                                let decoded_cols = if cols.is_some(){
-                                    serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                } else{
-                                    vec![]
-                                };
+                                
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_client.get(g.id).unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                        )
+                                    }
+                                }
 
-                                decoded_cols.len() as u64
+                                all_gal_collections.len() as u64
                             },
                             gal_name: g.gal_name,
                             gal_description: g.gal_description,
@@ -478,7 +512,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn get_all_for(screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_all_for(screen_cid: &str, limit: web::Query<Limit>, mut redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
         
@@ -533,14 +567,25 @@ impl UserPrivateGallery{
                         id: g.id,
                         owner_screen_cid: g.owner_screen_cid,
                         collections: {
-                            let cols = g.collections;
-                            let decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
                             
-                            let none_minted_cols = decoded_cols
+                            // ------------------------------------------------
+                            // get collection ids from redis for this gallery 
+                            // ------------------------------------------------
+                            let empty_vec_of_ids: Vec<i32> = vec![];
+                            let get_gal_collections: String = redis_client.get(g.id).unwrap_or(
+                                serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                            );
+                            let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                            let mut all_gal_collections = vec![];
+                            if !gal_collections.is_empty(){
+                                for col_id in gal_collections{
+                                    all_gal_collections.push(
+                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                    )
+                                }
+                            }
+                            
+                            let none_minted_cols = all_gal_collections
                                 .into_iter()
                                 .map(|mut c|{
 
@@ -624,7 +669,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub fn get_all_for_without_limit(screen_cid: &str,
+    pub fn get_all_for_without_limit(screen_cid: &str, mut redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
         
@@ -665,14 +710,25 @@ impl UserPrivateGallery{
                         id: g.id,
                         owner_screen_cid: g.owner_screen_cid,
                         collections: {
-                            let cols = g.collections;
-                            let decoded_cols = if cols.is_some(){
-                                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                            } else{
-                                vec![]
-                            };
                             
-                            let none_minted_cols = decoded_cols
+                            // ------------------------------------------------
+                            // get collection ids from redis for this gallery 
+                            // ------------------------------------------------
+                            let empty_vec_of_ids: Vec<i32> = vec![];
+                            let get_gal_collections: String = redis_client.get(g.id).unwrap_or(
+                                serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                            );
+                            let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                            let mut all_gal_collections = vec![];
+                            if !gal_collections.is_empty(){
+                                for col_id in gal_collections{
+                                    all_gal_collections.push(
+                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                    )
+                                }
+                            }
+                            
+                            let none_minted_cols = all_gal_collections
                                 .into_iter()
                                 .map(|mut c|{
 
@@ -725,7 +781,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, 
+    pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, mut redis_client: RedisClient,
         limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
 
@@ -764,21 +820,32 @@ impl UserPrivateGallery{
                 if !invrd.is_accepted{
                     
                     let gal_id = invrd.gallery_id;
-                    let gallery = Self::find_by_id_none_sync(gal_id, connection).unwrap();
+                    let gallery = Self::find_by_id_none_async(gal_id, redis_client.clone(), connection).unwrap();
                     Some(
                         UserPrivateGalleryInfoDataInvited{
                             id: gallery.id,
                             owner_username: User::find_by_screen_cid_none_async(&gallery.owner_screen_cid, connection).unwrap().username,
                             owner_screen_cid: gallery.owner_screen_cid,
                             collections: {
-                                let cols = gallery.collections;
-                                let decoded_cols = if cols.is_some(){
-                                    serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-                                } else{
-                                    vec![]
-                                };
+                                
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_client.get(gallery.id).unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                        )
+                                    }
+                                }
 
-                                decoded_cols.len() as u64
+                                all_gal_collections.len() as u64
                             },
                             gal_name: gallery.gal_name,
                             gal_description: gallery.gal_description,
@@ -795,7 +862,7 @@ impl UserPrivateGallery{
                                 invfs
                                     .into_iter()
                                     .map(|scid|{
-                                        let user = User::find_by_screen_cid_none_async(&scid.unwrap(), connection).unwrap();
+                                        let user = User::find_by_screen_cid_none_async(&scid.unwrap(), connection).unwrap_or(User::default());
                                         UserWalletInfoResponse{
                                             username: user.username,
                                             avatar: user.avatar,
@@ -872,7 +939,8 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, 
-        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        limit: web::Query<Limit>, redis_client: RedisClient,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -890,7 +958,7 @@ impl UserPrivateGallery{
             )
         }
 
-        let get_gallery_info = Self::find_by_id(gal_id, connection).await;
+        let get_gallery_info = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery) = get_gallery_info else{
             let resp_err = get_gallery_info.unwrap_err();
             return Err(resp_err);
@@ -918,7 +986,7 @@ impl UserPrivateGallery{
                 .map(|f_scid|{
                     
                     if f_scid.is_some(){
-                        let user_data = User::find_by_screen_cid_none_async(&f_scid.unwrap(), connection).unwrap();
+                        let user_data = User::find_by_screen_cid_none_async(&f_scid.unwrap(), connection).unwrap_or(User::default());
                         Some(
                             UserWalletInfoResponse{
                                 username: user_data.username,
@@ -1004,7 +1072,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn find_by_id(gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn find_by_id(gallery_id: i32, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_gallery = users_galleries
@@ -1030,7 +1098,28 @@ impl UserPrivateGallery{
             UserPrivateGalleryData{ 
                 id: gallery_info.id, 
                 owner_screen_cid: gallery_info.owner_screen_cid, 
-                collections: gallery_info.collections, 
+                collections: {
+                    // ------------------------------------------------
+                    // get collection ids from redis for this gallery 
+                    // ------------------------------------------------
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let empty_vec_of_ids: Vec<i32> = vec![];
+                    let get_gal_collections: String = redis_conn.get(gallery_info.id).await.unwrap_or(
+                        serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                    );
+                    let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                    let mut all_gal_collections = vec![];
+                    if !gal_collections.is_empty(){
+                        for col_id in gal_collections{
+                            all_gal_collections.push(
+                                UserCollection::find_by_id(col_id, connection).await.unwrap()
+                            )
+                        }
+                    }
+                    Some(
+                        serde_json::to_value(&all_gal_collections).unwrap()
+                    )
+                }, 
                 gal_name: gallery_info.gal_name, 
                 gal_description: gallery_info.gal_description, 
                 invited_friends: gallery_info.invited_friends, 
@@ -1043,7 +1132,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub fn find_by_id_none_sync(gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn find_by_id_none_async(gallery_id: i32, mut redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_gallery = users_galleries
@@ -1069,7 +1158,27 @@ impl UserPrivateGallery{
             UserPrivateGalleryData{ 
                 id: gallery_info.id, 
                 owner_screen_cid: gallery_info.owner_screen_cid, 
-                collections: gallery_info.collections, 
+                collections: {
+                    // ------------------------------------------------
+                    // get collection ids from redis for this gallery 
+                    // ------------------------------------------------
+                    let empty_vec_of_ids: Vec<i32> = vec![];
+                    let get_gal_collections: String = redis_client.get(gallery_info.id).unwrap_or(
+                        serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                    );
+                    let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                    let mut all_gal_collections = vec![];
+                    if !gal_collections.is_empty(){
+                        for col_id in gal_collections{
+                            all_gal_collections.push(
+                                UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                            )
+                        }
+                    }
+                    Some(
+                        serde_json::to_value(&all_gal_collections).unwrap()
+                    )
+                }, 
                 gal_name: gallery_info.gal_name, 
                 gal_description: gallery_info.gal_description, 
                 invited_friends: gallery_info.invited_friends, 
@@ -1083,6 +1192,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn find_by_owner_and_contract_address(gallery_owner: &str, col_contract_address: &str,
+        redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
@@ -1107,14 +1217,22 @@ impl UserPrivateGallery{
 
         for gallery in galleries_info{
             
-            let cols = gallery.collections.clone();
-            let decoded_cols = if cols.is_some(){
-                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-            } else{
-                vec![]
-            };
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+            let empty_vec_of_ids: Vec<i32> = vec![];
+            let get_gal_collections: String = redis_conn.get(gallery.id).await.unwrap_or(
+                serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+            );
+            let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+            let mut all_gal_collections = vec![];
+            if !gal_collections.is_empty(){
+                for col_id in gal_collections{
+                    all_gal_collections.push(
+                        UserCollection::find_by_id(col_id, connection).await.unwrap()
+                    )
+                }
+            }
 
-            for col in decoded_cols{
+            for col in all_gal_collections{
                 if col.contract_address == col_contract_address.to_string(){
 
                     /* terminate the caller with the found gallery data */
@@ -1122,7 +1240,28 @@ impl UserPrivateGallery{
                         UserPrivateGalleryData{ 
                             id: gallery.id, 
                             owner_screen_cid: gallery.owner_screen_cid, 
-                            collections: gallery.collections, 
+                            collections: {
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_conn.get(gallery.id).await.unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                        )
+                                    }
+                                }
+                                Some(
+                                    serde_json::to_value(&all_gal_collections).unwrap()
+                                )
+                            }, 
                             gal_name: gallery.gal_name, 
                             gal_description: gallery.gal_description, 
                             invited_friends: gallery.invited_friends, 
@@ -1141,7 +1280,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn find_by_owner_and_collection_id(gallery_owner: &str, col_id: i32,
+    pub async fn find_by_owner_and_collection_id(gallery_owner: &str, col_id: i32, redis_client: RedisClient,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
@@ -1166,14 +1305,22 @@ impl UserPrivateGallery{
 
         for gallery in galleries_info{
             
-            let cols = gallery.collections.clone();
-            let decoded_cols = if cols.is_some(){
-                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-            } else{
-                vec![]
-            };
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+            let empty_vec_of_ids: Vec<i32> = vec![];
+            let get_gal_collections: String = redis_conn.get(gallery.id).await.unwrap_or(
+                serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+            );
+            let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+            let mut all_gal_collections = vec![];
+            if !gal_collections.is_empty(){
+                for col_id in gal_collections{
+                    all_gal_collections.push(
+                        UserCollection::find_by_id(col_id, connection).await.unwrap()
+                    )
+                }
+            }
 
-            for col in decoded_cols{
+            for col in all_gal_collections{
                 if col.id == col_id{
 
                     /* terminate the caller with the found gallery data */
@@ -1181,7 +1328,28 @@ impl UserPrivateGallery{
                         UserPrivateGalleryData{ 
                             id: gallery.id, 
                             owner_screen_cid: gallery.owner_screen_cid, 
-                            collections: gallery.collections, 
+                            collections: {
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_conn.get(gallery.id).await.unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                        )
+                                    }
+                                }
+                                Some(
+                                    serde_json::to_value(&all_gal_collections).unwrap()
+                                )
+                            }, 
                             gal_name: gallery.gal_name, 
                             gal_description: gallery.gal_description, 
                             invited_friends: gallery.invited_friends, 
@@ -1200,75 +1368,21 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn find_by_contract_address(col_contract_address: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
-        -> Result<UserPrivateGalleryData, PanelHttpResponse>{
-
-        let galleries_data = users_galleries
-            .load::<UserPrivateGallery>(connection);
-
-        let Ok(galleries_info) = galleries_data else{
-
-            let resp = Response::<&[u8]>{
-                data: Some(&[]),
-                message: NO_GALLERY_FOUND,
-                status: 404,
-                is_error: true
-            };
-            return Err(
-                Ok(HttpResponse::NotFound().json(resp))
-            )
-
-        };
-
-        for gallery in galleries_info{
-            
-            let cols = gallery.collections.clone();
-            let decoded_cols = if cols.is_some(){
-                serde_json::from_value::<Vec<UserCollectionData>>(cols.clone().unwrap()).unwrap()
-            } else{
-                vec![]
-            };
-
-            for col in decoded_cols{
-                if col.contract_address == col_contract_address.to_string(){
-
-                    return Ok(
-                        UserPrivateGalleryData{ 
-                            id: gallery.id, 
-                            owner_screen_cid: gallery.owner_screen_cid, 
-                            collections: gallery.collections, 
-                            gal_name: gallery.gal_name, 
-                            gal_description: gallery.gal_description, 
-                            invited_friends: gallery.invited_friends, 
-                            extra: gallery.extra, 
-                            gallery_background: gallery.gallery_background,
-                            created_at: gallery.created_at.to_string(), 
-                            updated_at: gallery.updated_at.to_string() 
-                        }
-                    )
-                }
-            }
-
-        }
-
-        Ok(UserPrivateGalleryData::default())
-
-    }
 
 }
 
 impl UserPrivateGallery{
 
     // if the user wants to exit from the gallery we won't payback him
-    pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
+    pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest, 
+        redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let ExitFromPrivateGalleryRequest{ gal_id, caller_cid, tx_signature, hash_data } = 
             exit_from_private_gallery;
         
-        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+        let get_gallery_data = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
@@ -1320,7 +1434,7 @@ impl UserPrivateGallery{
             };
 
             // only owner can update
-            match Self::update(&gallery_data.owner_screen_cid, updated_gal_data, redis_actor.clone(), gal_id, connection).await{
+            match Self::update(&gallery_data.owner_screen_cid, updated_gal_data, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
                 Ok(updated_gallery_data) => {
 
                     /** -------------------------------------------------------------------- */
@@ -1362,7 +1476,25 @@ impl UserPrivateGallery{
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
                     events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
-                    Ok(updated_gallery_data)
+                    Ok(
+                        UserPrivateGalleryData{
+                            id: updated_gallery_data.id,
+                            owner_screen_cid: updated_gallery_data.owner_screen_cid,
+                            collections: {
+                                let cols: Vec<UserCollectionData> = vec![];
+                                Some(
+                                    serde_json::to_value(&cols).unwrap()
+                                )
+                            },
+                            gal_name: todo!(),
+                            gal_description: todo!(),
+                            invited_friends: todo!(),
+                            extra: todo!(),
+                            gallery_background: todo!(),
+                            created_at: todo!(),
+                            updated_at: todo!(),
+                        }
+                    )
                 },
                 Err(err) => Err(err)
             }
@@ -1501,7 +1633,8 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest, redis_actor: Addr<RedisActor>,
+    pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest, 
+        redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
         
@@ -1520,7 +1653,7 @@ impl UserPrivateGallery{
         
         if are_we_friend{
 
-            let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+            let get_gallery_data = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
             let Ok(gallery_data) = get_gallery_data else{
                 let error_resp = get_gallery_data.unwrap_err();
                 return Err(error_resp);
@@ -1589,7 +1722,7 @@ impl UserPrivateGallery{
         let RemoveInvitedFriendFromPrivateGalleryRequest{ gal_id, caller_cid, friend_screen_cid, tx_signature, hash_data } = 
             remove_invited_friend_request;
         
-        let get_gallery_data = Self::find_by_id(gal_id, connection).await;
+        let get_gallery_data = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_data else{
             let error_resp = get_gallery_data.unwrap_err();
             return Err(error_resp);
@@ -1686,7 +1819,28 @@ impl UserPrivateGallery{
 
             let updated_gal_data = UpdateUserPrivateGalleryRequest{
                 owner_cid: caller_cid,
-                collections: gallery_data.collections,
+                collections: {
+                    // ------------------------------------------------
+                    // get collection ids from redis for this gallery 
+                    // ------------------------------------------------
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let empty_vec_of_ids: Vec<i32> = vec![];
+                    let get_gal_collections: String = redis_conn.get(gallery_data.id).await.unwrap_or(
+                        serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                    );
+                    let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                    let mut all_gal_collections = vec![];
+                    if !gal_collections.is_empty(){
+                        for col_id in gal_collections{
+                            all_gal_collections.push(
+                                UserCollection::find_by_id(col_id, connection).await.unwrap()
+                            )
+                        }
+                    }
+                    Some(
+                        serde_json::to_value(&all_gal_collections).unwrap()
+                    )
+                },
                 gal_name: gallery_data.gal_name,
                 gal_description: gallery_data.gal_description,
                 invited_friends: Some(friends_), /* updated */
@@ -1695,7 +1849,7 @@ impl UserPrivateGallery{
                 hash_data,
             }; 
 
-            match Self::update(&caller_screen_cid, updated_gal_data, redis_actor.clone(), gal_id, connection).await{
+            match Self::update(&caller_screen_cid, updated_gal_data, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
                 Ok(update_gallery_data) => {
 
                     /** -------------------------------------------------------------------- */
@@ -1760,7 +1914,28 @@ impl UserPrivateGallery{
                 UserPrivateGalleryData{ 
                     id: gallery_data.id, 
                     owner_screen_cid: gallery_data.owner_screen_cid, 
-                    collections: gallery_data.collections, 
+                    collections: {
+                        // ------------------------------------------------
+                        // get collection ids from redis for this gallery 
+                        // ------------------------------------------------
+                        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                        let empty_vec_of_ids: Vec<i32> = vec![];
+                        let get_gal_collections: String = redis_conn.get(gallery_data.id).await.unwrap_or(
+                            serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                        );
+                        let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                        let mut all_gal_collections = vec![];
+                        if !gal_collections.is_empty(){
+                            for col_id in gal_collections{
+                                all_gal_collections.push(
+                                    UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                )
+                            }
+                        }
+                        Some(
+                            serde_json::to_value(&all_gal_collections).unwrap()
+                        )
+                    }, 
                     gal_name: gallery_data.gal_name, 
                     gal_description: gallery_data.gal_description, 
                     invited_friends: inv_frds, 
@@ -1777,11 +1952,12 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
-    pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
+    pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
+        redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
-        let get_gallery_info = Self::find_by_id(gal_id, connection).await;
+        let get_gallery_info = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery_data) = get_gallery_info else{
             let error_resp = get_gallery_info.unwrap_err();
             return Err(error_resp);
@@ -1815,7 +1991,28 @@ impl UserPrivateGallery{
                         let gallery_data = UserPrivateGalleryData{
                             id: g.id,
                             owner_screen_cid: g.owner_screen_cid,
-                            collections: g.collections,
+                            collections: {
+                                // ------------------------------------------------
+                                // get collection ids from redis for this gallery 
+                                // ------------------------------------------------
+                                let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                                let empty_vec_of_ids: Vec<i32> = vec![];
+                                let get_gal_collections: String = redis_conn.get(g.id).await.unwrap_or(
+                                    serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                                );
+                                let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                                let mut all_gal_collections = vec![];
+                                if !gal_collections.is_empty(){
+                                    for col_id in gal_collections{
+                                        all_gal_collections.push(
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                        )
+                                    }
+                                }
+                                Some(
+                                    serde_json::to_value(&all_gal_collections).unwrap()
+                                )
+                            },
                             gal_name: g.gal_name,
                             gal_description: g.gal_description,
                             invited_friends: g.invited_friends,

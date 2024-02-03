@@ -1323,7 +1323,7 @@ impl UserFan{
 
     }
 
-    pub async fn remove_freind(remove_friend_request: RemoveFriend, redis_actor: Addr<RedisActor>,
+    pub async fn remove_freind(remove_friend_request: RemoveFriend, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         
@@ -1351,7 +1351,7 @@ impl UserFan{
                     
                     // remove frd from private gallery if his in there
                     // since the owner is not his friend any more
-                    let get_all_private_galleries = UserPrivateGallery::get_all_for_without_limit(owner_screen_cid, connection);
+                    let get_all_private_galleries = UserPrivateGallery::get_all_for_without_limit(owner_screen_cid, redis_client.clone(), connection);
                     if get_all_private_galleries.is_ok(){
                         let galleries = get_all_private_galleries.unwrap();
                         for gallery in galleries{
@@ -1375,6 +1375,7 @@ impl UserFan{
                                                         tx_signature: String::from(""),
                                                         hash_data: String::from(""),
                                                     }, 
+                                                    redis_client.clone(),
                                                     redis_actor.clone(),
                                                     gallery.clone().id,
                                                     connection)
@@ -1769,7 +1770,7 @@ impl UserFan{
         };
 
         // update invited_friends with the owner_screen_cid
-        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery) = get_gallery_data else{
             let resp_error = get_gallery_data.unwrap_err();
             return Err(resp_error);
@@ -1825,7 +1826,7 @@ impl UserFan{
                         extra: gallery.extra,
                         tx_signature,
                         hash_data,
-                    }, redis_actor.clone(), gal_id, connection).await{
+                    }, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
 
                         Ok(_) => {
                             
@@ -1904,7 +1905,7 @@ impl UserFan{
         };
 
         // update invited_friends with the caller_screen_cid
-        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, connection).await;
+        let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery) = get_gallery_data else{
             let resp_error = get_gallery_data.unwrap_err();
             return Err(resp_error);
@@ -2042,7 +2043,7 @@ impl UserFan{
                         extra: gallery.extra,
                         tx_signature,
                         hash_data,
-                    }, redis_actor.clone(), gal_id, connection).await{
+                    }, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
 
                         Ok(_) => Ok(updated_user_fan_data),
                         Err(resp) => {
