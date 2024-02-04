@@ -12,6 +12,7 @@ use crate::schema::users_fans::friends;
 use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
 use self::constants::FRIEND_IS_NOT_INVITED_YET;
 
+use super::galleries_invitation_requests::PrivateGalleryInvitationRequest;
 use super::users::{UserWalletInfoResponse, UserData};
 use super::users_collections::{UserCollection, UserCollectionData, CollectionInfoResponse};
 use super::users_fans::{InvitationRequestData, UserFan, InvitationRequestDataResponse};
@@ -801,12 +802,12 @@ impl UserPrivateGallery{
         }
 
         let get_user_fan = UserFan::get_user_fans_data_for(&caller_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan else{
+        let Ok(mut user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
             return Err(resp_error);
         };
 
-        let user_invitation_request_data = user_fan_data.invitation_requests;
+        let user_invitation_request_data = user_fan_data.construct_gallery_invitation_requests(connection);
         let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
             serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
         } else{
@@ -1437,6 +1438,9 @@ impl UserPrivateGallery{
             match Self::update(&gallery_data.owner_screen_cid, updated_gal_data, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
                 Ok(updated_gallery_data) => {
 
+                    // remove user request from the galleries_invitation_requests table
+                    PrivateGalleryInvitationRequest::remove(user.id, gallery_data.id, connection).await;
+
                     /** -------------------------------------------------------------------- */
                     /** ----------------- publish new event data to `on_user_action` channel */
                     /** -------------------------------------------------------------------- */
@@ -1851,6 +1855,9 @@ impl UserPrivateGallery{
 
             match Self::update(&caller_screen_cid, updated_gal_data, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
                 Ok(update_gallery_data) => {
+
+                    // remove user request from the galleries_invitation_requests table
+                    PrivateGalleryInvitationRequest::remove(friend_info.id, gallery_data.id, connection).await;
 
                     /** -------------------------------------------------------------------- */
                     /** ----------------- publish new event data to `on_user_action` channel */

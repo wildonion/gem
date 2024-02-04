@@ -12,6 +12,7 @@ use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
+use super::galleries_invitation_requests::{NewPrivateGalleryInvitationRequest, PrivateGalleryInvitationRequest};
 use super::users::{User, UserWalletInfoResponse, UserData};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest};
 
@@ -488,14 +489,14 @@ impl UserFan{
             can only call this method for his own
         */
         let get_user_fan_data = Self::get_user_fans_data_for(owner_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan_data else{
+        let Ok(mut user_fan_data) = get_user_fan_data else{
 
             let resp_err = get_user_fan_data.unwrap_err();
             return Err(resp_err);
         };
 
 
-        let user_invitation_request_data = user_fan_data.invitation_requests;
+        let user_invitation_request_data = user_fan_data.construct_gallery_invitation_requests(connection);
         let decoded_invitation_request_data = if user_invitation_request_data.is_some(){
             serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
         } else{
@@ -685,7 +686,7 @@ impl UserFan{
             .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
             .first::<UserFan>(connection);
 
-        let Ok(fan_data) = user_fan_data else{
+        let Ok(mut fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -702,11 +703,11 @@ impl UserFan{
         Ok(
             UserFanData{
                 id: fan_data.id,
-                user_screen_cid: fan_data.user_screen_cid,
-                friends: fan_data.friends,
-                invitation_requests: fan_data.invitation_requests,
-                created_at: fan_data.created_at.to_string(),
-                updated_at: fan_data.updated_at.to_string(),
+                user_screen_cid: fan_data.clone().user_screen_cid,
+                friends: fan_data.clone().friends,
+                invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
+                created_at: fan_data.clone().created_at.to_string(),
+                updated_at: fan_data.clone().updated_at.to_string(),
             }
         )
 
@@ -818,7 +819,7 @@ impl UserFan{
             .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
             .first::<UserFan>(connection);
 
-        let Ok(fan_data) = user_fan_data else{
+        let Ok(mut fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -857,7 +858,7 @@ impl UserFan{
         Ok(
             UserFanData{
                 id: fan_data.id,
-                user_screen_cid: fan_data.user_screen_cid,
+                user_screen_cid: fan_data.clone().user_screen_cid,
                 friends: {
 
                     if both_friend_data_arr.is_empty(){
@@ -895,9 +896,9 @@ impl UserFan{
                         Some(serde_json::to_value(sliced).unwrap())
                     }
                 },
-                invitation_requests: fan_data.invitation_requests,
-                created_at: fan_data.created_at.to_string(),
-                updated_at: fan_data.updated_at.to_string(),
+                invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
+                created_at: fan_data.clone().created_at.to_string(),
+                updated_at: fan_data.clone().updated_at.to_string(),
             }
         )
 
@@ -911,7 +912,7 @@ impl UserFan{
             .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
             .first::<UserFan>(connection);
 
-        let Ok(fan_data) = user_fan_data else{
+        let Ok(mut fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -950,7 +951,7 @@ impl UserFan{
         Ok(
             UserFanData{
                 id: fan_data.id,
-                user_screen_cid: fan_data.user_screen_cid,
+                user_screen_cid: fan_data.clone().user_screen_cid,
                 friends: {
 
                     if both_friend_data_arr.is_empty(){
@@ -960,9 +961,9 @@ impl UserFan{
                         Some(serde_json::to_value(both_friend_data_arr).unwrap())
                     }
                 },
-                invitation_requests: fan_data.invitation_requests,
-                created_at: fan_data.created_at.to_string(),
-                updated_at: fan_data.updated_at.to_string(),
+                invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
+                created_at: fan_data.clone().created_at.to_string(),
+                updated_at: fan_data.clone().updated_at.to_string(),
             }
         )
 
@@ -996,7 +997,7 @@ impl UserFan{
             .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
             .first::<UserFan>(connection);
 
-        let Ok(fan_data) = user_fan_data else{
+        let Ok(mut fan_data) = user_fan_data else{
 
             let resp = Response{
                 data: Some(owner_screen_cid),
@@ -1044,7 +1045,7 @@ impl UserFan{
         Ok(
             UserFanData{
                 id: fan_data.id,
-                user_screen_cid: fan_data.user_screen_cid,
+                user_screen_cid: fan_data.clone().user_screen_cid,
                 friends: if owner_followers.is_empty(){
                         Some(serde_json::to_value(owner_followers).unwrap())
                     } else{
@@ -1084,7 +1085,7 @@ impl UserFan{
     
                         Some(serde_json::to_value(sliced).unwrap())
                     },
-                invitation_requests: fan_data.invitation_requests,
+                invitation_requests: fan_data.construct_gallery_invitation_requests(connection),
                 created_at: fan_data.created_at.to_string(),
                 updated_at: fan_data.updated_at.to_string(),
             }
@@ -1135,7 +1136,7 @@ impl UserFan{
             };
 
             let mut followings = vec![];
-            for fan_data in fans_data{
+            for mut fan_data in fans_data{
 
                 // ignore the caller friends field 
                 if fan_data.user_screen_cid == who_screen_cid{
@@ -1181,7 +1182,7 @@ impl UserFan{
                                     }
                                 },
                                 friends: fan_data.clone().friends,
-                                invitation_requests: fan_data.clone().invitation_requests,
+                                invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
                                 created_at: fan_data.created_at.to_string(),
                                 updated_at: fan_data.updated_at.to_string(),
                             }
@@ -1278,12 +1279,12 @@ impl UserFan{
             
             let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
             let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
-            let Ok(user_fan_data) = get_user_fan else{
+            let Ok(mut user_fan_data) = get_user_fan else{
                 let resp_error = get_user_fan.unwrap_err();
                 return Err(resp_error);
             };
     
-            let user_friends_data = user_fan_data.friends;
+            let user_friends_data = user_fan_data.clone().friends;
             let mut decoded_friends_data = if user_friends_data.is_some(){
                 serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
             } else{
@@ -1332,12 +1333,12 @@ impl UserFan{
     
             let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
             let get_user_fan = Self::get_user_fans_data_for(&friend_screen_cid, connection).await;
-            let Ok(user_fan_data) = get_user_fan else{
+            let Ok(mut user_fan_data) = get_user_fan else{
                 let resp_error = get_user_fan.unwrap_err();
                 return Err(resp_error);
             };
     
-            let user_friends_data = user_fan_data.friends;
+            let user_friends_data = user_fan_data.clone().friends;
             let mut decoded_friends_data = if user_friends_data.is_some(){
                 serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
             } else{
@@ -1501,15 +1502,15 @@ impl UserFan{
                     .returning(UserFan::as_returning())
                     .get_result::<UserFan>(connection)
                     {
-                        Ok(user_fan_data) => {
+                        Ok(mut user_fan_data) => {
 
                             let fan_info = UserFanData{ 
                                 id: user_fan_data.id, 
-                                user_screen_cid: user_fan_data.user_screen_cid, 
-                                friends: user_fan_data.friends, 
-                                invitation_requests: user_fan_data.invitation_requests, 
-                                created_at: user_fan_data.created_at.to_string(), 
-                                updated_at: user_fan_data.updated_at.to_string() 
+                                user_screen_cid: user_fan_data.clone().user_screen_cid, 
+                                friends: user_fan_data.clone().friends, 
+                                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection), 
+                                created_at: user_fan_data.clone().created_at.to_string(), 
+                                updated_at: user_fan_data.clone().updated_at.to_string() 
                             };
 
                             /** -------------------------------------------------------------------- */
@@ -1584,12 +1585,43 @@ impl UserFan{
 
     }
 
-    /* 
-        pushing a new invitation request for the passed in user by doing this we're updating the 
-        invitation_request_data field for the user so client can get the invitation_request_data
-        in an interval and check for new unaccepted ones. use get_user_unaccpeted_invitation_requests 
-        method to fetch those ones that their `is_accepted` are false.
-    */
+    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+
+        let owner_id = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap().id;
+        
+        let get_invitation_requests_data = PrivateGalleryInvitationRequest::get_all_for_user(owner_id, connection);
+        let invitation_requests_data = if get_invitation_requests_data.is_ok(){
+            get_invitation_requests_data.unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut all_inv_reqs = vec![];
+        for inv_req in invitation_requests_data{
+            all_inv_reqs.push(
+                InvitationRequestData{
+                    username: {
+                        User::find_by_id_none_async(inv_req.invitee_id, connection).unwrap().username
+                    },
+                    user_avatar: {
+                        User::find_by_id_none_async(inv_req.invitee_id, connection).unwrap().avatar
+                    },
+                    from_screen_cid: {
+                        User::find_by_id_none_async(inv_req.from_user_id, connection).unwrap().screen_cid.unwrap()
+                    },
+                    requested_at: inv_req.requested_at,
+                    gallery_id: inv_req.gal_id,
+                    is_accepted: inv_req.is_accepted,
+                }
+            )
+        }
+
+        Some(
+            serde_json::to_value(&all_inv_reqs).unwrap()
+        )
+
+    }
+
     pub async fn push_invitation_request_for(owner_screen_cid: &str, redis_actor: Addr<RedisActor>,
         invitation_request_data: InvitationRequestData,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
@@ -1610,13 +1642,6 @@ impl UserFan{
             let resp_err = get_request_sender_info.unwrap_err();
             return Err(resp_err);
         };
-        
-        let get_user_fan_data = Self::get_user_fans_data_for(owner_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan_data else{
-
-            let error_resp = get_user_fan_data.unwrap_err();
-            return Err(error_resp);
-        };
 
         let check_we_are_friend = Self::are_we_friends(
             &request_sender, 
@@ -1629,32 +1654,61 @@ impl UserFan{
         
         if are_we_friend{
 
-            let user_invitation_request_data = user_fan_data.invitation_requests;
-            let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
-                serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
+            // getting all gallery invitation requests for the passed in invitee
+            let get_invitation_requests_data = PrivateGalleryInvitationRequest::get_all_for_user(user.id, connection);
+            let invitation_requests_data = if get_invitation_requests_data.is_ok(){
+                get_invitation_requests_data.unwrap()
             } else{
                 vec![]
             };
 
-            if !decoded_invitation_request_data
+            let mut all_inv_reqs = vec![];
+            for inv_req in invitation_requests_data{
+                all_inv_reqs.push(
+                    InvitationRequestData{
+                        username: {
+                            User::find_by_id(inv_req.invitee_id, connection).await.unwrap().username
+                        },
+                        user_avatar: {
+                            User::find_by_id(inv_req.invitee_id, connection).await.unwrap().avatar
+                        },
+                        from_screen_cid: {
+                            User::find_by_id(inv_req.from_user_id, connection).await.unwrap().screen_cid.unwrap()
+                        },
+                        requested_at: inv_req.requested_at,
+                        gallery_id: inv_req.gal_id,
+                        is_accepted: inv_req.is_accepted,
+                    }
+                )
+            }
+
+
+            let mut is_this_new_invitation = false;
+            if !all_inv_reqs
                 .clone()
                 .into_iter()
                 .any(|invrd| invrd.gallery_id == invitation_request_data.gallery_id){
 
-                    decoded_invitation_request_data.push(invitation_request_data.clone());
+                    is_this_new_invitation = true;
+
                 }
 
-            let new_updated_data = Self::update(owner_screen_cid, 
-                UpdateUserFanData{ 
-                    friends: user_fan_data.friends, 
-                    invitation_requests: Some(serde_json::to_value(decoded_invitation_request_data).unwrap()), 
-                }, connection).await;
+            if is_this_new_invitation{
+                // insert into PrivateGalleryInvitationRequest table
+                let get_inserted_inv_req_data = PrivateGalleryInvitationRequest::insert(
+                    NewPrivateGalleryInvitationRequest{
+                        invitee_id: user.id,
+                        from_user_id: request_sender_info.id,
+                        gal_id: invitation_request_data.gallery_id,
+                        is_accepted: false,
+                        requested_at: invitation_request_data.requested_at
+                    }, connection).await;
+                let Ok(inserted_inv_req_data) = get_inserted_inv_req_data else{
+                    let err_resp = get_inserted_inv_req_data.unwrap_err();
+                    return Err(err_resp);
+                };
+            }
 
-            let Ok(udpated_data) = new_updated_data else{
-
-                let resp_err = new_updated_data.unwrap_err();
-                return Err(resp_err);
-            };
 
             let invitation_request_data_response = InvitationRequestDataResponse{
                 to_screen_cid: owner_screen_cid.to_string(),
@@ -1750,52 +1804,36 @@ impl UserFan{
         }
 
         let get_request_sender_info = User::find_by_screen_cid(&from_screen_cid.clone(), connection).await;
-        let Ok(request_sender_info) =get_request_sender_info else{
+        let Ok(request_sender_info) = get_request_sender_info else{
 
             let resp_err = get_request_sender_info.unwrap_err();
             return Err(resp_err);
         };
-        
-        let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan else{
-            let resp_error = get_user_fan.unwrap_err();
-            return Err(resp_error);
-        };
 
-        let user_invitation_request_data = user_fan_data.invitation_requests;
-        let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
-            serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
-        } else{
-            vec![]
-        };
-
-        // update invited_friends with the owner_screen_cid
         let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
         let Ok(gallery) = get_gallery_data else{
             let resp_error = get_gallery_data.unwrap_err();
             return Err(resp_error);
         };
 
+        let get_user_fan = Self::get_user_fans_data_for(&owner_screen_cid, connection).await;
+        let Ok(mut user_fan_data) = get_user_fan else{
+            let resp_error = get_user_fan.unwrap_err();
+            return Err(resp_error);
+        };
 
-        /* mutating a structure inside a vector of InvitationRequestData structs using &mut pointer */
-        'updateinvreqblock: for inv_req in &mut decoded_invitation_request_data{
+        match PrivateGalleryInvitationRequest::accept_request(user.id, gal_id, connection).await{
 
-            if inv_req.is_accepted == false && 
-                inv_req.from_screen_cid == from_screen_cid && 
-                inv_req.gallery_id == gal_id{
-            
-                inv_req.is_accepted = true;
-                break 'updateinvreqblock;
+            Ok(updated_private_gallery_invitation_request) => {
 
-            }
-        }
-
-        match Self::update(&owner_screen_cid, UpdateUserFanData{ 
-            friends: user_fan_data.friends, 
-            invitation_requests: Some(serde_json::to_value(decoded_invitation_request_data).unwrap())
-        }, connection).await{
-
-            Ok(updated_user_fan_data) => {
+                let final_user_fan_data = UserFanData{
+                    id: user_fan_data.id,
+                    user_screen_cid: user_fan_data.clone().user_screen_cid,
+                    friends: user_fan_data.clone().friends,
+                    invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                    created_at: user_fan_data.clone().created_at,
+                    updated_at: user_fan_data.clone().updated_at,
+                };
 
                 // if the updation process of users_fans data was successful then we simply
                 // add the caller to invited_friend of the gallery owner
@@ -1861,13 +1899,13 @@ impl UserFan{
                                     actioner_wallet_info,
                                     fired_at: Some(chrono::Local::now().timestamp()),
                                     action_type: ActionType::AcceptInvitationRequest,
-                                    action_data: serde_json::to_value(updated_user_fan_data.clone()).unwrap()
+                                    action_data: serde_json::to_value(final_user_fan_data.clone()).unwrap()
                                 }
                             };
                             let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
                             events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
                             
-                            Ok(updated_user_fan_data)
+                            Ok(final_user_fan_data)
                         
                         },
                         Err(resp) => return Err(resp),
@@ -1892,12 +1930,12 @@ impl UserFan{
         // caller
         let caller_screen_cid = &walletreq::evm::get_keccak256_from(caller_cid.clone());
         let get_user_fan = Self::get_user_fans_data_for(&caller_screen_cid, connection).await;
-        let Ok(user_fan_data) = get_user_fan else{
+        let Ok(mut user_fan_data) = get_user_fan else{
             let resp_error = get_user_fan.unwrap_err();
             return Err(resp_error);
         };
 
-        let user_invitation_request_data = user_fan_data.invitation_requests;
+        let user_invitation_request_data = user_fan_data.construct_gallery_invitation_requests(connection);
         let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
             serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
         } else{
@@ -1944,139 +1982,135 @@ impl UserFan{
 
         // don't push new invitation request to the caller related field
         // since the caller might be gets invited by gallery owner request
+        let mut is_this_new_request = false;
         if !decoded_invitation_request_data
                 .clone()
                 .into_iter()
                 .any(|invrd| invrd.gallery_id == gallery.id){
 
-                    decoded_invitation_request_data.push(InvitationRequestData{
-                        username: owner.username,
-                        user_avatar: owner.avatar,
-                        from_screen_cid: owner_screen_cid.clone(),
-                        requested_at: chrono::Local::now().timestamp(),
-                        gallery_id: gallery.id,
-                        is_accepted: true,
-                    });
+                    is_this_new_request = true;
                 }
 
-
-        match Self::update(&caller_screen_cid, UpdateUserFanData{ 
-            friends: user_fan_data.friends, 
-            invitation_requests: Some(serde_json::to_value(decoded_invitation_request_data).unwrap())
-        }, connection).await{
-
-            Ok(updated_user_fan_data) => {
-
-                // if the users_fans record was updated successfully then we simply push the 
-                // user who has paid for the gllary into the invited_friends field of the gallery
-                let gallery_invited_friends = gallery.invited_friends;
-                let mut invited_friends = if gallery_invited_friends.is_some(){
-                    gallery_invited_friends.unwrap()
-                } else{
-                    vec![]
-                };
-
-                /** -------------------------------------------------------------------------------------------- */
-                /** ------------------------------ gallery entrance redis caching ------------------------------ */
-                // caching the gallery entrance fees in redis, we'll use this to payback the caller_screen_cid
-                // when the owner wants to remove the caller_screen_cid from his gallery 
-                let mut conn = redis_client.get_async_connection().await.unwrap();
-                let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
-                let updated_redis_gals = match get_galleries_with_entrance_fee{
-                    Ok(galleries_with_entrance_fee) if !galleries_with_entrance_fee.is_empty() => {
-                        let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&galleries_with_entrance_fee).unwrap();
-                        // also at the time of entering we have to cache the enterance fee so later on 
-                        // we should be able to payback the user with this fee once the owner kicks him out
-                        // cause the owner might have updated the gallery entery price
-                        let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
-                        if get_friend_scids.is_some(){
-                            let mut friend_scids = get_friend_scids.clone().unwrap().0.clone();
-                            if !friend_scids.contains(&caller_screen_cid.to_string()){
-                                friend_scids.push(caller_screen_cid.to_string());
-                            }
-                            galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), g_entry_price));
-                        } else{
-                            galleries_with_entrance_fee.insert(gal_id, (vec![caller_cid], g_entry_price));
-                        }
-                        galleries_with_entrance_fee
-                    },
-                    _ => {
-                        let mut gals: HashMap<i32, (Vec<String>, i64)> = HashMap::new();
-                        gals.insert(gal_id, (vec![caller_cid], g_entry_price));
-                        gals
-                    }
-                };
-
-                let stringified_ = serde_json::to_string_pretty(&updated_redis_gals).unwrap();
-                let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
-                /** -------------------------------------------------------------------------------------------- */
-                /** -------------------------------------------------------------------------------------------- */
-
-                // if caller_screen_cid has not been invited yet means that
-                // gallery owner didn't send request to him and he's entering 
-                // by paing the fee so we charge him so we'll push him into 
-                // invited_friends field
-                if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
-                    
-                    // update balance of the one who accepted the request
-                    // cause he must pay for the entry price of the gallery
-                    let new_balance = user.balance.unwrap() - g_entry_price;
-                    updated_user_balance = Some(User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
-            
-                    // update balance of the owner
-                    let new_owner_balance = owner.balance.unwrap() + g_entry_price;
-                    updated_owner_balance = Some(User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
-
-                    invited_friends.push(Some(caller_screen_cid.to_string()));
-                }
-
-                match UserPrivateGallery::update(&gallery.owner_screen_cid, 
-                    UpdateUserPrivateGalleryRequest{
-                        owner_cid: {
-                            let user = User::find_by_screen_cid_none_async(&owner_screen_cid, connection);
-                            user.unwrap().cid.unwrap()
-                        },
-                        collections: gallery.collections,
-                        gal_name: gallery.gal_name,
-                        gal_description: gallery.gal_description,
-                        invited_friends: Some(invited_friends),
-                        extra: gallery.extra,
-                        tx_signature,
-                        hash_data,
-                    }, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
-
-                        Ok(_) => Ok(updated_user_fan_data),
-                        Err(resp) => {
-                            
-                            if updated_user_balance.is_some() && updated_owner_balance.is_some(){
-                                // revert the payment process, pay the gallery price back the user 
-                                let new_balance = updated_user_balance.unwrap().balance.unwrap() + g_entry_price;
-                                let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
-                                
-                                // charge the owner for the gallery price
-                                let new_owner_balance = updated_owner_balance.unwrap().balance.unwrap() - g_entry_price;
-                                let updated_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
-                            }
-                            
-                            return Err(resp)
-                        },
-                    }
-
-
-            },
-            Err(resp) => {
-
-                // revert the payment process, pay the gallery price back the user
-                let new_balance = user.balance.unwrap() + g_entry_price;
-                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-                
-                // charge the owner for the gallery price
-                let new_owner_balance = owner.balance.unwrap() - g_entry_price;
-                let update_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-
-                return Err(resp);
-            }
+        if is_this_new_request{
+            let get_inserted_inv_req_data = PrivateGalleryInvitationRequest::insert(
+                NewPrivateGalleryInvitationRequest{
+                    invitee_id: user.id,
+                    from_user_id: owner.id,
+                    gal_id: gallery.id,
+                    is_accepted: true,
+                    requested_at: chrono::Local::now().timestamp(),
+                }, connection).await;
+            let Ok(inserted_inv_req_data) = get_inserted_inv_req_data else{
+                let err_resp = get_inserted_inv_req_data.unwrap_err();
+                return Err(err_resp);
+            };
         }
+
+        // if the users_fans record was updated successfully then we simply push the 
+        // user who has paid for the gllary into the invited_friends field of the gallery
+        let gallery_invited_friends = gallery.invited_friends;
+        let mut invited_friends = if gallery_invited_friends.is_some(){
+            gallery_invited_friends.unwrap()
+        } else{
+            vec![]
+        };
+
+        /** -------------------------------------------------------------------------------------------- */
+        /** ------------------------------ gallery entrance redis caching ------------------------------ */
+        // caching the gallery entrance fees in redis, we'll use this to payback the caller_screen_cid
+        // when the owner wants to remove the caller_screen_cid from his gallery 
+        let mut conn = redis_client.get_async_connection().await.unwrap();
+        let get_galleries_with_entrance_fee: redis::RedisResult<String> = conn.get("galleries_with_entrance_fee").await;
+        let updated_redis_gals = match get_galleries_with_entrance_fee{
+            Ok(galleries_with_entrance_fee) if !galleries_with_entrance_fee.is_empty() => {
+                let mut galleries_with_entrance_fee = serde_json::from_str::<HashMap<i32, (Vec<String>, i64)>>(&galleries_with_entrance_fee).unwrap();
+                // also at the time of entering we have to cache the enterance fee so later on 
+                // we should be able to payback the user with this fee once the owner kicks him out
+                // cause the owner might have updated the gallery entery price
+                let get_friend_scids = galleries_with_entrance_fee.get(&gal_id);
+                if get_friend_scids.is_some(){
+                    let mut friend_scids = get_friend_scids.clone().unwrap().0.clone();
+                    if !friend_scids.contains(&caller_screen_cid.to_string()){
+                        friend_scids.push(caller_screen_cid.to_string());
+                    }
+                    galleries_with_entrance_fee.insert(gal_id, (friend_scids.to_owned(), g_entry_price));
+                } else{
+                    galleries_with_entrance_fee.insert(gal_id, (vec![caller_cid], g_entry_price));
+                }
+                galleries_with_entrance_fee
+            },
+            _ => {
+                let mut gals: HashMap<i32, (Vec<String>, i64)> = HashMap::new();
+                gals.insert(gal_id, (vec![caller_cid], g_entry_price));
+                gals
+            }
+        };
+
+        let stringified_ = serde_json::to_string_pretty(&updated_redis_gals).unwrap();
+        let ـ : RedisResult<String> = conn.set("galleries_with_entrance_fee", stringified_).await;
+        /** -------------------------------------------------------------------------------------------- */
+        /** -------------------------------------------------------------------------------------------- */
+
+        // if caller_screen_cid has not been invited yet means that
+        // gallery owner didn't send request to him and he's entering 
+        // by paing the fee so we charge him so we'll push him into 
+        // invited_friends field
+        if !invited_friends.contains(&Some(caller_screen_cid.to_string())){
+            
+            // update balance of the one who accepted the request
+            // cause he must pay for the entry price of the gallery
+            let new_balance = user.balance.unwrap() - g_entry_price;
+            updated_user_balance = Some(User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+    
+            // update balance of the owner
+            let new_owner_balance = owner.balance.unwrap() + g_entry_price;
+            updated_owner_balance = Some(User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+
+            invited_friends.push(Some(caller_screen_cid.to_string()));
+        }
+
+        match UserPrivateGallery::update(&gallery.owner_screen_cid, 
+            UpdateUserPrivateGalleryRequest{
+                owner_cid: {
+                    let user = User::find_by_screen_cid_none_async(&owner_screen_cid, connection);
+                    user.unwrap().cid.unwrap()
+                },
+                collections: gallery.collections,
+                gal_name: gallery.gal_name,
+                gal_description: gallery.gal_description,
+                invited_friends: Some(invited_friends),
+                extra: gallery.extra,
+                tx_signature,
+                hash_data,
+            }, redis_client.clone(), redis_actor.clone(), gal_id, connection).await{
+
+                Ok(_) => 
+                    Ok(
+                        UserFanData{
+                            id: user_fan_data.id,
+                            user_screen_cid: user_fan_data.clone().user_screen_cid,
+                            friends: user_fan_data.clone().friends,
+                            invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                            created_at: user_fan_data.clone().created_at.to_string(),
+                            updated_at: user_fan_data.clone().updated_at.to_string(),
+                        }
+                    ),
+                Err(resp) => {
+                    
+                    if updated_user_balance.is_some() && updated_owner_balance.is_some(){
+                        // revert the payment process, pay the gallery price back the user 
+                        let new_balance = updated_user_balance.unwrap().balance.unwrap() + g_entry_price;
+                        let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                        
+                        // charge the owner for the gallery price
+                        let new_owner_balance = updated_owner_balance.unwrap().balance.unwrap() - g_entry_price;
+                        let updated_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                    }
+                    
+                    return Err(resp)
+                },
+            }
+
 
         
     }
@@ -2092,15 +2126,15 @@ impl UserFan{
             .get_result(connection)
             {
             
-                Ok(uf) => {
+                Ok(mut uf) => {
                     Ok(
                         UserFanData{
                             id: uf.id,
-                            user_screen_cid: uf.user_screen_cid,
-                            friends: uf.friends,
-                            invitation_requests: uf.invitation_requests,
-                            created_at: uf.created_at.to_string(),
-                            updated_at: uf.updated_at.to_string(),
+                            user_screen_cid: uf.clone().user_screen_cid,
+                            friends: uf.clone().friends,
+                            invitation_requests: uf.clone().construct_gallery_invitation_requests(connection),
+                            created_at: uf.clone().created_at.to_string(),
+                            updated_at: uf.clone().updated_at.to_string(),
                         }
                     )
 
@@ -2130,6 +2164,47 @@ impl UserFan{
             
             }
             
+
+    }
+
+}
+
+impl UserFanData{
+
+    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+
+        let owner_id = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap().id;
+        
+        let get_invitation_requests_data = PrivateGalleryInvitationRequest::get_all_for_user(owner_id, connection);
+        let invitation_requests_data = if get_invitation_requests_data.is_ok(){
+            get_invitation_requests_data.unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut all_inv_reqs = vec![];
+        for inv_req in invitation_requests_data{
+            all_inv_reqs.push(
+                InvitationRequestData{
+                    username: {
+                        User::find_by_id_none_async(inv_req.invitee_id, connection).unwrap().username
+                    },
+                    user_avatar: {
+                        User::find_by_id_none_async(inv_req.invitee_id, connection).unwrap().avatar
+                    },
+                    from_screen_cid: {
+                        User::find_by_id_none_async(inv_req.from_user_id, connection).unwrap().screen_cid.unwrap()
+                    },
+                    requested_at: inv_req.requested_at,
+                    gallery_id: inv_req.gal_id,
+                    is_accepted: inv_req.is_accepted,
+                }
+            )
+        }
+
+        Some(
+            serde_json::to_value(&all_inv_reqs).unwrap()
+        )
 
     }
 

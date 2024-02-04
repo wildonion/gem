@@ -41,6 +41,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    galleries_invitation_requests (id) {
+        id -> Int4,
+        invitee_id -> Int4,
+        from_user_id -> Int4,
+        gal_id -> Int4,
+        is_accepted -> Bool,
+        requested_at -> Int8,
+    }
+}
+
+diesel::table! {
     nfts_comments (id) {
         id -> Int4,
         user_id -> Int4,
@@ -295,6 +306,7 @@ diesel::joinable!(users_tasks -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     clp_events,
+    galleries_invitation_requests,
     nfts_comments,
     nfts_likes,
     tasks,
