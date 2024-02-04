@@ -8906,104 +8906,57 @@ async fn add_reaction_to_nft(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+                        
+                    let user_add_nft_reaction = user_add_nft_reaction.to_owned();
+                    
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &user_add_nft_reaction.caller_cid, 
+                        &user_add_nft_reaction.tx_signature, 
+                        &user_add_nft_reaction.hash_data, 
+                        None,
+                        connection
+                    ).await;
 
-                    let identifier_key = format!("{}-add-reaction-to-nft", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "add_reaction_to_nft");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    /* 
-                        checking that the incoming request is already rate limited or not,
-                        since there is no global storage setup we have to pass the storage 
-                        data like redis_conn to the macro call 
-                    */
-                    if is_rate_limited!{
-                        redis_conn,
-                        identifier_key.clone(), /* identifier */
-                        String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key */
-                    }{
+                    match UserNft::add_reaction_to_nft(
+                        user_add_nft_reaction,
+                        redis_client.clone(),
+                        redis_actix_actor,
+                        connection).await{
+                        Ok(user_nft_data) => {
 
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            RATE_LIMITED, //// response message
-                            StatusCode::TOO_MANY_REQUESTS, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    } else {
-                    
-                        
-                        let user_add_nft_reaction = user_add_nft_reaction.to_owned();
-                        
-                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-                        /*
-                            followings are the param 
-                            must be passed to do the 
-                            kyc process on request data
-                            @params:
-                                - _id              : user id
-                                - from_cid         : user crypto id
-                                - tx_signature     : tx signature signed
-                                - hash_data        : sha256 hash of data generated in client app
-                                - deposited_amount : the amount of token must be deposited for this call
-                        */
-                        let is_request_verified = kyced::verify_request(
-                            _id, 
-                            &user_add_nft_reaction.caller_cid, 
-                            &user_add_nft_reaction.tx_signature, 
-                            &user_add_nft_reaction.hash_data, 
-                            None,
-                            connection
-                        ).await;
-
-                        let Ok(user) = is_request_verified else{
-                            let error_resp = is_request_verified.unwrap_err();
-                            return error_resp; /* terminate the caller with an actix http response object */
-                        };
-
-                        match UserNft::add_reaction_to_nft(
-                            user_add_nft_reaction,
-                            redis_client.clone(),
-                            redis_actix_actor,
-                            connection).await{
-                            Ok(user_nft_data) => {
-
-                                resp!{
-                                    UserNftData, //// the data type
-                                    user_nft_data, //// response data
-                                    UPDATED, //// response message
-                                    StatusCode::OK, //// status code
-                                    None::<Cookie<'_>>, //// cookie
-                                }
-
-                            },
-                            Err(resp) => {
-                                resp
+                            resp!{
+                                UserNftData, //// the data type
+                                user_nft_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
                             }
+
+                        },
+                        Err(resp) => {
+                            resp
                         }
-                    
-                    
-                    }
+                    } 
 
                 },
                 Err(resp) => {
