@@ -2020,7 +2020,7 @@ async fn deposit(
 
 
 
-                        let new_balance = user.balance.unwrap() - deposit_object.amount;
+                        let new_balance = user.balance.unwrap() - (deposit_object.amount + gastracker::calculate_gas_in_token(redis_client.clone()).await.unwrap());
                         let mut mint_tx_hash = String::from("");
                         let mut token_id = String::from("");
 
