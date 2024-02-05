@@ -1542,10 +1542,10 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
         for nft in onchain_nfts{
             if nft["token_id"].is_string(){
                 let token_id = nft["token_id"].as_str().unwrap();
-                let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap();
+                let nft_info = UserNft::find_by_onchain_id(token_id, connection).await.unwrap_or(UserNftData::default());
                 nfts_owned_by.push(NftColInfo{
                     col_data: {
-                        let col_info = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await.unwrap();
+                        let col_info = UserCollection::find_by_contract_address(&nft_info.contract_address, connection).await.unwrap_or(UserCollectionData::default());
                         UserCollectionDataGeneralInfo{
                             id: col_info.id,
                             contract_address: col_info.contract_address,
