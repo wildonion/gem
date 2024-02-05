@@ -138,12 +138,13 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::exports::get_all_public_collection_nfts);
     config.service(apis::user::exports::accept_invitation_request);
     config.service(apis::user::exports::enter_private_gallery);
-    config.service(apis::user::exports::get_user_unaccpeted_invitation_requests);
-    config.service(apis::user::exports::get_user_unaccpeted_friend_requests);
+    config.service(apis::user::exports::get_user_unaccepted_invitation_requests);
+    config.service(apis::user::exports::get_user_unaccepted_friend_requests);
     config.service(apis::user::exports::accept_friend_request);
     config.service(apis::user::exports::send_friend_request_to);
     config.service(apis::user::exports::remove_user_from_follower);
     config.service(apis::user::exports::remove_user_from_freind);
+    config.service(apis::user::exports::remove_user_from_following);
     config.service(apis::user::exports::get_all_my_friends);
     config.service(apis::user::exports::get_all_my_followers);
     config.service(apis::user::exports::get_all_my_followings);

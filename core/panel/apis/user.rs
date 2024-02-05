@@ -12,7 +12,7 @@ use crate::models::users_checkouts::{UserCheckoutData, UserCheckout, NewUserChec
 use crate::models::users_clps::{UserClp, RegisterUserClpEventRequest, CancelUserClpEventRequest};
 use crate::models::users_collections::{UserCollection, UserCollectionData, NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_deposits::{UserDepositData, UserDepositDataWithWalletInfo};
-use crate::models::users_fans::{AcceptFriendRequest, AcceptInvitationRequest, EnterPrivateGalleryRequest, FriendData, InvitationRequestData, InvitationRequestDataResponse, RemoveFollower, RemoveFriend, SendFriendRequest, UserFan, UserFanData, UserFanDataWithWalletInfo, UserRelations};
+use crate::models::users_fans::{AcceptFriendRequest, AcceptInvitationRequest, EnterPrivateGalleryRequest, FriendData, InvitationRequestData, InvitationRequestDataResponse, RemoveFollower, RemoveFollowing, RemoveFriend, SendFriendRequest, UserFan, UserFanData, UserFanDataWithWalletInfo, UserRelations};
 use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserPrivateGalleryRequest, UpdateUserPrivateGalleryRequest, UserPrivateGallery, UserPrivateGalleryData, RemoveInvitedFriendFromPrivateGalleryRequest, SendInvitationRequest, UserPrivateGalleryInfoData, ExitFromPrivateGalleryRequest};
 use crate::models::users_nfts::{AddReactionRequest, CreateNftMetadataUriRequest, NewUserNftRequest, NftReactionData, UpdateUserNftRequest, UserNft, UserNftData, UserNftDataWithWalletInfo, UserReactionData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
@@ -5297,7 +5297,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 #[get("/gallery/get/unaccepted/invitation-requests/")]
 #[passport(user)]
-async fn get_user_unaccpeted_invitation_requests(
+async fn get_user_unaccepted_invitation_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5363,7 +5363,7 @@ async fn get_user_unaccpeted_invitation_requests(
                         }
                     }
 
-                    match UserFan::get_user_unaccpeted_invitation_requests(
+                    match UserFan::get_user_unaccepted_invitation_requests(
                         &user.screen_cid.unwrap(),
                         limit, connection).await{
                         
@@ -5421,7 +5421,7 @@ async fn get_user_unaccpeted_invitation_requests(
 
 #[get("/fan/get/unaccepted/friend-requests/")]
 #[passport(user)]
-async fn get_user_unaccpeted_friend_requests(
+async fn get_user_unaccepted_friend_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5487,7 +5487,7 @@ async fn get_user_unaccpeted_friend_requests(
                         }
                     }
 
-                    match UserFan::get_user_unaccpeted_friend_requests(
+                    match UserFan::get_user_unaccepted_friend_requests(
                         &user.screen_cid.unwrap(),
                         limit, connection).await{
                         
@@ -6453,6 +6453,146 @@ async fn remove_user_from_freind(
                     };
 
                     match UserFan::remove_freind(remove_friend_request, redis_client.clone(), redis_actix_actor.clone(), connection).await{
+                        Ok(user_fan_data) => {
+
+                            resp!{
+                                UserFanData, //// the data type
+                                user_fan_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[post("/fan/remove/following")]
+#[passport(user)]
+async fn remove_user_from_following(
+    req: HttpRequest,
+    remove_following_request: web::Json<RemoveFollowing>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let remove_following_request = remove_following_request.to_owned();
+                    
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &remove_following_request.owner_cid, 
+                        &remove_following_request.tx_signature, 
+                        &remove_following_request.hash_data, 
+                        None, /* no need to charge the user for this call */
+                        connection
+                    ).await;
+
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
+                    };
+
+                    match UserFan::remove_following(remove_following_request, redis_client.clone(), redis_actix_actor.clone(), connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -11051,8 +11191,8 @@ pub mod exports{
     pub use super::get_all_public_collection_nfts;
     pub use super::get_all_galleries_invited_to;
     pub use super::get_invited_friends_wallet_data_of_gallery;
-    pub use super::get_user_unaccpeted_invitation_requests;
-    pub use super::get_user_unaccpeted_friend_requests;
+    pub use super::get_user_unaccepted_invitation_requests;
+    pub use super::get_user_unaccepted_friend_requests;
     pub use super::get_all_my_friends;
     pub use super::get_all_my_followers;
     pub use super::get_all_my_followings;
@@ -11093,6 +11233,7 @@ pub mod exports{
     pub use super::accept_friend_request;
     pub use super::remove_user_from_follower;
     pub use super::remove_user_from_freind;
+    pub use super::remove_user_from_following;
     pub use super::remove_invited_friend_from_gallery;
     pub use super::exit_from_private_gallery;
     pub use super::create_private_gallery;
