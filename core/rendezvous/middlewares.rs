@@ -110,7 +110,7 @@ pub mod auth{
 
                                     // this must be saved in redis when user do a login
                                     let user_jwt_key = format!("jwt-{}", token_data.claims._id.unwrap().to_string());
-                                    let user_jwt: String = redis_conn.get(user_jwt_key).await.unwrap();
+                                    let user_jwt: String = redis_conn.get(user_jwt_key).await.unwrap_or(String::from(""));
                                     if user_jwt.is_empty() || user_jwt != token.to_string(){ // user did a logout
                                         return Err(NOT_FOUND_TOKEN.to_string()); // terminate this scope
                                     }
