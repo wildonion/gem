@@ -24,6 +24,7 @@
     |   nfts_likes                    ---> methods of postgres nfts_likes table
     |   nfts_comments                 ---> methods of postgres nfts_comments table
     |   galleries_invitation_requests ---> methods of postgres galleries_invitation_requests table
+    |   users_friends                 ---> methods of postgres users_friends table
     |
 */
 
@@ -47,3 +48,4 @@ pub mod token_stats;
 pub mod nfts_comments;
 pub mod nfts_likes;
 pub mod galleries_invitation_requests;
+pub mod users_friends;

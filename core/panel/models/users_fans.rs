@@ -14,6 +14,7 @@ use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
 use super::galleries_invitation_requests::{NewPrivateGalleryInvitationRequest, PrivateGalleryInvitationRequest};
 use super::users::{User, UserWalletInfoResponse, UserData};
+use super::users_friends::{NewFriendRequest, UserFriend};
 use super::users_galleries::{UserPrivateGallery, UpdateUserPrivateGalleryRequest};
 
 
@@ -158,6 +159,14 @@ pub struct RemoveFriend{
     pub hash_data: String,
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct RemoveFollowing{
+    pub owner_cid: String, 
+    pub friend_screen_cid: String,
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default, AsChangeset)]
 #[diesel(table_name=users_fans)]
 pub struct UpdateUserFanData{
@@ -181,6 +190,36 @@ pub struct FriendOwnerCount{
 
 impl UserFan{
 
+    pub fn construct_friends_data(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+
+        let user = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap();
+        let get_friend_requests_data = UserFriend::get_all_for_user(user.id, connection);
+        let friend_requests_data = if get_friend_requests_data.is_ok(){
+            get_friend_requests_data.unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut friends_data = vec![];
+        for frd_req in friend_requests_data{
+            let friend_info = User::find_by_id_none_async(frd_req.friend_id, connection).unwrap();
+            friends_data.push(
+                FriendData{
+                    username: friend_info.clone().username,
+                    user_avatar: friend_info.clone().avatar,
+                    screen_cid: friend_info.clone().screen_cid.unwrap(),
+                    requested_at: frd_req.requested_at,
+                    is_accepted: frd_req.is_accepted,
+                }
+            )
+        }
+
+        Some(
+            serde_json::to_value(&friends_data).unwrap()
+        )
+
+    }
+
     pub async fn get_owners_with_lots_of_followers(owners: Vec<UserData>, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<Vec<FriendOwnerCount>, PanelHttpResponse>{
@@ -200,7 +239,7 @@ impl UserFan{
                 UserFanData::default()
             };
 
-            let user_friends_data = all_owner_friends.friends;
+            let user_friends_data = all_owner_friends.construct_friends_data(connection);
             let mut decoded_friends_data = if user_friends_data.is_some(){
                 serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
             } else{
@@ -387,7 +426,7 @@ impl UserFan{
             return Err(resp_err);
         };
 
-        let user_friends_data = user_fan_data.friends;
+        let user_friends_data = user_fan_data.construct_friends_data(connection);
         let mut decoded_friends_data = if user_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
         } else{
@@ -395,24 +434,18 @@ impl UserFan{
         };
         
 
-        /* mutating a structure inside a vector of FriendData structs using &mut pointer */
-        'updatefrienddatablock: for frn_req in &mut decoded_friends_data{
+        match UserFriend::accept_request(user.id, friend_info.id, connection).await{
 
-            if frn_req.is_accepted == false && 
-                frn_req.screen_cid == friend_screen_cid{
-                    
-                frn_req.is_accepted = true;
-                break 'updatefrienddatablock;
+            Ok(friend_req_data) => {
 
-            }
-        }
-
-        match Self::update(&owner_screen_cid, UpdateUserFanData{ 
-            friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), /* encoding the updated decoded_friends_data back to serde json value */
-            invitation_requests: user_fan_data.invitation_requests
-        }, connection).await{
-
-            Ok(user_fan_data) => {
+                let user_fan_data = UserFanData{
+                    id: user_fan_data.id,
+                    user_screen_cid: user_fan_data.clone().user_screen_cid,
+                    friends: user_fan_data.clone().construct_friends_data(connection),
+                    invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                    created_at: user_fan_data.clone().created_at.to_string(),
+                    updated_at: user_fan_data.clone().updated_at.to_string(),
+                };
                 
                 /** -------------------------------------------------------------------- */
                 /** ----------------- publish new event data to `on_user_action` channel */
@@ -465,7 +498,7 @@ impl UserFan{
         this will be used to fetch the user unaccepted invitation requests
         inside the user fan data from any gallery owner
     */
-    pub async fn get_user_unaccpeted_invitation_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_user_unaccepted_invitation_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<Vec<Option<InvitationRequestData>>, PanelHttpResponse>{
         
@@ -575,7 +608,7 @@ impl UserFan{
 
     }
 
-    pub async fn get_user_unaccpeted_friend_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
+    pub async fn get_user_unaccepted_friend_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
     -> Result<Vec<Option<FriendData>>, PanelHttpResponse>{
         
@@ -602,7 +635,7 @@ impl UserFan{
         };
 
 
-        let user_friends_data = user_fan_data.friends;
+        let user_friends_data = user_fan_data.construct_friends_data(connection);
         let decoded_friends_data = if user_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
         } else{
@@ -704,7 +737,7 @@ impl UserFan{
             UserFanData{
                 id: fan_data.id,
                 user_screen_cid: fan_data.clone().user_screen_cid,
-                friends: fan_data.clone().friends,
+                friends: fan_data.clone().construct_friends_data(connection),
                 invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
                 created_at: fan_data.clone().created_at.to_string(),
                 updated_at: fan_data.clone().updated_at.to_string(),
@@ -759,14 +792,14 @@ impl UserFan{
         };
 
         /* both of them must have each other in their friend data and the request be accepted */
-        let first_friends_data = first_fan_data.clone().friends;
+        let first_friends_data = first_fan_data.clone().construct_friends_data(connection);
         let decoded_first_friends_data = if first_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(first_friends_data.clone().unwrap()).unwrap()
         } else{
             vec![]
         };
 
-        let second_friends_data = second_fan_data.clone().friends;
+        let second_friends_data = second_fan_data.clone().construct_friends_data(connection);
         let decoded_second_friends_data = if second_friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(second_friends_data.clone().unwrap()).unwrap()
         } else{
@@ -833,7 +866,7 @@ impl UserFan{
 
         };
 
-        let friends_data = fan_data.clone().friends;
+        let friends_data = fan_data.clone().construct_friends_data(connection);
         let decoded_friends_data = if friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
         } else{
@@ -926,7 +959,7 @@ impl UserFan{
 
         };
 
-        let friends_data = fan_data.clone().friends;
+        let friends_data = fan_data.clone().construct_friends_data(connection);
         let decoded_friends_data = if friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
         } else{
@@ -1012,7 +1045,7 @@ impl UserFan{
         };
 
         // get followers
-        let friends_data = fan_data.clone().friends;
+        let friends_data = fan_data.clone().construct_friends_data(connection);
         let mut decoded_friends_data = if friends_data.is_some(){
             serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
         } else{
@@ -1143,7 +1176,7 @@ impl UserFan{
                     continue;
                 }
 
-                let friends_data = fan_data.clone().friends;
+                let friends_data = fan_data.clone().construct_friends_data(connection);
                 let mut decoded_friends_data = if friends_data.is_some(){
                     serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
                 } else{
@@ -1181,7 +1214,7 @@ impl UserFan{
                                         created_at: user.created_at.to_string(),
                                     }
                                 },
-                                friends: fan_data.clone().friends,
+                                friends: fan_data.clone().construct_friends_data(connection),
                                 invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
                                 created_at: fan_data.created_at.to_string(),
                                 updated_at: fan_data.updated_at.to_string(),
@@ -1284,13 +1317,26 @@ impl UserFan{
                 return Err(resp_error);
             };
     
-            let user_friends_data = user_fan_data.clone().friends;
+            let user_friends_data = user_fan_data.clone().construct_friends_data(connection);
             let mut decoded_friends_data = if user_friends_data.is_some(){
                 serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
             } else{
                 vec![]
             };
-    
+
+            let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
+            let Ok(user) = get_user else{
+
+                let resp_err = get_user.unwrap_err();
+                return Err(resp_err);
+            };
+
+            let get_friend = User::find_by_screen_cid(&follower_screen_cid.clone(), connection).await;
+            let Ok(friend_info) = get_friend else{
+
+                let resp_err = get_friend.unwrap_err();
+                return Err(resp_err);
+            };
             
             if decoded_friends_data.clone().into_iter().any(|frd| {
                 if frd.screen_cid == follower_screen_cid && frd.is_accepted == true{
@@ -1302,10 +1348,21 @@ impl UserFan{
                 }
             }){
             
-                Self::update(&owner_screen_cid, UpdateUserFanData{ 
-                    friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
-                    invitation_requests: user_fan_data.invitation_requests
-                }, connection).await
+                match UserFriend::remove(user.id, friend_info.id, connection){
+                    Ok(removed_records) => {
+                        Ok(
+                            UserFanData{
+                                id: user_fan_data.id,
+                                user_screen_cid: user_fan_data.clone().user_screen_cid,
+                                friends: user_fan_data.clone().construct_friends_data(connection),
+                                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                                created_at: user_fan_data.clone().created_at.to_string(),
+                                updated_at: user_fan_data.clone().updated_at.to_string(),
+                            }
+                        )
+                    },
+                    Err(resp) => Err(resp)
+                }
                 
             } else{
 
@@ -1337,8 +1394,22 @@ impl UserFan{
                 let resp_error = get_user_fan.unwrap_err();
                 return Err(resp_error);
             };
+
+            let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
+            let Ok(user) = get_user else{
+
+                let resp_err = get_user.unwrap_err();
+                return Err(resp_err);
+            };
+
+            let get_friend = User::find_by_screen_cid(&friend_screen_cid.clone(), connection).await;
+            let Ok(friend_info) = get_friend else{
+
+                let resp_err = get_friend.unwrap_err();
+                return Err(resp_err);
+            };
     
-            let user_friends_data = user_fan_data.clone().friends;
+            let user_friends_data = user_fan_data.clone().construct_friends_data(connection);
             let mut decoded_friends_data = if user_friends_data.is_some(){
                 serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
             } else{
@@ -1395,10 +1466,22 @@ impl UserFan{
                 }
             }){
             
-                Self::update(&friend_screen_cid, UpdateUserFanData{ 
-                    friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
-                    invitation_requests: user_fan_data.invitation_requests
-                }, connection).await
+                // remove friend from table
+                match UserFriend::remove(user.id, friend_info.id, connection){
+                    Ok(removed_records) => {
+                        Ok(
+                            UserFanData{
+                                id: user_fan_data.id,
+                                user_screen_cid: user_fan_data.clone().user_screen_cid,
+                                friends: user_fan_data.clone().construct_friends_data(connection),
+                                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                                created_at: user_fan_data.clone().created_at.to_string(),
+                                updated_at: user_fan_data.clone().updated_at.to_string(),
+                            }
+                        )
+                    },
+                    Err(resp) => Err(resp)
+                }
                 
             } else{
 
@@ -1414,6 +1497,74 @@ impl UserFan{
 
             }
 
+
+    }
+
+    pub async fn remove_following(remove_friend_request: RemoveFollowing, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<UserFanData, PanelHttpResponse>{
+        
+            let RemoveFollowing { owner_cid, friend_screen_cid, tx_signature, hash_data } 
+                = remove_friend_request;
+    
+            let owner_screen_cid = &walletreq::evm::get_keccak256_from(owner_cid.clone());
+            let get_user_fan = Self::get_user_fans_data_for(&friend_screen_cid, connection).await;
+            let Ok(mut user_fan_data) = get_user_fan else{
+                let resp_error = get_user_fan.unwrap_err();
+                return Err(resp_error);
+            };
+    
+            let user_friends_data = user_fan_data.clone().construct_friends_data(connection);
+            let mut decoded_friends_data = if user_friends_data.is_some(){
+                serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
+            } else{
+                vec![]
+            };
+
+            let get_user = User::find_by_screen_cid(owner_screen_cid, connection).await;
+            let Ok(user) = get_user else{
+
+                let resp_err = get_user.unwrap_err();
+                return Err(resp_err);
+            };
+
+            let get_friend = User::find_by_screen_cid(&friend_screen_cid.clone(), connection).await;
+            let Ok(friend_info) = get_friend else{
+
+                let resp_err = get_friend.unwrap_err();
+                return Err(resp_err);
+            };
+            
+            for friend_data in decoded_friends_data{
+                if friend_data.screen_cid == friend_screen_cid && !friend_data.is_accepted{
+                    return match UserFriend::remove(user.id, friend_info.id, connection){
+                        Ok(removed_records) => {
+                            Ok(
+                                UserFanData{
+                                    id: user_fan_data.id,
+                                    user_screen_cid: user_fan_data.clone().user_screen_cid,
+                                    friends: user_fan_data.clone().construct_friends_data(connection),
+                                    invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                                    created_at: user_fan_data.clone().created_at.to_string(),
+                                    updated_at: user_fan_data.clone().updated_at.to_string(),
+                                }
+                            )
+                        },
+                        Err(resp) => Err(resp)
+                    }
+                }
+            } 
+
+        Ok(
+            UserFanData{
+                id: user_fan_data.id,
+                user_screen_cid: user_fan_data.clone().user_screen_cid,
+                friends: user_fan_data.clone().construct_friends_data(connection),
+                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                created_at: user_fan_data.clone().created_at.to_string(),
+                updated_at: user_fan_data.clone().updated_at.to_string(),
+            }
+        )
 
     }
 
@@ -1446,7 +1597,7 @@ impl UserFan{
             /* already inserted just update the friends field */
             Ok(user_fan_data) => {
 
-                let friends_data = user_fan_data.clone().friends;
+                let friends_data = user_fan_data.clone().construct_friends_data(connection);
                 let mut decoded_friends_data = if friends_data.is_some(){
                     serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
                 } else{
@@ -1470,115 +1621,132 @@ impl UserFan{
                     decoded_friends_data.push(friend_data);
                 } 
 
-                Self::update(&user_screen_cid_, 
-                    UpdateUserFanData{ 
-                        friends: Some(serde_json::to_value(decoded_friends_data).unwrap()), 
-                        invitation_requests: user_fan_data.invitation_requests 
-                    }, connection).await
+                match UserFriend::insert(NewFriendRequest{
+                    user_id: user.id,
+                    friend_id: friend_info.id,
+                    is_accepted: false,
+                    requested_at: chrono::Local::now().timestamp(),
+                }, connection).await{
+                    Ok(friend_req_data) => { // it might be a found data or inserted one
+                        Ok(
+                            UserFanData{
+                                id: user_fan_data.id,
+                                user_screen_cid: user_fan_data.clone().user_screen_cid,
+                                friends: user_fan_data.clone().construct_friends_data(connection),
+                                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
+                                created_at: user_fan_data.clone().created_at.to_string(),
+                                updated_at: user_fan_data.clone().updated_at.to_string(),
+                            }
+                        )
+                    },
+                    Err(resp) => Err(resp)
+                }
                 
             },
             /* insert new record */
             Err(resp) => {
                 
-                let new_fan_data = InsertNewUserFanRequest{
-                    user_screen_cid: user_screen_cid_.to_owned(),
-                    friends: {
-                        let friend_data = FriendData{ 
-                            screen_cid: caller_screen_cid.clone(), // caller is sending request to user_screen_cid
-                            requested_at: chrono::Local::now().timestamp(), 
-                            is_accepted: false,
-                            username: user.clone().username,
-                            user_avatar: user.clone().avatar, 
+                match UserFriend::insert(NewFriendRequest{
+                    user_id: user.id,
+                    friend_id: friend_info.id,
+                    is_accepted: false,
+                    requested_at: chrono::Local::now().timestamp(),
+                }, connection).await{
+                    Ok(friend_req_data) => { // it might be a found data or inserted one
+
+                        let new_fan_data = InsertNewUserFanRequest{
+                            user_screen_cid: user_screen_cid_.to_owned(),
+                            friends: Some(serde_json::to_value::<Vec<FriendData>>(vec![]).unwrap()),
+                            invitation_requests: Some(serde_json::to_value::<Vec<InvitationRequestData>>(vec![]).unwrap()),
                         };
 
-                        Some(serde_json::to_value(vec![friend_data]).unwrap())
-                    },
-                    invitation_requests: Some(serde_json::to_value::<Vec<InvitationRequestData>>(vec![]).unwrap()),
-                };
-                
-                /* return the last record */
-                match diesel::insert_into(users_fans)
-                    .values(&new_fan_data)
-                    .returning(UserFan::as_returning())
-                    .get_result::<UserFan>(connection)
-                    {
-                        Ok(mut user_fan_data) => {
+                        /* return the last record */
+                        match diesel::insert_into(users_fans)
+                        .values(&new_fan_data)
+                        .returning(UserFan::as_returning())
+                        .get_result::<UserFan>(connection)
+                        {
+                            Ok(mut user_fan_data) => {
 
-                            let fan_info = UserFanData{ 
-                                id: user_fan_data.id, 
-                                user_screen_cid: user_fan_data.clone().user_screen_cid, 
-                                friends: user_fan_data.clone().friends, 
-                                invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection), 
-                                created_at: user_fan_data.clone().created_at.to_string(), 
-                                updated_at: user_fan_data.clone().updated_at.to_string() 
-                            };
+                                let fan_info = UserFanData{ 
+                                    id: user_fan_data.id, 
+                                    user_screen_cid: user_fan_data.clone().user_screen_cid, 
+                                    friends: user_fan_data.clone().construct_friends_data(connection), 
+                                    invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection), 
+                                    created_at: user_fan_data.clone().created_at.to_string(), 
+                                    updated_at: user_fan_data.clone().updated_at.to_string() 
+                                };
 
-                            /** -------------------------------------------------------------------- */
-                            /** ----------------- publish new event data to `on_user_action` channel */
-                            /** -------------------------------------------------------------------- */
-                            let actioner_wallet_info = UserWalletInfoResponse{
-                                username: user.username,
-                                avatar: user.avatar,
-                                bio: user.bio,
-                                banner: user.banner,
-                                mail: user.mail,
-                                screen_cid: user.screen_cid,
-                                extra: user.extra,
-                                stars: user.stars,
-                                created_at: user.created_at.to_string(),
-                            };
-                            let user_wallet_info = UserWalletInfoResponse{
-                                username: friend_info.username,
-                                avatar: friend_info.avatar,
-                                bio: friend_info.bio,
-                                banner: friend_info.banner,
-                                mail: friend_info.mail,
-                                screen_cid: friend_info.screen_cid,
-                                extra: friend_info.extra,
-                                stars: friend_info.stars,
-                                created_at: friend_info.created_at.to_string(),
-                            };
-                            let user_notif_info = SingleUserNotif{
-                                wallet_info: user_wallet_info,
-                                notif: NotifData{
-                                    actioner_wallet_info,
-                                    fired_at: Some(chrono::Local::now().timestamp()),
-                                    action_type: ActionType::FriendRequestFrom,
-                                    action_data: serde_json::to_value(fan_info.clone()).unwrap()
-                                }
-                            };
-                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
-        
-                            Ok(
-                                fan_info
-                            )
-        
-                        },
-                        Err(e) => {
-        
-                            let resp_err = &e.to_string();
+                                /** -------------------------------------------------------------------- */
+                                /** ----------------- publish new event data to `on_user_action` channel */
+                                /** -------------------------------------------------------------------- */
+                                let actioner_wallet_info = UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    extra: user.extra,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                };
+                                let user_wallet_info = UserWalletInfoResponse{
+                                    username: friend_info.username,
+                                    avatar: friend_info.avatar,
+                                    bio: friend_info.bio,
+                                    banner: friend_info.banner,
+                                    mail: friend_info.mail,
+                                    screen_cid: friend_info.screen_cid,
+                                    extra: friend_info.extra,
+                                    stars: friend_info.stars,
+                                    created_at: friend_info.created_at.to_string(),
+                                };
+                                let user_notif_info = SingleUserNotif{
+                                    wallet_info: user_wallet_info,
+                                    notif: NotifData{
+                                        actioner_wallet_info,
+                                        fired_at: Some(chrono::Local::now().timestamp()),
+                                        action_type: ActionType::FriendRequestFrom,
+                                        action_data: serde_json::to_value(fan_info.clone()).unwrap()
+                                    }
+                                };
+                                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+            
+                                Ok(
+                                    fan_info
+                                )
+            
+                            },
+                            Err(e) => {
+            
+                                let resp_err = &e.to_string();
 
-                            /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                            
-                            let error_content = &e.to_string();
-                            let error_content = error_content.as_bytes().to_vec();  
-                            let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::send_friend_request_to");
-                            let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-        
-                            let resp = Response::<&[u8]>{
-                                data: Some(&[]),
-                                message: resp_err,
-                                status: 500,
-                                is_error: true
-                            };
-                            return Err(
-                                Ok(HttpResponse::InternalServerError().json(resp))
-                            );
-        
+                                /* custom error handler */
+                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                
+                                let error_content = &e.to_string();
+                                let error_content = error_content.as_bytes().to_vec();  
+                                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::send_friend_request_to");
+                                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+            
+                                let resp = Response::<&[u8]>{
+                                    data: Some(&[]),
+                                    message: resp_err,
+                                    status: 500,
+                                    is_error: true
+                                };
+                                return Err(
+                                    Ok(HttpResponse::InternalServerError().json(resp))
+                                );
+            
+                            }
                         }
-                    }
+
+                    },
+                    Err(resp) => Err(resp)
+                }
 
             }
         }
@@ -1829,7 +1997,7 @@ impl UserFan{
                 let final_user_fan_data = UserFanData{
                     id: user_fan_data.id,
                     user_screen_cid: user_fan_data.clone().user_screen_cid,
-                    friends: user_fan_data.clone().friends,
+                    friends: user_fan_data.clone().construct_friends_data(connection),
                     invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
                     created_at: user_fan_data.clone().created_at,
                     updated_at: user_fan_data.clone().updated_at,
@@ -2089,7 +2257,7 @@ impl UserFan{
                         UserFanData{
                             id: user_fan_data.id,
                             user_screen_cid: user_fan_data.clone().user_screen_cid,
-                            friends: user_fan_data.clone().friends,
+                            friends: user_fan_data.clone().construct_friends_data(connection),
                             invitation_requests: user_fan_data.clone().construct_gallery_invitation_requests(connection),
                             created_at: user_fan_data.clone().created_at.to_string(),
                             updated_at: user_fan_data.clone().updated_at.to_string(),
@@ -2113,58 +2281,6 @@ impl UserFan{
 
 
         
-    }
-
-    pub async fn update(owner_screen_cid: &str, new_user_fan_data: UpdateUserFanData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<UserFanData, PanelHttpResponse>{
-
-
-        match diesel::update(users_fans.filter(users_fans::user_screen_cid.eq(owner_screen_cid)))
-            .set(&new_user_fan_data)
-            .returning(UserFan::as_returning())
-            .get_result(connection)
-            {
-            
-                Ok(mut uf) => {
-                    Ok(
-                        UserFanData{
-                            id: uf.id,
-                            user_screen_cid: uf.clone().user_screen_cid,
-                            friends: uf.clone().friends,
-                            invitation_requests: uf.clone().construct_gallery_invitation_requests(connection),
-                            created_at: uf.clone().created_at.to_string(),
-                            updated_at: uf.clone().updated_at.to_string(),
-                        }
-                    )
-
-                },
-                Err(e) => {
-                    
-                    let resp_err = &e.to_string();
-
-                    /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
-                        
-                    let error_content = &e.to_string();
-                    let error_content = error_content.as_bytes().to_vec();  
-                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::update");
-                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                    let resp = Response::<&[u8]>{
-                        data: Some(&[]),
-                        message: resp_err,
-                        status: 500,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::InternalServerError().json(resp))
-                    );
-                }
-            
-            }
-            
-
     }
 
 }
@@ -2204,6 +2320,36 @@ impl UserFanData{
 
         Some(
             serde_json::to_value(&all_inv_reqs).unwrap()
+        )
+
+    }
+
+    pub fn construct_friends_data(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+
+        let user = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap();
+        let get_friend_requests_data = UserFriend::get_all_for_user(user.id, connection);
+        let friend_requests_data = if get_friend_requests_data.is_ok(){
+            get_friend_requests_data.unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut friends_data = vec![];
+        for frd_req in friend_requests_data{
+            let friend_info = User::find_by_id_none_async(frd_req.friend_id, connection).unwrap();
+            friends_data.push(
+                FriendData{
+                    username: friend_info.clone().username,
+                    user_avatar: friend_info.clone().avatar,
+                    screen_cid: friend_info.clone().screen_cid.unwrap(),
+                    requested_at: frd_req.requested_at,
+                    is_accepted: frd_req.is_accepted,
+                }
+            )
+        }
+
+        Some(
+            serde_json::to_value(&friends_data).unwrap()
         )
 
     }

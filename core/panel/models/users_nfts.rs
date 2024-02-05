@@ -3158,7 +3158,7 @@ impl UserNft{
                             let get_nft_owner_friends = UserFan::get_all_my_friends_without_limit(&user.clone().screen_cid.unwrap(), connection).await;
                             if get_nft_owner_friends.is_ok(){
                                 let nft_owner_friends = get_nft_owner_friends.unwrap();
-                                let friends_data = nft_owner_friends.clone().friends;
+                                let friends_data = nft_owner_friends.clone().construct_friends_data(connection);
                                 let decoded_friends_data = if friends_data.is_some(){
                                     serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
                                 } else{

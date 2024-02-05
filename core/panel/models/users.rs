@@ -1160,7 +1160,7 @@ impl User{
                         let get_user_fan_data = UserFan::get_user_fans_data_for(user.screen_cid.as_ref().unwrap(), connection).await;
                         if get_user_fan_data.is_ok(){
                             let user_friends = get_user_fan_data.as_ref().unwrap();
-                            let friends_data = user_friends.clone().friends;
+                            let friends_data = user_friends.clone().construct_friends_data(connection);
                             let decoded_friends_data = if friends_data.is_some(){
                                 serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
                             } else{

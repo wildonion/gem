@@ -220,6 +220,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_friends (id) {
+        id -> Int4,
+        user_id -> Int4,
+        friend_id -> Int4,
+        is_accepted -> Bool,
+        requested_at -> Int8,
+    }
+}
+
+diesel::table! {
     users_galleries (id) {
         id -> Int4,
         owner_screen_cid -> Varchar,
@@ -317,6 +327,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     users_collections,
     users_deposits,
     users_fans,
+    users_friends,
     users_galleries,
     users_mails,
     users_nfts,
