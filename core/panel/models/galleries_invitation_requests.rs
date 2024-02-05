@@ -8,7 +8,7 @@ use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::misc::{Response, Limit};
 use crate::schema::galleries_invitation_requests::dsl::*;
 use crate::schema::galleries_invitation_requests;
-use self::constants::{APP_NAME, NO_COMMENT_FOUND_FOR_THIS_NFT, NO_COMMENT_FOUND_FOR_THIS_USER, RECIPIENT_NOT_FOUND};
+use self::constants::{APP_NAME, NO_COMMENT_FOUND_FOR_THIS_NFT, NO_COMMENT_FOUND_FOR_THIS_USER, NO_INVITATION_FOUND_FOR_THIS_USER, RECIPIENT_NOT_FOUND};
 use super::users::{User, UserData, UserWalletInfoResponse};
 use super::users_collections::{UserCollection, UserCollectionData, UpdateUserCollection};
 use super::users_fans::{UserFan, FriendData};
@@ -123,7 +123,7 @@ impl PrivateGalleryInvitationRequest{
         let Ok(inv_requests) = get_all_invitation_requests else{
             let resp = Response{
                 data: Some(owner_id),
-                message: NO_COMMENT_FOUND_FOR_THIS_USER,
+                message: NO_INVITATION_FOUND_FOR_THIS_USER,
                 status: 404,
                 is_error: true,
             };

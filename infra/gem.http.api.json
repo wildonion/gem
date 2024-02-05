@@ -2796,7 +2796,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_pain@yahoo.com\",\n    \"password\": \"123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3345,7 +3345,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNjI1MzE0NjI2NDc1ODI0NSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwODg0NTE0NjI2NTM1NDc5OCwiaWF0IjoxNzA2MjUzMTQ2MjY1MzU0Nzk4fQ.pZ4udNd8Va9u0g-vL8qsyD37Z7psi7DpQPS-OOd3kmjvjGbfydIyt-b2Rleo2S38TmcQ9O4v5ADfalDarLRQiQ",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA2MzYxMzE4MDQzMzg0MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA4OTUzMzE4MDQzNjQzMDAwLCJpYXQiOjE3MDYzNjEzMTgwNDM2NDMwMDB9.NQAeHcCep56n0VG_8tzQ8cJyw3CZjFwJ3rEPPksQ30JiDdCJdNOfnzrLDDUbZTrye9-fZVz3ceaXDKFLWjiV0g",
 													"type": "string"
 												}
 											]
@@ -3561,7 +3561,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNDIxMjYwMjQxMjc2NDEyNSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNDIxNDQwMjQxMjg1NTQwOSwiaWF0IjoxNzA0MjEyNjAyNDEyODU1NDA5fQ.jUPBBKAYKJE64U4Cqh23fzyvGuXWhFSxfwYeVfAhGHIobv8gB7KLH-aiO64Dot77-TmhtMDP2UxRMMFpAMx4cA",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNjYzNzg5NDAwMzg0NTA3OSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTgwNjUxNjI5NDAwMzk1NTk1MCwiaWF0IjoxNzA2NjM3ODk0MDAzOTU1OTUwfQ.OYdj8Q7MGJfbJ645-Ww1pGVaG1mIOpP7zH8FtbriX6Lb-CXLC_qybDPjVDJmMF7RLS1qHw2rrngt80eciQDNbg",
 													"type": "string"
 												}
 											]
@@ -4211,6 +4211,44 @@
 												"fan",
 												"remove",
 												"friend"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Remove Following",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"owner_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"friend_screen_cid\": \"0x047deaa159bbbd3effb448a4dad780d47f159d67\",\n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/fan/remove/following",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"remove",
+												"following"
 											]
 										}
 									},
