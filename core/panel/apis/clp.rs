@@ -60,17 +60,17 @@ async fn chatroomlp(
     clpucid: web::Path<(i32, String, String, String)>,
     payload: Multipart,
     r1keys: Query<R1Keys>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_chatroomlp_actor_address: web::Data<Addr<ChatRoomLaunchpadServer>>,
 ) -> PanelHttpResponse {
 
     
+    // now we can map and decode the json_data Value into a desired structure
+    // and stores all the files fields on the server as image
     let arced_payload = std::sync::Arc::new(tokio::sync::Mutex::new(payload));
     let (json_data, files) = multipartreq::extract(arced_payload).await.unwrap();
-    // now we can map the json_data Value into a desired structure
-    // ...
     
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.clone().to_owned();
     let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
     /* 
@@ -186,13 +186,15 @@ async fn chatroomlp(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-
+                    
+                    // getting the user info if he is in this event
                     let get_users_in_this_event = UserClp::get_all_users_in_clp_event(chat_room, connection).await;
                     let Ok(users) = get_users_in_this_event else{
                         let err_resp = get_users_in_this_event.unwrap_err();
                         return err_resp;
                     };
 
+                    // getting the user event history 
                     let get_all_users_clps = UserClp::get_all_users_clps(connection).await;
                     let Ok(all_users_clps) = get_all_users_clps else{
                         let err_resp = get_all_users_clps.unwrap_err();

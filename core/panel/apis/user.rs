@@ -6367,7 +6367,7 @@ async fn remove_user_from_follower(
 
 #[post("/fan/remove/friend")]
 #[passport(user)]
-async fn remove_user_from_freind(
+async fn remove_user_from_friend(
     req: HttpRequest,
     remove_friend_request: web::Json<RemoveFriend>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6452,7 +6452,7 @@ async fn remove_user_from_freind(
                         return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    match UserFan::remove_freind(remove_friend_request, redis_client.clone(), redis_actix_actor.clone(), connection).await{
+                    match UserFan::remove_friend(remove_friend_request, redis_client.clone(), redis_actix_actor.clone(), connection).await{
                         Ok(user_fan_data) => {
 
                             resp!{
@@ -11232,7 +11232,7 @@ pub mod exports{
     pub use super::enter_private_gallery;
     pub use super::accept_friend_request;
     pub use super::remove_user_from_follower;
-    pub use super::remove_user_from_freind;
+    pub use super::remove_user_from_friend;
     pub use super::remove_user_from_following;
     pub use super::remove_invited_friend_from_gallery;
     pub use super::exit_from_private_gallery;

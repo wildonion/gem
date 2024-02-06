@@ -1381,7 +1381,7 @@ impl UserFan{
 
     }
 
-    pub async fn remove_freind(remove_friend_request: RemoveFriend, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+    pub async fn remove_friend(remove_friend_request: RemoveFriend, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
             -> Result<UserFanData, PanelHttpResponse>{
         

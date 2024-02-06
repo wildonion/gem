@@ -24,6 +24,10 @@ pub struct Response<'m, T>{
     pub is_error: bool
 }
 
+/** 
+ * this method takes a multipart data and extract its images only
+ * to fill the buffer then sotre that on the server as an image file
+*/
 pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str, 
     asset: std::sync::Arc<tokio::sync::Mutex<Multipart>>) -> Result<String, PanelHttpResponse>{
 
@@ -146,7 +150,7 @@ pub async fn store_file(upload_path: &str, identifier: &str, path_prefix: &str,
 
 /** 
  * this method extract a multipart data types which contains formdata fields
- * and all multipart images inside the form
+ * and all multipart images inside the form body request 
 */
 pub async fn extract(
     payload: std::sync::Arc<tokio::sync::Mutex<Multipart>>
