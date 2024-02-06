@@ -26,8 +26,8 @@ use crate::schema::users_collections;
 #[diesel(table_name=users_friends)]
 pub struct UserFriend{
     pub id: i32,
-    pub user_id: i32,
-    pub friend_id: i32,
+    pub user_id: i32, // is the one who must accept or reject the friend_id request
+    pub friend_id: i32, // is the one who has sent friend request to user_id
     pub is_accepted: bool,
     pub requested_at: i64,
 }
@@ -74,8 +74,8 @@ impl UserFriend{
         -> Result<UserFriend, PanelHttpResponse>{
 
         match users_friends
-            .filter(users_friends::user_id.eq(new_friend_request.user_id))
-            .filter(users_friends::friend_id.eq(new_friend_request.friend_id))
+            .filter(users_friends::user_id.eq(new_friend_request.friend_id))
+            .filter(users_friends::friend_id.eq(new_friend_request.user_id))
             .first::<UserFriend>(connection)
             {
                 Ok(found_frd_req) => Ok(found_frd_req),
@@ -83,7 +83,12 @@ impl UserFriend{
 
                     /* inserting new comment */
                     match diesel::insert_into(users_friends)
-                    .values(&new_friend_request)
+                    .values(&NewFriendRequest{
+                        user_id: new_friend_request.friend_id,
+                        friend_id: new_friend_request.user_id,
+                        is_accepted: new_friend_request.is_accepted,
+                        requested_at: new_friend_request.requested_at,
+                    })
                     .returning(UserFriend::as_returning())
                     .get_result::<UserFriend>(connection)
                     {
