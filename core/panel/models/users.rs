@@ -164,6 +164,21 @@ pub struct UserWalletInfoResponse{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct UserWalletInfoResponseForUserSuggestions{
+    pub username: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub banner: Option<String>,
+    pub mail: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* keccak256 */
+    pub extra: Option<serde_json::Value>,
+    pub stars: Option<i64>,
+    pub created_at: String,
+    pub requested_at: Option<i64>,
+    pub is_accepted: Option<bool>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct ForgotPasswordRequest{
     pub mail: String,
 }
@@ -1122,7 +1137,7 @@ impl User{
 
     pub async fn suggest_user_to_owner(limit: web::Query<Limit>, owner_screen_cid: &str,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
+        -> Result<Vec<UserWalletInfoResponseForUserSuggestions>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0) as usize;
             let to = limit.to.unwrap_or(10) as usize;
@@ -1155,8 +1170,7 @@ impl User{
                                 continue;
                             }
 
-                        // get all friends data of user, push to suggestions if:
-                        // the owner_screen_cid wasn't in their friends
+                        // get all friends data of user, push to suggestions
                         let get_user_fan_data = UserFan::get_user_fans_data_for(user.screen_cid.as_ref().unwrap(), connection).await;
                         if get_user_fan_data.is_ok(){
                             let user_friends = get_user_fan_data.as_ref().unwrap();
@@ -1166,25 +1180,19 @@ impl User{
                             } else{
                                 vec![]
                             };
-    
-                            if !decoded_friends_data.into_iter().any(|frd| &frd.screen_cid == owner_screen_cid){
-                                suggestions.push(
-                                    UserWalletInfoResponse{
-                                        username: user.clone().username,
-                                        avatar: user.clone().avatar,
-                                        bio: user.clone().bio,
-                                        banner: user.clone().banner,
-                                        mail: user.clone().mail,
-                                        screen_cid: user.clone().screen_cid,
-                                        stars: user.clone().stars,
-                                        created_at: user.clone().created_at.to_string(),
-                                        extra: user.clone().extra,
-                                    }
-                                )
+
+                            let mut requested_at: Option<i64> = None;
+                            let mut is_accepted: Option<bool> = None;
+                            for friend in decoded_friends_data{
+                                if friend.screen_cid == owner_screen_cid{
+                                    requested_at = Some(friend.requested_at);
+                                    is_accepted = Some(friend.is_accepted);
+                                    break;
+                                }
                             }
-                        } else{
+
                             suggestions.push(
-                                UserWalletInfoResponse{
+                                UserWalletInfoResponseForUserSuggestions{
                                     username: user.clone().username,
                                     avatar: user.clone().avatar,
                                     bio: user.clone().bio,
@@ -1194,13 +1202,31 @@ impl User{
                                     stars: user.clone().stars,
                                     created_at: user.clone().created_at.to_string(),
                                     extra: user.clone().extra,
+                                    requested_at, // to know whether owner_screen_cid has sent a request to friend or not
+                                    is_accepted // to know whether the user.screen_cid has accepted the request of owner_screen_cid or not
+                                }
+                            )
+                            
+                        } else{
+                            suggestions.push(
+                                UserWalletInfoResponseForUserSuggestions{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                    extra: user.clone().extra,
+                                    requested_at: None, // to know whether owner_screen_cid has sent a request to friend or not
+                                    is_accepted: None // to know whether the user.screen_cid has accepted the request of owner_screen_cid or not
                                 }
                             )
                         }
 
                     }
-                    
-                    
+
                     suggestions.sort_by(|s1, s2|{
 
                         let s1_created_at = NaiveDateTime

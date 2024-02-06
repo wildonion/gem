@@ -7089,7 +7089,7 @@ async fn get_friend_suggestions_for_owner(
                         Ok(suggestions) => {
 
                             resp!{
-                                Vec<UserWalletInfoResponse>, //// the data type
+                                Vec<UserWalletInfoResponseForUserSuggestions>, //// the data type
                                 suggestions, //// response data
                                 FETCHED, //// response message
                                 StatusCode::OK, //// status code

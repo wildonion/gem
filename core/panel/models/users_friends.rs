@@ -28,7 +28,7 @@ pub struct UserFriend{
     pub id: i32,
     pub user_id: i32, // is the one who must accept or reject the friend_id request
     pub friend_id: i32, // is the one who has sent friend request to user_id
-    pub is_accepted: bool,
+    pub is_accepted: bool, // user_id can accept or reject this
     pub requested_at: i64,
 }
 
