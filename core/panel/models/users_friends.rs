@@ -47,9 +47,11 @@ impl UserFriend{
     pub fn remove(owner_id: i32, frd_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<usize, PanelHttpResponse>{
 
+        // owner_id or friend_id which is the request sender wants to remove his request
+        // which has been sent to the frd_id or user_id
         match diesel::delete(users_friends
-            .filter(users_friends::user_id.eq(owner_id)))
-            .filter(users_friends::friend_id.eq(frd_id))
+            .filter(users_friends::user_id.eq(frd_id)))
+            .filter(users_friends::friend_id.eq(owner_id))
             .execute(connection)
             {
                 Ok(num_deleted) => Ok(num_deleted),
@@ -81,7 +83,10 @@ impl UserFriend{
                 Ok(found_frd_req) => Ok(found_frd_req),
                 Err(e) => {
 
-                    /* inserting new comment */
+                    /* 
+                        at the time of insertion friend_id is the one 
+                        who is sending the request to the user_id 
+                    */
                     match diesel::insert_into(users_friends)
                     .values(&NewFriendRequest{
                         user_id: new_friend_request.friend_id,

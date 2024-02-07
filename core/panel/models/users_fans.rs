@@ -1536,7 +1536,7 @@ impl UserFan{
             };
             
             for friend_data in decoded_friends_data{
-                if friend_data.screen_cid == friend_screen_cid && !friend_data.is_accepted{
+                if friend_data.screen_cid == *owner_screen_cid && !friend_data.is_accepted{
                     return match UserFriend::remove(user.id, friend_info.id, connection){
                         Ok(removed_records) => {
                             Ok(
@@ -1555,6 +1555,7 @@ impl UserFan{
                 }
             } 
 
+        // return the whole data of the user fan even if there was a removed record
         Ok(
             UserFanData{
                 id: user_fan_data.id,
