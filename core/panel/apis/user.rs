@@ -9643,6 +9643,136 @@ async fn get_all_nfts_owned_by(
 
 }
 
+#[get("/collection/get/all/onchain/for/{who_screen_cid}/")]
+#[passport(user)]
+async fn get_all_collections_owned_by(
+    req: HttpRequest,
+    who_screen_cid: web::Path<String>,
+    limit: web::Query<Limit>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+    
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let get_user = User::find_by_screen_cid(&who_screen_cid.to_owned(), connection).await;
+                    let Ok(user) = get_user else{
+                        let err_resp = get_user.unwrap_err();
+                        return err_resp;
+                    };
+
+                    match UserNft::get_all_collections_owned_by(
+                        &who_screen_cid.to_owned(),
+                        limit, connection).await{
+                        Ok(user_cols) => {
+
+                            resp!{
+                                OnchainContracts, //// the data type
+                                user_cols, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[get("/nft/{nft_id}/reaction/get/all")]
 #[passport(user)]
 async fn get_all_nft_reactions(
@@ -11199,6 +11329,7 @@ pub mod exports{
     pub use super::get_all_user_relations;
     pub use super::get_all_nft_reactions; /**** all nft comments, likes and dislikes ****/
     pub use super::get_all_nfts_owned_by;
+    pub use super::get_all_collections_owned_by;
     pub use super::get_new_clp_event_info;
     pub use super::get_all_user_clp_events_info;
     pub use super::get_friend_suggestions_for_owner;

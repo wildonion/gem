@@ -99,6 +99,11 @@ pub struct OnchainNfts{
     pub onchain_nfts: Vec<NftColInfo>
 }
 
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
+pub struct OnchainContracts{
+    pub onchain_contracts: Vec<UserCollectionData>
+}
+
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct NftPortUpdateCollectionContractResponse{
@@ -1576,5 +1581,39 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
         onchain_nfts: nfts_owned_by
     }
 
+
+}
+
+pub async fn get_contracts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
+    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> OnchainContracts{
+
+        let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
+        let contracts_get_nfts = format!("https://api.nftport.xyz/v0/accounts/contracts/{}?chain=polygon&type=owns_contract_nfts&page_size={}&continuation={}", caller_screen_cid, to, from);
+        let res_value: serde_json::Value = reqwest::Client::new()
+            .get(contracts_get_nfts.as_str())
+            .header("Authorization", nftport_token.as_str())
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+
+        let mut contracts_owned_by = vec![];
+        if res_value["contracts"].is_array(){
+            let contracts = res_value["contracts"].as_array().unwrap();
+            for contract in contracts{
+                if contract["address"].is_string(){
+                    let contract_addr = contract["address"].as_str().unwrap();
+                    let contract_info = UserCollection::find_by_contract_address(contract_addr, connection).await.unwrap_or(UserCollectionData::default());
+                    contracts_owned_by.push(contract_info);
+                }
+            }
+        }
+
+    OnchainContracts{
+        onchain_contracts: contracts_owned_by
+    }
+    
 
 }
