@@ -4720,7 +4720,7 @@ impl Id{
                 (
                         // update only region and username
                             region.eq(u_country),
-                            username.eq(id_.username.clone()),
+                            username.eq(id_.username.clone().to_lowercase()), // username must be unique and case sensitive
                         )
                     )
                     .returning(FetchUser::as_returning())
@@ -4927,7 +4927,7 @@ impl Id{
                         can't return heap data of type String we must clone them or use their 
                         borrowed form or return the static version of their slice like &'static str
                     */
-                    username.eq(self.username.clone()),
+                    username.eq(self.username.clone().to_lowercase()), // username must be unique and case sensitive
                     region.eq(self.region.clone()),
                     device_id.eq(self.device_id.clone()),
                     cid.eq(self.new_cid.clone().unwrap()),

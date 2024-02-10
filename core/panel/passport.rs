@@ -183,6 +183,8 @@ impl Passport for HttpRequest{
         [String::from("")].into_iter()
     }
 
+    // UserDataExt is only visible in this crate and can 
+    // only be impl for other types only in here
     async fn get_passport<T: UserDataExt>(&self, login_info: T,
         redis_client:redis::Client, 
         redis_actor:Addr<RedisActor>, 
@@ -238,6 +240,8 @@ impl Passport for HttpRequest{
 
     }
 
+    // UserDataExt is only visible in this crate and can 
+    // only be impl for other types only in here
     async fn create_passport<T: UserDataExt>(&self, new_user_info: T,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<PanelHttpResponse, PanelHttpResponse>{
@@ -296,7 +300,12 @@ impl Passport for HttpRequest{
 
 }
 
-trait UserDataExt{
+// if we want to call methods of UserDataExt trait 
+// on other struct instances outside of here we must
+// make it public like using either pub or pub(crate)
+// right now it's visible only in here and can be impl
+// for structures only in this crate
+pub(self) trait UserDataExt{
     type UserInfo;
 
     fn get_identifier(&self) -> String;
