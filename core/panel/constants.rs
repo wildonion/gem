@@ -8,6 +8,7 @@ use s3req::Storage;
 use config::{Env, Context};
 use config::EnvExt;
 use crate::*;
+use self::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
 use self::events::subscribers::handlers::actors::notif::user::UserListenerActor;
 use self::events::subscribers::handlers::actors::notif::system::SystemActor;
 use self::events::subscribers::handlers::actors::notif::action::UserActionActor;
@@ -91,7 +92,8 @@ pub struct SubscriberActors{
     pub mmr_actor: Addr<MmrNotifServer>,
     pub action_actor: Addr<UserActionActor>,
     pub system_actor: Addr<SystemActor>,
-    pub user_actor: Addr<UserListenerActor>
+    pub user_actor: Addr<UserListenerActor>,
+    pub clp_event_checker_actor: Addr<ClpEventSchedulerActor>
 }
 
 impl AppState{

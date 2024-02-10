@@ -30,6 +30,7 @@ macro_rules! server {
             use crate::events::subscribers::handlers::actors::notif::user::UserListenerActor;
             use crate::events::subscribers::handlers::actors::notif::action::UserActionActor;
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
+            use crate::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -88,6 +89,9 @@ macro_rules! server {
             let users_action_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
             let shared_users_action_listener_instance = Data::new(users_action_listener_instance.clone());
 
+            let clp_event_listener_instance = ClpEventSchedulerActor::new(app_storage.clone()).start();
+            let shared_clp_event_listener_instance = Data::new(clp_event_listener_instance.clone());
+
             let shared_storage = Data::new(app_storage.clone());
 
 
@@ -107,7 +111,8 @@ macro_rules! server {
                     mmr_actor: mmr_notif_server_instance.clone(),
                     action_actor: users_action_listener_instance.clone(),
                     system_actor: system_actor_instance.clone(),
-                    user_actor: user_listener_instance.clone()
+                    user_actor: user_listener_instance.clone(),
+                    clp_event_checker_actor: clp_event_listener_instance.clone()
                 }
             );
             app_state.config = {
@@ -152,7 +157,8 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_user_listener_instance.clone()))
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
                     .app_data(Data::clone(&shared_users_action_listener_instance.clone()))
-                    .app_data(Data::clone(&shared_state_app.clone()))
+                    .app_data(Data::clone(&shared_clp_event_listener_instance.clone()))
+                    .app_data(Data::clone(&shared_state_app.clone())) // the whole app state: s3, actors and configs
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))

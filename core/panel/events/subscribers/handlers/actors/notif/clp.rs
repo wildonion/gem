@@ -22,12 +22,15 @@ impl Actor for ClpEventSchedulerActor{
         
         info!("ClpEventSchedulerActor -> started cron scheduler interval");
 
+        // running a 5 seconds interval to check the current event status
+        // and if it was expired or finished start the process of summarizing 
+        // users chats, generating and minting ai pictures
         ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
             
             let storage = actor.app_storage.clone();
             let this = actor.clone();
             tokio::spawn(async move{
-                this.check(storage.unwrap()).await;
+                this.check_event_status(storage.unwrap()).await;
             });
 
         });
@@ -38,7 +41,14 @@ impl Actor for ClpEventSchedulerActor{
 
 impl ClpEventSchedulerActor{
 
-    pub async fn check(&self, app_storage: Arc<Storage>){
+    pub fn new(app_storage: Option<Arc<Storage>>) -> Self{
+
+        ClpEventSchedulerActor{
+            app_storage,
+        }
+    }
+
+    pub async fn check_event_status(&self, app_storage: Arc<Storage>){
 
         let pg_pool = app_storage.get_pgdb().await.unwrap();
         let connection = &mut pg_pool.get().unwrap();
