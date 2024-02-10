@@ -600,8 +600,22 @@ async fn get_users_wallet_info(
                 Ok(users_info) => {
 
                     resp!{
-                        Vec<UserWalletInfoResponse>, // the data type
-                        users_info, // response data
+                        Vec<Option<UserWalletInfoResponseWithBalance>>, // the data type
+                        {
+                            let mut users_info = users_info
+                                .into_iter()
+                                .map(|user|{
+                                    if user.username == "adminy" || user.username == "devdevy"{
+                                        None
+                                    } else{
+                                        Some(user)
+                                    }
+                                })
+                                .collect::<Vec<Option<UserWalletInfoResponseWithBalance>>>();
+                            users_info.retain(|user| user.is_some());
+                            users_info
+                            
+                        }, // response data
                         FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie

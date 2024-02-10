@@ -164,6 +164,20 @@ pub struct UserWalletInfoResponse{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+pub struct UserWalletInfoResponseWithBalance{
+    pub username: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub banner: Option<String>,
+    pub mail: Option<String>, /* unique */
+    pub screen_cid: Option<String>, /* keccak256 */
+    pub extra: Option<serde_json::Value>,
+    pub stars: Option<i64>,
+    pub balance: Option<i64>,
+    pub created_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct UserWalletInfoResponseForUserSuggestions{
     pub username: String,
     pub avatar: Option<String>,
@@ -639,9 +653,7 @@ impl User{
     }
 
     pub const SCHEMA_NAME: &'static str = "User";
-    pub const fn get_schema_name() -> &'static str{
-        Self::SCHEMA_NAME
-    }
+    pub const fn get_schema_name() -> &'static str{ Self::SCHEMA_NAME }
 
     pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
 
@@ -683,6 +695,9 @@ impl User{
                 let _token_time = token_data.token_time; /* if a user do a login this will be reset and the last JWT will be invalid */
                 let exp_time = token_data.exp;
 
+                // ------------------------------------------------------------------
+                // the exp_time must not be greater than now so a JWT be a valid one
+                // ------------------------------------------------------------------
                 if Utc::now().timestamp_nanos_opt().unwrap() > exp_time{
                     let resp = Response{
                         data: Some(_id.to_owned()),
@@ -734,6 +749,9 @@ impl User{
                     } 
                 }
 
+                // ----------------------------------------------------------------------------
+                // the token_time inside JWT must be the one in db otherwise users did a logout
+                // ----------------------------------------------------------------------------
                 /*
                     if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
                     into the request header means that the user did a logout or did a login again since by logging 
@@ -781,7 +799,7 @@ impl User{
 
         let encoding_key = env::var("SECRET_KEY").expect("⚠️ no secret key variable set");
         let now = Utc::now();
-        let access_exp_time = now + chrono::Duration::days(30); // logout every month :)
+        let access_exp_time = now + chrono::Duration::days(30); // logout every month
         
         // -------------------------------------------------
         //    access token payload, will be used to login 
@@ -1059,7 +1077,7 @@ impl User{
 
     pub async fn fetch_all_users_wallet_info(limit: web::Query<Limit>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
-        -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
+        -> Result<Vec<UserWalletInfoResponseWithBalance>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0);
             let to = limit.to.unwrap_or(10);
@@ -1089,7 +1107,7 @@ impl User{
                         .into_iter()
                         .map(|u|{
 
-                            UserWalletInfoResponse{
+                            UserWalletInfoResponseWithBalance{
                                 username: u.username,
                                 avatar: u.avatar,
                                 bio: u.bio,
@@ -1098,11 +1116,12 @@ impl User{
                                 screen_cid: u.screen_cid,
                                 stars: u.stars,
                                 created_at: u.created_at.to_string(),
+                                balance: u.balance,
                                 extra: u.extra,
                             }
 
                         })
-                        .collect::<Vec<UserWalletInfoResponse>>()
+                        .collect::<Vec<UserWalletInfoResponseWithBalance>>()
                     )
 
                 },
