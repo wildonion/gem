@@ -1,10 +1,11 @@
 
 
 
-use crate::{*, 
-    models::users::{UserData, User, UserRole, JWTClaims}, 
-    constants::{FETCHED, EXPIRED_JWT, EXPIRED_REF_JWT, INVALID_REF_JWT}, misc::Response
+use actix::Addr;
+use crate::{constants::{EXPIRED_JWT, EXPIRED_REF_JWT, FETCHED, IDENTIFIER_ALREADY_EXISTS, INVALID_REF_JWT, REGISTERED, WRONG_IDENTIFIER, WRONG_PASSWORD}, misc::Response, models::users::{JWTClaims, User, UserData, UserRole}, *
 };
+
+use self::models::users::UserLoginInfoRequest;
 
 
 
@@ -36,6 +37,14 @@ pub trait Passport{
     async fn get_user(&self, role: Option<UserRole>, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<JWTClaims, PanelHttpResponse>;
+
+    async fn get_passport<T: UserDataExt>(&self, login_info: T, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<PanelHttpResponse, PanelHttpResponse>;
+
+    async fn create_passport<T: UserDataExt>(&self, new_user_info: T,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<PanelHttpResponse, PanelHttpResponse>;
 
     fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<User, PanelHttpResponse>;
@@ -171,7 +180,140 @@ impl Passport for HttpRequest{
     }
 
     async fn stream() -> impl Iterator<Item = String> {
-        vec![String::from("")].into_iter()
+        [String::from("")].into_iter()
     }
 
+    async fn get_passport<T: UserDataExt>(&self, login_info: T,
+        redis_client:redis::Client, 
+        redis_actor:Addr<RedisActor>, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<PanelHttpResponse, PanelHttpResponse>{
+        
+        let req = self as &Self::Request;
+        
+        match User::find_by_identifier(&login_info.get_identifier().to_owned(), connection).await{
+            Ok(user) => {
+
+                let pswd_verification = user.verify_pswd(&login_info.get_password()); 
+                let Ok(pswd_flag) = pswd_verification else{
+                    let err_msg = pswd_verification.unwrap_err();
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &err_msg.to_string(),
+                        status: 500,
+                        is_error: true,
+                    };
+                    return 
+                        Ok(Ok(HttpResponse::InternalServerError().json(resp)));
+                };
+
+                if !pswd_flag{
+
+                    let resp = Response::<String>{
+                        data: Some(login_info.get_identifier()),
+                        message: WRONG_PASSWORD,
+                        status: 403,
+                        is_error: true,
+                    };
+                    return 
+                        Ok(Ok(HttpResponse::Forbidden().json(resp)));
+                }
+    
+                Ok(user.get_user_data_response_with_cookie(redis_client.clone(), redis_actor, connection).await.unwrap())
+            },
+            Err(resp) => {
+
+                let resp = Response::<String>{
+                    data: Some(login_info.get_password()),
+                    message: WRONG_IDENTIFIER,
+                    status: 403,
+                    is_error: true,
+                };
+                return 
+                    Ok(Ok(HttpResponse::Forbidden().json(resp)));
+
+            }
+        }
+
+    }
+
+    async fn create_passport<T: UserDataExt>(&self, new_user_info: T,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<PanelHttpResponse, PanelHttpResponse>{
+        
+        let req = self as &Self::Request;
+        
+        
+        match User::find_by_identifier(&new_user_info.get_identifier().to_owned(), connection).await{
+            Ok(user) => {
+
+                let resp = Response::<String>{
+                    data: Some(new_user_info.get_identifier()),
+                    message: IDENTIFIER_ALREADY_EXISTS,
+                    status: 406,
+                    is_error: true,
+                };
+                return 
+                    Ok(Ok(HttpResponse::NotAcceptable().json(resp)));
+
+            },
+            Err(resp) => {
+
+                /* USER NOT FOUND response */
+                // resp
+                
+                /* gently, we'll insert this user into table */
+                match User::insert_by_identifier_password(new_user_info.get_identifier(), new_user_info.get_password(), connection).await{
+                    Ok((user_login_data, cookie)) => {
+
+                        let resp = Response::<UserData>{
+                            data: Some(user_login_data),
+                            message: REGISTERED,
+                            status: 200,
+                            is_error: true,
+                        };
+                        return 
+                            Ok(Ok(HttpResponse::Created().json(resp)));
+
+                    },
+                    Err(resp) => {
+                        
+                        /* 
+                            🥝 response can be one of the following:
+                            
+                            - DIESEL INSERT ERROR RESPONSE
+                            - CANT_GENERATE_COOKIE
+                        */
+                        Err(resp)
+                    }
+                }
+
+            }
+        }
+
+    }
+
+}
+
+trait UserDataExt{
+    type UserInfo;
+
+    fn get_identifier(&self) -> String;
+    fn get_password(&self) -> String;
+}
+
+impl UserDataExt for UserLoginInfoRequest{
+    type UserInfo = Self;
+    
+    // can't move out of a shared reference we have to clone it since 
+    // self is behind a reference which is valid as long as the object
+    // is valid
+    fn get_identifier(&self) -> String {
+        self.identifier.clone()
+    }
+
+    fn get_password(&self) -> String {
+        self.password.clone()
+    }
 }

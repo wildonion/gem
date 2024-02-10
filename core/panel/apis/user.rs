@@ -786,46 +786,11 @@ async fn login_with_identifier_and_password(
             }
 
             let login_info = user_login_info.to_owned();
-
-            match User::find_by_identifier(&login_info.identifier.to_owned(), connection).await{
-                Ok(user) => {
-
-                    let pswd_verification = user.verify_pswd(&login_info.password); 
-                    let Ok(pswd_flag) = pswd_verification else{
-                        let err_msg = pswd_verification.unwrap_err();
-                        resp!{
-                            &[u8], // the data type
-                            &[], // response data
-                            &err_msg.to_string(), // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    };
-
-                    if !pswd_flag{
-                        resp!{
-                            String, // the data type
-                            login_info.identifier, // response data
-                            WRONG_PASSWORD, // response message
-                            StatusCode::FORBIDDEN, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-                    }
-        
-                    user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap()
-                },
-                Err(resp) => {
-
-                    resp!{
-                        String, // the data type
-                        login_info.identifier, // response data
-                        WRONG_IDENTIFIER, // response message
-                        StatusCode::FORBIDDEN, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
-
-                }
+            match req.get_passport(login_info, redis_client.clone(), redis_actix_actor, connection).await{
+                Ok(ok_resp) => ok_resp,
+                Err(err_resp) => err_resp
             }
+
         },
         None => {
             
@@ -859,50 +824,11 @@ async fn signup_with_identifier_and_password(
             let connection = &mut pg_pool.get().unwrap();
             let login_info = user_login_info.to_owned();
 
-            match User::find_by_identifier(&login_info.identifier.to_owned(), connection).await{
-                Ok(user) => {
-
-                    resp!{
-                        String, // the data type
-                        login_info.identifier, // response data
-                        IDENTIFIER_ALREADY_EXISTS, // response message
-                        StatusCode::NOT_ACCEPTABLE, // status code
-                        None::<Cookie<'_>>, // cookie
-                    }
-
-                },
-                Err(resp) => {
-
-                    /* USER NOT FOUND response */
-                    // resp
-                    
-                    /* gently, we'll insert this user into table */
-                    match User::insert_by_identifier_password(login_info.identifier, login_info.password, connection).await{
-                        Ok((user_login_data, cookie)) => {
-
-                            resp!{
-                                UserData, // the data type
-                                user_login_data, // response data
-                                REGISTERED, // response message
-                                StatusCode::CREATED, // status code,
-                                Some(cookie), // cookie 
-                            } 
-
-                        },
-                        Err(resp) => {
-                            
-                            /* 
-                                🥝 response can be one of the following:
-                                
-                                - DIESEL INSERT ERROR RESPONSE
-                                - CANT_GENERATE_COOKIE
-                            */
-                            resp
-                        }
-                    }
-
-                }
+            match req.create_passport(login_info, connection).await{
+                Ok(ok_resp) => ok_resp,
+                Err(err_resp) => err_resp
             }
+            
         },
         None => {
             
@@ -8856,103 +8782,56 @@ async fn update_nft(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+   
+                    let update_user_nft_request = update_user_nft_request.to_owned();
+                    
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
+                    /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
+                    /*
+                        followings are the param 
+                        must be passed to do the 
+                        kyc process on request data
+                        @params:
+                            - _id              : user id
+                            - from_cid         : user crypto id
+                            - tx_signature     : tx signature signed
+                            - hash_data        : sha256 hash of data generated in client app
+                            - deposited_amount : the amount of token must be deposited for this call
+                    */
+                    let is_request_verified = kyced::verify_request(
+                        _id, 
+                        &update_user_nft_request.caller_cid, 
+                        &update_user_nft_request.tx_signature, 
+                        &update_user_nft_request.hash_data, 
+                        Some(update_user_nft_request.amount),
+                        connection
+                    ).await;
 
-                    let identifier_key = format!("{}-update-nft", _id);
-                    let Ok(mut redis_conn) = get_redis_conn else{
-
-                        /* handling the redis connection error using PanelError */
-                        let redis_get_conn_error = get_redis_conn.err().unwrap();
-                        let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
-                        let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
-                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "updated_nft");
-                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
-
-                        resp!{
-                            &[u8], // the date type
-                            &[], // the data itself
-                            &redis_get_conn_error_string, // response message
-                            StatusCode::INTERNAL_SERVER_ERROR, // status code
-                            None::<Cookie<'_>>, // cookie
-                        }
-
+                    let Ok(user) = is_request_verified else{
+                        let error_resp = is_request_verified.unwrap_err();
+                        return error_resp; /* terminate the caller with an actix http response object */
                     };
 
-                    /* 
-                        checking that the incoming request is already rate limited or not,
-                        since there is no global storage setup we have to pass the storage 
-                        data like redis_conn to the macro call 
-                    */
-                    if is_rate_limited!{
-                        redis_conn,
-                        identifier_key.clone(), /* identifier */
-                        String, /* the type of identifier */
-                        "fin_rate_limiter" /* redis key */
-                    }{
+                    match UserNft::update(
+                        update_user_nft_request,
+                        redis_client.clone(), 
+                        redis_actix_actor,
+                        connection).await{
+                        Ok(user_nft_data) => {
 
-                        resp!{
-                            &[u8], //// the data type
-                            &[], //// response data
-                            RATE_LIMITED, //// response message
-                            StatusCode::TOO_MANY_REQUESTS, //// status code
-                            None::<Cookie<'_>>, //// cookie
-                        }
-
-                    } else {
-                    
-                        
-                        let update_user_nft_request = update_user_nft_request.to_owned();
-                        
-                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-                        /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
-                        /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
-                        /*
-                            followings are the param 
-                            must be passed to do the 
-                            kyc process on request data
-                            @params:
-                                - _id              : user id
-                                - from_cid         : user crypto id
-                                - tx_signature     : tx signature signed
-                                - hash_data        : sha256 hash of data generated in client app
-                                - deposited_amount : the amount of token must be deposited for this call
-                        */
-                        let is_request_verified = kyced::verify_request(
-                            _id, 
-                            &update_user_nft_request.caller_cid, 
-                            &update_user_nft_request.tx_signature, 
-                            &update_user_nft_request.hash_data, 
-                            Some(update_user_nft_request.amount),
-                            connection
-                        ).await;
-
-                        let Ok(user) = is_request_verified else{
-                            let error_resp = is_request_verified.unwrap_err();
-                            return error_resp; /* terminate the caller with an actix http response object */
-                        };
-
-                        match UserNft::update(
-                            update_user_nft_request,
-                            redis_client.clone(), 
-                            redis_actix_actor,
-                            connection).await{
-                            Ok(user_nft_data) => {
-
-                                resp!{
-                                    UserNftData, //// the data type
-                                    user_nft_data, //// response data
-                                    UPDATED, //// response message
-                                    StatusCode::OK, //// status code
-                                    None::<Cookie<'_>>, //// cookie
-                                }
-
-                            },
-                            Err(resp) => {
-                                resp
+                            resp!{
+                                UserNftData, //// the data type
+                                user_nft_data, //// response data
+                                UPDATED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
                             }
+
+                        },
+                        Err(resp) => {
+                            resp
                         }
-                    
-                    
                     }
 
                 },
