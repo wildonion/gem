@@ -41,7 +41,7 @@ pub struct Health{
 */
 #[get("/check-server")]
 #[passport(admin, user, dev)]
-async fn index(
+pub(self) async fn index(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -62,7 +62,7 @@ async fn index(
 
 #[get("/check-token")]
 #[passport(admin, user, dev)]
-async fn check_token(
+pub(self) async fn check_token(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -223,7 +223,7 @@ async fn check_token(
 
 #[post("/logout")]
 #[passport(admin, user, dev)]
-async fn logout(
+pub(self) async fn logout(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -340,7 +340,7 @@ async fn logout(
 
 #[post("/profile/forgot-password")]
 #[passport(user)]
-async fn forgot_password(
+pub(self) async fn forgot_password(
     req: HttpRequest,
     forgot_password_request: web::Json<ForgotPasswordRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -422,7 +422,7 @@ async fn forgot_password(
 
 #[get("/get-tasks/")]
 #[passport(admin, user, dev)]
-async fn get_tasks(
+pub(self) async fn get_tasks(
         req: HttpRequest,  
         limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -531,7 +531,7 @@ async fn get_tasks(
 
 #[post("/cid/wallet/stripe/update/balance/webhook/{session_id}/{payment_intent}")]
 #[passport(admin, user, dev)]
-async fn update_user_balance_webhook(
+pub(self) async fn update_user_balance_webhook(
         req: HttpRequest,
         params: web::Path<(String, String)>,
         storage: web::Data<Option<Arc<Storage>>>
@@ -630,7 +630,7 @@ async fn update_user_balance_webhook(
 
 #[post("/am-i-kyced")]
 #[passport(admin, user, dev)]
-async fn is_user_kyced(
+pub(self) async fn is_user_kyced(
         req: HttpRequest,  
         check_kyc_request: web::Json<CheckKycRequest>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)

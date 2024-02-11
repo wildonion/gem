@@ -31,7 +31,7 @@ use crate::models::{
 
 */
 #[get("/rendezvous/get/admin/{admin_id}/data/")]
-async fn get_admin_data(
+pub(self) async fn get_admin_data(
         req: HttpRequest, 
         admin_id: web::Path<String>, // mongodb object id of admin or god
         limit: web::Query<Limit>,
@@ -192,7 +192,7 @@ async fn get_admin_data(
 }
 
 #[get("/rendezvous/get/user/{user_id}/data/")]
-async fn get_user_data(
+pub(self) async fn get_user_data(
         req: HttpRequest, 
         limit: web::Query<Limit>,
         user_id: web::Path<String>, // mongodb object id of user or player  

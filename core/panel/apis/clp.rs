@@ -54,7 +54,7 @@ use actix::prelude::*;
 */
 #[get("/chatroomlp/{chatroomlp_id}/{user_cid}/{tx_signature}/{hash_data}/")]
 #[passport(user)]
-async fn chatroomlp(
+pub(self) async fn chatroomlp(
     req: HttpRequest, 
     stream: web::Payload, // it's like streaming over bytes in tcp listener but this is http based one
     clpucid: web::Path<(i32, String, String, String)>,

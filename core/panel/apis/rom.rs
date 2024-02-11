@@ -68,7 +68,7 @@ use actix::prelude::*;
 
 */
 #[get("/{user_id}/{notif_room}")]
-async fn sub_to_rom(
+pub(self) async fn sub_to_rom(
     req: HttpRequest, 
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,

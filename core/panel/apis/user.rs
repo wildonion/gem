@@ -65,7 +65,7 @@ use self::models::token_stats::TokenStatInfo;
     login page again.
 */
 #[post("/login/{identifier}")]
-async fn login(
+pub(self) async fn login(
         req: HttpRequest, 
         login_identifier: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -146,7 +146,7 @@ async fn login(
 
 #[post("/request-mail-code/{mail}")]
 #[passport(user)]
-async fn request_mail_code(
+pub(self) async fn request_mail_code(
     req: HttpRequest,
     user_mail: web::Path<String>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -310,7 +310,7 @@ async fn request_mail_code(
 
 #[post("/verify-mail-code")]
 #[passport(user)]
-async fn verify_mail_code(
+pub(self) async fn verify_mail_code(
     req: HttpRequest,
     check_user_verification_request: web::Json<CheckUserMailVerificationRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -430,7 +430,7 @@ async fn verify_mail_code(
 
 #[post("/request-phone-code/{phone}")]
 #[passport(user)]
-async fn request_phone_code(
+pub(self) async fn request_phone_code(
     req: HttpRequest,
     user_phone: web::Path<String>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -629,7 +629,7 @@ async fn request_phone_code(
 
 #[post("/verify-phone-code")]
 #[passport(user)]
-async fn verify_phone_code(
+pub(self) async fn verify_phone_code(
     req: HttpRequest,
     check_user_verification_request: web::Json<CheckUserPhoneVerificationRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -757,7 +757,7 @@ async fn verify_phone_code(
     login page again.
 */
 #[post("/login")]
-async fn login_with_identifier_and_password(
+pub(self) async fn login_with_identifier_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -808,7 +808,7 @@ async fn login_with_identifier_and_password(
 }
 
 #[post("/signup")]
-async fn signup_with_identifier_and_password(
+pub(self) async fn signup_with_identifier_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -846,7 +846,7 @@ async fn signup_with_identifier_and_password(
 }
 
 #[get("/sessions/oauth/google")]
-async fn session_oauth_google(
+pub(self) async fn session_oauth_google(
         req: HttpRequest,
         google_query: web::Query<GoogleQueryCode>,
         app_state: web::Data<AppState>
@@ -944,7 +944,7 @@ async fn session_oauth_google(
 
 #[post("/verify-twitter-account/{account_name}")]
 #[passport(user)]
-async fn verify_twitter_account(
+pub(self) async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1098,7 +1098,7 @@ async fn verify_twitter_account(
 
 #[get("/report-tasks/{user_id}/")]
 #[passport(user)]
-pub async fn tasks_report(
+pub(self) async fn tasks_report(
         req: HttpRequest,
         limit: web::Query<Limit>,
         user_id: web::Path<i32>,  
@@ -1206,7 +1206,7 @@ pub async fn tasks_report(
 
 #[post("/cid/wallet/stripe/charge")]
 #[passport(user)]
-async fn charge_wallet_request(
+pub(self) async fn charge_wallet_request(
     req: HttpRequest,
     charge_wallet_request: web::Json<ChargeWalletRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1539,7 +1539,7 @@ async fn charge_wallet_request(
 
 #[post("/cid/build")]
 #[passport(user)]
-async fn make_cid(
+pub(self) async fn make_cid(
     req: HttpRequest,
     id_: web::Json<NewIdRequest>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1803,7 +1803,7 @@ async fn make_cid(
 
 #[post("/deposit/to/{contract_address}")]
 #[passport(user)]
-async fn deposit(
+pub(self) async fn deposit(
     req: HttpRequest,
     contract_address: web::Path<String>,
     deposit: web::Json<NewUserDepositRequest>,
@@ -2141,7 +2141,7 @@ async fn deposit(
 
 #[get("/deposit/get/all/")]
 #[passport(user)]
-async fn get_all_user_deposits(
+pub(self) async fn get_all_user_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2270,7 +2270,7 @@ async fn get_all_user_deposits(
 
 #[post("/withdraw/from/{contract_address}")]
 #[passport(user)]
-async fn withdraw(
+pub(self) async fn withdraw(
     req: HttpRequest,
     contract_address: web::Path<String>,
     withdraw: web::Json<NewUserWithdrawRequest>,
@@ -2541,7 +2541,7 @@ async fn withdraw(
 
 #[get("/withdraw/get/all/")]
 #[passport(user)]
-async fn get_all_user_withdrawals(
+pub(self) async fn get_all_user_withdrawals(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2669,7 +2669,7 @@ async fn get_all_user_withdrawals(
 
 #[get("/checkout/get/all/unpaid/")]
 #[passport(user)]
-async fn get_all_user_unpaid_checkouts(
+pub(self) async fn get_all_user_unpaid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2797,7 +2797,7 @@ async fn get_all_user_unpaid_checkouts(
 
 #[get("/checkout/get/all/paid/")]
 #[passport(user)]
-async fn get_all_user_paid_checkouts(
+pub(self) async fn get_all_user_paid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2925,7 +2925,7 @@ async fn get_all_user_paid_checkouts(
 
 #[get("/deposit/get/all/unclaimed/")]
 #[passport(user)]
-async fn get_recipient_unclaimed_deposits(
+pub(self) async fn get_recipient_unclaimed_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3055,7 +3055,7 @@ async fn get_recipient_unclaimed_deposits(
 
 #[post("/profile/update/bio")]
 #[passport(user)]
-async fn edit_bio(
+pub(self) async fn edit_bio(
     req: HttpRequest,
     update_bio_request: web::Json<UpdateBioRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3165,7 +3165,7 @@ async fn edit_bio(
 
 #[post("/profile/update/extra")]
 #[passport(user)]
-async fn edit_extra(
+pub(self) async fn edit_extra(
     req: HttpRequest,
     update_extra_request: web::Json<UpdateExtraRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3275,7 +3275,7 @@ async fn edit_extra(
 
 #[post("/profile/update/wallet-back")]
 #[passport(user)]
-async fn upload_wallet_back(
+pub(self) async fn upload_wallet_back(
     req: HttpRequest,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart,
@@ -3388,7 +3388,7 @@ async fn upload_wallet_back(
 
 #[post("/profile/update/avatar")]
 #[passport(user)]
-async fn upload_avatar(
+pub(self) async fn upload_avatar(
     req: HttpRequest,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart, /* form-data implementation to receive stream of byte fields */
@@ -3499,7 +3499,7 @@ async fn upload_avatar(
 
 #[post("/profile/update/banner")]
 #[passport(user)]
-async fn upload_banner(
+pub(self) async fn upload_banner(
     req: HttpRequest,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart, /* form-data implementation to receive stream of byte fields */
@@ -3610,7 +3610,7 @@ async fn upload_banner(
 
 #[post("/profile/update/password")]
 #[passport(user)]
-async fn update_password(
+pub(self) async fn update_password(
     req: HttpRequest,
     new_password_request: web::Json<NewPasswordRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3766,7 +3766,7 @@ async fn update_password(
 
 #[get("/profile/notifs/get/")]
 #[passport(user)]
-async fn get_notifications(
+pub(self) async fn get_notifications(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -3925,7 +3925,7 @@ async fn get_notifications(
     _______________________________________________________________________________
 */
 #[post("/rendezvous/player/{player_id}/upload/avatar")]
-async fn upload_rendezvous_player_avatar(
+pub(self) async fn upload_rendezvous_player_avatar(
     req: HttpRequest, 
     player_id: web::Path<String>, // mongodb objectid
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4040,7 +4040,7 @@ async fn upload_rendezvous_player_avatar(
 
 #[post("/gallery/create")]
 #[passport(user)]
-async fn create_private_gallery(
+pub(self) async fn create_private_gallery(
     req: HttpRequest,
     new_private_gallery_request: web::Json<NewUserPrivateGalleryRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4226,7 +4226,7 @@ async fn create_private_gallery(
 
 #[post("/gallery/{gal_id}/update")]
 #[passport(user)]
-async fn update_private_gallery(
+pub(self) async fn update_private_gallery(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     update_private_gallery_request: web::Json<UpdateUserPrivateGalleryRequest>,
@@ -4418,7 +4418,7 @@ async fn update_private_gallery(
 
 #[post("/gallery/remove/invited-friend")]
 #[passport(user)]
-async fn remove_invited_friend_from_gallery(
+pub(self) async fn remove_invited_friend_from_gallery(
     req: HttpRequest,
     remove_invited_friend_request: web::Json<RemoveInvitedFriendFromPrivateGalleryRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4558,7 +4558,7 @@ async fn remove_invited_friend_from_gallery(
 
 #[post("/gallery/exit")]
 #[passport(user)]
-async fn exit_from_private_gallery(
+pub(self) async fn exit_from_private_gallery(
     req: HttpRequest,
     exit_from_private_gallery: web::Json<ExitFromPrivateGalleryRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4698,7 +4698,7 @@ async fn exit_from_private_gallery(
 
 #[post("/gallery/send/invitation-request")]
 #[passport(user)]
-async fn send_private_gallery_invitation_request_to(
+pub(self) async fn send_private_gallery_invitation_request_to(
     req: HttpRequest,
     send_invitation_request: web::Json<SendInvitationRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4849,7 +4849,7 @@ async fn send_private_gallery_invitation_request_to(
 
 #[get("/gallery/get/all/")]
 #[passport(user)]
-async fn get_all_private_galleries_for(
+pub(self) async fn get_all_private_galleries_for(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -4971,7 +4971,7 @@ async fn get_all_private_galleries_for(
 
 #[get("/gallery/get/all/i-invited-to/")]
 #[passport(user)]
-async fn get_all_galleries_invited_to(
+pub(self) async fn get_all_galleries_invited_to(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5096,7 +5096,7 @@ async fn get_all_galleries_invited_to(
 
 #[get("/gallery/{gal_id}/get/invited-friends/")]
 #[passport(user)]
-async fn get_invited_friends_wallet_data_of_gallery(
+pub(self) async fn get_invited_friends_wallet_data_of_gallery(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
@@ -5223,7 +5223,7 @@ async fn get_invited_friends_wallet_data_of_gallery(
 
 #[get("/gallery/get/unaccepted/invitation-requests/")]
 #[passport(user)]
-async fn get_user_unaccepted_invitation_requests(
+pub(self) async fn get_user_unaccepted_invitation_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5347,7 +5347,7 @@ async fn get_user_unaccepted_invitation_requests(
 
 #[get("/fan/get/unaccepted/friend-requests/")]
 #[passport(user)]
-async fn get_user_unaccepted_friend_requests(
+pub(self) async fn get_user_unaccepted_friend_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5471,7 +5471,7 @@ async fn get_user_unaccepted_friend_requests(
 
 #[post("/gallery/accept/invitation-request")]
 #[passport(user)]
-async fn accept_invitation_request(
+pub(self) async fn accept_invitation_request(
     req: HttpRequest,
     accept_invitation_request: web::Json<AcceptInvitationRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5611,7 +5611,7 @@ async fn accept_invitation_request(
 
 #[post("/gallery/enter")]
 #[passport(user)]
-async fn enter_private_gallery(
+pub(self) async fn enter_private_gallery(
     req: HttpRequest,
     enter_private_gallery_request: web::Json<EnterPrivateGalleryRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -5750,7 +5750,7 @@ async fn enter_private_gallery(
 
 #[get("/fan/get/relations/for/{who}/")]
 #[passport(user)]
-async fn get_all_user_relations(
+pub(self) async fn get_all_user_relations(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
@@ -5875,7 +5875,7 @@ async fn get_all_user_relations(
 
 #[post("/fan/accept/friend-request")]
 #[passport(user)]
-async fn accept_friend_request(
+pub(self) async fn accept_friend_request(
     req: HttpRequest,
     accept_friend_request: web::Json<AcceptFriendRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6015,7 +6015,7 @@ async fn accept_friend_request(
 
 #[post("/fan/send/friend-request")]
 #[passport(user)]
-async fn send_friend_request_to(
+pub(self) async fn send_friend_request_to(
     req: HttpRequest,
     send_friend_request_to: web::Json<SendFriendRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6154,7 +6154,7 @@ async fn send_friend_request_to(
 
 #[post("/fan/remove/follower")]
 #[passport(user)]
-async fn remove_user_from_follower(
+pub(self) async fn remove_user_from_follower(
     req: HttpRequest,
     remove_follower_request: web::Json<RemoveFollower>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6293,7 +6293,7 @@ async fn remove_user_from_follower(
 
 #[post("/fan/remove/friend")]
 #[passport(user)]
-async fn remove_user_from_friend(
+pub(self) async fn remove_user_from_friend(
     req: HttpRequest,
     remove_friend_request: web::Json<RemoveFriend>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6433,7 +6433,7 @@ async fn remove_user_from_friend(
 
 #[post("/fan/remove/following")]
 #[passport(user)]
-async fn remove_user_from_following(
+pub(self) async fn remove_user_from_following(
     req: HttpRequest,
     remove_following_request: web::Json<RemoveFollowing>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6573,7 +6573,7 @@ async fn remove_user_from_following(
 
 #[get("/fan/get/all/friends/")]
 #[passport(user)]
-async fn get_all_my_friends(
+pub(self) async fn get_all_my_friends(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6696,7 +6696,7 @@ async fn get_all_my_friends(
 
 #[get("/fan/get/all/followings/")]
 #[passport(user)]
-async fn get_all_my_followings(
+pub(self) async fn get_all_my_followings(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6819,7 +6819,7 @@ async fn get_all_my_followings(
 
 #[get("/fan/get/all/followers/")]
 #[passport(user)]
-async fn get_all_my_followers(
+pub(self) async fn get_all_my_followers(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -6942,7 +6942,7 @@ async fn get_all_my_followers(
 
 #[get("/fan/get/suggestions/for/")]
 #[passport(user)]
-async fn get_friend_suggestions_for_owner(
+pub(self) async fn get_friend_suggestions_for_owner(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -7066,7 +7066,7 @@ async fn get_friend_suggestions_for_owner(
 
 #[get("/collection/get/all/for/{who}/")]
 #[passport(user)]
-async fn get_all_public_collections_for(
+pub(self) async fn get_all_public_collections_for(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
@@ -7191,7 +7191,7 @@ async fn get_all_public_collections_for(
 
 #[get("/gallery/get/all/for/{who}/")]
 #[passport(user)]
-async fn get_all_private_galleries_general_info_for(
+pub(self) async fn get_all_private_galleries_general_info_for(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
@@ -7318,7 +7318,7 @@ async fn get_all_private_galleries_general_info_for(
 
 #[post("/collection/{col_id}/upload/background")]
 #[passport(user)]
-async fn upload_collection_banner(
+pub(self) async fn upload_collection_banner(
     req: HttpRequest,
     col_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -7446,7 +7446,7 @@ async fn upload_collection_banner(
 
 #[post("/collection/create")]
 #[passport(user)]
-async fn create_collection(
+pub(self) async fn create_collection(
     req: HttpRequest,
     new_user_collection_request: web::Json<NewUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -7636,7 +7636,7 @@ async fn create_collection(
 
 #[post("/collection/update")]
 #[passport(user)]
-async fn update_collection(
+pub(self) async fn update_collection(
     req: HttpRequest,
     update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -7826,7 +7826,7 @@ async fn update_collection(
 
 #[get("/collection/{col_id}/get/all/minted-nfts/")]
 #[passport(user)]
-async fn get_all_public_collection_nfts(
+pub(self) async fn get_all_public_collection_nfts(
     req: HttpRequest,
     col_id: web::Path<i32>,
     limit: web::Query<Limit>,
@@ -7951,7 +7951,7 @@ async fn get_all_public_collection_nfts(
 
 #[get("/collection/get/all/private/in-gallery/{gal_id}/")]
 #[passport(user)]
-async fn get_all_private_collections_for(
+pub(self) async fn get_all_private_collections_for(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
@@ -8078,7 +8078,7 @@ async fn get_all_private_collections_for(
 
 #[get("/collection/firends-view/get/all/private/in-gallery/{gal_id}/for/{who}/")]
 #[passport(user)]
-async fn get_all_private_collections_for_invited_friends(
+pub(self) async fn get_all_private_collections_for_invited_friends(
     req: HttpRequest,
     gal_id_who_screen_cid: web::Path<(i32, String)>,
     limit: web::Query<Limit>,
@@ -8209,7 +8209,7 @@ async fn get_all_private_collections_for_invited_friends(
 
 #[post("/nft/create")]
 #[passport(user)]
-async fn create_nft(
+pub(self) async fn create_nft(
     req: HttpRequest,
     new_user_nft_request: web::Json<NewUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -8399,7 +8399,7 @@ async fn create_nft(
 
 #[post("/nft/create/metadata-uri")]
 #[passport(user)]
-async fn create_nft_metadata_uri(
+pub(self) async fn create_nft_metadata_uri(
     req: HttpRequest,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut payload: Multipart,
@@ -8603,7 +8603,7 @@ async fn create_nft_metadata_uri(
 
 #[post("/gallery/{gal_id}/upload/background")]
 #[passport(user)]
-async fn upload_private_gallery_back(
+pub(self) async fn upload_private_gallery_back(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -8728,7 +8728,7 @@ async fn upload_private_gallery_back(
 
 #[post("/nft/update")]
 #[passport(user)]
-async fn update_nft(
+pub(self) async fn update_nft(
     req: HttpRequest,
     update_user_nft_request: web::Json<UpdateUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -8871,7 +8871,7 @@ async fn update_nft(
 
 #[post("/nft/add/reaction")]
 #[passport(user)]
-async fn add_reaction_to_nft(
+pub(self) async fn add_reaction_to_nft(
     req: HttpRequest,
     user_add_nft_reaction: web::Json<AddReactionRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -9014,7 +9014,7 @@ async fn add_reaction_to_nft(
 
 #[post("/nft/buy")]
 #[passport(user)]
-async fn buy_nft(
+pub(self) async fn buy_nft(
     req: HttpRequest,
     user_buy_nft_request: web::Json<UpdateUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -9204,7 +9204,7 @@ async fn buy_nft(
 
 #[post("/nft/mint")]
 #[passport(user)]
-async fn mint_nft(
+pub(self) async fn mint_nft(
     req: HttpRequest,
     user_mint_nft_request: web::Json<UpdateUserNftRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -9394,7 +9394,7 @@ async fn mint_nft(
 
 #[get("/nft/get/all/onchain/for/{who_screen_cid}/")]
 #[passport(user)]
-async fn get_all_nfts_owned_by(
+pub(self) async fn get_all_nfts_owned_by(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
@@ -9524,7 +9524,7 @@ async fn get_all_nfts_owned_by(
 
 #[get("/collection/get/all/onchain/for/{who_screen_cid}/")]
 #[passport(user)]
-async fn get_all_collections_owned_by(
+pub(self) async fn get_all_collections_owned_by(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
@@ -9654,7 +9654,7 @@ async fn get_all_collections_owned_by(
 
 #[get("/nft/{nft_id}/reaction/get/all")]
 #[passport(user)]
-async fn get_all_nft_reactions(
+pub(self) async fn get_all_nft_reactions(
     req: HttpRequest,
     nft_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -9778,7 +9778,7 @@ async fn get_all_nft_reactions(
 
 #[post("/clp/register")]
 #[passport(user)]
-async fn register_clp_event(
+pub(self) async fn register_clp_event(
     req: HttpRequest,
     register_clp_event_request: web::Json<RegisterUserClpEventRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10030,7 +10030,7 @@ async fn register_clp_event(
 
 #[post("/clp/cancel")]
 #[passport(user)]
-async fn cancel_clp_event(
+pub(self) async fn cancel_clp_event(
     req: HttpRequest,
     cancel_clp_event_request: web::Json<CancelUserClpEventRequest>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10239,7 +10239,7 @@ async fn cancel_clp_event(
 
 #[get("/clp/get/new")]
 #[passport(user)]
-async fn get_new_clp_event_info(
+pub(self) async fn get_new_clp_event_info(
     req: HttpRequest,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
@@ -10355,7 +10355,7 @@ async fn get_new_clp_event_info(
 
 #[get("/clp/get/all/")]
 #[passport(user)]
-async fn get_all_user_clp_events_info(
+pub(self) async fn get_all_user_clp_events_info(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10471,7 +10471,7 @@ async fn get_all_user_clp_events_info(
 
 #[get("/get-token-value/{tokens}")]
 #[passport(user)]
-async fn get_token_value(
+pub(self) async fn get_token_value(
         req: HttpRequest,  
         tokens: web::Path<i64>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10601,7 +10601,7 @@ async fn get_token_value(
 
 #[get("/get-gas-fee")]
 #[passport(user)]
-async fn get_gas_fee(
+pub(self) async fn get_gas_fee(
         req: HttpRequest,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
@@ -10717,7 +10717,7 @@ async fn get_gas_fee(
 
 #[get("/get/all/top/")]
 #[passport(user)]
-async fn get_top_users(
+pub(self) async fn get_top_users(
     req: HttpRequest,  
     limit: web::Query<Limit>,    
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10826,7 +10826,7 @@ async fn get_top_users(
 
 #[get("/nft/get/{asset_id}")]
 #[passport(user)]
-async fn get_single_nft(
+pub(self) async fn get_single_nft(
     req: HttpRequest,  
     asset_id: web::Path<i32>,    
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -10979,7 +10979,7 @@ async fn get_single_nft(
 
 #[get("/nft/get/")]
 #[passport(user)]
-async fn get_nfts_owned_by(
+pub(self) async fn get_nfts_owned_by(
     req: HttpRequest,  
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
