@@ -43,7 +43,7 @@ use self::models::clp_events::UpdateClpEventRequest;
 
 */
 #[post("/notif/register/reveal-role/{event_id}")]
-async fn reveal_role(
+pub(self) async fn reveal_role(
         req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -216,7 +216,7 @@ async fn reveal_role(
 }
 
 #[post("/rendezvous/event/{event_id}/upload/img")]
-async fn update_rendezvous_event_img(
+pub(self) async fn update_rendezvous_event_img(
     req: HttpRequest, 
         event_id: web::Path<String>, // mongodb objectid
         storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -339,7 +339,7 @@ async fn update_rendezvous_event_img(
     login page again.
 */
 #[post("/login")]
-async fn login(
+pub(self) async fn login(
         req: HttpRequest, 
         login_info: web::Json<LoginInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -439,7 +439,7 @@ async fn login(
 
 #[post("/register-new-user")]
 #[passport(admin)]
-async fn register_new_user(
+pub(self) async fn register_new_user(
         req: HttpRequest,  
         new_user: web::Json<NewUserInfoRequest>, 
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -564,7 +564,7 @@ async fn register_new_user(
 
 #[post("/edit-user")]
 #[passport(admin)]
-async fn edit_user(
+pub(self) async fn edit_user(
         req: HttpRequest, 
         new_user: web::Json<EditUserByAdminRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -677,7 +677,7 @@ async fn edit_user(
 
 #[post("/delete-user/{user_id}")]
 #[passport(admin)]
-async fn delete_user(
+pub(self) async fn delete_user(
         req: HttpRequest, 
         doer_id: web::Path<i32>,  // doer is the user who do task
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -800,7 +800,7 @@ async fn delete_user(
 
 #[get("/get-users/")]
 #[passport(admin)]
-async fn get_users(
+pub(self) async fn get_users(
         req: HttpRequest,  
         limit: web::Query<Limit>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -906,7 +906,7 @@ async fn get_users(
 
 #[post("/register-new-task")]
 #[passport(admin)]
-async fn register_new_task(
+pub(self) async fn register_new_task(
         req: HttpRequest, 
         new_task: web::Json<NewTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1030,7 +1030,7 @@ async fn register_new_task(
 
 #[post("/delete-task/{job_id}")]
 #[passport(admin)]
-async fn delete_task(
+pub(self) async fn delete_task(
         req: HttpRequest, 
         job_id: web::Path<i32>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1161,7 +1161,7 @@ async fn delete_task(
 
 #[post("/edit-task")]
 #[passport(admin)]
-async fn edit_task(
+pub(self) async fn edit_task(
         req: HttpRequest, 
         new_task: web::Json<EditTaskRequest>,  
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1270,7 +1270,7 @@ async fn edit_task(
 
 #[get("/get-admin-tasks/{owner_id}/")]
 #[passport(admin)]
-async fn get_admin_tasks(
+pub(self) async fn get_admin_tasks(
         req: HttpRequest, 
         owner_id: web::Path<i32>,  
         limit: web::Query<Limit>,
@@ -1381,7 +1381,7 @@ async fn get_admin_tasks(
 
 #[get("/get-users-tasks/")]
 #[passport(admin)]
-async fn get_users_tasks(
+pub(self) async fn get_users_tasks(
         req: HttpRequest,
         limit: web::Query<Limit>,   
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1490,7 +1490,7 @@ async fn get_users_tasks(
 
 #[post("/add-twitter-account")]
 #[passport(admin)]
-async fn add_twitter_account(
+pub(self) async fn add_twitter_account(
         req: HttpRequest,   
         new_account: web::Json<Keys>,
         storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1654,7 +1654,7 @@ async fn add_twitter_account(
 
 #[get("/deposit/get/")]
 #[passport(admin)]
-async fn get_all_users_deposits(
+pub(self) async fn get_all_users_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1771,7 +1771,7 @@ async fn get_all_users_deposits(
 
 #[get("/withdraw/get/")]
 #[passport(admin)]
-async fn get_all_users_withdrawals(
+pub(self) async fn get_all_users_withdrawals(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -1888,7 +1888,7 @@ async fn get_all_users_withdrawals(
 
 #[get("/checkouts/get/")]
 #[passport(admin)]
-async fn get_all_users_checkouts(
+pub(self) async fn get_all_users_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2004,7 +2004,7 @@ async fn get_all_users_checkouts(
 
 #[get("/clp/get/{clpevent_id}")]
 #[passport(admin)]
-async fn get_clp_event(
+pub(self) async fn get_clp_event(
     req: HttpRequest,
     clp_event_id: web::Path<i32>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2121,7 +2121,7 @@ async fn get_clp_event(
 
 #[get("/clp/get/")]
 #[passport(admin)]
-async fn get_all_clp_event(
+pub(self) async fn get_all_clp_event(
     req: HttpRequest,
     limit: web::Query<Limit>,
     storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
@@ -2238,7 +2238,7 @@ async fn get_all_clp_event(
 
 #[post("/clp/start")]
 #[passport(admin)]
-async fn start_new_clp_event(
+pub(self) async fn start_new_clp_event(
     req: HttpRequest,
     app_state: web::Data<AppState>,
     new_clp_event_request: web::Json<NewClpEventRequest>,
@@ -2352,7 +2352,7 @@ async fn start_new_clp_event(
 
 #[post("/clp/update")]
 #[passport(admin)]
-async fn update_clp_event(
+pub(self) async fn update_clp_event(
     req: HttpRequest,
     app_state: web::Data<AppState>,
     update_clp_event_request: web::Json<UpdateClpEventRequest>
@@ -2453,7 +2453,7 @@ async fn update_clp_event(
 
 #[post("/clp/{clp_event_id}/update/background")]
 #[passport(admin)]
-async fn update_clp_event_back(
+pub(self) async fn update_clp_event_back(
     req: HttpRequest,
     app_state: web::Data<AppState>,
     clp_event_id: web::Path<i32>
@@ -2549,8 +2549,107 @@ async fn update_clp_event_back(
 
 }
 
+#[post("/mail/send/to")]
+#[passport(admin)]
+pub(self) async fn send_mail(
+    req: HttpRequest,
+    app_state: web::Data<AppState>,
+    users_mail_info: web::Json<UserMailInfos>
+) -> PanelHttpResponse{
+    
+    let storage = app_state.app_sotrage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
+    
+    match storage.clone().unwrap().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* 
+                 ------------------------------------- 
+                | --------- PASSPORT CHECKING --------- 
+                | ------------------------------------- 
+                | granted_role has been injected into this 
+                | api body using #[passport()] proc macro 
+                | at compile time thus we're checking it
+                | at runtime
+                |
+            */
+            let granted_role = 
+                if granted_roles.len() == 3{ /* everyone can pass */
+                    None /* no access is required perhaps it's an public route! */
+                } else if granted_roles.len() == 1{
+                    match granted_roles[0]{ /* the first one is the right access */
+                        "admin" => Some(UserRole::Admin),
+                        "user" => Some(UserRole::User),
+                        _ => Some(UserRole::Dev)
+                    }
+                } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        ACCESS_DENIED, // response message
+                        StatusCode::FORBIDDEN, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+                };
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    let users_mail_info = users_mail_info.to_owned();
+                    
+                    todo!()
+
+
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+        
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 
 pub mod exports{
+    pub use super::send_mail;
     pub use super::start_new_clp_event; 
     pub use super::update_clp_event; 
     pub use super::get_clp_event;

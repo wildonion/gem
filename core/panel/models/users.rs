@@ -260,6 +260,13 @@ pub struct UserChatRoomLaunchpadRequest{
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct UserMailInfos{
+    pub ids: Vec<i32>,
+    pub body: String,
+    pub subject: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UpdateBioRequest{
     pub bio: String,
 }

@@ -2008,6 +2008,38 @@
 							"response": []
 						},
 						{
+							"name": "Send Mail To Users",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"ids\": [1, 224, 35],\n    \"body\": \"Welcome to our platform\",\n    \"subject\": \"Welcome\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/mail/send/to",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"mail",
+										"send",
+										"to"
+									]
+								},
+								"description": "> There are access and refresh tokens in cookie response in form of `/accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
+							},
+							"response": []
+						},
+						{
 							"name": "Reveal Role",
 							"request": {
 								"auth": {
