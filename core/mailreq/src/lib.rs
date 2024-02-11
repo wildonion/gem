@@ -91,6 +91,7 @@ pub async fn send_mail(
         .from(from.unwrap())
         .to(to.unwrap())
         .subject(subject)
+        .date_now()
         .header(LettreContentType::TEXT_HTML)
         .body(body)
         .unwrap();

@@ -23,6 +23,13 @@ mod server;
     for production all the generated rust codes from proto 
     will be compile too, thus there is no need to put any code
     in the root path.
+
+    the include! macro is primarily used for two purposes, 
+    it is used to include documentation that is written in a 
+    separate file and it is used to include build artifacts 
+    usually as a result from the build.rs script, so there must 
+    be expressions in a file or crate that want to be loaded 
+    with include!() macro
 */
 pub mod kyc{
     tonic::include_proto!("kyc");

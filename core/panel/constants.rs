@@ -68,6 +68,17 @@ Lazy::new(||{
         )
     )
 });
+// to mutate an static type we must use mutex since mutating static is not safe
+// in a single thread contexts and by default we must use mutex to do so
+type RamDbType = Lazy<std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>>>;
+pub static RamDb: RamDbType = 
+Lazy::new(||{
+    std::sync::Arc::new(
+        tokio::sync::Mutex::new(
+            HashMap::new()
+        )
+    )
+});
 
 
 /* 
@@ -82,7 +93,7 @@ pub struct AppState{
     pub config: std::sync::Arc<Context<Env>>,
     pub app_sotrage: Option<Arc<Storage>>,
     pub subscriber_actors: Option<SubscriberActors>,
-    pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>>
+    pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db which can be shared between threads
 }
 
 #[derive(Clone)]

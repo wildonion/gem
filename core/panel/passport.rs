@@ -67,7 +67,7 @@ impl Passport for HttpRequest{
 
     fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
 
-        let req = self as &Self::Request;
+        let req = self as &Self::Request; // casting the self into a request object
 
         if let Some(authen_header) = req.headers().get("Authorization"){
             if let Ok(authen_str) = authen_header.to_str(){
@@ -164,7 +164,7 @@ impl Passport for HttpRequest{
             Copy, we must either use the borrow form of data or pass its 
             clone to other scopes
         */
-        let req = self as &Self::Request;
+        let req = self as &Self::Request; // casting the self into a request object
 
         /* 
             Copy trait is not implemented for req thus we can't dereference it or 
@@ -191,7 +191,7 @@ impl Passport for HttpRequest{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<PanelHttpResponse, PanelHttpResponse>{
         
-        let req = self as &Self::Request;
+        let req = self as &Self::Request; // casting the self into a request object 
         
         match User::find_by_identifier(&login_info.get_identifier().to_owned(), connection).await{
             Ok(user) => {
@@ -246,7 +246,7 @@ impl Passport for HttpRequest{
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<PanelHttpResponse, PanelHttpResponse>{
         
-        let req = self as &Self::Request;
+        let req = self as &Self::Request; // casting the self into a request object
         
         
         match User::find_by_identifier(&new_user_info.get_identifier().to_owned(), connection).await{

@@ -87,7 +87,7 @@ impl UserActionActor{
         let redis_client = app_storage.as_ref().get_redis().await.unwrap();
         let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-        let (user_notif_sender, mut user_notif_receiver) = 
+        let (user_notif_event_sender, mut user_notif_event_receiver) = 
             tokio::sync::mpsc::channel::<SingleUserNotif>(1024);
 
         /* 
@@ -144,7 +144,7 @@ impl UserActionActor{
                 
                 // sending the decoded data into an mpsc jobq channel to update 
                 // redis outside of tokio::spawn() threadpool
-                if let Err(why) = user_notif_sender.send(decoded_user_notif).await{
+                if let Err(why) = user_notif_event_sender.send(decoded_user_notif).await{
                     error!("can't send user notif sender due to: {}", why.to_string());
                 }
 
@@ -154,7 +154,7 @@ impl UserActionActor{
 
         // streaming over mpsc jobq channel to receive notif data constantly
         // from the sender and then update the redis later 
-        while let Some(notif_data) = user_notif_receiver.recv().await{
+        while let Some(notif_data) = user_notif_event_receiver.recv().await{
 
             let user_id = {
                 let scid = notif_data.clone().wallet_info.screen_cid.unwrap_or(String::from(""));
@@ -175,7 +175,8 @@ impl UserActionActor{
                 .set_user_notif(notif_data.notif)
                 .set_user_wallet_info(notif_data.wallet_info);
             
-            // updating/caching in redis
+            // updating/caching in redis, later on we can read the 
+            // entire notif data from redis in notification api
             let stringified_user_notif = serde_json::to_string_pretty(&updated_user_notif).unwrap();
             let ـ : RedisResult<String> = redis_conn.set(redis_key, stringified_user_notif).await;
 
