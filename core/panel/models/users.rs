@@ -761,8 +761,9 @@ impl User{
                 // ----------------------------------------------------------------------------
                 /*
                     if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
-                    into the request header means that the user did a logout or did a login again since by logging 
-                    out the token time will be set to zero and by logging in again a new token time will be initialized.
+                    into the request header means that the user did a logout or did a login again from a new device 
+                    since by logging out the token time will be set to zero and by logging in again a new token 
+                    time will be initialized.
                 */
                 if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
                     user.token_time.unwrap() != _token_time || 
