@@ -222,7 +222,14 @@ impl Passport for HttpRequest{
                         Ok(Ok(HttpResponse::Forbidden().json(resp)));
                 }
     
-                Ok(user.get_user_data_response_with_cookie(redis_client.clone(), redis_actor, connection).await.unwrap())
+                Ok(
+                    user.
+                        get_user_data_response_with_cookie(
+                            &login_info.get_device_id(), 
+                            redis_client.clone(), 
+                            redis_actor, 
+                            connection).await.unwrap()
+                        )
             },
             Err(resp) => {
 
@@ -310,6 +317,7 @@ pub(self) trait UserDataExt{
 
     fn get_identifier(&self) -> String;
     fn get_password(&self) -> String;
+    fn get_device_id(&self) -> String;
 }
 
 impl UserDataExt for UserLoginInfoRequest{
@@ -324,5 +332,9 @@ impl UserDataExt for UserLoginInfoRequest{
 
     fn get_password(&self) -> String {
         self.password.clone()
+    }
+
+    fn get_device_id(&self) -> String{
+        self.device_id.clone()
     }
 }

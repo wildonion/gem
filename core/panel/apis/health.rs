@@ -272,15 +272,16 @@ pub(self) async fn logout(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
+                    let _token_time = token_data.token_time;
 
                     /* 
                         🔐 logout supports also for jwt only, it sets the token time field 
-                        inside the users table related to the logged in user to 0, this wiill 
-                        be checked inside the **passport** function to see that the token time 
-                        inside the passed in jwt to the request header must be the one 
-                        inside the users table
+                        inside the users table related to the logged in user to 0, this will
+                        also remove the jwt field inside the users_logins table related to 
+                        the user device id, means that logging out from a device won't logout
+                        user completely from the app
                     */
-                    match User::logout(_id, redis_client.to_owned(), redis_actix_actor, connection).await{
+                    match User::logout(_id, _token_time, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(_) => {
                             
                             resp!{

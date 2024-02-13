@@ -245,6 +245,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_logins (id) {
+        id -> Int4,
+        user_id -> Int4,
+        device_id -> Varchar,
+        jwt -> Varchar,
+        last_login -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_mails (id) {
         id -> Int4,
         user_id -> Int4,
@@ -329,6 +341,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     users_fans,
     users_friends,
     users_galleries,
+    users_logins,
     users_mails,
     users_nfts,
     users_phones,

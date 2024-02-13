@@ -11,6 +11,8 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 - an event managing and reservation system with reveal-role functionality.
 
+- the most secure logic for JWT authentication per device
+
 - crypto id or **EVM** based wallet to store onchain digital assets.
 
 - buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards.

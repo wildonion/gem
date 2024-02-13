@@ -364,7 +364,7 @@ pub(self) async fn login(
             if user.id != 0{
 
                 info!("generating new set of token with refresh token for admin with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
+                return user.get_user_data_response_with_cookie(&login_info.device_id, redis_client.clone(), redis_actix_actor, connection).await.unwrap();
 
             }
 
@@ -400,7 +400,7 @@ pub(self) async fn login(
                                 }
                             }
         
-                            user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap()
+                            user.get_user_data_response_with_cookie(&login_info.device_id, redis_client.clone(), redis_actix_actor, connection).await.unwrap()
         
                         },
                         _ => {
@@ -2606,6 +2606,7 @@ pub(self) async fn send_mail(
                     let role = token_data.user_role;
                     let users_mail_info = users_mail_info.to_owned();
 
+                    // https://users.rust-lang.org/t/crate-lettre-doesnt-support-multiple-recipients/80813/11
                     let mut mails = vec![];
                     for uid in users_mail_info.ids{
                         let get_user = User::find_by_id(uid, connection).await;

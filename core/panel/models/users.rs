@@ -22,6 +22,7 @@ use self::events::publishers::action::{ActionType, NotifData, SingleUserNotif};
 use super::users_collections::{UserCollection, CollectionOwnerCount};
 use super::users_fans::{UserFan, FriendData, FriendOwnerCount};
 use super::users_galleries::GalleryOwnerCount;
+use super::users_logins::{NewUserLoginRequest, UserLogin};
 use super::users_mails::UserMail;
 use super::users_nfts::{UserNft, NftOwnerCount};
 use super::users_phones::UserPhone;
@@ -346,13 +347,15 @@ pub struct CheckUserPhoneVerificationRequest{
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct LoginInfoRequest{
     pub username: String,
-    pub password: String
+    pub password: String,
+    pub device_id: String
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct UserLoginInfoRequest{
     pub identifier: String,
-    pub password: String
+    pub password: String,
+    pub device_id: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -466,6 +469,7 @@ pub struct IpInfoResponse{
 pub struct GoogleQueryCode {
     pub code: String,
     pub state: String,
+    pub device_id: String
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
@@ -558,7 +562,7 @@ impl User{
 
     }
 
-    pub async fn get_user_data_response_with_cookie(&self, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+    pub async fn get_user_data_response_with_cookie(&self, device_id_: &str, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
 
         /* generate cookie 🍪 from token time and jwt */
@@ -573,6 +577,27 @@ impl User{
             .returning(FetchUser::as_returning())
             .get_result(connection)
             .unwrap();
+
+        // updating users_logins table with the latest jwt
+        let get_login_info = UserLogin::upsert(
+            NewUserLoginRequest{
+                user_id: self.id,
+                device_id: device_id_.to_string(),
+                jwt: {
+                    // store the hash of the token time in db in place of jwt
+                    let toke_time_hash = format!("{}", cookie_token_time);
+                    let mut hasher = Sha256::new();
+                    hasher.update(toke_time_hash.as_str());
+                    let time_hash = hasher.finalize();
+                    hex::encode(time_hash.to_vec())
+                },
+                last_login: Some(chrono::Local::now().naive_local()),
+            }, connection).await;
+
+        let Ok(login_info) = get_login_info else{
+            let err_resp = get_login_info.unwrap_err();
+            return Err(err_resp);
+        };
         
         let user_login_data = UserData{
             id: updated_user.id,
@@ -632,7 +657,7 @@ impl User{
         */
         
         let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
-        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
         let resp = Response{
             data: Some(user_login_data),
@@ -756,22 +781,47 @@ impl User{
                     } 
                 }
 
-                // ----------------------------------------------------------------------------
-                // the token_time inside JWT must be the one in db otherwise users did a logout
-                // ----------------------------------------------------------------------------
+                //// -----------------------------
+                //// JWT PER DEVICE AUTHENTICATION
+                //// -----------------------------
                 /*
-                    if the current token time of the fetched user wasn't equal to the one inside the passed in JWT
-                    into the request header means that the user did a logout or did a login again from a new device 
-                    since by logging out the token time will be set to zero and by logging in again a new token 
-                    time will be initialized.
+                    on each login we’ll generate a new token time that will be stored 
+                    in jwt itself and in a separate table along with its device id so 
+                    if a user wants to to logout we’ll set the token time related to 
+                    the passed in device id to 0 and in the next request we’ll check 
+                    the token time inside the jwt with the one inside that table if we 
+                    found a match means user has not logged out yet otherwise he did a 
+                    logout and the current jwt is invalid, note that in all these logic 
+                    the hash of the token time will be inside the table  
                 */
-                if user.token_time.is_none() || /* means that the user has passed an invalid token that haven't a token time which means it doesn't belong to the user him/her-self */
-                    user.token_time.unwrap() != _token_time || 
-                    user.token_time.unwrap() == 0{ /* user did a logout! */
-                    
+                let get_user_login_infos = UserLogin::find_by_user_id(_id, connection).await;
+                let Ok(user_login_infos) = get_user_login_infos else{
+                    let err_resp = get_user_login_infos.unwrap_err();
+                    return Err(err_resp);
+                };
+
+                let mut found_token_in_db = String::from("");
+                for login_info in user_login_infos{
+                    // since there are jwt per each device thus if we found 
+                    // a jwt means that this user didn't logout from that 
+                    // device yet
+                    let toke_time_hash = format!("{}", _token_time);
+                    let mut hasher = Sha256::new();
+                    hasher.update(toke_time_hash.as_str());
+                    let time_hash = hasher.finalize();
+                    let token_time_hash_hex = hex::encode(time_hash.to_vec());
+
+                    if login_info.jwt == token_time_hash_hex{
+                        /* returning token data, if we're here means that nothing went wrong */
+                        found_token_in_db = login_info.jwt;
+                    } 
+                }
+                // we didn't found jwt in db cause user might has logged out 
+                // from his device related to this jwt
+                if found_token_in_db.is_empty(){
                     let resp = Response{
                         data: Some(_id.to_owned()),
-                        message: DO_LOGIN, /* comple the user to login again to set a new token time in his/her jwt */
+                        message: INVALID_JWT, /* comple the user to login again to set a new token time in his/her jwt */
                         status: 403,
                         is_error: true
                     };
@@ -781,7 +831,6 @@ impl User{
                     
                 }
 
-                /* returning token data, if we're here means that nothing went wrong */
                 return Ok(token_data);
 
             },
@@ -1890,7 +1939,7 @@ impl User{
                     the new user we'll start updating user fans and user nfts 
                 */
                 let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                 
                 Ok(updated_user)
             
@@ -2025,7 +2074,7 @@ impl User{
                         the new user we'll start updating user fans and user nfts 
                     */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2142,7 +2191,7 @@ impl User{
                         the new user we'll start updating user fans and user nfts 
                     */
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2271,7 +2320,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2400,7 +2449,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2529,7 +2578,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                     Ok(
                         UserData { 
@@ -2704,7 +2753,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                     
                     Ok(
                         UserData { 
@@ -3138,7 +3187,7 @@ impl User{
 
     }
 
-    pub async fn logout(who: i32, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+    pub async fn logout(who: i32, _token_time: i64, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), PanelHttpResponse>{
 
         match diesel::update(users.find(who))
@@ -3147,6 +3196,29 @@ impl User{
             .get_result(connection)
             {
                 Ok(updated_user) => {
+
+                    // also remove jwt from the users_logins table
+                    let get_user_login_infos = UserLogin::find_by_user_id(who, connection).await;
+                    let Ok(user_login_infos) = get_user_login_infos else{
+                        let err_resp = get_user_login_infos.unwrap_err();
+                        return Err(err_resp);
+                    };
+
+                    // also make the jwt field empty in db
+                    let toke_time_hash = format!("{}", _token_time);
+                    let mut hasher = Sha256::new();
+                    hasher.update(toke_time_hash.as_str());
+                    let time_hash = hasher.finalize();
+                    let token_time_hash_hex = hex::encode(time_hash.to_vec());
+                    for login_info in user_login_infos{
+                        if login_info.jwt == token_time_hash_hex{
+                            let get_updated_user_login = UserLogin::remove_jwt(login_info.id, connection).await;
+                            let Ok(updated_user_login) = get_updated_user_login else{
+                                let err_resp = get_updated_user_login.unwrap_err();
+                                return Err(err_resp);
+                            };
+                        }
+                    }
                     
                     /* ----------------------------------------------- */
                     /* --------- publish updated user to redis channel */
@@ -3158,7 +3230,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
                     
                     Ok(())
                 },
@@ -3236,7 +3308,7 @@ impl User{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                     /** -------------------------------------------------------------------- */
                     /** ----------------- publish new event data to `on_user_action` channel */
@@ -3533,7 +3605,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                         Ok(
                             UserData { 
@@ -3658,7 +3730,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -3996,7 +4068,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -4120,7 +4192,7 @@ impl User{
                         */
                         
                         let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                        events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
 
                         Ok(
@@ -4746,7 +4818,7 @@ impl Id{
                             */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                            events::publishers::user::publish(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+                            events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
 
                             let user_data = UserData { 
                                 id: updated_user.id, 
@@ -4958,7 +5030,7 @@ impl Id{
                     */
                     
                     let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user).unwrap();
-                    events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+                    events::publishers::user::emit(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                     let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
                     match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
@@ -4975,7 +5047,7 @@ impl Id{
                             */
                             
                             let json_stringified_updated_user = serde_json::to_string_pretty(&updated_user_data).unwrap();
-                            events::publishers::user::publish(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
+                            events::publishers::user::emit(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                             Ok(
                                 UserIdResponse { 

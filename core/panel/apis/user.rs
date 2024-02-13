@@ -55,95 +55,6 @@ use self::models::token_stats::TokenStatInfo;
 
 */
 
-/* 
-    >-------------------------------------------------------------------------
-    There are access and refresh tokens in cookie response in form of 
-        /accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refreshtoken={refresh_token:} 
-    once the access token gets expired we can pass refresh token into 
-    the request header in place of access token to get a new set of 
-    keys on behalf of user, instead of redirecting client to the 
-    login page again.
-*/
-#[post("/login/{identifier}")]
-pub(self) async fn login(
-        req: HttpRequest, 
-        login_identifier: web::Path<String>,  
-        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ) -> PanelHttpResponse {
-
-    let storage = app_state.app_sotrage.as_ref().to_owned();
-    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
-    let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
-
-    match storage.clone().unwrap().get_pgdb().await{
-        Some(pg_pool) => {
-            
-            let connection = &mut pg_pool.get().unwrap();
-
-
-            let check_refresh_token = req.check_refresh_token(connection);
-            let Ok(user) = check_refresh_token else{
-                let err_resp = check_refresh_token.unwrap_err();
-                return err_resp;
-            };
-
-            if user.id != 0{
-
-                info!("generating new set of token with refresh token for user with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
-
-            }
-
-            match User::find_by_identifier(&login_identifier.to_owned(), connection).await{
-                Ok(user) => user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap(),
-                Err(resp) => {
-
-                    /* USER NOT FOUND response */
-                    // resp
-                    
-                    /* gently, we'll insert this user into table */
-                    match User::insert(login_identifier.to_owned(), connection).await{
-                        Ok((user_login_data, cookie)) => {
-
-                            resp!{
-                                UserData, // the data type
-                                user_login_data, // response data
-                                REGISTERED, // response message
-                                StatusCode::CREATED, // status code,
-                                Some(cookie), // cookie 
-                            } 
-
-                        },
-                        Err(resp) => {
-                            
-                            /* 
-                                🥝 response can be one of the following:
-                                
-                                - DIESEL INSERT ERROR RESPONSE
-                                - CANT_GENERATE_COOKIE
-                            */
-                            resp
-                        }
-                    }
-
-                }
-            }
-        },
-        None => {
-            
-            resp!{
-                &[u8], // the data type
-                &[], // response data
-                STORAGE_ISSUE, // response message
-                StatusCode::INTERNAL_SERVER_ERROR, // status code
-                None::<Cookie<'_>>, // cookie
-            }
-        }
-    }
-
-
-}
-
 #[post("/request-mail-code/{mail}")]
 #[passport(user)]
 pub(self) async fn request_mail_code(
@@ -781,7 +692,7 @@ pub(self) async fn login_with_identifier_and_password(
             if user.id != 0{
 
                 info!("generating new set of token with refresh token for admin with id: {}", user.id);
-                return user.get_user_data_response_with_cookie(redis_client.clone(), redis_actix_actor, connection).await.unwrap();
+                return user.get_user_data_response_with_cookie(&user_login_info.clone().device_id, redis_client.clone(), redis_actix_actor, connection).await.unwrap();
 
             }
 
@@ -864,6 +775,7 @@ pub(self) async fn session_oauth_google(
 
             let code = &google_query.code;
             let state = &google_query.state;
+            let device_id_ = &google_query.device_id;
 
             if code.is_empty(){
                 resp!{
@@ -922,6 +834,7 @@ pub(self) async fn session_oauth_google(
 
             // generate cookie containing both jwts and send response
             user_data.get_user_data_response_with_cookie(
+                device_id_,
                 redis_client.clone(), 
                 redis_actix_actor, 
                 connection)
@@ -11220,7 +11133,6 @@ pub mod exports{
     pub use super::create_collection;
     pub use super::update_collection;
     pub use super::upload_collection_banner;
-    pub use super::login;
     pub use super::login_with_identifier_and_password;
     pub use super::signup_with_identifier_and_password;
     pub use super::verify_twitter_account;
