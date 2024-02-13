@@ -72,7 +72,7 @@ pub(self) async fn sub_to_rom(
     req: HttpRequest, 
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
     ws_mmr_notif_server: web::Data<Addr<MmrNotifServer>>,
 ) -> PanelHttpResponse {
@@ -96,7 +96,7 @@ pub(self) async fn sub_to_rom(
         match rendezvous_passport!{ &token }{
             true => {
             
-                let storage = storage.as_ref().to_owned();
+                let storage = app_state.app_sotrage.as_ref().to_owned();
                 let redis_async_pubsubconn = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
                 match storage.clone().unwrap().get_pgdb().await{
@@ -183,7 +183,7 @@ pub(self) async fn sub_to_rom(
                                         notif_room: notif_room_str,
                                         ws_role_notif_actor_address,
                                         ws_mmr_notif_actor_address,
-                                        app_storage: storage.clone(),
+                                        app_storage: storage.as_deref().cloned(), // as_deref() returns Option<&T> and cloned() maps an Option<&T> to an Option<T>
                                         is_subscription_interval_started: false
                                     }, 
                                     &req, 

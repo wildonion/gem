@@ -56,10 +56,10 @@ use crate::schema::tasks;
 pub(self) async fn verify_twitter_task(
         req: HttpRequest,
         path: web::Path<(i32, i32)>, 
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
@@ -272,10 +272,10 @@ pub(self) async fn verify_twitter_task(
 #[get("/get-x-requests")]
 pub(self) async fn get_x_requests(
         req: HttpRequest,   
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -326,10 +326,10 @@ pub(self) async fn get_x_requests(
 #[get("/bot/check-users-tasks")]
 pub(self) async fn check_users_task(
         req: HttpRequest,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -420,10 +420,10 @@ pub(self) async fn check_users_task(
 pub(self) async fn tasks_leaderboard(
         req: HttpRequest,
         limit: web::Query<Limit>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -481,10 +481,10 @@ pub(self) async fn tasks_leaderboard(
 pub(self) async fn get_user_wallet_info(
         req: HttpRequest,   
         user_identifier: web::Path<String>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -532,10 +532,10 @@ pub(self) async fn get_user_wallet_info(
 pub(self) async fn get_nft_product_collections(
         req: HttpRequest,
         col_owner: web::Path<String>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -583,10 +583,10 @@ pub(self) async fn get_nft_product_collections(
 pub(self) async fn get_users_wallet_info(
         req: HttpRequest,   
         limit: web::Query<Limit>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -648,10 +648,10 @@ pub(self) async fn get_users_wallet_info(
 pub(self) async fn get_top_nfts(
         req: HttpRequest,   
         limit: web::Query<Limit>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -785,10 +785,10 @@ pub(self) async fn get_top_nfts(
 pub(self) async fn get_all_nfts(
         req: HttpRequest,   
         limit: web::Query<Limit>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -907,10 +907,10 @@ pub(self) async fn get_all_nfts(
 pub(self) async fn search(
         req: HttpRequest,   
         query: web::Query<Search>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{

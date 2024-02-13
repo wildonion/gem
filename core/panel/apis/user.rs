@@ -68,10 +68,10 @@ use self::models::token_stats::TokenStatInfo;
 pub(self) async fn login(
         req: HttpRequest, 
         login_identifier: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
@@ -149,10 +149,10 @@ pub(self) async fn login(
 pub(self) async fn request_mail_code(
     req: HttpRequest,
     user_mail: web::Path<String>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -313,11 +313,11 @@ pub(self) async fn request_mail_code(
 pub(self) async fn verify_mail_code(
     req: HttpRequest,
     check_user_verification_request: web::Json<CheckUserMailVerificationRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -433,10 +433,10 @@ pub(self) async fn verify_mail_code(
 pub(self) async fn request_phone_code(
     req: HttpRequest,
     user_phone: web::Path<String>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -632,11 +632,11 @@ pub(self) async fn request_phone_code(
 pub(self) async fn verify_phone_code(
     req: HttpRequest,
     check_user_verification_request: web::Json<CheckUserPhoneVerificationRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -760,10 +760,10 @@ pub(self) async fn verify_phone_code(
 pub(self) async fn login_with_identifier_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
@@ -811,10 +811,10 @@ pub(self) async fn login_with_identifier_and_password(
 pub(self) async fn signup_with_identifier_and_password(
         req: HttpRequest, 
         user_login_info: web::Json<UserLoginInfoRequest>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
@@ -947,10 +947,10 @@ pub(self) async fn session_oauth_google(
 pub(self) async fn verify_twitter_account(
         req: HttpRequest,
         account_name: web::Path<String>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
@@ -1102,10 +1102,10 @@ pub(self) async fn tasks_report(
         req: HttpRequest,
         limit: web::Query<Limit>,
         user_id: web::Path<i32>,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -1209,11 +1209,11 @@ pub(self) async fn tasks_report(
 pub(self) async fn charge_wallet_request(
     req: HttpRequest,
     charge_wallet_request: web::Json<ChargeWalletRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -1542,11 +1542,11 @@ pub(self) async fn charge_wallet_request(
 pub(self) async fn make_cid(
     req: HttpRequest,
     id_: web::Json<NewIdRequest>,
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
     let new_object_id_request = id_.0;
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -1807,11 +1807,11 @@ pub(self) async fn deposit(
     req: HttpRequest,
     contract_address: web::Path<String>,
     deposit: web::Json<NewUserDepositRequest>,
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
     
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -2144,11 +2144,11 @@ pub(self) async fn deposit(
 pub(self) async fn get_all_user_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -2274,10 +2274,10 @@ pub(self) async fn withdraw(
     req: HttpRequest,
     contract_address: web::Path<String>,
     withdraw: web::Json<NewUserWithdrawRequest>,
-    storage: web::Data<Option<Arc<Storage>>>,
+    app_state: web::Data<AppState>,
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -2544,11 +2544,11 @@ pub(self) async fn withdraw(
 pub(self) async fn get_all_user_withdrawals(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -2672,11 +2672,11 @@ pub(self) async fn get_all_user_withdrawals(
 pub(self) async fn get_all_user_unpaid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -2800,11 +2800,11 @@ pub(self) async fn get_all_user_unpaid_checkouts(
 pub(self) async fn get_all_user_paid_checkouts(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -2928,11 +2928,11 @@ pub(self) async fn get_all_user_paid_checkouts(
 pub(self) async fn get_recipient_unclaimed_deposits(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -3058,10 +3058,10 @@ pub(self) async fn get_recipient_unclaimed_deposits(
 pub(self) async fn edit_bio(
     req: HttpRequest,
     update_bio_request: web::Json<UpdateBioRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3168,10 +3168,10 @@ pub(self) async fn edit_bio(
 pub(self) async fn edit_extra(
     req: HttpRequest,
     update_extra_request: web::Json<UpdateExtraRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3277,12 +3277,12 @@ pub(self) async fn edit_extra(
 #[passport(user)]
 pub(self) async fn upload_wallet_back(
     req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart,
 ) -> PanelHttpResponse{
 
     /* extracting shared storage data */
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3390,11 +3390,11 @@ pub(self) async fn upload_wallet_back(
 #[passport(user)]
 pub(self) async fn upload_avatar(
     req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart, /* form-data implementation to receive stream of byte fields */
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3501,12 +3501,12 @@ pub(self) async fn upload_avatar(
 #[passport(user)]
 pub(self) async fn upload_banner(
     req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart, /* form-data implementation to receive stream of byte fields */
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3613,11 +3613,11 @@ pub(self) async fn upload_banner(
 pub(self) async fn update_password(
     req: HttpRequest,
     new_password_request: web::Json<NewPasswordRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3769,11 +3769,11 @@ pub(self) async fn update_password(
 pub(self) async fn get_notifications(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     users_action_subscriber_actor: web::Data<Addr<UserActionActor>>,
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -3928,7 +3928,7 @@ pub(self) async fn get_notifications(
 pub(self) async fn upload_rendezvous_player_avatar(
     req: HttpRequest, 
     player_id: web::Path<String>, // mongodb objectid
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart, /* form-data implementation to receive stream of byte fields */
     ) -> PanelHttpResponse{
 
@@ -3956,7 +3956,7 @@ pub(self) async fn upload_rendezvous_player_avatar(
                         player and if it was verified we'll allow the user to update the image
                     */
     
-                    let storage = storage.as_ref().to_owned();
+                    let storage = app_state.app_sotrage.as_ref().to_owned();
                     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
                     let player_id_img_key = format!("{player_id:}-img");
 
@@ -4043,11 +4043,11 @@ pub(self) async fn upload_rendezvous_player_avatar(
 pub(self) async fn create_private_gallery(
     req: HttpRequest,
     new_private_gallery_request: web::Json<NewUserPrivateGalleryRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -4230,10 +4230,10 @@ pub(self) async fn update_private_gallery(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     update_private_gallery_request: web::Json<UpdateUserPrivateGalleryRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -4421,11 +4421,11 @@ pub(self) async fn update_private_gallery(
 pub(self) async fn remove_invited_friend_from_gallery(
     req: HttpRequest,
     remove_invited_friend_request: web::Json<RemoveInvitedFriendFromPrivateGalleryRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -4561,11 +4561,11 @@ pub(self) async fn remove_invited_friend_from_gallery(
 pub(self) async fn exit_from_private_gallery(
     req: HttpRequest,
     exit_from_private_gallery: web::Json<ExitFromPrivateGalleryRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -4701,10 +4701,10 @@ pub(self) async fn exit_from_private_gallery(
 pub(self) async fn send_private_gallery_invitation_request_to(
     req: HttpRequest,
     send_invitation_request: web::Json<SendInvitationRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -4852,11 +4852,11 @@ pub(self) async fn send_private_gallery_invitation_request_to(
 pub(self) async fn get_all_private_galleries_for(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -4974,11 +4974,11 @@ pub(self) async fn get_all_private_galleries_for(
 pub(self) async fn get_all_galleries_invited_to(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -5100,11 +5100,11 @@ pub(self) async fn get_invited_friends_wallet_data_of_gallery(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -5226,11 +5226,11 @@ pub(self) async fn get_invited_friends_wallet_data_of_gallery(
 pub(self) async fn get_user_unaccepted_invitation_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -5350,11 +5350,11 @@ pub(self) async fn get_user_unaccepted_invitation_requests(
 pub(self) async fn get_user_unaccepted_friend_requests(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -5474,11 +5474,11 @@ pub(self) async fn get_user_unaccepted_friend_requests(
 pub(self) async fn accept_invitation_request(
     req: HttpRequest,
     accept_invitation_request: web::Json<AcceptInvitationRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -5614,10 +5614,10 @@ pub(self) async fn accept_invitation_request(
 pub(self) async fn enter_private_gallery(
     req: HttpRequest,
     enter_private_gallery_request: web::Json<EnterPrivateGalleryRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -5754,11 +5754,11 @@ pub(self) async fn get_all_user_relations(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -5878,11 +5878,11 @@ pub(self) async fn get_all_user_relations(
 pub(self) async fn accept_friend_request(
     req: HttpRequest,
     accept_friend_request: web::Json<AcceptFriendRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -6018,10 +6018,10 @@ pub(self) async fn accept_friend_request(
 pub(self) async fn send_friend_request_to(
     req: HttpRequest,
     send_friend_request_to: web::Json<SendFriendRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -6157,11 +6157,11 @@ pub(self) async fn send_friend_request_to(
 pub(self) async fn remove_user_from_follower(
     req: HttpRequest,
     remove_follower_request: web::Json<RemoveFollower>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -6296,11 +6296,11 @@ pub(self) async fn remove_user_from_follower(
 pub(self) async fn remove_user_from_friend(
     req: HttpRequest,
     remove_friend_request: web::Json<RemoveFriend>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -6436,11 +6436,11 @@ pub(self) async fn remove_user_from_friend(
 pub(self) async fn remove_user_from_following(
     req: HttpRequest,
     remove_following_request: web::Json<RemoveFollowing>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -6576,11 +6576,11 @@ pub(self) async fn remove_user_from_following(
 pub(self) async fn get_all_my_friends(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -6699,11 +6699,11 @@ pub(self) async fn get_all_my_friends(
 pub(self) async fn get_all_my_followings(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -6822,11 +6822,11 @@ pub(self) async fn get_all_my_followings(
 pub(self) async fn get_all_my_followers(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -6945,11 +6945,11 @@ pub(self) async fn get_all_my_followers(
 pub(self) async fn get_friend_suggestions_for_owner(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -7070,11 +7070,11 @@ pub(self) async fn get_all_public_collections_for(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -7195,11 +7195,11 @@ pub(self) async fn get_all_private_galleries_general_info_for(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -7321,12 +7321,12 @@ pub(self) async fn get_all_private_galleries_general_info_for(
 pub(self) async fn upload_collection_banner(
     req: HttpRequest,
     col_id: web::Path<i32>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart,
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -7449,11 +7449,11 @@ pub(self) async fn upload_collection_banner(
 pub(self) async fn create_collection(
     req: HttpRequest,
     new_user_collection_request: web::Json<NewUserCollectionRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -7639,11 +7639,11 @@ pub(self) async fn create_collection(
 pub(self) async fn update_collection(
     req: HttpRequest,
     update_user_collection_request: web::Json<UpdateUserCollectionRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -7830,11 +7830,11 @@ pub(self) async fn get_all_public_collection_nfts(
     req: HttpRequest,
     col_id: web::Path<i32>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -7955,11 +7955,11 @@ pub(self) async fn get_all_private_collections_for(
     req: HttpRequest,
     gal_id: web::Path<i32>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -8082,11 +8082,11 @@ pub(self) async fn get_all_private_collections_for_invited_friends(
     req: HttpRequest,
     gal_id_who_screen_cid: web::Path<(i32, String)>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -8212,11 +8212,11 @@ pub(self) async fn get_all_private_collections_for_invited_friends(
 pub(self) async fn create_nft(
     req: HttpRequest,
     new_user_nft_request: web::Json<NewUserNftRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -8401,12 +8401,12 @@ pub(self) async fn create_nft(
 #[passport(user)]
 pub(self) async fn create_nft_metadata_uri(
     req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut payload: Multipart,
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -8606,11 +8606,11 @@ pub(self) async fn create_nft_metadata_uri(
 pub(self) async fn upload_private_gallery_back(
     req: HttpRequest,
     gal_id: web::Path<i32>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     mut img: Multipart,
 ) -> PanelHttpResponse{
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -8731,11 +8731,11 @@ pub(self) async fn upload_private_gallery_back(
 pub(self) async fn update_nft(
     req: HttpRequest,
     update_user_nft_request: web::Json<UpdateUserNftRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -8874,11 +8874,11 @@ pub(self) async fn update_nft(
 pub(self) async fn add_reaction_to_nft(
     req: HttpRequest,
     user_add_nft_reaction: web::Json<AddReactionRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -9017,11 +9017,11 @@ pub(self) async fn add_reaction_to_nft(
 pub(self) async fn buy_nft(
     req: HttpRequest,
     user_buy_nft_request: web::Json<UpdateUserNftRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -9207,11 +9207,11 @@ pub(self) async fn buy_nft(
 pub(self) async fn mint_nft(
     req: HttpRequest,
     user_mint_nft_request: web::Json<UpdateUserNftRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -9398,10 +9398,10 @@ pub(self) async fn get_all_nfts_owned_by(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
     
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -9528,10 +9528,10 @@ pub(self) async fn get_all_collections_owned_by(
     req: HttpRequest,
     who_screen_cid: web::Path<String>,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
     
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -9657,11 +9657,11 @@ pub(self) async fn get_all_collections_owned_by(
 pub(self) async fn get_all_nft_reactions(
     req: HttpRequest,
     nft_id: web::Path<i32>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -9781,11 +9781,11 @@ pub(self) async fn get_all_nft_reactions(
 pub(self) async fn register_clp_event(
     req: HttpRequest,
     register_clp_event_request: web::Json<RegisterUserClpEventRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -10033,11 +10033,11 @@ pub(self) async fn register_clp_event(
 pub(self) async fn cancel_clp_event(
     req: HttpRequest,
     cancel_clp_event_request: web::Json<CancelUserClpEventRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -10241,10 +10241,10 @@ pub(self) async fn cancel_clp_event(
 #[passport(user)]
 pub(self) async fn get_new_clp_event_info(
     req: HttpRequest,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
     
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -10358,10 +10358,10 @@ pub(self) async fn get_new_clp_event_info(
 pub(self) async fn get_all_user_clp_events_info(
     req: HttpRequest,
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
     
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
 
@@ -10474,10 +10474,10 @@ pub(self) async fn get_all_user_clp_events_info(
 pub(self) async fn get_token_value(
         req: HttpRequest,  
         tokens: web::Path<i64>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
@@ -10603,10 +10603,10 @@ pub(self) async fn get_token_value(
 #[passport(user)]
 pub(self) async fn get_gas_fee(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
@@ -10720,11 +10720,11 @@ pub(self) async fn get_gas_fee(
 pub(self) async fn get_top_users(
     req: HttpRequest,  
     limit: web::Query<Limit>,    
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse {
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
@@ -10829,11 +10829,11 @@ pub(self) async fn get_top_users(
 pub(self) async fn get_single_nft(
     req: HttpRequest,  
     asset_id: web::Path<i32>,    
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse {
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
@@ -10982,11 +10982,11 @@ pub(self) async fn get_single_nft(
 pub(self) async fn get_nfts_owned_by(
     req: HttpRequest,  
     limit: web::Query<Limit>,
-    storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse {
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
 
@@ -11259,6 +11259,4 @@ pub mod exports{
     pub use super::charge_wallet_request; /**** buy in-app token ****/
     pub use super::register_clp_event;
     pub use super::cancel_clp_event;
-    // pub use super::request_advieh_campaign; // ---- charge user based on available plans
-    // ...
 }

@@ -43,7 +43,7 @@ pub struct Health{
 #[passport(admin, user, dev)]
 pub(self) async fn index(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
         let iam_healthy = Health{
@@ -64,10 +64,10 @@ pub(self) async fn index(
 #[passport(admin, user, dev)]
 pub(self) async fn check_token(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     
 
@@ -225,11 +225,11 @@ pub(self) async fn check_token(
 #[passport(admin, user, dev)]
 pub(self) async fn logout(
         req: HttpRequest,  
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
@@ -343,11 +343,11 @@ pub(self) async fn logout(
 pub(self) async fn forgot_password(
     req: HttpRequest,
     forgot_password_request: web::Json<ForgotPasswordRequest>,
-    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
 ) -> PanelHttpResponse{
 
 
-    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -425,10 +425,10 @@ pub(self) async fn forgot_password(
 pub(self) async fn get_tasks(
         req: HttpRequest,  
         limit: web::Query<Limit>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
 
     match storage.clone().unwrap().get_pgdb().await{
@@ -534,7 +534,7 @@ pub(self) async fn get_tasks(
 pub(self) async fn update_user_balance_webhook(
         req: HttpRequest,
         params: web::Path<(String, String)>,
-        storage: web::Data<Option<Arc<Storage>>>
+        app_state: web::Data<AppState>,
     ) -> PanelHttpResponse{
 
     /* 
@@ -547,7 +547,7 @@ pub(self) async fn update_user_balance_webhook(
     */
 
     /* extracting shared state data */
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().unwrap().get_redis().await.unwrap();
     let async_redis_client = storage.as_ref().unwrap().get_async_redis_pubsub_conn().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
@@ -633,10 +633,10 @@ pub(self) async fn update_user_balance_webhook(
 pub(self) async fn is_user_kyced(
         req: HttpRequest,  
         check_kyc_request: web::Json<CheckKycRequest>,
-        storage: web::Data<Option<Arc<Storage>>> // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
     ) -> PanelHttpResponse {
 
-    let storage = storage.as_ref().to_owned();
+    let storage = app_state.app_sotrage.as_ref().to_owned();
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     
 
