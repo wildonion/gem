@@ -1132,7 +1132,7 @@ pub(self) async fn search(
 
                 for collection in decoded_cols{
                     
-                    let colnfts = collection.nfts;
+                    let colnfts = collection.clone().nfts;
                     let decoded_nfts = if colnfts.is_some(){
                         serde_json::from_value::<Vec<UserNftData>>(colnfts.unwrap()).unwrap()
                     } else{
@@ -1151,12 +1151,34 @@ pub(self) async fn search(
                                 nft.onchain_id.clone().unwrap().contains(&query.q) ||
                                 nft.tx_hash.clone().unwrap().contains(&query.q)
                             ){
-                                Some(nft)
+                                Some(
+                                    NftColInfo{ 
+                                        col_data: UserCollectionDataGeneralInfo{
+                                            id: collection.id,
+                                            contract_address: collection.clone().contract_address,
+                                            col_name: collection.clone().col_name,
+                                            symbol: collection.clone().symbol,
+                                            owner_screen_cid: collection.clone().owner_screen_cid,
+                                            metadata_updatable: collection.clone().metadata_updatable,
+                                            freeze_metadata: collection.clone().freeze_metadata,
+                                            base_uri: collection.clone().base_uri,
+                                            royalties_share: collection.clone().royalties_share,
+                                            royalties_address_screen_cid: collection.clone().royalties_address_screen_cid,
+                                            collection_background: collection.clone().collection_background,
+                                            extra: collection.clone().extra,
+                                            col_description: collection.clone().col_description,
+                                            contract_tx_hash: collection.clone().contract_tx_hash,
+                                            created_at: collection.created_at.to_string(),
+                                            updated_at: collection.updated_at.to_string(),
+                                        }, 
+                                        nfts_data: nft 
+                                    }
+                                )
                             } else{
                                 None
                             }
                         })
-                        .collect::<Vec<Option<UserNftData>>>();
+                        .collect::<Vec<Option<NftColInfo>>>();
                     
 
                     found_nfts.extend(match_nfts);
@@ -1171,25 +1193,25 @@ pub(self) async fn search(
 
                 /* 
                     cannot move out of `*n1` which is behind a shared reference
-                    move occurs because `*n1` has type `std::option::Option<UserNftData>`, 
+                    move occurs because `*n1` has type `std::option::Option<NftColInfo>`, 
                     which does not implement the `Copy` trait and unwrap() takes the 
                     ownership of the instance.
-                    also we must create a longer lifetime for `UserNftData::default()` by 
+                    also we must create a longer lifetime for `NftColInfo::default()` by 
                     putting it inside a type so we can take a reference to it and pass the 
-                    reference to the `unwrap_or()`, cause &UserNftData::default() will be dropped 
+                    reference to the `unwrap_or()`, cause &NftColInfo::default() will be dropped 
                     at the end of the `unwrap_or()` statement while we're borrowing it.
                 */
-                let n1_default = UserNftData::default();
-                let n2_default = UserNftData::default();
+                let n1_default = NftColInfo::default();
+                let n2_default = NftColInfo::default();
                 let n1 = n1.as_ref().unwrap_or(&n1_default);
                 let n2 = n2.as_ref().unwrap_or(&n2_default);
 
                 let n1_created_at = NaiveDateTime
-                    ::parse_from_str(&n1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    ::parse_from_str(&n1.nfts_data.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 let n2_created_at = NaiveDateTime
-                    ::parse_from_str(&n2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    ::parse_from_str(&n2.nfts_data.created_at, "%Y-%m-%d %H:%M:%S%.f")
                     .unwrap();
 
                 n2_created_at.cmp(&n1_created_at)
