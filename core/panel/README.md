@@ -34,8 +34,7 @@
 - register/delete/edit new twitter tasks and users
 - get all withdrawals, deposits, checkouts, users, users tasks and twitter tasks
 - create a new chatroom launchpad (generate `N` number of nfts using AI for future mintings)
-- get a chatroom launchpad statistics info 
-- advieh process for a collection
+- get a chatroom launchpad statistics info
 - chatroom launchpad endpoints (create, edit and fetch)
 
 ### 👨🏻‍💻 Dev Access
