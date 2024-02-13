@@ -2604,12 +2604,50 @@ pub(self) async fn send_mail(
                     
                     let _id = token_data._id;
                     let role = token_data.user_role;
-
                     let users_mail_info = users_mail_info.to_owned();
-                    
-                    todo!()
 
+                    let mut mails = vec![];
+                    for uid in users_mail_info.ids{
+                        let get_user = User::find_by_id(uid, connection).await;
+                        if get_user.is_err(){
+                            continue;
+                        }
+                        let get_user_mail = get_user.unwrap().mail;
+                        if get_user_mail.is_none(){
+                            continue;
+                        }
+                        mails.push(get_user_mail.unwrap());
+                    }
 
+                    if mails.is_empty(){
+                        resp!{
+                            &[u8], // the data type
+                            &[], // response data
+                            NOT_VERIFIED_USERS, // response message
+                            StatusCode::NOT_ACCEPTABLE, // status code
+                            None::<Cookie<'_>>, // cookie
+                        }
+                    }
+
+                    let batch_send = mailreq::send_batch(
+                        APP_NAME, 
+                        mails, 
+                        &users_mail_info.body, 
+                        &users_mail_info.subject
+                    ).await;
+
+                    let Ok(batch_send_res) = batch_send else{
+                        let err_resp = batch_send.unwrap_err();
+                        return err_resp;
+                    };
+
+                    resp!{
+                        &[u8], // the data type
+                        &[], // response data
+                        BATCH_MAIL_SENT, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
 
                 },
                 Err(resp) => {

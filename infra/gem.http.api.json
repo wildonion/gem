@@ -1995,11 +1995,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{panel-admin}}/login",
+									"raw": "{{panel-admin}}/admin/login",
 									"host": [
 										"{{panel-admin}}"
 									],
 									"path": [
+										"admin",
 										"login"
 									]
 								},
@@ -2011,13 +2012,20 @@
 							"name": "Send Mail To Users",
 							"request": {
 								"auth": {
-									"type": "noauth"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcwNzgxMDIwNzA1NjY2NTAwMCwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcxMDQwMjIwNzA2MTEyMDAwMCwiaWF0IjoxNzA3ODEwMjA3MDYxMTIwMDAwfQ.fU4lU2Wh1EgcxKIeEQXU5SGosNqEafLdrovs0Sim4b0NZkWcIex6c8qfB7WoZm49t_SoN2UYfexxhDpTGUR9HQ",
+											"type": "string"
+										}
+									]
 								},
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"ids\": [1, 224, 35],\n    \"body\": \"Welcome to our platform\",\n    \"subject\": \"Welcome\"\n}",
+									"raw": "{\n    \"ids\": [3, 4],\n    \"body\": \"Welcome to our platform\",\n    \"subject\": \"Welcome\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
