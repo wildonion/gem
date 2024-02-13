@@ -5,7 +5,7 @@ use crate::*;
 use actix::Addr;
 
 
-pub async fn publish(
+pub async fn emit(
     redis_actor: Addr<RedisActor>, 
     channel: &str, 
     stringified_data: &str,
@@ -71,7 +71,7 @@ pub async fn publish(
                                 
                                 if subs >= 1{
                                     
-                                    /* if we're here means that ws session received the notif */
+                                    /* if we're here means that a subscriber received the notif */
                                     info!("🙋 --- [{subs:}] pg listener subscriber actor has subscribed to topic : {}", cloned_channel);
                                     break;
                                     

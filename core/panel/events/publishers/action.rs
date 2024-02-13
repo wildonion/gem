@@ -175,7 +175,7 @@ pub async fn emit(
                                 
                                 if subs >= 1{
                                     
-                                    /* if we're here means that ws session received the notif */
+                                    /* if we're here means that a subscriber received the notif */
                                     info!("🙋 --- [{subs:}] user notif listener subscriber actor has subscribed to topic : {}", cloned_channel);
                                     break;
                                     
