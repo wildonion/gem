@@ -92,18 +92,13 @@ macro_rules! server {
             let clp_event_listener_instance = ClpEventSchedulerActor::new(app_storage.clone()).start();
             let shared_clp_event_listener_instance = Data::new(clp_event_listener_instance.clone());
 
+            //--- connection must be initialized once in server.rs and will be passed to different scopes
+            //--- and passed through the routers' threads as a shared state data 
             let shared_storage = Data::new(app_storage.clone());
-
-
-            //--- starting the tcp listener actor
-            // let tcp_server_addr = format!("{}:{}", host, port);
-            // events::subscribers::handlers::
-            //     actors::tcp::listener::
-            //         TcpListenerActor::new(&tcp_server_addr).start();
 
             // setting up the whole app state data
             let mut app_state = AppState::init();
-            app_state.app_sotrage = app_storage.clone();
+            app_state.app_sotrage = app_storage.clone(); 
             app_state.subscriber_actors = Some(
                 SubscriberActors{
                     clp_actor: chatroomlp_server_instance.clone(),
@@ -158,6 +153,10 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
                     .app_data(Data::clone(&shared_users_action_listener_instance.clone()))
                     .app_data(Data::clone(&shared_clp_event_listener_instance.clone()))
+                    /* 
+                        shared_state_app contains all the global like data 
+                        that will be shared between actix api routers' threads
+                    */
                     .app_data(Data::clone(&shared_state_app.clone())) // the whole app state: s3, actors and configs
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())

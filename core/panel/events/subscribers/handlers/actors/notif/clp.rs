@@ -48,6 +48,11 @@ impl ClpEventSchedulerActor{
         }
     }
 
+    /* ------------------------------------------------------------ */
+    /* --------------- EVENT ACTOR WROKER SCHEDULER --------------- */
+    /* ------------------------------------------------------------ */
+    // once the actor gets started we'll execute this methiod 
+    // every 5 seconds constantly to check the followings:
     pub async fn check_event_status(&self, app_storage: Arc<Storage>){
 
         let pg_pool = app_storage.get_pgdb().await.unwrap();
@@ -55,16 +60,14 @@ impl ClpEventSchedulerActor{
 
         tokio::spawn(async move{
             
-            /* 
-                once the actor gets started we'll do the followings every 5 seconds 
-                constantly to check the followings:
-                1 - check that the event is expired or not if now > clp_event.expire_at then start generating titles, images and mint them
+            /*     
+                1 - check that the current and latest event is expired or not if now > clp_event.expire_at then start generating titles, images and mint them
                     in this case:
-                    1 - summerize users' chats and generate n titles
-                    2 - generate nft based images for those titles
-                    3 - generate a mapping between titles and images using ai
-                    4 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
-                    5 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
+                        1 - summerize users' chats and generate n titles
+                        2 - generate nft based images for those titles
+                        3 - generate a mapping between titles and images using ai
+                        4 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
+                        5 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
                 2 - lock the event if now > clp_event.start_at then lock the event so they can't register for the event 
             */
 
