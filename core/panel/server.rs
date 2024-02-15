@@ -209,7 +209,13 @@ macro_rules! server {
                         server
                             /* 
                                 running our own tcp listener server in a threadpool with 10 spawned 
-                                threads to handle incoming connections asyncly and concurrently 
+                                threads to handle incoming connections asyncly and concurrently also
+                                we should make the app to be ran constantly so we can monitor the logics 
+                                inside any tokio::spawn() or other threads which have been executed 
+                                concurrently and asyncly in the background, otherwise we would use some 
+                                mpsc channel to send any computational result inside of those threads 
+                                into the channel so we can receive it outside of their scopes while 
+                                the app is running
                             */
                             .workers(10) 
                             .run() /* actix web http+ws server runs in the same thread that actix has ran */
@@ -246,7 +252,7 @@ macro_rules! server {
             */
             // info!("➔ 🎛️ starting conse panel on address: [{}:{}]", host, port);
             
-            s /* returning the server */
+            s /* returning the server which is being ran constantly, concurrently and asyncly in the background threads */
 
         }
     };
