@@ -115,6 +115,34 @@ mod config;         /* contains all env vars */
 
 
 
+/*  
+    -------------------------------------------------------------------------------------------
+   |                      NOTE ON CODE ORDER EXECUTION OF ASYNC METHODS
+   |-------------------------------------------------------------------------------------------
+   | in rust the order of execution is not async by default but rather it's thread safe 
+   | and without having race conditions due to its rules of mutable and immutable pointers 
+   | of types although if there might be async methods but it's not expected that they must 
+   | be executed asyncly, the early one gets executed first and then the second one goes, 
+   | an example of that would be calling async_method_one() method with async operations 
+   | inside, and other_async_method_two() method, both of them are async however, but the 
+   | code waits till all the async operations inside the first one get executed then run the 
+   | second one, this gets criticized if we have some delay and sleep methods inside the first 
+   | one which gets us into trouble with the whole process of code order execution if we don't 
+   | want to have disruption in their execution, though in some cases it's needed to have this 
+   | logic but in here it would be a bad idea, the solution to this is running both of them 
+   | asyncly in their own seprate threadpool which can be done by putting each of them inside 
+   | tokio::spawn() in this case there would be no disruption in their order execution at all 
+   | and we'd have a fully async execution of methods in the background.
+   | to catch any result data inside the tokio::spawn() we would have to use mpsc channel to
+   | send the data to the channel inside the tokio::spawn() and receive it outside of tokio
+   | scope and do the rest of the logics with that.
+   |
+   | conclusion: 
+   | use tokio::spawn() to execute any async task in the background without having
+   | any disruption in other order execution of async methods.
+   | 
+*/
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 

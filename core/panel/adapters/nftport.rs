@@ -302,7 +302,7 @@ pub async fn start_minting_card_process(
                 let mint_tx_hash = mint_response.transaction_hash;
 
                 /* sleep till the transaction gets confirmed on blockchain */
-                tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(45)).await; // this will make the current thread and the whole app gets slept cause we're not in a separate thread like tokio::spawn()
 
                 let token_id_string = {
         
@@ -751,7 +751,7 @@ pub async fn create_collection(
     if collection_creation.response == String::from("OK"){
 
         /* sleep till the transaction gets confirmed on blockchain */
-        tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(45)).await; // this will make the current thread and the whole app gets slept cause we're not in a separate thread like tokio::spawn()
 
         /* getting the deployed contract address */
         let get_tx_hash_info = format!("https://api.nftport.xyz/v0/contracts/{}?chain=polygon", collection_creation.transaction_hash);
@@ -1097,7 +1097,7 @@ pub async fn mint_nft(
             let mint_tx_hash = mint_response.transaction_hash;
 
             /* sleep till the transaction gets confirmed on blockchain */
-            tokio::time::sleep(tokio::time::Duration::from_secs(45)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(45)).await; // this will make the current thread and the whole app gets slept cause we're not in a separate thread like tokio::spawn()
 
             let token_id_string = {
     
