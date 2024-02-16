@@ -31,6 +31,7 @@ macro_rules! server {
             use crate::events::subscribers::handlers::actors::notif::action::UserActionActor;
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
             use crate::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
+            use crate::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -92,6 +93,9 @@ macro_rules! server {
             let clp_event_listener_instance = ClpEventSchedulerActor::new(app_storage.clone()).start();
             let shared_clp_event_listener_instance = Data::new(clp_event_listener_instance.clone());
 
+            let user_balance_listener_instance = UserBalanceActor::new(app_storage.clone()).start();
+            let shared_balance_listener_instance = Data::new(user_balance_listener_instance.clone()).clone();
+
             //--- connection must be initialized once in server.rs and will be passed to different scopes
             //--- and passed through the routers' threads as a shared state data 
             let shared_storage = Data::new(app_storage.clone());
@@ -107,6 +111,7 @@ macro_rules! server {
                     action_actor: users_action_listener_instance.clone(),
                     system_actor: system_actor_instance.clone(),
                     user_actor: user_listener_instance.clone(),
+                    balance_actor: user_balance_listener_instance.clone(),
                     clp_event_checker_actor: clp_event_listener_instance.clone()
                 }
             );
@@ -153,8 +158,9 @@ macro_rules! server {
                     .app_data(Data::clone(&shared_system_actor_instance.clone()))
                     .app_data(Data::clone(&shared_users_action_listener_instance.clone()))
                     .app_data(Data::clone(&shared_clp_event_listener_instance.clone()))
+                    .app_data(Data::clone(&shared_balance_listener_instance.clone()))
                     /* 
-                        shared_state_app contains all the global like data 
+                        shared_state_app contains all the global data 
                         that will be shared between actix api routers' threads
                     */
                     .app_data(Data::clone(&shared_state_app.clone())) // the whole app state: s3, actors and configs

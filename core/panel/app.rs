@@ -116,9 +116,9 @@ mod config;         /* contains all env vars */
 
 
 /*  
-    -------------------------------------------------------------------------------------------
-   |                      NOTE ON CODE ORDER EXECUTION OF ASYNC METHODS
-   |-------------------------------------------------------------------------------------------
+    -----------------------------------------------------------------
+   |          NOTE ON CODE ORDER EXECUTION OF ASYNC METHODS
+   |-----------------------------------------------------------------
    | in rust the order of execution is not async by default but rather it's thread safe 
    | and without having race conditions due to its rules of mutable and immutable pointers 
    | of types although if there might be async methods but it's not expected that they must 
@@ -141,6 +141,21 @@ mod config;         /* contains all env vars */
    | use tokio::spawn() to execute any async task in the background without having
    | any disruption in other order execution of async methods.
    | 
+
+
+    -----------------------------------------------------------------
+   |                  ACTIX RUNTIME VS TOKIO RUNTIME
+   |-----------------------------------------------------------------
+   | to use actix actors, http and ws wee need to add #[actix_web::main] on top of main method
+   | but this doesn't mean we can't use the tokio::spawn() to execute task in the background 
+   | putting #[tokio::main] doesn't allow us to run the actix tasks in actix runtime itself, 
+   | note that we should avoid starting any actor in the background inside tokio::spawn otherwise
+   | we'll face the error of `spawn_local` called from outside of a `task::LocalSet` which says
+   | that we can't start an actor inside the tokio runtime instead we should use the actix runtime
+   | and start the actor in the context of actix runtime itself where there is no #[tokio::main]
+   | is on top of main method.
+   |
+
 */
 
 #[actix_web::main]

@@ -24,3 +24,4 @@ pub mod clp;
 pub mod user;
 pub mod action;
 pub mod system;
+pub mod balance;

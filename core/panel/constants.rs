@@ -8,6 +8,7 @@ use s3req::Storage;
 use config::{Env, Context};
 use config::EnvExt;
 use crate::*;
+use self::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
 use self::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
 use self::events::subscribers::handlers::actors::notif::user::UserListenerActor;
 use self::events::subscribers::handlers::actors::notif::system::SystemActor;
@@ -132,6 +133,7 @@ pub struct SubscriberActors{
     pub action_actor: Addr<UserActionActor>,
     pub system_actor: Addr<SystemActor>,
     pub user_actor: Addr<UserListenerActor>,
+    pub balance_actor: Addr<UserBalanceActor>,
     pub clp_event_checker_actor: Addr<ClpEventSchedulerActor>
 }
 
