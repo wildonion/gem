@@ -27,10 +27,14 @@ pub struct UserBalanceActor{
 
 
 impl Actor for UserBalanceActor{
-    
+
+    // actors run within a specific execution context Context<A>
+    // the context object is available only during execution or ctx 
+    // each actor has a separate execution context the execution 
+    // context also controls the lifecycle of an actor.
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Self::Context){
+    fn started(&mut self, ctx: &mut Self::Context){ // ctx is the execution context and contrls the lifecycle of the actor
         
         info!("UserBalanceActor -> started subscription interval");
 

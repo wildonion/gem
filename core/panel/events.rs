@@ -83,6 +83,7 @@
         its threads to avoid race conditions and deadlocks, actors have their own worker threadpool 
         to run heavy tasks concurrently and message mailbox to communicate with different parts 
         of the app and other actors asyncly like fetching an state of an actor during its execution
+        by sending async message to that actor
           
 */
 

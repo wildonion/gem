@@ -37,6 +37,10 @@ pub struct UserActionActor{
 
 impl Actor for UserActionActor{
     
+    // actors run within a specific execution context Context<A>
+    // the context object is available only during execution or ctx 
+    // each actor has a separate execution context the execution 
+    // context also controls the lifecycle of an actor.
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context){

@@ -20,14 +20,6 @@ use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifSer
 pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 
-
-
-/* 
-    code order execution and synchronization in multithreaded based envs like
-    actor worker like having static lazy arced mutex data without having deadlocks 
-    and race conditions using std::sync tokio::sync objects like 
-    semaphore,arc,mutex,rwlock,mpsc
-*/
 pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
     let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
@@ -50,58 +42,6 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
     app_storage
 
-});
-
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-// s3 code order execution using sync objects: 
-// static lazy arced mutexed and pinned box future db type, send sync static
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-/* 
-    trait objects like closures are dynamically sized means they're stored on the heap in order 
-    to act them as a separate object or type we need to either put them behind a pointer or box 
-    them, this would be true about the futures cause they're traits too.
-    future objects must be pinned to the ram before they can be solved or polled the reason 
-    of doing this is first of all they're trait objects and traits are dynamically sized means 
-    they're size will be known at runtime second of alldue to the fact that rust doesn’t have 
-    gc which allows us not to have a tracking reference counting process for a type at runtime 
-    cause it’ll move the type if the type goes of out of the scope hence in order to solve and 
-    poll a future in other scopes later on, we should pin it to the ram first which can be done 
-    once we await on the future but if we want to solve and poll a mutable reference of a future 
-    we should stick and pin it to the ram manually, first by pinning the future into the ram using 
-    Box::pin or tokio::pin!() then do an await on the mutable reference of the future object, so 
-    if it is required to call .await on a &mut _ reference, the caller is responsible for pinning 
-    the future by pinning future objects manually we make them as an object before polling them 
-    like having a mutable reference to them or pass them into other parts to solve 
-    them in different parts
-
-    let mut future = async move{};
-    tokio::pin!(future); // pinning the future object before solving/polling its mutable pointer
-    let mutable_pointer = &mut future;
-    mutable_pointer.await; // polling the mutable reference of the futuer object
-*/
-type DbS3Type = Lazy<std::sync::Arc<tokio::sync::Mutex<
-    std::pin::Pin<Box<dyn futures::Future<Output = HashMap<String, String>> + Send + Sync + 'static>>
-    >>>;
-pub static DbS3: DbS3Type = 
-Lazy::new(||{
-    std::sync::Arc::new(
-        tokio::sync::Mutex::new(
-            Box::pin(async move{ // pinning the future object into the ram before polling it to make it as a separate object type for future solvation
-                HashMap::new()
-            })
-        )
-    )
-});
-// to mutate an static type we must use mutex since mutating static is not safe
-// in a single thread contexts and by default we must use mutex to do so
-type RamDbType = Lazy<std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>>>;
-pub static RamDb: RamDbType = 
-Lazy::new(||{
-    std::sync::Arc::new(
-        tokio::sync::Mutex::new(
-            HashMap::new()
-        )
-    )
 });
 
 

@@ -1,8 +1,6 @@
 
 
 
-
-
 use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
 use crate::adapters::nftport;
@@ -24,9 +22,7 @@ pub struct UserChat;
 /* ---------------------------------------- */
 impl UserChat{
     
-    pub async fn store(event_id: i32, user_screen_cid: &str, user_text: &str, 
-            //--- connection must be initialized once in server.rs and will be passed to different scopes
-            //--- and passed through the routers' threads as a shared state data 
+    pub async fn store(event_id: i32, user_screen_cid: &str, user_text: &str, // user_text is a raw text
             connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserChat, PanelHttpResponse>{
 
@@ -50,7 +46,10 @@ impl UserChat{
 
     }
 
-    /* use the following method for ai summarization to generate a title */
+    /* ----------- use case:
+        use the following method for ai summarization to generate a title 
+        and then generate image from the title then mint it to user_screen_cid 
+       ----------- */
     pub async fn get_all_chats_of(user_screen_cid: &str, 
         connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Vec<UserChat>, PanelHttpResponse>{
@@ -65,7 +64,7 @@ impl UserChat{
                 vec![]
             )
 
-        }
+    }
 
 
 }

@@ -16,6 +16,11 @@ pub struct ClpEventSchedulerActor{
 
 
 impl Actor for ClpEventSchedulerActor{
+    
+    // actors run within a specific execution context Context<A>
+    // the context object is available only during execution or ctx 
+    // each actor has a separate execution context the execution 
+    // context also controls the lifecycle of an actor.
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
@@ -58,6 +63,9 @@ impl ClpEventSchedulerActor{
         let pg_pool = app_storage.get_pgdb().await.unwrap();
         let connection = &mut pg_pool.get().unwrap();
 
+        // check event status will be executed in the background asyncly
+        // and concurrently inside tokio::spawn() without having any 
+        // disruption in other async methods order of execution
         tokio::spawn(async move{
             
             /*     

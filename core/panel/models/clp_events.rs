@@ -138,7 +138,7 @@ impl ClpEvent{
 
             Ok(event)
 
-        }
+    }
     
     pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) 
         -> Result<Vec<ClpEvent>, PanelHttpResponse> {
@@ -184,6 +184,7 @@ impl ClpEvent{
 
     }
 
+    // fetching the latest clp event info, the one that is about to be started
     pub async fn get_latest(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<ClpEventData, PanelHttpResponse>{
 
