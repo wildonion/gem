@@ -1251,7 +1251,7 @@ impl UserFan{
                 vec![]
             };
 
-            // can't return UserFanData cause user might have no one send him a request yet
+            // can't return UserFanData cause user might have no one sent him a request yet
             // so there is no record for who_screen_cid yet thus users_fans would be empty.
             Ok(
                 sliced

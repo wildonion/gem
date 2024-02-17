@@ -1,6 +1,6 @@
 
 
-conse rendezvous service the user, dev and admin in-game APIs
+conse rendezvous service, an event managing and reservation system with reveal-participant-role functionality, the user, dev and admin in-game APIs
 
 > event managers can define event so players can reserve the event also each event contains a deck which contains some predefined roles which will be assigned randomly to each player once the event manager submit on the reveal role button.
 

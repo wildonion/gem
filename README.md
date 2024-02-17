@@ -9,17 +9,21 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 ### 🍔 Technical Features
 
-- an event managing and reservation system with reveal-role functionality.
+- an event managing and reservation system with reveal-participant-role functionality
 
-- most secure logic for authentication process with **JWT** per device and **secp256k1** per each user for API signing.
+- **X (twitter)** task verification system based on pre-defined tasks by admins.
 
-- crypto id or **EVM** based wallet to store onchain digital assets.
+- broadcast **X** tasks registered by admins into discord channel.
 
-- buy, receive and sell in-app token using **Stripe** payment gateway and **NFT** based gift cards.
+- crypto id, an **EVM** based wallet with **secp256k1** algorithm to store users' onchain digital assets and sign in-app API calls.
 
-- build multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
+- the most secure logic for authentication process with **JWT** per device and **secp256k1** per each user for API signing.
 
-- chatroom launchpad to mint **AI** generated **NFTs** based on summarization of participants' chats in each event.
+- buy, receive and sell in-app **$TOKEN** using **Stripe** payment gateway and minting **NFT** gift cards.
+
+- creating multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
+
+- participating in chatroom launchpad events to mint **AI** generated **NFTs**, based on summarization of participants' chats in each event.
 
 ## 🥪 Panel Architecture
 
