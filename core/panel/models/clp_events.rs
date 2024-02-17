@@ -139,6 +139,33 @@ impl ClpEvent{
             Ok(event)
 
     }
+
+    // this will be used in clp actor to lock the event if the event is expired
+    pub async fn lock_event(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Self, String>{
+
+            match diesel::update(clp_events.find(clp_event_id))
+                .set(is_locked.eq(true))
+                .returning(ClpEvent::as_returning())
+                .get_result::<ClpEvent>(connection)
+                {
+                    Ok(updated_clp_event) => Ok(updated_clp_event),
+                    Err(e) => {
+                        let resp_err = &e.to_string();
+
+                        /* custom error handler */
+                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                        let error_content = &e.to_string();
+                        let error_content = error_content.as_bytes().to_vec();  
+                        let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "ClpEvent::lock_event");
+                        let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                        return Err(resp_err.to_owned());
+                    }   
+                }
+
+    }
     
     pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) 
         -> Result<Vec<ClpEvent>, PanelHttpResponse> {
@@ -204,6 +231,44 @@ impl ClpEvent{
             return Err(
                 Ok(HttpResponse::NotFound().json(resp))
             );
+        };
+
+        Ok(
+            ClpEventData{
+                id: clp_event.id,
+                contract_address: clp_event.contract_address,
+                event_name: clp_event.event_name,
+                symbol: clp_event.symbol,
+                max_supply: clp_event.max_supply,
+                mint_price: clp_event.mint_price,
+                presale_mint_price: clp_event.presale_mint_price,
+                tokens_per_mint: clp_event.tokens_per_mint,
+                start_at: clp_event.start_at,
+                expire_at: clp_event.expire_at,
+                is_locked: clp_event.is_locked,
+                owner_screen_cid: clp_event.owner_screen_cid,
+                event_background: clp_event.event_background,
+                extra: clp_event.extra,
+                event_description: clp_event.event_description,
+                contract_tx_hash: clp_event.contract_tx_hash,
+                created_at: clp_event.created_at,
+                updated_at: clp_event.updated_at,
+            }
+        )
+
+    }
+
+    pub async fn get_latest_without_actix_response(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<ClpEventData, String>{
+
+        // fetch the latest event which is not locked yet and it's close to get started
+        let not_locked_clp_events = clp_events::table
+            .filter(is_locked.eq(false))
+            .order(clp_events::start_at.asc()) // get the one which is about to start earlier 
+            .first::<ClpEvent>(connection);
+                        
+        let Ok(clp_event) = not_locked_clp_events else{
+            return Err(USER_CLP_EVENT_NOT_FOUND.to_string());
         };
 
         Ok(

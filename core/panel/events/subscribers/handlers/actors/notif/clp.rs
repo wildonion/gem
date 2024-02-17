@@ -6,7 +6,7 @@
 use actix::{AsyncContext, Context};
 use s3req::Storage;
 use crate::*;
-use self::constants::WS_SUBSCRIPTION_INTERVAL;
+use self::{constants::WS_SUBSCRIPTION_INTERVAL, models::clp_events::ClpEvent};
 
 
 #[derive(Clone)]
@@ -28,13 +28,14 @@ impl Actor for ClpEventSchedulerActor{
         info!("ClpEventSchedulerActor -> started cron scheduler interval");
 
         // running a 5 seconds interval to check the current event status
-        // and if it was expired or finished start the process of summarizing 
-        // users chats, generating and minting ai pictures
+        // and if it was expired or finished we would have to start the 
+        // process of summarizing users chats, generating and minting 
+        //openai pictures
         ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
             
             let storage = actor.app_storage.clone();
             let this = actor.clone();
-            tokio::spawn(async move{
+            tokio::spawn(async move{ // executing in the background asyncly without having any disruption in other async method order of executions
                 this.check_event_status(storage.unwrap()).await;
             });
 
@@ -62,26 +63,33 @@ impl ClpEventSchedulerActor{
 
         let pg_pool = app_storage.get_pgdb().await.unwrap();
         let connection = &mut pg_pool.get().unwrap();
+        
+        let get_latest_clp_event = ClpEvent::get_latest_without_actix_response(connection).await;
+        if get_latest_clp_event.is_err(){
+            error!("error in getting latest clp event info due to: {:?}", get_latest_clp_event.as_ref().unwrap_err());
+        }
 
-        // check event status will be executed in the background asyncly
-        // and concurrently inside tokio::spawn() without having any 
-        // disruption in other async methods order of execution
-        tokio::spawn(async move{
+        let latest_clp_event_info = get_latest_clp_event.unwrap();
+        if chrono::Local::now().timestamp() > latest_clp_event_info.expire_at{ // event is expired so let's start generating :)
             
-            /*     
-                1 - check that the current and latest event is expired or not if now > clp_event.expire_at then start generating titles, images and mint them
-                    in this case:
-                        1 - summerize users' chats and generate n titles
-                        2 - generate nft based images for those titles
-                        3 - generate a mapping between titles and images using ai
-                        4 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
-                        5 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
-                2 - lock the event if now > clp_event.start_at then lock the event so they can't register for the event 
-            */
+            // start generating titles, images and mint them
+            // in this case:
+            //     1 - summerize users' chats and generate n titles
+            //     2 - generate nft based images for those titles
+            //     3 - generate a mapping between titles and images using ai
+            //     4 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
+            //     5 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
+            // ... 
+        }
 
-            // ...
+        if chrono::Local::now().timestamp() > latest_clp_event_info.start_at{
 
-        });
+            // lock the event so users can't register for the event
+            let updated_clp_event = ClpEvent::lock_event(latest_clp_event_info.id, connection).await;
+            if let Err(why) = updated_clp_event{
+                error!("can't lock the clp event due to {:?}", why);
+            }
+        }
 
     }
 
