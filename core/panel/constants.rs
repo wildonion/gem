@@ -28,7 +28,6 @@ pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
     let db_password = env::var("DB_PASSWORD").expect("⚠️ no db password variable set");
     let db_engine = env::var("DB_ENGINE").expect("⚠️ no db engine variable set");
     let db_name = env::var("DB_NAME").expect("⚠️ no db name variable set");
-
     let app_storage = block_on(
         s3req::storage!{ // this publicly has exported inside the misc so we can access it here 
             db_name,
@@ -257,7 +256,6 @@ pub static NFT_EVENT_TYPE_RECIPIENT_IS_NEEDED: &str = "This Event Type Requires 
 pub static NFT_EVENT_TYPE_BUYER_IS_NEEDED: &str = "This Event Type Requires Valid `buyer_screen_cid` Field To Be Filled Up";
 pub static NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED: &str = "This Event Type Requires Valid `metadata_uri` Field To Be Filled Up";
 pub static NFT_IS_NOT_LISTED: &str = "Nft Is Not Listed";
-
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
 pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";
@@ -268,15 +266,11 @@ pub const GALLERY_UPLOAD_PATH: &str = "assets/images/galleries";
 pub const NFT_UPLOAD_PATH: &str = "assets/images/nfts";
 pub const LOGS_FOLDER_ERROR_KIND: &str = "logs/error-kind";
 pub const TOO_LARGE_FILE_SIZE: &str = "File Is Too Large";
-
-
 pub static STRIPE_STARTED_PAYAMENT: &str = "Stripe Payment Process Has Been Started Successfully";
 pub static STRIPE_PRODUCT_OBJECT_ISSUE: &str = "Couldn't Create Stripe Product Object";
 pub static STRIPE_PRICE_OBJECT_ISSUE: &str = "Couldn't Create Stripe Price Object";
 pub static STRIPE_SESSION_OBJECT_ISSUE: &str = "Couldn't Create Stripe Session Object";
 pub static STRIPE_INVALID_WEBHOOK_SIGNATURE: &str = "Invalid Webhook Signature";
-
-
 pub static TWITTER_24HOURS_LIMITED: &str = "24 Hours Rate Limited";
 pub static TWITTER_RATE_LIMIT: &str = "Reached Twitter Rate Limit";
 pub static TWITTER_USER_IS_NOT_VALID: &str = "Twitter Username Is Not Valid";
@@ -289,8 +283,6 @@ pub static TWITTER_VERIFIED_HASHTAG: &str = "Twitter Hashtag Task Is Done";
 pub static TWITTER_KEYS_ADDED: &str = "Twitter Keys Added Successfully";
 pub static TWITTER_VERIFICATION_RATE_LIMIT: &str = "Entering Chillzone";
 pub static TWITTER_INVALID_BOT_ENDPOINT: &str = "Invalid X Bot Endpoint";
-
-
 pub static USER_CLP_EVENT_ALREADY_REGISTERED: &str = "User With This Screen Crypto Id Is Already Registered";
 pub static CLP_EVENT_NOT_REGISTERED_EVENT: &str = "User With This Screen Crypto Id Is Not Registered For This Event";
 pub static CLP_EVENT_HASNT_STARTED: &str = "Event Hasn't Been Started Yet";
@@ -312,7 +304,6 @@ pub static NO_CLP_EVENT: &str = "Found No Clp Event";
 pub static SERVER_IO_ERROR_CODE: &u16 = &0xFFFE; // 65534
 pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 65535
 pub static THIRDPARTYAPI_ERROR_CODE: &u16 = &0xFFFC; // 65532
-
 pub const WS_HEARTBEAT_INTERVAL: StdDuration = StdDuration::from_secs(5);
 pub const WS_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(1);
 pub const WS_CLIENT_TIMEOUT: StdDuration = StdDuration::from_secs(3600);
