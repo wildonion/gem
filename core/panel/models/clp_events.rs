@@ -188,10 +188,15 @@ impl ClpEvent{
 
     pub async fn reward_participants(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, String>{
 
-        
+        let get_clp_event_info = ClpEvent::find_by_id_without_actix_response(clp_event_id, connection).await;
+        if let Err(why) = get_clp_event_info{
+            return Err(why);
+        }
+        let mut clp_event_info = get_clp_event_info.unwrap();
+
         let get_users_in_event = UserClp::get_all_users_in_clp_event_without_actix_response(clp_event_id, connection).await;
         if let Err(why) = get_users_in_event{
-            return Err(why.to_string());
+            return Err(why);
         }
         let users_in_event = get_users_in_event.unwrap();
 
@@ -206,7 +211,9 @@ impl ClpEvent{
 
         let (uimg_sender, mut uimg_receiver) = 
             tokio::sync::oneshot::channel::<HashMap<i32, String>>();
-        
+
+        let (clp_event_sender, mut clp_event_receiver) = 
+            tokio::sync::oneshot::channel::<Self>();
 
         tokio::spawn(async move{
             let get_users_titles = UserChat::start_summarizing_chats(users_in_event).await;
@@ -237,15 +244,23 @@ impl ClpEvent{
             return Err(uimg_err);
         }
 
-        if let Ok(users_imges) = uimg_receiver.try_recv(){
-            
-            // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
-            // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
-            // ...
+        tokio::spawn(async move{
 
+            if let Ok(users_imges) = uimg_receiver.try_recv(){
+                
+                // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
+                // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
+                // ...
+                
+            }
+        });
+
+        if let Ok(updated_clp_event) = clp_event_receiver.try_recv(){
+            clp_event_info = updated_clp_event;
         }
 
-        todo!()
+        Ok(clp_event_info)
+
 
     }
     
