@@ -3,7 +3,7 @@
 cd ..
 
 echo \t"------------------------------------------------------"\n
-echo \t"    --[are you completed with .env screct vars?]--"
+echo \t"  --[are you completed with .env.prod screct vars?]--"
 echo \t"------------------------------------------------------"\n
 read ENVCOMPLETED
 
@@ -95,14 +95,8 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
 
         sudo docker run -d --network gem --name mongodb --restart unless-stopped -e PUID=1000 -e PGID=1000 -p 27017:27017 -v $(pwd)/infra/data/mongodb/:/data/db mongo
         MONGODB_CONTAINER_ID=$(docker container ls  | grep 'mongodb' | awk '{print $1}')
-        sudo docker cp $(pwd)/infra/rendezvous-collections/roles.json $MONGODB_CONTAINER_ID:/roles.json # root of the container
-        sudo docker cp $(pwd)/infra/rendezvous-collections/sides.json $MONGODB_CONTAINER_ID:/sides.json # root of the container 
-        sudo docker cp $(pwd)/infra/rendezvous-collections/users.json $MONGODB_CONTAINER_ID:/users.json # root of the container 
-        sudo docker cp $(pwd)/infra/rendezvous-collections/last_moves.json $MONGODB_CONTAINER_ID:/last_moves.json # root of the container 
-        sudo docker exec mongodb mongoimport --db conse --collection roles roles.json # roles.json is now inside the root of the mongodb container
-        sudo docker exec mongodb mongoimport --db conse --collection users users.json # users.json is now inside the root of the mongodb container
-        sudo docker exec mongodb mongoimport --db conse --collection sides sides.json # sides.json is now inside the root of the mongodb container
-        sudo docker exec mongodb mongoimport --db conse --collection last_moves last_moves.json # last_moves.json is now inside the root of the mongodb container
+        sudo docker cp $(pwd)/infra/rendezvous-collections/users.json $MONGODB_CONTAINER_ID:/users.json 
+        sudo docker exec mongodb mongoimport --db conse --collection users users.json
 
         sudo docker run -d --network gem --name postgres --restart unless-stopped -p 5432:5432 -v $(pwd)/infra/data/postgres/:/var/lib/postgresql/data -e POSTGRES_PASSWORD=$PASSWORD -e POSTGRES_USER=postgres -e PGDATA=/var/lib/postgresql/data/pgdata postgres
         sudo docker run -d --link postgres --network gem --name adminer -p 7543:8080 adminer
@@ -152,7 +146,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker build -t conse-rendezvous-$TIMESTAMP -f $(pwd)/infra/docker/rendezvous/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --link mongodb --network gem --name conse-rendezvous-$TIMESTAMP -p 7439:7438 conse-rendezvous-$TIMESTAMP
         
-        echo \t"--[make sure you 1. setup a subdomain for wehbook endpoint in DNS records 2. register the webhook endpoint in your stripe dashabord 3. setup the nginx config file for the endpoint with SSL point to this VPS]--"
+        echo \t"--[make sure you 1. setup a subdomain for wehbook endpoint in DNS records 2. register the webhook endpoint in your stripe dashabord 3. setup the nginx config file for the endpoint with SSL points to this VPS]--"
         sudo docker build -t stripe-webhook-$TIMESTAMP -f $(pwd)/infra/docker/stripewh/Dockerfile . --no-cache
         sudo docker run -d --restart unless-stopped --link postgres --network gem --name stripe-webhook-$TIMESTAMP -p 4243:4242 stripe-webhook-$TIMESTAMP
 
@@ -179,5 +173,5 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
     fi
 
 else
-    echo \t"run me again once you get done with filling .env vars"
+    echo \t"run me again once you get done with filling .env.prod vars"
 fi

@@ -34,7 +34,7 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 ## 🚟 Infra Route and API Endpoints
 
-> Ensure that all the vars inside `.env` are filled with their appropriate values.
+> Ensure that all the vars inside `.env.prod` are filled with their appropriate values.
 
 > Ensure that any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
 
