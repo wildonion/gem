@@ -5,6 +5,11 @@
    -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
         CONSE PANEL CUSTOM ERROR HANDLER
    -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+   https://fettblog.eu/rust-enums-wrapping-errors/
+   
+   custom error handler is useful to specify the exact type of error at runtime 
+   instead of using Box<dyn Error> which handles all possible errors at runtime 
+   dynamically and may causes the app gets panicked at runtime 
 */
 
 
@@ -53,6 +58,7 @@ pub enum ErrorKind{
 */
 unsafe impl Send for PanelError{}
 unsafe impl Sync for PanelError{}
+impl std::error::Error for ErrorKind{}
 
 impl std::fmt::Display for ErrorKind{
 
