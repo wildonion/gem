@@ -12,13 +12,25 @@ pub mod generate{
 
 
     // https://platform.openai.com/docs/api-reference/images/create
-    // generate nft like image based on the user's summarization
-    // ...
+    pub async fn create_image_from(title: &str) -> String{
+
+        // generate an image based on the passed in title 
+        // ...
+        
+        let img_url = String::from("");
+        img_url
+    }
 } 
 
 pub mod summarize{
     
     // https://platform.openai.com/docs/api-reference/chat/create
-    // summarize user's chats into a title like statement 
-    // ...
+    pub async fn create_titles_from(chats: &[String]) -> String {
+
+        // summarize all the texts inside the chats into a single title
+        // ...
+
+        todo!()
+    }
+
 }

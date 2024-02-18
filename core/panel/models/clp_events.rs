@@ -5,6 +5,8 @@ use chrono::NaiveDateTime;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NOT_FOUND, USER_CLP_EVENT_NOT_FOUND};
 use crate::misc::{Response, Limit};
+use crate::models::chatdb::UserChat;
+use crate::models::users_clps::UserClp;
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
 use self::constants::NO_CLP_EVENT;
 use super::users::User;
@@ -140,6 +142,23 @@ impl ClpEvent{
 
     }
 
+    pub async fn find_by_id_without_actix_response(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Self, String>{
+
+            let single_clp_event = clp_events
+                .filter(clp_events::id.eq(clp_event_id))
+                .first::<ClpEvent>(connection);
+                            
+            let Ok(event) = single_clp_event else{
+                return Err(
+                    CLP_EVENT_NOT_FOUND.to_string()
+                );
+            };
+
+            Ok(event)
+
+    }
+
     // this will be used in clp actor to lock the event if the event is expired
     pub async fn lock_event(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<Self, String>{
@@ -164,6 +183,69 @@ impl ClpEvent{
                         return Err(resp_err.to_owned());
                     }   
                 }
+
+    }
+
+    pub async fn reward_participants(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, String>{
+
+        
+        let get_users_in_event = UserClp::get_all_users_in_clp_event_without_actix_response(clp_event_id, connection).await;
+        if let Err(why) = get_users_in_event{
+            return Err(why.to_string());
+        }
+        let users_in_event = get_users_in_event.unwrap();
+
+        let (ut_err_sender, mut ut_err_receiver) = 
+            tokio::sync::oneshot::channel::<String>();
+
+        let (uimg_err_sender, mut uimg_err_receiver) = 
+            tokio::sync::oneshot::channel::<String>();
+        
+        let (ut_sender, mut ut_receiver) = 
+            tokio::sync::oneshot::channel::<HashMap<i32, String>>();
+
+        let (uimg_sender, mut uimg_receiver) = 
+            tokio::sync::oneshot::channel::<HashMap<i32, String>>();
+        
+
+        tokio::spawn(async move{
+            let get_users_titles = UserChat::start_summarizing_chats(users_in_event).await;
+            if get_users_titles.is_err(){
+                ut_err_sender.send(format!("can't summarize chats for the event {}", clp_event_id));
+            }
+            let users_titles = get_users_titles.unwrap();
+            ut_sender.send(users_titles);
+        });
+
+
+        tokio::spawn(async move{
+            if let Ok(users_titles) = ut_receiver.try_recv(){
+                let get_users_images = UserChat::start_generating_ai_images(users_titles).await;
+                if get_users_images.is_err(){
+                    uimg_err_sender.send(format!("can't generate images from users titles for the event {}", clp_event_id));
+                }
+                let users_images = get_users_images.unwrap();
+                uimg_sender.send(users_images);
+            }
+        });
+
+        if let Ok(ut_err) = ut_err_receiver.try_recv(){
+            return Err(ut_err);
+        }
+
+        if let Ok(uimg_err) = uimg_err_receiver.try_recv(){
+            return Err(uimg_err);
+        }
+
+        if let Ok(users_imges) = uimg_receiver.try_recv(){
+            
+            // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
+            // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
+            // ...
+
+        }
+
+        todo!()
 
     }
     
