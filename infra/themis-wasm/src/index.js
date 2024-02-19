@@ -38,15 +38,8 @@ window.onload = function() {
 
 
         let deposit_body = {
-            "recipient_cid": "0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
-            "from_cid": "0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
-            "amount": 5,
+            "text": "this is a message sending from chatroom"
         };
-
-        let withdraw_body = {
-            "recipient_cid": "0x554543320000002d6682f8f7030f89be91e75b5604e14c026d7ec893c4be6de1d221a9e329a59b8dee2fad3b16",
-            "deposit_id": 1,
-        }
         
         // request body signing
         const deposit_message = new TextEncoder().encode(JSON.stringify(deposit_body));
@@ -56,15 +49,7 @@ window.onload = function() {
         let final_deposit_sig = "0x"+signedDepositMessageHex;
         deposit_body["tx_sigature"] = final_deposit_sig;
 
-        const withdraw_message = new TextEncoder().encode(JSON.stringify(withdraw_body));
-        const signedWithdrawMessage = signer.sign(withdraw_message);
-        const signedWithdrawMessageHex = bytesToHex(signedWithdrawMessage);
-
-        let final_withdraw_sig = "0x"+signedWithdrawMessageHex;
-        withdraw_body["tx_sigature"] = final_withdraw_sig;
-
         console.log(final_deposit_sig);
-        console.log(final_withdraw_sig);
         /* ----------------------------------- */
         /* ----------------------------------- */
 

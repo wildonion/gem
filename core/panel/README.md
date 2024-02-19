@@ -110,7 +110,7 @@
 
 * push notification routes for **ECQ**, **MMR** and reveal role topics are `wss://event.panel.conse.app/subscribe/mmr-{event_objectid}`, `wss://event.panel.conse.app/subscribe/{user_objectid}/reveal-role-{event_objectid}` respectively and in order to receive realtime role and mmr notifs data users must use `/join-roles` and `/join-mmr` commands respectively which are used to join the ws channel to create a session once they gets connected, for listening on incoming events (mmr and reveal role), note that these routes **are guarded with conse rendezvous JWT** so remember to pass the conse rendezvous JWT to the header of these routes like `Bearer ...JWT...`, also there is an slash command called `/events` which shows the total online events to the player.
 
-* chatroom launchpad endpoint is `wss://event.panel.conse.app/subscribe/chatroomlp/{chatroomlp_id}/{user_screen_cid}/{tx_signature}/{hash_data}/?r1pubkey={r1pubkey}&r1signature={r1signature}` and there must be JWT in header like: `Authorization`: `Bearer ...JWT...`.
+* chatroom launchpad endpoint is `wss://event.panel.conse.app/subscribe/chatroomlp/{chatroomlp_id}/{user_cid}/{k1_tx_signature}/{k1_hash_data}/?r1pubkey={r1pubkey}&r1signature={r1signature}` and there must be JWT in header like: `Authorization`: `Bearer ...JWT...`.
 
 * basically if you want to execute an sql file into a database you can run the following commands:
     - step 1: ```bash docker cp run.sql postgres:run.sql```
