@@ -61,6 +61,9 @@ impl ClpEventSchedulerActor{
     // every 5 seconds constantly to check the followings:
     pub async fn check_event_status(&self, app_storage: Arc<Storage>){
 
+        // note that some ClpEvent methods doesn't return actix response in their
+        // error part since we're using tokio::spawn() and can't transfer actix 
+        // http response between tokio::spawn since it's not Send 
         tokio::spawn(async move{
             let pg_pool = app_storage.get_pgdb().await.unwrap();
             let connection = &mut pg_pool.get().unwrap();
@@ -74,7 +77,7 @@ impl ClpEventSchedulerActor{
             if chrono::Local::now().timestamp() > latest_clp_event_info.expire_at{ // event is expired so let's start generating :)
                 
                 // start summarizing chats, generating titles and images and finally mint them
-                let reward_them = ClpEvent::reward_participants(latest_clp_event_info.id, connection).await;
+                let reward_them = ClpEvent::distribute_rewards(latest_clp_event_info.id, connection).await;
                 if let Err(why) = reward_them{
                     error!("can't reward participants due to {:?}", why);
                 }

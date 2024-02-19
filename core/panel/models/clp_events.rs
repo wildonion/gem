@@ -186,7 +186,7 @@ impl ClpEvent{
 
     }
 
-    pub async fn reward_participants(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, String>{
+    pub async fn distribute_rewards(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, String>{
 
         let get_clp_event_info = ClpEvent::find_by_id_without_actix_response(clp_event_id, connection).await;
         if let Err(why) = get_clp_event_info{
@@ -194,11 +194,11 @@ impl ClpEvent{
         }
         let mut clp_event_info = get_clp_event_info.unwrap();
 
-        let get_users_in_event = UserClp::get_all_users_in_clp_event_without_actix_response(clp_event_id, connection).await;
-        if let Err(why) = get_users_in_event{
+        let get_users_in_this_event = UserClp::get_all_users_in_clp_event_without_actix_response(clp_event_id, connection).await;
+        if let Err(why) = get_users_in_this_event{
             return Err(why);
         }
-        let users_in_event = get_users_in_event.unwrap();
+        let users_in_this_event = get_users_in_this_event.unwrap();
 
         let (ut_err_sender, mut ut_err_receiver) = 
             tokio::sync::oneshot::channel::<String>();
@@ -216,9 +216,9 @@ impl ClpEvent{
             tokio::sync::oneshot::channel::<Self>();
 
         tokio::spawn(async move{
-            let get_users_titles = UserChat::start_summarizing_chats(users_in_event).await;
+            let get_users_titles = UserChat::start_summarizing_chats(users_in_this_event).await;
             if get_users_titles.is_err(){
-                ut_err_sender.send(format!("can't summarize chats for the event {}", clp_event_id));
+                ut_err_sender.send(format!("can't summarize all users chats for the event {}", clp_event_id));
             }
             let users_titles = get_users_titles.unwrap();
             ut_sender.send(users_titles);
@@ -248,6 +248,8 @@ impl ClpEvent{
 
             if let Ok(users_imges) = uimg_receiver.try_recv(){
                 
+                todo!()
+
                 // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
                 // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
                 // ...
