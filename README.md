@@ -13,13 +13,13 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 - **X (twitter)** task verification system based on pre-defined tasks by admins.
 
-- broadcast **X** tasks registered by admins into discord channel.
+- broadcasting **X** tasks registered by admins into discord channel.
 
 - crypto id, an **EVM** based wallet with **secp256k1** algorithm to store users' onchain digital assets and sign in-app API calls.
 
 - the most secure logic for authentication process with **JWT** per device and **secp256k1** per each user for API signing.
 
-- buy, receive and sell in-app **$TOKEN** using **Stripe** payment gateway and minting **NFT** gift cards.
+- buying, receiving and selling in-app **$TOKEN** using **Stripe** payment gateway and minting **NFT** gift cards.
 
 - creating multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
 
