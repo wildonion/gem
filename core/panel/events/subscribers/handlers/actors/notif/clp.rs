@@ -6,7 +6,7 @@
 use actix::{AsyncContext, Context};
 use s3req::Storage;
 use crate::*;
-use self::{constants::WS_SUBSCRIPTION_INTERVAL, models::clp_events::ClpEvent};
+use self::{constants::WS_SUBSCRIPTION_INTERVAL, models::clp_events::{ClpEvent, ClpEventData}};
 
 
 #[derive(Clone)]
@@ -72,8 +72,11 @@ impl ClpEventSchedulerActor{
             if get_latest_clp_event.is_err(){
                 error!("error in getting latest clp event info due to: {:?}", get_latest_clp_event.as_ref().unwrap_err());
             }
-    
-            let latest_clp_event_info = get_latest_clp_event.unwrap();
+            
+            /* -------------------------------------------------------------------------------- */
+            /* ---------------------- check that event is expired or not ---------------------- */
+            /* -------------------------------------------------------------------------------- */
+            let latest_clp_event_info = get_latest_clp_event.unwrap_or(ClpEventData::default());
             if chrono::Local::now().timestamp() > latest_clp_event_info.expire_at{ // event is expired so let's start generating :)
                 
                 // start summarizing chats, generating titles and images and finally mint them
@@ -82,7 +85,10 @@ impl ClpEventSchedulerActor{
                     error!("can't reward participants due to {:?}", why);
                 }
             }
-    
+            
+            /* -------------------------------------------------------------------------------- */
+            /* ---------------------- check that event is started or not ---------------------- */
+            /* -------------------------------------------------------------------------------- */
             if chrono::Local::now().timestamp() > latest_clp_event_info.start_at{
     
                 // lock the event so users can't register for the event
