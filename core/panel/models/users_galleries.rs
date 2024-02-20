@@ -6,10 +6,10 @@ use chrono::NaiveDateTime;
  
 use crate::constants::{GALLERY_NOT_FOUND, GALLERY_NOT_OWNED_BY, COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, NO_GALLERY_FOUND, NO_GALLERY_FOUND_FOR, NO_GALLERY_FOUND_FOR_COL_OWNER, GALLERY_UPLOAD_PATH};
 use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
-use crate::misc::Limit;
+use crate::helpers::misc::Limit;
 use crate::schema::users_collections::contract_address;
 use crate::schema::users_fans::friends;
-use crate::{*, misc::Response, constants::STORAGE_IO_ERROR_CODE};
+use crate::{*, helpers::misc::Response, constants::STORAGE_IO_ERROR_CODE};
 use self::constants::FRIEND_IS_NOT_INVITED_YET;
 
 use super::galleries_invitation_requests::PrivateGalleryInvitationRequest;
@@ -323,7 +323,7 @@ impl UserPrivateGallery{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1612,7 +1612,7 @@ impl UserPrivateGallery{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2078,7 +2078,7 @@ impl UserPrivateGallery{
                         let resp_err = &e.to_string();
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  

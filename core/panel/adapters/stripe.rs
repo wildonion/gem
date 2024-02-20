@@ -102,7 +102,7 @@ pub async fn create_product(
         let ـ : RedisResult<String> = redis_conn.set(create_prod_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "stripe_create_prod");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -183,7 +183,7 @@ pub async fn create_price(
         let ـ : RedisResult<String> = redis_conn.set(create_price_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, cloned_err_resp_vec.as_bytes().to_vec(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "stripe_create_price");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -287,7 +287,7 @@ pub async fn create_session(
         let ـ : RedisResult<String> = redis_conn.set(create_session_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, cloned_err_resp_vec.as_bytes().to_vec(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "stripe_create_session");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 

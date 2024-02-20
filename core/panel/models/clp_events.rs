@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NOT_FOUND, USER_CLP_EVENT_NOT_FOUND};
-use crate::misc::{Response, Limit};
+use crate::helpers::misc::{Response, Limit};
 use crate::models::chatdb::UserChat;
 use crate::models::users_clps::UserClp;
 use crate::{*, constants::COLLECTION_NOT_FOUND_OF};
@@ -173,7 +173,7 @@ impl ClpEvent{
                         let resp_err = &e.to_string();
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  

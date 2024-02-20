@@ -21,8 +21,8 @@ macro_rules! server {
             use actix_web::{web, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
-            use crate::config::{Env as ConfigEnv, Context};
-            use crate::config::EnvExt;
+            use crate::helpers::config::{Env as ConfigEnv, Context};
+            use crate::helpers::config::EnvExt;
             use crate::constants::*;
             use crate::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
@@ -32,6 +32,8 @@ macro_rules! server {
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
             use crate::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
             use crate::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
+            use crate::events::subscribers::handlers::actors::agents::run::RunAgentActor;
+            use crate::events::subscribers::handlers::actors::agents::deploy::DeployAgentActor;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -93,6 +95,12 @@ macro_rules! server {
             let clp_event_listener_instance = ClpEventSchedulerActor::new(app_storage.clone()).start();
             let shared_clp_event_listener_instance = Data::new(clp_event_listener_instance.clone());
 
+            let run_actor_instance = RunAgentActor::new(port, std::path::PathBuf::new()).start();
+            let shared_run_actor_instance = Data::new(run_actor_instance.clone());
+
+            let deploy_actor_instance = DeployAgentActor::new(port, std::path::PathBuf::new()).start();
+            let shared_deploy_actor_instance = Data::new(deploy_actor_instance.clone());
+
             let user_balance_listener_instance = UserBalanceActor::new(app_storage.clone()).start();
             let shared_balance_listener_instance = Data::new(user_balance_listener_instance.clone()).clone();
 
@@ -112,7 +120,13 @@ macro_rules! server {
                     system_actor: system_actor_instance.clone(),
                     user_actor: user_listener_instance.clone(),
                     balance_actor: user_balance_listener_instance.clone(),
-                    clp_event_checker_actor: clp_event_listener_instance.clone()
+                    clp_event_checker_actor: clp_event_listener_instance.clone(),
+                }
+            );
+            app_state.agent_actors = Some(
+                AgentActors{
+                    run_agent_actor: run_actor_instance.clone(),
+                    deploy_agent_actor: deploy_actor_instance.clone()
                 }
             );
             app_state.config = {
@@ -120,7 +134,7 @@ macro_rules! server {
                 let ctx_env = env.get_vars();
                 std::sync::Arc::new(ctx_env)
             };
-            let shared_state_app = Data::new(app_state.clone());
+            let shared_state_app = Data::new(app_state.clone()); // making the app state as a shareable data 
 
 
             /*  
@@ -230,7 +244,7 @@ macro_rules! server {
                     Err(e) => {
         
                         /* custom error handler */
-                        use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
+                        use helpers::error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                          
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();

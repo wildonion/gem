@@ -22,3 +22,11 @@ impl Actor for DeployAgentActor{
     }
 
 }
+
+
+impl DeployAgentActor{
+
+    pub fn new(port: u16, path: std::path::PathBuf) -> Self{
+        Self { port, path}
+    }
+}

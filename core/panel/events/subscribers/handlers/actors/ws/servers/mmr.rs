@@ -10,7 +10,7 @@
 */
 
 use crate::constants::WS_CLIENT_TIMEOUT;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use s3req::Storage;
 use crate::*;
 use actix::prelude::*;

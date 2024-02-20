@@ -11,7 +11,7 @@
 use crate::*;
 use crate::constants::{WS_CLIENT_TIMEOUT, WS_SUBSCRIPTION_INTERVAL, STORAGE_IO_ERROR_CODE};
 use crate::events::subscribers::handlers::actors::notif::system::NotifySystemActorWithRedisSubscription;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use crate::models::users::{User, UserData};
 use crate::models::users_fans::UserFan;
 use crate::models::users_nfts::UserNft;
@@ -168,7 +168,7 @@ impl UserListenerActor{
             
             let Ok(mut pubsubstreamer) = get_stream_messages else{
 
-                use error::{ErrorKind, StorageError::RedisAsync, PanelError};
+                use helpers::error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
                 let error_content = e.to_string().as_bytes().to_vec();  
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)), "UserListenerActor::redis_subscribe");

@@ -22,3 +22,10 @@ impl Actor for RunAgentActor{
     }
 
 }
+
+impl RunAgentActor{
+
+    pub fn new(port: u16, path: std::path::PathBuf) -> Self{
+        Self { port, path}
+    }
+}

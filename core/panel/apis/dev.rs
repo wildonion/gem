@@ -10,7 +10,7 @@ use crate::*;
 use crate::resp;
 use crate::passport;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use s3req::Storage;
 use crate::models::{
     users::UserData,

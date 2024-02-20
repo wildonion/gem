@@ -5,9 +5,11 @@
 use actix::Addr;
 use futures::executor::block_on;
 use s3req::Storage;
-use config::{Env, Context};
-use config::EnvExt;
+use helpers::config::{Env, Context};
+use helpers::config::EnvExt;
 use crate::*;
+use self::events::subscribers::handlers::actors::agents::deploy::DeployAgentActor;
+use self::events::subscribers::handlers::actors::agents::run::RunAgentActor;
 use self::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
 use self::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
 use self::events::subscribers::handlers::actors::notif::user::UserListenerActor;
@@ -17,9 +19,8 @@ use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRo
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
 
-pub const APP_NAME: &str = "Conse";
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
-
+pub const APP_NAME: &str = "Conse";
 pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{
 
     let db_host = env::var("DB_HOST").expect("⚠️ no db host variable set");
@@ -58,9 +59,10 @@ pub struct AppState{
         config vars, publisher and subscriber actor workers and an
         in memory ram db for any runtime caching operations
     */
-    pub config: std::sync::Arc<Context<Env>>,
+    pub config: std::sync::Arc<Context<helpers::config::Env>>,
     pub app_sotrage: Option<Arc<Storage>>,
     pub subscriber_actors: Option<SubscriberActors>,
+    pub agent_actors: Option<AgentActors>,
     pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db which can be shared between threads without having race conditions
 }
 
@@ -73,7 +75,13 @@ pub struct SubscriberActors{
     pub system_actor: Addr<SystemActor>,
     pub user_actor: Addr<UserListenerActor>,
     pub balance_actor: Addr<UserBalanceActor>,
-    pub clp_event_checker_actor: Addr<ClpEventSchedulerActor>
+    pub clp_event_checker_actor: Addr<ClpEventSchedulerActor>,
+}
+
+#[derive(Clone)]
+pub struct AgentActors{
+    pub deploy_agent_actor: Addr<DeployAgentActor>,
+    pub run_agent_actor: Addr<RunAgentActor>,
 }
 
 impl AppState{
@@ -82,6 +90,7 @@ impl AppState{
             config: std::sync::Arc::new(Context::default()),
             app_sotrage: None,
             subscriber_actors: None,
+            agent_actors: None,
             ramdb: std::sync::Arc::new(
                     tokio::sync::Mutex::new(
                             HashMap::new()

@@ -5,7 +5,7 @@ use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::events::publishers::action::ActionType;
 use crate::*;
-use crate::misc::Response;
+use crate::helpers::misc::Response;
 use crate::models::users_collections::{NewUserCollectionRequest, UpdateUserCollectionRequest};
 use crate::models::users_nfts::{NewUserNftRequest, UpdateUserNftRequest};
 use crate::schema::users::identifier;
@@ -221,7 +221,7 @@ pub async fn start_minting_card_process(
             let ـ : RedisResult<String> = redis_conn.set(upload_mata_logs_key_err, err_resp_str.as_str()).await;
 
             /* custom error handler */
-            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
             let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -282,7 +282,7 @@ pub async fn start_minting_card_process(
                 let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str.as_str()).await;
 
                 /* custom error handler */
-                use error::{ErrorKind, ThirdPartyApiError, PanelError};
+                use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
                 let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
                 let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -344,7 +344,7 @@ pub async fn start_minting_card_process(
                         let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str.as_str()).await;
 
                         /* custom error handler */
-                        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+                        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
                         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_minting_card_process");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -493,7 +493,7 @@ pub async fn start_transferring_card_process(
         let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::start_transferring_card_process");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
@@ -613,7 +613,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
         if get_upload_output.is_err(){
             
             /* custom error handler */
-            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
             let process_cmd_error_content = get_upload_output.as_ref().unwrap_err().to_string();
             let process_cmd_error_content_vec = process_cmd_error_content.as_bytes().to_vec();
             let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, process_cmd_error_content_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(process_cmd_error_content.clone())), "nftport::upload_file_to_ipfs");
@@ -645,7 +645,7 @@ pub async fn upload_file_to_ipfs(nftport_token: &str, redis_client: redis::Clien
             let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str).await;
 
             /* custom error handler */
-            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
             let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, res.to_owned(), ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::upload_file_to_ipfs");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -733,7 +733,7 @@ pub async fn create_collection(
         let ـ : RedisResult<String> = redis_conn.set(collection_creation_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::create_collection");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
@@ -864,7 +864,7 @@ pub async fn update_collection(
         let ـ : RedisResult<String> = redis_conn.set(collection_update_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::update_collection");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
@@ -979,7 +979,7 @@ pub async fn upload_nft_to_ipfs<N>(
         let ـ : RedisResult<String> = redis_conn.set(upload_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::upload_nft_to_ipfs");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -1077,7 +1077,7 @@ pub async fn mint_nft(
             let ـ : RedisResult<String> = redis_conn.set(mint_logs_key_err, err_resp_str.as_str()).await;
 
             /* custom error handler */
-            use error::{ErrorKind, ThirdPartyApiError, PanelError};
+            use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
             let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::mint_nft");
             let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -1139,7 +1139,7 @@ pub async fn mint_nft(
                     let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str.as_str()).await;
 
                     /* custom error handler */
-                    use error::{ErrorKind, ThirdPartyApiError, PanelError};
+                    use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
                     let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::mint_nft");
                     let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -1249,7 +1249,7 @@ pub async fn transfer_nft(
         let ـ : RedisResult<String> = redis_conn.set(transfer_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::transfer_nft");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         
@@ -1338,7 +1338,7 @@ pub async fn update_nft(
         let ـ : RedisResult<String> = redis_conn.set(update_nft_logs_key_err, err_resp_str.as_str()).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "nftport::update_nft");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
         

@@ -16,10 +16,10 @@ use crate::models::users_collections::{NewUserCollectionRequest, UserCollectionD
 use crate::models::users_deposits::{UserDeposit, UserDepositData, UserDepositDataWithWalletInfo};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
-use crate::passport::Passport;
+use crate::helpers::passport::Passport;
 use crate::resp;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use s3req::Storage;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -256,7 +256,7 @@ pub(self) async fn update_rendezvous_event_img(
 
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_event_img");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -1561,7 +1561,7 @@ pub(self) async fn add_twitter_account(
                    
                     let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap(); /* converting the file buffer into serde Value to build the struct from its String */
                     let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
-                    let mut twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
+                    let mut twitter = serde_json::from_str::<helpers::misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
                     let twitter_accounts = &mut twitter.keys;
 
                     /* twitter var will be mutated too since twitter_accounts is a mutable reference to twitter */

@@ -19,7 +19,7 @@ macro_rules! verify {
         { // this is required if we want to import modules and use the let statements
 
             use crate::models::xbot::Twitter;
-            use crate::misc::Response;
+            use crate::helpers::misc::Response;
 
             info!("🤖 sending request to the twitter bot hosted on [{:#?}]", $endpoint);
             let response_value: serde_json::Value = reqwest::Client::new()

@@ -7,7 +7,7 @@
 use crate::*;
 use super::{users::User, users_tasks::UserTask, tasks::TaskData};
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use crate::schema::users_tasks;
 use crate::schema::users_tasks::dsl::*;
 
@@ -50,7 +50,7 @@ impl Twitter{
 
         let accounts_value: serde_json::Value = serde_json::from_reader(file).unwrap();
         let accounts_json_string = serde_json::to_string(&accounts_value).unwrap(); // reader in serde_json::from_reader can be a tokio tcp stream, a file or a buffer that contains the u8 bytes
-        let twitter = serde_json::from_str::<misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
+        let twitter = serde_json::from_str::<helpers::misc::TwitterAccounts>(&accounts_json_string).unwrap(); 
         let twitter_accounts = twitter.keys;
 
         Ok(

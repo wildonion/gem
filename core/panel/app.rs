@@ -100,18 +100,13 @@ use spacetimedb_sdk::{
 #[path="spacetimedb/client/chatdb/mod.rs"] /* mod.rs contains all modules, methods, structures and functions */
 mod spacetimchatdb; /* contains spacetimedb client interfaces for chatdb server */
 mod apis;           /* contains http routes and model call logics */
-mod misc;           /* contains miscellaneous and utilities methods and modules */
 mod constants;      /* contains constant and static types */
 mod services;       /* contains service handler to register routes */
 mod events;         /* contains realtiming event pubsub logics based on ws, tcp and redis */
 mod models;         /* contains models, schemas structures and db query calls */
 mod schema;         /* contains diesel db schemas */
-mod error;          /* contains error handler logis */
+mod helpers;        /* contains miscellaneous and utilities methods and modules, server handler methods and macros, error handler, kyc process of the api body, passport traits for HttpRequest and all env vars */
 mod adapters;       /* contains all third party apis */
-mod server;         /* contains server handler methods and macros */
-mod kyced;          /* contains kyc process of the api body */
-mod passport;       /* contains passport traits for HttpRequest */
-mod config;         /* contains all env vars */
 
 
 

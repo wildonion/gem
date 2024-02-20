@@ -11,7 +11,7 @@ use chrono::Timelike;
 use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
 use crate::*;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit, gen_random_chars_0_255};
+use crate::helpers::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit, gen_random_chars_0_255};
 use crate::models::users_galleries::{UserPrivateGallery, NewUserPrivateGalleryRequest};
 use crate::schema::{users, users_tasks, users_mails, users_phones};
 use crate::schema::users::dsl::*;
@@ -1188,7 +1188,7 @@ impl User{
     
     
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1343,7 +1343,7 @@ impl User{
     
     
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1652,7 +1652,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1682,7 +1682,7 @@ impl User{
             CHARSET[idx] as char // CHARSET is of type utf8 bytes thus we can index it which it's length is 10 bytes (0-9)
         }).collect();
 
-        if !misc::is_password_valid(&password){
+        if !helpers::misc::is_password_valid(&password){
             let resp = Response::<&[u8]>{
                 data: Some(&[]),
                 message: REGEX_PASSWORD_ISSUE,
@@ -1805,7 +1805,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1862,7 +1862,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1950,7 +1950,7 @@ impl User{
 
 
                 /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  
@@ -2015,7 +2015,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2132,7 +2132,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2249,7 +2249,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2378,7 +2378,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2507,7 +2507,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2636,7 +2636,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2811,7 +2811,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -2858,7 +2858,7 @@ impl User{
 
 
                             /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                              
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
@@ -2971,7 +2971,7 @@ impl User{
 
 
                 /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  
@@ -3078,7 +3078,7 @@ impl User{
 
 
                 /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  
@@ -3165,7 +3165,7 @@ impl User{
 
 
                 /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  
@@ -3240,7 +3240,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -3406,7 +3406,7 @@ impl User{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -3531,7 +3531,7 @@ impl User{
 
 
                             /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                              
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
@@ -3663,7 +3663,7 @@ impl User{
 
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
@@ -3789,7 +3789,7 @@ impl User{
 
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
@@ -4127,7 +4127,7 @@ impl User{
 
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
@@ -4251,7 +4251,7 @@ impl User{
 
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  
@@ -4372,7 +4372,7 @@ impl User{
                     let resp_err = &e.to_string();
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -4503,7 +4503,7 @@ impl User{
                     let resp_err = &e.to_string();
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -4883,7 +4883,7 @@ impl Id{
                             let resp_err = &e.to_string();
 
                             /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                                 
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
@@ -5108,7 +5108,7 @@ impl Id{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
                     let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "Id::save");

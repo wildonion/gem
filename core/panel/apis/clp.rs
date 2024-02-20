@@ -18,10 +18,10 @@ use crate::models::users::User;
 use crate::models::users::UserChatRoomLaunchpadRequest;
 use crate::models::users::UserRole;
 use crate::models::users_clps::UserClp;
-use crate::passport::Passport;
+use crate::helpers::passport::Passport;
 use crate::resp;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use actix_web::web::Query;
 use s3req::Storage;
  
@@ -172,7 +172,7 @@ pub(self) async fn chatroomlp(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &user_cid, 
                         &tx_signature, 

@@ -8,7 +8,7 @@
 use crate::*;
 use crate::models::users::User;
 use super::users_tasks::UserTask;
-use crate::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, Limit};
+use crate::helpers::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, Limit};
 use crate::schema::{tasks, users, users_tasks};
 use crate::schema::tasks::dsl::*;
 use crate::schema::users_tasks::dsl::*;
@@ -221,7 +221,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -269,7 +269,7 @@ impl Task{
 
 
                             /* custom error handler */
-                            use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                            use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                              
                             let error_content = &e.to_string();
                             let error_content = error_content.as_bytes().to_vec();  
@@ -343,7 +343,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -399,7 +399,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -452,7 +452,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -490,7 +490,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -543,7 +543,7 @@ impl Task{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -616,7 +616,7 @@ impl Task{
 
 
                 /* custom error handler */
-                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();  

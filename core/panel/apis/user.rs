@@ -17,10 +17,10 @@ use crate::models::users_galleries::{UserPrivateGalleryInfoDataInvited, NewUserP
 use crate::models::users_nfts::{AddReactionRequest, CreateNftMetadataUriRequest, NewUserNftRequest, NftReactionData, UpdateUserNftRequest, UserNft, UserNftData, UserNftDataWithWalletInfo, UserReactionData};
 use crate::models::users_withdrawals::{UserWithdrawal, UserWithdrawalData};
 use crate::models::{users::*, tasks::*, users_tasks::*};
-use crate::passport::Passport; /* loading Passport macro to use get_user() method on HttpRequest object */
+use crate::helpers::passport::Passport; /* loading Passport macro to use get_user() method on HttpRequest object */
 use crate::resp;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use actix::Addr;
 use chrono::NaiveDateTime;
 use s3req::Storage;
@@ -32,7 +32,7 @@ use futures_util::TryStreamExt;
 use crate::*;
 use crate::models::users::UserRole;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 use models::users::{Id, NewIdRequest, UserIdResponse};
@@ -117,7 +117,7 @@ pub(self) async fn request_mail_code(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_mail_code");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -428,7 +428,7 @@ pub(self) async fn request_phone_code(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "request_phone_code");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -1181,7 +1181,7 @@ pub(self) async fn charge_wallet_request(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "charge_wallet_request");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -1234,7 +1234,7 @@ pub(self) async fn charge_wallet_request(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &charge_wallet_request_object.buyer_cid, 
                             &charge_wallet_request_object.tx_signature, 
@@ -1576,7 +1576,7 @@ pub(self) async fn make_cid(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "make_cid");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -1778,7 +1778,7 @@ pub(self) async fn deposit(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "deposit");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -1843,7 +1843,7 @@ pub(self) async fn deposit(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &deposit_object.from_cid, 
                             &deposit_object.tx_signature, 
@@ -2245,7 +2245,7 @@ pub(self) async fn withdraw(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "withdraw");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -2298,7 +2298,7 @@ pub(self) async fn withdraw(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &withdraw_object.recipient_cid, 
                             &withdraw_object.tx_signature, 
@@ -3584,7 +3584,7 @@ pub(self) async fn update_password(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_password");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -3878,7 +3878,7 @@ pub(self) async fn upload_rendezvous_player_avatar(
 
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_event_img");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -4014,7 +4014,7 @@ pub(self) async fn create_private_gallery(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_private_gallery");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -4068,7 +4068,7 @@ pub(self) async fn create_private_gallery(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &create_private_gallery_request_object.owner_cid, 
                             &create_private_gallery_request_object.tx_signature, 
@@ -4200,7 +4200,7 @@ pub(self) async fn update_private_gallery(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "update_private_gallery");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -4253,7 +4253,7 @@ pub(self) async fn update_private_gallery(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &update_private_gallery_request_object.owner_cid, 
                             &update_private_gallery_request_object.tx_signature, 
@@ -4402,7 +4402,7 @@ pub(self) async fn remove_invited_friend_from_gallery(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &remove_invited_friend_request.caller_cid, 
                         &remove_invited_friend_request.tx_signature, 
@@ -4542,7 +4542,7 @@ pub(self) async fn exit_from_private_gallery(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &exit_from_private_gallery.caller_cid, 
                         &exit_from_private_gallery.tx_signature, 
@@ -4693,7 +4693,7 @@ pub(self) async fn send_private_gallery_invitation_request_to(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &send_invitation_request.gallery_owner_cid, 
                         &send_invitation_request.tx_signature, 
@@ -5455,7 +5455,7 @@ pub(self) async fn accept_invitation_request(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &accept_invitation_request.owner_cid, 
                         &accept_invitation_request.tx_signature, 
@@ -5594,7 +5594,7 @@ pub(self) async fn enter_private_gallery(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &enter_private_gallery_request.caller_cid, 
                         &enter_private_gallery_request.tx_signature, 
@@ -5859,7 +5859,7 @@ pub(self) async fn accept_friend_request(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &accept_friend_request.owner_cid, 
                         &accept_friend_request.tx_signature, 
@@ -5998,7 +5998,7 @@ pub(self) async fn send_friend_request_to(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &send_friend_request_to.owner_cid, 
                         &send_friend_request_to.tx_signature, 
@@ -6137,7 +6137,7 @@ pub(self) async fn remove_user_from_follower(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &remove_follower_request.owner_cid, 
                         &remove_follower_request.tx_signature, 
@@ -6277,7 +6277,7 @@ pub(self) async fn remove_user_from_friend(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &remove_friend_request.owner_cid, 
                         &remove_friend_request.tx_signature, 
@@ -6417,7 +6417,7 @@ pub(self) async fn remove_user_from_following(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &remove_following_request.owner_cid, 
                         &remove_following_request.tx_signature, 
@@ -7420,7 +7420,7 @@ pub(self) async fn create_collection(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_collection");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -7474,7 +7474,7 @@ pub(self) async fn create_collection(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &new_user_collection_request.owner_cid, 
                             &new_user_collection_request.tx_signature, 
@@ -7610,7 +7610,7 @@ pub(self) async fn update_collection(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "updated_collection");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -7664,7 +7664,7 @@ pub(self) async fn update_collection(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &update_user_collection_request.owner_cid, 
                             &update_user_collection_request.tx_signature, 
@@ -8183,7 +8183,7 @@ pub(self) async fn create_nft(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_nft");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -8237,7 +8237,7 @@ pub(self) async fn create_nft(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &new_user_nft_request.caller_cid, 
                             &new_user_nft_request.tx_signature, 
@@ -8373,7 +8373,7 @@ pub(self) async fn create_nft_metadata_uri(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "create_nft_metadata_uri");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -8439,7 +8439,7 @@ pub(self) async fn create_nft_metadata_uri(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &create_nft_metadata_uri_request.caller_cid, 
                             &create_nft_metadata_uri_request.tx_signature, 
@@ -8712,7 +8712,7 @@ pub(self) async fn update_nft(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &update_user_nft_request.caller_cid, 
                         &update_user_nft_request.tx_signature, 
@@ -8855,7 +8855,7 @@ pub(self) async fn add_reaction_to_nft(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &user_add_nft_reaction.caller_cid, 
                         &user_add_nft_reaction.tx_signature, 
@@ -8988,7 +8988,7 @@ pub(self) async fn buy_nft(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "buy_nft");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -9042,7 +9042,7 @@ pub(self) async fn buy_nft(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &user_buy_nft_request.caller_cid, 
                             &user_buy_nft_request.tx_signature, 
@@ -9178,7 +9178,7 @@ pub(self) async fn mint_nft(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "mint_nft");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -9232,7 +9232,7 @@ pub(self) async fn mint_nft(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &user_mint_nft_request.caller_cid, 
                             &user_mint_nft_request.tx_signature, 
@@ -9752,7 +9752,7 @@ pub(self) async fn register_clp_event(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "register_clp_event");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -9855,7 +9855,7 @@ pub(self) async fn register_clp_event(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &register_clp_event_request.participant_cid, 
                             &register_clp_event_request.tx_signature, 
@@ -10004,7 +10004,7 @@ pub(self) async fn cancel_clp_event(
                         /* handling the redis connection error using PanelError */
                         let redis_get_conn_error = get_redis_conn.err().unwrap();
                         let redis_get_conn_error_string = redis_get_conn_error.to_string();
-                        use error::{ErrorKind, StorageError::Redis, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::Redis, PanelError};
                         let error_content = redis_get_conn_error_string.as_bytes().to_vec();  
                         let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Redis(redis_get_conn_error)), "cancel_clp_event");
                         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
@@ -10064,7 +10064,7 @@ pub(self) async fn cancel_clp_event(
                                 - hash_data        : sha256 hash of data generated in client app
                                 - deposited_amount : the amount of token must be deposited for this call
                         */
-                        let is_request_verified = kyced::verify_request(
+                        let is_request_verified = helpers::kyced::verify_request(
                             _id, 
                             &cancel_clp_event_request.participant_cid, 
                             &cancel_clp_event_request.tx_signature, 

@@ -109,7 +109,7 @@ impl UserBalanceActor{
 
             let Ok(mut pubsubstreamer) = get_stream_messages else{
 
-                use error::{ErrorKind, StorageError::RedisAsync, PanelError};
+                use helpers::error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
                 let error_content = e.to_string().as_bytes().to_vec();  
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)), "UserBalanceActor::redis_subscribe");

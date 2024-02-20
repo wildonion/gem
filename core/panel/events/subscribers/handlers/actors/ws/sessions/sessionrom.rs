@@ -15,7 +15,7 @@
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::events::publishers::role::PlayerRoleInfo;
 use crate::events::subscribers::handlers::actors::ws::servers::role::{NotifySessionsWithRedisSubscription, NotifySessionWithRedisSubscription};
-use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
+use crate::{helpers::misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use s3req::Storage;
 use actix::prelude::*;
@@ -108,7 +108,7 @@ impl WsNotifSession{
             
             let Ok(mut get_stream_messages) = get_stream_messages else{
 
-                use error::{ErrorKind, StorageError::RedisAsync, PanelError};
+                use helpers::error::{ErrorKind, StorageError::RedisAsync, PanelError};
                 let e = get_stream_messages.unwrap_err();
                 let error_content = e.to_string().as_bytes().to_vec();  
                 let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(RedisAsync(e)), "WsNotifSession::role_subscription");
@@ -308,7 +308,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsNotifSession{
             Err(e) => {
 
                 /* custom error handler */
-                use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
+                use helpers::error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();

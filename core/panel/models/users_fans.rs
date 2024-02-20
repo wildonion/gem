@@ -9,7 +9,7 @@ use chrono::NaiveDateTime;
 use crate::*;
 use crate::constants::{NO_FANS_FOUND, STORAGE_IO_ERROR_CODE, INVALID_QUERY_LIMIT, NO_FRIEND_FOUND, NO_USER_FANS, USER_SCREEN_CID_NOT_FOUND, INVALID_GALLERY_PRICE};
 use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
-use crate::misc::{Response, Limit};
+use crate::helpers::misc::{Response, Limit};
 use crate::schema::users_fans::dsl::*;
 use crate::schema::users_fans;
 use super::galleries_invitation_requests::{NewPrivateGalleryInvitationRequest, PrivateGalleryInvitationRequest};
@@ -358,7 +358,7 @@ impl UserFan{
                                     let resp_err = &e.to_string();
 
                                     /* custom error handler */
-                                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                                     
                                     let error_content = &e.to_string();
                                     let error_content = error_content.as_bytes().to_vec();  
@@ -382,7 +382,7 @@ impl UserFan{
     
     
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -1725,7 +1725,7 @@ impl UserFan{
                                 let resp_err = &e.to_string();
 
                                 /* custom error handler */
-                                use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                                 
                                 let error_content = &e.to_string();
                                 let error_content = error_content.as_bytes().to_vec();  

@@ -6,9 +6,9 @@ use crate::adapters::stripe::StripeWebhookPayload;
 use crate::models::users_checkouts::UserCheckout;
 use crate::resp;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use s3req::Storage;
-use passport::Passport;
+use helpers::passport::Passport;
 use crate::models::users::*;
 use crate::schema::users::dsl::*;
 use crate::schema::users;
@@ -698,7 +698,7 @@ pub(self) async fn is_user_kyced(
                             - hash_data        : sha256 hash of data generated in client app
                             - deposited_amount : the amount of token must be deposited for this call
                     */
-                    let is_request_verified = kyced::verify_request(
+                    let is_request_verified = helpers::kyced::verify_request(
                         _id, 
                         &check_kyc_request.caller_cid, 
                         &check_kyc_request.tx_signature, 

@@ -11,7 +11,7 @@ use crate::models::users_galleries::{UserPrivateGallery, UserPrivateGalleryData}
 use crate::models::{users::*, tasks::*, users_tasks::*, xbot::*};
 use crate::resp;
 use crate::constants::*;
-use crate::misc::*;
+use crate::helpers::misc::*;
 use chrono::NaiveDateTime;
 use rand::seq::SliceRandom;
 use s3req::Storage;

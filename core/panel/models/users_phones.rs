@@ -2,7 +2,7 @@
 
 
 use crate::*;
-use crate::misc::Response;
+use crate::helpers::misc::Response;
 use crate::schema::users;
 use crate::schema::users_phones;
 use crate::schema::users::dsl::*;
@@ -90,7 +90,7 @@ impl UserPhone{
 
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                      
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -128,7 +128,7 @@ impl UserPhone{
                         let resp_err = &e.to_string();
 
                         /* custom error handler */
-                        use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                             
                         let error_content = &e.to_string();
                         let error_content = error_content.as_bytes().to_vec();  

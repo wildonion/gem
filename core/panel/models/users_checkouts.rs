@@ -3,7 +3,7 @@
 
 
 use crate::*;
-use crate::misc::{Response, Limit};
+use crate::helpers::misc::{Response, Limit};
 use crate::schema::users::dsl::*;
 use crate::schema::users_checkouts;
 use crate::constants::*;
@@ -115,7 +115,7 @@ impl UserCheckout{
                     let resp_err = &e.to_string();
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  
@@ -380,7 +380,7 @@ impl UserCheckout{
                     let resp_err = &e.to_string();
 
                     /* custom error handler */
-                    use error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
                         
                     let error_content = &e.to_string();
                     let error_content = error_content.as_bytes().to_vec();  

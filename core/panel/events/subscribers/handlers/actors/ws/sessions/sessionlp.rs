@@ -15,7 +15,7 @@
 use crate::constants::{WS_CLIENT_TIMEOUT, SERVER_IO_ERROR_CODE, STORAGE_IO_ERROR_CODE, WS_SUBSCRIPTION_INTERVAL};
 use crate::models::users::{User, UserWalletInfoResponse};
 use crate::models::chatdb::UserChat;
-use crate::{misc::*, constants::WS_HEARTBEAT_INTERVAL};
+use crate::{helpers::misc::*, constants::WS_HEARTBEAT_INTERVAL};
 use crate::*;
 use s3req::Storage;
 use actix::prelude::*;
@@ -197,7 +197,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
             Err(e) => {
 
                 /* custom error handler */
-                use error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
+                use helpers::error::{ErrorKind, ServerError::{ActixWeb, Ws}, PanelError};
                  
                 let error_content = &e.to_string();
                 let error_content = error_content.as_bytes().to_vec();
@@ -239,7 +239,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsLaunchpadSessio
                 let message_vec = get_decrypted_new_message.unwrap();
                 // converting vector decoded message into static slice so it can live 
                 // long enough for the entire app and then to str using std::str::from_utf8 
-                let message_vec_slice = misc::vector_to_static_slice(message_vec); 
+                let message_vec_slice = helpers::misc::vector_to_static_slice(message_vec); 
                 let new_message = std::str::from_utf8(message_vec_slice).unwrap();
 
                 /* handling slash commands */

@@ -424,7 +424,7 @@ pub async fn fetch_x_app_rl_data(redis_client: redis::Client) -> TotalXRlInfo{
         let ـ : RedisResult<String> = redis_conn.set(get_nft_logs_key_err, err_resp_str).await;
 
         /* custom error handler */
-        use error::{ErrorKind, ThirdPartyApiError, PanelError};
+        use helpers::error::{ErrorKind, ThirdPartyApiError, PanelError};
         let error_instance = PanelError::new(*THIRDPARTYAPI_ERROR_CODE, err_resp_vec, ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(err_resp_str.to_string())), "fetch_x_app_rl_data");
         let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
 
@@ -649,7 +649,7 @@ macro_rules! resp {
 
         {
             use actix_web::HttpResponse;
-            use crate::misc::Response;
+            use crate::helpers::misc::Response;
             
             let code = $code.as_u16();
             let mut res = HttpResponse::build($code);

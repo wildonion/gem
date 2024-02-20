@@ -1159,3 +1159,18 @@ code: 65535 | message: null value in column "activity_code" of relation "users" 
 code: 65535 | message: duplicate key value violates unique constraint "users_username_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_username_key\""))) | time: 1705676309823 | method name: User::insert_new_google_user
 code: 65535 | message: duplicate key value violates unique constraint "users_logins_jwt_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_logins_jwt_key\""))) | time: 1707855534798 | method name: UserLogin::remove_jwt
 code: 65535 | message: duplicate key value violates unique constraint "users_logins_jwt_key" | due to: Storage(Diesel(DatabaseError(UniqueViolation, "duplicate key value violates unique constraint \"users_logins_jwt_key\""))) | time: 1707855551681 | method name: UserLogin::remove_jwt
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452176754 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452177722 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452178724 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452179726 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452180717 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452181727 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452182720 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452183724 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452184722 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452185723 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452186722 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452187722 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452188719 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452189723 | method name: ClpEvent::lock_event
+code: 65535 | message: Record not found | due to: Storage(Diesel(NotFound)) | time: 1708452190716 | method name: ClpEvent::lock_event
