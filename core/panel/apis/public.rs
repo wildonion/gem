@@ -1324,16 +1324,6 @@ pub(self) async fn search(
 
 #[post("/test-stream")]
 pub(self) async fn test_stream(
-    /* 
-        actix_web::main
-            - http  ---> apis, web::Json, web::Path, Payload, Multipart
-            - ws    ---> while let some streaming over Payload
-            - actor ---> redis and local borker pubsub actors
-            - async ---> tokio::spawn(), Box::pin
-        tokio::main
-            - tcp listeners while let some streaming
-            - spawn,mpsc,select,time,mutex
-    */
     req: HttpRequest,
     mut stream: Payload,
     json_body: web::Json<LoginInfoRequest>,
@@ -1368,7 +1358,6 @@ pub(self) async fn test_stream(
         // ...
          
     });
-
 
     resp!{
         usize, // the data type
