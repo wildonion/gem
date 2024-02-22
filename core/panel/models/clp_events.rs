@@ -227,7 +227,7 @@ impl ClpEvent{
 
         tokio::spawn(async move{
             if let Ok(users_titles) = ut_receiver.try_recv(){
-                let get_users_images = UserChat::start_generating_ai_images(users_titles).await;
+                let get_users_images = UserChat::start_generating_ai_images(users_titles, clp_event_id).await;
                 if get_users_images.is_err(){
                     uimg_err_sender.send(format!("can't generate images from users titles for the event {}", clp_event_id));
                 }
@@ -253,6 +253,8 @@ impl ClpEvent{
                 // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
                 // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
                 // ...
+
+                // clp_event_sender.send(updated_event);
                 
             }
         });
@@ -261,7 +263,7 @@ impl ClpEvent{
             clp_event_info = updated_clp_event;
         }
 
-        Ok(clp_event_info)
+        Ok(clp_event_info) // return the latest clp event info 
 
 
     }

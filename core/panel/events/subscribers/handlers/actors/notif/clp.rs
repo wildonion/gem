@@ -5,7 +5,7 @@
 
 use actix::{AsyncContext, Context};
 use s3req::Storage;
-use crate::*;
+use crate::{constants::WS_CLP_EVENT_SUBSCRIPTION_INTERVAL, *};
 use self::{constants::WS_SUBSCRIPTION_INTERVAL, models::clp_events::{ClpEvent, ClpEventData}};
 
 
@@ -31,7 +31,7 @@ impl Actor for ClpEventSchedulerActor{
         // and if it was expired or finished we would have to start the 
         // process of summarizing users chats, generating and minting 
         //openai pictures
-        ctx.run_interval(WS_SUBSCRIPTION_INTERVAL, |actor, ctx|{
+        ctx.run_interval(WS_CLP_EVENT_SUBSCRIPTION_INTERVAL, |actor, ctx|{
             
             let storage = actor.app_storage.clone();
             let this = actor.clone();
@@ -77,9 +77,10 @@ impl ClpEventSchedulerActor{
             /* ---------------------- check that event is expired or not ---------------------- */
             /* -------------------------------------------------------------------------------- */
             let latest_clp_event_info = get_latest_clp_event.unwrap_or(ClpEventData::default());
-            if chrono::Local::now().timestamp() > latest_clp_event_info.expire_at{ // event is expired so let's start generating :)
+            if chrono::Local::now().timestamp() > latest_clp_event_info.expire_at{ // event is expired so let's rewarding :)
                 
                 // start summarizing chats, generating titles and images and finally mint them
+                // to all participant in-app evm wallet inside the event
                 let reward_them = ClpEvent::distribute_rewards(latest_clp_event_info.id, connection).await;
                 if let Err(why) = reward_them{
                     error!("can't reward participants due to {:?}", why);

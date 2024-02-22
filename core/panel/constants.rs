@@ -267,6 +267,7 @@ pub static NFT_EVENT_TYPE_METADATA_URI_IS_NEEDED: &str = "This Event Type Requir
 pub static NFT_IS_NOT_LISTED: &str = "Nft Is Not Listed";
 pub const CHARSET: &[u8] = b"0123456789"; /* converting chars into an slice of their ascii codes which is utf8 bytes */
 pub const EVENT_UPLOAD_PATH: &str = "assets/images/events";
+pub const OPENAI_IMAGES: &str = "assets/images/openai/events";
 pub const WALLET_BACK_UPLOAD_PATH: &str = "assets/images/wallet/background";
 pub const AVATAR_UPLOAD_PATH: &str = "assets/images/avatars";
 pub const BANNER_UPLOAD_PATH: &str = "assets/images/banners";
@@ -303,6 +304,7 @@ pub static USER_CLP_EVENT_NOT_FOUND_ANY: &str = "Found No User Clp Event Data";
 pub static USER_CLP_EVENT_NOT_FOUND: &str = "Found No User Clp With This Data";
 pub static CLP_EVENT_NOT_FOUND: &str = "Found No Clp Event With This Id";
 pub static NO_CLP_EVENT: &str = "Found No Clp Event";
+pub static CHATGPT_SUMMARIZATION_PROMPT: &str = "could you summarize the following chats inside single quotes into a single title, also remove any bad and toxic words in it if there are any.";
 
 /* 
     u16 bits is 2 bytes which is 4 chars in hex 
@@ -315,6 +317,7 @@ pub static STORAGE_IO_ERROR_CODE: &u16 = &0xFFFF; // 65535
 pub static THIRDPARTYAPI_ERROR_CODE: &u16 = &0xFFFC; // 65532
 pub const WS_HEARTBEAT_INTERVAL: StdDuration = StdDuration::from_secs(5);
 pub const WS_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(1);
+pub const WS_CLP_EVENT_SUBSCRIPTION_INTERVAL: StdDuration = StdDuration::from_secs(300);
 pub const WS_CLIENT_TIMEOUT: StdDuration = StdDuration::from_secs(3600);
 pub static WS_INVALID_PATH: &str = "Invalid Path Params";
 pub static WS_UPDATE_NOTIF_ROOM_ISSUE: &str = "Can't Update Notif Room";

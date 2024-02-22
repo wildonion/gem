@@ -78,13 +78,13 @@ impl UserChat{
         Ok(users_titles_map)
     }
 
-    pub async fn start_generating_ai_images(users_titles_map: HashMap<i32, String>) -> Result<HashMap<i32, String>, String>{
+    pub async fn start_generating_ai_images(users_titles_map: HashMap<i32, String>, clp_event_id: i32) -> Result<HashMap<i32, String>, String>{
 
         let mut users_image_map = HashMap::new();
         for (user_id, title) in users_titles_map{
             users_image_map.insert(
                 user_id,
-                openai::generate::create_image_from(&title).await
+                openai::generate::create_image_from(helpers::misc::string_to_static_str(title), clp_event_id).await
             );
         }
 
