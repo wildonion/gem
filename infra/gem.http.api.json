@@ -1987,7 +1987,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"username\": \"adminy\",\n    \"password\": \"4dmin@%$^$3hjsD\"\n}",
+									"raw": "{\n    \"username\": \"adminy\",\n    \"password\": \"4dmin@%$^$3hjsD\",\n    \"device_id\": \"8888\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2808,25 +2808,6 @@
 							"name": "KYC",
 							"item": [
 								{
-									"name": "Login With Identifier",
-									"request": {
-										"method": "POST",
-										"header": [],
-										"url": {
-											"raw": "{{panel-user}}/login/8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"login",
-												"8SzHrPVkDf5xhmjyUJ7W8vDaxhTiGF9XBT9XX2PtiwYF"
-											]
-										},
-										"description": "> There are access and refresh tokens in cookie response in form of /`accesstoken={access_token:}&accesstoken_time={time_hash_hex_string:}&refrestoken={refresh_token:}` once the access token gets expired we can pass refresh token into the request header in place of access token to get a new set of keys on behalf of user, instead of redirecting client to the login page again."
-									},
-									"response": []
-								},
-								{
 									"name": "Login With Identifier and Password",
 									"request": {
 										"auth": {
@@ -2836,7 +2817,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\"\n}",
+											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\",\n    \"device_id\": \"2222\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3080,7 +3061,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA0Mzc0Mzc2NjUxMzA2MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzA0Mzc2MTc2NjU5MDEyMDAwLCJpYXQiOjE3MDQzNzQzNzY2NTkwMTIwMDB9.OOAKAUl08hGQEXV7-DYV2SWv_Tk1mVMUqZl6zyTEQ-D4492kIDhQScOm22enGQhL9Q76ySYIqeBgVkCw_d7qsw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA3ODU1OTMyMTkzNzEyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzEwNDQ3OTMyMTkzOTk1MDAwLCJpYXQiOjE3MDc4NTU5MzIxOTM5OTUwMDB9.3tY0F3BtEtxkUsc5fH2ZivjRpCMdLs81vAPf3u5rp2HKOBl9tdzJFqXiewRF3BpZpiRroKSoKftOMcWOy39YZg",
 													"type": "string"
 												}
 											]
@@ -3089,7 +3070,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"bio\": \"the sexeiseee\"\n}",
+											"raw": "{\n    \"bio\": \"the wildest\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3353,7 +3334,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "{{panel-user}}/sessions/oauth/google?code=&state=",
+											"raw": "{{panel-user}}/sessions/oauth/google?code=&state=&device_id",
 											"host": [
 												"{{panel-user}}"
 											],
@@ -3370,6 +3351,10 @@
 												{
 													"key": "state",
 													"value": ""
+												},
+												{
+													"key": "device_id",
+													"value": null
 												}
 											]
 										},
@@ -5788,7 +5773,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk1MDQxOTUyMjI1OTQ3MDAwLCJleHAiOjE2OTc2MzM5NTIsImlhdCI6MTY5NTA0MTk1Mn0.jknOjsKMbAwOmxC0_WHyTb85KXfA3hqsQ9ynsOs6FLKFD9Xw-Xz6YOx-OzEczc9bfZoh_UgrHhhjWhnw4axbWg",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA3ODU1OTQ4ODMyNjY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzEwNDQ3OTQ4ODMyODcyMDAwLCJpYXQiOjE3MDc4NTU5NDg4MzI4NzIwMDB9.SY3flmAiv1mTpFavmbPWA46goRQygEvTjxl7rysnfzqnBknhClaT3UDZUarG2PFvHJqG_wBhNUnMJZp_mniCZA",
 											"type": "string"
 										}
 									]
@@ -6176,12 +6161,19 @@
 						},
 						{
 							"name": "Get All Minted Nfts",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
 							"request": {
 								"auth": {
 									"type": "noauth"
 								},
 								"method": "GET",
 								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
 								"url": {
 									"raw": "{{panel-public}}/get-all-minted-nfts/?from=0&to=10",
 									"host": [
@@ -6200,6 +6192,39 @@
 											"key": "to",
 											"value": "10"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Test Http Byte Stream",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "",
+											"type": "file",
+											"src": "/Users/wildonion/Desktop/onion.png"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{panel-public}}/test-stream",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"test-stream"
 									]
 								}
 							},

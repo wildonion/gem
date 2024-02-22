@@ -12,6 +12,8 @@ use crate::models::{users::*, tasks::*, users_tasks::*, xbot::*};
 use crate::resp;
 use crate::constants::*;
 use crate::helpers::misc::*;
+use actix_web::web::Payload;
+use bytes::Buf;
 use chrono::NaiveDateTime;
 use rand::seq::SliceRandom;
 use s3req::Storage;
@@ -1320,8 +1322,67 @@ pub(self) async fn search(
 
 }
 
+#[post("/test-stream")]
+pub(self) async fn test_stream(
+    /* 
+        actix_web::main
+            - http  ---> apis, web::Json, web::Path, Payload, Multipart
+            - ws    ---> while let some streaming over Payload
+            - actor ---> redis and local borker pubsub actors
+            - async ---> tokio::spawn(), Box::pin
+        tokio::main
+            - tcp listeners while let some streaming
+            - spawn,mpsc,select,time,mutex
+    */
+    req: HttpRequest,
+    mut stream: Payload,
+    json_body: web::Json<LoginInfoRequest>,
+    some_path: web::Path<(String, i32)>,
+    multipart_body: Multipart,
+) -> PanelHttpResponse{
+
+    // streaming over the incoming binary data from client
+    // later on we can map the buffer into its related strucutre
+    let mut buffer = vec![];
+    while let Some(chunk) = stream.next().await{
+        let bytes = chunk.unwrap();
+        buffer.extend_from_slice(bytes.chunk());
+    }
+
+    // extracting multipart formdata
+    let extracted_multipart = multipartreq::extract(
+        std::sync::Arc::new(
+            tokio::sync::Mutex::new(multipart_body)
+        )
+    ).await.unwrap();
+    let json_value_formdata = extracted_multipart.0;
+    let files = extracted_multipart.1;
+
+    // getting the json body
+    let json_body = json_body.to_owned();
+
+    // executing async tasks in the background
+    tokio::spawn(async move{
+
+        // async logics
+        // ...
+         
+    });
+
+
+    resp!{
+        usize, // the data type
+        buffer.len(), // response data
+        &format!("Stream Length Fetched"), // response message
+        StatusCode::OK, // status code
+        None::<Cookie<'_>>, // cookie
+    }
+
+}
+
 
 pub mod exports{
+    pub use super::test_stream;
     pub use super::verify_twitter_task;
     pub use super::check_users_task;
     pub use super::get_x_requests;

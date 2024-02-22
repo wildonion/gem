@@ -214,5 +214,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::exports::get_top_nfts);
     config.service(apis::public::exports::get_all_nfts);
     config.service(apis::public::exports::get_nft_product_collections);
+    config.service(apis::public::exports::test_stream);
 
 }
