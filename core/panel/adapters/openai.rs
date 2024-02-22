@@ -27,7 +27,7 @@ pub mod generate{
 
         tokio::spawn(async move{
 
-            let client = OpenAiClient::new();
+            let client = OpenAiClient::new(); // the client would take the OPENAI_API_KEY env var by itself in its constructor
             let img_request = CreateImageRequestArgs::default()
                 .prompt(title)
                 .n(1)
@@ -91,9 +91,12 @@ pub mod summarize{
             
         }
 
+        // the summarization process is heavy computaionally therefore we don't wanna
+        // have a none async order of execution that's why we put the task inside the
+        // tokio threadpool to avoid making any interuption in other method execution order
         let gpt_prompt = format!("{} '{:?}'", CHATGPT_SUMMARIZATION_PROMPT, user_chats);
         tokio::spawn(async move{
-            let client = OpenAiClient::new();
+            let client = OpenAiClient::new(); // the client would take the OPENAI_API_KEY env var by itself in its constructor
             let chat_request = CreateChatCompletionRequestArgs::default()
                 .max_tokens(1024u16)
                 .model("gpt-4-turbo")
@@ -122,9 +125,9 @@ pub mod summarize{
             let response = client.chat().create(chat_request).await.unwrap();
             let choices = response.choices;
             let assitant_answer = &choices[0];
-            let assitant_content = &assitant_answer.message.content;
+            let assistant_content = &assitant_answer.message.content;
             
-            summarization_sender.send(assitant_content.to_owned())
+            summarization_sender.send(assistant_content.to_owned())
         
         });
 
