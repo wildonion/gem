@@ -1324,6 +1324,8 @@ pub(self) async fn search(
 
 #[post("/test-stream")]
 pub(self) async fn test_stream(
+    // payload and multipart are both in form of bytes that 
+    // can be collected using while let some streaming
     req: HttpRequest,
     mut stream: Payload,
     json_body: web::Json<LoginInfoRequest>,

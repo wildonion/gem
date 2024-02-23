@@ -1,5 +1,11 @@
 
 
+/*  > -----------------------------------------------------------------------
+    | deploy actor is used to deploy the app by sending command to this actor
+    | -----------------------------------------------------------------------
+    | contains: message structures and their handlers
+    |
+*/
 
 use crate::{*, constants::{WS_SUBSCRIPTION_INTERVAL, STORAGE_IO_ERROR_CODE}, events::publishers::action::{UserNotif, NotifExt, NotifData, SingleUserNotif}, models::users::User};
 use actix::prelude::*;

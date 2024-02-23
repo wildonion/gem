@@ -63,7 +63,7 @@ impl ClpEventSchedulerActor{
 
         // note that some ClpEvent methods doesn't return actix response in their
         // error part since we're using tokio::spawn() and can't transfer actix 
-        // http response between tokio::spawn since it's not Send 
+        // http response between tokio::spawn since it's not Send and Sync
         tokio::spawn(async move{
             let pg_pool = app_storage.get_pgdb().await.unwrap();
             let connection = &mut pg_pool.get().unwrap();
