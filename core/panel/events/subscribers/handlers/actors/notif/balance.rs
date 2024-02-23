@@ -72,6 +72,33 @@ impl UserBalanceActor{
         }
     }
 
+    /* 
+        none-actor approach for subscription: 
+        following method is not necessary to be executed inside the started() method,
+        actually there is no need to use an actor for this, the subscription can simply 
+        be started inside the tokio::spawn() an let it be there in the background in 
+        an async function the we could have executed the method inside another tokio::spawn
+        where the server is being started but the convenient way is to use actor worker 
+        for this cause actors are great structures to deal with executing and scheduling 
+        tasks asyncly and concurrently in different parts of the app, hopefully the have 
+        some mailbox receiver for communicating with other actors.
+
+        pub async fn redis_subscribe(){
+
+            tokio::spawn(async move{
+
+                // subscription logic
+                // ...
+
+            });
+
+        }
+
+        // put this where the server is being started
+        tokio::spawn(async move{
+            redis_subscribe().await;
+        });
+    */
     pub async fn redis_subscribe(&mut self, app_storage: Arc<Storage>,
         redis_async_pubsubconn: Arc<PubsubConnection>){
 
@@ -163,7 +190,7 @@ impl UserBalanceActor{
                 let user_info = User::find_by_id(owner_id, connection).await.unwrap();
                 let new_balance = if user_info.balance.is_none(){0 + balance} else{user_info.balance.unwrap() + balance};
                 if let Err(why) = User::update_balance(owner_id, new_balance, redis_client.clone(), redis_actix_actor.clone(), connection).await{
-                    error!("can't update user balance due to");
+                    error!("can't update user balance at the moment");
                 }
             }
 
