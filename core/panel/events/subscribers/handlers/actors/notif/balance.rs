@@ -181,8 +181,8 @@ impl UserBalanceActor{
             /* 
                 step1 - stripe server would store the user id along with its updated balance inside a map after a successful payment
                 step2 - the map contains the latest users balance data thus if a user balance is not zero means we have to update his balance
-                step3 - after publishing the users balance map to redis channel, all balances must be seto to zero inside the map to avoid double updating issue
-                step4 - this actor subscribes to the related channel constantly until it receive the users balance map 
+                step3 - after publishing the users balance map to redis channel, inside the stipre setver, all balances must be seto to zero inside the map to avoid double updating issue
+                step4 - this actor subscribes to the related channel constantly until it receives the users balance map 
                 step5 - finally we'll update each user balance inside the db
             */    
             // update balance of all users came from a successful stripe payment
