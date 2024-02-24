@@ -3,8 +3,58 @@
 
 
 use crate::*; /* this includes all things in app.rs specially s3 which contains the storage! macro */
+use crate::models::users::LoginInfoRequest;
 
 
+pub async fn start_streaming(){
+
+    /* 
+        executing a tcp streamer in the background, this is started 
+        in the background even after dropping the http connection,
+        and waits for the client request, note that we can start a 
+        tokio tcp listener from the context of actix_web::main runtime
+        but can't start actix stuffs like actors from the context of 
+        tokio::main runtime
+    */
+    tokio::spawn(async move{ // execute the creating process of a tcp listener asyncly inside a tokio threadpool
+
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:2324").await.unwrap();
+        info!("tcp listener started in the background");
+
+        tokio::spawn(async move{ // execute the accepting process of a tcp listener asyncly inside a tokio threadpool
+
+            while let Ok((mut stream, addr)) = listener.accept().await{
+
+                tokio::spawn(async move{ // execute the reading process from the socket stream asyncly inside a tokio threadpool
+                    
+                    info!("got new client: {:?}", addr.to_string());
+                    let mut buffer = vec![];
+
+                    while match stream.read(&mut buffer).await{
+                        Ok(size) if size == 0 => return,
+                        Ok(size) => {
+
+                            let received_buffer = &buffer[..size];
+                            let datastr = std::str::from_utf8(&received_buffer).unwrap();
+                            let datainfo = serde_json::from_slice::<LoginInfoRequest>(&buffer).unwrap();
+                            
+                            info!("parsed data: {:?}", datastr);
+                            return;
+                        },
+                        Err(why) => {
+                            error!("can't read from stream due to: {}", why.to_string());
+                            return;
+                        }
+                    }
+                    {} // this belongs to the while match
+
+                });
+            }
+        });
+         
+    });
+
+}
 
 #[macro_export]
 macro_rules! server {
@@ -224,7 +274,7 @@ macro_rules! server {
                             .configure(services::init_public)
                     )
                 }) 
-                .listen($tcp_listener){
+                .listen($tcp_listener){ // bind the http server on the passed in tcp listener cause after all http is a tcp based protocol!
                     Ok(server) => {
                         server
                             /* 

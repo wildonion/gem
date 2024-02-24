@@ -1328,9 +1328,9 @@ pub(self) async fn test_stream(
     // can be collected using while let some streaming
     req: HttpRequest,
     mut stream: Payload,
-    json_body: web::Json<LoginInfoRequest>,
-    some_path: web::Path<(String, i32)>,
-    multipart_body: Multipart,
+    // json_body: web::Json<LoginInfoRequest>,
+    // some_path: web::Path<(String, i32)>,
+    // multipart_body: Multipart,
 ) -> PanelHttpResponse{
 
     // streaming over the incoming binary data from client
@@ -1342,22 +1342,22 @@ pub(self) async fn test_stream(
     }
 
     // extracting multipart formdata
-    let extracted_multipart = multipartreq::extract(
-        std::sync::Arc::new(
-            tokio::sync::Mutex::new(multipart_body)
-        )
-    ).await.unwrap();
-    let json_value_formdata = extracted_multipart.0;
-    let files = extracted_multipart.1;
+    // let extracted_multipart = multipartreq::extract(
+    //     std::sync::Arc::new(
+    //         tokio::sync::Mutex::new(multipart_body)
+    //     )
+    // ).await.unwrap();
+    // let json_value_formdata = extracted_multipart.0;
+    // let files = extracted_multipart.1;
 
     // getting the json body
-    let json_body = json_body.to_owned();
+    // let json_body = json_body.to_owned();
 
-    // executing async tasks in the background
-    tokio::spawn(async move{
 
-        // async logics
-        // ...
+    tokio::spawn(async move{ 
+
+        // start a tcp streamer in the background 
+        helpers::server::start_streaming().await;
          
     });
 
