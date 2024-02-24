@@ -6199,14 +6199,11 @@
 						},
 						{
 							"name": "Test Http Byte Stream",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
 							"request": {
 								"auth": {
 									"type": "noauth"
 								},
-								"method": "GET",
+								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "formdata",

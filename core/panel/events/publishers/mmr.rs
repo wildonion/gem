@@ -6,7 +6,7 @@
 /*   match making rating/ranking  */
 /* ------------------------------ */
 /*
-    https://github.com/wildonion/zoomate/blob/main/src/lib.rs
+    https://github.com/wildonion/zoomate + test_stream() api
     https://github.com/wildonion/gvm/blob/main/src/lib.rs
 
     complete proc macros in lib.rs as a plugin
@@ -52,4 +52,44 @@ impl UserRank{
 pub struct CurrentMatch{
     pub event_id: String,
     pub users: Vec<UserRank>,
+}
+
+
+pub mod structures{
+
+    // graph game (multithreaded graph, random, board, score, enemy, tokio, redis, actix, libp2p)
+    struct Enemy{
+        damage_rate: u8
+    }
+
+    struct Player<'s>{
+        nickname: &'s str,
+        score: u16,
+    }
+
+    struct Col{
+        x: u8,
+        y: u8
+    }
+
+    struct Row{
+        x: u8,
+        y: u8
+    }
+
+    struct Board<'b>{
+        col: &'b [Col],
+        row: &'b [Row]
+    }
+
+    struct Node<T>{
+        pub value: T, 
+        pub parent: std::sync::Arc<std::rc::Weak<Node<T>>>,
+        pub children: std::sync::Arc<tokio::sync::Mutex<Vec<Node<T>>>>
+    }
+
+}
+
+pub mod functions{
+    
 }

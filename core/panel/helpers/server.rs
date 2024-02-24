@@ -14,11 +14,17 @@ pub async fn start_streaming(){
         and waits for the client request, note that we can start a 
         tokio tcp listener from the context of actix_web::main runtime
         but can't start actix stuffs like actors from the context of 
-        tokio::main runtime
+        tokio::main runtime, 
+        more about actor worker threadpool in: https://github.com/wildonion/zoomate/blob/main/src/helpers/acter.rs
     */
     tokio::spawn(async move{ // execute the creating process of a tcp listener asyncly inside a tokio threadpool
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:2324").await.unwrap();
+        let addr = format!(
+            "{}:{}", 
+            std::env::var("HOST").unwrap(),
+            std::env::var("TCP_PORT").unwrap()
+        );
+        let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
         info!("tcp listener started in the background");
 
         tokio::spawn(async move{ // execute the accepting process of a tcp listener asyncly inside a tokio threadpool
@@ -37,6 +43,9 @@ pub async fn start_streaming(){
                             let received_buffer = &buffer[..size];
                             let datastr = std::str::from_utf8(&received_buffer).unwrap();
                             let datainfo = serde_json::from_slice::<LoginInfoRequest>(&buffer).unwrap();
+                            
+                            // do whatever is needed with received data 
+                            // ...
                             
                             info!("parsed data: {:?}", datastr);
                             return;
