@@ -720,14 +720,14 @@ pub(self) async fn get_notifications(
     req: HttpRequest,
     limit: web::Query<Limit>,
     app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    users_action_subscriber_actor: web::Data<Addr<UserActionActor>>,
 ) -> PanelHttpResponse{
 
     let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let get_redis_conn = redis_client.get_async_connection().await;
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
-    let users_action_subscriber_actor = users_action_subscriber_actor.get_ref().to_owned();
+    let ws_role_notif_actor_address = app_state.subscriber_actors.as_ref().unwrap().role_actor.clone();
+    let users_action_subscriber_actor = app_state.subscriber_actors.as_ref().unwrap().user_actor.clone();
     
     /* 
           ------------------------------------- 

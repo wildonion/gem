@@ -73,8 +73,6 @@ pub(self) async fn sub_to_rom(
     stream: web::Payload, 
     route_paths: web::Path<(String, String)>,
     app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ws_role_notif_server: web::Data<Addr<RoleNotifServer>>,
-    ws_mmr_notif_server: web::Data<Addr<MmrNotifServer>>,
 ) -> PanelHttpResponse {
 
 
@@ -107,10 +105,8 @@ pub(self) async fn sub_to_rom(
                         let user_id = route_paths.0.to_owned();
                         let notif_room = route_paths.1.to_owned();
                         let notif_room_str = string_to_static_str(notif_room.clone());
-                        let ws_role_notif_actor_address = ws_role_notif_server.get_ref().to_owned();
-                        let ws_mmr_notif_actor_address = ws_mmr_notif_server.get_ref().to_owned();
-
-
+                        let ws_role_notif_actor_address = app_state.subscriber_actors.as_ref().unwrap().role_actor.clone();
+                        let ws_mmr_notif_actor_address = app_state.subscriber_actors.as_ref().unwrap().mmr_actor.clone();
                         /* 
                             ------------------------------------------------------------
                              UPDATING NOTIF ROOMS OF ALL ACTORS WITH THE PASSED IN ROOM

@@ -61,7 +61,6 @@ pub(self) async fn chatroomlp(
     payload: Multipart,
     r1keys: Query<R1Keys>,
     app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
-    ws_chatroomlp_actor_address: web::Data<Addr<ChatRoomLaunchpadServer>>,
 ) -> PanelHttpResponse {
 
     
@@ -134,7 +133,7 @@ pub(self) async fn chatroomlp(
                     let tx_signature = clpucid.2;
                     let hash_data = clpucid.3;
                     let chat_room_str = string_to_static_str(format!("{}", chat_room)); // the unique chatroom id
-                    let ws_chatroomlp_actor_address = ws_chatroomlp_actor_address.get_ref().to_owned();
+                    let ws_chatroomlp_actor_address = app_state.subscriber_actors.as_ref().unwrap().clp_actor.clone();
 
                     /* find a clp event with the passed in id */
                     let get_clp_event = ClpEvent::find_by_id(chat_room, connection).await;

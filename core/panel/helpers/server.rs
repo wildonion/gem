@@ -133,39 +133,16 @@ macro_rules! server {
                 each server is an actor which allow us to communicate with them asyncly and concurrently 
                 within the different parts of the app by message sending logic.
             */
-            let role_notif_server_instance = RoleNotifServer::new(app_storage.clone()).start();
-            let shared_ws_role_notif_server = Data::new(role_notif_server_instance.clone());
-            
+            let role_notif_server_instance = RoleNotifServer::new(app_storage.clone()).start();            
             let mmr_notif_server_instance = MmrNotifServer::new(app_storage.clone()).start();
-            let shared_ws_mmr_notif_server = Data::new(mmr_notif_server_instance.clone());
-
             let chatroomlp_server_instance = ChatRoomLaunchpadServer::new(app_storage.clone()).start();
-            let shared_ws_chatroomlp_server = Data::new(chatroomlp_server_instance.clone());
-            
             let system_actor_instance = SystemActor{updated_users: HashMap::new()}.start();
-            let shared_system_actor_instance = Data::new(system_actor_instance.clone());
-            
             let user_listener_instance = UserListenerActor::new(app_storage.clone(), system_actor_instance.clone()).start();
-            let shared_user_listener_instance = Data::new(user_listener_instance.clone());
-
             let users_action_listener_instance = UserActionActor::new(app_storage.clone(), system_actor_instance.clone()).start();
-            let shared_users_action_listener_instance = Data::new(users_action_listener_instance.clone());
-
             let clp_event_listener_instance = ClpEventSchedulerActor::new(app_storage.clone()).start();
-            let shared_clp_event_listener_instance = Data::new(clp_event_listener_instance.clone());
-
             let run_actor_instance = RunAgentActor::new(port, std::path::PathBuf::new()).start();
-            let shared_run_actor_instance = Data::new(run_actor_instance.clone());
-
             let deploy_actor_instance = DeployAgentActor::new(port, std::path::PathBuf::new()).start();
-            let shared_deploy_actor_instance = Data::new(deploy_actor_instance.clone());
-
             let user_balance_listener_instance = UserBalanceActor::new(app_storage.clone()).start();
-            let shared_balance_listener_instance = Data::new(user_balance_listener_instance.clone()).clone();
-
-            //--- connection must be initialized once in server.rs and will be passed to different scopes
-            //--- and passed through the routers' threads as a shared state data 
-            let shared_storage = Data::new(app_storage.clone());
 
             // setting up the whole app state data
             let mut app_state = AppState::init();
@@ -222,17 +199,7 @@ macro_rules! server {
                 App::new()
                     /* 
                         SHARED STATE DATA
-                    */
-                    .app_data(Data::clone(&shared_storage.clone()))
-                    .app_data(Data::clone(&shared_ws_role_notif_server.clone()))
-                    .app_data(Data::clone(&shared_ws_mmr_notif_server.clone()))
-                    .app_data(Data::clone(&shared_ws_chatroomlp_server.clone()))
-                    .app_data(Data::clone(&shared_user_listener_instance.clone()))
-                    .app_data(Data::clone(&shared_system_actor_instance.clone()))
-                    .app_data(Data::clone(&shared_users_action_listener_instance.clone()))
-                    .app_data(Data::clone(&shared_clp_event_listener_instance.clone()))
-                    .app_data(Data::clone(&shared_balance_listener_instance.clone()))
-                    /* 
+
                         shared_state_app contains all the global data 
                         that will be shared between actix api routers' threads
                     */
