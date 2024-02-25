@@ -2,6 +2,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
+use s3req::Storage;
 use crate::adapters::nftport;
 use crate::constants::{COLLECTION_NOT_FOUND_FOR, INVALID_QUERY_LIMIT, GALLERY_NOT_OWNED_BY, CANT_GET_CONTRACT_ADDRESS, USER_NOT_FOUND, USER_SCREEN_CID_NOT_FOUND, COLLECTION_UPLOAD_PATH, UNSUPPORTED_FILE_TYPE, TOO_LARGE_FILE_SIZE, STORAGE_IO_ERROR_CODE, COLLECTION_NOT_OWNED_BY, CANT_CREATE_COLLECTION_ONCHAIN, INVALID_CONTRACT_TX_HASH, CANT_UPDATE_COLLECTION_ONCHAIN, COLLECTION_NOT_FOUND_FOR_CONTRACT, CLP_EVENT_NOT_FOUND, USER_CLP_EVENT_NOT_FOUND};
 use crate::helpers::misc::{Response, Limit};
@@ -23,7 +24,7 @@ use crate::schema::clp_events;
     diesel migration redo                       ---> drop tables 
 
 */
-#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Queryable, Identifiable, Selectable, Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
 #[diesel(table_name=clp_events)]
 pub struct ClpEvent{
     pub id: i32,
@@ -186,7 +187,17 @@ impl ClpEvent{
 
     }
 
-    pub async fn distribute_rewards(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, String>{
+    pub async fn distribute_rewards(clp_event_id: i32, app_storage: Arc<Storage>) -> Result<Self, String>{
+
+        // we've passed the app_storage itself to this method, since it's clonable, shareable 
+        // between threads, pg pool connection is not capable of moving around by itself cause
+        // it's only valid inside the method body since it's behind a mutable reference and
+        // references must be valid only inside their own scope, or in an scope where they've 
+        // been defined unless we take an static lifetime for them, due to this fact we could'nt 
+        // move the connection between tokio::spawn() as this method takes the ownership of types
+        // which we're not allowed to move the connection.
+        let pg_pool = app_storage.get_pgdb().await.unwrap();
+        let connection = &mut pg_pool.get().unwrap();
 
         let get_clp_event_info = ClpEvent::find_by_id_without_actix_response(clp_event_id, connection).await;
         if let Err(why) = get_clp_event_info{
@@ -224,7 +235,6 @@ impl ClpEvent{
             ut_sender.send(users_titles);
         });
 
-
         tokio::spawn(async move{
             if let Ok(users_titles) = ut_receiver.try_recv(){
                 let get_users_images = UserChat::start_generating_ai_images(users_titles, clp_event_id).await;
@@ -246,15 +256,27 @@ impl ClpEvent{
 
         tokio::spawn(async move{
 
-            if let Ok(users_imges) = uimg_receiver.try_recv(){
-                
-                todo!()
+            let pg_pool = app_storage.get_pgdb().await.unwrap();
+            let connection = &mut pg_pool.get().unwrap();
+            if let Ok(users_images) = uimg_receiver.try_recv(){
 
-                // 1 - store all generated nfts + metadata on ipfs, then update collection base_uri finally store nfts in db 
-                // 2 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
-                // ...
+                let updated_event = Default::default();
+                for (owner_id, img_url) in users_images{
+                    let user = User::find_by_id(owner_id, connection).await.unwrap();
+                    let participant_screen_cid = user.screen_cid.unwrap();
+                    
+                    // TODO
+                    // 1 - store img_url + metadata on ipfs,
+                    // 2 - update collection base_uri 
+                    // 3 - finally store nfts in db 
+                    // 4 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
+                    // ...
 
-                // clp_event_sender.send(updated_event);
+                }
+
+                if let Err(clp_event) = clp_event_sender.send(updated_event){ // if the value can't be sent, it'll return as the error type
+                    error!("can't send the updated clp event to the channel");
+                }
                 
             }
         });
@@ -263,8 +285,7 @@ impl ClpEvent{
             clp_event_info = updated_clp_event;
         }
 
-        Ok(clp_event_info) // return the latest clp event info 
-
+        Ok(clp_event_info) // return the updated clp event info contains all the generated nfts of this event
 
     }
     
@@ -285,7 +306,7 @@ impl ClpEvent{
                 Ok(HttpResponse::NotAcceptable().json(resp))
             )
         }
-
+        
         let all_clp_events = clp_events
             .order(created_at.desc())
             .offset(from)

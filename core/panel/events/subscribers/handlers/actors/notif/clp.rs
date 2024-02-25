@@ -81,7 +81,7 @@ impl ClpEventSchedulerActor{
                 
                 // start summarizing chats, generating titles and images and finally mint them
                 // to all participant in-app evm wallet inside the event
-                let reward_them = ClpEvent::distribute_rewards(latest_clp_event_info.id, connection).await;
+                let reward_them = ClpEvent::distribute_rewards(latest_clp_event_info.id, app_storage).await;
                 if let Err(why) = reward_them{
                     error!("can't reward participants due to {:?}", why);
                 }

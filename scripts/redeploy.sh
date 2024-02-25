@@ -32,7 +32,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
 
     if [[ $REDPLOY_INFRASTRUCTURE == "Y" || $REDPLOY_INFRASTRUCTURE == "y" ]]; then
 
-        echo "> Redeploying Infrastructure Only"
+        echo "> Redeploying Infrastructure Pipelines Only"
         echo "☕ Okay, sit back and drink your coffee :)"
 
         sudo docker stop graphana && sudo docker rm -f grapana
