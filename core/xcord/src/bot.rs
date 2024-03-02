@@ -74,7 +74,6 @@ use futures::executor::block_on;
 use tokio::sync::oneshot;
 use tokio::sync::Mutex; // async Mutex will be used inside async methods since the trait Send is not implement for std::sync::Mutex
 use chrono::{TimeZone, Timelike, Datelike, Utc}; // this trait is rquired to be imported here to call the with_ymd_and_hms() method on a Utc object since every Utc object must be able to call the with_ymd_and_hms() method 
-use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt, CpuExt, DiskExt}; // methods of trait DiskExt can be used on each Disk instance to get information of the disk because Disk struct has private methods and we can access them by call the trait DiskExt methods which has been implemented for the Disk struct  
 use redis_async::client::ConnectionBuilder;
 use serenity::{async_trait, model::prelude::{MessageId, UserId, ChannelId, 
                 interaction::application_command::{CommandDataOption, CommandDataOptionValue}, command::CommandOption}, 

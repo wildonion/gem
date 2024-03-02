@@ -1,5 +1,6 @@
 
 
+use core::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::NaiveDateTime;
 use s3req::Storage;
@@ -246,6 +247,7 @@ impl ClpEvent{
             }
         });
 
+        // return the error caused by either the summarizing titles or generating images process
         if let Ok(ut_err) = ut_err_receiver.try_recv(){
             return Err(ut_err);
         }
@@ -264,14 +266,17 @@ impl ClpEvent{
                 for (owner_id, img_url) in users_images{
                     let user = User::find_by_id(owner_id, connection).await.unwrap();
                     let participant_screen_cid = user.screen_cid.unwrap();
-                    
+                    let mut img_meta_map = HashMap::<String, serde_json::Value>::new();
+
+                    // ------------------------------------------------------------
                     // TODO
-                    // 1 - store img_url + metadata on ipfs,
-                    // 2 - update collection base_uri 
+                    // 1 - store img_url + metadata on ipfs the img_meta_map map,
+                    // 2 - update collection base_uri in table and on the chain
                     // 3 - finally store nfts in db 
                     // 4 - mint ai generated pictures to users screen_cids inside the chat by calling contract ABI
                     // ...
-
+                    // ------------------------------------------------------------
+                    
                 }
 
                 if let Err(clp_event) = clp_event_sender.send(updated_event){ // if the value can't be sent, it'll return as the error type
