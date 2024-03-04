@@ -517,8 +517,8 @@ pub(self) async fn search_in_top_nfts(
                     nft.nfts_data.nft_description.contains(search_query) ||
                     nft.nfts_data.current_owner_screen_cid.contains(search_query) ||
                     nft.nfts_data.contract_address.contains(search_query) ||
-                    nft.nfts_data.onchain_id.clone().unwrap().contains(search_query) ||
-                    nft.nfts_data.tx_hash.clone().unwrap().contains(search_query){
+                    nft.nfts_data.onchain_id.clone().unwrap_or(String::from("")).contains(search_query) ||
+                    nft.nfts_data.tx_hash.clone().unwrap_or(String::from("")).contains(search_query){
 
                         match_top_nfts.push(nft);
                     }
