@@ -8,6 +8,7 @@
    | - pubsub pattern syncing
    | - wasm and smart contract based design pattern (call db reducer methods directly)
    | - in wasm contexts we can't have async and std crates
+   | - serverless wasm functions as db reducers
    |
 */
 use spacetimedb::{spacetimedb, ReducerContext, Identity, Timestamp};

@@ -2,12 +2,12 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-is a crypto based friendly gathering **Game Event Manager**, NFT based galleries on top of **Polygon** with the following engines as its core backend: 
-- actor based pubsub push notification structure to notify different parts of the app on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
-- chatroom launchpad feature to mint generated AI based NFT images to users' in-app wallet based on their chats in each launchpad events.
+is a crypto based friendly gathering **Game Event Manager**, NFT based galleries on top of **Polygon** with the following design patterns as its core engine: 
+- actor based component APIs, a reliable design pattern facilitating the communication between each API without sending HTTP requests, only by utilising actor message sending concepts.
+- actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) by utilising top users to rank and match them as well as suggest users to each other based on their stars.
 
-### 🍔 Technical Features
+### 🍔 Features
 
 - an event managing and reservation system with reveal-participant-role functionality
 

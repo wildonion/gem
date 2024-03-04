@@ -194,9 +194,9 @@ impl ClpEvent{
         // between threads, pg pool connection is not capable of moving around by itself cause
         // it's only valid inside the method body since it's behind a mutable reference and
         // references must be valid only inside their own scope, or in an scope where they've 
-        // been defined unless we take an static lifetime for them, due to this fact we could'nt 
+        // been defined unless we borrow them for static, due to this fact we couldn't 
         // move the connection between tokio::spawn() as this method takes the ownership of types
-        // which we're not allowed to move the connection.
+        // which we're not allowed in this case.
         let pg_pool = app_storage.get_pgdb().await.unwrap();
         let connection = &mut pg_pool.get().unwrap();
 
