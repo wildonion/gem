@@ -25,3 +25,4 @@ pub mod health;
 pub mod public;
 pub mod rom;
 pub mod clp;
+pub mod components;
