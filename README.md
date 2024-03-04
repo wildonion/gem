@@ -5,7 +5,7 @@
 is a crypto based friendly gathering **Game Event Manager**, NFT based galleries on top of **Polygon** with the following engines as its core backend: 
 - actor based pubsub push notification structure to notify different parts of the app on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
 - chatroom launchpad feature to mint generated AI based NFT images to users' in-app wallet based on their chats in each launchpad events.
-- behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) built on top of each event's `phases` field inside the game for each player to match them for new game and rank them based on their in-game statuses, the match making rating or ranking (**MMR**) engine, on the other hand is is a weighted tree based suggestion engine that suggests players, events and other games and players based on their ranks earned using **GVM** during the game.
+- behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) by utilising top users to rank and match them as well as suggest users to each other based on their stars.
 
 ### 🍔 Technical Features
 
