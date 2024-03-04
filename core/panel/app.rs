@@ -148,7 +148,7 @@ mod adapters;       /* contains all third party apis */
    | we'll face the error of `spawn_local` called from outside of a `task::LocalSet` which says
    | that we can't start an actor inside the tokio runtime instead we should use the actix runtime
    | and start the actor in the context of actix runtime itself where there is no #[tokio::main]
-   | is on top of main method.
+   | on top of main method.
    |
 
 */
@@ -168,7 +168,7 @@ async fn main() -> std::io::Result<()> {
     )).unwrap();
 
 
-    let server = server!
+    let server = bootsteap!
     {
         /* SERVER CONFIGS */
         tcp_listener

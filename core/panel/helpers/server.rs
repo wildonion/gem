@@ -66,7 +66,7 @@ pub async fn start_streaming(){
 }
 
 #[macro_export]
-macro_rules! server {
+macro_rules! bootsteap {
     (
         
         /* ... setup args go here ... */
