@@ -219,8 +219,13 @@ pub struct R1Keys{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Search{
     pub q: String,
-    pub from: Option<i64>,
-    pub to: Option<i64>
+    pub from: Option<i64>, // can be not passed 
+    pub to: Option<i64> // can be not passed 
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UnlimitedSearch{
+    pub q: String 
 }
 
 /*

@@ -138,6 +138,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::gallery::exports::get_all_public_collection_nfts);
     config.service(apis::user::gallery::exports::accept_invitation_request);
     config.service(apis::user::gallery::exports::enter_private_gallery);
+    config.service(apis::user::gallery::exports::search_in_invited_friends_wallet_data_of_gallery);
     config.service(apis::user::gallery::exports::get_user_unaccepted_invitation_requests);
     config.service(apis::user::friend::exports::get_user_unaccepted_friend_requests);
     config.service(apis::user::friend::exports::accept_friend_request);
@@ -145,6 +146,9 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::friend::exports::remove_user_from_follower);
     config.service(apis::user::friend::exports::remove_user_from_friend);
     config.service(apis::user::friend::exports::remove_user_from_following);
+    config.service(apis::user::friend::exports::search_in_followers);
+    config.service(apis::user::friend::exports::search_in_followings);
+    config.service(apis::user::friend::exports::search_in_friends);
     config.service(apis::user::friend::exports::get_all_my_friends);
     config.service(apis::user::friend::exports::get_all_my_followers);
     config.service(apis::user::friend::exports::get_all_my_followings);
@@ -210,6 +214,7 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::wallet::exports::get_user_wallet_info);
     config.service(apis::public::wallet::exports::get_users_wallet_info);
     config.service(apis::public::search::exports::search);
+    config.service(apis::public::search::exports::search_in_top_nfts);
     config.service(apis::public::blockchain::exports::get_top_nfts);
     config.service(apis::public::blockchain::exports::get_all_nfts);
     config.service(apis::public::blockchain::exports::get_nft_product_collections);

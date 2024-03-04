@@ -1188,6 +1188,147 @@ pub(self) async fn get_invited_friends_wallet_data_of_gallery(
 
 }
 
+#[get("/gallery/{gal_id}/search/invited-friends/")]
+#[passport(user)]
+pub(self) async fn search_in_invited_friends_wallet_data_of_gallery(
+    req: HttpRequest,
+    gal_id: web::Path<i32>,
+    query: web::Query<UnlimitedSearch>,
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    let search_query = &query.q;
+                    match UserPrivateGallery::get_invited_friends_wallet_data_of_gallery_without_limit(
+                        &user.screen_cid.unwrap(),
+                        gal_id.to_owned(),
+                        redis_client.clone(),
+                        connection).await{
+                        
+                        Ok(mut friends_wallet_data) => {
+
+                            let mut invited_friends_match = vec![];
+                            friends_wallet_data.retain(|wd| wd.is_some()); // remove all nones
+
+                            for friend_wallet in friends_wallet_data{
+                                let wallet_data = friend_wallet.unwrap();
+                                if wallet_data.clone().screen_cid.unwrap().contains(search_query) ||
+                                wallet_data.clone().username.contains(search_query){
+                                    invited_friends_match.push(
+                                        wallet_data
+                                    )
+                                }
+                            } 
+
+                            resp!{
+                                Vec<UserWalletInfoResponse>, //// the data type
+                                invited_friends_match, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 #[get("/gallery/get/unaccepted/invitation-requests/")]
 #[passport(user)]
 pub(self) async fn get_user_unaccepted_invitation_requests(
@@ -4706,4 +4847,5 @@ pub mod exports{
     pub use super::upload_collection_banner;
     pub use super::upload_private_gallery_back;
     pub use super::remove_invited_friend_from_gallery;
+    pub use super::search_in_invited_friends_wallet_data_of_gallery;
 }

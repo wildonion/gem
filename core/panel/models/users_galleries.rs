@@ -1073,6 +1073,105 @@ impl UserPrivateGallery{
 
     }
 
+    pub async fn get_invited_friends_wallet_data_of_gallery_without_limit(caller_screen_cid: &str, gal_id: i32, 
+       redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
+
+        let get_gallery_info = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
+        let Ok(gallery) = get_gallery_info else{
+            let resp_err = get_gallery_info.unwrap_err();
+            return Err(resp_err);
+        };
+
+        if caller_screen_cid != gallery.owner_screen_cid{
+            
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: GALLERY_NOT_OWNED_BY,
+                status: 403,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::Forbidden().json(resp))
+            )
+
+        }
+
+        let inv_frds = gallery.invited_friends;
+        let friends_wallet_data = if inv_frds.is_some(){
+            let friends_ = inv_frds.unwrap();
+            let mut friends_wallets = friends_
+                .into_iter()
+                .map(|f_scid|{
+                    
+                    if f_scid.is_some(){
+                        let user_data = User::find_by_screen_cid_none_async(&f_scid.unwrap(), connection).unwrap_or(User::default());
+                        Some(
+                            UserWalletInfoResponse{
+                                username: user_data.username,
+                                avatar: user_data.avatar,
+                                mail: user_data.mail,
+                                screen_cid: user_data.screen_cid,
+                                stars: user_data.stars,
+                                created_at: user_data.created_at.to_string(),
+                                bio: user_data.bio,
+                                banner: user_data.banner,
+                                extra: user_data.extra,
+                            }
+                        )
+                    } else{
+                        None
+                    }
+
+                })
+                .collect::<Vec<Option<UserWalletInfoResponse>>>();
+
+            /* sorting wallet data in desc order */
+            friends_wallets.sort_by(|fw1, fw2|{
+                /* 
+                    cannot move out of `*fw1` which is behind a shared reference
+                    move occurs because `*fw1` has type `std::option::Option<UserWalletInfoResponse>`, 
+                    which does not implement the `Copy` trait and unwrap() takes the 
+                    ownership of the instance.
+                    also we must create a longer lifetime for `UserWalletInfoResponse::default()` by 
+                    putting it inside a type so we can take a reference to it and pass the 
+                    reference to the `unwrap_or()`, cause &UserWalletInfoResponse::default() will be dropped 
+                    at the end of the `unwrap_or()` statement while we're borrowing it.
+                */
+                let fw1_default = UserWalletInfoResponse::default();
+                let fw2_default = UserWalletInfoResponse::default();
+                let fw1 = fw1.as_ref().unwrap_or(&fw1_default);
+                let fw2 = fw2.as_ref().unwrap_or(&fw2_default);
+
+                let fw1_created_at = NaiveDateTime
+                    ::parse_from_str(&fw1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                let fw2_created_at = NaiveDateTime
+                    ::parse_from_str(&fw2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+
+                fw2_created_at.cmp(&fw1_created_at)
+
+            });
+
+            friends_wallets // sorted
+
+        } else{
+            vec![]
+        };
+        
+        Ok(
+            if friends_wallet_data.contains(&None){
+                vec![]
+            } else{
+                friends_wallet_data.to_owned()
+            }
+        )
+
+
+    }
+
     pub async fn find_by_id(gallery_id: i32, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 

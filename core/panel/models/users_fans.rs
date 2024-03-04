@@ -1126,6 +1126,91 @@ impl UserFan{
 
     }
 
+    pub async fn get_all_my_followers_without_limit(owner_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    -> Result<UserFanData, PanelHttpResponse>{
+
+        let user_fan_data = users_fans
+            .filter(users_fans::user_screen_cid.eq(owner_screen_cid))
+            .first::<UserFan>(connection);
+
+        let Ok(mut fan_data) = user_fan_data else{
+
+            let resp = Response{
+                data: Some(owner_screen_cid),
+                message: NO_FANS_FOUND,
+                status: 404,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            )
+
+        };
+
+        // get followers
+        let friends_data = fan_data.clone().construct_friends_data(connection);
+        let mut decoded_friends_data = if friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+        } else{
+            vec![]
+        }; 
+
+        let mut owner_followers = vec![];
+        for dfrd in decoded_friends_data{
+            // owner_screen_cid and frd.screen_cid must not be friend already
+            let are_we_friends = Self::are_we_friends(
+                &owner_screen_cid, 
+                &dfrd.screen_cid, 
+                connection
+            ).await;
+
+            if are_we_friends.is_ok() && are_we_friends.unwrap(){
+                continue;
+            } 
+            
+            if dfrd.is_accepted{
+                owner_followers.push(Some(dfrd));
+            } else{
+                owner_followers.push(None);
+            }
+            
+        }
+
+        owner_followers.retain(|frd| frd.is_some());
+
+        Ok(
+            UserFanData{
+                id: fan_data.id,
+                user_screen_cid: fan_data.clone().user_screen_cid,
+                friends: if owner_followers.is_empty(){
+                        Some(serde_json::to_value(owner_followers).unwrap())
+                    } else{
+
+                        /* sorting friend requests in desc order */
+                        owner_followers.sort_by(|frd1, frd2|{
+                            
+                            let frd1_default = FriendData::default();
+                            let frd2_default = FriendData::default();
+                            let frd1 = frd1.as_ref().unwrap_or(&frd1_default);
+                            let frd2 = frd2.as_ref().unwrap_or(&frd2_default);
+                            
+                            let frd1_requested_at = frd1.requested_at;
+                            let frd2_requested_at = frd2.requested_at;
+                            frd2_requested_at.cmp(&frd1_requested_at)
+    
+                        });
+    
+                        Some(serde_json::to_value(owner_followers).unwrap())
+                    },
+                invitation_requests: fan_data.construct_gallery_invitation_requests(connection),
+                created_at: fan_data.created_at.to_string(),
+                updated_at: fan_data.updated_at.to_string(),
+            }
+        )   
+
+    }
+
     /* -------------------- 
     // get those ones inside the users_fans table who
     // have owner in their friend data and are 
@@ -1255,6 +1340,105 @@ impl UserFan{
             // so there is no record for who_screen_cid yet thus users_fans would be empty.
             Ok(
                 sliced
+            ) 
+
+        }
+    
+        pub async fn get_all_my_followings_without_limit(who_screen_cid: &str,
+            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            -> Result<Vec<UserFanDataWithWalletInfo>, PanelHttpResponse>{
+
+            let all_fans_data = users_fans
+                .order(created_at.desc())
+                .load::<UserFan>(connection);
+
+            let Ok(fans_data) = all_fans_data else{
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: NO_USER_FANS,
+                    status: 404,
+                    is_error: true
+                };
+                return Err(
+                    Ok(HttpResponse::NotFound().json(resp))
+                )
+
+            };
+
+            let mut followings = vec![];
+            for mut fan_data in fans_data{
+
+                // ignore the caller friends field 
+                if fan_data.user_screen_cid == who_screen_cid{
+                    continue;
+                }
+
+                let friends_data = fan_data.clone().construct_friends_data(connection);
+                let mut decoded_friends_data = if friends_data.is_some(){
+                    serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                } else{
+                    vec![]
+                }; 
+                
+                for friend in decoded_friends_data{
+                    
+                    // who_screen_cid and friend.screen_cid must not be friend already
+                    let are_we_friends = Self::are_we_friends(
+                        &who_screen_cid, 
+                        &friend.screen_cid, 
+                        connection
+                    ).await;
+
+                    if are_we_friends.is_ok() && are_we_friends.unwrap(){
+                        continue;
+                    }
+                    
+                    if friend.screen_cid == who_screen_cid{
+                        followings.push({
+                            UserFanDataWithWalletInfo{
+                                id: fan_data.id,
+                                user_wallet_info: {
+                                    let user = User::find_by_screen_cid(&fan_data.clone().user_screen_cid, connection).await.unwrap_or(User::default());
+                                    UserWalletInfoResponse{
+                                        username: user.username,
+                                        avatar: user.avatar,
+                                        bio: user.bio,
+                                        banner: user.banner,
+                                        mail: user.mail,
+                                        screen_cid: user.screen_cid,
+                                        extra: user.extra,
+                                        stars: user.stars,
+                                        created_at: user.created_at.to_string(),
+                                    }
+                                },
+                                friends: fan_data.clone().construct_friends_data(connection),
+                                invitation_requests: fan_data.clone().construct_gallery_invitation_requests(connection),
+                                created_at: fan_data.created_at.to_string(),
+                                updated_at: fan_data.updated_at.to_string(),
+                            }
+                        });
+                    }
+                }
+
+            }
+
+            followings.sort_by(|uf1, uf2|{
+
+                let uf1_created_at = NaiveDateTime
+                    ::parse_from_str(uf1.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                let uf2_created_at = NaiveDateTime
+                    ::parse_from_str(uf2.clone().created_at.as_str(), "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap();
+    
+                uf2_created_at.cmp(&uf1_created_at)
+    
+            });      
+
+            Ok(
+                followings
             ) 
 
         }

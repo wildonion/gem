@@ -4617,6 +4617,43 @@
 									"response": []
 								},
 								{
+									"name": "Search In Invited Friends Wallet Data Of My Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/1/search/invited-friends/?q=w",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"1",
+												"search",
+												"invited-friends",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "w"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Get My Unaccepted Invitation Requests",
 									"request": {
 										"auth": {
@@ -4898,6 +4935,120 @@
 												{
 													"key": "to",
 													"value": "10"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In Friends For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/friends/search/for/0x047deaa159bbbd3effb448a4dad780d47f159d67/?q=w",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"friends",
+												"search",
+												"for",
+												"0x047deaa159bbbd3effb448a4dad780d47f159d67",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "w"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In Followings For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/followings/search/for/0x047deaa159bbbd3effb448a4dad780d47f159d67/?q=w",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"followings",
+												"search",
+												"for",
+												"0x047deaa159bbbd3effb448a4dad780d47f159d67",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "w"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In Followers For",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/followers/search/for/0x047deaa159bbbd3effb448a4dad780d47f159d67/?q=w",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"followers",
+												"search",
+												"for",
+												"0x047deaa159bbbd3effb448a4dad780d47f159d67",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "w"
 												}
 											]
 										}
@@ -6153,6 +6304,33 @@
 										{
 											"key": "to",
 											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Search Top Nfts (Most Liked)",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/search-top-nfts/?q=w",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"search-top-nfts",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "w"
 										}
 									]
 								}
