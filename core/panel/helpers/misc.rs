@@ -524,6 +524,7 @@ pub async fn get_ip_data(user_ip: String) -> IpInfoResponse{
 }
 
 pub fn is_password_valid(s: &str) -> bool {
+    // all the followings must be true eventually
     let mut has_whitespace = false;
     let mut has_upper = false;
     let mut has_lower = false;
@@ -636,11 +637,10 @@ pub fn string_to_static_str(s: String) -> &'static str {
 /* --------------------------- MACROS --------------------------- */
 /* -------------------------------------------------------------- */
 /*
-    we can define as many as response object 
-    since once the scope or method or the match
-    arm gets executed the lifetime of the response
-    object will be dropped from the ram since rust 
-    doesn't have gc :) 
+    we can define as many as response object since once the scope
+    or method or the match arm gets executed the lifetime of the 
+    response object will be dropped from the ram due to the fact 
+    that rust doesn't have gc :) 
 */
 #[macro_export]
 macro_rules! resp {
@@ -658,7 +658,7 @@ macro_rules! resp {
             
             let code = $code.as_u16();
             let mut res = HttpResponse::build($code);
-            
+
             let response_data = Response::<$data_type>{
                 data: Some($data),
                 message: $msg,
