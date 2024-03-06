@@ -1,65 +1,4 @@
 
-/*  > -------------------------------------------
-    |           proc macro functions 
-    | ------------------------------------------
-    |
-    |   RUST CODES ---> TOKEN STREAM ---> AST
-    |
-    | 0 - compiler generates TokenStreams of Rust codes that this proc macro is placed of top of
-    | 1 - parse (a new parser perhaps!) TokenStreams (Rust codes) to generate AST using syn
-    | 2 - write new Rust codes using the patterns inside the generated AST like mutating idents or variables
-    | 3 - convert generated or mutated either pure Rust codes in step 2 into a new AST using quote
-    | 4 - return the new AST as a new TokenStream to the compiler to update the method or struct field at compile time
-    |
-
-    _> the input to all methods is of type TokenStream which is the extracted tokens
-       of the actual Rust codes that can be used to build the AST later by compiler
-
-    https://veykril.github.io/tlborm/introduction.html
-    https://blog.logrocket.com/procedural-macros-in-rust/
-    https://danielkeep.github.io/tlborm/book/README.html
-
-
-    since macro processing in Rust happens after the construction of the AST, as such, 
-    the syntax used to invoke a macro must be a proper part of the language's syntax 
-    tree thus by adding a new code in this crate the compiler needs to compile the whole 
-    things again, which forces us to reload the workspace everytime, means by that any 
-    logging codes don't work in here at runtime and we must check them in console once 
-    the code gets compiled.
-
-    a TokenStream is simply built from the Rust codes which can be used to built the
-    AST like: RUST CODES ---> TOKEN STREAM ---> AST also the following are matters:
-    sync generates : the AST from the passed in TokenStream (sequence of token trees)
-    quote generates: Rust codes that can be used to generate TokenStream and a new AST
-
-    proc macro can be on top of methods, union, enum and struct and can be used to add 
-    method to them before they get compiled since compiler will extend the struct AST 
-    by doing this once we get the token stream of the struct Rust code. it can be used 
-    to parse it into Rust pattern (ident, ty, tt and ...) that will be used to add a new 
-    or edit a logic on them finally we must use the extended token stream of the Rust codes 
-    that we've added to convert them into a new token stream to return from the macro to 
-    tell the compiler that extend the old AST with this new one
-
-    kinds: 
-        decl_macro
-        proc_macro
-        proc_macro_derive
-        proc_macro_attribute
-    
-    benefits:
-        add a method to struct or check a condition against its fields
-        convert trait into module to extend the trait methods
-        extend the interface of a struct by changing the behaviour of its fields and methods
-        create a DSL like jsx, css or a new keyword or a new lang
-        build a new AST from the input TokenStream by parsing incoming tokens and return the generated TokenStream from a new Rust codes
-        write parser using decl_macro
-        changing and analysing the AST logics of methods at compile time before getting into their body
-        bind rust code to other langs and extending code in rust using macros
-        extend the user code by adding some code into his already coded logic at compile time
-    
-
-*/
-
 
 
 use proc_macro::TokenStream;
@@ -180,37 +119,5 @@ pub fn passport(args: TokenStream, input: TokenStream) -> TokenStream {
     */
     TokenStream::from(quote!(#api_ast))
 
-
-}
-
-
-#[proc_macro]
-pub fn passport_proc(input: TokenStream) -> TokenStream {
-
-    // ex:
-    // #[passport_proc]
-    // #[passport_proc(access=all)]
-    // #[passport_proc(access=user)]
-    // #[passport_proc(access=admin)]
-    // #[passport_proc(access=dev)]
-    // fn im_a_method(){}
-    
-    input
-
-}
-
-#[proc_macro_derive(Passport)]
-pub fn derive_proc_macro(input: TokenStream) -> TokenStream {
-
-    // ex:
-    // #[derive(Passport)]
-    // struct SexyStruct{}
-    
-    // this will be implemented in here for the struct inside input token stream
-    // so later on we can call the method on the struct once we implement the
-    // method for the struct in here.
-    // SexyStruct::passport() // like checking jwt in request object
-
-    input
 
 }
