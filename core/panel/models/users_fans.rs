@@ -227,7 +227,7 @@ impl UserFan{
         let mut friends_owner_map = vec![];
         for owner in owners{
 
-            if owner.screen_cid.is_none(){
+            if owner.screen_cid.is_none() || owner.screen_cid.clone().unwrap().is_empty(){{
                 continue;
             }
             
@@ -238,6 +238,11 @@ impl UserFan{
             } else{
                 UserFanData::default()
             };
+
+            // avoid checking default user fan data
+            if all_owner_friends.id == 0{
+                continue;
+            }
 
             let user_friends_data = all_owner_friends.construct_friends_data(connection);
             let mut decoded_friends_data = if user_friends_data.is_some(){
