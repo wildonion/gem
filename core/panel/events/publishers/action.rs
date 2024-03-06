@@ -145,10 +145,9 @@ pub async fn emit(
         the message at their own time and once 1 subscriber receives the message we'll break the 
         background loop since there is only one redis async subscriber in overall which will begin to 
         subscribing once the user notif listener actor gets started, so in the following we're running an async 
-        task every 1 second in the background hence we might have a successfull return from inside the 
-        api where this method has called but still waiting for a subscriber to subscribe to the published
-        topic in the that channel
-
+        task every 1 second in the background hence we might have a successfull return back to the client 
+        from inside the api where this method has been called but still waiting for a subscriber to subscribe 
+        to the published topic in the that channel
     */
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
     let cloned_channel = channel.to_string().clone();

@@ -28,7 +28,6 @@ use redis::cluster::ClusterClient;
 use redis::AsyncCommands; // this trait is required to be imported in here to call set() methods on the cluster connection
 use redis::RedisResult;
 use serde::{Serialize, Deserialize};
-use tokio_cron_scheduler::{JobScheduler, JobToRun, Job};
 use std::time::Duration;
 use constants::MainResult;
 use std::collections::{HashSet, HashMap};

@@ -134,7 +134,7 @@ impl UserListenerActor{
         following method is not necessary to be executed inside the started() method,
         actually there is no need to use an actor for this, the subscription can simply 
         be started inside the tokio::spawn() an let it be there in the background in 
-        an async function the we could have executed the method inside another tokio::spawn
+        an async function then we could have executed the method inside another tokio::spawn
         where the server is being started but the convenient way is to use actor worker 
         for this cause actors are great structures to deal with executing and scheduling 
         tasks asyncly and concurrently in different parts of the app, hopefully the have 

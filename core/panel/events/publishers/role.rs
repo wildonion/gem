@@ -65,7 +65,6 @@ impl Reveal{
             task every 1 second in the background thus we might have a successfull return from inside the 
             api where this method has called but still waiting for a subscriber to subscribe to the published
             event room 
-
         */
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
         let cloned_channel = channel.to_string().clone();
