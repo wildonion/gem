@@ -70,7 +70,6 @@ use tokio::time::Duration as TokioDuration;
 use std::env;
 use chrono::Utc;
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey, TokenData};
-use tokio_cron_scheduler::{JobScheduler, Job};
 use std::time::Instant;
 use std::collections::HashSet;
 use rand::rngs::ThreadRng;
@@ -107,6 +106,7 @@ mod models;         /* contains models, schemas structures and db query calls */
 mod schema;         /* contains diesel db schemas */
 mod helpers;        /* contains miscellaneous and utilities methods and modules, server handler methods and macros, error handler, kyc process of the api body, passport traits for HttpRequest and all env vars */
 mod adapters;       /* contains all third party apis */
+mod middlewares;    /* contains all middlewares logics */
 
 
 
@@ -157,8 +157,8 @@ mod adapters;       /* contains all third party apis */
 async fn main() -> std::io::Result<()> {
 
     /*
-        >_ running a tcp listener server so actix can use this to accept 
-        incoming connections in its threadpool 
+        >_ running a tcp listener server, actix will use this to accept 
+        incoming tcp based connections in its threadpool
     */
     dotenv::dotenv().expect(".env file must be in here!");
     let tcp_listener = std::net::TcpListener::bind(
