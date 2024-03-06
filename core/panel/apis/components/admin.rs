@@ -13,6 +13,19 @@ use actix::Actor;
 use actix::prelude::*;
 use self::constants::AppState;
 
+// fn pointer method, futures must be pinned at a fixed position on the heap 
+// to avoid getting invalidated pointers even after moving the type
+type Method = fn(HttpRequest, AppState) -> std::pin::Pin<Box<dyn futures::Future<Output = PanelHttpResponse>>>;
+
+
+#[derive(Clone, Message)]
+#[rtype(result = "ApiResponse")]
+pub struct ExecuteApi{ // execute an api available from the list of all registered apis
+    pub route: String,
+}
+
+#[derive(MessageResponse)]
+pub struct ApiResponse(pub PanelHttpResponse);
 
 #[derive(Clone)]
 pub enum ComponentState{
@@ -20,8 +33,6 @@ pub enum ComponentState{
     Executed,
 }
 
-// fn pointer method
-type Method = fn(HttpRequest, AppState) -> Box<dyn futures::Future<Output = PanelHttpResponse>>;
 #[derive(Clone)]
 pub struct Api{
     pub route: String, 
@@ -72,8 +83,31 @@ impl AdminComponentActor{
 
     }
 
+    // emit/fire/publish an event into a redis pubsub channel 
+    // so other apis can subscribe to it
+    pub async fn emit(){
+
+    }
+
+    // redis subscription process to subscribe to an specific channel 
+    // contians emitted data from other apis publisher
+    pub async fn subscribe(){
+
+    }
+
 }
 
-// message handlers to run an api of this component
-// send back the result to the communicator
-// ...
+impl Handler<ExecuteApi> for AdminComponentActor{
+    type Result = ApiResponse;
+
+    /*  
+        1) other apis can send ExecuteApi message to this actor to execute an specific route 
+        2) once the api gets executed its http response will back to the caller
+        3) the response of the executed api will be cached inside the api state
+    */
+    fn handle(&mut self, msg: ExecuteApi, ctx: &mut Self::Context) -> Self::Result {
+
+        todo!()
+
+    }
+}
