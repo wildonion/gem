@@ -8,6 +8,10 @@ use s3req::Storage;
 use helpers::config::{Env, Context};
 use helpers::config::EnvExt;
 use crate::*;
+use self::apis::components::admin::AdminComponentActor;
+use self::apis::components::user::UserComponentActor;
+use self::apis::components::health::HealthComponentActor;
+use self::apis::components::public::PublicComponentActor;
 use self::events::subscribers::handlers::actors::agents::deploy::DeployAgentActor;
 use self::events::subscribers::handlers::actors::agents::run::RunAgentActor;
 use self::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
@@ -63,6 +67,7 @@ pub struct AppState{
     pub app_sotrage: Option<Arc<Storage>>,
     pub subscriber_actors: Option<SubscriberActors>,
     pub agent_actors: Option<AgentActors>,
+    pub component_actors: Option<ApiComponentActors>,
     pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db which can be shared between threads without having race conditions
 }
 
@@ -84,6 +89,14 @@ pub struct AgentActors{
     pub run_agent_actor: Addr<RunAgentActor>,
 }
 
+#[derive(Clone)]
+pub struct ApiComponentActors{
+    pub admin_api_actor: Addr<AdminComponentActor>,
+    pub user_api_actor: Addr<UserComponentActor>,
+    pub health_api_actor: Addr<HealthComponentActor>,
+    pub public_api_actor: Addr<PublicComponentActor>,
+}
+
 impl AppState{
     pub fn init() -> Self{
         AppState{
@@ -91,6 +104,7 @@ impl AppState{
             app_sotrage: None,
             subscriber_actors: None,
             agent_actors: None,
+            component_actors: None,
             ramdb: std::sync::Arc::new(
                     tokio::sync::Mutex::new(
                             HashMap::new()

@@ -2,7 +2,7 @@
 
 
 
-use crate::*; /* this includes all things in app.rs specially s3 which contains the storage! macro */
+use crate::*;
 use crate::models::users::LoginInfoRequest;
 
 
@@ -77,7 +77,7 @@ macro_rules! bootsteap {
         {
 
             use std::env;
-            use actix_web::{web, App, HttpRequest, HttpServer, Responder, HttpResponse, get, ResponseError};
+            use actix_web::{web, App, HttpRequest, middleware, HttpServer, Responder, HttpResponse, get, ResponseError};
             use actix_web::middleware::Logger;
             use dotenv::dotenv;
             use crate::helpers::config::{Env as ConfigEnv, Context};
@@ -93,6 +93,10 @@ macro_rules! bootsteap {
             use crate::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
             use crate::events::subscribers::handlers::actors::agents::run::RunAgentActor;
             use crate::events::subscribers::handlers::actors::agents::deploy::DeployAgentActor;
+            use crate::apis::components::admin::AdminComponentActor;
+            use crate::apis::components::user::UserComponentActor;
+            use crate::apis::components::health::HealthComponentActor;
+            use crate::apis::components::public::PublicComponentActor;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -143,6 +147,10 @@ macro_rules! bootsteap {
             let run_actor_instance = RunAgentActor::new(port, std::path::PathBuf::new()).start();
             let deploy_actor_instance = DeployAgentActor::new(port, std::path::PathBuf::new()).start();
             let user_balance_listener_instance = UserBalanceActor::new(app_storage.clone()).start();
+            let admin_component_actor = AdminComponentActor::new(vec![]).start();
+            let user_component_actor = UserComponentActor::new(vec![]).start();
+            let public_component_actor = PublicComponentActor::new(vec![]).start();
+            let health_component_actor = HealthComponentActor::new(vec![]).start();
 
             // setting up the whole app state data
             let mut app_state = AppState::init();
@@ -157,6 +165,14 @@ macro_rules! bootsteap {
                     user_actor: user_listener_instance.clone(),
                     balance_actor: user_balance_listener_instance.clone(),
                     clp_event_checker_actor: clp_event_listener_instance.clone(),
+                }
+            );
+            app_state.component_actors = Some(
+                ApiComponentActors{
+                    admin_api_actor: admin_component_actor.clone(),
+                    user_api_actor: user_component_actor.clone(),
+                    health_api_actor: health_component_actor.clone(),
+                    public_api_actor: public_component_actor.clone(),
                 }
             );
             app_state.agent_actors = Some(
@@ -207,6 +223,7 @@ macro_rules! bootsteap {
                     .wrap(Cors::permissive())
                     .wrap(Logger::default())
                     .wrap(Logger::new("%a %{User-Agent}i %t %P %r %s %b %T %D"))
+                    .wrap(middleware::Compress::default())
                     /*
                         INIT WS SERVICE
                     */
