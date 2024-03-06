@@ -36,6 +36,8 @@ impl DeployAgentActor{
         Self { port, path}
     }
 
+    // automatic deploy: run redeoploy.sh or rebuildpanel.sh scripes
+    // github actions and yml file
     pub fn cid_cd(){
         
     }
