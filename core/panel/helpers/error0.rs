@@ -16,7 +16,9 @@
    fact that the Error trait and for example String type are both in different crates and based
    on orphant rule Rust doesn't allow us to impl Error for String, needs to have an implementation 
    of the trait std::error::Error in other for it to be compatible with Box<dyn Error> and use 
-   it as the error part
+   it as the error part, type G can be a trait object T or be casted into trait T if it impls trait 
+   T use Display to write the variant error message to the buffer and use Debug to write the exact 
+   source of error to the buffer 
    
    returning trait as return type of method requires the returning instance impls the trait and 
    in our case since we don't know the return type that will cause the error we can't use -> impl 
@@ -66,8 +68,13 @@ use thiserror::Error;
 
 
 /* 
-    thiserror impls Display, Error and From traits for the type to display an error message for each variant 
-    causes the error in the source method then we could debug the source using our own Debug implementation
+    thiserror impls Display (log the error variant into human readable format), Error and From traits for 
+    the type to display an error message for the variant causes the error in the source method then we could 
+    debug the source using our own Debug implementation also note that if we want to return the PanelError 
+    as the error part of Result which allows us to use ? operator on the error type, the Error, Display, Debug 
+    and From traits must be implemented for that also the From trait must be implemented for every single error 
+    variant that makes the PanelError like if we want to use ? to unwrap a file opening process the From<std::io::Error> 
+    must be implemented for the PanelError struct.
 
     #[error(/* */)] defines the Display representation of the enum variant it is applied to, e.g., if the key file is missing, the error would return the string failed to read the key file when displaying the error.
     #[source] is used to denote what should be returned as the root cause in Error::source. Which is used in our debug implementation.
@@ -86,12 +93,20 @@ pub struct PanelError{
 pub enum ErrorKind{
     #[error("Large Number of Workers, Must be {}", .0)]
     Workers(u16),
+    #[error("File Read/Write Error")]
+    File(FileEror),
     #[error("Actix HTTP or WS Server Error")]
     Server(ServerError), // actix server io 
     #[error("Redis or Diesel Error")]
     Storage(StorageError), // diesel, redis
     #[error("Api Reqwest Error")]
     ThirdPartyApi(ThirdPartyApiError) // reqwest response text
+}
+
+#[derive(Error, Debug)]
+pub enum FileEror{
+    #[error("[FILE] - failed to read from or write to file")]
+    ReadWrite(#[from] std::io::Error)
 }
 
 #[derive(Error, Debug)]
@@ -154,6 +169,7 @@ impl actix_web::ResponseError for PanelError{
             helpers::misc::Response::<'_, &[u8]>{
                 data: Some(&[]),
                 message: {
+                    // converting the error bytes caused by one of the ErrorKind variant back to the string
                     let string_err = std::str::from_utf8(&self.msg).unwrap();
                     &string_err
                 },
@@ -171,6 +187,8 @@ impl actix_web::ResponseError for PanelError{
             ErrorKind::Storage(StorageError::RedisAsync(s)) => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::Storage(StorageError::Redis(s)) => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::ThirdPartyApi(ThirdPartyApiError::Reqwest(s)) => StatusCode::EXPECTATION_FAILED,
+            ErrorKind::Workers(s) => StatusCode::NOT_ACCEPTABLE,
+            ErrorKind::File(s) => StatusCode::EXPECTATION_FAILED,
         }
     }
 
@@ -178,6 +196,71 @@ impl actix_web::ResponseError for PanelError{
 impl std::fmt::Display for PanelError{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self) // write the PanelError instance into the buffer
+    }
+}
+
+// From implementations, when used to return an instance of PanelError which contains an error
+// variant, it mainly allows us to use ? operator to convert the type into instance of PanelError 
+// by calling the from method to return the error caused by an unsuccessful related operations
+// like when we're using ? operator on opening a file result, if the operation goes wrong like
+// the file doesn't get found it eventually build a PanelError instance which contains the io 
+// error by calling from() method then the code gets panicked in there which causes to return 
+// an instance of PanelError to the caller, albeit to log the error the Dispaly and Debug traits
+// must be implemented for the PanelError. basically to return type E as error part in Result
+// in order to be able to use ? operator on the process contains a result, the From trait must
+// be implemented for each error variant (that we've detected might happened at runtime) of type E 
+impl From<std::io::Error> for PanelError{
+    fn from(error: std::io::Error) -> Self {
+        Self{ 
+            code: 0, 
+            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            kind: ErrorKind::File(FileEror::ReadWrite(error)), 
+            method_name: String::from("") 
+        }
+    }
+}
+
+impl From<ws::ProtocolError> for PanelError{
+    fn from(error: ws::ProtocolError) -> Self {
+        Self{ 
+            code: 0, 
+            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            kind: ErrorKind::Server(ServerError::Ws(error)), 
+            method_name: String::from("") 
+        }
+    }
+}
+
+impl From<redis::RedisError> for PanelError{
+    fn from(error: redis::RedisError) -> Self {
+        Self{ 
+            code: 0, 
+            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            kind: ErrorKind::Storage(StorageError::Redis(error)),
+            method_name: String::from("") 
+        }
+    }
+}
+
+impl From<redis_async::error::Error> for PanelError{
+    fn from(error: redis_async::error::Error) -> Self {
+        Self{ 
+            code: 0, 
+            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            kind: ErrorKind::Storage(StorageError::RedisAsync(error)),
+            method_name: String::from("") 
+        }
+    }
+}
+
+impl From<diesel::result::Error> for PanelError{
+    fn from(error: diesel::result::Error) -> Self {
+        Self{ 
+            code: 0, 
+            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            kind: ErrorKind::Storage(StorageError::Diesel(error)),
+            method_name: String::from("") 
+        }
     }
 }
 

@@ -15,7 +15,7 @@ pub(self) async fn test_stream(
     // json_body: web::Json<LoginInfoRequest>,
     // some_path: web::Path<(String, i32)>,
     // multipart_body: Multipart,
-) -> PanelHttpResponse{
+) -> Result<actix_web::HttpResponse, helpers::error0::PanelError>{
 
     // streaming over the incoming binary data from client
     // later on we can map the buffer into its related strucutre
@@ -24,6 +24,10 @@ pub(self) async fn test_stream(
         let bytes = chunk.unwrap();
         buffer.extend_from_slice(bytes.chunk());
     }
+
+    // we can use ? operator since the From<std::io::Error> trait has implemented for the PanelError
+    // runtime ERROR: cause file doesn't exist
+    let f = std::fs::File::open("openme.txt")?; 
 
     // extracting multipart formdata
     // let extracted_multipart = multipartreq::extract(

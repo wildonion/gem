@@ -12,9 +12,13 @@
    Box<dyn Error> which handles all possible errors at runtime dynamically and may causes the 
    app gets panicked at runtime we would have to use the one in here note that we should the ? 
    operator in any function that returns Result<T, E> or Option<T>, basically a custom error type 
-   E which must be enum variant since Error is not impelemted for normal Rust types, needs to 
-   have an implementation of the trait std::error::Error in other for it to be compatible with 
-   Box<dyn Error> and use it as the error part
+   E which must be enum variant since Error is not impelemted for normal Rust types due to the
+   fact that the Error trait and for example String type are both in different crates and based
+   on orphant rule Rust doesn't allow us to impl Error for String, needs to have an implementation 
+   of the trait std::error::Error in other for it to be compatible with Box<dyn Error> and use 
+   it as the error part, type G can be a trait object T or be casted into trait T if it impls trait 
+   T use Display to write the variant error message to the buffer and use Debug to write the exact 
+   source of error to the buffer 
    
    returning trait as return type of method requires the returning instance impls the trait and 
    in our case since we don't know the return type that will cause the error we can't use -> impl 
