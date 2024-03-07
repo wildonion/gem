@@ -52,6 +52,8 @@ impl Actor for UserComponentActor{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
+        info!("UserComponentActor -> started");
+
     }
 }
 

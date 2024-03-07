@@ -52,6 +52,7 @@ impl Actor for AdminComponentActor{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
+        info!("AdminComponentActor -> started");
     }
 }
 

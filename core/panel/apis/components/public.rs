@@ -52,6 +52,7 @@ impl Actor for PublicComponentActor{
 
     fn started(&mut self, ctx: &mut Self::Context) {
         
+        info!("PublicComponentActor -> started");
     }
 }
 

@@ -51,7 +51,8 @@ impl Actor for HealthComponentActor{
     type Context = Context<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        
+
+        info!("HealthComponentActor -> started");
     }
 }
 
