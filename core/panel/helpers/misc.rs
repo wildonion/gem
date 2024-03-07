@@ -631,11 +631,14 @@ pub fn string_to_static_str(s: String) -> &'static str {
 
 }
 
-
-
-/* -------------------------------------------------------------- */
-/* --------------------------- MACROS --------------------------- */
-/* -------------------------------------------------------------- */
+// -----====-----====-----====-----====-----====-----====-----====
+// resp object macro, the most important section in the code 
+// the following facitilate sending data back to the client by 
+// building a respone object every time the server wants to
+// send data back to the client, the macro however gets called
+// from where the server is creating data to send it, to inject
+// headers and cookies the logics must goes here.
+// -----====-----====-----====-----====-----====-----====-----====
 /*
     we can define as many as response object since once the scope
     or method or the match arm gets executed the lifetime of the 
@@ -655,6 +658,8 @@ macro_rules! resp {
         {
             use actix_web::HttpResponse;
             use crate::helpers::misc::Response;
+            use actix_web::http::header::Expires;
+            use std::time::{SystemTime, Duration};
             
             let code = $code.as_u16();
             let mut res = HttpResponse::build($code);
@@ -670,15 +675,20 @@ macro_rules! resp {
                 }
             };
             
+            // response expiration in client, the Expire gives the date/time after 
+            // which the response is considered stale.
+            let expiration = SystemTime::now() + Duration::from_secs(60 * 60 * 24); 
             let resp = if let Some(cookie) = $cookie{
                 res
                     .cookie(cookie.clone())
                     .append_header(("cookie", cookie.value()))
+                    .insert_header(Expires(expiration.into()))
                     .json(
                         response_data
                     )
             } else{
                 res
+                    .insert_header(Expires(expiration.into()))
                     .json(
                         response_data
                     )
