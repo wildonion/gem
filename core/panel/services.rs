@@ -139,6 +139,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::gallery::exports::accept_invitation_request);
     config.service(apis::user::gallery::exports::enter_private_gallery);
     config.service(apis::user::gallery::exports::search_in_invited_friends_wallet_data_of_gallery);
+    config.service(apis::user::gallery::exports::search_in_all_galleries_invited_to);
     config.service(apis::user::gallery::exports::get_user_unaccepted_invitation_requests);
     config.service(apis::user::friend::exports::get_user_unaccepted_friend_requests);
     config.service(apis::user::friend::exports::accept_friend_request);
@@ -149,6 +150,9 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::friend::exports::search_in_followers);
     config.service(apis::user::friend::exports::search_in_followings);
     config.service(apis::user::friend::exports::search_in_friends);
+    config.service(apis::user::friend::exports::search_in_unaccepted_friend_request);
+    config.service(apis::user::friend::exports::search_in_friend_suggestions_for_owner);
+    config.service(apis::user::friend::exports::search_in_all_user_relations);
     config.service(apis::user::friend::exports::get_all_my_friends);
     config.service(apis::user::friend::exports::get_all_my_followers);
     config.service(apis::user::friend::exports::get_all_my_followings);

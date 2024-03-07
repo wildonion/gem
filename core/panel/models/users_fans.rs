@@ -59,9 +59,9 @@ pub struct FriendData{
 #[derive(PartialEq)]
 pub struct UserRelations{
     pub user_info: UserWalletInfoResponse,
-    pub followers: UserFanData,
-    pub friends: UserFanData,
-    pub followings: Vec<UserFanDataWithWalletInfo>
+    pub followers: UserFanData, // followers are the one who are inside friends data field with follower condition 
+    pub friends: UserFanData, // followers are the one who are inside friends data field with friend condition
+    pub followings: Vec<UserFanDataWithWalletInfo> // followings are the one who are inside the table with the following conditions
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -705,6 +705,74 @@ impl UserFan{
                 vec![]
             } else{
                 sliced.to_owned()
+            }
+        )
+
+    }
+
+    pub async fn get_user_unaccepted_friend_requests_without_limit(owner_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    -> Result<Vec<Option<FriendData>>, PanelHttpResponse>{
+        
+        let get_user_fan_data = Self::get_user_fans_data_for(owner_screen_cid, connection).await;
+        let Ok(user_fan_data) = get_user_fan_data else{
+
+            let resp_err = get_user_fan_data.unwrap_err();
+            return Err(resp_err);
+        };
+
+
+        let user_friends_data = user_fan_data.construct_friends_data(connection);
+        let decoded_friends_data = if user_friends_data.is_some(){
+            serde_json::from_value::<Vec<FriendData>>(user_friends_data.unwrap()).unwrap()
+        } else{
+            vec![]
+        };        
+
+        let mut unaccepted_ones = decoded_friends_data
+            .into_iter()
+            .map(|frd|{
+
+                if frd.is_accepted == false{
+                    Some(frd)
+                } else{
+                    None
+                }
+
+            })
+            .collect::<Vec<Option<FriendData>>>();
+
+        unaccepted_ones.retain(|frd| frd.is_some());
+
+        /* sorting friend requests in desc order */
+        unaccepted_ones.sort_by(|frd1, frd2|{
+            /* 
+                cannot move out of `*frd1` which is behind a shared reference
+                move occurs because `*frd1` has type `std::option::Option<FriendData>`, 
+                which does not implement the `Copy` trait and unwrap() takes the 
+                ownership of the instance.
+                also we must create a longer lifetime for `FriendData::default()` by 
+                putting it inside a type so we can take a reference to it and pass the 
+                reference to the `unwrap_or()`, cause &FriendData::default() will be dropped 
+                at the end of the `unwrap_or()` statement while we're borrowing it.
+            */
+            let frd1_default = FriendData::default();
+            let frd2_default = FriendData::default();
+            let frd1 = frd1.as_ref().unwrap_or(&frd1_default);
+            let frd2 = frd2.as_ref().unwrap_or(&frd2_default);
+
+            let frd1_requested_at = frd1.requested_at;
+            let frd2_requested_at = frd2.requested_at;
+
+            frd2_requested_at.cmp(&frd1_requested_at)
+
+        });
+
+        Ok(
+            if unaccepted_ones.contains(&None){
+                vec![]
+            } else{
+                unaccepted_ones.to_owned()
             }
         )
 
@@ -1476,6 +1544,50 @@ impl UserFan{
                 },
                 followings: {
                     let get_followings = Self::get_all_my_followings(who_screen_cid, limit, connection).await;
+                    let Ok(user_followings) = get_followings else{
+                        let err_resp = get_followings.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_followings
+                },
+            }
+        )
+
+    }
+
+    pub async fn get_user_relations_without_limit(who_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<UserRelations, PanelHttpResponse>{
+
+        // in-place initialization and returning
+        Ok(
+            UserRelations{
+                user_info: {
+                    let get_user_info = User::fetch_wallet_by_username_or_mail_or_scid(who_screen_cid, connection).await;
+                    let Ok(user_wallet_info) = get_user_info else{
+                        let err_resp = get_user_info.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_wallet_info
+                },
+                followers: {
+                    let get_followers = Self::get_all_my_followers_without_limit(who_screen_cid, connection).await;
+                    let Ok(user_followers) = get_followers else{
+                        let err_resp = get_followers.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_followers
+                },
+                friends: {
+                    let get_friends = Self::get_all_my_friends_without_limit(who_screen_cid, connection).await;
+                    let Ok(user_friends) = get_friends else{
+                        let err_resp = get_friends.unwrap_err();
+                        return Err(err_resp);
+                    };
+                    user_friends
+                },
+                followings: {
+                    let get_followings = Self::get_all_my_followings_without_limit(who_screen_cid, connection).await;
                     let Ok(user_followings) = get_followings else{
                         let err_resp = get_followings.unwrap_err();
                         return Err(err_resp);

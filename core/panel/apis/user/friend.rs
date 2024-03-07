@@ -1738,6 +1738,468 @@ pub(self) async fn search_in_followings(
     
 }
 
+#[get("/fan/search/relations/for/{who}/")]
+#[passport(user)]
+pub(self) async fn search_in_all_user_relations(
+    req: HttpRequest,
+    who_screen_cid: web::Path<String>,
+    query: web::Query<UnlimitedSearch>,
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserFan::get_user_relations_without_limit(
+                        &who_screen_cid.to_owned(), 
+                        connection).await{
+                        
+                        Ok(mut user_relations) => {
+
+                            let search_q = &query.q;
+                            let followers = user_relations.clone().followers;
+                            let friends = user_relations.clone().friends;
+                            // taking a mutable reference to the underlying followings data which updates
+                            // followings field inside the user_relations if any of the following info 
+                            // inside the followings vector gets updated
+                            let followings = &mut user_relations.followings; 
+
+                            let mut match_friends = vec![];
+                            let mut match_followers = vec![];
+                            
+                            // following is a mutable pointer so if we update one of its field
+                            // then the followings vector gets updated too with the latest changes
+                            // of this element
+                            for following in followings{ 
+                                let user_friends_data_followings = following.clone().friends;
+                                let mut decoded_friends_data_followings = if user_friends_data_followings.is_some(){
+                                    serde_json::from_value::<Vec<FriendData>>(user_friends_data_followings.unwrap()).unwrap()
+                                } else{
+                                    vec![]
+                                }; 
+
+                                let mut match_followings = vec![];
+                                for frd in decoded_friends_data_followings{
+                                    if frd.username.contains(search_q) || 
+                                        frd.screen_cid.contains(search_q){
+                                            match_followings.push(frd);
+                                        }
+                                }
+
+                                following.friends = {
+                                    Some(serde_json::to_value(&match_followings).unwrap())
+                                };
+                            }
+                                
+                            let user_friends_data_followers = followers.construct_friends_data(connection);
+                            let mut decoded_friends_data_followers = if user_friends_data_followers.is_some(){
+                                serde_json::from_value::<Vec<FriendData>>(user_friends_data_followers.unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            }; 
+
+                            let user_friends_data_friends = friends.construct_friends_data(connection);
+                            let mut decoded_friends_data_friends = if user_friends_data_friends.is_some(){
+                                serde_json::from_value::<Vec<FriendData>>(user_friends_data_friends.unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            }; 
+
+                            for frd in decoded_friends_data_followers{
+                                if frd.username.contains(search_q) || 
+                                    frd.screen_cid.contains(search_q){
+                                        match_followers.push(frd);
+                                    }
+                            }
+
+                            for frd in decoded_friends_data_friends{
+                                if frd.username.contains(search_q) || 
+                                    frd.screen_cid.contains(search_q){
+                                        match_friends.push(frd);
+                                    }
+                            }
+
+                            user_relations.followers.friends = {
+                                Some(serde_json::to_value(&match_followers).unwrap())
+                            };
+
+                            user_relations.friends.friends = {
+                                Some(serde_json::to_value(&match_friends).unwrap())
+                            };
+
+                            resp!{
+                                UserRelations, //// the data type
+                                user_relations, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/fan/search/suggestions/for/")]
+#[passport(user)]
+pub(self) async fn search_in_friend_suggestions_for_owner(
+    req: HttpRequest,
+    query: web::Query<UnlimitedSearch>,
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match User::suggest_user_to_owner_without_limit(
+                        &user.screen_cid.unwrap(),
+                        connection).await{
+                        Ok(suggestions) => {
+
+                            let search_q = &query.q;
+                            let mut match_suggestions = vec![];
+                            for uw in suggestions{
+                                if uw.username.contains(search_q) || 
+                                    uw.screen_cid.as_ref().unwrap().contains(search_q){
+                                        match_suggestions.push(uw);
+                                    }
+                            }
+
+                            resp!{
+                                Vec<UserWalletInfoResponseForUserSuggestions>, //// the data type
+                                match_suggestions, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    }
+                    
+
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
+#[get("/fan/search/unaccepted/friend-requests/")]
+#[passport(user)]
+pub(self) async fn search_in_unaccepted_friend_request(
+    req: HttpRequest,
+    query: web::Query<UnlimitedSearch>,
+    app_state: web::Data<AppState>,
+) -> PanelHttpResponse{
+
+    let storage = app_state.app_sotrage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid or has created a wallet */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.screen_cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+
+                    match UserFan::get_user_unaccepted_friend_requests_without_limit(
+                        &user.screen_cid.unwrap(),
+                        connection).await{
+                        
+                        Ok(mut unaccepted_requests) => {
+
+                            let search_q = &query.q;
+                            unaccepted_requests.retain(|frd| frd.is_some()); // remove none ones
+                            let mut match_unaccepted_frd_reqs = vec![];
+                            for frd in unaccepted_requests{
+                                if frd.as_ref().unwrap().username.contains(search_q) || 
+                                    frd.as_ref().unwrap().screen_cid.contains(search_q){
+                                        match_unaccepted_frd_reqs.push(frd);
+                                    }
+                            }
+
+                            resp!{
+                                Vec<Option<FriendData>>, //// the data type
+                                match_unaccepted_frd_reqs, //// response data
+                                FETCHED, //// response message
+                                StatusCode::OK, //// status code
+                                None::<Cookie<'_>>, //// cookie
+                            }
+
+                        },
+                        Err(resp) => {
+                            resp
+                        }
+                    
+                    }
+                    
+                },
+                Err(resp) => {
+                
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+    
+}
+
 #[get("/fan/followers/search/for/{who_screen_cid}/")]
 #[passport(user)]
 pub(self) async fn search_in_followers(
@@ -1901,4 +2363,7 @@ pub mod exports{
     pub use super::search_in_followers;
     pub use super::search_in_followings;
     pub use super::search_in_friends;
+    pub use super::search_in_unaccepted_friend_request;
+    pub use super::search_in_friend_suggestions_for_owner;
+    pub use super::search_in_all_user_relations;
 }

@@ -3586,7 +3586,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNjYzNzg5NDAwMzg0NTA3OSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTgwNjUxNjI5NDAwMzk1NTk1MCwiaWF0IjoxNzA2NjM3ODk0MDAzOTU1OTUwfQ.OYdj8Q7MGJfbJ645-Ww1pGVaG1mIOpP7zH8FtbriX6Lb-CXLC_qybDPjVDJmMF7RLS1qHw2rrngt80eciQDNbg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NzM3MjUxOTA5MDU2NTg3LCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NjE1NjUxLCJpYXQiOjE3MDk3MzcyNTF9.yMfcIyXs6Q5YoRrN7elyR7rMDSU4S3TlQrfeOy4abbt1EcWHhbBQchs2IHhYHoqU6iGiigRH_MQzVr6SyPui3Q",
 													"type": "string"
 												}
 											]
@@ -4617,43 +4617,6 @@
 									"response": []
 								},
 								{
-									"name": "Search In Invited Friends Wallet Data Of My Gallery",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
-													"type": "string"
-												}
-											]
-										},
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "{{panel-user}}/gallery/1/search/invited-friends/?q=w",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"gallery",
-												"1",
-												"search",
-												"invited-friends",
-												""
-											],
-											"query": [
-												{
-													"key": "q",
-													"value": "w"
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
 									"name": "Get My Unaccepted Invitation Requests",
 									"request": {
 										"auth": {
@@ -4942,6 +4905,43 @@
 									"response": []
 								},
 								{
+									"name": "Search In Invited Friends Wallet Data Of My Gallery",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAwMzkzNDk2MDAwNDEwMDAwLCJleHAiOjE3MDI5ODU0OTYsImlhdCI6MTcwMDM5MzQ5Nn0.WcL2hRG5XEm6avpsj6hhigmxBXWpp29p1MAbLPAts_pBx65Jfxj_MXKjs5vccNOV8a-EkRnZ0XtDaLCYMSwH5w",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/1/search/invited-friends/?q=w",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"1",
+												"search",
+												"invited-friends",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "w"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
 									"name": "Search In Friends For",
 									"request": {
 										"auth": {
@@ -4949,7 +4949,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNTk0MTczMDIxOTE1NTIwMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwNTk0MzUzMDIxOTI2Njc0OCwiaWF0IjoxNzA1OTQxNzMwMjE5MjY2NzQ4fQ.V5xSRxZ7ELhzT7AqA7bfOIEknNu7H8y-Q9lcKB56Lr49EZKTS-_s8brwmsjkG7ueAC_NmZOoXd447MIPYw9Tcg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NTc4ODY2NjUyMjA5MzkwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NDU3MjY2LCJpYXQiOjE3MDk1Nzg4NjZ9.zcj3DHRNo-s1Y7wgsaGyYklDKmaQHg1tCX7VS4K6kSsFCkDNH21GYrwewvXeUG7wInCrQwtoV2Y5ztpQWTF-fA",
 													"type": "string"
 												}
 											]
@@ -4973,6 +4973,155 @@
 												{
 													"key": "q",
 													"value": "w"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In All Private Galleries I Invited To",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NTc4ODY2NjUyMjA5MzkwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NDU3MjY2LCJpYXQiOjE3MDk1Nzg4NjZ9.zcj3DHRNo-s1Y7wgsaGyYklDKmaQHg1tCX7VS4K6kSsFCkDNH21GYrwewvXeUG7wInCrQwtoV2Y5ztpQWTF-fA",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/gallery/search/all/i-invited-to/?q=wildoniongallery",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"gallery",
+												"search",
+												"all",
+												"i-invited-to",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "wildoniongallery"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In Unaccepted Friend Requests",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NTc4ODY2NjUyMjA5MzkwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NDU3MjY2LCJpYXQiOjE3MDk1Nzg4NjZ9.zcj3DHRNo-s1Y7wgsaGyYklDKmaQHg1tCX7VS4K6kSsFCkDNH21GYrwewvXeUG7wInCrQwtoV2Y5ztpQWTF-fA",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/search/unaccepted/friend-requests/?q=wildonion",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"search",
+												"unaccepted",
+												"friend-requests",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "wildonion"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In Friend Suggestions",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NTc4ODY2NjUyMjA5MzkwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NDU3MjY2LCJpYXQiOjE3MDk1Nzg4NjZ9.zcj3DHRNo-s1Y7wgsaGyYklDKmaQHg1tCX7VS4K6kSsFCkDNH21GYrwewvXeUG7wInCrQwtoV2Y5ztpQWTF-fA",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/search/suggestions/for/?q=wildonion",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"search",
+												"suggestions",
+												"for",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "wildonion"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Search In User Relations",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA5NTc4ODY2NjUyMjA5MzkwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODA5NDU3MjY2LCJpYXQiOjE3MDk1Nzg4NjZ9.zcj3DHRNo-s1Y7wgsaGyYklDKmaQHg1tCX7VS4K6kSsFCkDNH21GYrwewvXeUG7wInCrQwtoV2Y5ztpQWTF-fA",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/fan/search/relations/for/{who}/?q=wildonion",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"fan",
+												"search",
+												"relations",
+												"for",
+												"{who}",
+												""
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "wildonion"
 												}
 											]
 										}

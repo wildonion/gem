@@ -1366,6 +1366,131 @@ impl User{
 
     }
 
+    pub async fn suggest_user_to_owner_without_limit(owner_screen_cid: &str,
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<UserWalletInfoResponseForUserSuggestions>, PanelHttpResponse>{
+            
+            match users
+                .order(created_at.desc())
+                .load::<User>(connection)
+            {
+                Ok(all_users) => {
+
+                    let mut suggestions = vec![];
+                    for user in all_users{
+
+                        // might be admin, dev or the user didn't create wallet yet
+                        // also don't suggest the user to himself
+                        if user.screen_cid.is_none() ||
+                            (user.screen_cid.is_some() && user.screen_cid.as_ref().unwrap() == owner_screen_cid){
+                                continue;
+                            }
+
+                        // get all friends data of user, push to suggestions
+                        let get_user_fan_data = UserFan::get_user_fans_data_for(user.screen_cid.as_ref().unwrap(), connection).await;
+                        if get_user_fan_data.is_ok(){
+                            let user_friends = get_user_fan_data.as_ref().unwrap();
+                            let friends_data = user_friends.clone().construct_friends_data(connection);
+                            let decoded_friends_data = if friends_data.is_some(){
+                                serde_json::from_value::<Vec<FriendData>>(friends_data.clone().unwrap()).unwrap()
+                            } else{
+                                vec![]
+                            };
+
+                            let mut requested_at: Option<i64> = None;
+                            let mut is_accepted: Option<bool> = None;
+                            for friend in decoded_friends_data{
+                                if friend.screen_cid == owner_screen_cid{
+                                    requested_at = Some(friend.requested_at);
+                                    is_accepted = Some(friend.is_accepted);
+                                    break;
+                                }
+                            }
+
+                            suggestions.push(
+                                UserWalletInfoResponseForUserSuggestions{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                    extra: user.clone().extra,
+                                    requested_at, // to know whether owner_screen_cid has sent a request to friend or not
+                                    is_accepted // to know whether the user.screen_cid has accepted the request of owner_screen_cid or not
+                                }
+                            )
+                            
+                        } else{
+                            suggestions.push(
+                                UserWalletInfoResponseForUserSuggestions{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                    extra: user.clone().extra,
+                                    requested_at: None, // to know whether owner_screen_cid has sent a request to friend or not
+                                    is_accepted: None // to know whether the user.screen_cid has accepted the request of owner_screen_cid or not
+                                }
+                            )
+                        }
+
+                    }
+
+                    suggestions.sort_by(|s1, s2|{
+
+                        let s1_created_at = NaiveDateTime
+                            ::parse_from_str(&s1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                            .unwrap();
+
+                        let s2_created_at = NaiveDateTime
+                            ::parse_from_str(&s2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                            .unwrap();
+
+                        s2_created_at.cmp(&s1_created_at)
+        
+                    });
+
+                    Ok(
+                        suggestions
+                    )
+
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+    
+    
+                    /* custom error handler */
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::suggest_user_to_owner");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+    
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+    
+                }
+            }
+
+
+    }
+
     pub async fn find_by_mail(user_mail: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
