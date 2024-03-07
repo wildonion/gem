@@ -12,9 +12,11 @@
    Box<dyn Error> which handles all possible errors at runtime dynamically and may causes the 
    app gets panicked at runtime we would have to use the one in here note that we should the ? 
    operator in any function that returns Result<T, E> or Option<T>, basically a custom error type 
-   E which must be enum variant since Error is not impelemted for normal Rust types, needs to 
-   have an implementation of the trait std::error::Error in other for it to be compatible with 
-   Box<dyn Error> and use it as the error part
+   E which must be enum variant since Error is not impelemted for normal Rust types due to the
+   fact that the Error trait and for example String type are both in different crates and based
+   on orphant rule Rust doesn't allow us to impl Error for String, needs to have an implementation 
+   of the trait std::error::Error in other for it to be compatible with Box<dyn Error> and use 
+   it as the error part
    
    returning trait as return type of method requires the returning instance impls the trait and 
    in our case since we don't know the return type that will cause the error we can't use -> impl 
@@ -59,27 +61,20 @@ use std::io::{Write, Read};
 use serenity::model::misc;
 use tokio::fs::OpenOptions;
 use tokio::io::ReadBuf;
-use thiserror::Error as ThisError;
+use thiserror::Error;
 
 
 
-// all the below setups and impls can be facitilated by
-// utilising the thiserror crate automaticaly
-#[derive(ThisError, Debug)]
-pub enum AppError{
-       
-    // error variants
-    // ...
-}
+/* 
+    thiserror impls Display, Error and From traits for the type to display an error message for each variant 
+    causes the error in the source method then we could debug the source using our own Debug implementation
 
-
-/* ----------------------------- */
-/* ----------------------------- 
-    a custom error handler for the panel apis
-    can be built during the execution of the app
-    to log the runtime crashes and errors
+    #[error(/* */)] defines the Display representation of the enum variant it is applied to, e.g., if the key file is missing, the error would return the string failed to read the key file when displaying the error.
+    #[source] is used to denote what should be returned as the root cause in Error::source. Which is used in our debug implementation.
+    #[from] automatically derives an implementation of From for the type it has been applied to into the top-level error type (e.g., impl From<reqwest:Error> for CustomError {/* */}). The field annotated with #[from] is also used as an error source, saving us from having to use two annotations on the same field (e.g., #[source] #[from] reqwest::Error). Notice how we are unable put #[from] to the two std::io::Error variants, as there cannot be multiple From<std::io::Error> implementations for the same type.
 */
-#[derive(Debug)]
+
+#[derive(Error, Debug)]
 pub struct PanelError{
     pub code: u16,
     pub msg: Vec<u8>, // reason 
@@ -87,26 +82,51 @@ pub struct PanelError{
     pub method_name: String // in what method
 }
 
-
-#[derive(Debug)]
-pub enum StorageError{
-    Redis(redis::RedisError),
-    RedisAsync(redis_async::error::Error),
-    Diesel(diesel::result::Error)
-}
-#[derive(Debug)]
-pub enum ServerError{
-    ActixWeb(std::io::Error),
-    Ws(ws::ProtocolError),
-}
-#[derive(Debug)]
-pub enum ThirdPartyApiError{
-    ReqwestTextResponse(reqwest::Error),
-}
+#[derive(Error)]
 pub enum ErrorKind{
+    #[error("Large Number of Workers, Must be {}", .0)]
+    Workers(u16),
+    #[error("Actix HTTP or WS Server Error")]
     Server(ServerError), // actix server io 
+    #[error("Redis or Diesel Error")]
     Storage(StorageError), // diesel, redis
+    #[error("Api Reqwest Error")]
     ThirdPartyApi(ThirdPartyApiError) // reqwest response text
+}
+
+#[derive(Error, Debug)]
+pub enum StorageError{
+    #[error("[REDIS] - failed to store in redis")]
+    Redis(#[from] redis::RedisError),
+    #[error("[REDIS ASYNC] - failed to subscribe to channel")]
+    RedisAsync(#[from] redis_async::error::Error),
+    #[error("[DIESEL] - failed to do postgres db operation")]
+    Diesel(#[from] diesel::result::Error)
+}
+#[derive(Error, Debug)]
+pub enum ServerError{
+    #[error("[ACTIX WEB] - failed to start actix web server")]
+    ActixWeb(#[from] std::io::Error),
+    #[error("[ACTIX WS] - failed to read from ws stream")]
+    Ws(#[from] ws::ProtocolError),
+}
+#[derive(Error, Debug)]
+pub enum ThirdPartyApiError{
+    #[error("[REQWEST] - failed to send api request")]
+    Reqwest(#[from] reqwest::Error),
+}
+
+// thiserrror's only requirement is for the type to implement the Debug trait
+// here we're implementing the Debug trait manually to write the error source
+// into the formatter buffer
+impl std::fmt::Debug for ErrorKind{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing into the mutable buffer, we would have access it every where
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?;
+        }
+        Ok(())
+    }
 }
 
 /* ----------------------------- */
@@ -150,7 +170,7 @@ impl actix_web::ResponseError for PanelError{
             ErrorKind::Storage(StorageError::Diesel(s)) => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::Storage(StorageError::RedisAsync(s)) => StatusCode::INTERNAL_SERVER_ERROR,
             ErrorKind::Storage(StorageError::Redis(s)) => StatusCode::INTERNAL_SERVER_ERROR,
-            ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(s)) => StatusCode::EXPECTATION_FAILED,
+            ErrorKind::ThirdPartyApi(ThirdPartyApiError::Reqwest(s)) => StatusCode::EXPECTATION_FAILED,
         }
     }
 
@@ -161,106 +181,11 @@ impl std::fmt::Display for PanelError{
     }
 }
 
-
-/* ----------------------------- */
-/* -----------------------------
-    implementing Error, Display, Debug and From traits for ErrorKind enum so we can 
-    return the Error trait as the return type of the error part from the method, to do 
-    so we can return the instance of the ErrorKind in place of the return type of 
-    the error part like so: Result<(), ErrorKind> and then use the ? operator to 
-    map the type causes the error into the exact error variant.
-*/
-impl std::error::Error for ErrorKind{
-
-    // the return type is a borrow with the self lifetime of trait 
-    // object of type Error with static lifetime, trait objects must
-    // be behind pointer in our case we're putting it behind the pointer
-    // with the lifetime of the self
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)>{
-        match self{
-            Self::Server(ServerError::ActixWeb(s)) => Some(s),
-            Self::Server(ServerError::Ws(s)) => Some(s),
-            Self::Storage(StorageError::Diesel(s)) => Some(s),
-            Self::Storage(StorageError::RedisAsync(s)) => Some(s),
-            Self::Storage(StorageError::Redis(s)) => Some(s),
-            Self::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(s)) => Some(s), 
-        }
-    }
-
-}
-
-impl std::fmt::Display for ErrorKind{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result{
-        match self{ // write! macros writes data into the mutable buffer f by converting the string data into utf8 bytes
-            Self::Server(ServerError::ActixWeb(_)) => f.write_str(&format!("[ACTIX WEB] - failed to start actix web server")),
-            Self::Server(ServerError::Ws(_)) => f.write_str(&format!("[ACTIX WS] - failed to read from ws stream")),
-            Self::Storage(StorageError::Diesel(_)) => f.write_str(&format!("[DIESEL] - failed to do postgres db operation")),
-            Self::Storage(StorageError::RedisAsync(_)) => f.write_str(&format!("[REDIS ASYNC] - failed to subscribe to channel")),
-            Self::Storage(StorageError::Redis(_)) => f.write_str(&format!("[REDIS] - failed to store in redis")),
-            Self::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(_)) => f.write_str(&format!("[REQWEST] - failed to fetch from thirdparty server")),
-        }
-    }
-}
-
-impl std::fmt::Debug for ErrorKind{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self)?; // writing into the mutable buffer, we would have access it every where
-        if let Some(source) = self.source(){
-            writeln!(f, "Caused by: \n\t{}", source)?;
-        }
-        Ok(())
-    }
-}
-
-/* ----------------------------- */
-/* -----------------------------
-    implementing every possible error for the ErrorKind so we can 
-    map the error using map_err() to the related variant and use ? 
-    operator at the end of the call, the error however can be made 
-    by calling from() method on the ErrorKind struct.
-*/
-impl From<std::io::Error> for ErrorKind{ // std::io::Error can also be caused by file read/write process
-    fn from(error: std::io::Error) -> Self {
-        ErrorKind::Server(ServerError::ActixWeb(error))
-    }
-}
-
-impl From<ws::ProtocolError> for ErrorKind{
-    fn from(error: ws::ProtocolError) -> Self {
-        ErrorKind::Server(ServerError::Ws(error))
-    }
-}
-
-impl From<redis::RedisError> for ErrorKind{
-    fn from(error: redis::RedisError) -> Self{
-        ErrorKind::Storage(StorageError::Redis(error))
-    }
-}
-
-impl From<redis_async::error::Error> for ErrorKind{
-    fn from(error: redis_async::error::Error) -> Self{
-        ErrorKind::Storage(StorageError::RedisAsync(error))
-    }
-}
-
-impl From<diesel::result::Error> for ErrorKind{
-    fn from(error: diesel::result::Error) -> Self{
-        ErrorKind::Storage(StorageError::Diesel(error))
-    }
-}
-
-impl From<reqwest::Error> for ErrorKind{
-    fn from(error: reqwest::Error) -> Self {
-        ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(error))
-    }
-}
-
 impl From<(Vec<u8>, u16, ErrorKind, String)> for PanelError{
     fn from(msg_code_kind_method: (Vec<u8>, u16, ErrorKind, String)) -> PanelError{
         PanelError { code: msg_code_kind_method.1, msg: msg_code_kind_method.0, kind: msg_code_kind_method.2, method_name: msg_code_kind_method.3 }
     }
 }
-
 
 impl PanelError{
 
@@ -369,7 +294,7 @@ impl PanelError{
                 read all the bytes and filled the buffer with 
                 the file bytes
             */
-            if bytes_read == 0{
+            if bytes_read == 0{ // means there is nothing has been written into the buffer
                 break;
             }
         }

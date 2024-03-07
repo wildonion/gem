@@ -12,9 +12,11 @@
    Box<dyn Error> which handles all possible errors at runtime dynamically and may causes the 
    app gets panicked at runtime we would have to use the one in here note that we should the ? 
    operator in any function that returns Result<T, E> or Option<T>, basically a custom error type 
-   E which must be enum variant since Error is not impelemted for normal Rust types, needs to 
-   have an implementation of the trait std::error::Error in other for it to be compatible with 
-   Box<dyn Error> and use it as the error part
+   E which must be enum variant since Error is not impelemted for normal Rust types due to the
+   fact that the Error trait and for example String type are both in different crates and based
+   on orphant rule Rust doesn't allow us to impl Error for String, needs to have an implementation 
+   of the trait std::error::Error in other for it to be compatible with Box<dyn Error> and use 
+   it as the error part
    
    returning trait as return type of method requires the returning instance impls the trait and 
    in our case since we don't know the return type that will cause the error we can't use -> impl 
@@ -61,7 +63,6 @@ use tokio::fs::OpenOptions;
 use tokio::io::ReadBuf;
 
 
-
 /* ----------------------------- */
 /* ----------------------------- 
     a custom error handler for the panel apis
@@ -76,6 +77,11 @@ pub struct PanelError{
     pub method_name: String // in what method
 }
 
+pub enum ErrorKind{
+    Server(ServerError), // actix server io 
+    Storage(StorageError), // diesel, redis
+    ThirdPartyApi(ThirdPartyApiError) // reqwest response text
+}
 
 #[derive(Debug)]
 pub enum StorageError{
@@ -90,13 +96,7 @@ pub enum ServerError{
 }
 #[derive(Debug)]
 pub enum ThirdPartyApiError{
-    ReqwestTextResponse(String),
-}
-#[derive(Debug)]
-pub enum ErrorKind{
-    Server(ServerError), // actix server io 
-    Storage(StorageError), // diesel, redis
-    ThirdPartyApi(ThirdPartyApiError) // reqwest response text
+    Reqwest(reqwest::Error),
 }
 
 /* ----------------------------- */
@@ -108,7 +108,61 @@ pub enum ErrorKind{
 unsafe impl Send for PanelError{}
 unsafe impl Sync for PanelError{}
 
+/* ----------------------------- */
+/* -----------------------------
+    implementing Error, Display, Debug and From traits for ErrorKind enum so we can 
+    return the Error trait as the return type of the error part from the method, to do 
+    so we can return the instance of the ErrorKind in place of the return type of 
+    the error part like so: Result<(), ErrorKind> and then use the ? operator to 
+    map the type causes the error into the exact error variant.
+    
+    display a based error message for current variant then log the cause of error using 
+    Debug which logs the current source value returned by the source() method.
+*/
+impl std::error::Error for ErrorKind{
 
+    // the return type is a borrow with the self lifetime of trait 
+    // object of type Error with static lifetime, trait objects must
+    // be behind pointer in our case we're putting it behind the pointer
+    // with the lifetime of the self, this is for identifying the 
+    // underlying lower level error that caused your error.
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)>{
+        match self{ // all the following sources must be an object trait of type Error
+            Self::Server(ServerError::ActixWeb(s)) => Some(s),
+            Self::Server(ServerError::Ws(s)) => Some(s),
+            Self::Storage(StorageError::Diesel(s)) => Some(s),
+            Self::Storage(StorageError::RedisAsync(s)) => Some(s),
+            Self::Storage(StorageError::Redis(s)) => Some(s),
+            Self::ThirdPartyApi(ThirdPartyApiError::Reqwest(s)) => Some(s), 
+        }
+    }
+
+}
+
+impl std::fmt::Display for ErrorKind{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result{
+        match self{ // write! macros writes data into the mutable buffer f by converting the string data into utf8 bytes
+            Self::Server(ServerError::ActixWeb(_)) => f.write_str(&format!("[ACTIX WEB] - failed to start actix web server")),
+            Self::Server(ServerError::Ws(_)) => f.write_str(&format!("[ACTIX WS] - failed to read from ws stream")),
+            Self::Storage(StorageError::Diesel(_)) => f.write_str(&format!("[DIESEL] - failed to do postgres db operation")),
+            Self::Storage(StorageError::RedisAsync(_)) => f.write_str(&format!("[REDIS ASYNC] - failed to subscribe to channel")),
+            Self::Storage(StorageError::Redis(_)) => f.write_str(&format!("[REDIS] - failed to store in redis")),
+            Self::ThirdPartyApi(ThirdPartyApiError::Reqwest(_)) => f.write_str(&format!("[REQWEST] - failed to send api request")),
+        }
+    }
+}
+
+impl std::fmt::Debug for ErrorKind{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing into the mutable buffer, we would have access it every where
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?;
+        }
+        Ok(())
+    }
+}
+
+// the error however can be made by calling from() method on the ErrorKind struct.
 impl From<std::io::Error> for ErrorKind{ // std::io::Error can also be caused by file read/write process
     fn from(error: std::io::Error) -> Self {
         ErrorKind::Server(ServerError::ActixWeb(error))
@@ -139,9 +193,9 @@ impl From<diesel::result::Error> for ErrorKind{
     }
 }
 
-impl From<String> for ErrorKind{
-    fn from(error: String) -> Self {
-        ErrorKind::ThirdPartyApi(ThirdPartyApiError::ReqwestTextResponse(error))
+impl From<reqwest::Error> for ErrorKind{
+    fn from(error: reqwest::Error) -> Self {
+        ErrorKind::ThirdPartyApi(ThirdPartyApiError::Reqwest(error))
     }
 }
 
