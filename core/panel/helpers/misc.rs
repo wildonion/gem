@@ -677,7 +677,7 @@ macro_rules! resp {
             
             // response expiration in client, the Expire gives the date/time after 
             // which the response is considered stale.
-            let expiration = SystemTime::now() + Duration::from_secs(60 * 60 * 24); 
+            let expiration = SystemTime::now() + Duration::from_secs(60); 
             let resp = if let Some(cookie) = $cookie{
                 res
                     .cookie(cookie.clone())
