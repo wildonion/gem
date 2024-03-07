@@ -411,7 +411,7 @@ impl UserCollection{
             let mut collection_owner_map = vec![];
             for owner in owners{
 
-                if owner.screen_cid.is_none() || owner.screen_cid.clone().unwrap().is_empty(){{
+                if owner.screen_cid.is_none() || owner.screen_cid.clone().unwrap().is_empty(){
                     continue;
                 }
     
