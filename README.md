@@ -6,6 +6,8 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 - actor based component APIs, a reliable design pattern facilitating the communication between each API without sending HTTP requests, only by utilising actor message sending concept.
 - actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) by utilising top users to rank and match them as well as suggest users to each other based on their stars.
+- empowering caching strategies to speed up performance in calling heavy computational APIs.
+- **SSE** technology to inform clients by receiving automatic updates from the server via an HTTP connection. 
 
 ### 🍔 Features
 
