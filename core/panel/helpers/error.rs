@@ -1,61 +1,6 @@
 
 
 
-/* 
-   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-        CONSE PANEL CUSTOM ERROR HELPER
-   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-   https://fettblog.eu/rust-enums-wrapping-errors/
-   https://betterprogramming.pub/a-simple-guide-to-using-thiserror-crate-in-rust-eee6e442409b
-   
-   custom error handler, useful to specify the exact type of error at runtime instead of using 
-   Box<dyn Error> which handles all possible errors at runtime dynamically and may causes the 
-   app gets panicked at runtime we would have to use the one in here note that we should the ? 
-   operator in any function that returns Result<T, E> or Option<T>, basically a custom error type 
-   E which must be enum variant since Error is not impelemted for normal Rust types due to the
-   fact that the Error trait and for example String type are both in different crates and based
-   on orphant rule Rust doesn't allow us to impl Error for String, needs to have an implementation 
-   of the trait std::error::Error in other for it to be compatible with Box<dyn Error> and use 
-   it as the error part, type G can be a trait object T or be casted into trait T if it impls trait 
-   T use Display to write the variant error message to the buffer and use Debug to write the exact 
-   source of error to the buffer 
-   
-   returning trait as return type of method requires the returning instance impls the trait and 
-   in our case since we don't know the return type that will cause the error we can't use -> impl 
-   Error hence we should put the trait behind a box, (we stored on the heap to cover enough size 
-   for the type causes the error since we don't know the implemenor size which helps us to avoid 
-   overflowing) by doing so we tell rust that the type causes the error will be specified at runtime 
-   and all we know is it impls Error trait so if that error happens map the type into the error 
-   and return it as the error part of the result, to catch the error we are able to use the ? operator 
-   to convert different types of errors coming from different methods into the same Boxed Error 
-   type. if we would specify the exact type of error in error part of the result we must create an 
-   instance of the error and return that if we don't want to use ?, another way is to map the error 
-   of each function into the error type as the conclusion we must know the exact type of the error 
-   instead of using Box<dyn Error> to make the type caused the error as the return type by calling 
-   the map_err() method on the method to map the error into the exact error type as well as use ? 
-   operator to unwrap the exact error we should impl Error, Debug and Display traits for the error 
-   type which what thiserror is currently doing. usually we use an enum for the error type to cover 
-   all possible runtime errors then we could pass the variant the causes the error into the map_err() 
-   method and finally use the ? operator to return the exact error from the function with Result<(), ErrorKind> 
-   as its return type also in order to create Box<dyn Error> from Box<T> the T must implements the 
-   Error trait already since in order to return a trait object from a method we need to return an 
-   instance of the struct which impls that trait already.
-
-   fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{} if we want to use 
-   Result<(), impl std::error::Error + Send + Sync + 'static> as the return type of the error part, 
-   the exact error type instance must be sepecified also the Error trait must be implemented for the 
-   error type (impl Error for ErrorType{}) since we're implementing the Error trait for the error type 
-   in return type which insists that the instance of the type implements the Error trait. by returning 
-   a boxed error trait we're returning the Error trait as a heap object behind a valid pointer which 
-   handles all error type at runtime, this is the solution to return traits as an object cause we don't 
-   know what type causes the error at runtiem and is the implementor of the Error trait which forces 
-   us to return the trait as the error itself and since traits are dynamically sized we can't treat 
-   them as a typed object directly we must put them behind pointer like &'valid dyn Trait or box them 
-   to send them on the heap, also by bounding the Error trait to Send + Sync + 'static we'll make it 
-   sefable, sendable and shareable to move it between different scopes and threads.
-*/
-
-
 use crate::*;
 use crate::constants::LOGS_FOLDER_ERROR_KIND;
 use std::error::Error;

@@ -2,9 +2,9 @@
 
 
 /* 
-   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-        CONSE PANEL CUSTOM ERROR HELPER
-   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        CONSE PANEL CUSTOM ERROR HELPER USING THISERROR CRATE
+    -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
    https://fettblog.eu/rust-enums-wrapping-errors/
    https://betterprogramming.pub/a-simple-guide-to-using-thiserror-crate-in-rust-eee6e442409b
    
@@ -55,7 +55,6 @@
    sefable, sendable and shareable to move it between different scopes and threads.
 */
 
-
 use crate::*;
 use crate::constants::LOGS_FOLDER_ERROR_KIND;
 use std::error::Error;
@@ -66,32 +65,47 @@ use tokio::io::ReadBuf;
 use thiserror::Error;
 
 
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+thiserror impls Display (log the error variant into human readable format), Error and From traits for 
+the type to display an error message for the variant causes the error in the source method then we could 
+debug the source using our own Debug implementation also note that if we want to return the PanelErrorResponse 
+as the error part of Result which allows us to use ? operator on the error type, the Error, Display, Debug 
+and From traits must be implemented for that also the From trait must be implemented for every single error 
+variant that makes the PanelErrorResponse like if we want to use ? to unwrap a file opening process the From<std::io::Error> 
+must be implemented for the PanelErrorResponse struct.
 
-/* 
-    thiserror impls Display (log the error variant into human readable format), Error and From traits for 
-    the type to display an error message for the variant causes the error in the source method then we could 
-    debug the source using our own Debug implementation also note that if we want to return the PanelError 
-    as the error part of Result which allows us to use ? operator on the error type, the Error, Display, Debug 
-    and From traits must be implemented for that also the From trait must be implemented for every single error 
-    variant that makes the PanelError like if we want to use ? to unwrap a file opening process the From<std::io::Error> 
-    must be implemented for the PanelError struct.
-
-    #[error(/* */)] defines the Display representation of the enum variant it is applied to, e.g., if the key file is missing, the error would return the string failed to read the key file when displaying the error.
-    #[source] is used to denote what should be returned as the root cause in Error::source. Which is used in our debug implementation.
-    #[from] automatically derives an implementation of From for the type it has been applied to into the top-level error type (e.g., impl From<reqwest:Error> for CustomError {/* */}). The field annotated with #[from] is also used as an error source, saving us from having to use two annotations on the same field (e.g., #[source] #[from] reqwest::Error). Notice how we are unable put #[from] to the two std::io::Error variants, as there cannot be multiple From<std::io::Error> implementations for the same type.
+#[error(/* */)] defines the Display representation of the enum variant it is applied to, e.g., if the key file is missing, the error would return the string failed to read the key file when displaying the error in the terminal.
+#[source] is used to denote what should be returned as the root cause in Error::source. Which is used in our debug implementation.
+#[from] automatically derives an implementation of From for the type it has been applied to into the top-level error type (e.g., impl From<reqwest:Error> for CustomError {/* */}). The field annotated with #[from] is also used as an error source, saving us from having to use two annotations on the same field (e.g., #[source] #[from] reqwest::Error). Notice how we are unable put #[from] to the two std::io::Error variants, as there cannot be multiple From<std::io::Error> implementations for the same type.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 */
 
 #[derive(Error, Debug)]
-pub struct PanelError{
+pub struct PanelErrorResponse{
     pub code: u16,
     pub msg: Vec<u8>, // reason 
     pub kind: ErrorKind, // due to what service 
     pub method_name: String // in what method
 }
 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// since we've implemented the Error, Debug, Display and From traits 
+// for each variant of ErrorKind enum, it can be used as a separate
+// error handler in case of unwrapping the error using ? operator, so
+// if we're using the ErrorKind as an error part in a result type and 
+// unwrapping the error using ? operator the fulfilled buffer inside
+// the Debug and Display traits methods will be logged to the console
+// for the variant caused the error.
+// NOTE => since From trait is not implemented for each variant directly
+//         we can't unwrap the error on ErrorKind using ? operator cause 
+//         in order to map the type into an error From must be implmented 
+//         for an Error trait object like std::io::Error in opening a one 
+//         non existent file, which none the following variants contains 
+//         trait object directly, they're nested enum variants.
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #[derive(Error)]
 pub enum ErrorKind{
-    #[error("Large Number of Workers, Must be {}", .0)]
+    #[error("Large Number of Workers {}, Maximum Is 10", .0)]
     Workers(u16),
     #[error("File Read/Write Error")]
     File(FileEror),
@@ -103,67 +117,130 @@ pub enum ErrorKind{
     ThirdPartyApi(ThirdPartyApiError) // reqwest response text
 }
 
-#[derive(Error, Debug)]
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// in the following enums, From is impelemented directly 
+// for each variant to convert the type caused the error 
+// into the error by calling from() method when we use ? 
+// operator 
+// NOTE => we get the message inside the #[error] if we use unwrap() or match over the result to cover the error part unless we call the source() method on the error variant
+// NOTE => #[from] will be used to unwrap the error using ? so it contains the exact error message inside the source() method of std::error::Error trait
+// NOTE => message inside the #[error] is used to log into the console using Display trait 
+// NOTE => logging the cause or the source of error along with the message inside the #[error] macro which is written into the buffer using Display trait can be done with Debug trait
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#[derive(Error)]
 pub enum FileEror{
     #[error("[FILE] - failed to read from or write to file")]
-    ReadWrite(#[from] std::io::Error)
+    ReadWrite(#[from] std::io::Error) 
 }
 
-#[derive(Error, Debug)]
+#[derive(Error)]
 pub enum StorageError{
     #[error("[REDIS] - failed to store in redis")]
     Redis(#[from] redis::RedisError),
     #[error("[REDIS ASYNC] - failed to subscribe to channel")]
-    RedisAsync(#[from] redis_async::error::Error),
+    RedisAsync(#[from] redis_async::error::Error), 
     #[error("[DIESEL] - failed to do postgres db operation")]
-    Diesel(#[from] diesel::result::Error)
+    Diesel(#[from] diesel::result::Error) 
 }
-#[derive(Error, Debug)]
+#[derive(Error)]
 pub enum ServerError{
     #[error("[ACTIX WEB] - failed to start actix web server")]
     ActixWeb(#[from] std::io::Error),
     #[error("[ACTIX WS] - failed to read from ws stream")]
-    Ws(#[from] ws::ProtocolError),
+    Ws(#[from] ws::ProtocolError), 
 }
-#[derive(Error, Debug)]
+#[derive(Error)]
 pub enum ThirdPartyApiError{
     #[error("[REQWEST] - failed to send api request")]
-    Reqwest(#[from] reqwest::Error),
+    Reqwest(#[from] reqwest::Error), 
 }
 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // thiserrror's only requirement is for the type to implement the Debug trait
 // here we're implementing the Debug trait manually to write the error source
-// into the formatter buffer
+// into the formatter buffer so we can see the logs in the terminal
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 impl std::fmt::Debug for ErrorKind{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self)?; // writing into the mutable buffer, we would have access it every where
+        writeln!(f, "{}", self)?; // writing the self into the mutable buffer
         if let Some(source) = self.source(){
-            writeln!(f, "Caused by: \n\t{}", source)?;
+            writeln!(f, "Caused by: \n\t{}", source)?; // writing the source of the error into the mutable buffer
         }
         Ok(())
     }
 }
 
-/* ----------------------------- */
-/* -----------------------------
+impl std::fmt::Debug for FileEror{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing the self into the mutable buffer
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?; // writing the source of the error into the mutable buffer
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Debug for StorageError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing the self into the mutable buffer
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?; // writing the source of the error into the mutable buffer
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Debug for ServerError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing the self into the mutable buffer
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?; // writing the source of the error into the mutable buffer
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Debug for ThirdPartyApiError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self)?; // writing the self into the mutable buffer
+        if let Some(source) = self.source(){
+            writeln!(f, "Caused by: \n\t{}", source)?; // writing the source of the error into the mutable buffer
+        }
+        Ok(())
+    }
+}
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+/*
     make it sendable to be shared between threads also note that 
     Send and Sync can only be implement for a type that is inside 
     the current crate thus can't be implemented for actix_web::HttpResponse
 */
-unsafe impl Send for PanelError{}
-unsafe impl Sync for PanelError{}
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+unsafe impl Send for PanelErrorResponse{}
+unsafe impl Sync for PanelErrorResponse{}
 
-/* ----------------------------- */
-/* -----------------------------
-    implementing an actix error responder for the PanelError struct, 
-    allows us to use PanelError as the error part of the http response 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+/* 
+    implementing an actix error responder for the PanelErrorResponse struct, 
+    allows us to use PanelErrorResponse as the error part of the http response 
     result instead of actix_web::Error to avoid unknown runtime actix
     crashes
 */
-impl actix_web::ResponseError for PanelError{
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+impl actix_web::ResponseError for PanelErrorResponse{
     
-    // actix will detect the type that causes the error at runtime
-    // then choose its related variant and then show its message to the client 
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+    // when we use ? operator on the result type to unwrap the error Rust
+    // get started looking for the From implementation for the type that
+    // caused the error like if we're using ? to unwrap the error on a file
+    // reading process there must be From<std::io::Error> implementation for
+    // the PanelErrorResponse with some error message, since it allows Rust to log 
+    // the error to the console, in the following we're creating a response 
+    // object from the error detected by ? to send it back to the client, 
+    // note that in the place of the message we've used the error message
+    // inside the From implementation.
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody>{ // the error response contains a boxed body bytes
         HttpResponse::build(self.status_code()).json(
             helpers::misc::Response::<'_, &[u8]>{
@@ -193,237 +270,94 @@ impl actix_web::ResponseError for PanelError{
     }
 
 }
-impl std::fmt::Display for PanelError{
+impl std::fmt::Display for PanelErrorResponse{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self) // write the PanelError instance into the buffer
+        write!(f, "{:?}", self) // write the PanelErrorResponse instance into the buffer
     }
 }
 
-// From implementations, when used to return an instance of PanelError which contains an error
-// variant, it mainly allows us to use ? operator to convert the type into instance of PanelError 
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// From implementations, when used to return an instance of PanelErrorResponse which contains an error
+// variant, it mainly allows us to use ? operator to convert the type into instance of PanelErrorResponse 
 // by calling the from method to return the error caused by an unsuccessful related operations
 // like when we're using ? operator on opening a file result, if the operation goes wrong like
-// the file doesn't get found it eventually build a PanelError instance which contains the io 
+// the file doesn't get found it eventually build a PanelErrorResponse instance which contains the io 
 // error by calling from() method then the code gets panicked in there which causes to return 
-// an instance of PanelError to the caller, albeit to log the error the Dispaly and Debug traits
-// must be implemented for the PanelError. basically to return type E as error part in Result
+// an instance of PanelErrorResponse to the caller, albeit to log the error the Dispaly and Debug traits
+// must be implemented for the PanelErrorResponse. basically to return type E as error part in Result
 // in order to be able to use ? operator on the process contains a result, the From trait must
 // be implemented for each error variant (that we've detected might happened at runtime) of type E 
-impl From<std::io::Error> for PanelError{
+// NOTE => in the following methods, error param is the exact source of the error in which the app gets
+//         crashed at runtime due to
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+impl From<std::io::Error> for PanelErrorResponse{
     fn from(error: std::io::Error) -> Self {
         Self{ 
             code: 0, 
-            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            msg: error.to_string().as_bytes().to_vec(), // this is the exact source of error and is being used to build an http response with message so we need to have an error string
             kind: ErrorKind::File(FileEror::ReadWrite(error)), 
             method_name: String::from("") 
         }
     }
 }
 
-impl From<ws::ProtocolError> for PanelError{
+impl From<ws::ProtocolError> for PanelErrorResponse{
     fn from(error: ws::ProtocolError) -> Self {
         Self{ 
             code: 0, 
-            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            msg: error.to_string().as_bytes().to_vec(), // this is the exact source of error and is being used to build an http response with message so we need to have an error string
             kind: ErrorKind::Server(ServerError::Ws(error)), 
             method_name: String::from("") 
         }
     }
 }
 
-impl From<redis::RedisError> for PanelError{
+impl From<redis::RedisError> for PanelErrorResponse{
     fn from(error: redis::RedisError) -> Self {
         Self{ 
             code: 0, 
-            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            msg: error.to_string().as_bytes().to_vec(), // this is the exact source of error and is being used to build an http response with message so we need to have an error string
             kind: ErrorKind::Storage(StorageError::Redis(error)),
             method_name: String::from("") 
         }
     }
 }
 
-impl From<redis_async::error::Error> for PanelError{
+impl From<redis_async::error::Error> for PanelErrorResponse{
     fn from(error: redis_async::error::Error) -> Self {
         Self{ 
             code: 0, 
-            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            msg: error.to_string().as_bytes().to_vec(), // this is the exact source of error and is being used to build an http response with message so we need to have an error string
             kind: ErrorKind::Storage(StorageError::RedisAsync(error)),
             method_name: String::from("") 
         }
     }
 }
 
-impl From<diesel::result::Error> for PanelError{
+impl From<diesel::result::Error> for PanelErrorResponse{
     fn from(error: diesel::result::Error) -> Self {
         Self{ 
             code: 0, 
-            msg: error.to_string().as_bytes().to_vec(), // this is being used to build an http response with message so we need to have an error string
+            msg: error.to_string().as_bytes().to_vec(), // this is the exact source of error and is being used to build an http response with message so we need to have an error string
             kind: ErrorKind::Storage(StorageError::Diesel(error)),
             method_name: String::from("") 
         }
     }
 }
 
-impl From<(Vec<u8>, u16, ErrorKind, String)> for PanelError{
-    fn from(msg_code_kind_method: (Vec<u8>, u16, ErrorKind, String)) -> PanelError{
-        PanelError { code: msg_code_kind_method.1, msg: msg_code_kind_method.0, kind: msg_code_kind_method.2, method_name: msg_code_kind_method.3 }
+impl From<(Vec<u8>, u16, ErrorKind, String)> for PanelErrorResponse{
+    fn from(msg_code_kind_method: (Vec<u8>, u16, ErrorKind, String)) -> PanelErrorResponse{
+        PanelErrorResponse { code: msg_code_kind_method.1, msg: msg_code_kind_method.0, kind: msg_code_kind_method.2, method_name: msg_code_kind_method.3 }
     }
 }
 
-impl PanelError{
+
+impl PanelErrorResponse{
 
     pub fn new(code: u16, msg: Vec<u8>, kind: ErrorKind, method_name: &str) -> Self{
         
-        let err = PanelError::from((msg, code, kind, method_name.to_string()));
+        let err = PanelErrorResponse::from((msg, code, kind, method_name.to_string()));
 
         err
     }
-
-    pub async fn write(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that has satisfied the Write trait */
-        
-        let this = self;
-        let Self { code, msg, kind, method_name } = this;
-
-        let e = match self{
-            PanelError{
-                code: _,
-                msg,
-                kind,
-                method_name,
-            } if code <= &400 => {},
-            PanelError{
-                code: _,
-                msg,
-                ..
-            } => {},
-            _ => ()
-        };
-
-        /* creating the logs/error-kind folder if it doesn't exist */
-        tokio::fs::create_dir_all(LOGS_FOLDER_ERROR_KIND).await.unwrap();
-        let filepath = format!("{}/panel-error.log", LOGS_FOLDER_ERROR_KIND);
-
-        let mut panel_error_log;
-        let msg_content = String::from_utf8(msg.to_owned());
-        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {} | method name: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis(), method_name);
-        
-        /* writing to file */
-        match tokio::fs::metadata(filepath.clone()).await{
-            Ok(_) => {
-                /* ------- we found the file, append to it ------- */
-                let mut file = OpenOptions::new()
-                    .append(true)
-                    .create(true)
-                    .open(filepath.as_str())
-                    .await.unwrap();
-                file.write_all(error_log_content.as_bytes()).await.unwrap(); // Write the data to the file
-            },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                /* ------- we didn't found the file, create a new one ------- */
-                panel_error_log = tokio::fs::File::create(filepath.clone().as_str()).await.unwrap();
-                panel_error_log.write_all(error_log_content.as_bytes()).await.unwrap();
-            },
-            Err(e) => {
-                /* ------- can't create a new file or append to it ------- */
-                let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("{}/{}-panel-error-custom-error-handler-log-file.log", log_name, LOGS_FOLDER_ERROR_KIND);
-                let mut error_kind_log = tokio::fs::File::create(filepath.as_str()).await.unwrap();
-                error_kind_log.write_all(e.to_string().as_bytes()).await.unwrap();
-            }
-        }
-
-        /* writing to buffer using write macro */
-        let mut buffer = Vec::new(); 
-        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer using write macro */
-        
-        /* OR */
-        // serde_json::to_writer_pretty(buffer, &error_log_content);
-
-        buffer /* returns the full filled buffer from the error  */
-    
-    }
-
-    pub fn write_sync(&self) -> impl Write{ /* the return type is a trait which will be implemented for every type that is satisfied the Write trait */
-        
-        let this = self;
-        let Self { code, msg, kind, method_name } = this;
-
-        /* creating the logs/error-kind folder if it doesn't exist */
-        std::fs::create_dir_all(LOGS_FOLDER_ERROR_KIND).unwrap();
-        let filepath = format!("{}/panel-error.log", LOGS_FOLDER_ERROR_KIND);
-
-        let mut panel_error_log;
-        let msg_content = serde_json::from_slice::<String>(msg.as_slice());
-        let error_log_content = format!("code: {} | message: {} | due to: {:?} | time: {} | method name: {}\n", code, &msg_content.unwrap(), kind, chrono::Local::now().timestamp_millis(), method_name);
-
-        /* --------------------------------------------------------------------------------- */
-        /* -------------- read from file buffer and decode it into the String -------------- */
-        /* --------------------------------------------------------------------------------- */
-        let loaded_file = std::fs::OpenOptions::new()
-            .read(true)
-            .open(filepath.clone())
-            .unwrap();
-        
-        /* reading the full filled bytes of the file and put it into a buffer reader */
-        let buf_reader = std::io::BufReader::new(loaded_file);
-
-        /* OR 
-
-        let mut file_content_buffer = vec![];
-        loop{
-            let bytes_read = loaded_file.read(&mut file_content_buffer).unwrap();
-            /* 
-                if the zero bytes are in there means we've 
-                read all the bytes and filled the buffer with 
-                the file bytes
-            */
-            if bytes_read == 0{ // means there is nothing has been written into the buffer
-                break;
-            }
-        }
-
-        */
-
-        /* decoding the buffer reader into the String struct */
-        let decoded_error_log_content: String = serde_json::from_reader(buf_reader).unwrap();
-        /* --------------------------------------------------------------------------------- */
-        /* --------------------------------------------------------------------------------- */
-        /* --------------------------------------------------------------------------------- */
-
-        /* writing to file */
-        match std::fs::metadata(filepath.clone()){
-            Ok(_) => {
-                /* ------- we found the file, append to it ------- */
-                let mut file = std::fs::OpenOptions::new()
-                    .append(true)
-                    .create(true)
-                    .open(filepath.as_str())
-                    .unwrap();
-                file.write_all(error_log_content.as_bytes()).unwrap(); // Write the data to the file
-            },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                /* ------- we didn't found the file, create a new one ------- */
-                panel_error_log = std::fs::File::create(filepath.clone().as_str()).unwrap();
-                panel_error_log.write_all(error_log_content.as_bytes()).unwrap();
-            },
-            Err(e) => {
-                /* ------- can't create a new file or append to it ------- */
-                let log_name = format!("[{}]", chrono::Local::now());
-                let filepath = format!("{}/{}-panel-error-custom-error-handler-log-file.log", log_name, LOGS_FOLDER_ERROR_KIND);
-                let mut error_kind_log = std::fs::File::create(filepath.as_str()).unwrap();
-                error_kind_log.write_all(e.to_string().as_bytes()).unwrap();
-            }
-        }
-
-        /* writing to buffer using write macro */
-        let mut buffer = Vec::new(); 
-        let _: () = write!(&mut buffer, "{}", error_log_content).unwrap(); /* writing to buffer using write macro */
-        
-        /* OR */
-        // serde_json::to_writer_pretty(buffer, &error_log_content);
-        
-        buffer /* returns the full filled buffer from the error  */
-    
-    }
-
 }
