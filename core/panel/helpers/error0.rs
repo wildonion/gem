@@ -74,6 +74,14 @@ and From traits must be implemented for that also the From trait must be impleme
 variant that makes the PanelErrorResponse like if we want to use ? to unwrap a file opening process the From<std::io::Error> 
 must be implemented for the PanelErrorResponse struct.
 
+? needs to create error from the type so the From trait must be implemented for the 
+type to build the instance contains the caused error Rust uses the type passed to from() 
+method to log and display the source of error into the console, also impl Debug for 
+each error variant inside the enum to log the source to the console and Display for 
+the error handler struct to log and instance of the error handler and finally the Error
+trait for the error handler struct or the field that contains the enum error variants 
+that wants to be used as the error part in Result type.
+
 #[error(/* */)] defines the Display representation of the enum variant it is applied to, e.g., if the key file is missing, the error would return the string failed to read the key file when displaying the error in the terminal.
 #[source] is used to denote what should be returned as the root cause in Error::source. Which is used in our debug implementation.
 #[from] automatically derives an implementation of From for the type it has been applied to into the top-level error type (e.g., impl From<reqwest:Error> for CustomError {/* */}). The field annotated with #[from] is also used as an error source, saving us from having to use two annotations on the same field (e.g., #[source] #[from] reqwest::Error). Notice how we are unable put #[from] to the two std::io::Error variants, as there cannot be multiple From<std::io::Error> implementations for the same type.
@@ -276,20 +284,21 @@ impl std::fmt::Display for PanelErrorResponse{
     }
 }
 
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// From implementations, when used to return an instance of PanelErrorResponse which contains an error
-// variant, it mainly allows us to use ? operator to convert the type into instance of PanelErrorResponse 
-// by calling the from method to return the error caused by an unsuccessful related operations
-// like when we're using ? operator on opening a file result, if the operation goes wrong like
-// the file doesn't get found it eventually build a PanelErrorResponse instance which contains the io 
-// error by calling from() method then the code gets panicked in there which causes to return 
-// an instance of PanelErrorResponse to the caller, albeit to log the error the Dispaly and Debug traits
-// must be implemented for the PanelErrorResponse. basically to return type E as error part in Result
-// in order to be able to use ? operator on the process contains a result, the From trait must
-// be implemented for each error variant (that we've detected might happened at runtime) of type E 
-// NOTE => in the following methods, error param is the exact source of the error in which the app gets
-//         crashed at runtime due to
-// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+/*  -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    From implementations to make the error from the a source error like std::io::Error, when used to return 
+    an instance of PanelErrorResponse which contains an error variant, it mainly allows us to use ? operator 
+    to convert the type into instance of PanelErrorResponse by calling the from method to return the error 
+    caused by an unsuccessful related operations like when we're using ? operator on opening a file result, 
+    if the operation goes wrong like the file doesn't get found it eventually build a PanelErrorResponse 
+    instance which contains the io error by calling from() method then the code gets panicked in there which 
+    causes to return an instance of PanelErrorResponse to the caller, albeit to log the error the Dispaly and 
+    Debug traits must be implemented for the PanelErrorResponse. basically to return type E as error part in
+    Result in order to be able to use ? operator on the process contains a result, the From trait must be 
+    implemented for each error variant (that we've detected might happened at runtime) of type E 
+    NOTE => in the following methods, error param is the exact source of the error in which the app gets
+            crashed at runtime due to 
+  -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+*/
 impl From<std::io::Error> for PanelErrorResponse{
     fn from(error: std::io::Error) -> Self {
         Self{ 

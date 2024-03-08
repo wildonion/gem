@@ -1,6 +1,11 @@
 
 
 
+/*  -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+        IN-PLATFORM REVEAL ROLE  PUBLISHER
+    -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+*/
+
 use actix::Addr;
 use mongodb::bson::oid::ObjectId;
 use crate::*;

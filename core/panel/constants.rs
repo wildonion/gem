@@ -68,7 +68,7 @@ pub struct AppState{
     pub subscriber_actors: Option<SubscriberActors>,
     pub agent_actors: Option<AgentActors>,
     pub component_actors: Option<ApiComponentActors>,
-    pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db which can be shared between threads without having race conditions
+    pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db and cache storage which can be shared between threads without having race conditions
 }
 
 #[derive(Clone)]

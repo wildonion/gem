@@ -6,7 +6,6 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 - actor based component APIs, a reliable design pattern facilitating the communication between each API without sending HTTP requests, only by utilising actor message sending concept.
 - actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
 - behavioural graph virtual machine (**[GVM](https://github.com/wildonion/gvm/)**) by utilising top users to rank and match them as well as suggest users to each other based on their stars.
-- empowering caching strategies to speed up performance in calling heavy computational APIs.
 - **SSE** technology to inform clients by receiving automatic updates from the server via an HTTP connection. 
 
 ### 🍔 Features
@@ -104,6 +103,8 @@ wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928
 * Read More About [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
 
 * Read More About [Push Notification Strategy](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)
+
+* Read More About [Rust Ownership and Borrowing Rules](https://github.com/wildonion/gvm/wiki/Ownership-and-Borrowing-Rules)
 
 * [HTTP Postman Collection](https://dewoloper.postman.co/workspace/dewo~9f34982c-dde5-4f77-9d5d-46872ed07d4a/collection/22927035-7a3bd80c-b40f-46ab-bc94-5fca466fe30b?action=share&creator=22927035)
 
