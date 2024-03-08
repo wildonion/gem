@@ -118,13 +118,15 @@ pub(self) async fn reveal_role(
                         let channel = format!("reveal-role-{notif_room:}"); /* reveal roles notif channels start with reveal-role */
                         
 
-                        /* publishing the revealed roles in the background asyncly until 1 subscriber gets subscribed to the channel */
-                        Reveal::publish(
-                            redis_actix_actor, 
-                            &channel, 
-                            &stringified_player_roles,
-                            &notif_room
-                        ).await;
+                        tokio::spawn(async move{
+                            /* publishing the revealed roles in the background asyncly until 1 subscriber gets subscribed to the channel */
+                            Reveal::publish(
+                                redis_actix_actor, 
+                                &channel, 
+                                &stringified_player_roles,
+                                &notif_room
+                            ).await;
+                        });
 
                     
                         resp!{
