@@ -130,7 +130,7 @@ pub enum ErrorKind{
 // for each variant to convert the type caused the error 
 // into the error by calling from() method when we use ? 
 // operator 
-// NOTE => we get the message inside the #[error] if we use unwrap() or match over the result to cover the error part unless we call the source() method on the error variant
+// NOTE => we get the message inside the #[error] if we use unwrap() or match over the result to cover the error part unless we call the source() method on the error variant to get the source message of the exact error
 // NOTE => #[from] will be used to unwrap the error using ? so it contains the exact error message inside the source() method of std::error::Error trait
 // NOTE => message inside the #[error] is used to log into the console using Display trait 
 // NOTE => logging the cause or the source of error along with the message inside the #[error] macro which is written into the buffer using Display trait can be done with Debug trait
@@ -247,7 +247,11 @@ impl actix_web::ResponseError for PanelErrorResponse{
     // the error to the console, in the following we're creating a response 
     // object from the error detected by ? to send it back to the client, 
     // note that in the place of the message we've used the error message
-    // inside the From implementation.
+    // inside the From implementation, also since we're handling possible errors
+    // using PanelErrorResponse there is no need to match over ok or the err part
+    // of any result, we can directly use ? operator Rust will take care of 
+    // the rest process and then if there is an error an http response containing 
+    // the error will be returned back to the client.
     // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody>{ // the error response contains a boxed body bytes
         HttpResponse::build(self.status_code()).json(

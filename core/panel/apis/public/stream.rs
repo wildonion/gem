@@ -1,6 +1,5 @@
 
 
-use std::error::Error;
 
 pub use super::*;
 
@@ -70,7 +69,10 @@ pub(self) async fn test_stream(
     };
 
 
-    // we can use ? operator since the From<std::io::Error> trait has implemented for the PanelError
+    // since we're handling the error using PanelErrorResponse there is no need to match over
+    // ok or the err part of the result we can directly use ? operator Rust will take care of 
+    // the rest process.
+    // we can use ? operator since the From<std::io::Error> trait has implemented for the PanelErrorResponse
     // runtime ERROR: cause file doesn't exist
     let f = std::fs::File::open("openme.txt")?; // ? returns http error response 
 
