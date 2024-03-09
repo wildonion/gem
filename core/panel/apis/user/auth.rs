@@ -102,6 +102,7 @@ pub(self) async fn signup_with_identifier_and_password(
 
 }
 
+// https://github.com/wpcodevo/google-github-oath2-reactjs
 #[get("/sessions/oauth/google")]
 pub(self) async fn session_oauth_google(
         req: HttpRequest,
