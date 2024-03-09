@@ -1,6 +1,8 @@
 
 
 
+use crate::models::users_nfts::UserNftDataWithWalletInfo;
+
 pub use super::*;
 
 
@@ -316,9 +318,152 @@ pub(self) async fn get_all_nfts(
 
 }
 
+#[get("/nft/get/{asset_id}")]
+pub(self) async fn get_single_nft(
+    req: HttpRequest,  
+    asset_id: web::Path<i32>,    
+    app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse {
+
+
+    let storage = app_state.app_sotrage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let async_redis_client = storage.as_ref().clone().unwrap().get_async_redis_pubsub_conn().await.unwrap();
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+            match UserNft::find_by_id(asset_id.to_owned(), connection).await{
+                        
+                Ok(user_nft_data) => {
+                    resp!{
+                        UserNftDataWithWalletInfo, // the data type
+                        UserNftDataWithWalletInfo{ 
+                            id: user_nft_data.id, 
+                            contract_address: user_nft_data.contract_address, 
+                            current_owner_wallet_info: {
+                                let user = User::find_by_screen_cid(&user_nft_data.current_owner_screen_cid, connection).await.unwrap();
+                                UserWalletInfoResponse{
+                                    username: user.username,
+                                    avatar: user.avatar,
+                                    bio: user.bio,
+                                    banner: user.banner,
+                                    mail: user.mail,
+                                    screen_cid: user.screen_cid,
+                                    extra: user.extra,
+                                    stars: user.stars,
+                                    created_at: user.created_at.to_string(),
+                                }
+                            }, 
+                            metadata_uri: user_nft_data.metadata_uri, 
+                            extra: user_nft_data.extra, 
+                            onchain_id: user_nft_data.onchain_id, 
+                            nft_name: user_nft_data.nft_name, 
+                            is_minted: user_nft_data.is_minted, 
+                            nft_description: user_nft_data.nft_description, 
+                            current_price: user_nft_data.current_price, 
+                            is_listed: user_nft_data.is_listed, 
+                            freeze_metadata: user_nft_data.freeze_metadata, 
+                            comments: user_nft_data.comments, 
+                            likes: user_nft_data.likes, 
+                            tx_hash: user_nft_data.tx_hash, 
+                            created_at: user_nft_data.created_at.to_string(), 
+                            updated_at: user_nft_data.updated_at.to_string(),
+                            attributes: user_nft_data.attributes, 
+                        }, // response data
+                        FETCHED, // response message
+                        StatusCode::OK, // status code
+                        None::<Cookie<'_>>, // cookie
+                    }
+
+                },
+                Err(resp) => {
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+
+}
+
+#[get("/collection/get/")]
+pub(self) async fn get_public_collection(
+        req: HttpRequest,   
+        col_id: web::Path<i32>,
+        app_state: web::Data<AppState>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+    ) -> PanelHttpResponse {
+
+    let storage = app_state.app_sotrage.as_ref().to_owned();
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+
+    match storage.clone().unwrap().get_pgdb().await{
+        Some(pg_pool) => {
+        
+            let connection = &mut pg_pool.get().unwrap();
+            let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+
+            let get_col_info = UserCollection::find_by_id(col_id.to_owned(), connection).await;
+            let Ok(mut collection) = get_col_info else{
+                let err_resp = get_col_info.unwrap_err();
+                return err_resp;
+            };
+
+            let get_minted_nfts_of_collection = UserCollection
+                ::get_all_pure_minted_nfts_of_collection_with_address(&collection.contract_address, connection);
+            
+            let Ok(mut minted_nfts) = get_minted_nfts_of_collection else{
+                let err_resp = get_minted_nfts_of_collection.unwrap_err();
+                return err_resp;
+            };
+
+            collection.nfts = Some(
+                serde_json::to_value(&minted_nfts).unwrap()
+            );
+
+            resp!{
+                UserCollectionData, // the data type
+                collection, // response data
+                FETCHED, // response message
+                StatusCode::OK, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        
+        }, 
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }         
+
+
+}
+
 
 pub mod exports{
     pub use super::get_top_nfts;
     pub use super::get_all_nfts;
+    pub use super::get_public_collection;
+    pub use super::get_single_nft;
     pub use super::get_nft_product_collections;
 }

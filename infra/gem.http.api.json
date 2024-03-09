@@ -5556,35 +5556,6 @@
 									"response": []
 								},
 								{
-									"name": "Get Single NFT",
-									"request": {
-										"auth": {
-											"type": "bearer",
-											"bearer": [
-												{
-													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjM1LCJ1c2VyX3JvbGUiOiJVc2VyIiwidG9rZW5fdGltZSI6MTcwNjI1MzE0NjI2NDc1ODI0NSwiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTcwODg0NTE0NjI2NTM1NDc5OCwiaWF0IjoxNzA2MjUzMTQ2MjY1MzU0Nzk4fQ.pZ4udNd8Va9u0g-vL8qsyD37Z7psi7DpQPS-OOd3kmjvjGbfydIyt-b2Rleo2S38TmcQ9O4v5ADfalDarLRQiQ",
-													"type": "string"
-												}
-											]
-										},
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "{{panel-user}}/nft/get/2",
-											"host": [
-												"{{panel-user}}"
-											],
-											"path": [
-												"nft",
-												"get",
-												"2"
-											]
-										}
-									},
-									"response": []
-								},
-								{
 									"name": "Get My NFTs",
 									"request": {
 										"auth": {
@@ -6301,21 +6272,32 @@
 							"response": []
 						},
 						{
-							"name": "Commit Webhook",
+							"name": "Test Http Byte Stream",
 							"request": {
+								"auth": {
+									"type": "noauth"
+								},
 								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "",
+											"type": "file",
+											"src": "/Users/wildonion/Desktop/onion.png"
+										}
+									]
+								},
 								"url": {
-									"raw": "{{panel-public}}/public/commit-webhook",
+									"raw": "{{panel-public}}/test-stream",
 									"host": [
 										"{{panel-public}}"
 									],
 									"path": [
-										"public",
-										"commit-webhook"
+										"test-stream"
 									]
-								},
-								"description": "this api will be used by github to send webhook events like push, pull or issues our server must subscribe to the incoming request from github within 10 seconds period of time."
+								}
 							},
 							"response": []
 						},
@@ -6525,36 +6507,6 @@
 							"response": []
 						},
 						{
-							"name": "Test Http Byte Stream",
-							"request": {
-								"auth": {
-									"type": "noauth"
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "",
-											"type": "file",
-											"src": "/Users/wildonion/Desktop/onion.png"
-										}
-									]
-								},
-								"url": {
-									"raw": "{{panel-public}}/test-stream",
-									"host": [
-										"{{panel-public}}"
-									],
-									"path": [
-										"test-stream"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "Search",
 							"request": {
 								"auth": {
@@ -6622,6 +6574,50 @@
 									],
 									"path": [
 										"get-x-requests"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Single NFT",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/nft/get/2",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"nft",
+										"get",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Public Collection",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-public}}/collection/get/2",
+									"host": [
+										"{{panel-public}}"
+									],
+									"path": [
+										"collection",
+										"get",
+										"2"
 									]
 								}
 							},

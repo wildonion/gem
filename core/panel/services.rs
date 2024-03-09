@@ -177,8 +177,6 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::gallery::exports::update_collection);
     config.service(apis::user::gallery::exports::upload_collection_banner);
     config.service(apis::user::gallery::exports::get_nfts_owned_by);
-    config.service(apis::user::gallery::exports::get_single_nft);
-
 }
 
 /*
@@ -221,6 +219,8 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::search::exports::search_in_top_nfts);
     config.service(apis::public::blockchain::exports::get_top_nfts);
     config.service(apis::public::blockchain::exports::get_all_nfts);
+    config.service(apis::public::blockchain::exports::get_public_collection);
+    config.service(apis::public::blockchain::exports::get_single_nft);
     config.service(apis::public::blockchain::exports::get_nft_product_collections);
     config.service(apis::public::stream::exports::test_stream);
 
