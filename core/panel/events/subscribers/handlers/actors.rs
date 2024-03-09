@@ -4,4 +4,4 @@
 
 pub mod notif;
 pub mod ws;
-pub mod agents;
+pub mod ci;

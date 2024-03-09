@@ -91,8 +91,8 @@ macro_rules! bootsteap {
             use crate::events::subscribers::handlers::actors::notif::system::SystemActor;
             use crate::events::subscribers::handlers::actors::notif::clp::ClpEventSchedulerActor;
             use crate::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
-            use crate::events::subscribers::handlers::actors::agents::run::RunAgentActor;
-            use crate::events::subscribers::handlers::actors::agents::deploy::DeployAgentActor;
+            use crate::events::subscribers::handlers::actors::ci::run::RunAgentActor;
+            use crate::events::subscribers::handlers::actors::ci::deploy::DeployAgentActor;
             use crate::apis::components::admin::AdminComponentActor;
             use crate::apis::components::user::UserComponentActor;
             use crate::apis::components::health::HealthComponentActor;
