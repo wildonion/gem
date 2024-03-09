@@ -1,6 +1,6 @@
 
 
-
+use std::error::Error; // loading the Error trait allows us to call the source() method
 pub use super::*;
 
 
@@ -17,7 +17,7 @@ pub async fn open_file() -> Result<(), helpers::error0::FileEror>{
 }
 
 
-// more logics in: https://github.com/wildonion/zoomate/blob/main/src/helpers/tcpserver.rs
+// more tcp logics in: https://github.com/wildonion/zoomate/blob/main/src/helpers/tcpserver.rs
 #[post("/test-stream")]
 pub(self) async fn test_stream(
     // payload and multipart are both in form of bytes that 
@@ -39,7 +39,7 @@ pub(self) async fn test_stream(
     
     // building the error of read/write file manually so we could return 
     // PanelErrorResponse in respond to the client
-
+    // ...
     // note that in the following method we've used the FileEror as the error part
     // of the result type which unwrap the error by using ? to log the exact caused 
     // of error to the console but note that can't use ? in here cause ? unwrap the
@@ -47,6 +47,8 @@ pub(self) async fn test_stream(
     // match in here to catch the error
     match open_file().await{
         Ok(_) => {},
+        // build a custom http response from the FileError variant
+        // ...
         Err(e) => { // as we can see the error type is a FileError which is one the variant of the ErrorKind enum
             // e.to_string() is the display message of the error, note without 
             // matching over the result and use unwrap() only the app gets crashed 
@@ -74,7 +76,7 @@ pub(self) async fn test_stream(
     // the rest process.
     // we can use ? operator since the From<std::io::Error> trait has implemented for the PanelErrorResponse
     // runtime ERROR: cause file doesn't exist
-    let f = std::fs::File::open("openme.txt")?; // ? returns http error response 
+    let f = std::fs::File::open("openme.txt")?; // using ? convert the error into our custom http response error so we're not worry about making a custom http response containing the error 
 
     // extracting multipart formdata
     // let extracted_multipart = multipartreq::extract(

@@ -53,6 +53,24 @@
    them as a typed object directly we must put them behind pointer like &'valid dyn Trait or box them 
    to send them on the heap, also by bounding the Error trait to Send + Sync + 'static we'll make it 
    sefable, sendable and shareable to move it between different scopes and threads.
+
+   in the following example the error part of the result is a boxed version of Error trait
+   means that using ? operator to unwrap the error on any result type inside the main function 
+   requires the std::error::Error trait be implemented for the type caused the error in order 
+   cause to build the error using from() method or the error part be an Error trait object 
+   in our case the error part of the open() method implements the Error trait and it's a trait
+   object of type std::io::Error, the boxed version of Error trait supports every type that 
+   implements Error trait which allows us to use ? operator on any result type to handle the 
+   error properly.
+
+    #[tokio::main]
+    async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+
+        // ERROR to the console: Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+        let file = std::fs::File::open("openme.txt")?;
+
+    }
+
 */
 
 use crate::*;
