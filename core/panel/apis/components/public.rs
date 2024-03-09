@@ -105,6 +105,14 @@ impl Handler<ExecuteApi> for PublicComponentActor{
         1) other apis can send ExecuteApi message to this actor to execute an specific route 
         2) once the api gets executed its http response will back to the caller
         3) the response of the executed api will be cached inside the api state
+
+
+        let res = AdminComponentActor.send(
+            ExecuteApi{
+                route: "/nft/get"
+            }
+        ).await;
+
     */
     fn handle(&mut self, msg: ExecuteApi, ctx: &mut Self::Context) -> Self::Result {
 
