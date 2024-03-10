@@ -35,3 +35,7 @@ make
 sudo make install
 
 sudo docker network create -d bridge gem || true
+
+sudo apt-get install -y apache2-utils
+echo \n"-> Creating Nginx Logs Dir Password"\n\t;
+htpasswd -c ../infra/docker/nginx/.htpasswd conse
