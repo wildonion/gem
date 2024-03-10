@@ -10,6 +10,8 @@ WORKDIR /etc/nginx/infra/docker/nginx
 # Remove the default Nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
 
+# copy the logs dir password into the /etc/nginx dir
+COPY .htpasswd /etc/nginx/.htpasswd
 # Copy the SSL certificate and private key to the container
 #conse.app:
 COPY cert-conse.app.pem /etc/nginx/cert-conse.app.pem
