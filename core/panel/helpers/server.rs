@@ -93,10 +93,10 @@ macro_rules! bootsteap {
             use crate::events::subscribers::handlers::actors::notif::balance::UserBalanceActor;
             use crate::events::subscribers::handlers::actors::ci::run::RunAgentActor;
             use crate::events::subscribers::handlers::actors::ci::deploy::DeployAgentActor;
-            use crate::apis::components::admin::AdminComponentActor;
-            use crate::apis::components::user::UserComponentActor;
-            use crate::apis::components::health::HealthComponentActor;
-            use crate::apis::components::public::PublicComponentActor;
+            use crate::apis::admin::AdminComponentActor;
+            use crate::apis::user::UserComponentActor;
+            use crate::apis::health::HealthComponentActor;
+            use crate::apis::public::PublicComponentActor;
 
             
             env::set_var("RUST_LOG", "trace");
@@ -189,7 +189,9 @@ macro_rules! bootsteap {
             let shared_state_app = Data::new(app_state.clone()); // making the app state as a shareable data 
 
 
-            /*  
+            /*      
+                take note that Actix Web uses multiple single-thread runtimes and data won’t be sent 
+                between threads, that's why HttpResponse is not Send and Sync.
                 we can have a global like data by sharing it between different parts of the app
                 using jobq channel cause in rust we don't have global concepts to define a mutable 
                 global type thus we have to put the type inside the Arc<Mutex<Type>> and share it 

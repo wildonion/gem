@@ -20,3 +20,34 @@ pub mod logout;
 pub mod password;
 pub mod task;
 pub mod webhook;
+
+
+
+//  -------------------------
+// |   component setups
+// | ------------------------
+// |
+
+
+// fn pointer method, futures must be pinned at a fixed position on the heap 
+// to avoid getting invalidated pointers even after moving the type
+type Method = fn(HttpRequest, AppState) -> std::pin::Pin<Box<dyn futures::Future<Output = PanelHttpResponse>>>;
+
+#[derive(Clone)]
+pub enum ComponentState{
+    Halted,
+    Executed,
+}
+
+#[derive(Clone)]
+pub struct Api{
+    pub route: String, 
+    pub method: Method,
+    pub last_response: Option<serde_json::Value> // last response json value caught throughout the api calling
+}
+
+#[derive(Clone)]
+pub struct HealthComponentActor{
+    pub state: Option<ComponentState>,
+    pub apis: Vec<Api>
+}

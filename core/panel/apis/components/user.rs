@@ -5,6 +5,7 @@
     | --------- USER COMPONENT ACTOR --------- 
     | ------------------------------------------
     | contains api structures and message handlers
+    | to communicate locally and remotely
     |
 */
 
@@ -12,6 +13,7 @@ use crate::*;
 use actix::Actor;
 use actix::prelude::*;
 use self::constants::AppState;
+use crate::apis::user::{ComponentState, UserComponentActor, Api};
 
 // fn pointer method, futures must be pinned at a fixed position on the heap 
 // to avoid getting invalidated pointers even after moving the type
@@ -27,25 +29,6 @@ pub struct ExecuteApi{ // execute an api available from the list of all register
 #[derive(MessageResponse)]
 pub struct ApiResponse(pub PanelHttpResponse);
 
-#[derive(Clone)]
-pub enum ComponentState{
-    Halted,
-    Executed,
-}
-
-#[derive(Clone)]
-pub struct Api{
-    pub route: String, 
-    pub method: Method,
-    pub last_response: Option<serde_json::Value> // last response json value caught throughout the api calling
-}
-
-#[derive(Clone)]
-pub struct UserComponentActor{
-    pub state: Option<ComponentState>,
-    pub apis: Vec<Api>
-}
-
 impl Actor for UserComponentActor{
 
     type Context = Context<Self>;
@@ -53,7 +36,6 @@ impl Actor for UserComponentActor{
     fn started(&mut self, ctx: &mut Self::Context) {
         
         info!("UserComponentActor -> started");
-
     }
 }
 
@@ -88,13 +70,15 @@ impl UserComponentActor{
     // emit/fire/publish an event into a redis pubsub channel 
     // so other apis can subscribe to it
     pub async fn emit(){
-
+        // redis and actix broker publication
+        // ...
     }
 
-    // redis subscription process to subscribe to an specific channel 
+    // redis/actixborker subscription process to subscribe to an specific channel 
     // contians emitted data from other apis publisher
     pub async fn subscribe(){
-
+        // redis and actix broker subscription
+        // ...
     }
 
 }
@@ -108,7 +92,7 @@ impl Handler<ExecuteApi> for UserComponentActor{
         3) the response of the executed api will be cached inside the api state
 
 
-        let res = AdminComponentActor.send(
+        let res = UserComponentActor.send(
             ExecuteApi{
                 route: "/nft/get"
             }
@@ -116,6 +100,10 @@ impl Handler<ExecuteApi> for UserComponentActor{
 
     */
     fn handle(&mut self, msg: ExecuteApi, ctx: &mut Self::Context) -> Self::Result {
+
+        // use actix telepathy to send message to other actors remotely
+        // https://docs.rs/actix-telepathy/latest/actix_telepathy/#:~:text=To%20send%20messages%20between%20remote,RemoteAddr%20that%20the%20ClusterListener%20receives.&text=Now%2C%20every%20new%20member%20receives,every%20ClusterListener%20in%20the%20cluster.
+        // ...
 
         todo!()
 
