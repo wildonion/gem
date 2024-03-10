@@ -57,14 +57,17 @@
    in the following example the error part of the result is a boxed version of Error trait
    means that using ? operator to unwrap the error on any result type inside the main function 
    requires the std::error::Error trait be implemented for the type caused the error in order 
-   cause to build the error using from() method or the error part be an Error trait object 
-   in our case the error part of the open() method implements the Error trait and it's a trait
-   object of type std::io::Error, the boxed version of Error trait supports every type that 
-   implements Error trait which allows us to use ? operator on any result type to handle the 
-   error properly.
+   to build the error using from() method or the error part be an Error trait object, in our 
+   case the error part of the open() method implements the Error trait and it's a trait
+   object of type std::io::Error, on the other hand the boxed version of Error trait supports 
+   showing error at runtime on every type that implements Error which allows us to use ? operator 
+   on any result type to convert the error into the error part in result type using from() method 
+   properly to return the instance of the error part to the caller and logs to the console.
 
     #[tokio::main]
-    async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{
+    async fn main() -> 
+        // it can be an on the heap Error trait object itself or a boxed struct instance which impls Error trait
+        Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ 
 
         // ERROR to the console: Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }
         let file = std::fs::File::open("openme.txt")?;

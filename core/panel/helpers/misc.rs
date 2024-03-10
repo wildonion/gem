@@ -631,14 +631,17 @@ pub fn string_to_static_str(s: String) -> &'static str {
 
 }
 
-// -----====-----====-----====-----====-----====-----====-----====
-// resp object macro, the most important section in the code 
-// the following facitilate sending data back to the client by 
-// building a respone object every time the server wants to
-// send data back to the client, the macro however gets called
-// from where the server is creating data to send it, to inject
-// headers and cookies the logics must goes here.
-// -----====-----====-----====-----====-----====-----====-----====
+// -----====-----====-----====-----====-----====-----====-----====-----====-----====-----====
+// resp object macro, the most important section in the code the following facitilate 
+// sending data back to the client by building a respone object every time the server
+// wants to send data back to the client, the macro however gets called from where the 
+// server is creating data to send it, injecting headers and cookies logics must goes 
+// here, since this is macro the logic will be built at compile time and once the api 
+// gets executed its body and all the data inside will be dropped out of the ram even 
+// the response object which has been created this is good quite frankly since by dropping 
+// all the data in the api Rust makes some space inside the heap and clean extra allocation 
+// which helps having control on ram overhead, we owe Rust due to not having gc rules.
+// -----====-----====-----====-----====-----====-----====-----====-----====-----====-----====
 /*
     we can define as many as response object since once the scope
     or method or the match arm gets executed the lifetime of the 

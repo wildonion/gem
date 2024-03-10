@@ -8,9 +8,11 @@ pub use super::*;
 pub async fn open_file() -> Result<(), helpers::error0::FileEror>{
 
     // in order to use the ? operator the From<std::io::Error> trait must be 
-    // implemented for the FileEror so Rust can create the error by calling 
-    // the from() method on the FileEror to create the error type based on 
-    // the error variant which in our case is std::io::Error
+    // implemented for our custom error handler or FileEror so Rust can create 
+    // the error by calling the from() method on the FileEror and pass the 
+    // opening file process error which in our case is std::io::Error to it to 
+    // build the FileError instance, take note that From<std::io::Error> must 
+    // be implemented for FileError to do so.
     let f = std::fs::File::open("openme.txt")?;
     Ok(())
 
