@@ -23,6 +23,9 @@ pub struct ExecuteApi{ // execute an api available from the list of all register
     pub route: String,
 }
 
+// -----------------------------------
+// messages used for communication
+// -----------------------------------
 #[derive(MessageResponse)]
 pub struct ApiResponse(pub PanelHttpResponse);
 
@@ -36,6 +39,9 @@ impl Actor for AdminComponentActor{
     }
 }
 
+// -----------------------------------
+// admin component implementations
+// -----------------------------------
 impl AdminComponentActor{
 
     pub fn new(apis: Vec<Api>) -> Self{
@@ -80,6 +86,10 @@ impl AdminComponentActor{
 
 }
 
+
+// -----------------------------------
+// local and remote message handlers
+// -----------------------------------
 impl Handler<ExecuteApi> for AdminComponentActor{
     type Result = ApiResponse;
 

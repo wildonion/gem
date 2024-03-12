@@ -50,7 +50,8 @@ pub mod x;
 
 
 // fn pointer method, futures must be pinned at a fixed position on the heap 
-// to avoid getting invalidated pointers even after moving the type
+// to avoid getting invalidated pointers even after moving the type.
+// fn is a pointer to a function can be used to specifiy the type of a var.
 type Method = fn(HttpRequest, AppState) -> std::pin::Pin<Box<dyn futures::Future<Output = PanelHttpResponse>>>;
 
 #[derive(Clone)]

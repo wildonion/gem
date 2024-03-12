@@ -20,6 +20,9 @@ use crate::apis::user::{ComponentState, UserComponentActor, Api};
 type Method = fn(HttpRequest, AppState) -> std::pin::Pin<Box<dyn futures::Future<Output = PanelHttpResponse>>>;
 
 
+// -----------------------------------
+// messages used for communication
+// -----------------------------------
 #[derive(Clone, Message)]
 #[rtype(result = "ApiResponse")]
 pub struct ExecuteApi{ // execute an api available from the list of all registered apis
@@ -39,6 +42,9 @@ impl Actor for UserComponentActor{
     }
 }
 
+// -----------------------------------
+// public component implementations
+// -----------------------------------
 impl UserComponentActor{
 
     pub fn new(apis: Vec<Api>) -> Self{
@@ -83,6 +89,9 @@ impl UserComponentActor{
 
 }
 
+// -----------------------------------
+// local and remote message handlers
+// -----------------------------------
 impl Handler<ExecuteApi> for UserComponentActor{
     type Result = ApiResponse;
 

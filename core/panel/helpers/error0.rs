@@ -67,6 +67,8 @@
     #[tokio::main]
     async fn main() -> 
         // it can be an on the heap Error trait object itself or a boxed struct instance which impls Error trait
+        // in cases we don't have custom error handler we can use Boxed Error trait which detect the type of error
+        // at runtime it only requires the error type happening at runtime implements the Error trait.
         Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>{ 
 
         // ERROR to the console: Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }

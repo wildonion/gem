@@ -1,6 +1,6 @@
 
 
-## HTTP, TCP and gRPC Rust Clients
+## HTTP, TCP and gRPC Rust Clients for Panel Server
 
 ```rust
 //===== http requests setup
@@ -12,7 +12,7 @@ let res_get = api.send_get("/users/get/?from=0&to=10", header);
 let tcp_endpoint = "0.0.0.0:2455";
 let streamer = Clinet::new_tcp(tcp_endpoint);
 while let Some(socket) = streamer.await{
-    // use socket to for write and read
+    // use socket for write and read
     // ...
 }
 ```
