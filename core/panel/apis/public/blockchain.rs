@@ -1,7 +1,7 @@
 
 
 
-use crate::models::users_nfts::UserNftDataWithWalletInfo;
+use crate::models::users_nfts::{UserNftDataWithWalletInfo, UserNftDataWithWalletInfoAndCollectionData};
 
 pub use super::*;
 
@@ -340,10 +340,31 @@ pub(self) async fn get_single_nft(
                         
                 Ok(user_nft_data) => {
                     resp!{
-                        UserNftDataWithWalletInfo, // the data type
-                        UserNftDataWithWalletInfo{ 
+                        UserNftDataWithWalletInfoAndCollectionData, // the data type
+                        UserNftDataWithWalletInfoAndCollectionData{ 
                             id: user_nft_data.id, 
-                            contract_address: user_nft_data.contract_address, 
+                            contract_address: user_nft_data.clone().contract_address, 
+                            collection_data: {
+                                let collection_data = UserCollection::find_by_contract_address_none_async(&user_nft_data.contract_address, connection).unwrap();
+                                serde_json::json!({
+                                    "id": collection_data.id,
+                                    "contract_address": collection_data.contract_address,
+                                    "col_name": collection_data.col_name,
+                                    "symbol": collection_data.symbol,
+                                    "owner_screen_cid": collection_data.owner_screen_cid,
+                                    "metadata_updatable": collection_data.metadata_updatable,
+                                    "freeze_metadata": collection_data.freeze_metadata,
+                                    "base_uri": collection_data.base_uri,
+                                    "royalties_share": collection_data.royalties_share,
+                                    "royalties_address_screen_cid": collection_data.royalties_address_screen_cid,
+                                    "collection_background": collection_data.collection_background,
+                                    "extra": collection_data.extra, /* pg key, value based json binary object */
+                                    "col_description": collection_data.col_description,
+                                    "contract_tx_hash": collection_data.contract_tx_hash,
+                                    "created_at": collection_data.created_at.to_string(),
+                                    "updated_at": collection_data.updated_at.to_string(),
+                                })
+                            },
                             current_owner_wallet_info: {
                                 let user = User::find_by_screen_cid(&user_nft_data.current_owner_screen_cid, connection).await.unwrap();
                                 UserWalletInfoResponse{
@@ -401,7 +422,7 @@ pub(self) async fn get_single_nft(
 
 }
 
-#[get("/collection/get/")]
+#[get("/collection/get/{col_id}")]
 pub(self) async fn get_public_collection(
         req: HttpRequest,   
         col_id: web::Path<i32>,

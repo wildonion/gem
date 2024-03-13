@@ -115,6 +115,29 @@ pub struct UserCollectionDataGeneralInfo{
     pub updated_at: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct UserNftDataWithWalletInfoAndCollectionData{
+    pub id: i32,
+    pub contract_address: String,
+    pub collection_data: serde_json::Value,
+    pub current_owner_wallet_info: UserWalletInfoResponse,
+    pub metadata_uri: String,
+    pub extra: Option<serde_json::Value>,
+    pub attributes: Option<serde_json::Value>,
+    pub onchain_id: Option<String>,
+    pub nft_name: String,
+    pub is_minted: Option<bool>,
+    pub nft_description: String,
+    pub current_price: Option<i64>,
+    pub is_listed: Option<bool>,
+    pub freeze_metadata: Option<bool>,
+    pub comments: Option<serde_json::Value>,
+    pub likes: Option<serde_json::Value>,
+    pub tx_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct UserLikeStat{
     pub nft_id: i32,
