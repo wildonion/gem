@@ -39,6 +39,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
         .send()
         .await;
 
+    // if let Ok(resp) = otp_response{
+    //     if resp.status().is_success(){
+    //         println!("success status");
+    //     }
+    // }
+        
     let res_stat = otp_response
         .as_ref()
         .unwrap()
