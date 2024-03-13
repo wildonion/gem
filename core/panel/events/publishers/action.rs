@@ -74,7 +74,7 @@ impl UserNotif{
         self.clone()
     }
     fn get(&mut self) -> Self{
-        let this = UserNotif { ..self.clone() };
+        let this = UserNotif { ..self.clone() }; // filling all the fields with self using .. notation
         this
     }
 }
