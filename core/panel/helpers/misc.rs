@@ -603,6 +603,13 @@ pub fn vector_to_static_slice(s: Vec<u8>) -> &'static [u8] {
     Box::leak(s.into_boxed_slice()) 
 }
 
+// convert any generic of Vec into a generic slice by leaking and consuming the 
+// memory of the vector to return an static reference to the leacked part since 
+// that part will never be freed until the lifetime of the app
+pub fn vector_slice<T>(s: Vec<T>) -> &'static [T]{
+    Box::leak(s.into_boxed_slice())
+}
+
 pub fn string_to_static_str(s: String) -> &'static str { 
     /* 
         we cannot obtain &'static str from a String because Strings may not live 
