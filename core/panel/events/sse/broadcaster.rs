@@ -8,10 +8,19 @@
 // add broadcaster struct to app state so we can share it between threads
 // broadcast new clp event
 
+
+use crate::*;
+
+
+// -0--0--0--0--0--0--0--0--0--0-
+//    sse broadcaster struct 
+// -0--0--0--0--0--0--0--0--0--0-
+
 #[derive(Debug, Clone, Default)]
 pub struct Broadcaster{ 
 
 }
+
 
 impl Broadcaster{
 
@@ -20,13 +29,17 @@ impl Broadcaster{
         todo!()
         
     }
-    
+
     pub async fn add_client(){
 
     }
 
-    pub async fn broadcast(){
+    pub async fn broadcast(topic: &str){
          
     } 
+
+    pub async fn get_clp_event(){
+
+    }
     
 }
