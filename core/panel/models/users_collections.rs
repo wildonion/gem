@@ -170,7 +170,7 @@ pub struct CollectionOwnerCount{
 impl UserCollection{
 
     pub async fn get_all_by_owner(owner: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
         /* get all nfts owned by the passed in current_owner */
@@ -234,7 +234,7 @@ impl UserCollection{
     }
 
     pub async fn get_all(
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
 
         /* get all nfts owned by the passed in current_owner */
@@ -296,7 +296,7 @@ impl UserCollection{
 
     }
 
-    pub fn get_all_nfts_of_collection(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_nfts_of_collection(col_id: i32, connection: &mut DbPoolConnection)
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         /* get all nfts owned by the passed in current_owner */
@@ -353,7 +353,7 @@ impl UserCollection{
     } 
 
     pub async fn get_all_nft_product_collections_by_owner(owner: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<CollectionInfoResponse>, PanelHttpResponse>{
 
         /* get all nfts owned by the passed in current_owner */
@@ -405,7 +405,7 @@ impl UserCollection{
 
     }
 
-    pub async fn get_owners_with_lots_of_collections(owners: Vec<UserData>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_owners_with_lots_of_collections(owners: Vec<UserData>, connection: &mut DbPoolConnection) 
         -> Result<Vec<CollectionOwnerCount>, PanelHttpResponse>{
 
             let mut collection_owner_map = vec![];
@@ -458,7 +458,7 @@ impl UserCollection{
     }
 
     pub async fn get_all_minted_nfts_of_collection(col_id: i32, limit: web::Query<Limit>, 
-        caller_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        caller_screen_cid: &str, connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserNftData>>, PanelHttpResponse>{
 
 
@@ -565,7 +565,7 @@ impl UserCollection{
     }
 
     pub fn get_all_pure_minted_nfts_of_collection_with_address(col_addr: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserNftData>>, PanelHttpResponse>{
 
 
@@ -596,7 +596,7 @@ impl UserCollection{
 
     }
 
-    pub async fn find_by_contract_address(col_contract_address: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn find_by_contract_address(col_contract_address: &str, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         let user_collection = users_collections
@@ -652,7 +652,7 @@ impl UserCollection{
 
     }
 
-    pub fn find_by_contract_address_none_async(col_contract_address: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub fn find_by_contract_address_none_async(col_contract_address: &str, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         let user_collection = users_collections
@@ -708,7 +708,7 @@ impl UserCollection{
 
     }
 
-    pub async fn find_by_id(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn find_by_id(col_id: i32, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         let user_collection = users_collections
@@ -764,7 +764,7 @@ impl UserCollection{
 
     }
 
-    pub fn find_by_id_none_async(col_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub fn find_by_id_none_async(col_id: i32, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         let user_collection = users_collections
@@ -824,7 +824,7 @@ impl UserCollection{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_all_private_collections_for(caller_screen_cid: &str, gal_id: i32,
-        limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
             
         let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
@@ -971,7 +971,7 @@ impl UserCollection{
     }
 
     pub async fn get_all_private_collections_for_invited_friends(caller_screen_cid: &str, owner_screen_cid_: &str, 
-        gal_id: i32, limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        gal_id: i32, limit: web::Query<Limit>, redis_client: RedisClient, connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCollectionData>, PanelHttpResponse>{
             
         let get_gallery_data = UserPrivateGallery::find_by_id(gal_id, redis_client.clone(), connection).await;
@@ -1152,7 +1152,7 @@ impl UserCollection{
         mut img: Multipart, 
         redis_actor: Addr<RedisActor>,
         redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         let get_collection = Self::find_by_id(col_id, connection).await;
@@ -1299,7 +1299,7 @@ impl UserCollection{
     }
 
     pub async fn get_all_public_collections_for(screen_cid: &str, limit: web::Query<Limit>, caller_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserCollectionData>>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -1440,7 +1440,7 @@ impl UserCollection{
             - base_uri
     */
     pub async fn insert(new_col_info: NewUserCollectionRequest, redis_actor: Addr<RedisActor>,
-        redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        redis_client: redis::Client, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
 
         if new_col_info.royalties_share > 50000{
@@ -1743,7 +1743,7 @@ impl UserCollection{
             - base_uri
     */
     pub async fn update(mut col_info: UpdateUserCollectionRequest, redis_actor: Addr<RedisActor>,
-        redis_client: redis::Client, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        redis_client: redis::Client, connection: &mut DbPoolConnection) 
         -> Result<UserCollectionData, PanelHttpResponse>{
         
         if col_info.royalties_share > 50000{

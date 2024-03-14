@@ -18,7 +18,7 @@ use crate::{*, models::users::User, helpers::misc::Response, constants::{NOT_VER
 pub async fn verify_request(
     the_user_id: i32, from_cid: &str, tx_signature: &str, 
     hash_data: &str, deposited_amount: Option<i64>,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+    connection: &mut DbPoolConnection
 ) -> Result<User, PanelHttpResponse>{
 
     /* find user info with this id */

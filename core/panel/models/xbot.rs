@@ -65,7 +65,7 @@ impl Twitter{
         )
     }
 
-    pub async fn verify_user_with_xbot(&self, account_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, Result<HttpResponse, actix_web::Error>>{
+    pub async fn verify_user_with_xbot(&self, account_name: &str, connection: &mut DbPoolConnection) -> Result<bool, Result<HttpResponse, actix_web::Error>>{
 
         let key = env::var("XBOT_KEY").unwrap();
         let user_existance_endpoint = format!("{}/user-existance/{}", self.endpoint.as_ref().unwrap(), key);
@@ -143,7 +143,7 @@ impl Twitter{
 
     pub async fn verify_username(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient,
         doer_id: i32) -> PanelHttpResponse{
 
@@ -193,7 +193,7 @@ impl Twitter{
 
     pub async fn verify_activity_code(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient, 
         doer_id: i32) -> PanelHttpResponse{
 
@@ -245,7 +245,7 @@ impl Twitter{
 
     pub async fn verify_tweet(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient, 
         doer_id: i32) -> PanelHttpResponse{
 
@@ -298,7 +298,7 @@ impl Twitter{
 
     pub async fn verify_like(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient, 
         doer_id: i32) -> PanelHttpResponse{
 
@@ -351,7 +351,7 @@ impl Twitter{
 
     pub async fn verify_retweet(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient, 
         doer_id: i32) -> PanelHttpResponse{
 
@@ -403,7 +403,7 @@ impl Twitter{
 
     pub async fn verify_hashtag(&self, 
         task: TaskData, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient, 
         doer_id: i32) -> PanelHttpResponse{
 
@@ -455,7 +455,7 @@ impl Twitter{
 
     pub async fn do_task(
         doer_id: i32, job_id: i32, task_type: &str, tusername: &str, tweet_link: Option<&str>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> PanelHttpResponse{
+        connection: &mut DbPoolConnection) -> PanelHttpResponse{
         
         match UserTask::insert(doer_id, job_id, connection).await{
             Ok(_) => {

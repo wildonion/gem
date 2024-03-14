@@ -52,7 +52,7 @@ pub struct NewUserMail<'s>{
 impl UserMail{
 
     pub async fn save(user_mail: &str, receiver_id: i32, random_code: String, five_mins_later: chrono::NaiveDateTime,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<usize, PanelHttpResponse>{
 
         
         let single_user = users::table
@@ -115,7 +115,7 @@ impl UserMail{
 
 
     pub async fn update_vat(user_mail_id: i32, user_vat: i64, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         match diesel::update(users_mails.find(user_mail_id))
                 .set(users_mails::vat.eq(user_vat))

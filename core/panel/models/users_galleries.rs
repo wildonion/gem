@@ -178,7 +178,7 @@ impl UserPrivateGallery{
 
 
     pub async fn get_owners_with_lots_of_galleries(owners: Vec<UserData>, redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<GalleryOwnerCount>, PanelHttpResponse>{
 
             let mut galleries_owner_map = vec![];
@@ -235,7 +235,7 @@ impl UserPrivateGallery{
         screen_cid: &str,
         mut img: Multipart, 
         redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserPrivateGalleryData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
             
         let Ok(gallery) = Self::find_by_id(gal_id, redis_client.clone(), connection).await else{
@@ -346,7 +346,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn get_all_general_info_for(screen_cid: &str, caller_screen_cid: &str, limit: web::Query<Limit>,
-        mut redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        mut redis_client: RedisClient, connection: &mut DbPoolConnection) 
         -> Result<Vec<UserPrivateGalleryInfoData>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0) as usize;
@@ -514,7 +514,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_all_for(screen_cid: &str, limit: web::Query<Limit>, mut redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0) as usize;
@@ -671,7 +671,7 @@ impl UserPrivateGallery{
     }
 
     pub fn get_all_for_without_limit(screen_cid: &str, mut redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserPrivateGalleryData>, PanelHttpResponse>{
         
         /* fetch all owner galleries */
@@ -783,7 +783,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, mut redis_client: RedisClient,
-        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        limit: web::Query<Limit>, connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -937,7 +937,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn get_all_galleries_invited_to_without_limit(caller_screen_cid: &str, mut redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
 
         let get_user_fan = UserFan::get_user_fans_data_for(&caller_screen_cid, connection).await;
@@ -1068,7 +1068,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn get_invited_friends_wallet_data_of_gallery(caller_screen_cid: &str, gal_id: i32, 
         limit: web::Query<Limit>, redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -1201,7 +1201,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn get_invited_friends_wallet_data_of_gallery_without_limit(caller_screen_cid: &str, gal_id: i32, 
-       redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+       redis_client: RedisClient, connection: &mut DbPoolConnection)
         -> Result<Vec<Option<UserWalletInfoResponse>>, PanelHttpResponse>{
 
         let get_gallery_info = Self::find_by_id(gal_id, redis_client.clone(), connection).await;
@@ -1299,7 +1299,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub async fn find_by_id(gallery_id: i32, redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn find_by_id(gallery_id: i32, redis_client: RedisClient, connection: &mut DbPoolConnection)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_gallery = users_galleries
@@ -1359,7 +1359,7 @@ impl UserPrivateGallery{
 
     }
 
-    pub fn find_by_id_none_async(gallery_id: i32, mut redis_client: RedisClient, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn find_by_id_none_async(gallery_id: i32, mut redis_client: RedisClient, connection: &mut DbPoolConnection)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_gallery = users_galleries
@@ -1420,7 +1420,7 @@ impl UserPrivateGallery{
 
     pub async fn find_by_owner_and_contract_address(gallery_owner: &str, col_contract_address: &str,
         redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_galleries_data = users_galleries
@@ -1508,7 +1508,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn find_by_owner_and_collection_id(gallery_owner: &str, col_id: i32, redis_client: RedisClient,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let user_galleries_data = users_galleries
@@ -1603,7 +1603,7 @@ impl UserPrivateGallery{
     // if the user wants to exit from the gallery we won't payback him
     pub async fn exit_from_private_gallery(exit_from_private_gallery: ExitFromPrivateGalleryRequest, 
         redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let ExitFromPrivateGalleryRequest{ gal_id, caller_cid, tx_signature, hash_data } = 
@@ -1751,7 +1751,7 @@ impl UserPrivateGallery{
     }
 
     pub async fn insert(new_gallery_info: NewUserPrivateGalleryRequest, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
             let gal_owner = walletreq::evm::get_keccak256_from(new_gallery_info.owner_cid);
@@ -1865,7 +1865,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn send_invitation_request_to(send_invitation_request: SendInvitationRequest, 
         redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
         
         let SendInvitationRequest{ gal_id, gallery_owner_cid, to_screen_cid, tx_signature, hash_data } = 
@@ -1946,7 +1946,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-= GALLERY OWNER -=-=-=-=-=-=-=-=-=-=-=-=-=-= */
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn remove_invited_friend_from(remove_invited_friend_request: RemoveInvitedFriendFromPrivateGalleryRequest,
-        redis_client: RedisClient, redis_actor: Addr<RedisActor>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        redis_client: RedisClient, redis_actor: Addr<RedisActor>, connection: &mut DbPoolConnection) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
 
         let RemoveInvitedFriendFromPrivateGalleryRequest{ gal_id, caller_cid, friend_screen_cid, tx_signature, hash_data } = 
@@ -2187,7 +2187,7 @@ impl UserPrivateGallery{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(caller_screen_cid: &str, new_gallery_info: UpdateUserPrivateGalleryRequest, 
         redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        gal_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        gal_id: i32, connection: &mut DbPoolConnection) 
         -> Result<UserPrivateGalleryData, PanelHttpResponse>{
         
         let get_gallery_info = Self::find_by_id(gal_id, redis_client.clone(), connection).await;

@@ -208,7 +208,7 @@ pub async fn emit_nft_list_event_2_all_nft_owner_friends(
     channel: &str, 
     nft_owner: User,
     action_data_value: serde_json::Value,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+    connection: &mut DbPoolConnection
 ){
 
     for friend in friends{

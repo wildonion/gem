@@ -452,7 +452,7 @@ pub struct NftOwnerCount{
 impl UserNft{
 
     pub async fn update_nft_reactions_with_this_user(latest_user_info: UserData,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserNft>, String>{
 
         match users_nfts
@@ -578,7 +578,7 @@ impl UserNft{
     }
 
     pub async fn get_all_nfts_owned_by(caller_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<OnchainNfts, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<OnchainNfts, PanelHttpResponse>{
 
         
         let from = limit.from.unwrap_or(0);
@@ -617,7 +617,7 @@ impl UserNft{
     }
 
     pub async fn get_all_collections_owned_by(caller_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<OnchainContracts, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<OnchainContracts, PanelHttpResponse>{
 
         
         let from = limit.from.unwrap_or(0);
@@ -656,7 +656,7 @@ impl UserNft{
     }
 
     pub async fn get_all_nft_reactions(nft_id: i32, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<NftReactionData, PanelHttpResponse>{
         
         let get_nft = users_nfts
@@ -720,7 +720,7 @@ impl UserNft{
     }
 
     pub async fn get_all_by_current_owner(current_owner: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{
 
         /* get all nfts owned by the passed in current_owner */
@@ -775,7 +775,7 @@ impl UserNft{
     }
 
     pub fn get_all_inside_contract_none_async(col_addr: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{
 
         /* get all nfts inside the passed in contract address */
@@ -830,7 +830,7 @@ impl UserNft{
     }
 
     pub async fn get_owners_with_lots_of_nfts(owners: Vec<UserData>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<NftOwnerCount>, PanelHttpResponse>{
         
         let mut nft_owner_map = vec![];
@@ -896,7 +896,7 @@ impl UserNft{
 
     } 
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    pub async fn get_all(connection: &mut DbPoolConnection) 
         -> Result<Vec<UserNftData>, PanelHttpResponse>{
 
 
@@ -952,7 +952,7 @@ impl UserNft{
     }
 
     pub async fn find_by_onchain_id(onchain_id_: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let user_nft = users_nfts
@@ -999,7 +999,7 @@ impl UserNft{
     }
 
     pub fn find_by_onchain_id_none_async(onchain_id_: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let user_nft = users_nfts
@@ -1050,7 +1050,7 @@ impl UserNft{
         files: HashMap<String, Vec<u8>>, // a map between filenames and their utf8 bytes
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let CreateNftMetadataUriRequest{ caller_cid, amount, nft_id, nft_new_attributes, nft_new_extra, nft_new_name, nft_new_description, tx_signature, hash_data, col_id }
@@ -1184,7 +1184,7 @@ impl UserNft{
     }
 
     pub async fn find_by_id(asset_id: i32, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let user_nft = users_nfts
@@ -1231,7 +1231,7 @@ impl UserNft{
     }
 
     pub fn find_by_id_none_async(asset_id: i32, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let user_nft = users_nfts
@@ -1284,7 +1284,7 @@ impl UserNft{
 
     pub async fn store_gift_card(asset_info: NewUserGiftCardNftRequest,
         redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
             
 
@@ -1423,7 +1423,7 @@ impl UserNft{
 
     pub async fn insert(asset_info: NewUserNftRequest,
         redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
             
         /* find a collection data with the passed in contract address */
@@ -1571,7 +1571,7 @@ impl UserNft{
         udpate_nft_request: UpdateUserNftRequest, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         
@@ -1653,7 +1653,7 @@ impl UserNft{
     
     }
 
-    pub fn construct_comments(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_comments(&mut self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let get_all_nft_comments = models::nfts_comments::NftComment::get_all_for_nft(self.id, connection);
         let all_comments = if get_all_nft_comments.is_ok(){
@@ -1688,7 +1688,7 @@ impl UserNft{
         
     }
 
-    pub fn construct_likes(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_likes(&mut self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let mut this_nft_likes = vec![];
 
@@ -1758,7 +1758,7 @@ impl UserNft{
     }
 
     pub async fn add_reaction_to_nft(add_reaction_request: AddReactionRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
         
         let caller_screen_cid = walletreq::evm::get_keccak256_from(add_reaction_request.clone().caller_cid);
@@ -2206,7 +2206,7 @@ impl UserNft{
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         
@@ -2549,7 +2549,7 @@ impl UserNft{
         royalty_amount: i64,
         redis_actor: Addr<RedisActor>,
         redis_client: redis::Client,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<(), PanelHttpResponse>{
 
         /* --------------------------------------------- */
@@ -2599,7 +2599,7 @@ impl UserNft{
         royalty_amount: i64,
         redis_actor: Addr<RedisActor>,
         redis_client: redis::Client,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<(), PanelHttpResponse>{
 
         /* --------------------------------------------- */
@@ -2640,7 +2640,7 @@ impl UserNft{
     }
 
     pub async fn mint_nft(mut mint_nft_request: UpdateUserNftRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         
@@ -2905,7 +2905,7 @@ impl UserNft{
     /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
     pub async fn update(mut asset_info: UpdateUserNftRequest,
         redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         let caller_screen_cid = walletreq::evm::get_keccak256_from(asset_info.clone().caller_cid);

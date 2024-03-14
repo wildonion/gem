@@ -563,7 +563,7 @@ impl User{
     }
 
     pub async fn get_user_data_response_with_cookie(&self, device_id_: &str, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<PanelHttpResponse, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<PanelHttpResponse, PanelHttpResponse>{
 
         /* generate cookie 🍪 from token time and jwt */
         /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
@@ -687,7 +687,7 @@ impl User{
     pub const SCHEMA_NAME: &'static str = "User";
     pub const fn get_schema_name() -> &'static str{ Self::SCHEMA_NAME }
 
-    pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<JWTClaims, PanelHttpResponse>{
+    pub async fn passport(req: HttpRequest, pass_role: Option<UserRole>, connection: &mut DbPoolConnection) -> Result<JWTClaims, PanelHttpResponse>{
 
         let mut jwt_token = ""; 
 
@@ -999,7 +999,7 @@ impl User{
         Ok(argon2::verify_encoded(&self.pswd, password_bytes).unwrap())
     }
 
-    pub async fn find_by_username(user_name: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_username(user_name: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(username.eq(user_name.to_string()))
@@ -1021,7 +1021,7 @@ impl User{
 
     }
 
-    pub async fn find_by_username_or_mail_or_scid(recipient_info: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_username_or_mail_or_scid(recipient_info: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(
@@ -1048,7 +1048,7 @@ impl User{
     }
 
     pub async fn fetch_wallet_by_username_or_mail_or_scid(user_info: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWalletInfoResponse, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserWalletInfoResponse, PanelHttpResponse>{
 
         let single_user = users
             .filter(
@@ -1086,7 +1086,7 @@ impl User{
 
     }
 
-    pub async fn get_top_users(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+    pub async fn get_top_users(connection: &mut DbPoolConnection, 
         redis_client: RedisClient,
         limit: web::Query<Limit>) 
         -> Result<TopUsers, PanelHttpResponse>{
@@ -1133,7 +1133,7 @@ impl User{
     }
 
     pub async fn fetch_all_users_wallet_info(limit: web::Query<Limit>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserWalletInfoResponseWithBalance>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0);
@@ -1212,7 +1212,7 @@ impl User{
     }
 
     pub async fn suggest_user_to_owner(limit: web::Query<Limit>, owner_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserWalletInfoResponseForUserSuggestions>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0) as usize;
@@ -1367,7 +1367,7 @@ impl User{
     }
 
     pub async fn suggest_user_to_owner_without_limit(owner_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserWalletInfoResponseForUserSuggestions>, PanelHttpResponse>{
             
             match users
@@ -1491,7 +1491,7 @@ impl User{
 
     }
 
-    pub async fn find_by_mail(user_mail: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_mail(user_mail: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(mail.eq(user_mail.to_string()))
@@ -1513,7 +1513,7 @@ impl User{
 
     }
 
-    pub async fn find_by_phone(user_phone: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_phone(user_phone: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(phone_number.eq(user_phone.to_string()))
@@ -1535,7 +1535,7 @@ impl User{
 
     }
 
-    pub async fn find_by_identifier(identifier_login: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_identifier(identifier_login: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(identifier.eq(identifier_login.to_string()))
@@ -1557,7 +1557,7 @@ impl User{
 
     }
 
-    pub async fn find_by_identifier_or_mail(identifier_login: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_identifier_or_mail(identifier_login: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(
@@ -1584,7 +1584,7 @@ impl User{
 
     }
 
-    pub async fn find_by_id(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_id(doer_id: i32, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::id.eq(doer_id))
@@ -1606,7 +1606,7 @@ impl User{
 
     }
 
-    pub fn find_by_id_none_async(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub fn find_by_id_none_async(doer_id: i32, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::id.eq(doer_id))
@@ -1628,7 +1628,7 @@ impl User{
 
     }
 
-    pub async fn find_by_screen_cid(user_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn find_by_screen_cid(user_screen_cid: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::screen_cid.eq(user_screen_cid))
@@ -1650,7 +1650,7 @@ impl User{
 
     }
 
-    pub fn find_by_screen_cid_none_async(user_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub fn find_by_screen_cid_none_async(user_screen_cid: &str, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let single_user = users
             .filter(users::screen_cid.eq(user_screen_cid))
@@ -1672,7 +1672,7 @@ impl User{
 
     }
 
-    pub async fn insert(identifier_login: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert(identifier_login: String, connection: &mut DbPoolConnection) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_random_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -1799,7 +1799,7 @@ impl User{
     
     }
 
-    pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(UserData, Cookie), PanelHttpResponse>{
+    pub async fn insert_by_identifier_password(identifier_login: String, password: String, connection: &mut DbPoolConnection) -> Result<(UserData, Cookie), PanelHttpResponse>{
 
         let random_chars = gen_random_chars(gen_random_number(5, 11));
         let random_code: String = (0..5).map(|_|{
@@ -1953,7 +1953,7 @@ impl User{
     }
 
     pub async fn insert_new_google_user(user: GoogleUserResult, 
-            connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+            connection: &mut DbPoolConnection,
             redis_client: &RedisClient
         ) -> Result<User, PanelHttpResponse>{
 
@@ -2010,7 +2010,7 @@ impl User{
     }
 
     pub async fn update_user_with_google_info(user: GoogleUserResult, user_id: i32, 
-        redis_actor: Addr<RedisActor>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        redis_actor: Addr<RedisActor>, connection: &mut DbPoolConnection,
         redis_client: &RedisClient
     ) -> Result<User, PanelHttpResponse>{
 
@@ -2098,7 +2098,7 @@ impl User{
     }
 
     pub async fn insert_new_user(user: NewUserInfoRequest, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+        connection: &mut DbPoolConnection,
         redis_client: &RedisClient
         ) -> Result<usize, PanelHttpResponse>{
 
@@ -2167,7 +2167,7 @@ impl User{
         new_bio: &str, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
         let Ok(user) = User::find_by_id(bio_owner_id, connection).await else{
@@ -2284,7 +2284,7 @@ impl User{
         new_extra: serde_json::Value, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
         let Ok(user) = User::find_by_id(extra_owner_id, connection).await else{
@@ -2401,7 +2401,7 @@ impl User{
         mut img: Multipart, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
         
             
         let Ok(user) = User::find_by_id(wallet_owner_id, connection).await else{
@@ -2530,7 +2530,7 @@ impl User{
         mut img: Multipart, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
         let Ok(user) = User::find_by_id(avatar_owner_id, connection).await else{
@@ -2659,7 +2659,7 @@ impl User{
         mut img: Multipart, 
         redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
         let Ok(user) = User::find_by_id(banner_owner_id, connection).await else{
@@ -2784,7 +2784,7 @@ impl User{
     }
 
     pub async fn edit_by_admin(new_user: EditUserByAdminRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
         /* fetch user info based on the data inside jwt */ 
         let single_user = users
@@ -2958,7 +2958,7 @@ impl User{
 
     }
 
-    pub async fn delete_by_admin(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+    pub async fn delete_by_admin(doer_id: i32, connection: &mut DbPoolConnection) -> Result<usize, PanelHttpResponse>{
 
         /* we must first delete from users_tasks */
         
@@ -3013,7 +3013,7 @@ impl User{
     
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) -> Result<Vec<UserData>, PanelHttpResponse>{
+    pub async fn get_all(connection: &mut DbPoolConnection, limit: web::Query<Limit>) -> Result<Vec<UserData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -3118,7 +3118,7 @@ impl User{
 
     }
 
-    pub async fn get_all_balance_greater_than_100(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) -> Result<Vec<UserData>, PanelHttpResponse>{
+    pub async fn get_all_balance_greater_than_100(connection: &mut DbPoolConnection, limit: web::Query<Limit>) -> Result<Vec<UserData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -3225,7 +3225,7 @@ impl User{
 
     }
 
-    pub async fn get_all_without_limit(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserData>, PanelHttpResponse>{
+    pub async fn get_all_without_limit(connection: &mut DbPoolConnection) -> Result<Vec<UserData>, PanelHttpResponse>{
         
         match users
             .load::<User>(connection)
@@ -3313,7 +3313,7 @@ impl User{
     }
 
     pub async fn logout(who: i32, _token_time: i64, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<(), PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<(), PanelHttpResponse>{
 
         match diesel::update(users.find(who))
             .set(token_time.eq(0))
@@ -3388,7 +3388,7 @@ impl User{
     }
 
     pub async fn update_balance(owner_id: i32, new_balance: i64, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserData, PanelHttpResponse>{
 
         let Ok(user) = User::find_by_id(owner_id, connection).await else{
@@ -3556,7 +3556,7 @@ impl User{
     pub async fn update_social_account(
         social_owner_id: i32, 
         account_name: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_id(social_owner_id, connection).await else{
@@ -3697,7 +3697,7 @@ impl User{
         new_mail: &str, 
         redis_client: RedisClient,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_id(mail_owner_id, connection).await else{
@@ -3816,7 +3816,7 @@ impl User{
         phone_owner_id: i32, 
         new_phone: &str, 
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_id(phone_owner_id, connection).await else{
@@ -3939,7 +3939,7 @@ impl User{
     }
 
     pub async fn send_phone_verification_code_to(phone_owner_id: i32, user_phone: String, user_ip: String, redis_actor: Addr<RedisActor>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
         let get_single_user = User::find_by_id(phone_owner_id, connection).await;
         let Ok(single_user) = get_single_user else{
@@ -4046,7 +4046,7 @@ impl User{
     }
 
     pub async fn check_phone_verification_code(check_user_verification_request: CheckUserPhoneVerificationRequest, receiver_id: i32, redis_actor: Addr<RedisActor>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
             
 
         let get_single_user = User::find_by_id(receiver_id, connection).await;
@@ -4160,7 +4160,7 @@ impl User{
     pub async fn verify_phone(
         phone_owner_id: i32, 
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_id(phone_owner_id, connection).await else{
@@ -4279,7 +4279,7 @@ impl User{
     pub async fn verify_mail(
         mail_owner_id: i32, 
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
             let Ok(user) = User::find_by_id(mail_owner_id, connection).await else{
@@ -4401,7 +4401,7 @@ impl User{
     }
 
     pub async fn reset_password(forgot_pswd: ForgotPasswordRequest, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserData, PanelHttpResponse>{
 
         let get_user = Self::find_by_mail(&forgot_pswd.mail, connection).await;
@@ -4521,7 +4521,7 @@ impl User{
     }
 
     pub async fn update_password(owner_id: i32, new_pass_request: NewPasswordRequest, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserData, PanelHttpResponse>{
 
         let get_user = Self::find_by_id(owner_id, connection).await;
@@ -4652,7 +4652,7 @@ impl User{
     }
 
     pub async fn send_mail_verification_code_to(mail_owner_id: i32, user_mail: String, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
 
 
         let get_single_user = User::find_by_id(mail_owner_id, connection).await;
@@ -4780,7 +4780,7 @@ impl User{
     }
 
     pub async fn check_mail_verification_code(check_user_verification_request: CheckUserMailVerificationRequest, receiver_id: i32, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserData, PanelHttpResponse>{
             
 
         let get_single_user = User::find_by_id(receiver_id, connection).await;
@@ -4897,7 +4897,7 @@ impl User{
 impl Id{
 
     pub async fn new_or_update(id_: NewIdRequest, id_owner: i32, id_username: String, user_ip: String, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Id, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<Id, PanelHttpResponse>{
 
         let Ok(user) = User::find_by_id(id_owner, connection).await else{
             let resp = Response{
@@ -5110,7 +5110,7 @@ impl Id{
     }
 
     pub async fn save(&mut self, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserIdResponse, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserIdResponse, PanelHttpResponse>{
         
         let get_user = User::find_by_id(self.user_id, connection).await;
         let Ok(user) = get_user else{

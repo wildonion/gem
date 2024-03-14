@@ -159,7 +159,7 @@ pub async fn start_minting_card_process(
     nft_desc: String,
     redis_client: redis::Client,
     redis_actor: Addr<RedisActor>,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+    connection: &mut DbPoolConnection
 ) -> (String, String, u8){
 
     let mut redis_conn = redis_client.get_async_connection().await.unwrap();
@@ -437,7 +437,7 @@ pub async fn start_transferring_card_process(
     polygon_recipient_address: String,
     redis_client: redis::Client,
     redis_actor: Addr<RedisActor>,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+    connection: &mut DbPoolConnection
 ) -> (String, u8){
     
     /* 
@@ -1518,7 +1518,7 @@ pub async fn get_nft_onchain_metadata_uri<N>(
 }
 
 pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> OnchainNfts{
+    connection: &mut DbPoolConnection) -> OnchainNfts{
 
     /* -----------------------------------------------------------------
         > in those case that we don't want to create a separate struct 
@@ -1585,7 +1585,7 @@ pub async fn get_nfts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
 }
 
 pub async fn get_contracts_owned_by(caller_screen_cid: &str, from: i64, to: i64,
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> OnchainContracts{
+    connection: &mut DbPoolConnection) -> OnchainContracts{
 
         let nftport_token = std::env::var("NFTPORT_TOKEN").unwrap();
         let contracts_get_nfts = format!("https://api.nftport.xyz/v0/accounts/contracts/{}?chain=polygon&type=owns_contract_nfts&page_size={}&continuation={}", caller_screen_cid, to, from);

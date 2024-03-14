@@ -44,7 +44,7 @@ pub struct NewFriendRequest{
 
 impl UserFriend{
 
-    pub fn remove(owner_id: i32, frd_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn remove(owner_id: i32, frd_id: i32, connection: &mut DbPoolConnection)
         -> Result<usize, PanelHttpResponse>{
 
         // owner_id or friend_id which is the request sender wants to remove his request
@@ -72,7 +72,7 @@ impl UserFriend{
 
     }
     
-    pub async fn insert(new_friend_request: NewFriendRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn insert(new_friend_request: NewFriendRequest, connection: &mut DbPoolConnection)
         -> Result<UserFriend, PanelHttpResponse>{
 
         match users_friends
@@ -128,7 +128,7 @@ impl UserFriend{
 
     }
 
-    pub fn get_all_for_user(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_for_user(owner_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<UserFriend>, PanelHttpResponse>{
 
 
@@ -152,7 +152,7 @@ impl UserFriend{
 
     }
 
-    pub async fn get_all_friends_wallet_info_for(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
+    pub async fn get_all_friends_wallet_info_for(owner_id: i32, connection: &mut DbPoolConnection) -> Result<Vec<UserWalletInfoResponse>, PanelHttpResponse>{
 
         let get_friend_reqs = users_friends
             .filter(users_friends::user_id.eq(owner_id))
@@ -192,7 +192,7 @@ impl UserFriend{
 
     }
 
-    pub async fn accept_request(owner_id: i32, frd_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn accept_request(owner_id: i32, frd_id: i32, connection: &mut DbPoolConnection)
         -> Result<UserFriend, PanelHttpResponse>{
 
 

@@ -256,7 +256,7 @@ pub struct Response<'m, T>{
 /* --------------------------- HELPER METHODS ---------------------------- */
 /* ----------------------------------------------------------------------- */
 pub async fn is_bot_24hours_limited(
-    connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    connection: &mut DbPoolConnection,
     rl_data: Vec<XAppRlInfo>
 ) -> Result<(), PanelHttpResponse>{
 

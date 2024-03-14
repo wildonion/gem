@@ -1,14 +1,5 @@
 
 
-
-// https://github.com/chaudharypraveen98/actix-question-bank-stackoverflow/blob/master/src/broadcast.rs
-// https://github.com/chaudharypraveen98/actix-question-bank-stackoverflow/blob/master/src/main.rs
-
-
-// add broadcaster struct to app state so we can share it between threads
-// broadcast new clp event
-
-
 use crate::*;
 
 
@@ -16,11 +7,17 @@ use crate::*;
 //    sse broadcaster struct 
 // -0--0--0--0--0--0--0--0--0--0-
 
-#[derive(Debug, Clone, Default)]
-pub struct Broadcaster{ 
+// add broadcaster struct to app state so we can share it between threads
+// broadcast new clp event
 
+#[derive(Debug, Clone, Default)]
+pub struct Broadcaster{
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Event{
+
+}
 
 impl Broadcaster{
 
@@ -30,16 +27,26 @@ impl Broadcaster{
         
     }
 
+    pub async fn get_clients(){
+
+    }
+
     pub async fn add_client(){
 
     }
 
-    pub async fn broadcast(topic: &str){
-         
+    pub async fn broadcast(topic: &str, event: Event){
+
     } 
 
     pub async fn get_clp_event(){
 
+    }
+
+    pub async fn get_event_future() -> std::pin::Pin<Box<dyn futures::Future<Output=Event>>>{
+        
+        todo!()
+    
     }
     
 }

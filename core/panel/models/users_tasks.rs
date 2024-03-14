@@ -76,7 +76,7 @@ pub struct UserTaskData{
 */
 impl UserTask{
 
-    pub async fn all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, PanelHttpResponse>{
+    pub async fn all(connection: &mut DbPoolConnection) -> Result<Vec<UserTask>, PanelHttpResponse>{
 
         match users_tasks
             .order(done_at.desc())
@@ -110,7 +110,7 @@ impl UserTask{
 
     }
 
-    pub async fn all_with_limit(limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTask>, PanelHttpResponse>{
+    pub async fn all_with_limit(limit: web::Query<Limit>, connection: &mut DbPoolConnection) -> Result<Vec<UserTask>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -163,7 +163,7 @@ impl UserTask{
 
     pub async fn insert(
         doer_id: i32, job_id: i32, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<usize, PanelHttpResponse>{
 
         let single_task = tasks
             .filter(tasks::id.eq(job_id))
@@ -220,7 +220,7 @@ impl UserTask{
     }
 
     pub async fn reports(doer_id: i32, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<FetchUserTaskReport, PanelHttpResponse>{
         
 
         let from = limit.from.unwrap_or(0);
@@ -358,7 +358,7 @@ impl UserTask{
     }
 
     pub async fn reports_without_limit(doer_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<FetchUserTaskReport, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<FetchUserTaskReport, PanelHttpResponse>{
 
         let user = match users::table
             .order(users::created_at.desc())
@@ -479,7 +479,7 @@ impl UserTask{
     }
 
     pub async fn tasks_per_user(limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserTaskData>, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<Vec<UserTaskData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -637,7 +637,7 @@ impl UserTask{
 
     }
 
-    pub async fn find(doer_id: i32, job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> bool{
+    pub async fn find(doer_id: i32, job_id: i32, connection: &mut DbPoolConnection) -> bool{
 
         let single_user_task = users_tasks
             .filter(users_tasks::user_id.eq(doer_id))
@@ -653,7 +653,7 @@ impl UserTask{
         return true;
     }
 
-    pub async fn find_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> bool{
+    pub async fn find_by_doer(doer_id: i32, connection: &mut DbPoolConnection) -> bool{
 
         let single_user_task = users_tasks
             .filter(users_tasks::user_id.eq(doer_id))
@@ -668,7 +668,7 @@ impl UserTask{
         return true;
     }
 
-    pub async fn delete_by_doer(doer_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+    pub async fn delete_by_doer(doer_id: i32, connection: &mut DbPoolConnection) -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(users_tasks.filter(users_tasks::user_id.eq(doer_id)))
             .execute(connection)
@@ -701,7 +701,7 @@ impl UserTask{
 
     }
 
-    pub async fn delete_by_task(job_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+    pub async fn delete_by_task(job_id: i32, connection: &mut DbPoolConnection) -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(users_tasks.filter(users_tasks::task_id.eq(job_id)))
             .execute(connection)

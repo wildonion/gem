@@ -80,6 +80,7 @@ use panel_macros::passport; /* loading from lib.rs which contains proc macros */
 use snowflake::SnowflakeIdGenerator;
 use std::rc::Weak;
 use tokio::sync::RwLock;
+use crate::constants::*;
 use tokio_util::codec::{BytesCodec, FramedRead};
 use spacetimedb_sdk::{
     Address,

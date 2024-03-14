@@ -43,7 +43,7 @@ impl TokenStatInfo{
 
     pub async fn save(
         token_stat_info: TokenStatInfoRequest,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+        connection: &mut DbPoolConnection
     ) -> Result<TokenStatInfo, PanelHttpResponse>{
 
 

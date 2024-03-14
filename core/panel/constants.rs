@@ -23,6 +23,7 @@ use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRo
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
 
+pub type DbPoolConnection = PooledConnection<ConnectionManager<PgConnection>>;
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;
 pub const APP_NAME: &str = "Conse";
 pub static GLOBAL_S3: Lazy<Option<std::sync::Arc<Storage>>> = Lazy::new(||{

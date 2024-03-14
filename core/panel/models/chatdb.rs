@@ -25,7 +25,7 @@ pub struct UserChat;
 impl UserChat{
     
     pub async fn store(event_id: i32, user_screen_cid: &str, user_text: &str, // user_text is a raw text
-            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            connection: &mut DbPoolConnection) 
         -> Result<UserChat, PanelHttpResponse>{
 
         let get_user = User::find_by_screen_cid(user_screen_cid, connection).await;

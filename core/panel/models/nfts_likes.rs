@@ -43,7 +43,7 @@ pub struct NewNftLikeRequest{
 
 impl NftLike{
 
-    pub async fn insert(new_like: NewNftLikeRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn insert(new_like: NewNftLikeRequest, connection: &mut DbPoolConnection)
         -> Result<NftLike, PanelHttpResponse>{
 
             match diesel::insert_into(nfts_likes)
@@ -80,7 +80,7 @@ impl NftLike{
 
     }
 
-    pub async fn get_all_for_nft(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_for_nft(asset_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftLike>, PanelHttpResponse>{
 
         let get_all_likes = nfts_likes
@@ -103,7 +103,7 @@ impl NftLike{
 
     }
 
-    pub fn get_all_upvotes_for_nft(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_upvotes_for_nft(asset_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftLike>, PanelHttpResponse>{
 
         let get_all_likes = nfts_likes
@@ -127,7 +127,7 @@ impl NftLike{
 
     }
 
-    pub fn get_all_downvotes_for_nft(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_downvotes_for_nft(asset_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftLike>, PanelHttpResponse>{
 
         let get_all_likes = nfts_likes
@@ -151,7 +151,7 @@ impl NftLike{
 
     }
 
-    pub async fn get_all_for_user(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_for_user(owner_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftLike>, PanelHttpResponse>{
 
         
@@ -175,7 +175,7 @@ impl NftLike{
 
     }
 
-    pub async fn upsert(new_like: NewNftLikeRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn upsert(new_like: NewNftLikeRequest, connection: &mut DbPoolConnection)
         -> Result<NftLike, PanelHttpResponse>{
 
         

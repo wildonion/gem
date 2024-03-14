@@ -101,7 +101,7 @@ impl UserDeposit{
 
     pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, 
         polygon_recipient_address: String, nft_url: String, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<UserDepositData, PanelHttpResponse>{
 
         let depositor_screen_cid = &walletreq::evm::get_keccak256_from(user_deposit_request.clone().from_cid);
         let get_user = User::find_by_screen_cid(&depositor_screen_cid.clone(), connection).await;
@@ -220,7 +220,7 @@ impl UserDeposit{
 
     }
 
-    pub async fn find_by_id(deposit_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn find_by_id(deposit_id: i32, connection: &mut DbPoolConnection) -> Result<UserDepositData, PanelHttpResponse>{
 
         let user_deposits = users_deposits
             .filter(users_deposits::id.eq(deposit_id))
@@ -256,7 +256,7 @@ impl UserDeposit{
     }
 
     pub async fn get_all_for(user_cid: String, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
@@ -347,7 +347,7 @@ impl UserDeposit{
 
     }
 
-    pub async fn set_claim(deposit_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserDepositData, PanelHttpResponse>{
+    pub async fn set_claim(deposit_id: i32, connection: &mut DbPoolConnection) -> Result<UserDepositData, PanelHttpResponse>{
 
         match diesel::update(users_deposits.find(deposit_id))
             .set(is_claimed.eq(true))
@@ -399,7 +399,7 @@ impl UserDeposit{
     }
 
     pub async fn get_all(limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0);
@@ -491,7 +491,7 @@ impl UserDeposit{
 
 
     pub async fn get_unclaimeds_for(user_screen_cid: String, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserDepositDataWithWalletInfo>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0);

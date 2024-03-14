@@ -19,10 +19,10 @@ use self::models::users::UserLoginInfoRequest;
     pub trait PassportSend: Send {
         type Request;
         async fn get_user(&self, role: Option<UserRole>, 
-            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            connection: &mut DbPoolConnection) 
             -> Result<JWTClaims, PanelHttpResponse>;
 
-        fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        fn check_refresh_token(&self, connection: &mut DbPoolConnection) 
             -> Result<User, PanelHttpResponse>;
     }
 
@@ -35,18 +35,18 @@ pub trait Passport{
 
     type Request;
     async fn get_user(&self, role: Option<UserRole>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<JWTClaims, PanelHttpResponse>;
 
     async fn get_passport<T: UserDataExt>(&self, login_info: T, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<PanelHttpResponse, PanelHttpResponse>;
 
     async fn create_passport<T: UserDataExt>(&self, new_user_info: T,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<PanelHttpResponse, PanelHttpResponse>;
 
-    fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+    fn check_refresh_token(&self, connection: &mut DbPoolConnection) 
         -> Result<User, PanelHttpResponse>;
 
     async fn stream() -> impl Iterator<Item = String>; // the default type param of the Iterator trait has been set to String
@@ -65,7 +65,7 @@ impl Passport for HttpRequest{
     */
     type Request = HttpRequest;
 
-    fn check_refresh_token(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, PanelHttpResponse>{
+    fn check_refresh_token(&self, connection: &mut DbPoolConnection) -> Result<User, PanelHttpResponse>{
 
         let req = self as &Self::Request; // casting the self into a request object
 
@@ -153,7 +153,7 @@ impl Passport for HttpRequest{
     }
 
     async fn get_user(&self, role: Option<UserRole>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<JWTClaims, PanelHttpResponse>{
 
         /*
@@ -188,7 +188,7 @@ impl Passport for HttpRequest{
     async fn get_passport<T: UserDataExt>(&self, login_info: T,
         redis_client:redis::Client, 
         redis_actor:Addr<RedisActor>, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<PanelHttpResponse, PanelHttpResponse>{
         
         let req = self as &Self::Request; // casting the self into a request object 
@@ -250,7 +250,7 @@ impl Passport for HttpRequest{
     // UserDataExt is only visible in this crate and can 
     // only be impl for other types only in here
     async fn create_passport<T: UserDataExt>(&self, new_user_info: T,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<PanelHttpResponse, PanelHttpResponse>{
         
         let req = self as &Self::Request; // casting the self into a request object

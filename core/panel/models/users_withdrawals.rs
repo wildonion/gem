@@ -67,7 +67,7 @@ pub struct UserWithdrawalData{
 */
 impl UserWithdrawal{
 
-    pub async fn insert(user_withdraw_request: NewUserWithdrawRequest, succ_transfer_tx_hash: String, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWithdrawalData, PanelHttpResponse>{
+    pub async fn insert(user_withdraw_request: NewUserWithdrawRequest, succ_transfer_tx_hash: String, connection: &mut DbPoolConnection) -> Result<UserWithdrawalData, PanelHttpResponse>{
 
         let new_user_withdrawal = NewUserWithdrawal{
             recipient_cid: user_withdraw_request.recipient_cid.clone(),
@@ -171,7 +171,7 @@ impl UserWithdrawal{
     }
 
     pub async fn get_all_for(withdrawer_cid: String, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);
@@ -226,7 +226,7 @@ impl UserWithdrawal{
     }
 
     pub async fn get_all(limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
+        connection: &mut DbPoolConnection) -> Result<Vec<UserWithdrawalData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
         let to = limit.to.unwrap_or(10);

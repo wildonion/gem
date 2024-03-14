@@ -190,7 +190,7 @@ pub struct FriendOwnerCount{
 
 impl UserFan{
 
-    pub fn construct_friends_data(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_friends_data(&self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let user = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap();
         let get_friend_requests_data = UserFriend::get_all_for_user(user.id, connection);
@@ -221,7 +221,7 @@ impl UserFan{
     }
 
     pub async fn get_owners_with_lots_of_followers(owners: Vec<UserData>, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<FriendOwnerCount>, PanelHttpResponse>{
 
         let mut friends_owner_map = vec![];
@@ -281,7 +281,7 @@ impl UserFan{
     }
 
     pub async fn update_user_fans_data_with_this_user(latest_user_info: UserData,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserFan>, String>{
 
             match users_fans
@@ -399,7 +399,7 @@ impl UserFan{
     }
 
     pub async fn accept_friend_request(accept_friend_request: AcceptFriendRequest, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
 
         let AcceptFriendRequest { owner_cid, friend_screen_cid, tx_signature, hash_data } 
@@ -499,7 +499,7 @@ impl UserFan{
         inside the user fan data from any gallery owner
     */
     pub async fn get_user_unaccepted_invitation_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<Vec<Option<InvitationRequestData>>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0) as usize;
@@ -609,7 +609,7 @@ impl UserFan{
     }
 
     pub async fn get_user_unaccepted_friend_requests(owner_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<Vec<Option<FriendData>>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0) as usize;
@@ -711,7 +711,7 @@ impl UserFan{
     }
 
     pub async fn get_user_unaccepted_friend_requests_without_limit(owner_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<Vec<Option<FriendData>>, PanelHttpResponse>{
         
         let get_user_fan_data = Self::get_user_fans_data_for(owner_screen_cid, connection).await;
@@ -779,7 +779,7 @@ impl UserFan{
     }
 
     pub async fn get_user_fans_data_for(owner_screen_cid: &str, 
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<UserFanData, PanelHttpResponse>{
 
 
@@ -819,7 +819,7 @@ impl UserFan{
     // both screen cids must have each other in their friends data 
     // and they must have accepted each other's request
     -------------------- */
-    pub async fn are_we_friends(first_screen_cid: &str, second_screen_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<bool, PanelHttpResponse>{
+    pub async fn are_we_friends(first_screen_cid: &str, second_screen_cid: &str, connection: &mut DbPoolConnection) -> Result<bool, PanelHttpResponse>{
 
         /* ----- get all fan data of the first one ------ */
         let user_fan_data = users_fans
@@ -898,7 +898,7 @@ impl UserFan{
     // are friend with the owner
     -------------------- */
     pub async fn get_all_my_friends(owner_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<UserFanData, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -1006,7 +1006,7 @@ impl UserFan{
     }
 
     pub async fn get_all_my_friends_without_limit(owner_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<UserFanData, PanelHttpResponse>{
 
         let user_fan_data = users_fans
@@ -1076,7 +1076,7 @@ impl UserFan{
     // must not be friend with each other
     -------------------- */
     pub async fn get_all_my_followers(owner_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<UserFanData, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0) as usize;
@@ -1195,7 +1195,7 @@ impl UserFan{
     }
 
     pub async fn get_all_my_followers_without_limit(owner_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
     -> Result<UserFanData, PanelHttpResponse>{
 
         let user_fan_data = users_fans
@@ -1285,7 +1285,7 @@ impl UserFan{
     // not friend we each other
     -------------------- */
     pub async fn get_all_my_followings(who_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserFanDataWithWalletInfo>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0) as usize;
@@ -1413,7 +1413,7 @@ impl UserFan{
         }
     
         pub async fn get_all_my_followings_without_limit(who_screen_cid: &str,
-            connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+            connection: &mut DbPoolConnection) 
             -> Result<Vec<UserFanDataWithWalletInfo>, PanelHttpResponse>{
 
             let all_fans_data = users_fans
@@ -1512,7 +1512,7 @@ impl UserFan{
         }
 
     pub async fn get_user_relations(who_screen_cid: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserRelations, PanelHttpResponse>{
 
         // in-place initialization and returning
@@ -1556,7 +1556,7 @@ impl UserFan{
     }
 
     pub async fn get_user_relations_without_limit(who_screen_cid: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserRelations, PanelHttpResponse>{
 
         // in-place initialization and returning
@@ -1600,7 +1600,7 @@ impl UserFan{
     }
 
     pub async fn remove_follower(remove_follower_request: RemoveFollower,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
         
             let RemoveFollower { owner_cid, follower_screen_cid, tx_signature, hash_data } 
@@ -1678,7 +1678,7 @@ impl UserFan{
     }
 
     pub async fn remove_friend(remove_friend_request: RemoveFriend, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
         
             let RemoveFriend { owner_cid, friend_screen_cid, tx_signature, hash_data } 
@@ -1797,7 +1797,7 @@ impl UserFan{
     }
 
     pub async fn remove_following(remove_friend_request: RemoveFollowing, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
         
             let RemoveFollowing { owner_cid, friend_screen_cid, tx_signature, hash_data } 
@@ -1866,7 +1866,7 @@ impl UserFan{
     }
 
     pub async fn send_friend_request_to(send_friend_request: SendFriendRequest, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
         
         let SendFriendRequest{ owner_cid, to_screen_cid, tx_signature, hash_data } 
@@ -2050,7 +2050,7 @@ impl UserFan{
 
     }
 
-    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let owner_id = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap().id;
         
@@ -2089,7 +2089,7 @@ impl UserFan{
 
     pub async fn push_invitation_request_for(owner_screen_cid: &str, redis_actor: Addr<RedisActor>,
         invitation_request_data: InvitationRequestData,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<InvitationRequestDataResponse, PanelHttpResponse>{
         
         let request_sender = invitation_request_data.clone().from_screen_cid;
@@ -2248,7 +2248,7 @@ impl UserFan{
     
     pub async fn accept_invitation_request(accept_invitation_request: AcceptInvitationRequest,
         redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
 
         let AcceptInvitationRequest { owner_cid, from_screen_cid, gal_id, tx_signature, hash_data } 
@@ -2386,7 +2386,7 @@ impl UserFan{
 
     pub async fn enter_private_gallery_request(enter_private_gallery_request: EnterPrivateGalleryRequest,
         redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{
 
         let EnterPrivateGalleryRequest { caller_cid, owner_screen_cid, gal_id, tx_signature, hash_data } 
@@ -2584,7 +2584,7 @@ impl UserFan{
 
 impl UserFanData{
 
-    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_gallery_invitation_requests(&mut self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let owner_id = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap().id;
         
@@ -2621,7 +2621,7 @@ impl UserFanData{
 
     }
 
-    pub fn construct_friends_data(&self, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Option<serde_json::Value>{
+    pub fn construct_friends_data(&self, connection: &mut DbPoolConnection) -> Option<serde_json::Value>{
 
         let user = User::find_by_screen_cid_none_async(&self.user_screen_cid, connection).unwrap();
         let get_friend_requests_data = UserFriend::get_all_for_user(user.id, connection);

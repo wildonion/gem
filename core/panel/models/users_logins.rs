@@ -46,7 +46,7 @@ pub struct NewUserLoginRequest{
 
 impl UserLogin{
 
-    pub async fn insert(new_login: NewUserLoginRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn insert(new_login: NewUserLoginRequest, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         match diesel::insert_into(users_logins)
             .values(&new_login)
@@ -82,7 +82,7 @@ impl UserLogin{
 
     }
 
-    pub async fn find_by_user_id(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Vec<Self>, PanelHttpResponse>{
+    pub async fn find_by_user_id(owner_id: i32, connection: &mut DbPoolConnection) -> Result<Vec<Self>, PanelHttpResponse>{
     
         let single_user_login = users_logins
             .filter(users_logins::user_id.eq(owner_id))
@@ -104,7 +104,7 @@ impl UserLogin{
 
     }
 
-    pub async fn update(login_info: NewUserLoginRequest, login_data_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn update(login_info: NewUserLoginRequest, login_data_id: i32, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let now = chrono::Local::now().naive_local();
         match diesel::update(users_logins.find(login_data_id))
@@ -141,7 +141,7 @@ impl UserLogin{
 
     }
 
-    pub async fn remove_jwt(login_data_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn remove_jwt(login_data_id: i32, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         let now = chrono::Local::now().naive_local();
         match diesel::update(users_logins.find(login_data_id))
@@ -177,7 +177,7 @@ impl UserLogin{
 
     }
 
-    pub async fn upsert(new_login: NewUserLoginRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<Self, PanelHttpResponse>{
+    pub async fn upsert(new_login: NewUserLoginRequest, connection: &mut DbPoolConnection) -> Result<Self, PanelHttpResponse>{
 
         match users_logins
             .filter(users_logins::user_id.eq(new_login.user_id))

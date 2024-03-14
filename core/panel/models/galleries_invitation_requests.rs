@@ -47,7 +47,7 @@ pub struct NewPrivateGalleryInvitationRequest{
 
 impl PrivateGalleryInvitationRequest{
 
-    pub async fn remove(owner_id: i32, gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn remove(owner_id: i32, gallery_id: i32, connection: &mut DbPoolConnection)
         -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(galleries_invitation_requests
@@ -73,7 +73,7 @@ impl PrivateGalleryInvitationRequest{
 
     }
     
-    pub async fn insert(new_invitation_request: NewPrivateGalleryInvitationRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn insert(new_invitation_request: NewPrivateGalleryInvitationRequest, connection: &mut DbPoolConnection)
         -> Result<PrivateGalleryInvitationRequest, PanelHttpResponse>{
 
         
@@ -112,7 +112,7 @@ impl PrivateGalleryInvitationRequest{
 
     }
 
-    pub fn get_all_for_user(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_for_user(owner_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<PrivateGalleryInvitationRequest>, PanelHttpResponse>{
 
 
@@ -136,7 +136,7 @@ impl PrivateGalleryInvitationRequest{
 
     }
 
-    pub async fn accept_request(owner_id: i32, gallery_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn accept_request(owner_id: i32, gallery_id: i32, connection: &mut DbPoolConnection)
         -> Result<PrivateGalleryInvitationRequest, PanelHttpResponse>{
 
 

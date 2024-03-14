@@ -121,7 +121,7 @@ pub struct ClpEventData{
 
 impl ClpEvent{
 
-    pub async fn find_by_id(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn find_by_id(clp_event_id: i32, connection: &mut DbPoolConnection)
         -> Result<Self, PanelHttpResponse>{
 
             let single_clp_event = clp_events
@@ -144,7 +144,7 @@ impl ClpEvent{
 
     }
 
-    pub async fn find_by_id_without_actix_response(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn find_by_id_without_actix_response(clp_event_id: i32, connection: &mut DbPoolConnection)
         -> Result<Self, String>{
 
             let single_clp_event = clp_events
@@ -162,7 +162,7 @@ impl ClpEvent{
     }
 
     // this will be used in clp actor to lock the event if the event is expired
-    pub async fn lock_event(clp_event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn lock_event(clp_event_id: i32, connection: &mut DbPoolConnection)
         -> Result<Self, String>{
 
             match diesel::update(clp_events.find(clp_event_id))
@@ -294,7 +294,7 @@ impl ClpEvent{
 
     }
     
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, limit: web::Query<Limit>) 
+    pub async fn get_all(connection: &mut DbPoolConnection, limit: web::Query<Limit>) 
         -> Result<Vec<ClpEvent>, PanelHttpResponse> {
 
         let from = limit.from.unwrap_or(0);
@@ -339,7 +339,7 @@ impl ClpEvent{
     }
 
     // fetching the latest clp event info, the one that is about to be started
-    pub async fn get_latest(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_latest(connection: &mut DbPoolConnection)
         -> Result<ClpEventData, PanelHttpResponse>{
 
         // fetch the latest event which is not locked yet and it's close to get started
@@ -385,7 +385,7 @@ impl ClpEvent{
 
     }
 
-    pub async fn get_latest_without_actix_response(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_latest_without_actix_response(connection: &mut DbPoolConnection)
         -> Result<ClpEventData, String>{
 
         // fetch the latest event which is not locked yet and it's close to get started

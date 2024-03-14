@@ -83,7 +83,7 @@ impl UserClp{
 
     pub async fn cancel_reservation(participant_id: i32, event_id: i32, redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>
+        connection: &mut DbPoolConnection
         ) -> Result<UserData, PanelHttpResponse>{
         
         match Self::delete_by_participant_and_event_id(participant_id, event_id, connection).await{
@@ -175,7 +175,7 @@ impl UserClp{
     }
 
     pub async fn insert(entrance_fee: i64, participant_id: i32, event_id: i32, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<UserClp, PanelHttpResponse>{
 
         let get_user = User::find_by_id(participant_id, connection).await;
@@ -242,7 +242,7 @@ impl UserClp{
 
     }
 
-    pub async fn get_all_users_clps(connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_users_clps(connection: &mut DbPoolConnection)
         -> Result<Vec<UserClp>, PanelHttpResponse>{
 
         let users_clps_ = users_clps
@@ -268,7 +268,7 @@ impl UserClp{
     }
 
     pub async fn update_joined_at(participant_id: i32, event_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<UserClp, PanelHttpResponse>{
 
         let get_user_clp = Self::find_by_participant_and_event_id(participant_id, event_id, connection).await;
@@ -313,7 +313,7 @@ impl UserClp{
     }
 
     pub async fn find_by_participant_and_event_id(participant_id: i32, event_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<UserClp, PanelHttpResponse>{
 
         let single_user_clp = users_clps
@@ -338,7 +338,7 @@ impl UserClp{
     }
 
     pub async fn delete_by_participant_and_event_id(participant_id: i32, event_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<usize, PanelHttpResponse>{
 
         match diesel::delete(users_clps
@@ -366,7 +366,7 @@ impl UserClp{
         
     }
     
-    pub async fn get_all_users_in_clp_event(event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_users_in_clp_event(event_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<User>, PanelHttpResponse>{
 
         
@@ -411,7 +411,7 @@ impl UserClp{
     
     }
 
-    pub async fn get_all_users_in_clp_event_without_actix_response(event_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_users_in_clp_event_without_actix_response(event_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<User>, String>{
 
         
@@ -448,7 +448,7 @@ impl UserClp{
     
     }
 
-    pub async fn get_all_users_and_their_events(limit: Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_users_and_their_events(limit: Query<Limit>, connection: &mut DbPoolConnection)
         -> Result<Vec<ClpEventsPerUser>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0);
@@ -603,7 +603,7 @@ impl UserClp{
     }
 
     pub async fn get_all_user_events(limit: Query<Limit>, participant_id: i32,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        connection: &mut DbPoolConnection)
         -> Result<Vec<ClpEventData>, PanelHttpResponse>{
 
             let from = limit.from.unwrap_or(0);

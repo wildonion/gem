@@ -43,7 +43,7 @@ pub struct NewNftCommentRequest{
 
 impl NftComment{
     
-    pub async fn insert(new_comment: NewNftCommentRequest, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn insert(new_comment: NewNftCommentRequest, connection: &mut DbPoolConnection)
         -> Result<NftComment, PanelHttpResponse>{
 
         
@@ -82,7 +82,7 @@ impl NftComment{
 
     }
 
-    pub fn get_all_for_nft(asset_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub fn get_all_for_nft(asset_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftComment>, PanelHttpResponse>{
 
         let get_all_comments = nfts_comments
@@ -105,7 +105,7 @@ impl NftComment{
 
     }
 
-    pub async fn get_all_for_user(owner_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+    pub async fn get_all_for_user(owner_id: i32, connection: &mut DbPoolConnection)
         -> Result<Vec<NftComment>, PanelHttpResponse>{
 
 

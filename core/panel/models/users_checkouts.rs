@@ -83,7 +83,7 @@ pub struct UserCheckoutData{
 */
 impl UserCheckout{
 
-    pub async fn insert(new_user_checkout: NewUserCheckout, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserCheckoutData, PanelHttpResponse>{
+    pub async fn insert(new_user_checkout: NewUserCheckout, connection: &mut DbPoolConnection) -> Result<UserCheckoutData, PanelHttpResponse>{
 
         match diesel::insert_into(users_checkouts)
             .values(&new_user_checkout)
@@ -137,7 +137,7 @@ impl UserCheckout{
 
     }
 
-    pub async fn get_all(connection: &mut PooledConnection<ConnectionManager<PgConnection>>, 
+    pub async fn get_all(connection: &mut DbPoolConnection, 
         limit: web::Query<Limit>) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
 
@@ -201,7 +201,7 @@ impl UserCheckout{
     }
 
     pub async fn get_all_unpaid_for(user_crypto_id: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
 
         let from = limit.from.unwrap_or(0);
@@ -265,7 +265,7 @@ impl UserCheckout{
     }
 
     pub async fn get_all_paid_for(user_crypto_id: &str, limit: web::Query<Limit>,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<Vec<UserCheckoutData>, PanelHttpResponse>{
         
         let from = limit.from.unwrap_or(0);
@@ -329,7 +329,7 @@ impl UserCheckout{
     }
 
     pub async fn update(session_id: &str, new_payment_intent: &str,
-        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        connection: &mut DbPoolConnection) 
         -> Result<UserCheckoutData, PanelHttpResponse>{
         
         let get_user_checkout = users_checkouts
