@@ -81,6 +81,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::clp::exports::get_all_clp_event);
     config.service(apis::admin::clp::exports::update_clp_event_back);
     config.service(apis::admin::mail::exports::send_mail);
+    config.service(apis::admin::ticket::exports::get_all);
 
 
 }
@@ -223,5 +224,6 @@ pub fn init_public(config: &mut web::ServiceConfig){
     config.service(apis::public::blockchain::exports::get_single_nft);
     config.service(apis::public::blockchain::exports::get_nft_product_collections);
     config.service(apis::public::stream::exports::test_stream);
+    config.service(apis::public::ticket::exports::send);
 
 }

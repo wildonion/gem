@@ -3,7 +3,7 @@
 
 
 
-
+use crate::models::users_tickets::{UserTicket, NewUserTicketRequest};
 use redis::AsyncCommands;
 use actix_web::HttpMessage;
 use futures_util::TryStreamExt; /* TryStreamExt can be used to call try_next() on future object */
@@ -41,6 +41,7 @@ pub mod rendezvous;
 pub mod task;
 pub mod user;
 pub mod x;
+pub mod ticket;
 
 
 //  -------------------------

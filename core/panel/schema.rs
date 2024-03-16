@@ -310,6 +310,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_tickets (id) {
+        id -> Int4,
+        user_id -> Int4,
+        title -> Varchar,
+        cname -> Varchar,
+        mail -> Varchar,
+        cdescription -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_withdrawals (id) {
         id -> Int4,
         deposit_id -> Int4,
@@ -346,5 +359,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     users_nfts,
     users_phones,
     users_tasks,
+    users_tickets,
     users_withdrawals,
 );

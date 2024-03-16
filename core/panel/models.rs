@@ -26,6 +26,7 @@
     |   galleries_invitation_requests ---> methods of postgres galleries_invitation_requests table
     |   users_friends                 ---> methods of postgres users_friends table
     |   users_logins                  ---> methods of postgres users_logins table
+    |   users_tickets                 ---> methods of postgres users_tickets table
     |
 */
 
@@ -51,3 +52,4 @@ pub mod nfts_likes;
 pub mod galleries_invitation_requests;
 pub mod users_friends;
 pub mod users_logins;
+pub mod users_tickets;

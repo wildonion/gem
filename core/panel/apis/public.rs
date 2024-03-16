@@ -4,6 +4,7 @@
 
 
 use crate::*;
+use crate::models::users_tickets::{UserTicket, NewUserTicketRequest};
 use crate::models::users_collections::{UserCollectionData, UserCollection, CollectionInfoResponse};
 use crate::models::users_nfts::{UserNftData, UserNft, NftLike, LikeUserInfo, UserLikeStat, NftUpvoterLikes, NftColInfo, UserCollectionDataGeneralInfo};
 use crate::schema::users_galleries::dsl::users_galleries;
@@ -30,6 +31,7 @@ pub mod wallet;
 pub mod x;
 pub mod stream;
 pub mod task;
+pub mod ticket;
 
 
 //  -------------------------
