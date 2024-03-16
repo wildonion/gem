@@ -29,6 +29,7 @@ pub(self) async fn test_stream(
     // json_body: web::Json<LoginInfoRequest>,
     // some_path: web::Path<(String, i32)>,
     // multipart_body: Multipart,
+    app_state: web::Data<AppState>
 ) -> Result<actix_web::HttpResponse, helpers::error0::PanelErrorResponse>{
 
     // streaming over the incoming binary data from client

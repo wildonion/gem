@@ -11,8 +11,8 @@
     would be a controller then with this design pattern we can communicate with each controller
     it's like calling smart contract methods from other contracts, in a high insight every api
     component actor can communicate with each other in a same app using mpsc, actixbroker and 
-    redis pubsub and in a distributed manner using libp2p, redis pubsub, actixtelepathy or gRPC 
-    remote actors need to be inside an specific cluster so we can communicate with each other 
+    redis pubsub and in a distributed manner using libp2p, redis pubsub, actixtelepathy or gRPC,
+    remote actors need to be inside an specific cluster so they can communicate with each other 
     through p2p network by utilising gossipsub protocol to aware each others of joining new nodes
 */
 

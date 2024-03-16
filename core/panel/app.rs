@@ -132,6 +132,15 @@ mod middlewares;    /* contains all middlewares logics */
    | to catch any result data inside the tokio::spawn() we would have to use mpsc channel to
    | send the data to the channel inside the tokio::spawn() and receive it outside of tokio
    | scope and do the rest of the logics with that.
+   | notice of putting .await after async task call, it consumes the future objcet by pinning
+   | it into the ram for future solvation also it suspend the function execution until the future
+   | gets compeleted allows other parts of the app get executed without having any disruption,
+   | later once the future has completed it gets back to the caller to update the state and its
+   | value, this behaviour is called none blocking completion but based on the beginning notes
+   | the order of async task execution is not async by itself and if we have async_task1 first 
+   | followed by async_task2 the order of executing them is regular and it's not pure async like
+   | goroutines in Go or nodejs, to achive this we should spawn them insie tokio::spawn which 
+   | runs all the future in the background like what goroutines do.
    |
    | conclusion: 
    | use tokio::spawn() to execute any async task in the background without having
@@ -149,7 +158,10 @@ mod middlewares;    /* contains all middlewares logics */
    | we'll face the error of `spawn_local` called from outside of a `task::LocalSet` which says
    | that we can't start an actor inside the tokio runtime instead we should use the actix runtime
    | and start the actor in the context of actix runtime itself where there is no #[tokio::main]
-   | on top of main method.
+   | on top of main method, good to know that #[tokio::main] simplifies the sentup and execution
+   | of async tasks within the tokio runtime on the other hans tokio::spawn is used for manually
+   | spawning, managing and scheduling async task in the background you need to handle task lifecycles, 
+   | cancellation, and coordination between tasks explicitly
    |
 
 */
