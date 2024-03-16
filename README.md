@@ -35,10 +35,6 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 ## 🚟 Infra Route and API Endpoints
 
-> Ensure that all the vars inside `.env.prod` are filled with their appropriate values.
-
-> Ensure that any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
-
 ```bash
 # ---------------------------------------------------------------------------------------------------
 # conse panel dev username/password              : devdevy/d3v@%$^$3hjsD
@@ -151,6 +147,38 @@ cargo run --bin contest
 ```
     
 ## 🚀 Production Setup
+
+> Ensure that:
+
+- all the vars inside `.env.prod` are filled with their appropriate values.
+    
+- any self-signed SSL certificates used by gRPC server are valid and issued by a recognized certificate authority, if you are using a self-signed certificate, it may not be trusted by default by clients.
+
+- you've created an NFT product contract for NFT gift card section, later you have to update the `up.sql` file inside `users_collections` migration folder with appropriate contract info (address, tx hash and ...), use the following curl to build a new product contract:
+    ```bash
+        curl --request POST \
+        --url https://api.nftport.xyz/v0/contracts \
+        --header 'Authorization: <API_KEY>' \
+        --header 'accept: application/json' \
+        --header 'content-type: application/json' \
+        --data '
+            {
+            "chain": "polygon",
+            "name": "Conse Gift Card",
+            "symbol": "CGC",
+            "owner_address": "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2",
+            "metadata_updatable": true,
+            "type": "erc721",
+            "royalties_share": 250,
+            "royalties_address": "0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2"
+            }
+        '
+    ```
+    the output would be expected:
+    ```bash
+        {"response":"OK","chain":"polygon","transaction_hash":"0x3f9821e5bb280d9fdfcea7adb7b220ec1abe4907e4dc98a433d1f3f6520d7859","transaction_external_url":"https://polygonscan.com/tx/0x3f9821e5bb280d9fdfcea7adb7b220ec1abe4907e4dc98a433d1f3f6520d7859","owner_address":"0xB3E106F72E8CB2f759Be095318F70AD59E96bfC2","type":"erc721","name":"Conse Gift Card","symbol":"CGC"}
+    ```
+- finally go for `diesel migration run` command.
 
 > before going for production, make make sure that you have the `conse.app` domain and the following subdomains are enabled in DNS panel and is pointing to the machine where the `gem` services codes are hosted on, note that for every new (sub)domain inside the VPS there must be a new nginx config file and a new ssl certificate inside the `infra/docker/nginx` folder related to that (sub)domain name which can be setup by running `renew.sh` on every changes to the nginx config file like hosting new codes, services or adding a new domain to the VPS.
 
