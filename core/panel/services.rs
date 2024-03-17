@@ -82,6 +82,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::clp::exports::update_clp_event_back);
     config.service(apis::admin::mail::exports::send_mail);
     config.service(apis::admin::ticket::exports::get_all);
+    config.service(apis::admin::token::exports::get_all);
 
 
 }

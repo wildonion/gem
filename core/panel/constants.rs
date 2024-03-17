@@ -143,6 +143,7 @@ pub static NO_WITHDRAWAL_YET: &str = "No Any Withdrawal Yet";
 pub static CID_HAS_NO_PAID_CHECKOUT_YET: &str = "This Crypto Id Has No Any Paid Checkout Yet";
 pub static CID_HAS_NO_UNPAID_CHECKOUT_YET: &str = "This Crypto Id Has No Any Unpaid Checkout Yet";
 pub static NO_TICKET_FOUND: &str = "No Ticket Found";
+pub static NO_TOKEN_STAT_FOUND: &str = "No User Token Stat Found";
 pub static NO_CHECKOUT_FOUND: &str = "No Any Checkout Found With This Session Id";
 pub static RECIPIENT_HAS_NO_DEPOSIT_YET: &str = "This Recipient Has No Any Deposit Yet";
 pub static DEPOSIT_NOT_FOUND: &str = "No Deposit Found With Thid Id";

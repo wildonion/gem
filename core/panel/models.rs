@@ -27,6 +27,7 @@
     |   users_friends                 ---> methods of postgres users_friends table
     |   users_logins                  ---> methods of postgres users_logins table
     |   users_tickets                 ---> methods of postgres users_tickets table
+    |   users_tokens                  ---> methods of postgres users_tokens table
     |
 */
 
@@ -53,3 +54,4 @@ pub mod galleries_invitation_requests;
 pub mod users_friends;
 pub mod users_logins;
 pub mod users_tickets;
+pub mod users_tokens;

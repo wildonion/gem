@@ -1987,7 +1987,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"username\": \"adminy\",\n    \"password\": \"4dmin@%$^$3hjsD\",\n    \"device_id\": \"8888\"\n}",
+									"raw": "{\n    \"username\": \"adminy\",\n    \"password\": \"4dmin@%$^$3hjsD\"\n    // \"device_id\": \"8888\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2787,6 +2787,37 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Get All User Token Stats",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/get-user-token-stats/?from=0&to=10",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"get-user-token-stats",
+										""
+									],
+									"query": [
+										{
+											"key": "from",
+											"value": "0"
+										},
+										{
+											"key": "to",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -2850,7 +2881,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"identifier\": \"ea_painme@yahoo.com\",\n    \"password\": \"Qwe%$[rty]*@;123\",\n    \"device_id\": \"2222\"\n}",
+											"raw": "{\n    \"identifier\": \"abarmardeatashyne@gmail.com\",\n    \"password\": \"Qwe%$[rty]*@;123\"\n    // \"device_id\": \"2222\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3094,7 +3125,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjUsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzA3ODU1OTMyMTkzNzEyMDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzEwNDQ3OTMyMTkzOTk1MDAwLCJpYXQiOjE3MDc4NTU5MzIxOTM5OTUwMDB9.3tY0F3BtEtxkUsc5fH2ZivjRpCMdLs81vAPf3u5rp2HKOBl9tdzJFqXiewRF3BpZpiRroKSoKftOMcWOy39YZg",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzEwNTg4MzM0MDQ1NTQwNTkzLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODEwNDY2NzM0LCJpYXQiOjE3MTA1ODgzMzR9.uqj-dsYw6R5k4Wgxgd1COsusTxPjLIkpUvbmkaxBL81bfe8UghH-fAAZcKy8Ymp00Yz2yKmFISHM-h7rE6Y6NA",
 													"type": "string"
 												}
 											]

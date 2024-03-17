@@ -2,7 +2,7 @@
 
 
 
-
+use crate::models::users_tokens::{NewUserTokenRequest, UserToken};
 use std::io::Write;
 use std::time::{UNIX_EPOCH, SystemTime};
 use actix::Addr;
@@ -3474,6 +3474,17 @@ impl User{
                     let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
                     events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
+
+                    // insert into users_balance table, tracking the income and outcome of
+                    // each user let us to debug quickly and prevent frauds
+                    UserToken::insert(
+                        NewUserTokenRequest{
+                            user_id: user.id,
+                            current_balance: updated_user.balance.unwrap_or(0),
+                            last_balance: user.balance.unwrap_or(0),
+                        },
+                        connection
+                    ).await;
 
                     Ok(
                         UserData { 

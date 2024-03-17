@@ -323,6 +323,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    users_tokens (id) {
+        id -> Int4,
+        user_id -> Int4,
+        current_balance -> Nullable<Int8>,
+        last_balance -> Nullable<Int8>,
+        charged_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users_withdrawals (id) {
         id -> Int4,
         deposit_id -> Int4,
@@ -360,5 +370,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     users_phones,
     users_tasks,
     users_tickets,
+    users_tokens,
     users_withdrawals,
 );
