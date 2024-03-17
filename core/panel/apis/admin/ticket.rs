@@ -58,7 +58,7 @@ pub(self) async fn get_all(
                     resp!{
                         Vec<UserTicket>, // the data type
                         tickets_data, // response data
-                        CREATED, // response message
+                        FETCHED, // response message
                         StatusCode::OK, // status code
                         None::<Cookie<'_>>, // cookie
                     }
