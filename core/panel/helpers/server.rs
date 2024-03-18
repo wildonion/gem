@@ -2,10 +2,34 @@
 
 
 
+use crate::events::sse::broadcaster::Event;
 use crate::*;
 use crate::models::users::LoginInfoRequest;
 
 
+// add new client
+pub async fn sse_client(app_state: web::Data<AppState>) -> PanelHttpResponse{
+    // since unwrap() takes the ownership of the isntance and the app_state hence we should clone the 
+    // sse_broadcaster to prevent it from moving, as_ref() and as_mut() is not working here
+    app_state.sse_broadcaster.clone().unwrap().add_client().await 
+}
+
+// use this method to broadcast new event
+pub async fn broadcast_event(
+    app_state: web::Data<AppState>,
+    event_info: web::Path<(String, String)>,
+) -> PanelHttpResponse{
+    
+    let topic = event_info.clone().0;
+    let event = event_info.clone().1;
+    // since unwrap() takes the ownership of the isntance and the app_state hence we should clone the 
+    // sse_broadcaster to prevent it from moving, as_ref() and as_mut() is not working here
+    let get_sse_broadcaster = app_state.sse_broadcaster.clone();
+    let mut sse_broadcaster = get_sse_broadcaster.unwrap();
+    sse_broadcaster.broadcast(&topic, Event{data: event}).await
+}
+
+// start a tcp streamer in the background
 pub async fn start_streaming(){
 
     /* 
@@ -41,8 +65,8 @@ pub async fn start_streaming(){
                         Ok(size) => {
 
                             let received_buffer = &buffer[..size];
-                            let datastr = std::str::from_utf8(&received_buffer).unwrap();
-                            let datainfo = serde_json::from_slice::<LoginInfoRequest>(&buffer).unwrap();
+                            let datastr = std::str::from_utf8(&received_buffer).unwrap(); // map into str if there is no structurized data
+                            let datainfo = serde_json::from_slice::<LoginInfoRequest>(&buffer).unwrap(); // map into some kinda data structure if the received bytes are structurized
                             
                             // do whatever is needed with received data 
                             // ...
@@ -83,6 +107,7 @@ macro_rules! bootsteap {
             use crate::helpers::config::{Env as ConfigEnv, Context};
             use crate::helpers::config::EnvExt;
             use crate::constants::*;
+            use crate::events::sse::broadcaster::Broadcaster;
             use crate::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
             use crate::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
@@ -97,6 +122,7 @@ macro_rules! bootsteap {
             use crate::apis::user::UserComponentActor;
             use crate::apis::health::HealthComponentActor;
             use crate::apis::public::PublicComponentActor;
+            use crate::helpers::server::{sse_client, broadcast_event};
 
             
             env::set_var("RUST_LOG", "trace");
@@ -175,6 +201,7 @@ macro_rules! bootsteap {
                     public_api_actor: public_component_actor.clone(),
                 }
             );
+            app_state.sse_broadcaster = Some(Broadcaster::new());
             app_state.agent_actors = Some(
                 AgentActors{
                     run_agent_actor: run_actor_instance.clone(),
@@ -268,6 +295,11 @@ macro_rules! bootsteap {
                         actix_web::web::scope("/public")
                             .configure(services::init_public)
                     )
+                    /*
+                        SSE ROUTES
+                    */
+                    .route("/events{_:/?}", web::get().to(sse_client)) // eg: /events, /events/123, /events/abc -> fetching event
+                    .route("/events/{msg}", web::get().to(broadcast_event))
                 }) 
                 .listen($tcp_listener){ // bind the http server on the passed in tcp listener cause after all http is a tcp based protocol!
                     Ok(server) => {

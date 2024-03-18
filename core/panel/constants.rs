@@ -8,6 +8,7 @@ use s3req::Storage;
 use helpers::config::{Env, Context};
 use helpers::config::EnvExt;
 use crate::*;
+use self::events::sse::broadcaster::Broadcaster;
 use self::apis::admin::AdminComponentActor;
 use self::apis::user::UserComponentActor;
 use self::apis::health::HealthComponentActor;
@@ -69,6 +70,7 @@ pub struct AppState{
     pub subscriber_actors: Option<SubscriberActors>,
     pub agent_actors: Option<AgentActors>,
     pub component_actors: Option<ApiComponentActors>,
+    pub sse_broadcaster: Option<Broadcaster>,
     pub ramdb: std::sync::Arc<tokio::sync::Mutex<HashMap<String, String>>> // an in memory and safe to mutate db and cache storage which can be shared between threads without having race conditions
 }
 
@@ -106,6 +108,7 @@ impl AppState{
             subscriber_actors: None,
             agent_actors: None,
             component_actors: None,
+            sse_broadcaster: None,
             ramdb: std::sync::Arc::new(
                     tokio::sync::Mutex::new(
                             HashMap::new()

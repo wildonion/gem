@@ -19,16 +19,15 @@ use self::models::clp_events::ClpEvent;
     these events and update the web page in real-time.
 */
 
-// add broadcaster struct to app state so we can share it between threads
-// broadcast new clp event
+// https://github.com/chaudharypraveen98/actix-question-bank-stackoverflow/blob/master/src/broadcast.rs
 
 #[derive(Debug, Clone, Default)]
 pub struct Broadcaster{
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct Event<E>{
-    pub data: E
+pub struct Event<E: Send + Sync>{
+    pub data: E // data can be like a clp event
 }
  
 impl Broadcaster{
@@ -39,23 +38,27 @@ impl Broadcaster{
         
     }
 
-    pub async fn get_clients(){
+    pub async fn get_clients(&self){
 
     }
 
-    pub async fn add_client(){
-
+    pub async fn add_client(&mut self) ->  PanelHttpResponse{
+        todo!()
     }
 
-    pub async fn broadcast<E>(topic: &str, event: Event<E>){
+    // broadcast new clp event, so client can use html5 sse to 
+    // fetch latest event through the openned connection
+    pub async fn broadcast<E: Send + Sync>(&mut self, topic: &str, event: Event<E>) -> PanelHttpResponse{
 
+        todo!()
     } 
 
-    pub async fn get_clp_event(){
+    pub async fn get_clp_event(&self){
 
     }
 
-    pub async fn get_event_future<E>() -> std::pin::Pin<Box<dyn futures::Future<Output=Event<E>>>>{
+    pub async fn get_event_future<E: Send + Sync>(&self) 
+        -> std::pin::Pin<Box<dyn futures::Future<Output=Event<E>>>>{
         
         todo!()
     
