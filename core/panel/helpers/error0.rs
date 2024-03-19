@@ -76,6 +76,11 @@
 
     }
 
+    final note: Box<dyn std::error::Error> is a boxed object safe trait which is used for dynamic dispatch at runtime 
+                this would be called on any object that implements the Error trait to return the source of the error, 
+                we've to make sure this is an object safe trait to dispatch the call dynamically cause the compiler must 
+                not be aware of the implementor size in order to do the call at runtime.
+
 */
 
 use crate::*;

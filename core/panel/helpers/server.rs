@@ -6,11 +6,11 @@ use crate::events::sse::broadcaster::Event;
 use crate::*;
 use crate::models::users::LoginInfoRequest;
 
-
-// add new client
+// use this method to add new sse client
 pub async fn sse_client(app_state: web::Data<AppState>) -> PanelHttpResponse{
     // since unwrap() takes the ownership of the isntance and the app_state hence we should clone the 
     // sse_broadcaster to prevent it from moving, as_ref() and as_mut() is not working here
+    // DerefMut is not implemented for AppState
     app_state.sse_broadcaster.clone().unwrap().add_client().await 
 }
 
@@ -24,6 +24,7 @@ pub async fn broadcast_event(
     let event = event_info.clone().1;
     // since unwrap() takes the ownership of the isntance and the app_state hence we should clone the 
     // sse_broadcaster to prevent it from moving, as_ref() and as_mut() is not working here
+    // DerefMut is not implemented for AppState
     let get_sse_broadcaster = app_state.sse_broadcaster.clone();
     let mut sse_broadcaster = get_sse_broadcaster.unwrap();
     sse_broadcaster.broadcast(&topic, Event{data: event}).await
