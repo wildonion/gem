@@ -33,7 +33,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use self::models::clp_events::UpdateClpEventRequest;
 
 
-
 pub mod auth;
 pub mod wallet;
 pub mod clp;
@@ -72,8 +71,7 @@ pub struct Api{
 
 #[derive(Clone)]
 pub struct AdminComponentActor{
+    pub app_storage: Option<Arc<Storage>>,
     pub state: Option<ComponentState>,
     pub apis: Vec<Api>
 }
-
-

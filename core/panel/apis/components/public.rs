@@ -5,30 +5,28 @@
     | --------- PUBLIC COMPONENT ACTOR --------- 
     | ------------------------------------------
     | contains api structures and message handlers
-    | to communicate locally and remotely
+    | to communicate locally
     |
 */
 
 use crate::*;
 use actix::Actor;
 use actix::prelude::*;
+use s3req::Storage;
 use self::constants::AppState;
 use crate::apis::public::{ComponentState, PublicComponentActor, Api};
 
-// fn pointer method, futures must be pinned at a fixed position on the heap 
-// to avoid getting invalidated pointers even after moving the type
-type Method = fn(HttpRequest, AppState) -> std::pin::Pin<Box<dyn futures::Future<Output = PanelHttpResponse>>>;
 
 
-// -----------------------------------
-// messages used for communication
-// -----------------------------------
 #[derive(Clone, Message)]
 #[rtype(result = "ApiResponse")]
 pub struct ExecuteApi{ // execute an api available from the list of all registered apis
     pub route: String,
 }
 
+// -----------------------------------
+// messages used for communication
+// -----------------------------------
 #[derive(MessageResponse)]
 pub struct ApiResponse(pub PanelHttpResponse);
 
@@ -47,15 +45,16 @@ impl Actor for PublicComponentActor{
 // -----------------------------------
 impl PublicComponentActor{
 
-    pub fn new(apis: Vec<Api>) -> Self{
+    pub fn new(apis: Vec<Api>, app_storage: Option<Arc<Storage>>) -> Self{
         Self{
             state: None,
-            apis
+            apis,
+            app_storage
         }
     }
 
     pub fn get_self(&self) -> Self{
-        Self { state: self.clone().state, apis: self.clone().apis }
+        Self { state: self.clone().state, apis: self.clone().apis, app_storage: self.clone().app_storage }
     }
 
     pub fn set_state(&mut self, new_state: ComponentState) -> Self{
@@ -75,19 +74,20 @@ impl PublicComponentActor{
 
     // emit/fire/publish an event into a redis pubsub channel 
     // so other apis can subscribe to it
-    pub async fn emit(){
+    pub async fn emit(&mut self){
         // redis and actix broker publication
         // ...
     }
 
     // redis/actixborker subscription process to subscribe to an specific channel 
     // contians emitted data from other apis publisher
-    pub async fn subscribe(){
+    pub async fn subscribe(&mut self){
         // redis and actix broker subscription
         // ...
     }
 
 }
+
 
 // -----------------------------------
 // local and remote message handlers
@@ -109,10 +109,6 @@ impl Handler<ExecuteApi> for PublicComponentActor{
 
     */
     fn handle(&mut self, msg: ExecuteApi, ctx: &mut Self::Context) -> Self::Result {
-
-        // use actix telepathy to send message to other actors remotely
-        // https://docs.rs/actix-telepathy/latest/actix_telepathy/#:~:text=To%20send%20messages%20between%20remote,RemoteAddr%20that%20the%20ClusterListener%20receives.&text=Now%2C%20every%20new%20member%20receives,every%20ClusterListener%20in%20the%20cluster.
-        // ...
 
         todo!()
 

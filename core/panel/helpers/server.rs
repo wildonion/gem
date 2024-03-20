@@ -174,10 +174,10 @@ macro_rules! bootsteap {
             let run_actor_instance = RunAgentActor::new(port, std::path::PathBuf::new()).start();
             let deploy_actor_instance = DeployAgentActor::new(port, std::path::PathBuf::new()).start();
             let user_balance_listener_instance = UserBalanceActor::new(app_storage.clone()).start();
-            let admin_component_actor = AdminComponentActor::new(vec![]).start();
-            let user_component_actor = UserComponentActor::new(vec![]).start();
-            let public_component_actor = PublicComponentActor::new(vec![]).start();
-            let health_component_actor = HealthComponentActor::new(vec![]).start();
+            let admin_component_actor = AdminComponentActor::new(vec![], app_storage.clone()).start();
+            let user_component_actor = UserComponentActor::new(vec![], app_storage.clone()).start();
+            let public_component_actor = PublicComponentActor::new(vec![], app_storage.clone()).start();
+            let health_component_actor = HealthComponentActor::new(vec![], app_storage.clone()).start();
 
             // setting up the whole app state data
             let mut app_state = AppState::init();

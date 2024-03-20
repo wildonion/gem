@@ -4,6 +4,7 @@
 /* ------------------------------- */
 /* publisher and subscriber actors */
 /* ------------------------------- */
+// -> all actix actors must be started within the context of the actix runtime
 /* 
 
     • generally pubsub realtime monitoring, streaming and push notification over an mpsc receiver/redis subscriber/tcp listener 

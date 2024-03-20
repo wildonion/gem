@@ -84,6 +84,7 @@ pub struct Api{
 
 #[derive(Clone)]
 pub struct UserComponentActor{
+    pub app_storage: Option<Arc<Storage>>,
     pub state: Option<ComponentState>,
     pub apis: Vec<Api>
 }

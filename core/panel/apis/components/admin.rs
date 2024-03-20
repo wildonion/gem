@@ -5,16 +5,17 @@
     | --------- ADMIN COMPONENT ACTOR --------- 
     | ------------------------------------------
     | contains api structures and message handlers
-    | to communicate locally and remotely
+    | to communicate locally
     |
 */
 
 use crate::*;
 use actix::Actor;
 use actix::prelude::*;
+use s3req::Storage;
 use self::constants::AppState;
 use crate::apis::admin::{ComponentState, AdminComponentActor, Api};
-
+use actix_broker::BrokerSubscribe;
 
 
 #[derive(Clone, Message)]
@@ -44,15 +45,16 @@ impl Actor for AdminComponentActor{
 // -----------------------------------
 impl AdminComponentActor{
 
-    pub fn new(apis: Vec<Api>) -> Self{
+    pub fn new(apis: Vec<Api>, app_storage: Option<Arc<Storage>>) -> Self{
         Self{
             state: None,
-            apis
+            apis,
+            app_storage
         }
     }
 
     pub fn get_self(&self) -> Self{
-        Self { state: self.clone().state, apis: self.clone().apis }
+        Self { state: self.clone().state, apis: self.clone().apis, app_storage: self.clone().app_storage }
     }
 
     pub fn set_state(&mut self, new_state: ComponentState) -> Self{
@@ -72,14 +74,14 @@ impl AdminComponentActor{
 
     // emit/fire/publish an event into a redis pubsub channel 
     // so other apis can subscribe to it
-    pub async fn emit(){
+    pub async fn emit(&mut self){
         // redis and actix broker publication
         // ...
     }
 
     // redis/actixborker subscription process to subscribe to an specific channel 
     // contians emitted data from other apis publisher
-    pub async fn subscribe(){
+    pub async fn subscribe(&mut self){
         // redis and actix broker subscription
         // ...
     }
@@ -107,10 +109,6 @@ impl Handler<ExecuteApi> for AdminComponentActor{
 
     */
     fn handle(&mut self, msg: ExecuteApi, ctx: &mut Self::Context) -> Self::Result {
-
-        // use actix telepathy to send message to other actors remotely
-        // https://docs.rs/actix-telepathy/latest/actix_telepathy/#:~:text=To%20send%20messages%20between%20remote,RemoteAddr%20that%20the%20ClusterListener%20receives.&text=Now%2C%20every%20new%20member%20receives,every%20ClusterListener%20in%20the%20cluster.
-        // ...
 
         todo!()
 
