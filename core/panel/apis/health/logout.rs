@@ -61,7 +61,8 @@ pub(self) async fn logout(
                         inside the users table related to the logged in user to 0, this will
                         also remove the jwt field inside the users_logins table related to 
                         the user device id, means that logging out from a device won't logout
-                        user completely from the app
+                        user completely from the app it only logs him out from only the device
+                        he is sent the request
                     */
                     match User::logout(_id, _token_time, redis_client.to_owned(), redis_actix_actor, connection).await{
                         Ok(_) => {
