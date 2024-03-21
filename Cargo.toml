@@ -98,7 +98,6 @@ sqlx = { version = "0.7", features = [
 trait-variant = "0.1.1"
 async-openai = "0.18.3"
 thiserror = "1.0"
-cached = "0.49.2"
 
 [lib]
 proc-macro = true
