@@ -299,7 +299,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                                         )
                                     }
                                 }
@@ -414,7 +414,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                                         )
                                     }
                                 }
@@ -581,7 +581,7 @@ impl UserPrivateGallery{
                             if !gal_collections.is_empty(){
                                 for col_id in gal_collections{
                                     all_gal_collections.push(
-                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                                     )
                                 }
                             }
@@ -724,7 +724,7 @@ impl UserPrivateGallery{
                             if !gal_collections.is_empty(){
                                 for col_id in gal_collections{
                                     all_gal_collections.push(
-                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                                     )
                                 }
                             }
@@ -841,7 +841,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                                         )
                                     }
                                 }
@@ -980,7 +980,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                            UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                                         )
                                     }
                                 }
@@ -1339,7 +1339,7 @@ impl UserPrivateGallery{
                     if !gal_collections.is_empty(){
                         for col_id in gal_collections{
                             all_gal_collections.push(
-                                UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                             )
                         }
                     }
@@ -1398,7 +1398,7 @@ impl UserPrivateGallery{
                     if !gal_collections.is_empty(){
                         for col_id in gal_collections{
                             all_gal_collections.push(
-                                UserCollection::find_by_id_none_async(col_id, connection).unwrap()
+                                UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
                             )
                         }
                     }
@@ -1454,7 +1454,7 @@ impl UserPrivateGallery{
             if !gal_collections.is_empty(){
                 for col_id in gal_collections{
                     all_gal_collections.push(
-                        UserCollection::find_by_id(col_id, connection).await.unwrap()
+                        UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                     )
                 }
             }
@@ -1481,7 +1481,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                                         )
                                     }
                                 }
@@ -1542,7 +1542,7 @@ impl UserPrivateGallery{
             if !gal_collections.is_empty(){
                 for col_id in gal_collections{
                     all_gal_collections.push(
-                        UserCollection::find_by_id(col_id, connection).await.unwrap()
+                        UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                     )
                 }
             }
@@ -1569,7 +1569,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                                         )
                                     }
                                 }
@@ -2063,7 +2063,7 @@ impl UserPrivateGallery{
                     if !gal_collections.is_empty(){
                         for col_id in gal_collections{
                             all_gal_collections.push(
-                                UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                             )
                         }
                     }
@@ -2161,7 +2161,7 @@ impl UserPrivateGallery{
                         if !gal_collections.is_empty(){
                             for col_id in gal_collections{
                                 all_gal_collections.push(
-                                    UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                    UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                                 )
                             }
                         }
@@ -2238,7 +2238,7 @@ impl UserPrivateGallery{
                                 if !gal_collections.is_empty(){
                                     for col_id in gal_collections{
                                         all_gal_collections.push(
-                                            UserCollection::find_by_id(col_id, connection).await.unwrap()
+                                            UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
                                         )
                                     }
                                 }
