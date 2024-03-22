@@ -879,7 +879,24 @@ impl UserCollection{
             )
         };
         
-        let mut cols = collections
+        // get all collections related to the passed in gallery using redis
+        // there is a mapping between gallery id and collections ids has inside
+        let emppty_vec_of_ids: Vec<i32> = vec![];
+        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+        let get_all_collections_of_gal: String = redis_conn.get(gallery_data.id).await.unwrap_or(
+            serde_json::to_string_pretty(&emppty_vec_of_ids).unwrap()
+        );
+        let collection_ids = serde_json::from_str::<Vec<i32>>(&get_all_collections_of_gal).unwrap();
+        let mut gal_collections = vec![];
+        if !collection_ids.is_empty(){
+            for col_id in collection_ids{
+                gal_collections.push(
+                    UserCollection::find_by_id(col_id, connection).await.unwrap_or_default()
+                )
+            }
+        }
+
+        let mut cols = gal_collections
                 .into_iter()
                 .map(|c|{
 
