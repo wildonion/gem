@@ -49,7 +49,6 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 🛤️ ADMIN/DEV API ROUTE WITH POSTGRES DB STORAGE ==> https://api.panel.conse.app/
 🛣 ADMIN/DEV API ROUTE WITH MONGO DB STORAGE    ==> https://api.panel.conse.app/mongo
 🗺️ RENDEZVOUS API ROUTE                         ==> https://api.rendezvous.conse.app/
-📡 SWAGGER DOC                                  ==> https://api.panel.conse.app/swagger/
 🛢️ ADMINER PANEL                                ==> https://adminer.conse.app
 🛎️ JENKINS PANEL                                ==> https://jenkins.conse.app
 ⛵ PORTAINER PANEL                              ==> https://portainer.conse.app

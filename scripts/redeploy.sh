@@ -35,7 +35,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         echo "> Redeploying Infrastructure Pipelines Only"
         echo "☕ Okay, sit back and drink your coffee :)"
 
-        sudo docker stop graphana && sudo docker rm -f grapana
+        sudo docker stop graphana && sudo docker rm -f graphana
         sudo docker stop mongodb && sudo docker rm -f mongodb
         sudo docker stop postgres && sudo docker rm -f postgres
         sudo docker stop adminer && sudo docker rm -f adminer
@@ -124,6 +124,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         ANY_STRIPE_WEBHOOK_CONTAINER_ID=$(docker container ls  | grep 'stripe-webhook' | awk '{print $1}')
         ANY_XBOT_CONTAINER_ID=$(docker container ls  | grep 'xbot' | awk '{print $1}')
         ANY_XCORD_CONTAINER_ID=$(docker container ls  | grep 'xcord' | awk '{print $1}')
+        ANY_GRPC_CONTAINER_ID=$(docker container ls  | grep 'conse-grpc' | awk '{print $1}')
 
         sudo docker stop $ANY_CONSE_PANEL_PG_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_PG_CONTAINER_ID
         sudo docker stop $ANY_CONSE_PANEL_MONGO_CONTAINER_ID && sudo docker rm -f $ANY_CONSE_PANEL_MONGO_CONTAINER_ID
@@ -131,6 +132,7 @@ if [[ $ENVCOMPLETED == "Y" || $ENVCOMPLETED == "y" ]]; then
         sudo docker stop $ANY_STRIPE_WEBHOOK_CONTAINER_ID && sudo docker rm -f $ANY_STRIPE_WEBHOOK_CONTAINER_ID
         sudo docker stop $ANY_XBOT_CONTAINER_ID && sudo docker rm -f $ANY_XBOT_CONTAINER_ID
         sudo docker stop $ANY_XCORD_CONTAINER_ID && sudo docker rm -f $ANY_XCORD_CONTAINER_ID
+        sudo docker stop $ANY_GRPC_CONTAINER_ID && sudo docker rm -f $ANY_GRPC_CONTAINER_ID
 
         TIMESTAMP=$(date +%s)
 
