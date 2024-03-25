@@ -240,3 +240,12 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 # ---- rebuild conse panel docker container only 
 ./rebuildpanel.sh
 ```
+
+## 🚧 WIPs
+
+- chatroom launchpad, spacetimedb
+    - `admin.rs` apis, `chatdb.rs` and chatdb wasm methods, 
+    - `models/clp_events.rs`, `openai.rs`
+    - `broadcaster.rs` for sse on clp event and its apis in postman
+- ci, middlewares, clients folder, components
+- `mmr.rs` and `sessionrom.rs`,

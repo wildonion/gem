@@ -174,9 +174,7 @@ impl WsNotifSession{
         peer_name: String, redis_async_pubsubconn: Arc<PubsubConnection>,
         ws_role_notif_actor_address: Addr<RoleNotifServer>){
 
-
         todo!()
-        
 
     }
 
