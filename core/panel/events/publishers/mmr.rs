@@ -7,13 +7,11 @@
 /* ------------------------------ */
 /*
     https://github.com/wildonion/zoomate + test_stream() api
-    https://github.com/wildonion/gvm
+    https://github.com/wildonion/courtokm
 
     scoring, ranking and suggestion algos for nfts, galleries, users, collections
     based on stars field of the user, how much he has interacted with other users' stuffs
-
-    use gvm to feed vm the top users data so they can get ranked and suggested to 
-    each other based on their stars field
+    
 */
 
 
