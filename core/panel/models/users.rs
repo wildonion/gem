@@ -18,7 +18,6 @@ use crate::schema::users::dsl::*;
 use crate::models::xbot::Twitter;
 use crate::constants::*;
 use self::events::publishers::action::{ActionType, NotifData, SingleUserNotif};
-
 use super::users_collections::{UserCollection, CollectionOwnerCount};
 use super::users_fans::{UserFan, FriendData, FriendOwnerCount};
 use super::users_galleries::GalleryOwnerCount;
@@ -670,6 +669,123 @@ impl User{
                 HttpResponse::Ok()
                     .cookie(keys_info.0.clone())
                     .append_header(("cookie", keys_info.0.value()))
+                    .json(
+                        resp
+                    )
+            )
+        );
+                    
+    }
+
+    pub async fn get_user_data_response_with_cookie_and_redirect_header(&self, device_id_: &str, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+        connection: &mut DbPoolConnection, state: &str) -> Result<PanelHttpResponse, PanelHttpResponse>{
+
+        /* generate cookie 🍪 from token time and jwt */
+        /* since generate_cookie_and_jwt() takes the ownership of the user instance we must clone it then call this */
+        let keys_info = self.clone().generate_cookie_and_jwt().unwrap();
+        let cookie_token_time = keys_info.1;
+        let jwt = keys_info.2;
+
+        let now = chrono::Local::now().naive_local();
+        let updated_user = diesel::update(users.find(self.id))
+            .set((last_login.eq(now), token_time.eq(cookie_token_time)))
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            .unwrap();
+
+        // updating users_logins table with the latest jwt
+        let get_login_info = UserLogin::upsert(
+            NewUserLoginRequest{
+                user_id: self.id,
+                device_id: device_id_.to_string(),
+                jwt: {
+                    // store the hash of the token time in db in place of jwt
+                    let toke_time_hash = format!("{}", cookie_token_time);
+                    let mut hasher = Sha256::new();
+                    hasher.update(toke_time_hash.as_str());
+                    let time_hash = hasher.finalize();
+                    hex::encode(time_hash.to_vec())
+                },
+                last_login: Some(chrono::Local::now().naive_local()),
+            }, connection).await;
+
+        let Ok(login_info) = get_login_info else{
+            let err_resp = get_login_info.unwrap_err();
+            return Err(err_resp);
+        };
+        
+        let user_login_data = UserData{
+            id: updated_user.id,
+            region: updated_user.region.clone(),
+            username: updated_user.username.clone(),
+            bio: updated_user.bio.clone(),
+            avatar: updated_user.avatar.clone(),
+            banner: updated_user.banner.clone(),
+            wallet_background: updated_user.wallet_background.clone(),
+            activity_code: updated_user.activity_code.clone(),
+            twitter_username: updated_user.twitter_username.clone(),
+            facebook_username: updated_user.facebook_username.clone(),
+            discord_username: updated_user.discord_username.clone(),
+            identifier: updated_user.identifier.clone(),
+            user_role: {
+                match self.user_role.clone(){
+                    UserRole::Admin => "Admin".to_string(),
+                    UserRole::User => "User".to_string(),
+                    _ => "Dev".to_string(),
+                }
+            },
+            token_time: updated_user.token_time,
+            balance: updated_user.balance,
+            last_login: { 
+                if updated_user.last_login.is_some(){
+                    Some(updated_user.last_login.unwrap().to_string())
+                } else{
+                    Some("".to_string())
+                }
+            },
+            created_at: updated_user.created_at.to_string(),
+            updated_at: updated_user.updated_at.to_string(),
+            mail: updated_user.mail,
+            google_id: updated_user.google_id,
+            microsoft_id: updated_user.microsoft_id,
+            is_mail_verified: updated_user.is_mail_verified,
+            is_phone_verified: updated_user.is_phone_verified,
+            phone_number: updated_user.phone_number,
+            paypal_id: updated_user.paypal_id,
+            account_number: updated_user.account_number,
+            device_id: updated_user.device_id,
+            social_id: updated_user.social_id,
+            cid: updated_user.cid,
+            screen_cid: updated_user.screen_cid,
+            snowflake_id: updated_user.snowflake_id,
+            stars: updated_user.stars,
+            extra: updated_user.extra,
+        };
+
+        /* ----------------------------------------------- */
+        /* --------- publish updated user to redis channel */
+        /* ----------------------------------------------- */
+        /* 
+            once the user updates his info we'll publish new updated user to redis channel and in
+            other parts we start to subscribe to the new updated user topic then once we receive 
+            the new user we'll start updating user fans and user nfts 
+        */
+        
+        let json_stringified_updated_user = serde_json::to_string_pretty(&user_login_data).unwrap();
+        events::publishers::user::emit(redis_actor, "on_user_update", &json_stringified_updated_user).await;
+
+        let resp = Response{
+            data: Some(user_login_data),
+            message: LOGGEDIN,
+            status: 200,
+            is_error: false,
+        };
+        return Ok(
+            Ok(
+                HttpResponse::Ok()
+                    .cookie(keys_info.0.clone())
+                    .append_header(("cookie", keys_info.0.value()))
+                    .append_header((actix_web::http::header::LOCATION, format!("{}", state)))
                     .json(
                         resp
                     )

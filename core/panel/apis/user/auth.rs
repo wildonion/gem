@@ -121,7 +121,7 @@ pub(self) async fn session_oauth_google(
             let connection = &mut pg_pool.get().unwrap();
 
             let code = &google_query.code;
-            let state = &google_query.state;
+            let state = &google_query.state; // the complete frontend origin 
             let device_id_ = &google_query.device_id;
 
             if code.is_empty(){
@@ -180,11 +180,13 @@ pub(self) async fn session_oauth_google(
             };
 
             // generate cookie containing both jwts and send response
-            user_data.get_user_data_response_with_cookie(
+            user_data.get_user_data_response_with_cookie_and_redirect_header(
                 device_id_,
                 redis_client.clone(), 
                 redis_actix_actor, 
-                connection)
+                connection,
+                &state
+            )
             .await.unwrap()
 
         },
