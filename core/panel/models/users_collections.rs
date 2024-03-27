@@ -896,10 +896,12 @@ impl UserCollection{
             }
         }
 
-        let mut cols = gal_collections
-                .into_iter()
-                .map(|c|{
-
+        let mut cols = vec![];
+        for c in gal_collections{
+            if c.id == 0{
+                continue;
+            } else{
+                cols.push(
                     UserCollectionData{
                         id: c.id,
                         contract_address: c.clone().contract_address,
@@ -949,23 +951,9 @@ impl UserCollection{
                         freeze_metadata: c.freeze_metadata,
                         contract_tx_hash: c.contract_tx_hash,
                     }
-
-                })
-                .collect::<Vec<UserCollectionData>>();
-
-            cols.sort_by(|col1, col2|{
-
-                let col1_created_at = NaiveDateTime
-                    ::parse_from_str(&col1.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                    .unwrap();
-
-                let col2_created_at = NaiveDateTime
-                    ::parse_from_str(&col2.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                    .unwrap();
-
-                col2_created_at.cmp(&col1_created_at)
-
-            });
+                )
+            }
+        }
             
 
         let sliced = if from < cols.len(){
