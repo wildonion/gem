@@ -1644,7 +1644,7 @@ impl UserFan{
                 }
             }){
             
-                match UserFriend::remove(user.id, friend_info.id, connection){
+                match UserFriend::remove_follower(user.id, friend_info.id, connection){
                     Ok(removed_records) => {
                         Ok(
                             UserFanData{

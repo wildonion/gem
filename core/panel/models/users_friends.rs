@@ -71,6 +71,32 @@ impl UserFriend{
             }
 
     }
+
+    pub fn remove_follower(owner_id: i32, frd_id: i32, connection: &mut PooledConnection<ConnectionManager<PgConnection>>)
+        -> Result<usize, PanelHttpResponse>{
+
+        match diesel::delete(users_friends
+            .filter(users_friends::user_id.eq(owner_id)))
+            .filter(users_friends::friend_id.eq(frd_id))
+            .execute(connection)
+            {
+                Ok(num_deleted) => Ok(num_deleted),
+                Err(e) => {
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: &e.to_string(),
+                        status: 500,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
     
     pub async fn insert(new_friend_request: NewFriendRequest, connection: &mut DbPoolConnection)
         -> Result<UserFriend, PanelHttpResponse>{
