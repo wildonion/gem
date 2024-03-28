@@ -123,6 +123,18 @@ pub(self) async fn session_oauth_google(
             let code = &google_query.code;
             let state = &google_query.state; // the complete frontend origin 
             let device_id_ = &google_query.device_id;
+            let error = &google_query.error;
+
+            if !error.is_empty(){
+                return Ok(
+                    HttpResponse::Ok()
+                        .status(StatusCode::TEMPORARY_REDIRECT)
+                        .append_header((actix_web::http::header::LOCATION, format!("{}", state)))
+                        .json(
+                            "Redirecting..."
+                        )
+                );
+            }
 
             if code.is_empty(){
                 resp!{

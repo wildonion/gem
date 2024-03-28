@@ -468,7 +468,8 @@ pub struct IpInfoResponse{
 pub struct GoogleQueryCode {
     pub code: String,
     pub state: String,
-    pub device_id: String
+    pub device_id: String,
+    pub error: String,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
