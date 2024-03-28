@@ -780,14 +780,16 @@ impl User{
             status: 200,
             is_error: false,
         };
+        let redirect_url = format!("{}?data={}", state, jwt);
         return Ok(
             Ok(
                 HttpResponse::Ok()
                     .cookie(keys_info.0.clone())
+                    .status(StatusCode::TEMPORARY_REDIRECT)
                     .append_header(("cookie", keys_info.0.value()))
-                    .append_header((actix_web::http::header::LOCATION, format!("{}", state)))
+                    .append_header((actix_web::http::header::LOCATION, redirect_url))
                     .json(
-                        resp
+                        "Redirecting..."
                     )
             )
         );
