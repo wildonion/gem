@@ -120,10 +120,10 @@ pub(self) async fn session_oauth_google(
 
             let connection = &mut pg_pool.get().unwrap();
 
-            let code = &google_query.code;
-            let state = &google_query.state; // the complete frontend origin 
-            let device_id_ = &google_query.device_id;
-            let error = &google_query.error;
+            let code = &google_query.code.clone().unwrap_or("".to_string());
+            let state = &google_query.state.clone().unwrap_or("".to_string()); // the complete frontend origin 
+            let device_id_ = &google_query.device_id.clone();
+            let error = &google_query.error.clone().unwrap_or("".to_string());
 
             if !error.is_empty(){
                 return Ok(

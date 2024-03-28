@@ -466,10 +466,10 @@ pub struct IpInfoResponse{
 /** ------------------------------------ */
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct GoogleQueryCode {
-    pub code: String,
-    pub state: String,
+    pub code: Option<String>,
+    pub state: Option<String>,
+    pub error: Option<String>,
     pub device_id: String,
-    pub error: String,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
