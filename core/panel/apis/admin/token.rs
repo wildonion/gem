@@ -5,7 +5,7 @@ pub use super::*;
 
 
 
-#[post("/get-user-token-stats/")]
+#[get("/get-user-token-stats/")]
 #[passport(admin)]
 pub(self) async fn get_all(
     req: HttpRequest,

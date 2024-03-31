@@ -5,7 +5,7 @@ pub use super::*;
 
 
 
-#[post("/ticket/get/all/")]
+#[get("/ticket/get/all/")]
 #[passport(admin)]
 pub(self) async fn get_all(
     req: HttpRequest,
