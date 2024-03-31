@@ -9,6 +9,8 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 ### 🍔 Features
 
+> Note that the idea behind the chatroom launchpad has been moved to the **hoopoe** platform with different implementations.
+
 - [hoopoe](https://github.com/wildonion/zoomate/tree/main/hoopoe) a platform for social events 
 
 - an event managing and reservation system with reveal-participant-role functionality
