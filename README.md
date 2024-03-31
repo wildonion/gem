@@ -23,7 +23,7 @@ is a crypto based friendly gathering **Game Event Manager**, NFT based galleries
 
 - creating multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
 
-- participating in chatroom launchpad events to mint **AI** generated **NFTs**, based on summarization of participants' chats in each event.
+- participating in chatroom launchpad events (**%60 COMPLETED - See WIPs**) to mint **AI** generated **NFTs**, based on summarization of participants' chats in each event.
 
 ## 🥪 Panel Architecture
 
@@ -242,9 +242,6 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 
 ## 🚧 WIPs
 
-- update crates and Rust edition
-- chatroom launchpad, spacetimedb
-    - `admin.rs` apis, `chatdb.rs` and chatdb wasm methods, 
+- chatroom launchpad
+    - `admin.rs` apis, `chatdb.rs` and spacetim chatdb wasm methods, 
     - `models/clp_events.rs`, `openai.rs`
-    - `broadcaster.rs` for sse on clp event and its apis in postman
-- ci, middlewares, clients folder, components
