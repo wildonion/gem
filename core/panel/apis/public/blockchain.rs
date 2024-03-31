@@ -97,6 +97,10 @@ pub(self) async fn get_top_nfts(
 
             let mut nft_like_map = vec![];
             for nft in nfts{
+
+                if nft.is_minted.unwrap_or(false) == false{
+                    continue;
+                }
                 
                 let nft_likes = nft.likes;
                 let mut decoded_likes = if nft_likes.is_some(){
