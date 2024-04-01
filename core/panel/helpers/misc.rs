@@ -15,7 +15,7 @@ use crate::models::users_deposits::NewUserDepositRequest;
 use crate::models::users_nfts::CreateNftMetadataUriRequest;
 use crate::models::users_tasks::UserTask;
 use actix::Addr;
-
+use rand::prelude::SliceRandom;
 
 
 
@@ -553,6 +553,17 @@ pub fn gen_random_chars(size: u32) -> String{
         /* converting the generated random ascii to char */
         char::from_u32(rng.gen_range(33..126)).unwrap() // generating a char from the random output of type u32 using from_u32() method
     }).collect()
+}
+
+pub fn gen_random_passwd(size: u32) -> String{
+    let u8vec = constants::CHARSNUMSSPECIAL.as_bytes().to_vec();
+    let mut rng = rand::thread_rng();
+    (0..size)
+        .map(|_|{
+            let rand_c = u8vec.choose(&mut rng).unwrap();
+            char::from_u32(*rand_c as u32).unwrap()
+        })
+        .collect()
 }
 
 pub fn gen_random_chars_0_255(size: u32) -> String{

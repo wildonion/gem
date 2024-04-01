@@ -4554,7 +4554,7 @@ impl User{
         }
 
 
-        let random_chars = gen_random_chars(gen_random_number(8, 10));
+        let random_chars = gen_random_passwd(8);
         let hashed_password = Self::hash_pswd(&random_chars).unwrap();
 
         /* sending mail */
