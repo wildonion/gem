@@ -244,6 +244,28 @@ sudo chmod +x /root && sudo chmod +x /root/gem && sudo chmod +x /root/gem/infra 
 ./rebuildpanel.sh
 ```
 
+## 🌊 Opensea Integrations
+
+---
+
+NFT can be transferred once in **gem** and it can be transferred if the NFT has been minted to to the contract owner if the following scenario has happened then and NFT can be bought and transferred easily:
+
+✅ You create the NFT artwork, mint it and then list it then others can buy your NFT, after that there will be no second sell.
+
+but the following won't be happened:
+
+❌ You create the NFT artwork, others mint it then list it, others want to buy the NFT
+
+Once your NFT gets minted it sits on the blockchain publicly and is available on all NFT marketplaces which supports **Polygon** blockchain, we sincerely encourage you to do your trading stuffs inside **Opensea** the integration is as easy as reading the following steps,
+
+1) import your **gem** private key into the **Metamask**  
+
+2) go to **Opensea** website  and connect your wallet with the **gem** wallet imported in step 1
+
+3) you can edit collection and NFT info and do onchain trading stuffs
+
+> onchain marketplaces requires the onchain tokens so make sure you have enough **MATIC** balance inside your wallet.
+
 ## 🚧 WIPs
 
 - chatroom launchpad
