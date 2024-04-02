@@ -98,6 +98,8 @@ wss://event.panel.conse.app/subscribe/chatroomlp/1/03fe4d2c2eb9ab44971e01d9cd928
 
 ## 📘 Docs, ERDs, Schemas and Collections
 
+* Read More About [GEM Specifications](https://github.com/wildonion/gem/wiki/Specifications)
+  
 * Read More About [Crypto ID](https://github.com/wildonion/gem/wiki/Crypto-ID)
 
 * Read More About [Push Notification Strategy](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)
