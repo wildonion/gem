@@ -159,6 +159,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::friend::exports::get_all_my_followers);
     config.service(apis::user::friend::exports::get_all_my_followings);
     config.service(apis::user::gallery::exports::create_nft);
+    config.service(apis::user::gallery::exports::create_nft_with_pic);
     config.service(apis::user::gallery::exports::update_nft);
     config.service(apis::user::gallery::exports::buy_nft);
     config.service(apis::user::gallery::exports::mint_nft);

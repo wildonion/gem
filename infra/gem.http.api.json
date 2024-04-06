@@ -2759,7 +2759,14 @@
 							"name": "Get All User Tickets",
 							"request": {
 								"auth": {
-									"type": "bearer"
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcxMTkyMDY4OTA2OTkxMjMzMywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTgxMTc5OTA4OSwiaWF0IjoxNzExOTIwNjg5fQ.PXLGWfzfMek0DPwpzOjxw979TUO_M4ytVqnhLIufnTOKX_QzKVNjEGEnegD1CfARxY_LKqje0SoP36BYX26y9Q",
+											"type": "string"
+										}
+									]
 								},
 								"method": "GET",
 								"header": [],
@@ -5340,6 +5347,43 @@
 											"path": [
 												"nft",
 												"create"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create NFT With Pic",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"col_id\": 1,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ], // must fill this \n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{panel-user}}/nft/create-new",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"nft",
+												"create-new"
 											]
 										}
 									},
