@@ -19,7 +19,7 @@ pub(self) async fn get_user_wallet_info(
             let connection = &mut pg_pool.get().unwrap();
             let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
-            match User::fetch_wallet_by_username_or_mail_or_scid(&user_identifier.to_owned(), connection).await{
+            match User::fetch_wallet_by_username_or_mail_or_scid_or_cid(&user_identifier.to_owned(), connection).await{
 
                 Ok(user_info) => {
 
